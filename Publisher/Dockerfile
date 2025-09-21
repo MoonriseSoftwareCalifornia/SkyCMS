@@ -11,20 +11,23 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Publisher/Cosmos.Publisher.csproj", "Publisher/"]
+COPY ["AspNetCore.Identity.FlexDb/AspNetCore.Identity.FlexDb.csproj", "AspNetCore.Identity.FlexDb/"]
+COPY ["Cosmos.BlobService/Cosmos.BlobService.csproj", "Cosmos.BlobService/"]
+COPY ["Cosmos.ConnectionStrings/Cosmos.DynamicConfig.csproj", "Cosmos.ConnectionStrings/"]
 COPY ["Common/Cosmos.Common.csproj", "Common/"]
-RUN dotnet restore "./Publisher/Cosmos.Publisher.csproj"
+COPY ["Publisher/Sky.Publisher.csproj", "Publisher/"]
+RUN dotnet restore "./Publisher/Sky.Publisher.csproj"
 COPY . .
 WORKDIR "/src/Publisher"
-RUN dotnet build "./Cosmos.Publisher.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./Sky.Publisher.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Cosmos.Publisher.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Sky.Publisher.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Cosmos.Publisher.dll"]
+ENTRYPOINT ["dotnet", "Sky.Publisher.dll"]
