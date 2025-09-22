@@ -20,7 +20,6 @@ namespace Cosmos.Editor.Boot
     using Cosmos.Common.Data;
     using Cosmos.Common.Services.Configurations;
     using Cosmos.DynamicConfig;
-    using Sky.Editor.Data.Logic;
     using Cosmos.Editor.Services;
     using Cosmos.EmailServices;
     using Microsoft.AspNetCore.Antiforgery;
@@ -37,6 +36,7 @@ namespace Cosmos.Editor.Boot
     using Newtonsoft.Json.Serialization;
     using Sky.Cms.Hubs;
     using Sky.Cms.Services;
+    using Sky.Editor.Data.Logic;
 
     /// <summary>
     ///  Creates a multi-tenant web application.
