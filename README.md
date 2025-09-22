@@ -10,7 +10,7 @@
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMoonriseSoftwareCalifornia%2FSkyCMS%2Frefs%2Fheads%2Fmain%2FArmTemplates%2Fazuredeploy.json)
 
-[What gets deployed?](./ArmTemplates/README.md)
+[View instructions](./Docs/AzureInstall.md) for installing on Azure | [What gets deployed?](./ArmTemplates/README.md)
 
 ## Overview
 

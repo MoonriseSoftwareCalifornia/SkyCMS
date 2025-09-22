@@ -1,5 +1,7 @@
 
-# Installing SkyCMS
+# Installing SkyCMS on Azure
+
+The following describes how to install SkyCMS on Microsoft Azure.
 
 ## Quick Installation using Deploy Button
 
@@ -32,8 +34,6 @@ The easiest way to install SkyCMS is using the Deploy button located in the main
 
 ![Azure deploy dialog](./AzureDiaglog.png)
 
-
-
 1. **Deploy**
     - Review your configuration settings
     - Click "Deploy" to start the installation
@@ -43,8 +43,8 @@ The easiest way to install SkyCMS is using the Deploy button located in the main
     - Once deployment is finished, open the resource groups where you installed Sky.
     - Find the editor web app. The name prefix will start with "ed".
     - Follow the directions for creating a user account.
-    - Then select a website design.
-    - Finally, 
+    - Then select a website design and first home page.
+    - At your website's home page, select the "Menu" button, then "Public Website".
 
 ### Next Steps
 

@@ -1,4 +1,4 @@
-name: Editor and Publisher Docker Images
+name: Publish Docker Images
 
 on:
   workflow_dispatch
