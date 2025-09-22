@@ -233,16 +233,16 @@
 
         let publicBaseUrl = "@options.PublisherUrl.TrimEnd('/')";
 
-        const iframe = document.getElementById("iFrameWebPage");
+        // const iframe = document.getElementById("iFrameWebPage");
 
-        if (typeof iframe !== "undefined" && iframe !== null) {
-            var url = new URL(iframe.src);
-            var urlPath = url.pathname;
-            if (urlPath === "/root") {
-                urlPath = "/";
-            }
-            publicBaseUrl += urlPath + url.search + url.hash;
-        }
+        // if (typeof iframe !== "undefined" && iframe !== null) {
+        //     var url = new URL(iframe.src);
+        //     var urlPath = url.pathname;
+        //     if (urlPath === "/root") {
+        //         urlPath = "/";
+        //     }
+        //     publicBaseUrl += urlPath + url.search + url.hash;
+        // }
 
         $("#btnPublicWebsite").attr("href", publicBaseUrl);
     }
