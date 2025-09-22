@@ -53,4 +53,8 @@ After successful deployment:
 - Set up user accounts
 - Begin creating content
 
+### Clean Up
+
+If SkyCMS was created in a new Resource Group, simply delete the resource group to remove all Sky and all its resources.  Otherwise, using the Azure portal, delete the Sky resources there.
+
 For additional configuration options and troubleshooting, refer to the documentation in the `/docs` folder.
