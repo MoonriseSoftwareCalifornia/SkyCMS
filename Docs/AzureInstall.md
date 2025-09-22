@@ -9,7 +9,7 @@ The easiest way to install SkyCMS is using the Deploy button located in the main
 
 ### Prerequisites
 
-- An Azure subscription (Get one free)
+- An Azure subscription ([Get one free](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account/))
 
 ### Installation Steps
 
