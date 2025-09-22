@@ -6,8 +6,12 @@ This ARM template (`azuredeploy.json`) provides a complete Azure infrastructure 
 
 The template deploys a full-featured CMS solution with two main components:
 
-- **Editor**: Content creation and management interface
+- **Editor**: Content creation and management interface with built-in database.
 - **Publisher**: Public-facing website that serves content
+
+This deployment is suitable for scenarios where only one user edits content at a time, and the database does not need to be enterprise-grade.
+
+With a CDN in static mode, this website can be configured to support high user demand.
 
 ## What This Template Deploys
 

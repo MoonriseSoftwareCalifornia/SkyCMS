@@ -8,6 +8,8 @@
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMoonriseSoftwareCalifornia%2FSkyCMS%2Frefs%2Fheads%2Fmain%2FArmTemplates%2Fazuredeploy.json)
 
+[Read about what is deployed with this install.](./ArmTemplates/README.md)
+
 ## Overview
 
 [SkyCMS](https://Sky.moonrise.net/) is an open-source, cloud-native Content Management System designed for high-performance, scalability, and ease of use. Built with modern web technologies, SkyCMS runs in multiple modes to meet different deployment needs:
