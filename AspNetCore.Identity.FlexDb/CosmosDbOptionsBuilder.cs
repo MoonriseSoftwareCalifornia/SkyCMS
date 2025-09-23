@@ -52,9 +52,9 @@ namespace AspNetCore.Identity.FlexDb
         /// <exception cref="ArgumentException"></exception>
         /// <remarks>
         /// <para> This method inspects the provided connection string to determine the appropriate database provider to use. Here are some example connection strings:</para>
-        /// <para><b>Cosmos DB:</b> AccountEndpoint=https://{Your Cosmos account DNS name}:443/;AccountKey={Your Key};Database={Your database name};</para>
-        /// <para><b>SQL Server:</b> Server=tcp:{your_server}.database.windows.net,1433;Initial Catalog={your_database};Persist Security Info=False;User ID={your_user};Password={your_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;</para>
-        /// <para><b>MySQL:</b> Server={your_server};Port=3306;uid={your_user};pwd={your_password};database={your_database};</para>
+        /// <para><b>Cosmos DB:</b>AccountEndpoint=https://{Your Cosmos account DNS name}:443/;AccountKey={Your Key};Database={Your database name};</para>
+        /// <para><b>SQL Server:</b>Server=tcp:{your_server}.database.windows.net,1433;Initial Catalog={your_database};Persist Security Info=False;User ID={your_user};Password={your_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;</para>
+        /// <para><b>MySQL:</b>Server={your_server};Port=3306;uid={your_user};pwd={your_password};database={your_database};</para>
         /// <para><b>SQLite:</b>Data Source=/data/localdev.db</para>
         /// </remarks>
         public static void ConfigureDbOptions(DbContextOptionsBuilder optionsBuilder, string connectionString)
