@@ -10,7 +10,7 @@
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMoonriseSoftwareCalifornia%2FSkyCMS%2Frefs%2Fheads%2Fmain%2FArmTemplates%2Fazuredeploy.json)
 
-[View instructions](./Docs/AzureInstall.md) for installing on Azure | [What gets deployed?](./ArmTemplates/README.md)
+[View instructions](./Docs/AzureInstall.md) for installing on Azure | [What gets deployed?](./ArmTemplates/README.md) | [Storage Configuration](./Docs/StorageConfig.md) | [Database Configuration](./Docs/DatabaseConfig.md)
 
 ## Overview
 
@@ -215,6 +215,8 @@ dotnet run --project Editor
 ## 📖 Documentation
 
 - **Installation Guide**: [sky.moonrise.net/install](/ArmTemplates/README.md)
+- **Storage Configuration**: [Docs/StorageConfig.md](./Docs/StorageConfig.md) — Supported providers (Azure Blob, AWS S3), container/bucket naming, CDN integration, and recommended settings
+- **Database Configuration**: [Docs/DatabaseConfig.md](./Docs/DatabaseConfig.md) — Provider options (Cosmos DB, SQL Server, MySQL, SQLite), connection strings, EF configuration, and migration guidance
 - **Developer Documentation**: sky.moonrise.net/docs (coming soon)
 - **API Reference**: Available in the running application
 - **Video Tutorials**: YouTube Channel (coming soon)
