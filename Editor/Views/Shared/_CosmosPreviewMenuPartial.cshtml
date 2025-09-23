@@ -53,7 +53,7 @@
                         Publish now <i class="fa-solid fa-cloud-arrow-up"></i>
                     </a>
                 </li>
-                @if (previewType.Equals("article") && (isEditor || isAdministrator ))
+                @if (options.StaticWebPages == false && previewType.Equals("article") && (isEditor || isAdministrator))
                 {
                     <li class="nav-item" id="publishLater">
                         <a id="btnPublishLater" href="#" role="button" class="btn btn-sm btn-secondary mt-1 ms-2">

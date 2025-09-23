@@ -1449,7 +1449,7 @@ namespace Sky.Editor.Data.Logic
             await CheckCatalogEntries();
 
             // Update the published pages collection
-            return await UpsertPublishedPage(article.ArticleNumber);
+            return await UpsertPublishedPage(article.Id);
         }
 
         /// <summary>
@@ -1563,9 +1563,9 @@ namespace Sky.Editor.Data.Logic
         /// <summary>
         /// Creates a published page for a set of article versions, both in the database and in the blob storage (if enabled).
         /// </summary>
-        /// <param name="articleNumber">Artice number to publish.</param>
+        /// <param name="id">ID of article to publish.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        private async Task<List<CdnResult>> UpsertPublishedPage(int articleNumber)
+        private async Task<List<CdnResult>> UpsertPublishedPage(Guid id)
         {
             // Clean things up a bit.
             var doomed = await DbContext.Pages.Where(w => w.Content == "" || w.Title == "").ToListAsync();
@@ -1577,18 +1577,18 @@ namespace Sky.Editor.Data.Logic
             }
 
             // One or more versions of the article are going to be published.
-            var newVersions = await DbContext.Articles.Where(
-                w => w.ArticleNumber == articleNumber
-                && w.Published != null).ToListAsync();
+            var newVersion = await DbContext.Articles.FirstOrDefaultAsync(
+                w => w.Id == id
+                && w.Published != null);
 
             // These published versions are going to be replaced--except for redirects.
+            var articleNumber = newVersion.ArticleNumber;
             var publishedVersions = await DbContext.Pages.Where(
                 w => w.ArticleNumber == articleNumber
                 && w.StatusCode != (int)StatusCodeEnum.Redirect).ToListAsync();
 
             // This holds the new or updated page URLS.
             var purgePaths = new List<string>();
-            purgePaths.AddRange(newVersions.Select(s => s.UrlPath));
             purgePaths.AddRange(publishedVersions.Select(s => s.UrlPath));
 
             if (publishedVersions.Count > 0)
@@ -1603,43 +1603,43 @@ namespace Sky.Editor.Data.Logic
             }
 
             // Now refresh the published pages
-            foreach (var item in newVersions)
+            var authorInfo = await GetAuthorInfoForUserId(Guid.Parse(newVersion.UserId));
+
+            var newPage = new PublishedPage()
             {
-                var authorInfo = await GetAuthorInfoForUserId(Guid.Parse(item.UserId));
+                ArticleNumber = newVersion.ArticleNumber,
+                BannerImage = newVersion.BannerImage,
+                Content = newVersion.Content,
+                Expires = newVersion.Expires,
+                FooterJavaScript = newVersion.FooterJavaScript,
+                HeaderJavaScript = newVersion.HeaderJavaScript,
+                Id = Guid.NewGuid(), // Use a new GUID
+                Published = newVersion.Published,
+                StatusCode = newVersion.StatusCode,
+                Title = newVersion.Title,
+                Updated = newVersion.Updated,
+                UrlPath = newVersion.UrlPath,
+                ParentUrlPath = newVersion.UrlPath.Substring(0, Math.Max(newVersion.UrlPath.LastIndexOf('/'), 0)),
+                VersionNumber = newVersion.VersionNumber,
+                AuthorInfo = authorInfo == null ? string.Empty : JsonConvert.SerializeObject(authorInfo).Replace("\"", "'")
+            };
 
-                var newPage = new PublishedPage()
-                {
-                    ArticleNumber = item.ArticleNumber,
-                    BannerImage = item.BannerImage,
-                    Content = item.Content,
-                    Expires = item.Expires,
-                    FooterJavaScript = item.FooterJavaScript,
-                    HeaderJavaScript = item.HeaderJavaScript,
-                    Id = Guid.NewGuid(), // Use a new GUID
-                    Published = item.Published,
-                    StatusCode = item.StatusCode,
-                    Title = item.Title,
-                    Updated = item.Updated,
-                    UrlPath = item.UrlPath,
-                    ParentUrlPath = item.UrlPath.Substring(0, Math.Max(item.UrlPath.LastIndexOf('/'), 0)),
-                    VersionNumber = item.VersionNumber,
-                    AuthorInfo = authorInfo == null ? string.Empty : JsonConvert.SerializeObject(authorInfo).Replace("\"", "'")
-                };
+            DbContext.Pages.Add(newPage);
+            await DbContext.SaveChangesAsync();
 
-                DbContext.Pages.Add(newPage);
-                await DbContext.SaveChangesAsync();
-
-                if (item.UrlPath != "root")
-                {
-                    purgePaths.Add($"/pub/articles/{item.ArticleNumber}/");
-                }
-
-                // Publish the static webpage that are published before now (add 5 min)
-                if (newPage.Published.Value <= DateTimeOffset.Now.AddMinutes(5))
-                {
-                    await CreateStaticWebpage(newPage);
-                }
+            if (newVersion.UrlPath != "root")
+            {
+                purgePaths.Add($"/pub/articles/{newVersion.ArticleNumber}/");
             }
+
+            // Publish the static webpage that are published before now (add 5 min)
+            if (newPage.Published.Value <= DateTimeOffset.Now.AddMinutes(5))
+            {
+                await CreateStaticWebpage(newPage);
+            }
+
+            // Make sure the catalog is up to date.
+            await UpsertCatalogEntry(newVersion);
 
             // Update TOC file.
             await CreateStaticTableOfContentsJsonFile("/");
