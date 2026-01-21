@@ -369,6 +369,30 @@ namespace Cosmos.Common.Data
             }
             else
             {
+                // Relational Database Indexes (SQL Server, MySQL, SQLite)
+                // Layout versioning indexes for efficient querying by family and version
+                modelBuilder.Entity<Layout>()
+                    .HasIndex(l => l.LayoutNumber)
+                    .HasDatabaseName("IX_Layout_LayoutNumber");
+
+                modelBuilder.Entity<Layout>()
+                    .HasIndex(l => new { l.LayoutNumber, l.Version })
+                    .HasDatabaseName("IX_Layout_LayoutNumber_Version");
+
+                modelBuilder.Entity<Layout>()
+                    .HasIndex(l => new { l.LayoutNumber, l.IsDefault, l.Published })
+                    .HasDatabaseName("IX_Layout_LayoutNumber_IsDefault_Published");
+
+                // Template indexes for layout family lookups
+                modelBuilder.Entity<Template>()
+                    .HasIndex(t => t.LayoutNumber)
+                    .HasDatabaseName("IX_Template_LayoutNumber");
+
+                modelBuilder.Entity<Template>()
+                    .HasIndex(t => new { t.LayoutNumber, t.LayoutId })
+                    .HasDatabaseName("IX_Template_LayoutNumber_LayoutId");
+
+                // MySQL-specific prefix length constraints
                 if (Database.IsMySql())
                 {
                     modelBuilder.Entity<PublishedPage>()
@@ -380,7 +404,7 @@ namespace Cosmos.Common.Data
                         .HasAnnotation("MySql:IndexPrefixLength", new[] { 768 }); // 768 * 4 = 3072 bytes max
                 }
 
-                // All SQL providers.
+                // All SQL providers: ETag concurrency
                 modelBuilder.Entity<Article>().Property(e => e.RowVersion).IsETagConcurrency();
                 modelBuilder.Entity<CatalogEntry>().Property(e => e.RowVersion).IsETagConcurrency();
                 modelBuilder.Entity<PublishedPage>().Property(e => e.RowVersion).IsETagConcurrency();

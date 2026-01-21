@@ -46,6 +46,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.ReservedPaths;
+    using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
 
@@ -706,17 +707,13 @@ namespace Sky.Cms.Controllers
                     return View(model);
                 }
 
-
-
                 var command = new CreateArticleCommand
                 {
                     Title = model.Title,
                     TemplateId = model.TemplateId,
                     UserId = Guid.Parse(await GetUserId()),
-                     ArticleType = model.ArticleType,
-                      BlogKey = model.BlogKey,
-                       Category = model.Category,
-                        Introduction = model.Introduction
+                    ArticleType = model.ArticleType,
+                    BlogKey = string.Empty
                 };
 
                 var article = await articleLogic.CreateArticle(model.Title, Guid.Parse(await GetUserId()), model.TemplateId);
@@ -2101,9 +2098,9 @@ namespace Sky.Cms.Controllers
                 await publishingService.CreateStaticPages(guids);
 
                 var count = guids?.Count ?? await dbContext.Pages.CountAsync();
-                
-                return Json(new 
-                { 
+
+                return Json(new
+                {
                     success = true,
                     count = count,
                     message = $"Successfully published {count} page(s)"
@@ -2112,10 +2109,10 @@ namespace Sky.Cms.Controllers
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error publishing static pages");
-                return Json(new 
-                { 
+                return Json(new
+                {
                     success = false,
-                    message = ex.Message 
+                    message = ex.Message
                 });
             }
         }
@@ -2363,14 +2360,14 @@ namespace Sky.Cms.Controllers
             try
             {
                 var cdnService = CdnService.GetCdnService(dbContext, logger, HttpContext);
-                
+
                 if (cdnService == null)
                 {
                     return Json(new List<object>());
                 }
 
                 var results = await cdnService.PurgeCdn();
-                
+
                 return Json(results.Select(r => new
                 {
                     provider = r.ProviderName,
@@ -2381,14 +2378,14 @@ namespace Sky.Cms.Controllers
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error purging CDN");
-                return Json(new[] 
-                { 
-                    new 
-                    { 
+                return Json(new[]
+                {
+                    new
+                    {
                         provider = "CDN",
                         success = false,
-                        message = ex.Message 
-                    } 
+                        message = ex.Message
+                    }
                 });
             }
         }
