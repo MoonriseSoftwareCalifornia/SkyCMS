@@ -28,6 +28,18 @@ namespace Cosmos.Common.Data
         public int? Version { get; set; } = 1;
 
         /// <summary>
+        /// Gets or sets the layout number that persists across all versions of this layout family.
+        /// </summary>
+        /// <remarks>
+        /// This number identifies the layout "family" - all versions of the same conceptual layout
+        /// share the same LayoutNumber. A value of 0 indicates the layout has not been migrated
+        /// and needs LayoutNumber assignment. This field enables version management while maintaining
+        /// a stable identifier for template relationships.
+        /// </remarks>
+        [Display(Name = "Layout Number")]
+        public int LayoutNumber { get; set; } = 0;
+
+        /// <summary>
         /// Gets or sets the community layout ID.
         /// </summary>
         [Display(Name = "Community Layout Id")]

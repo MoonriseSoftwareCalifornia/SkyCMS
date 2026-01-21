@@ -22,10 +22,28 @@ namespace Cosmos.Common.Data
         public Guid Id { get; set; } = Guid.NewGuid();
 
         /// <summary>
-        /// Gets or sets the layout ID.
+        /// Gets or sets the layout ID for version pinning.
         /// </summary>
+        /// <remarks>
+        /// When set, this template will always render with the specific Layout version identified by this ID.
+        /// When null, the template uses the latest published Layout from the LayoutNumber family.
+        /// This allows templates to either pin to a specific version or auto-update with layout changes.
+        /// </remarks>
         [Display(Name = "Layout ID")]
         public Guid? LayoutId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the layout number (family identifier) this template belongs to.
+        /// </summary>
+        /// <remarks>
+        /// This identifies which layout "family" the template uses. All templates with the same
+        /// LayoutNumber share the same layout design family across different versions.
+        /// A value of 0 indicates the template has not been migrated and needs LayoutNumber assignment.
+        /// Templates typically use the latest published version of layouts in their family unless
+        /// LayoutId is explicitly set for version pinning.
+        /// </remarks>
+        [Display(Name = "Layout Number")]
+        public int LayoutNumber { get; set; } = 0;
 
         /// <summary>
         /// Gets or sets the community layout ID.
