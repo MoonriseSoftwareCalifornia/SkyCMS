@@ -621,7 +621,8 @@ namespace Sky.Cms.Controllers
             ViewData["reservedPaths"] = existingUrls;
 
             var query = dbContext.Templates.OrderBy(t => t.Title)
-                .Where(w => w.LayoutId == defautLayout.Id)
+                .Where(w => w.LayoutNumber == defautLayout.LayoutNumber || 
+                            (w.LayoutNumber == 0 && w.LayoutId == defautLayout.Id)) // Handles unmigrated data
                 .Select(s => new TemplateIndexViewModel
                 {
                     Id = s.Id,
@@ -735,7 +736,8 @@ namespace Sky.Cms.Controllers
             ViewData["pageSize"] = 20;
 
             var query = dbContext.Templates.OrderBy(t => t.Title)
-               .Where(w => w.LayoutId == defautLayout.Id)
+               .Where(w => w.LayoutNumber == defautLayout.LayoutNumber || 
+                           (w.LayoutNumber == 0 && w.LayoutId == defautLayout.Id)) // Handles unmigrated data
                .Select(s => new TemplateIndexViewModel
                {
                    Id = s.Id,
@@ -2275,7 +2277,7 @@ namespace Sky.Cms.Controllers
 
         /// <summary>
         /// Sends an article (or page) to trash bin.
-        /// </summary>
+ /// </summary>
         /// <param name="id">Article ID.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpGet]

@@ -5,6 +5,7 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using AspNetCore.Identity.FlexDb;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
 using Cosmos.BlobService;
@@ -25,6 +26,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,6 +57,7 @@ using Sky.Editor.Services.Diagnostics;
 using Sky.Editor.Services.EditorSettings;
 using Sky.Editor.Services.Email;
 using Sky.Editor.Services.Html;
+using Sky.Editor.Services.Layout;
 using Sky.Editor.Services.Layouts;
 using Sky.Editor.Services.Publishing;
 using Sky.Editor.Services.Redirects;
@@ -216,6 +219,100 @@ if (allowSetup && !isMultiTenantEditor)
 }
 
 // ---------------------------------------------------------------
+// STEP 1.7: RUN LAYOUT VERSIONING MIGRATION (IF NEEDED)
+// ---------------------------------------------------------------
+if (!isMultiTenantEditor)
+{
+    System.Console.WriteLine("🔄 Checking for layout versioning migration...");
+    
+    var connectionString = builder.Configuration.GetConnectionString(CONNECTIONSTRING_APP_DB);
+    
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        try
+        {
+            // Create a temporary service scope to run migration
+            var tempServices = new ServiceCollection();
+            tempServices.AddLogging(config => config.AddConsole());
+            tempServices.AddDbContext<ApplicationDbContext>(options =>
+            {
+                var dbOptions = CosmosDbOptionsBuilder.GetDbOptions<ApplicationDbContext>(connectionString);
+                if (dbOptions != null)
+                {
+                    options.UseCosmos(
+                        dbOptions.Extensions.OfType<Microsoft.EntityFrameworkCore.Cosmos.Infrastructure.Internal.CosmosOptionsExtension>()
+                            .First().AccountEndpoint.ToString(),
+                        dbOptions.Extensions.OfType<Microsoft.EntityFrameworkCore.Cosmos.Infrastructure.Internal.CosmosOptionsExtension>()
+                            .First().AccountKey,
+                        dbOptions.Extensions.OfType<Microsoft.EntityFrameworkCore.Cosmos.Infrastructure.Internal.CosmosOptionsExtension>()
+                            .First().DatabaseName);
+                }
+                else
+                {
+                    // SQL Server, MySQL, or SQLite
+                    if (connectionString.Contains("cosmosdb.azure.com", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException("Cosmos DB connection string detected but options could not be parsed");
+                    }
+                    else if (connectionString.Contains("mysql", StringComparison.OrdinalIgnoreCase) ||
+                             connectionString.Contains("mariadb", StringComparison.OrdinalIgnoreCase))
+                    {
+                        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                    }
+                    else if (connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) &&
+                             connectionString.Contains(".db", StringComparison.OrdinalIgnoreCase))
+                    {
+                        options.UseSqlite(connectionString);
+                    }
+                    else
+                    {
+                        options.UseSqlServer(connectionString);
+                    }
+                }
+            });
+            tempServices.AddScoped<Sky.Editor.Services.Layout.ILayoutMigrationService, Sky.Editor.Services.Layout.LayoutMigrationService>();
+            
+            var tempServiceProvider = tempServices.BuildServiceProvider();
+            
+            using (var scope = tempServiceProvider.CreateScope())
+            {
+                var migrationService = scope.ServiceProvider.GetRequiredService<Sky.Editor.Services.Layout.ILayoutMigrationService>();
+                
+                if (await migrationService.NeedsMigrationAsync())
+                {
+                    System.Console.WriteLine("📦 Layout versioning migration required - starting migration...");
+                    
+                    var layoutCount = await migrationService.MigrateLayoutNumbersAsync();
+                    System.Console.WriteLine($"✅ Migrated {layoutCount} layouts to versioned families");
+                    
+                    await migrationService.MigrateTemplateLayoutNumbersAsync();
+                    System.Console.WriteLine("✅ Template LayoutNumbers updated");
+                    
+                    System.Console.WriteLine("✅ Layout versioning migration completed successfully");
+                }
+                else
+                {
+                    System.Console.WriteLine("✓ Layout versioning already configured - no migration needed");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Console.WriteLine($"⚠️ WARNING: Layout versioning migration failed: {ex.Message}");
+            System.Console.WriteLine($"   {ex.StackTrace}");
+            System.Console.WriteLine("   Application will continue, but layout versioning may not work correctly.");
+            System.Console.WriteLine("   Please check the logs and database configuration.");
+            // Don't throw - allow app to continue
+        }
+    }
+    else
+    {
+        System.Console.WriteLine("⚠️ No connection string found. Skipping layout migration check.");
+        System.Console.WriteLine("   This is normal during initial setup.");
+    }
+}
+
+// ---------------------------------------------------------------
 // STEP 2: Register Core Infrastructure (Common to Both Modes)
 // ---------------------------------------------------------------
 builder.Services.AddMemoryCache();
@@ -280,6 +377,7 @@ builder.Services.AddScoped<ICommandHandler<SavePageDesignVersionCommand, Command
 builder.Services.AddScoped<ICommandHandler<PublishPageDesignVersionCommand, CommandResult<Template>>, PublishPageDesignVersionHandler>();
 builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
+builder.Services.AddScoped<ILayoutMigrationService, LayoutMigrationService>(); // NEW: Layout versioning migration
 builder.Services.AddScoped<IStorageContext, StorageContext>();
 builder.Services.AddScoped<StorageContext>(); // Register concrete class for Hangfire background jobs
 builder.Services.AddScoped<IEditorSettings, EditorSettings>(); // CHANGED: Scoped for per-request tenant context
