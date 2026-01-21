@@ -307,6 +307,8 @@ namespace Sky.Cms.Controllers
             var doc = new HtmlDocument();
             doc.LoadHtml(markedHtml);
 
+            var imageWidgetNodes = doc.DocumentNode.SelectNodes("//*[@data-editor-config='image-widget']") ?? new HtmlNodeCollection(null);
+            
             var legacyEditableNodes = doc.DocumentNode.SelectNodes("//*[@contenteditable]") ?? new HtmlNodeCollection(null);
             bool templateUpdated = false;
 
@@ -344,10 +346,11 @@ namespace Sky.Cms.Controllers
 
             foreach (var node in editableNodes)
             {
-                // Skip non-text widgets (e.g., image widget)
+                // Handle image widgets with placeholder
                 var editorConfig = node.GetAttributeValue("data-editor-config", string.Empty).ToLowerInvariant();
                 if (editorConfig == "image-widget")
                 {
+                    node.InnerHtml = "<div style=\"background-color: #e0e0e0; display: flex; align-items: center; justify-content: center; min-height: 200px; color: #666; font-size: 16px; font-family: Arial, sans-serif;\">Image goes here</div>";
                     continue;
                 }
 

@@ -68,6 +68,11 @@ namespace Sky.Editor.Models.Blogs
         /// </summary>
         [Display(Name = "Published")]
         public DateTimeOffset? Published { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets the blog URL path for the stream.
+        /// </summary>
+        public string UrlPath { get; set; }
     }
 
     /// <summary>
@@ -97,6 +102,11 @@ namespace Sky.Editor.Models.Blogs
         /// Gets or sets the hero image URL or path for the blog stream.
         /// </summary>
         public string HeroImage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the blog URL path for the stream.
+        /// </summary>
+        public string BlogUrlPath { get; set; }
 
         /// <summary>
         /// Gets or sets the list of entries belonging to the stream.

@@ -215,18 +215,26 @@ namespace Sky.Cms.Controllers
             ViewData["pageNo"] = pageNo;
             ViewData["pageSize"] = pageSize;
 
-            var articles = await dbContext.ArticleCatalog.Where(w => w.TemplateId == template.Id).Select(s => new
+            var pages = await dbContext.ArticleCatalog.Where(w => w.TemplateId == id).Select(s => new
             {
                 s.ArticleNumber,
                 s.Title,
                 s.UrlPath,
                 s.Published,
-                s.Status,
-                s.Updated,
-                s.ArticlePermissions
+                s.Updated
             }).AsNoTracking().ToListAsync();
 
-            var query = articles.AsQueryable();
+            var data = pages.GroupBy(articles => articles.ArticleNumber)
+                .Select(g => new
+                {
+                    ArticleNumber = g.Key,
+                    Title = g.OrderByDescending(o => o.Updated).First().Title,
+                    UrlPath = g.OrderByDescending(o => o.Updated).First().UrlPath,
+                    Published = g.OrderByDescending(o => o.Published).First().Published,
+                    Updated = g.OrderByDescending(o => o.Updated).First().Updated
+                }).ToList();
+
+            var query = data.AsQueryable();
 
             ViewData["RowCount"] = query.Count();
 
@@ -254,9 +262,6 @@ namespace Sky.Cms.Controllers
                         case "UrlPath":
                             query = query.OrderByDescending(o => o.UrlPath);
                             break;
-                        case "Status":
-                            query = query.OrderByDescending(o => o.Status);
-                            break;
                         case "Updated":
                             query = query.OrderByDescending(o => o.Updated);
                             break;
@@ -281,9 +286,6 @@ namespace Sky.Cms.Controllers
                         case "UrlPath":
                             query = query.OrderBy(o => o.UrlPath);
                             break;
-                        case "Status":
-                            query = query.OrderBy(o => o.Status);
-                            break;
                         case "Updated":
                             query = query.OrderBy(o => o.Updated);
                             break;
@@ -299,11 +301,11 @@ namespace Sky.Cms.Controllers
             var users = await dbContext.Users.Select(s => new { s.Id, s.Email }).ToListAsync();
             var roles = await dbContext.Roles.Select(s => new { s.Id, s.Name }).ToListAsync();
 
-            var data = query.Skip(pageNo * pageSize).Take(pageSize).AsNoTracking().ToList();
+            var d = query.Skip(pageNo * pageSize).Take(pageSize).AsNoTracking().ToList();
 
             var model = new List<ArticleListItem>();
 
-            foreach (var datum in data)
+            foreach (var datum in d)
             {
                 var item = new ArticleListItem()
                 {
@@ -311,25 +313,9 @@ namespace Sky.Cms.Controllers
                     IsDefault = datum.UrlPath.Equals("root", StringComparison.CurrentCultureIgnoreCase),
                     UrlPath = datum.UrlPath,
                     LastPublished = datum.Published,
-                    Status = datum.Status,
                     Updated = datum.Updated,
                     Title = datum.Title
                 };
-
-                if (datum.ArticlePermissions != null && datum.ArticlePermissions.Count > 0)
-                {
-                    var userIds = datum.ArticlePermissions.Where(w => !w.IsRoleObject).Select(s => s.IdentityObjectId).ToList();
-                    if (userIds.Any())
-                    {
-                        item.Permissions.AddRange(users.Where(s => userIds.Contains(s.Id)).Select(s => s.Email).ToArray());
-                    }
-
-                    var roleds = datum.ArticlePermissions.Where(w => w.IsRoleObject).Select(s => s.IdentityObjectId).ToList();
-                    if (roleds.Any())
-                    {
-                        item.Permissions.AddRange(roles.Where(s => roleds.Contains(s.Id)).Select(s => s.Name).ToArray());
-                    }
-                }
 
                 model.Add(item);
             }

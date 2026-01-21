@@ -28,7 +28,6 @@ namespace Sky.Editor.Services.Publishing
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using Sky.Cms.Services;
-    using Sky.Editor.Data.Logic;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.BlogPublishing;
     using Sky.Editor.Services.CDN;
@@ -56,6 +55,7 @@ namespace Sky.Editor.Services.Publishing
         private readonly IViewRenderService viewRenderService;
         private readonly IServiceProvider _serviceProvider;
         private readonly SemaphoreSlim _layoutLock = new SemaphoreSlim(1, 1);
+        private readonly IPublishingProgressReporter _progressReporter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PublishingService"/> class.
@@ -70,6 +70,7 @@ namespace Sky.Editor.Services.Publishing
         /// <param name="blogRenderingService">The blog stream and post rendering service.</param>
         /// <param name="viewRenderService">View rendering service.</param>
         /// <param name="serviceProvider">Service provider for creating scoped dependencies.</param>
+        /// <param name="progressReporter">The publishing progress reporter.</param>
         public PublishingService(
             ApplicationDbContext db,
             IStorageContext storage,
@@ -80,7 +81,8 @@ namespace Sky.Editor.Services.Publishing
             IClock systemClock,
             IBlogRenderingService blogRenderingService,
             IViewRenderService viewRenderService,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            IPublishingProgressReporter progressReporter)
         {
             _db = db;
             _storage = storage;
@@ -92,6 +94,7 @@ namespace Sky.Editor.Services.Publishing
             this.blogRenderingService = blogRenderingService;
             this.viewRenderService = viewRenderService;
             _serviceProvider = serviceProvider;
+            _progressReporter = progressReporter;
         }
 
         private LayoutViewModel defaultLayout;
@@ -200,7 +203,7 @@ namespace Sky.Editor.Services.Publishing
                 DeleteStatic(prior);
             }
 
-            var authorInfo = await _authors.GetOrCreateAsync(userId);  // Use the already-parsed userId
+            var authorInfo = await _authors.GetOrCreateAsync(userId);
 
             PublishedPage page;
 
@@ -295,43 +298,122 @@ namespace Sky.Editor.Services.Publishing
         /// </remarks>
         public async Task CreateStaticPages(IEnumerable<Guid> ids)
         {
-            var pages = await _db.Pages.Where(w => ids.Contains(w.Id)).ToListAsync();
-
-            // Pre-load the layout once before parallel processing
+            const int batchSize = 50;
+            
+            // If no IDs provided, publish all pages
+            var pageIds = (ids == null || !ids.Any()) 
+                ? await _db.Pages.Select(p => p.Id).ToListAsync()
+                : ids.ToList();
+            
+            await _progressReporter.ReportProgressAsync(0, pageIds.Count, "Preparing to generate static pages...");
+            
+            // Pre-load layout once
             var layout = await GetDefaultLayoutAsync();
-
-            // Process pages in parallel with controlled concurrency
-            var options = new ParallelOptions
+            
+            // Determine optimal parallelism based on storage backend
+            var parallelism = StorageParallelismHelper.GetOptimalParallelism(
+                _storage,
+                _logger,
+                _settings.StaticPageParallelism);
+            
+            _logger.LogInformation(
+                "Starting static page generation for {PageCount} page(s) with parallelism: {Parallelism}",
+                pageIds.Count,
+                parallelism);
+            
+            await _progressReporter.ReportProgressAsync(
+                0, 
+                pageIds.Count, 
+                $"Starting generation of {pageIds.Count} page(s) with parallelism: {parallelism}");
+            
+            var processedCount = 0;
+            var progressLock = new object();
+            
+            // Process in batches to control memory
+            for (int i = 0; i < pageIds.Count; i += batchSize)
             {
-                MaxDegreeOfParallelism = 4 // Adjust based on your system
-            };
-
-            await Parallel.ForEachAsync(pages, options, async (page, cancellationToken) =>
-            {
-                // Each iteration needs its own DbContext scope
-                await using var scope = _serviceProvider.CreateAsyncScope();
-                var scopedStorage = scope.ServiceProvider.GetRequiredService<IStorageContext>();
-                var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<PublishingService>>();
-                var scopedViewRenderer = scope.ServiceProvider.GetRequiredService<IViewRenderService>(); // ADD THIS LINE
-
-                await CreateStaticFileWithRetrySafeAsync(
-                    page,
-                    layout,
-                    scopedStorage,
-                    scopedViewRenderer, // CHANGE THIS from viewRenderService
-                    scopedLogger,
-                    cancellationToken);
-            });
-
-            // Write the table of contents.
+                var batchIds = pageIds.Skip(i).Take(batchSize);
+                var pages = await _db.Pages.Where(w => batchIds.Contains(w.Id)).ToListAsync();
+                
+                // Process this batch with adaptive parallelism
+                var options = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = parallelism
+                };
+                
+                var batchProcessedCount = 0;
+                
+                await Parallel.ForEachAsync(pages, options, async (page, cancellationToken) =>
+                {
+                    await using var scope = _serviceProvider.CreateAsyncScope();
+                    var scopedStorage = scope.ServiceProvider.GetRequiredService<IStorageContext>();
+                    var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<PublishingService>>();
+                    var scopedViewRenderer = scope.ServiceProvider.GetRequiredService<IViewRenderService>();
+                    
+                    await CreateStaticFileWithRetrySafeAsync(
+                        page,
+                        layout,
+                        scopedStorage,
+                        scopedViewRenderer,
+                        scopedLogger,
+                        cancellationToken);
+                    
+                    // Thread-safe increment and progress reporting
+                    int currentCount;
+                    lock (progressLock)
+                    {
+                        batchProcessedCount++;
+                        currentCount = processedCount + batchProcessedCount;
+                    }
+                    
+                    // Report progress every 5 pages to avoid flooding SignalR
+                    if (currentCount % 5 == 0 || currentCount == pageIds.Count)
+                    {
+                        await _progressReporter.ReportProgressAsync(
+                            currentCount,
+                            pageIds.Count,
+                            $"Generated {currentCount} of {pageIds.Count} page(s)");
+                    }
+                });
+                
+                processedCount += batchProcessedCount;
+                
+                _logger.LogInformation(
+                    "Completed batch {BatchNumber}/{TotalBatches} ({PagesProcessed}/{TotalPages} pages)",
+                    (i / batchSize) + 1, 
+                    (pageIds.Count + batchSize - 1) / batchSize,
+                    Math.Min(i + batchSize, pageIds.Count),
+                    pageIds.Count);
+                
+                await _progressReporter.ReportProgressAsync(
+                    processedCount,
+                    pageIds.Count,
+                    $"Completed batch {(i / batchSize) + 1}/{(pageIds.Count + batchSize - 1) / batchSize}");
+            }
+            
+            await _progressReporter.ReportProgressAsync(
+                pageIds.Count,
+                pageIds.Count,
+                "Updating table of contents...");
+    
+            // Write TOC and purge CDN after all batches
             await WriteTocAsync("/");
-
-            // Refresh the CDN if present.
+            
+            await _progressReporter.ReportProgressAsync(
+                pageIds.Count,
+                pageIds.Count,
+                "Purging CDN cache...");
+            
             var cdnService = CdnService.GetCdnService(_db, _logger, _accessor.HttpContext);
             if (cdnService != null)
             {
                 await cdnService.PurgeCdn();
             }
+            
+            await _progressReporter.ReportProgressAsync(
+                pageIds.Count,
+                pageIds.Count,
+                "Static page generation completed successfully!");
         }
 
         /// <summary>

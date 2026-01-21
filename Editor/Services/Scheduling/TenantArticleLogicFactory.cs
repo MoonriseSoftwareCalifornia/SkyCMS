@@ -1,4 +1,4 @@
-// <copyright file="TenantArticleLogicFactory.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="TenantArticleLogicFactory.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -101,17 +101,21 @@ namespace Sky.Editor.Services.Scheduling
                 scopedServices,
                 domainName);
 
+            // Create no-op progress reporter for background jobs (no HTTP context)
+            var progressReporter = new NoOpPublishingProgressReporter();
+
             var publishingService = new PublishingService(
                 dbContext,
                 storageContext,
                 editorSettings,
                 scopedServices.GetRequiredService<ILogger<PublishingService>>(),
-                null,
+                null,  // No HttpContextAccessor in background jobs
                 authorService,
                 scopedServices.GetRequiredService<IClock>(),
                 blogRenderingService,
                 scopedServices.GetRequiredService<IViewRenderService>(),
-                scopedServices);
+                scopedServices,
+                progressReporter);  // ✅ Add no-op progress reporter
 
             var redirectService = new RedirectService(
                 dbContext,

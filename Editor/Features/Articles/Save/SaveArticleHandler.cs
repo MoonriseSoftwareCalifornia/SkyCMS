@@ -27,6 +27,7 @@ namespace Sky.Editor.Features.Articles.Save
 
     /// <summary>
     /// Handles saving (updating) existing articles with full workflow coordination.
+    /// Orchestrates HTML processing, title change tracking, catalog updates, and CDN publishing.
     /// </summary>
     public class SaveArticleHandler : ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>
     {
@@ -42,6 +43,13 @@ namespace Sky.Editor.Features.Articles.Save
         /// <summary>
         /// Initializes a new instance of the <see cref="SaveArticleHandler"/> class.
         /// </summary>
+        /// <param name="dbContext">The database context for article persistence.</param>
+        /// <param name="htmlService">Service for processing and validating HTML content.</param>
+        /// <param name="catalogService">Service for managing article catalog entries.</param>
+        /// <param name="publishingService">Service for publishing articles to CDN.</param>
+        /// <param name="titleChangeService">Service for handling article title changes and redirects.</param>
+        /// <param name="clock">Abstraction for current time (supports testing).</param>
+        /// <param name="logger">Logger for diagnostic information.</param>
         public SaveArticleHandler(
             ApplicationDbContext dbContext,
             IArticleHtmlService htmlService,
@@ -62,9 +70,13 @@ namespace Sky.Editor.Features.Articles.Save
         }
 
         /// <summary>
-        /// Handles the save article command.
+        /// Handles the save article command by updating an existing article in the database.
+        /// Processes HTML content, tracks title changes, updates the catalog, and publishes to CDN if applicable.
         /// </summary>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <param name="command">The command containing article update data.</param>
+        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+        /// <returns>A <see cref="CommandResult{T}"/> containing the updated article or validation errors.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when business validation fails (e.g., duplicate titles).</exception>
         public async Task<CommandResult<ArticleUpdateResult>> HandleAsync(
             SaveArticleCommand command,
             CancellationToken cancellationToken = default)
@@ -215,7 +227,12 @@ namespace Sky.Editor.Features.Articles.Save
 
         /// <summary>
         /// Saves the article with retry logic for concurrency conflicts.
+        /// Attempts up to two saves, reloading the entity on the first concurrency exception.
         /// </summary>
+        /// <param name="article">The article entity to save.</param>
+        /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+        /// <returns><c>true</c> if the article was saved successfully; otherwise, <c>false</c>.</returns>
+        /// <exception cref="DbUpdateConcurrencyException">Thrown if concurrency conflicts persist after retry.</exception>
         private async Task<bool> SaveWithRetryAsync(Article article, CancellationToken cancellationToken)
         {
             for (int attempt = 0; attempt < 2; attempt++)
@@ -242,8 +259,11 @@ namespace Sky.Editor.Features.Articles.Save
         }
 
         /// <summary>
-        /// Maps Article entity to ArticleViewModel.
+        /// Maps an Article entity to an ArticleViewModel for presentation.
         /// </summary>
+        /// <param name="article">The article entity to map.</param>
+        /// <param name="command">The original command containing additional metadata.</param>
+        /// <returns>An <see cref="ArticleViewModel"/> populated with article data.</returns>
         private static ArticleViewModel MapToViewModel(Article article, SaveArticleCommand command)
         {
             return new ArticleViewModel

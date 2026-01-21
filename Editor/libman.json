@@ -8,9 +8,8 @@
       "destination": "wwwroot/lib/bootstrap"
     },
     {
-      "provider": "unpkg",
-      "library": "filepond-plugin-file-metadata@1.0.8",
-      "destination": "wwwroot/lib/filepond-plugin-file-metadata"
+      "library": "cropperjs@2.0.1",
+      "destination": "wwwroot/lib/cropperjs"
     },
     {
       "library": "luxon@3.5.0",

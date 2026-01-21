@@ -29,7 +29,6 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.SignalR;
     using Microsoft.Azure.Cosmos.Serialization.HybridRow;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using SendGrid.Helpers.Errors.Model;
     using Sky.Cms.Hubs;
@@ -37,6 +36,7 @@ namespace Sky.Cms.Controllers
     using Sky.Cms.Services;
     using Sky.Editor.Data;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Models;
@@ -263,6 +263,8 @@ namespace Sky.Cms.Controllers
             {
                 return BadRequest("Cannot have nested editable regions.");
             }
+
+            model.HtmlContent = htmlService.EnsureEditableMarkers(model.HtmlContent);
 
             var article = await articleLogic.GetArticleByArticleNumber(model.ArticleNumber, null);
 
@@ -703,6 +705,19 @@ namespace Sky.Cms.Controllers
                     ModelState.AddModelError("Title", $"Title: {model.Title} conflicts with another article title or reserved word.");
                     return View(model);
                 }
+
+
+
+                var command = new CreateArticleCommand
+                {
+                    Title = model.Title,
+                    TemplateId = model.TemplateId,
+                    UserId = Guid.Parse(await GetUserId()),
+                     ArticleType = model.ArticleType,
+                      BlogKey = model.BlogKey,
+                       Category = model.Category,
+                        Introduction = model.Introduction
+                };
 
                 var article = await articleLogic.CreateArticle(model.Title, Guid.Parse(await GetUserId()), model.TemplateId);
                 article.ArticleType = model.ArticleType;
@@ -1708,6 +1723,8 @@ namespace Sky.Cms.Controllers
                     ModelState.AddModelError("Content", "Cannot have nested editable regions.");
                 }
 
+                model.Content = htmlService.EnsureEditableMarkers(model.Content);
+
                 // CHANGED: Use articleLogic to get the full article with all properties
                 var article = await articleLogic.GetArticleByArticleNumber(model.ArticleNumber, null);
 
@@ -2078,9 +2095,29 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Editors,Administrators")]
         public async Task<IActionResult> PublishStaticPages([FromBody] List<Guid> guids)
         {
-            await publishingService.CreateStaticPages(guids);
+            try
+            {
+                // Empty or null list triggers "publish all" in the service
+                await publishingService.CreateStaticPages(guids);
 
-            return Json(new { guids.Count });
+                var count = guids?.Count ?? await dbContext.Pages.CountAsync();
+                
+                return Json(new 
+                { 
+                    success = true,
+                    count = count,
+                    message = $"Successfully published {count} page(s)"
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error publishing static pages");
+                return Json(new 
+                { 
+                    success = false,
+                    message = ex.Message 
+                });
+            }
         }
 
         /// <summary>
@@ -2323,14 +2360,37 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> RefreshCdn()
         {
-            if (Request.Host.Host.Contains("localhost"))
+            try
             {
-                return Ok();
-            }
+                var cdnService = CdnService.GetCdnService(dbContext, logger, HttpContext);
+                
+                if (cdnService == null)
+                {
+                    return Json(new List<object>());
+                }
 
-            var cdnService = CdnService.GetCdnService(dbContext, logger, HttpContext);
-            var result = await cdnService.PurgeCdn();
-            return Json(result);
+                var results = await cdnService.PurgeCdn();
+                
+                return Json(results.Select(r => new
+                {
+                    provider = r.ProviderName,
+                    success = r.IsSuccessStatusCode,
+                    message = r.Message
+                }));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error purging CDN");
+                return Json(new[] 
+                { 
+                    new 
+                    { 
+                        provider = "CDN",
+                        success = false,
+                        message = ex.Message 
+                    } 
+                });
+            }
         }
 
         /// <summary>

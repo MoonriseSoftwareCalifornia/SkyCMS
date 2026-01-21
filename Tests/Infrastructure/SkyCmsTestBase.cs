@@ -95,12 +95,14 @@ namespace Sky.Tests
                 .FirstOrDefaultAsync(t => t.PageType == "blog-stream");
             if (existingTemplate == null)
             {
+                var defaultLayout = await Db.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
                 var t = TemplateService.GetTemplateByKeyAsync("blog-stream").Result;
                 var template = new Template
                 {
                     Id = Guid.NewGuid(),
                     PageType = "blog-stream",
-                    Content = t.Content
+                    Content = t.Content,
+                    LayoutId = defaultLayout?.Id ?? Guid.Empty
                 };
                 Db.Templates.Add(template);
                 await Db.SaveChangesAsync();
@@ -114,12 +116,14 @@ namespace Sky.Tests
 
             if (existingTemplate == null)
             {
+                var defaultLayout = await Db.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
                 var t = TemplateService.GetTemplateByKeyAsync("blog-post").Result;
                 var template = new Template
                 {
                     Id = Guid.NewGuid(),
                     PageType = "blog-post",
-                    Content = t.Content
+                    Content = t.Content,
+                    LayoutId = defaultLayout?.Id ?? Guid.Empty
                 };
                 Db.Templates.Add(template);
                 await Db.SaveChangesAsync();
@@ -224,12 +228,18 @@ namespace Sky.Tests
 
             EditorSettings = new EditorSettings(configuration, Db, HttpContextAccessor, Cache, null!);
 
-            PublishingService = new PublishingService(Db, Storage, EditorSettings,
+            PublishingService = new PublishingService(
+                Db, 
+                Storage, 
+                EditorSettings,
                 new LoggerFactory().CreateLogger<PublishingService>(),
-                HttpContextAccessor, authorInfoService,
+                HttpContextAccessor, 
+                authorInfoService,
                 Clock,
                 BlogRenderingService,
-                ViewRenderService, null!);
+                ViewRenderService, 
+                null!,
+                new NoOpPublishingProgressReporter()); // ✅ Add progress reporter
 
             RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);
             TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());

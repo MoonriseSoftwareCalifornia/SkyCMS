@@ -30,13 +30,16 @@
     background: rgba(0, 0, 0, 0.7);
     padding: 5px;
     border-radius: 4px;
-    opacity: 0;
+    opacity: 1; /* Change from 0 to 1, since JS handles visibility */
     transition: opacity 0.2s ease;
 }
 
+/* Remove or comment out this rule since JS handles the toolbar visibility */
+/*
 .ccms-img-widget-container:hover .ccms-img-toolbar {
     opacity: 1;
 }
+*/
 
 .ccms-img-toolbar-btn {
     background: rgba(255, 255, 255, 0.9);
@@ -45,7 +48,7 @@
     padding: 8px 10px;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: #333;
+    color: #000;  /* Change from #333 to pure black for better contrast */
     font-size: 14px;
 }
 

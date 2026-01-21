@@ -24,11 +24,6 @@ RUN dotnet restore "./Publisher/Sky.Publisher.csproj"
 COPY . .
 WORKDIR "/src/Publisher"
 
-# Install and run LibMan to restore client-side libraries
-RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
-ENV PATH="${PATH}:/root/.dotnet/tools"
-RUN libman restore
-
 RUN dotnet build "./Sky.Publisher.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage

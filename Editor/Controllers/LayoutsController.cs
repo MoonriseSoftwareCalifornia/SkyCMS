@@ -805,11 +805,13 @@ namespace Sky.Cms.Controllers
                 }
 
                 layout.IsDefault = true;
+                layout.Published = DateTimeOffset.UtcNow;
 
                 var others = await dbContext.Layouts.Where(w => w.Id != id && w.IsDefault == true).ToListAsync();
                 foreach (var item in others)
                 {
                     item.IsDefault = false;
+                    item.Published = null;
                 }
 
                 await dbContext.SaveChangesAsync();

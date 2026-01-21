@@ -190,6 +190,11 @@ namespace Sky.Editor.Services.EditorSettings
         }
 
         /// <summary>
+        ///  Gets or sets the static page parallelism level for static website publishing. If null, defaults to 4.
+        /// </summary>
+        public int? StaticPageParallelism { get; set; } = null;
+
+        /// <summary>
         /// Gets the blob absolute URL.
         /// </summary>
         /// <returns>Uri.</returns>

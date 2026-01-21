@@ -62,6 +62,12 @@ namespace Sky.Editor.Services.EditorSettings
         bool StaticWebPages { get; }
 
         /// <summary>
+        /// Gets the maximum degree of parallelism for static page generation.
+        /// If null, the system will auto-detect based on storage provider.
+        /// </summary>
+        int? StaticPageParallelism { get; }
+
+        /// <summary>
         /// Gets the blob storage (static web) URL.
         /// </summary>
         /// <returns>Uri.</returns>

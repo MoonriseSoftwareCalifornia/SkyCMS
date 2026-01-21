@@ -4,8 +4,8 @@
 }
 <!-- FilePond -->
 <link rel="stylesheet" href="/lib/filepond/filepond.min.css" />
-<!-- Image Widget styles -->
-<link rel="stylesheet" href="/lib/cosmos/image-widget/image-widget.css" />
+<!-- Image Widget -->
+<script src="~/lib/cosmos/image-widget/image-widget.js"></script>
 <style>
     .ccms-img-widget-img {
         max-height: 20vh;
@@ -22,7 +22,7 @@
                 <h3>Edit a Blog</h3>
                 <form asp-action="Edit" method="post" id="editBlogForm" novalidate enctype="multipart/form-data">
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
+                    @Html.AntiForgeryToken()
                     @* Hidden fields (no user entry for BlogKey; it�s derived from Title) *@
                     <input type="hidden" asp-for="BlogKey" />
                     @Html.HiddenFor(m => m.HeroImage)
@@ -45,7 +45,7 @@
                     <div id="titleFeedback" class="form-text mb-2" aria-live="polite"></div>
                     <div class="input-group mb-3" style="max-width: 300px;">
                         <span class="input-group-text">Publish:</span>
-                        <input asp-for="Published" type="datetime-local" value="@DateTimeOffset.UtcNow" class="form-control" />
+                        <input asp-for="Published" type="datetime-local" class="form-control" id="publishedInput" />
                     </div>
                     <span asp-validation-for="Published" class="text-danger"></span>
                     <div class="input-group mb-3">
@@ -155,6 +155,62 @@
                 });
             }
         });
+
+        // DateTime local/UTC conversion for Published field
+        (function() {
+            const publishedInput = document.getElementById('publishedInput');
+            const utcValue = '@Model.Published?.ToString("o")'; // ISO 8601 format
+            
+            // On page load: Convert UTC to local time for display
+            if (utcValue && publishedInput) {
+                try {
+                    const utcDate = new Date(utcValue);
+                    if (!isNaN(utcDate.getTime())) {
+                        // Format as yyyy-MM-ddTHH:mm for datetime-local input
+                        const year = utcDate.getFullYear();
+                        const month = String(utcDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(utcDate.getDate()).padStart(2, '0');
+                        const hours = String(utcDate.getHours()).padStart(2, '0');
+                        const minutes = String(utcDate.getMinutes()).padStart(2, '0');
+                        
+                        publishedInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                    }
+                } catch (e) {
+                    console.error('Error parsing published date:', e);
+                }
+            }
+            
+            // On form submit: Convert local time back to UTC (ISO format)
+            const form = document.getElementById('editBlogForm');
+            form.addEventListener('submit', function(e) {
+                if (publishedInput.value) {
+                    try {
+                        // Parse the local datetime-local value
+                        const localDate = new Date(publishedInput.value);
+                        if (!isNaN(localDate.getTime())) {
+                            // Convert to UTC ISO string
+                            const utcString = localDate.toISOString();
+                            
+                            // Create or update hidden field with UTC value
+                            let hiddenPublished = document.getElementById('PublishedUtc');
+                            if (!hiddenPublished) {
+                                hiddenPublished = document.createElement('input');
+                                hiddenPublished.type = 'hidden';
+                                hiddenPublished.name = 'Published';
+                                hiddenPublished.id = 'PublishedUtc';
+                                form.appendChild(hiddenPublished);
+                                
+                                // Remove name from visible input to prevent duplicate binding
+                                publishedInput.removeAttribute('name');
+                            }
+                            hiddenPublished.value = utcString;
+                        }
+                    } catch (e) {
+                        console.error('Error converting published date to UTC:', e);
+                    }
+                }
+            });
+        })();
     </script>
 
     @* FilePond and Image Widget *@

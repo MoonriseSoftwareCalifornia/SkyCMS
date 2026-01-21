@@ -5,6 +5,8 @@
 @{
     var canEdit = User.IsInRole("Administrators") || User.IsInRole("Editors");
     ViewData["Title"] = "Entries - " + Model.BlogKey;
+    var blogUrlPath = Model.BlogUrlPath;
+
 }
 <link href="~/lib/tabulator-tables/dist/css/tabulator_midnight.css" rel="stylesheet" />
 <script src="~/lib/luxon/luxon.min.js"></script>
@@ -47,6 +49,7 @@
 </div>
 <script>
     const publisherUrl = "@options.PublisherUrl";
+    const blogUrlPath = "@blogUrlPath";
     const tblHeight = window.innerHeight - 200;
     const canEdit = @Html.Raw(canEdit.ToString().ToLower());
 
@@ -81,14 +84,14 @@
     const menuBar = function(cell, formatterParams){
         data = cell.getRow().getData();
         let html = "<div class='btn-group btn-group-sm' role='group' aria-label='Page actions.'>";
-        html += html += "<a href='/Editor/Edit/" + data.ArticleNumber + "' title='Click to edit post.' class='btn btn-sm btn-success'><i class='fa-solid fa-pen-to-square'></i></a>";
+        html += html += "<a href='/Editor/Edit/" + data.ArticleNumber + "' title='Click to edit post.' class='btn btn-sm btn-success'><i class='fa-solid fa-pen-to-square'></i> Edit</a>";
         let url = data.UrlPath;
         if (url === "root") {
             url = "";
         }
 
         if (data.LastPublished !== null && data.LastPublished !== ""){
-            html += "<a target='_blank' href='" + publisherUrl + "/" + url + "' title='Open blog post on website.'  class='btn btn-sm btn-secondary'><i class='fa-solid fa-arrow-up-right-from-square'></i></a>";
+            html += "<a target='_blank' href='" + publisherUrl + "/" + blogUrlPath + "/" + url + "' title='Open blog post on website.'  class='btn btn-sm btn-secondary'><i class='fa-solid fa-arrow-up-right-from-square'></i> Preview</a>";
         }
         else
         {

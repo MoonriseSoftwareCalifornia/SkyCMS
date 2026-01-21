@@ -127,7 +127,16 @@ namespace Sky.Editor.Controllers
 
             // Create blog stream article.
             model.BlogKey = slugService.Normalize(model.Title);
-            var article = await articleLogic.CreateArticle(model.Title, Guid.Parse(await GetUserId()), null, model.BlogKey, ArticleType.BlogStream);
+            var defautLayout = await db.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
+
+            var blogEntryTemplage = await db.Templates.FirstOrDefaultAsync(t =>t.LayoutId == defautLayout.Id && t.PageType == "blog-stream");
+
+            if (blogEntryTemplage == null)
+            {
+                throw new InvalidOperationException("Blog entry template not found.");
+            }
+
+            var article = await articleLogic.CreateArticle(model.Title, Guid.Parse(await GetUserId()), blogEntryTemplage.Id, model.BlogKey, ArticleType.BlogStream);
 
             // Make the image URL relative path if it's absolute.
             if (string.IsNullOrWhiteSpace(model.HeroImage) == false && Uri.IsWellFormedUriString(model.HeroImage, UriKind.Absolute))
@@ -143,7 +152,7 @@ namespace Sky.Editor.Controllers
 
             article.BannerImage = model.HeroImage ?? string.Empty;
             article.Introduction = model.Description;
-            article.Content = string.Empty; // Blog stream articles have no body content.
+            article.Content = blogEntryTemplage.Content; // Blog stream articles have no body content.
             article.Published = model.Published;
 
             // MIGRATED: Use SaveArticleHandler via mediator
@@ -196,7 +205,8 @@ namespace Sky.Editor.Controllers
                 BlogKey = article.UrlPath,
                 Title = article.Title,
                 Description = article.Introduction,
-                HeroImage = article.BannerImage
+                HeroImage = article.BannerImage,
+                Published = article.Published
             });
         }
 
@@ -220,13 +230,13 @@ namespace Sky.Editor.Controllers
                 return View("Edit", model);
             }
 
-            if (!await titleChangeService.ValidateTitle(model.Title, null))
+            var article = await db.Articles.FirstOrDefaultAsync(f => f.Id == id);
+
+            if (article.Title.Equals(model.Title, StringComparison.CurrentCultureIgnoreCase) == false && !await titleChangeService.ValidateTitle(model.Title, null))
             {
                 ModelState.AddModelError(nameof(model.BlogKey), "Blog key conflicts with existing page on this website.");
-                return View("Create", model);
+                return View(model);
             }
-
-            var article = await db.Articles.FirstOrDefaultAsync(f => f.Id == id);
 
             // Save old title in case of change.
             var oldTitle = article.Title;
@@ -347,6 +357,7 @@ namespace Sky.Editor.Controllers
                 BlogTitle = blog.Title,
                 BlogDescription = blog.Introduction,
                 HeroImage = blog.BannerImage,
+                BlogUrlPath = blog.UrlPath,
                 Entries = entries.OrderByDescending(c => c.Published ?? c.Updated).ToList()
             };
             return View("Entries", vm);
@@ -363,6 +374,8 @@ namespace Sky.Editor.Controllers
         {
             var blogStreamType = (int)ArticleType.BlogStream;
             var blog = await db.Articles.FirstOrDefaultAsync(b => b.BlogKey == blogKey && b.ArticleType == blogStreamType);
+            var defautLayout = await db.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
+
             if (blog == null)
             {
                 return NotFound("Blog not found.");
@@ -373,19 +386,19 @@ namespace Sky.Editor.Controllers
                 return BadRequest("Title is required.");
             }
 
-            var html = await templateService.GetTemplateByKeyAsync("blog-post");
+            var blogEntryTemplage = await db.Templates.FirstOrDefaultAsync(t => t.LayoutId == defautLayout.Id && t.PageType == "blog-post");
 
-            if (html == null)
+            if (blogEntryTemplage == null)
             {
                 throw new InvalidOperationException("Blog entry template not found.");
             }
 
             var userId = Guid.Parse(await GetUserId());
 
-            var article = await articleLogic.CreateArticle(title, userId, null, blogKey);
+            var article = await articleLogic.CreateArticle(title, userId, blogEntryTemplage.Id, blogKey);
 
             article.ArticleType = ArticleType.BlogPost;
-            article.Content = html.Content;
+            article.Content = blogEntryTemplage.Content;
             article.Published = null;
 
             // MIGRATED: Use SaveArticleHandler via mediator
@@ -600,7 +613,8 @@ namespace Sky.Editor.Controllers
                     BlogKey = b.BlogKey,
                     Title = b.Title,
                     Description = b.Introduction,
-                    HeroImage = b.BannerImage
+                    HeroImage = b.BannerImage,
+                    UrlPath = b.UrlPath
                 })
                 .ToList();
 

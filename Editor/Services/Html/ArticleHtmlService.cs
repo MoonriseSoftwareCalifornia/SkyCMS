@@ -28,7 +28,7 @@ namespace Sky.Editor.Services.Html
             {
                 var doc = new HtmlDocument();
                 doc.LoadHtml(html);
-                var editable = doc.DocumentNode.SelectNodes("//*[@contenteditable='true' or translate(@contenteditable,'TRUE','true')='true']")
+                var editable = doc.DocumentNode.SelectNodes("//*[@contenteditable='true' or translate(@contenteditable,'TRUE','true')='true' or @data-editor-config or @data-ccms-ceid]")
                               ?? new HtmlNodeCollection(null);
 
                 // Only add markers to nodes that have contenteditable="true".
@@ -46,6 +46,14 @@ namespace Sky.Editor.Services.Html
                         {
                             node.Attributes.Add("data-ccms-index", (i++).ToString());
                         }
+                        else
+                        {
+                            node.Attributes["data-ccms-index"].Value = (i++).ToString();
+                        }
+
+                        // By now all editable areas should have Guids.
+                        // Remove this.
+                        node.Attributes.Remove("data-ccms-new");
                     }
                 }
 

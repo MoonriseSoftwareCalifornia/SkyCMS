@@ -523,7 +523,7 @@ namespace Cosmos.BlobService
             {
                 // Example: AccountId=xxxxxx;Bucket=cosmoscms-001;KeyId=AKIA;Key=MySecretKey;
                 var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
-                
+
                 var bucketPart = parts.FirstOrDefault(p => p.StartsWith("Bucket=", StringComparison.CurrentCultureIgnoreCase));
                 var accountIdPart = parts.FirstOrDefault(p => p.StartsWith("AccountId=", StringComparison.CurrentCultureIgnoreCase));
                 var keyIdPart = parts.FirstOrDefault(p => p.StartsWith("KeyId=", StringComparison.CurrentCultureIgnoreCase));
@@ -555,7 +555,7 @@ namespace Cosmos.BlobService
             {
                 // Example: Bucket=cosmoscms-001;Region=us-east-2;KeyId=AKIA;Key=MySecretKey;
                 var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
-                
+
                 var bucketPart = parts.FirstOrDefault(p => p.StartsWith("Bucket=", StringComparison.CurrentCultureIgnoreCase));
                 var regionPart = parts.FirstOrDefault(p => p.StartsWith("Region=", StringComparison.CurrentCultureIgnoreCase));
                 var keyIdPart = parts.FirstOrDefault(p => p.StartsWith("KeyId=", StringComparison.CurrentCultureIgnoreCase));

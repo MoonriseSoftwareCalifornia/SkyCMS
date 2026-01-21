@@ -61,6 +61,15 @@ public class SubmitContactFormHandlerTests
         // Arrange
         await SeedSettings();
 
+        emailConfigServiceMock
+            .Setup(x => x.GetEmailSettingsAsync())
+            .ReturnsAsync(new EmailSettings
+            {
+                SenderEmail = "admin@test.com",
+                Provider = "SendGrid",
+                IsConfigured = true
+            });
+
         var command = new SubmitContactFormCommand
         {
             Request = new ContactFormRequest
@@ -104,6 +113,15 @@ public class SubmitContactFormHandlerTests
     {
         // Arrange
         await SeedSettings();
+
+        emailConfigServiceMock
+            .Setup(x => x.GetEmailSettingsAsync())
+            .ReturnsAsync(new EmailSettings
+            {
+                SenderEmail = "admin@test.com",
+                Provider = "SendGrid",
+                IsConfigured = true
+            });
 
         var command = new SubmitContactFormCommand
         {
@@ -195,6 +213,15 @@ public class SubmitContactFormHandlerTests
         // Arrange
         await SeedSettings();
 
+        emailConfigServiceMock
+            .Setup(x => x.GetEmailSettingsAsync())
+            .ReturnsAsync(new EmailSettings
+            {
+                SenderEmail = "admin@test.com",
+                Provider = "SendGrid",
+                IsConfigured = true
+            });
+
         var command = new SubmitContactFormCommand
         {
             Request = new ContactFormRequest
@@ -227,6 +254,15 @@ public class SubmitContactFormHandlerTests
     {
         // Arrange
         await SeedSettings();
+
+        emailConfigServiceMock
+            .Setup(x => x.GetEmailSettingsAsync())
+            .ReturnsAsync(new EmailSettings
+            {
+                SenderEmail = "admin@test.com",
+                Provider = "SendGrid",
+                IsConfigured = true
+            });
 
         var command = new SubmitContactFormCommand
         {
@@ -272,6 +308,15 @@ public class SubmitContactFormHandlerTests
     {
         // Arrange
         await SeedSettings();
+
+        emailConfigServiceMock
+            .Setup(x => x.GetEmailSettingsAsync())
+            .ReturnsAsync(new EmailSettings
+            {
+                SenderEmail = "admin@test.com",
+                Provider = "SendGrid",
+                IsConfigured = true
+            });
 
         var command = new SubmitContactFormCommand
         {

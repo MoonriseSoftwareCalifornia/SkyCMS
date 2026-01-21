@@ -24,12 +24,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
+using Sky.Cms.Api.Shared.Extensions;
 using Sky.Cms.Hubs;
 using Sky.Cms.Services;
 using Sky.Editor.Boot;
@@ -41,6 +43,8 @@ using Sky.Editor.Features.Shared;
 using Sky.Editor.Features.Templates.Create;
 using Sky.Editor.Features.Templates.Publishing;
 using Sky.Editor.Features.Templates.Save;
+using Sky.Editor.Hubs;
+using Sky.Editor.Infrastructure.SignalR;
 using Sky.Editor.Infrastructure.Time;
 using Sky.Editor.Middleware;
 using Sky.Editor.Services.Authors;
@@ -60,7 +64,6 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
-using Sky.Cms.Api.Shared.Extensions;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -329,7 +332,21 @@ builder.Logging.AddFilter("Hangfire.Server.ServerWatchdog", LogLevel.Error);
 // STEP 8: Register Data Protection & SignalR
 // ---------------------------------------------------------------
 builder.Services.AddFlexDbDataProtection(builder.Configuration);
-builder.Services.AddSignalR();
+
+// Add SignalR with tenant isolation
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.MaximumReceiveMessageSize = 102400; // 100 KB
+    options.StreamBufferCapacity = 10;
+});
+
+// Custom user ID provider for tenant isolation - ensures SignalR connections are scoped to the current tenant's user
+builder.Services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>();
+
+// Progress reporter (SCOPED for tenant isolation) - allows per-user progress updates via SignalR
+builder.Services.AddScoped<IPublishingProgressReporter, PublishingProgressReporter>();
+
 
 // ---------------------------------------------------------------
 // STEP 9: Register MVC & Razor Pages
@@ -684,15 +701,14 @@ app.MapGet("ccms__antiforgery/token", (IAntiforgery forgeryService, HttpContext 
     context.Response.Headers["XSRF-TOKEN"] = tokens.RequestToken;
     return Results.Ok();
 });
-
-app.MapHub<LiveEditorHub>("/___cwps_hubs_live_editor");
 app.MapControllerRoute("MsValidation", ".well-known/microsoft-identity-association.json", new { controller = "Home", action = "GetMicrosoftIdentityAssociation" }).AllowAnonymous();
 app.MapControllerRoute("MyArea", "{area:exists}/{controller=Home}/{action=Index}/{id?}");
 app.MapControllerRoute(name: "pub", pattern: "pub/{*index}", defaults: new { controller = "Pub", action = "Index" });
-app.MapControllerRoute(name: "blog", pattern: "blog/{page?}", defaults: new { controller = "Blog", action = "Index" });
-app.MapControllerRoute(name: "blog_post", pattern: "blog/post/{*slug}", defaults: new { controller = "Blog", action = "Post" });
 app.MapControllerRoute(name: "blog_rss", pattern: "blog/rss", defaults: new { controller = "Blog", action = "Rss" });
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+
+// Add this catch-all route for dynamic pages (blog streams, articles, etc.)
+app.MapFallbackToController("Index", "Home");
 
 app.MapAreaControllerRoute(
     name: "setup",
@@ -700,8 +716,11 @@ app.MapAreaControllerRoute(
     pattern: "___setup/{*pathInfo}",
     defaults: new { page = "/Index" });
 
-app.MapFallbackToController("Index", "Home");
+// Map endpoints AFTER tenant context is established
 app.MapRazorPages();
+app.MapControllers();
+app.MapHub<PublishingProgressHub>("/hubs/publishing-progress"); // ✅ Tenant context available
+app.MapHub<LiveEditorHub>("/___cwps_hubs_live_editor");
 
 // ---------------------------------------------------------------
 // CONFIGURE BACKGROUND JOBS

@@ -20,10 +20,23 @@
                     <li>If static web pages are enabled, publishes a fresh copy of all of them.</li>
                     <li>If a CDN is configured, refreshes the Content Delivery Network (CDN) cache.</li>
                 </ul>
-                <p>Please note: Publishing can take several minutes to complete.</p>
                 <br />
                 <button id="btnPublish" class="btn btn-sm btn-success" onclick="publish()">Publish Website</button>
-                <div id="statusMsg" class="mt-4">
+                
+                <!-- Progress Bar -->
+                <div id="progressContainer" class="mt-4" style="display: none;">
+                    <div class="progress" style="height: 30px;">
+                        <div id="publishProgressBar" 
+                             class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                             role="progressbar" 
+                             aria-valuenow="0" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100" 
+                             style="width: 0%">
+                            0%
+                        </div>
+                    </div>
+                    <p id="statusMsg" class="mt-2 text-light"></p>
                 </div>
 
                 <div style="padding-bottom: 30px; padding-top: 30px;">
@@ -33,132 +46,165 @@
                         as caching mechanisms reload content.
                     </p>
                 </div>
+                
                 <div class="row" id="msgBox">
-                    <div class="card-group" style="padding-top: 30px;">
-                        <div id="card1" class="card text-white bg-primary mb-4" style="display:none">
-                            <div class="card-header" id="card1header">
-                                <h6 class="card-title">Date/Time Stamps</h6>
-                            </div>
-                            <div class="card-body" id="card1body">
-                                <div>
-                                    Updaing the &quot;last changed&quot; date and time of when each web page is the primary way caching mechanisms know that a page is updated.
-                                </div>
-                                <div id="spinner1" style="display: none">
-                                </div>
-                            </div>
-                        </div>
-                        <div id="card3" class="card text-white bg-primary mb-4" style="display:none">
-                            <div class="card-header" id="card3header">
-                                <h6 class="card-title">CDN</h6>
-                            </div>
-                            <div class="card-body" id="card3body">
-                                <div>
-                                    C/CMS can integrate with Content Delivery Networks (CDN) to speed up delivery of web content to users.
-                                </div>
-                                <div id="spinner3" style="display: none">
-                                    Working...
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <div id="purgeDetails"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
 <script>
-
-    let counter;
-    let count = 61;
-    let second = 1;
-    let publishedPages = [];
     const staticWebsite = @options.StaticWebPages.ToString().ToLower();
+    let publishConnection = null;
 
-    $("#btnStartCountDown").click(function(e) {
-        e.preventDefault();
-        $("#clearDiv").hide();
-        $("#gaugeDiv").show();
-        $("#resultDiv").hide();
-        counter = setInterval(timer, 200); //1000 will  run it every 1 second
-    });
+    // Initialize SignalR connection
+    async function initializeSignalR() {
+        if (publishConnection && publishConnection.state === signalR.HubConnectionState.Connected) {
+            return publishConnection;
+        }
 
-    function change(e) {
-        $("#gauge").data("kendoRadialGauge").value($("#gauge-value").val());
+        publishConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/publishing-progress")
+            .withAutomaticReconnect()
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        publishConnection.on("ReceiveProgress", (data) => {
+            updateProgress(data);
+        });
+
+        publishConnection.onreconnecting(() => {
+            $("#statusMsg").html("Connection lost. Reconnecting...");
+        });
+
+        publishConnection.onreconnected(() => {
+            $("#statusMsg").html("Connection restored. Publishing continues...");
+        });
+
+        publishConnection.onclose(() => {
+            console.log("SignalR connection closed");
+        });
+
+        try {
+            await publishConnection.start();
+            console.log("SignalR Connected");
+        } catch (err) {
+            console.error("SignalR Connection Error: ", err);
+            $("#statusMsg").html("Error connecting to progress updates. Please refresh the page.");
+        }
+
+        return publishConnection;
     }
 
-    async function publish(e) {
+    function updateProgress(data) {
+        const progressBar = $("#publishProgressBar");
+        const statusMsg = $("#statusMsg");
 
-        $("#statusMsg").html("Getting list of web pages to publish...");
+        if (progressBar.length) {
+            progressBar.css("width", data.progressPercentage + "%");
+            progressBar.attr("aria-valuenow", data.progressPercentage);
+            progressBar.text(data.progressPercentage + "%");
+        }
 
-        const response1 = await fetch('@Url.Action("GetPublishedPageList")');
-        const pageList = await response1.json();
+        if (statusMsg.length) {
+            let message = data.message;
+            if (data.currentPage && data.totalPages) {
+                message += ` (${data.currentPage}/${data.totalPages})`;
+            }
+            statusMsg.html(message);
+        }
 
-        $("#card1header").attr("class", "card-header text-white bg-primary");
-        $("#btnPublish").hide();
+        console.log(`Progress: ${data.progressPercentage}% - ${data.message}`);
+    }
 
-        //e.preventDefault();
-        //$("#msgBox").html("<p>Working, please wait .... </p><ul><li>Beginning publishing process...</li></ul>");
-        $("#statusMsg").html("<p>Updating time stamps on " + pageList.length + " published pages. Please wait, this may take a while ...</p>");
+    async function publish() {
+        try {
+            // Show progress UI
+            $("#progressContainer").show();
+            $("#btnPublish").prop("disabled", true);
+            $("#publishProgressBar").css("width", "0%").text("0%");
+            $("#statusMsg").html("Initializing...");
 
-        // Start with updating the time stamps of all published articles
-        //const response2 = await fetch('@Url.Action("UpdateTimeStamps")');
-        //const result2 = response2.json(); // await response.
+            // Connect to SignalR
+            await initializeSignalR();
 
-        // Now handle static web pages.
-        if (staticWebsite) {
-            $("#statusMsg").html("<p>Publishing " + pageList.length + " static pages, please wait, this may take a while ...</p>");
-            let idlist = [];
-            let c = 0;
-            for (let i = 0; i < pageList.length; i++) {
+            if (staticWebsite) {
+                $("#statusMsg").html("Starting static page generation...");
 
-                idlist.push(pageList[i].Id);
-                c++;
+                // Single API call - server handles everything
+                const response = await fetch('@Url.Action("PublishStaticPages")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify([]) // Empty array = publish all pages
+                });
 
-                if (c === 10) {
-                    const response = await fetch('@Url.Action("PublishStaticPages")', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(idlist)
+                if (!response.ok) {
+                    throw new Error(`Publishing failed: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Publishing completed:', result);
+            } else {
+                $("#statusMsg").html("Static pages disabled. Refreshing CDN only...");
+            }
+
+            // CDN refresh
+            $("#statusMsg").html("Refreshing CDN cache...");
+            const cdnResponse = await fetch('@Url.Action("RefreshCdn")');
+            
+            if (cdnResponse.ok) {
+                const cdnResult = await cdnResponse.json();
+                
+                // Display CDN purge details
+                if (cdnResult && cdnResult.length > 0) {
+                    let detailsHtml = '<div class="alert alert-info mt-3"><h5>CDN Purge Results:</h5><ul>';
+                    cdnResult.forEach(r => {
+                        detailsHtml += `<li><strong>${r.provider}:</strong> ${r.success ? 'Success' : 'Failed'} ${r.message ? '- ' + r.message : ''}</li>`;
                     });
-                    const result = await response.json();
-                    $("#statusMsg").html("<p>Published " + (i + 1) + " out of " + pageList.length + "static pages. Working ...</p>");
-                    c = 0;
-                    idlist = [];
+                    detailsHtml += '</ul></div>';
+                    $("#purgeDetails").html(detailsHtml);
                 }
             }
 
-            // Finish up any remainder.
-            if (idlist.length > 0) {
-                await fetch('@Url.Action("PublishStaticPages")', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(idlist)
-                    });
-            }
+            // Complete
+            $("#publishProgressBar")
+                .removeClass("progress-bar-animated")
+                .addClass("bg-success")
+                .css("width", "100%")
+                .text("100%");
+            $("#statusMsg").html("Publishing completed successfully!");
 
-
-            $("#statusMsg").html("Regenerating the TOC and site map ...");
-            const response2b = await fetch('@Url.Action("PublishTOC")');
-
-            $("#statusMsg").html("<p>Done with static pages.</p>.");
+        } catch (error) {
+            console.error("Publishing error:", error);
+            $("#publishProgressBar")
+                .removeClass("bg-success")
+                .addClass("bg-danger");
+            $("#statusMsg").html("Error: " + error.message);
+        } finally {
+            $("#btnPublish").prop("disabled", false);
+            
+            // Disconnect SignalR after a brief delay
+            setTimeout(async () => {
+                if (publishConnection) {
+                    await publishConnection.stop();
+                    publishConnection = null;
+                }
+            }, 3000);
         }
-
-        // Now handle CDN
-        $("#statusMsg").html("Refreshing CDN (if configured)...");
-
-        const response3 = await fetch('@Url.Action("RefreshCdn")');
-        const result3 = response3.json(); // await response.
-
-        $("#statusMsg").html("Done.");
-        $("#btnPublish").show();
     }
 
-
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', async () => {
+        if (publishConnection) {
+            await publishConnection.stop();
+        }
+    });
 </script>
 
 @{

@@ -78,6 +78,61 @@
  */
 
 // ============================================================================
+// AUTO-LOAD REQUIRED STYLESHEETS
+// ============================================================================
+
+/**
+ * Automatically loads required CSS files if not already present.
+ */
+(function ccms___autoLoadStyles() {
+    const requiredStyles = [
+        {
+            id: 'ccms-font-awesome-css',
+            href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
+            integrity: 'sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==',
+            crossorigin: 'anonymous'
+        },
+        {
+            id: 'ccms-image-widget-css',
+            href: '/lib/cosmos/image-widget/image-widget.css',
+            appendVersion: true // Will add ?v=timestamp
+        }
+    ];
+
+    requiredStyles.forEach(style => {
+        // Check if already loaded
+        if (document.getElementById(style.id)) {
+            return;
+        }
+
+        // Create link element
+        const link = document.createElement('link');
+        link.id = style.id;
+        link.rel = 'stylesheet';
+        
+        // Add cache-busting version parameter if needed
+        let href = style.href;
+        if (style.appendVersion) {
+            const timestamp = new Date().getTime();
+            href += `?v=${timestamp}`;
+        }
+        link.href = href;
+
+        // Add optional attributes
+        if (style.integrity) {
+            link.integrity = style.integrity;
+        }
+        if (style.crossorigin) {
+            link.crossOrigin = style.crossorigin;
+        }
+
+        // Append to head
+        document.head.appendChild(link);
+        console.log(`Auto-loaded stylesheet: ${style.id}`);
+    });
+})();
+
+// ============================================================================
 // CONSTANTS AND CONFIGURATION
 // ============================================================================
 
@@ -96,9 +151,9 @@ if (typeof window.CCMS_IMAGE_WIDGET_CONFIG === "undefined") {
         placeholderImage: '/images/AddImageHere.webp',
         zIndexOffset: 1000, // Safe z-index for overlays
         showProgressBar: true,
-        enableImageLibrary: true,
-        enableAltTextEditor: true, // Global UI toggle; modal only opens if the widget has data-ccms-enable-alt-editor="true"
-        enableDragReplace: true
+        enableAltTextEditor: true,      // Add this
+        enableDragReplace: true,         // Add this
+        enableImageLibrary: true         // Add this
     };
 }
 
@@ -238,6 +293,61 @@ function ccms___validateFile(file) {
     }
 
     return { valid: true, error: null };
+}
+
+/**
+ * Gets the image source URL from an image widget.
+ * @param {string|HTMLElement} widgetIdentifier - Either the widget container element, 
+ *        the element's ID, or the data-ccms-ceid attribute value
+ * @returns {string|null} The image src URL, or null if no image exists
+ * @example
+ * // Using element
+ * const element = document.getElementById('my-widget');
+ * const imageSrc = ccms___getImageWidgetSrc(element);
+ * 
+ * // Using data-ccms-ceid value
+ * const imageSrc = ccms___getImageWidgetSrc('img-123');
+ * 
+ * // Using element ID
+ * const imageSrc = ccms___getImageWidgetSrc('my-widget');
+ */
+function ccms___getImageWidgetSrc(widgetIdentifier) {
+    let widgetElement = null;
+
+    // Check if it's already an HTMLElement
+    if (widgetIdentifier instanceof HTMLElement) {
+        widgetElement = widgetIdentifier;
+    } else if (typeof widgetIdentifier === 'string') {
+        // Try to find by element ID first
+        widgetElement = document.getElementById(widgetIdentifier);
+
+        // If not found, try to find by data-ccms-ceid attribute
+        if (!widgetElement) {
+            widgetElement = document.querySelector(`[data-ccms-ceid="${widgetIdentifier}"]`);
+        }
+    }
+
+    // Validate we found a widget element
+    if (!widgetElement) {
+        console.warn(`Image widget not found: ${widgetIdentifier}`);
+        return null;
+    }
+
+    // Find the image element inside the widget
+    const img = widgetElement.querySelector('img');
+
+    // Return the src if image exists, otherwise null
+    if (img && img.src) {
+        return img.src;
+    }
+
+    return null;
+}
+
+// Export to window for global access
+if (typeof window !== 'undefined') {
+    window.ccms___getImageWidgetSrc = ccms___getImageWidgetSrc;
+    window.ccmsGetImageWidgetSrc = ccms___getImageWidgetSrc; // Shorter alias
 }
 
 // ============================================================================
@@ -735,6 +845,7 @@ function ccms___initializePond(element) {
         allowDrop: true,
         allowBrowse: true,
         allowMultiple: false,
+        allowReplace: false,
         maxFileSize: CCMS_IMAGE_WIDGET_CONFIG.maxFileSize,
         labelMaxFileSizeExceeded: 'File is too large',
         labelMaxFileSize: 'Maximum file size is 25MB'
@@ -830,6 +941,7 @@ function ccms___initializePond(element) {
     // EVENT: File Processing Complete (upload successful)
     // ========================================================================
     pond.on('processfile', (error, file) => {
+        const element = pond.editorElement;
         if (error) {
             console.error('Error processing file:', error);
             ccms___showError('Upload failed: ' + (error.main || 'Unknown error'), element);
@@ -846,7 +958,6 @@ function ccms___initializePond(element) {
         }
 
         console.log(`Upload complete: ${file.filename}`);
-        const element = pond.editorElement;
         const id = pond.editorId;
 
         // Clean up the FilePond widget
@@ -901,6 +1012,13 @@ function ccms___initializePond(element) {
             setTimeout(() => {
                 ccms___showAltTextEditor(image, element);
             }, 500);
+        }
+
+        // Save image widget inner html.
+        const editorId = element.getAttribute('data-ccms-ceid');
+        const html = element.innerHTML;
+        if (typeof parent !== 'undefined' && typeof parent.saveEditorRegion !== 'undefined') {
+            parent.saveEditorRegion(html, editorId);
         }
     });
 
@@ -1020,7 +1138,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    FilePond.registerPlugin(FilePondPluginFileMetadata);
+    // FilePond.registerPlugin(FilePondPluginFileMetadata);
 
     // Find and initialize all image widgets on the page
     const imageContainers = document.querySelectorAll('div[data-editor-config="image-widget"]');

@@ -10,7 +10,6 @@ namespace Sky.Editor.Features.Articles.Save
     using System;
     using System.ComponentModel.DataAnnotations;
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
     using Sky.Editor.Features.Shared;
 
     /// <summary>
