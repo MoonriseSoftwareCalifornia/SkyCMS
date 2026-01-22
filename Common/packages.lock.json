@@ -12,6 +12,23 @@
           "System.Text.Json": "4.7.2"
         }
       },
+      "Azure.Search.Documents": {
+        "type": "Direct",
+        "requested": "[11.5.1, )",
+        "resolved": "11.5.1",
+        "contentHash": "Vg+1mtM3LXVYwKQ+DDi7Wd/Rf2Ajo6rl5/7bFPfouUMBe/cNg71TIU62PY/eEtKfUI3Y7wdFXNcgGkpUG+OVnw==",
+        "dependencies": {
+          "Azure.Core": "1.36.0",
+          "System.Text.Json": "4.7.2",
+          "System.Threading.Channels": "4.7.1"
+        }
+      },
+      "Lucene.Net.Analysis.Common": {
+        "type": "Direct",
+        "requested": "[4.8.0, )",
+        "resolved": "4.9.0",
+        "contentHash": "bvw39HHvWKU8Ym7WM0Ru4XB8NrKyKmcqURplhAvGo2WBAqwYDe1Av9cnhZ1tNbrACG2CnSeY53U6qlWwdNysAA=="
+      },
       "MailChimp.Net.V3": {
         "type": "Direct",
         "requested": "[5.8.2, 6.0.0)",
@@ -33,6 +50,18 @@
         "dependencies": {
           "Microsoft.AspNetCore.DataProtection": "9.0.10",
           "Microsoft.EntityFrameworkCore": "9.0.10"
+        }
+      },
+      "Microsoft.Extensions.Diagnostics.HealthChecks": {
+        "type": "Direct",
+        "requested": "[9.0.10, 10.0.0)",
+        "resolved": "9.0.10",
+        "contentHash": "4R5RmjAb6IzfNBIQRLWEx8pXktg3CufPw7TotU6eHzFA6o7v2kEI/MfaNsvDjprZC+tCSPvmMKb3R25RuJpCGg==",
+        "dependencies": {
+          "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions": "9.0.10",
+          "Microsoft.Extensions.Hosting.Abstractions": "9.0.10",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.10",
+          "Microsoft.Extensions.Options": "9.0.10"
         }
       },
       "Otp.NET": {
@@ -263,6 +292,11 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.10",
           "Microsoft.Extensions.Options": "9.0.10"
         }
+      },
+      "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions": {
+        "type": "Transitive",
+        "resolved": "9.0.10",
+        "contentHash": "oAtETy4DYsuPwWwFoemOb/lmnaJor8fLvfOnCwWJhg1W250nZBHbMe5QfFLK7hkIrNSOi58Uz1R2ZFw4AoPM4g=="
       },
       "Microsoft.Extensions.FileProviders.Abstractions": {
         "type": "Transitive",
@@ -1115,6 +1149,11 @@
           "System.Threading.Tasks": "4.3.0"
         }
       },
+      "System.Threading.Channels": {
+        "type": "Transitive",
+        "resolved": "4.7.1",
+        "contentHash": "6akRtHK/wab3246t4p5v3HQrtQk8LboOt5T4dtpNgsp3zvDeM4/Gx8V12t0h+c/W9/enUrilk8n6EQqdQorZAA=="
+      },
       "System.Threading.Tasks": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -1162,13 +1201,13 @@
           "AWSSDK.S3": "[4.0.14.1, )",
           "Azure.Extensions.AspNetCore.DataProtection.Blobs": "[1.5.1, 2.0.0)",
           "Azure.Storage.Files.Shares": "[12.24.0, 13.0.0)",
-          "Cosmos.DynamicConfig": "[9.2.3.22, )"
+          "Cosmos.DynamicConfig": "[9.2.4.25, )"
         }
       },
       "cosmos.dynamicconfig": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[9.2.3.22, )",
+          "AspNetCore.Identity.FlexDb": "[9.2.4.25, )",
           "Microsoft.EntityFrameworkCore": "[9.0.10, 10.0.0)",
           "Microsoft.EntityFrameworkCore.Cosmos": "[9.0.10, 10.0.0)"
         }

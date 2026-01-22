@@ -106,6 +106,13 @@
 		</PackageReference>
 		<PackageReference Include="X.Web.Sitemap" />
 		<PackageReference Include="Azure.Monitor.Query" />
+		<!-- Hybrid Search Dependencies -->
+		<PackageReference Include="Azure.Search.Documents" />
+		<PackageReference Include="Lucene.Net" />
+		<PackageReference Include="Lucene.Net.Analysis.Common" />
+		<PackageReference Include="Lucene.Net.Highlighter" />
+		<PackageReference Include="Lucene.Net.QueryParser" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
 	</ItemGroup>
 
 	<ItemGroup>
