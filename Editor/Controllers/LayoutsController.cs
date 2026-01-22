@@ -125,13 +125,15 @@ namespace Sky.Cms.Controllers
         /// <param name="communityPages">Community pages.</param>
         /// <param name="layoutId">Layout ID.</param>
         /// <param name="communityLayoutId">Community layout ID.</param>
+        /// <param name="layoutNumber">Layout number to assign to templates.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task ImportCommunityTemplates(
             IArticleHtmlService htmlService,
             ApplicationDbContext dbContext,
             IEnumerable<Template> communityPages,
             Guid layoutId,
-            string communityLayoutId)
+            string communityLayoutId,
+            int layoutNumber)
         {
             foreach (var page in communityPages)
             {
@@ -141,6 +143,7 @@ namespace Sky.Cms.Controllers
                     Content = htmlService.EnsureEditableMarkers(page.Content),
                     Description = page.Description,
                     LayoutId = layoutId,
+                    LayoutNumber = layoutNumber,
                     Title = page.Title,
                     PageType = page.PageType,
                     Id = Guid.NewGuid()
@@ -315,17 +318,27 @@ namespace Sky.Cms.Controllers
             try
             {
                 var layoutCount = await dbContext.Layouts.CountAsync();
+                
+                // Get next available LayoutNumber
+                var maxLayoutNumber = await dbContext.Layouts
+                    .Where(l => l.LayoutNumber > 0)
+                    .MaxAsync(l => (int?)l.LayoutNumber) ?? 0;
+                
                 var layout = new Cosmos.Common.Data.Layout
                 {
                     IsDefault = false,
                     LayoutName = $"{NewLayoutPrefix} {layoutCount}",
-                    Notes = NewLayoutNotes
+                    Notes = NewLayoutNotes,
+                    LayoutNumber = maxLayoutNumber + 1,
+                    Version = 1
                 };
 
                 dbContext.Layouts.Add(layout);
                 await dbContext.SaveChangesAsync();
 
-                logger.LogInformation("Created new layout {LayoutId} with name '{LayoutName}'", layout.Id, layout.LayoutName);
+                logger.LogInformation(
+                    "Created new layout {LayoutId} with name '{LayoutName}', LayoutNumber={LayoutNumber}",
+                    layout.Id, layout.LayoutName, layout.LayoutNumber);
 
                 return RedirectToAction("EditCode", new { layout.Id });
             }
@@ -854,6 +867,13 @@ namespace Sky.Cms.Controllers
                 var layout = await layoutImportService.GetCommunityLayoutAsync(id, false);
                 var communityPages = await layoutImportService.GetCommunityTemplatePagesAsync(id);
 
+                // Get next available LayoutNumber
+                var maxLayoutNumber = await dbContext.Layouts
+                    .Where(l => l.LayoutNumber > 0)
+                    .MaxAsync(l => (int?)l.LayoutNumber) ?? 0;
+
+                layout.LayoutNumber = maxLayoutNumber + 1;
+
                 if ((await dbContext.Layouts.FirstOrDefaultAsync(a => a.IsDefault)) == null)
                 {
                     layout.Version = 1;
@@ -868,11 +888,13 @@ namespace Sky.Cms.Controllers
                 dbContext.Layouts.Add(layout);
                 await dbContext.SaveChangesAsync();
 
-                logger.LogInformation("Imported community layout {CommunityLayoutId} as layout {LayoutId}", id, layout.Id);
+                logger.LogInformation(
+                    "Imported community layout {CommunityLayoutId} as layout {LayoutId} with LayoutNumber={LayoutNumber}",
+                    id, layout.Id, layout.LayoutNumber);
 
                 if (communityPages != null && communityPages.Any())
                 {
-                    await ImportCommunityTemplates(htmlService, dbContext, communityPages, layout.Id, id);
+                    await ImportCommunityTemplates(htmlService, dbContext, communityPages, layout.Id, id, layout.LayoutNumber);
                 }
             }
             catch (Exception ex)
@@ -1240,13 +1262,14 @@ namespace Sky.Cms.Controllers
                     IsDefault = true,
                     LayoutName = DefaultLayoutName,
                     Notes = DefaultLayoutNotes,
+                    LayoutNumber = 1,
                     Version = 1,
                     LastModified = DateTimeOffset.UtcNow
                 };
                 dbContext.Layouts.Add(layout);
                 await dbContext.SaveChangesAsync();
 
-                logger.LogInformation("Created default layout {LayoutId}", layout.Id);
+                logger.LogInformation("Created default layout {LayoutId} with LayoutNumber=1", layout.Id);
 
                 return layout;
             }
@@ -1276,6 +1299,7 @@ namespace Sky.Cms.Controllers
                 BodyHtmlAttributes = layout.BodyHtmlAttributes,
                 FooterHtmlContent = layout.FooterHtmlContent,
                 IsDefault = false,
+                LayoutNumber = layout.LayoutNumber,
                 Version = (await dbContext.Layouts.CountAsync()) + 1,
                 LastModified = DateTimeOffset.UtcNow,
                 Published = null,
@@ -1284,6 +1308,10 @@ namespace Sky.Cms.Controllers
 
             dbContext.Layouts.Add(newLayout);
             await dbContext.SaveChangesAsync();
+
+            logger.LogInformation(
+                "Created new version of layout family LayoutNumber={LayoutNumber}, Version={Version}",
+                newLayout.LayoutNumber, newLayout.Version);
 
             return newLayout;
         }

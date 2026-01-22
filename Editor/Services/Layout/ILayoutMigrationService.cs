@@ -7,6 +7,7 @@
 
 namespace Sky.Editor.Services.Layout
 {
+    using Sky.Editor.Services.Migrations.Core;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -40,5 +41,13 @@ namespace Sky.Editor.Services.Layout
         /// </remarks>
         /// <returns>A task representing the asynchronous operation.</returns>
         Task MigrateTemplateLayoutNumbersAsync();
+
+        /// <summary>
+        /// Determines the database provider from a connection string using CosmosDbOptionsBuilder strategies.
+        /// </summary>
+        /// <param name="connectionString">The database connection string.</param>
+        /// <returns>The detected database provider.</returns>
+        /// <exception cref="ArgumentException">Thrown when provider cannot be determined.</exception>
+        DatabaseProvider DetermineProvider(string connectionString);
     }
 }

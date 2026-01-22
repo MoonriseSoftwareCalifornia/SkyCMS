@@ -121,6 +121,11 @@ namespace Cosmos.Common.Data
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
         /// <summary>
+        /// Gets or sets migration history tracking.
+        /// </summary>
+        public DbSet<MigrationHistory> MigrationHistory { get; set; } = null!;
+
+        /// <summary>
         /// Ensure database exists and returns status.
         /// </summary>
         /// <param name="connectionString">Connection string.</param>
@@ -366,6 +371,11 @@ namespace Cosmos.Common.Data
                     .ToContainer("DataProtection")
                     .HasPartitionKey(k => k.Id)
                     .HasKey(k => k.Id);
+
+                modelBuilder.Entity<MigrationHistory>()
+                    .ToContainer("MigrationHistory")
+                    .HasPartitionKey(k => k.Id)
+                    .HasKey(k => k.Id);
             }
             else
             {
@@ -391,6 +401,15 @@ namespace Cosmos.Common.Data
                 modelBuilder.Entity<Template>()
                     .HasIndex(t => new { t.LayoutNumber, t.LayoutId })
                     .HasDatabaseName("IX_Template_LayoutNumber_LayoutId");
+
+                // Migration history indexes
+                modelBuilder.Entity<MigrationHistory>()
+                    .HasIndex(m => m.MigrationId)
+                    .HasDatabaseName("IX_MigrationHistory_MigrationId");
+
+                modelBuilder.Entity<MigrationHistory>()
+                    .HasIndex(m => m.Provider)
+                    .HasDatabaseName("IX_MigrationHistory_Provider");
 
                 // MySQL-specific prefix length constraints
                 if (Database.IsMySql())

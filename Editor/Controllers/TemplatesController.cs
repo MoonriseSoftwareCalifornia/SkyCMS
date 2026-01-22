@@ -337,6 +337,7 @@ namespace Sky.Cms.Controllers
                 Description = "<p>New template, please add descriptive and helpful information here.</p>",
                 Content = "<p>" + LoremIpsum.SubSection1 + "</p>",
                 LayoutId = defautLayout?.Id,
+                LayoutNumber = defautLayout?.LayoutNumber ?? 0,
                 CommunityLayoutId = defautLayout?.CommunityLayoutId
             };
 

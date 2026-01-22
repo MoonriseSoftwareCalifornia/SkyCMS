@@ -1,4 +1,4 @@
-// <copyright file="TemplateService.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="TemplateService.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -15,9 +15,11 @@ namespace Sky.Editor.Services.Templates
     using System.Threading;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Models;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Templates.Models;
 
     /// <summary>
     /// Implementation of the template service.
@@ -51,11 +53,21 @@ namespace Sky.Editor.Services.Templates
         {
             var allTemplates = await GetAllTemplatesAsync();
             var defaultLayout = await dbContext.Layouts.FirstOrDefaultAsync(l => l.IsDefault == true);
-            var layoutId = defaultLayout?.Id;
+            
+            // If no default layout exists, we can't create templates
+            if (defaultLayout == null)
+            {
+                _logger.LogWarning("No default layout found. Cannot ensure default templates exist.");
+                return;
+            }
+
+            var layoutId = defaultLayout.Id; // Now Guid, not Guid?
 
             foreach (var template in allTemplates)
             {
-                var dbTemplate = await dbContext.Templates.FirstOrDefaultAsync(t => t.LayoutId == layoutId && t.Title == template.Name);
+                var dbTemplate = await dbContext.Templates
+                    .FirstOrDefaultAsync(t => t.LayoutId == layoutId && t.Title == template.Name);
+                
                 if (dbTemplate == null)
                 {
                     var html = await LoadTemplateContentAsync(template.FilePath);
@@ -67,7 +79,8 @@ namespace Sky.Editor.Services.Templates
                         PageType = template.Key,
                         Content = html,
                         LayoutId = layoutId,
-                        CommunityLayoutId = defaultLayout?.CommunityLayoutId
+                        LayoutNumber = defaultLayout.LayoutNumber,
+                        CommunityLayoutId = defaultLayout.CommunityLayoutId
                     };
                     dbContext.Templates.Add(dbTemplate);
                 }
@@ -162,14 +175,22 @@ namespace Sky.Editor.Services.Templates
             if (versions == null || versions.Count == 0)
             {
                 var template = await dbContext.Templates.FirstOrDefaultAsync(t => t.PageType == key);
+                
+                // Add null check for template
+                if (template == null)
+                {
+                    _logger.LogWarning("No template found with PageType: {PageType}", key);
+                    return new List<PageDesignVersion>(); // Return empty list
+                }
+                
                 var version = new PageDesignVersion
                 {
                     Id = Guid.NewGuid(),
-                    TemplateId = template.Id, // No template ID for default version
+                    TemplateId = template.Id,
                     Version = 1,
                     Title = template.Title,
-                    Description = template?.Description,
-                    Content = template?.Content ?? string.Empty,
+                    Description = template.Description,
+                    Content = template.Content ?? string.Empty,
                     PageType = template.PageType,
                     Published = DateTimeOffset.UtcNow,
                     Modified = DateTimeOffset.UtcNow
@@ -191,6 +212,13 @@ namespace Sky.Editor.Services.Templates
                 .OrderByDescending(v => v.Version)
                 .FirstOrDefault();
 
+            // Add null check for version
+            if (version == null)
+            {
+                _logger.LogWarning("No page design version found for PageType: {PageType}", key);
+                throw new InvalidOperationException($"No page design version found for PageType: {key}");
+            }
+
             if (version.Published.HasValue)
             {
                 var editableVersion = new PageDesignVersion
@@ -205,7 +233,7 @@ namespace Sky.Editor.Services.Templates
                     Published = null, // Not published yet
                     Modified = DateTimeOffset.UtcNow
                 };
-                
+
                 dbContext.PageDesignVersions.Add(editableVersion);
                 await dbContext.SaveChangesAsync();
                 return editableVersion;
@@ -221,17 +249,649 @@ namespace Sky.Editor.Services.Templates
         }
 
         /// <inheritdoc/>
-        public Task Save(PageDesignVersion model)
+        public async Task Save(PageDesignVersion model)
         {
-            throw new NotImplementedException();
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            try
+            {
+                var existing = await dbContext.PageDesignVersions.FindAsync(model.Id);
+
+                if (existing == null)
+                {
+                    // New version - add it
+                    dbContext.PageDesignVersions.Add(model);
+                }
+                else
+                {
+                    // Update existing version
+                    existing.Title = model.Title;
+                    existing.Description = model.Description;
+                    existing.Content = model.Content;
+                    existing.Modified = DateTimeOffset.UtcNow;
+                    // Don't modify Published date or Version number
+                }
+
+                await dbContext.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Saved page design version {VersionId} (PageType: {PageType}, Version: {Version})",
+                    model.Id,
+                    model.PageType,
+                    model.Version);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving page design version {VersionId}", model.Id);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
-        public Task Publish(PageDesignVersion model)
+        public async Task Publish(PageDesignVersion model)
         {
-            throw new NotImplementedException();
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            try
+            {
+                // Find the version to publish
+                var versionToPublish = await dbContext.PageDesignVersions.FindAsync(model.Id);
+
+                if (versionToPublish == null)
+                {
+                    throw new InvalidOperationException($"Page design version {model.Id} not found.");
+                }
+
+                // Unpublish all other versions of the same PageType
+                var otherVersions = await dbContext.PageDesignVersions
+                    .Where(v => v.PageType == versionToPublish.PageType && v.Id != versionToPublish.Id)
+                    .ToListAsync();
+
+                foreach (var version in otherVersions)
+                {
+                    version.Published = null;
+                }
+
+                // Publish this version
+                versionToPublish.Published = DateTimeOffset.UtcNow;
+                versionToPublish.Modified = DateTimeOffset.UtcNow;
+
+                // Update the corresponding template if it exists
+                var template = await dbContext.Templates.FirstOrDefaultAsync(t => t.Id == versionToPublish.TemplateId);
+                if (template != null)
+                {
+                    template.Content = versionToPublish.Content;
+                    template.Title = versionToPublish.Title;
+                    template.Description = versionToPublish.Description;
+                }
+
+                await dbContext.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Published page design version {VersionId} (PageType: {PageType}, Version: {Version})",
+                    versionToPublish.Id,
+                    versionToPublish.PageType,
+                    versionToPublish.Version);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error publishing page design version {VersionId}", model.Id);
+                throw;
+            }
         }
 
+        // ============================================================
+        // TEMPLATE APPLICATION - HELPER METHODS
+        // ============================================================
+
+        /// <summary>
+        /// Merges editable content from an article into a template, preserving user content.
+        /// </summary>
+        /// <param name="templateHtml">New template HTML structure.</param>
+        /// <param name="articleHtml">Existing article HTML with user content.</param>
+        /// <param name="warnings">List to collect merge warnings.</param>
+        /// <returns>Merged HTML content.</returns>
+        private string MergeEditableContent(string templateHtml, string articleHtml, List<string> warnings)
+        {
+            try
+            {
+                var articleDoc = new HtmlAgilityPack.HtmlDocument();
+                var templateDoc = new HtmlAgilityPack.HtmlDocument();
+
+                articleDoc.LoadHtml(articleHtml);
+                templateDoc.LoadHtml(templateHtml);
+
+                // Find all editable regions in both documents
+                var articleEditableRegions = articleDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]") ?? new HtmlAgilityPack.HtmlNodeCollection(null);
+                var templateEditableRegions = templateDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]") ?? new HtmlAgilityPack.HtmlNodeCollection(null);
+
+                // Build a dictionary of article regions by ID
+                var articleRegionsById = new Dictionary<string, HtmlAgilityPack.HtmlNode>();
+                foreach (var region in articleEditableRegions)
+                {
+                    var id = region.GetAttributeValue("data-ccms-ceid", null);
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        articleRegionsById[id] = region;
+                    }
+                }
+
+                // Merge content into template regions
+                foreach (var templateRegion in templateEditableRegions)
+                {
+                    var regionId = templateRegion.GetAttributeValue("data-ccms-ceid", null);
+                    if (string.IsNullOrEmpty(regionId)) continue;
+
+                    if (articleRegionsById.TryGetValue(regionId, out var articleRegion))
+                    {
+                        // Preserve user content from matching region
+                        templateRegion.InnerHtml = articleRegion.InnerHtml;
+                    }
+                    // else: Region is new in template, keep template default content
+                }
+
+                // Check for regions in article that are not in template (will be lost)
+                var templateRegionIds = new HashSet<string>(
+                    templateEditableRegions.Select(r => r.GetAttributeValue("data-ccms-ceid", null))
+                        .Where(id => !string.IsNullOrEmpty(id)));
+
+                var lostRegions = articleRegionsById.Keys.Except(templateRegionIds).ToList();
+                if (lostRegions.Any())
+                {
+                    warnings.Add($"The following editable regions will be lost: {string.Join(", ", lostRegions)}");
+                }
+
+                // Check for articles with no editable content
+                if (articleEditableRegions.Count == 0 && templateEditableRegions.Count > 0)
+                {
+                    warnings.Add("Article has no editable regions - all content will be replaced with template defaults");
+                }
+
+                return templateDoc.DocumentNode.OuterHtml;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error merging editable content");
+                throw new InvalidOperationException("Failed to merge template and article content. HTML may be malformed.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Counts editable regions in HTML content.
+        /// </summary>
+        /// <param name="html">HTML content to analyze.</param>
+        /// <returns>Number of editable regions found.</returns>
+        private int CountEditableRegions(string html)
+        {
+            try
+            {
+                var doc = new HtmlAgilityPack.HtmlDocument();
+                doc.LoadHtml(html);
+                var regions = doc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]");
+                return regions?.Count ?? 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Detects merge warnings by comparing template and article editable regions.
+        /// </summary>
+        /// <param name="templateHtml">Template HTML.</param>
+        /// <param name="articleHtml">Article HTML.</param>
+        /// <returns>Warning message or null if no issues.</returns>
+        private string? DetectMergeWarnings(string templateHtml, string articleHtml)
+        {
+            try
+            {
+                var articleDoc = new HtmlAgilityPack.HtmlDocument();
+                var templateDoc = new HtmlAgilityPack.HtmlDocument();
+
+                articleDoc.LoadHtml(articleHtml);
+                templateDoc.LoadHtml(templateHtml);
+
+                var articleRegions = articleDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]");
+                var templateRegions = templateDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]");
+
+                var articleRegionIds = new HashSet<string>(
+                    (articleRegions ?? Enumerable.Empty<HtmlAgilityPack.HtmlNode>())
+                        .Select(r => r.GetAttributeValue("data-ccms-ceid", null))
+                        .Where(id => !string.IsNullOrEmpty(id)));
+
+                var templateRegionIds = new HashSet<string>(
+                    (templateRegions ?? Enumerable.Empty<HtmlAgilityPack.HtmlNode>())
+                        .Select(r => r.GetAttributeValue("data-ccms-ceid", null))
+                        .Where(id => !string.IsNullOrEmpty(id)));
+
+                // Check for lost regions
+                var lostRegions = articleRegionIds.Except(templateRegionIds).ToList();
+                if (lostRegions.Any())
+                {
+                    return $"Template is missing {lostRegions.Count} editable region(s): {string.Join(", ", lostRegions)}";
+                }
+
+                // Check for no editable regions
+                if (articleRegionIds.Count == 0 && templateRegionIds.Count > 0)
+                {
+                    return "Article has no editable regions - content will be lost";
+                }
+
+                return null;
+            }
+            catch
+            {
+                return "Unable to analyze merge compatibility";
+            }
+        }
+
+        // ============================================================
+        // TEMPLATE APPLICATION - PUBLIC METHODS
+        // ============================================================
+
+        /// <inheritdoc/>
+        public async Task<TemplateApplicationResult> ApplyTemplateToArticleAsync(int articleNumber, Guid templateId)
+        {
+            var result = new TemplateApplicationResult
+            {
+                ArticleNumber = articleNumber,
+                Success = false
+            };
+
+            try
+            {
+                // Validate template exists
+                var template = await dbContext.Templates
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == templateId);
+
+                if (template == null)
+                {
+                    result.ErrorMessage = $"Template with ID '{templateId}' not found.";
+                    return result;
+                }
+
+                // Get the latest version of the article
+                var latestArticle = await dbContext.Articles
+                    .Where(a => a.ArticleNumber == articleNumber)
+                    .OrderByDescending(a => a.VersionNumber)
+                    .FirstOrDefaultAsync();
+
+                if (latestArticle == null)
+                {
+                    result.ErrorMessage = $"Article {articleNumber} not found.";
+                    return result;
+                }
+
+                // Merge template with article content
+                var warnings = new List<string>();
+                string mergedContent;
+
+                try
+                {
+                    mergedContent = MergeEditableContent(template.Content, latestArticle.Content, warnings);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    result.ErrorMessage = ex.Message;
+                    return result;
+                }
+
+                // Calculate next version number
+                var maxVersion = await dbContext.Articles
+                    .Where(a => a.ArticleNumber == articleNumber)
+                    .MaxAsync(a => (int?)a.VersionNumber) ?? 0;
+
+                var newVersionNumber = maxVersion + 1;
+
+                // Create new article version (DRAFT)
+                var newArticle = new Article
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = articleNumber,
+                    VersionNumber = newVersionNumber,
+                    Content = mergedContent,
+                    Title = latestArticle.Title,
+                    UrlPath = latestArticle.UrlPath,
+                    TemplateId = templateId,
+                    Published = null, // DRAFT - not published
+                    Updated = DateTimeOffset.UtcNow,
+                    HeaderJavaScript = latestArticle.HeaderJavaScript,
+                    FooterJavaScript = latestArticle.FooterJavaScript,
+                    BannerImage = latestArticle.BannerImage,
+                    UserId = latestArticle.UserId,
+                    ArticleType = latestArticle.ArticleType,
+                    Category = latestArticle.Category,
+                    StatusCode = latestArticle.StatusCode,
+                    Expires = latestArticle.Expires,
+                    Introduction = latestArticle.Introduction,
+                    RedirectTarget = latestArticle.RedirectTarget,
+                    BlogKey = latestArticle.BlogKey
+                };
+
+                dbContext.Articles.Add(newArticle);
+                await dbContext.SaveChangesAsync();
+
+                // Build successful result
+                result.Success = true;
+                result.NewVersionNumber = newVersionNumber;
+                result.NewVersionId = newArticle.Id;
+                result.IsDraft = true;
+                result.Warnings = warnings;
+
+                _logger.LogInformation(
+                    "Template {TemplateId} applied to article {ArticleNumber}. Created version {VersionNumber} (DRAFT)",
+                    templateId,
+                    articleNumber,
+                    newVersionNumber);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error applying template {TemplateId} to article {ArticleNumber}", templateId, articleNumber);
+                result.ErrorMessage = $"Unexpected error: {ex.Message}";
+                return result;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<TemplateBatchApplicationResult> ApplyTemplateToArticlesAsync(Guid templateId, List<int>? articleNumbers = null)
+        {
+            var startTime = DateTimeOffset.UtcNow;
+            var result = new TemplateBatchApplicationResult();
+
+            try
+            {
+                // Validate template exists
+                var template = await dbContext.Templates
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == templateId);
+
+                if (template == null)
+                {
+                    _logger.LogWarning("Template {TemplateId} not found for batch application", templateId);
+                    return result;
+                }
+
+                // Get article numbers to process
+                List<int> articlesToProcess;
+                if (articleNumbers == null || articleNumbers.Count == 0)
+                {
+                    // Apply to ALL articles using this template
+                    articlesToProcess = await dbContext.ArticleCatalog
+                        .Where(c => c.TemplateId == templateId)
+                        .Select(c => c.ArticleNumber)
+                        .Distinct()
+                        .ToListAsync();
+                }
+                else
+                {
+                    // Apply to specific articles
+                    articlesToProcess = articleNumbers;
+                }
+
+                _logger.LogInformation(
+                    "Starting batch template application: {TemplateId} to {Count} articles",
+                    templateId,
+                    articlesToProcess.Count);
+
+                // Process each article
+                foreach (var articleNumber in articlesToProcess)
+                {
+                    var articleResult = await ApplyTemplateToArticleAsync(articleNumber, templateId);
+                    result.Results.Add(articleResult);
+
+                    if (articleResult.Success)
+                    {
+                        result.SuccessCount++;
+                    }
+                    else
+                    {
+                        result.FailureCount++;
+                        _logger.LogWarning(
+                            "Failed to apply template {TemplateId} to article {ArticleNumber}: {Error}",
+                            templateId,
+                            articleNumber,
+                            articleResult.ErrorMessage);
+                    }
+                }
+
+                result.Duration = DateTimeOffset.UtcNow - startTime;
+
+                _logger.LogInformation(
+                    "Batch template application completed: {Success} succeeded, {Failed} failed in {Duration}ms",
+                    result.SuccessCount,
+                    result.FailureCount,
+                    result.Duration.TotalMilliseconds);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during batch template application for template {TemplateId}", templateId);
+                result.Duration = DateTimeOffset.UtcNow - startTime;
+                return result;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<TemplateApplicationPreview> PreviewTemplateApplicationAsync(Guid templateId)
+        {
+            // Validate template exists
+            var template = await dbContext.Templates
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == templateId);
+
+            if (template == null)
+            {
+                throw new InvalidOperationException($"Template with ID '{templateId}' not found.");
+            }
+
+            var preview = new TemplateApplicationPreview
+            {
+                TemplateId = templateId,
+                TemplateName = template.Title
+            };
+
+            // Find all articles using this template
+            var articleNumbers = await dbContext.ArticleCatalog
+                .Where(c => c.TemplateId == templateId)
+                .Select(c => c.ArticleNumber)
+                .Distinct()
+                .ToListAsync();
+
+            preview.TotalAffectedArticles = articleNumbers.Count;
+
+            // Build preview for each article
+            foreach (var articleNumber in articleNumbers)
+            {
+                // Get latest version
+                var latestArticle = await dbContext.Articles
+                    .Where(a => a.ArticleNumber == articleNumber)
+                    .OrderByDescending(a => a.VersionNumber)
+                    .FirstOrDefaultAsync();
+
+                if (latestArticle == null) continue;
+
+                // Check if article has published version
+                var publishedVersion = await dbContext.Articles
+                    .Where(a => a.ArticleNumber == articleNumber && a.Published != null)
+                    .OrderByDescending(a => a.Published)
+                    .FirstOrDefaultAsync();
+
+                var previewItem = new ArticlePreviewItem
+                {
+                    ArticleNumber = articleNumber,
+                    Title = latestArticle.Title,
+                    UrlPath = latestArticle.UrlPath,
+                    CurrentVersionNumber = latestArticle.VersionNumber,
+                    HasPublishedVersion = publishedVersion != null,
+                    LastPublished = publishedVersion?.Published,
+                    EditableRegionsCount = CountEditableRegions(latestArticle.Content),
+                    CanMerge = true
+                };
+
+                // Detect merge warnings
+                var warning = DetectMergeWarnings(template.Content, latestArticle.Content);
+                if (!string.IsNullOrEmpty(warning))
+                {
+                    previewItem.MergeWarning = warning;
+                }
+
+                preview.Articles.Add(previewItem);
+            }
+
+            _logger.LogInformation(
+                "Preview generated for template {TemplateId}: {Count} articles affected",
+                templateId,
+                preview.TotalAffectedArticles);
+
+            return preview;
+        }
+
+        /// <inheritdoc/>
+        public async Task<TemplateBatchPublishResult> PublishTemplateChangesAsync(Guid templateId, List<int>? articleNumbers = null)
+        {
+            var startTime = DateTimeOffset.UtcNow;
+            var result = new TemplateBatchPublishResult();
+
+            try
+            {
+                // Validate template exists
+                var template = await dbContext.Templates
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == templateId);
+
+                if (template == null)
+                {
+                    _logger.LogWarning("Template {TemplateId} not found for publishing changes", templateId);
+                    return result;
+                }
+
+                // Get article numbers to process
+                List<int> articlesToProcess;
+                if (articleNumbers == null || articleNumbers.Count == 0)
+                {
+                    // Apply to ALL articles using this template
+                    articlesToProcess = await dbContext.ArticleCatalog
+                        .Where(c => c.TemplateId == templateId)
+                        .Select(c => c.ArticleNumber)
+                        .Distinct()
+                        .ToListAsync();
+                }
+                else
+                {
+                    // Apply to specific articles
+                    articlesToProcess = articleNumbers;
+                }
+
+                _logger.LogInformation(
+                    "Publishing template changes: {TemplateId} to {Count} articles",
+                    templateId,
+                    articlesToProcess.Count);
+
+                // Process each article
+                foreach (var articleNumber in articlesToProcess)
+                {
+                    try
+                    {
+                        // Apply template and create draft
+                        var articleResult = await ApplyTemplateToArticleAsync(articleNumber, templateId);
+
+                        // Create ArticlePublishResult from TemplateApplicationResult
+                        var publishResult = new ArticlePublishResult
+                        {
+                            ArticleNumber = articleNumber,
+                            Success = false
+                        };
+
+                        if (articleResult.Success && articleResult.NewVersionId != Guid.Empty)
+                        {
+                            // Publish the new version immediately
+                            var newArticle = await dbContext.Articles.FindAsync(articleResult.NewVersionId);
+                            if (newArticle != null)
+                            {
+                                // Unpublish other versions
+                                var otherVersions = await dbContext.Articles
+                                    .Where(a => a.ArticleNumber == articleNumber && a.Id != newArticle.Id)
+                                    .ToListAsync();
+
+                                foreach (var version in otherVersions)
+                                {
+                                    version.Published = null;
+                                }
+
+                                // Publish this version
+                                newArticle.Published = DateTimeOffset.UtcNow;
+                                await dbContext.SaveChangesAsync();
+
+                                publishResult.Success = true;
+                                publishResult.PublishedVersionNumber = newArticle.VersionNumber;
+
+                                _logger.LogInformation(
+                                    "Published template changes for article {ArticleNumber}, version {VersionNumber}",
+                                    articleNumber,
+                                    newArticle.VersionNumber);
+                            }
+                            else
+                            {
+                                publishResult.ErrorMessage = "Failed to find newly created article version";
+                            }
+                        }
+                        else
+                        {
+                            publishResult.ErrorMessage = articleResult.ErrorMessage ?? "Failed to apply template";
+                        }
+
+                        result.Results.Add(publishResult);
+                    }
+                    catch (Exception articleEx)
+                    {
+                        _logger.LogError(articleEx, "Error processing article {ArticleNumber}", articleNumber);
+                        result.Results.Add(new ArticlePublishResult
+                        {
+                            ArticleNumber = articleNumber,
+                            Success = false,
+                            ErrorMessage = articleEx.Message
+                        });
+                    }
+                }
+
+                result.Duration = DateTimeOffset.UtcNow - startTime;
+
+                _logger.LogInformation(
+                    "Template publishing completed: {Success} succeeded, {Failed} failed in {Duration}ms",
+                    result.Results.Count(r => r.Success),
+                    result.Results.Count(r => !r.Success),
+                    result.Duration.TotalMilliseconds);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during template publishing for template {TemplateId}", templateId);
+                result.Duration = DateTimeOffset.UtcNow - startTime;
+                return result;
+            }
+        }
+
+        // ============================================================
+        // PRIVATE HELPER METHODS
+        // ============================================================
+
+        /// <summary>
+        /// Loads template content from embedded resource or file system.
+        /// </summary>
+        /// <param name="filePath">Relative file path to the template.</param>
+        /// <returns>Template HTML content or null if not found.</returns>
         private async Task<string> LoadTemplateContentAsync(string filePath)
         {
             try
@@ -264,6 +924,10 @@ namespace Sky.Editor.Services.Templates
             }
         }
 
+        /// <summary>
+        /// Gets the list of standard page templates available in the system.
+        /// </summary>
+        /// <returns>List of page template metadata.</returns>
         private List<PageTemplate> GetStandardTemplates()
         {
             return new List<PageTemplate>
@@ -287,59 +951,7 @@ namespace Sky.Editor.Services.Templates
                     FilePath = "PageTemplates/blog-post.html",
                     ThumbnailPath = "/images/templates/blog-post-thumb.png",
                     Tags = new List<string> { "blog", "article", "post", "content" }
-                },
-                // TODO: Add more templates as needed
-                //new PageTemplate
-                //{
-                //    Key = "landing-page",
-                //    Name = "Landing Page",
-                //    Description = "Conversion-focused landing page with hero section, features, and call-to-action.",
-                //    Category = "Marketing",
-                //    FilePath = "PageTemplates/landing-page.html",
-                //    ThumbnailPath = "/images/templates/landing-page-thumb.png",
-                //    Tags = new List<string> { "landing", "marketing", "conversion", "cta" }
-                //},
-                //new PageTemplate
-                //{
-                //    Key = "about-page",
-                //    Name = "About Us",
-                //    Description = "Professional about page with team section, company history, and values.",
-                //    Category = "Corporate",
-                //    FilePath = "PageTemplates/about-page.html",
-                //    ThumbnailPath = "/images/templates/about-page-thumb.png",
-                //    Tags = new List<string> { "about", "team", "company", "corporate" }
-                //},
-                //new PageTemplate
-                //{
-                //    Key = "contact-page",
-                //    Name = "Contact Form",
-                //    Description = "Contact page with form, location map, and contact details.",
-                //    Category = "General",
-                //    FilePath = "PageTemplates/contact-page.html",
-                //    ThumbnailPath = "/images/templates/contact-page-thumb.png",
-                //    Tags = new List<string> { "contact", "form", "support" },
-                //    RequiresConfiguration = true
-                //},
-                //new PageTemplate
-                //{
-                //    Key = "product-showcase",
-                //    Name = "Product Showcase",
-                //    Description = "E-commerce style product display with image gallery and specifications.",
-                //    Category = "E-commerce",
-                //    FilePath = "PageTemplates/product-showcase.html",
-                //    ThumbnailPath = "/images/templates/product-thumb.png",
-                //    Tags = new List<string> { "product", "ecommerce", "showcase", "gallery" }
-                //},
-                //new PageTemplate
-                //{
-                //    Key = "blank",
-                //    Name = "Blank Page",
-                //    Description = "Empty page to start from scratch.",
-                //    Category = "General",
-                //    FilePath = "PageTemplates/blank.html",
-                //    ThumbnailPath = "/images/templates/blank-thumb.png",
-                //    Tags = new List<string> { "blank", "empty", "custom" }
-                //}
+                }
             };
         }
     }

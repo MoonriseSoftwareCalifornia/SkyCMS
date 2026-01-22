@@ -15,6 +15,7 @@ namespace Sky.Editor.Services.Layout
     using Microsoft.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore.Storage;
     using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Migrations.Core;
 
     /// <summary>
     /// Service for migrating existing layouts to use LayoutNumber versioning.
@@ -41,6 +42,7 @@ namespace Sky.Editor.Services.Layout
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
 
         /// <summary>
         /// Determines whether the database needs layout number migration.
@@ -88,8 +90,6 @@ namespace Sky.Editor.Services.Layout
         /// <returns>The number of layouts migrated.</returns>
         public async Task<int> MigrateLayoutNumbersAsync()
         {
-            IDbContextTransaction transaction = null;
-            
             try
             {
                 _logger.LogInformation("Starting layout number migration");
@@ -107,81 +107,85 @@ namespace Sky.Editor.Services.Layout
 
                 _logger.LogInformation("Found {Count} layouts to migrate", layouts.Count);
 
-                // Start transaction for atomic updates
-                transaction = await _dbContext.Database.BeginTransactionAsync();
-
-                // Group layouts by CommunityLayoutId to identify version families
-                // If CommunityLayoutId is null, use the layout's Id as the family identifier
-                var families = layouts
-                    .GroupBy(l => l.CommunityLayoutId ?? l.Id.ToString())
-                    .OrderBy(g => g.Min(l => l.LastModified ?? DateTimeOffset.MinValue))
-                    .ToList();
-
-                _logger.LogInformation("Identified {FamilyCount} layout families", families.Count);
-
-                int layoutNumber = 1;
-                int updatedCount = 0;
-
-                foreach (var family in families)
+                // Use execution strategy to handle retries and transactions
+                var strategy = _dbContext.Database.CreateExecutionStrategy();
+                
+                var updatedCount = await strategy.ExecuteAsync(async () =>
                 {
-                    // Determine if this family is currently active (has any IsDefault = true)
-                    var isActiveFamily = family.Any(l => l.IsDefault);
-
-                    _logger.LogDebug(
-                        "Processing layout family '{FamilyId}' with {VersionCount} versions (Active: {IsActive})",
-                        family.Key,
-                        family.Count(),
-                        isActiveFamily);
-
-                    // Assign the same LayoutNumber to all versions in this family
-                    foreach (var layout in family.OrderBy(l => l.Version ?? 0))
+                    using var transaction = await _dbContext.Database.BeginTransactionAsync();
+                    
+                    try
                     {
-                        layout.LayoutNumber = layoutNumber;
-                        
-                        // All versions in an active family get IsDefault = true
-                        // All versions in an inactive family get IsDefault = false
-                        layout.IsDefault = isActiveFamily;
+                        // Group layouts by CommunityLayoutId to identify version families
+                        // If CommunityLayoutId is null, use the layout's Id as the family identifier
+                        var families = layouts
+                            .GroupBy(l => l.CommunityLayoutId ?? l.Id.ToString())
+                            .OrderBy(g => g.Min(l => l.LastModified ?? DateTimeOffset.MinValue))
+                            .ToList();
 
-                        updatedCount++;
+                        _logger.LogInformation("Identified {FamilyCount} layout families", families.Count);
 
-                        _logger.LogTrace(
-                            "Updated Layout Id={LayoutId}, Version={Version} -> LayoutNumber={LayoutNumber}, IsDefault={IsDefault}",
-                            layout.Id,
-                            layout.Version,
-                            layout.LayoutNumber,
-                            layout.IsDefault);
+                        int layoutNumber = 1;
+                        int count = 0;
+
+                        foreach (var family in families)
+                        {
+                            // Determine if this family is currently active (has any IsDefault = true)
+                            var isActiveFamily = family.Any(l => l.IsDefault);
+
+                            _logger.LogDebug(
+                                "Processing layout family '{FamilyId}' with {VersionCount} versions (Active: {IsActive})",
+                                family.Key,
+                                family.Count(),
+                                isActiveFamily);
+
+                            // Assign the same LayoutNumber to all versions in this family
+                            foreach (var layout in family.OrderBy(l => l.Version ?? 0))
+                            {
+                                layout.LayoutNumber = layoutNumber;
+                                
+                                // All versions in an active family get IsDefault = true
+                                // All versions in an inactive family get IsDefault = false
+                                layout.IsDefault = isActiveFamily;
+
+                                count++;
+
+                                _logger.LogTrace(
+                                    "Updated Layout Id={LayoutId}, Version={Version} -> LayoutNumber={LayoutNumber}, IsDefault={IsDefault}",
+                                    layout.Id,
+                                    layout.Version,
+                                    layout.LayoutNumber,
+                                    layout.IsDefault);
+                            }
+
+                            layoutNumber++;
+                        }
+
+                        // Save all changes within transaction
+                        await _dbContext.SaveChangesAsync();
+                        await transaction.CommitAsync();
+
+                        _logger.LogInformation(
+                            "Layout migration completed successfully: {UpdatedCount} layouts migrated into {FamilyCount} families",
+                            count,
+                            families.Count);
+
+                        return count;
                     }
-
-                    layoutNumber++;
-                }
-
-                // Save all changes within transaction
-                await _dbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                _logger.LogInformation(
-                    "Layout migration completed successfully: {UpdatedCount} layouts migrated into {FamilyCount} families",
-                    updatedCount,
-                    families.Count);
+                    catch
+                    {
+                        await transaction.RollbackAsync();
+                        _logger.LogWarning("Layout migration transaction rolled back");
+                        throw;
+                    }
+                });
 
                 return updatedCount;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during layout number migration");
-
-                // Rollback transaction on error
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogWarning("Layout migration transaction rolled back");
-                }
-
                 throw;
-            }
-            finally
-            {
-                transaction?.Dispose();
             }
         }
 
@@ -286,6 +290,45 @@ namespace Sky.Editor.Services.Layout
                 _logger.LogError(ex, "Error during template LayoutNumber migration");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Determines the database provider from a connection string using CosmosDbOptionsBuilder strategies.
+        /// </summary>
+        /// <param name="connectionString">The database connection string.</param>
+        /// <returns>The detected database provider.</returns>
+        /// <exception cref="ArgumentException">Thrown when provider cannot be determined.</exception>
+        public DatabaseProvider DetermineProvider(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new ArgumentNullException(nameof(connectionString));
+            }
+
+            // Use existing CosmosDbOptionsBuilder strategies to detect provider
+            var strategies = AspNetCore.Identity.FlexDb.CosmosDbOptionsBuilder.GetDefaultStrategies();
+            var strategy = strategies
+                .OrderBy(s => s.Priority)
+                .FirstOrDefault(s => s.CanHandle(connectionString));
+
+            if (strategy == null)
+            {
+                throw new ArgumentException(
+                    "Unable to determine database provider from connection string. " +
+                    "Ensure the connection string is valid for Cosmos DB, SQL Server, MySQL, or SQLite.",
+                    nameof(connectionString));
+            }
+
+            // Map strategy ProviderName to DatabaseProvider enum
+            return strategy.ProviderName switch
+            {
+                "Microsoft.EntityFrameworkCore.Cosmos" => DatabaseProvider.CosmosDb,
+                "Microsoft.EntityFrameworkCore.SqlServer" => DatabaseProvider.SqlServer,
+                "MySql.EntityFrameworkCore" => DatabaseProvider.MySql,
+                "Microsoft.EntityFrameworkCore.Sqlite" => DatabaseProvider.Sqlite,
+                _ => throw new NotSupportedException(
+                    $"Provider '{strategy.ProviderName}' is recognized but not supported by migration service")
+            };
         }
     }
 }

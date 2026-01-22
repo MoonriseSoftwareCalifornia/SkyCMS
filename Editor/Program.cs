@@ -59,6 +59,8 @@ using Sky.Editor.Services.Email;
 using Sky.Editor.Services.Html;
 using Sky.Editor.Services.Layout;
 using Sky.Editor.Services.Layouts;
+using Sky.Editor.Services.Migrations;
+using Sky.Editor.Services.Migrations.Core;
 using Sky.Editor.Services.Publishing;
 using Sky.Editor.Services.Redirects;
 using Sky.Editor.Services.ReservedPaths;
@@ -186,129 +188,274 @@ if (enableDiagnostics)
 }
 
 // ---------------------------------------------------------------
-// STEP 1.6: APPLY DATABASE MIGRATIONS (IF SETUP ALLOWED)
+// STEP 1.6: RUN CUSTOM MIGRATION SERVICE (SCHEMA + DATA)
 // ---------------------------------------------------------------
-if (allowSetup && !isMultiTenantEditor)
+// This step runs the custom migration service that handles both schema migrations
+// (e.g., adding columns, creating indexes) and data migrations (e.g., populating
+// LayoutNumber values). The service automatically detects the database provider
+// (Cosmos DB, SQL Server, MySQL, SQLite) and applies provider-specific migrations.
+//
+// Migration Flow:
+//   1. Detect database provider using CosmosDbOptionsBuilder strategies
+//   2. Run schema migrations (M001_AddLayoutNumber, etc.)
+//   3. Run data migrations (LayoutMigrationService)
+//
+// Supported Modes:
+//   - Single-Tenant: Migrates a single database
+//   - Multi-Tenant: Discovers all tenants via DynamicConfigurationProvider
+//                    and migrates each tenant's database independently
+// ---------------------------------------------------------------
+if (allowSetup)
 {
-    System.Console.WriteLine("🔄 Checking for database migrations...");
-    
-    var connectionString = builder.Configuration.GetConnectionString(CONNECTIONSTRING_APP_DB);
-    
-    if (!string.IsNullOrWhiteSpace(connectionString))
+    if (!isMultiTenantEditor)
     {
-        try
+        // ============================================================
+        // SINGLE-TENANT MODE: Migrate single database
+        // ============================================================
+        System.Console.WriteLine("🔄 Running custom migration service (single-tenant mode)...");
+        
+        var connectionString = builder.Configuration.GetConnectionString(CONNECTIONSTRING_APP_DB);
+        
+        if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            var loggerFactory = LoggerFactory.Create(config => config.AddConsole());
-            var migrationLogger = loggerFactory.CreateLogger("MigrationHelper");
-            
-            await Sky.Editor.Data.MigrationHelper.ApplyMigrationsAsync(connectionString, migrationLogger);
+            try
+            {
+                // Create logger for migration service
+                var loggerFactory = LoggerFactory.Create(config => config.AddConsole());
+                var migrationLogger = loggerFactory.CreateLogger<MigrationService>();
+                
+                // Determine database provider using existing CosmosDbOptionsBuilder strategies
+                // This reuses the same provider detection logic used for DbContext configuration
+                var provider = MigrationService.DetermineProvider(connectionString);
+                System.Console.WriteLine($"   Detected provider: {provider}");
+                
+                // Create temporary service scope for migration
+                var tempServices = new ServiceCollection();
+                tempServices.AddLogging(config => config.AddConsole());
+                
+                // Configure DbContext using existing infrastructure
+                tempServices.AddDbContext<ApplicationDbContext>(options =>
+                {
+                    CosmosDbOptionsBuilder.ConfigureDbOptions(options, connectionString);
+                });
+                
+                var tempServiceProvider = tempServices.BuildServiceProvider();
+                
+                // Phase 1: Run schema migrations (M001_AddLayoutNumber, etc.)
+                using (var scope = tempServiceProvider.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    
+                    // Create migration context
+                    var migrationContext = new MigrationContext
+                    {
+                        DbContext = dbContext,
+                        Provider = provider,
+                        ConnectionString = connectionString,
+                        Logger = migrationLogger,
+                        ServiceProvider = scope.ServiceProvider
+                    };
+                    
+                    // Run custom schema migrations
+                    var migrationService = new MigrationService(migrationLogger);
+                    await migrationService.RunMigrationsAsync(migrationContext);
+                    
+                    System.Console.WriteLine("✅ Custom schema migrations completed successfully");
+                }
+                
+                // Phase 2: Run data migrations (LayoutMigrationService)
+                System.Console.WriteLine("🔄 Checking for layout versioning data migration...");
+                
+                using (var scope = tempServiceProvider.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    var layoutMigrationLogger = loggerFactory.CreateLogger<LayoutMigrationService>();
+                    
+                    var layoutMigrationService = new LayoutMigrationService(
+                        dbContext, 
+                        layoutMigrationLogger);
+                    
+                    if (await layoutMigrationService.NeedsMigrationAsync())
+                    {
+                        System.Console.WriteLine("📦 Layout data migration required - starting migration...");
+                        
+                        var layoutCount = await layoutMigrationService.MigrateLayoutNumbersAsync();
+                        System.Console.WriteLine($"✅ Migrated {layoutCount} layouts to versioned families");
+                        
+                        await layoutMigrationService.MigrateTemplateLayoutNumbersAsync();
+                        System.Console.WriteLine("✅ Template LayoutNumbers updated");
+                        
+                        System.Console.WriteLine("✅ Layout data migration completed successfully");
+                    }
+                    else
+                    {
+                        System.Console.WriteLine("✓ Layout versioning already configured - no data migration needed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"❌ FATAL ERROR: Migration failed: {ex.Message}");
+                System.Console.WriteLine($"   {ex.StackTrace}");
+                System.Console.WriteLine("Application startup halted. Please fix the database configuration and restart.");
+                throw; // Halt startup
+            }
         }
-        catch (Exception ex)
+        else
         {
-            System.Console.WriteLine($"❌ FATAL ERROR: Failed to apply database migrations: {ex.Message}");
-            System.Console.WriteLine($"   {ex.StackTrace}");
-            System.Console.WriteLine("Application startup halted. Please fix the database configuration and restart.");
-            throw; // Halt startup
+            System.Console.WriteLine("⚠️ No connection string found. Skipping migration check.");
+            System.Console.WriteLine("   This is normal during initial setup.");
         }
     }
     else
     {
-        System.Console.WriteLine("⚠️ No connection string found. Skipping migration check.");
-        System.Console.WriteLine("   This is normal during initial setup.");
-    }
-}
-
-// ---------------------------------------------------------------
-// STEP 1.7: RUN LAYOUT VERSIONING MIGRATION (IF NEEDED)
-// ---------------------------------------------------------------
-if (!isMultiTenantEditor)
-{
-    System.Console.WriteLine("🔄 Checking for layout versioning migration...");
-    
-    var connectionString = builder.Configuration.GetConnectionString(CONNECTIONSTRING_APP_DB);
-    
-    if (!string.IsNullOrWhiteSpace(connectionString))
-    {
+        // ============================================================
+        // MULTI-TENANT MODE: Migrate all tenant databases
+        // ============================================================
+        // This section discovers all configured tenants from the DynamicConfigurationProvider
+        // and applies schema and data migrations to each tenant's database independently.
+        // Failed migrations for individual tenants do not halt the application startup.
+        // ============================================================
+        System.Console.WriteLine("🔄 Running custom migration service (multi-tenant mode)...");
+        
         try
         {
-            // Create a temporary service scope to run migration
-            var tempServices = new ServiceCollection();
-            tempServices.AddLogging(config => config.AddConsole());
-            tempServices.AddDbContext<ApplicationDbContext>(options =>
+            var configDbConnectionString = builder.Configuration.GetConnectionString("ConfigDbConnectionString");
+            
+            if (string.IsNullOrWhiteSpace(configDbConnectionString))
             {
-                var dbOptions = CosmosDbOptionsBuilder.GetDbOptions<ApplicationDbContext>(connectionString);
-                if (dbOptions != null)
+                System.Console.WriteLine("⚠️ WARNING: ConfigDbConnectionString not found - skipping multi-tenant migration");
+                System.Console.WriteLine("   Multi-tenant setup requires ConfigDbConnectionString to discover tenants");
+            }
+            else
+            {
+                // Create temporary services for multi-tenant migration
+                var tempServices = new ServiceCollection();
+                var loggerFactory = LoggerFactory.Create(config => config.AddConsole());
+                tempServices.AddSingleton<ILoggerFactory>(loggerFactory);
+                tempServices.AddLogging(config => config.AddConsole());
+                
+                // Register DynamicConfigurationProvider for tenant discovery
+                tempServices.AddSingleton<IConfiguration>(builder.Configuration);
+                tempServices.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+                tempServices.AddMemoryCache();
+                tempServices.AddSingleton<IDynamicConfigurationProvider, DynamicConfigurationProvider>();
+                
+                var tempServiceProvider = tempServices.BuildServiceProvider();
+                
+                using (var scope = tempServiceProvider.CreateScope())
                 {
-                    options.UseCosmos(
-                        dbOptions.Extensions.OfType<Microsoft.EntityFrameworkCore.Cosmos.Infrastructure.Internal.CosmosOptionsExtension>()
-                            .First().AccountEndpoint.ToString(),
-                        dbOptions.Extensions.OfType<Microsoft.EntityFrameworkCore.Cosmos.Infrastructure.Internal.CosmosOptionsExtension>()
-                            .First().AccountKey,
-                        dbOptions.Extensions.OfType<Microsoft.EntityFrameworkCore.Cosmos.Infrastructure.Internal.CosmosOptionsExtension>()
-                            .First().DatabaseName);
-                }
-                else
-                {
-                    // SQL Server, MySQL, or SQLite
-                    if (connectionString.Contains("cosmosdb.azure.com", StringComparison.OrdinalIgnoreCase))
+                    var configProvider = scope.ServiceProvider.GetRequiredService<IDynamicConfigurationProvider>();
+                    
+                    // Discover all tenant domain names from configuration database
+                    var domainNames = await configProvider.GetAllDomainNamesAsync();
+                    
+                    if (domainNames.Count == 0)
                     {
-                        throw new InvalidOperationException("Cosmos DB connection string detected but options could not be parsed");
-                    }
-                    else if (connectionString.Contains("mysql", StringComparison.OrdinalIgnoreCase) ||
-                             connectionString.Contains("mariadb", StringComparison.OrdinalIgnoreCase))
-                    {
-                        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-                    }
-                    else if (connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) &&
-                             connectionString.Contains(".db", StringComparison.OrdinalIgnoreCase))
-                    {
-                        options.UseSqlite(connectionString);
+                        System.Console.WriteLine("⚠️ No tenant configurations found - skipping multi-tenant migration");
                     }
                     else
                     {
-                        options.UseSqlServer(connectionString);
+                        System.Console.WriteLine($"   Found {domainNames.Count} tenant(s) to migrate");
+                        
+                        int successCount = 0;
+                        int failureCount = 0;
+                        int skippedCount = 0;
+                        
+                        // Process each tenant independently
+                        foreach (var domainName in domainNames)
+                        {
+                            try
+                            {
+                                System.Console.WriteLine($"   Processing tenant: {domainName}");
+                                
+                                // Get connection string for this tenant
+                                var tenantConnectionString = await configProvider.GetDatabaseConnectionStringAsync(domainName);
+                                
+                                if (string.IsNullOrWhiteSpace(tenantConnectionString))
+                                {
+                                    System.Console.WriteLine($"      ⚠️ No connection string found for {domainName} - skipping");
+                                    skippedCount++;
+                                    continue;
+                                }
+                                
+                                // Determine provider for this tenant
+                                var provider = MigrationService.DetermineProvider(tenantConnectionString);
+                                
+                                // Create tenant-specific services
+                                var tenantServices = new ServiceCollection();
+                                tenantServices.AddLogging(config =>
+                                {
+                                    config.AddConsole();
+                                    config.SetMinimumLevel(LogLevel.Warning); // Reduce noise
+                                });
+                                
+                                tenantServices.AddDbContext<ApplicationDbContext>(options =>
+                                {
+                                    CosmosDbOptionsBuilder.ConfigureDbOptions(options, tenantConnectionString);
+                                });
+                                
+                                var tenantServiceProvider = tenantServices.BuildServiceProvider();
+                                
+                                using (var tenantScope = tenantServiceProvider.CreateScope())
+                                {
+                                    var tenantDbContext = tenantScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                                    var tenantLogger = loggerFactory.CreateLogger<MigrationService>();
+                                    
+                                    // Create migration context for this tenant
+                                    var migrationContext = new MigrationContext
+                                    {
+                                        DbContext = tenantDbContext,
+                                        Provider = provider,
+                                        ConnectionString = tenantConnectionString,
+                                        Logger = tenantLogger,
+                                        ServiceProvider = tenantScope.ServiceProvider
+                                    };
+                                    
+                                    // Run custom schema migrations
+                                    var migrationService = new MigrationService(tenantLogger);
+                                    await migrationService.RunMigrationsAsync(migrationContext);
+                                    
+                                    // Run data migrations (LayoutMigrationService)
+                                    var layoutMigrationLogger = loggerFactory.CreateLogger<LayoutMigrationService>();
+                                    var layoutMigrationService = new LayoutMigrationService(
+                                        tenantDbContext,
+                                        layoutMigrationLogger);
+                                    
+                                    if (await layoutMigrationService.NeedsMigrationAsync())
+                                    {
+                                        var layoutCount = await layoutMigrationService.MigrateLayoutNumbersAsync();
+                                        await layoutMigrationService.MigrateTemplateLayoutNumbersAsync();
+                                        System.Console.WriteLine($"      ✅ {domainName}: Migrated {layoutCount} layouts");
+                                    }
+                                    else
+                                    {
+                                        System.Console.WriteLine($"      ✓ {domainName}: Already migrated");
+                                    }
+                                    
+                                    successCount++;
+                                }
+                            }
+                            catch (Exception tenantEx)
+                            {
+                                System.Console.WriteLine($"      ❌ {domainName}: Migration failed - {tenantEx.Message}");
+                                failureCount++;
+                                // Continue with next tenant - don't halt startup
+                            }
+                        }
+                        
+                        System.Console.WriteLine($"✅ Multi-tenant migration summary: {successCount} succeeded, {failureCount} failed, {skippedCount} skipped");
                     }
-                }
-            });
-            tempServices.AddScoped<Sky.Editor.Services.Layout.ILayoutMigrationService, Sky.Editor.Services.Layout.LayoutMigrationService>();
-            
-            var tempServiceProvider = tempServices.BuildServiceProvider();
-            
-            using (var scope = tempServiceProvider.CreateScope())
-            {
-                var migrationService = scope.ServiceProvider.GetRequiredService<Sky.Editor.Services.Layout.ILayoutMigrationService>();
-                
-                if (await migrationService.NeedsMigrationAsync())
-                {
-                    System.Console.WriteLine("📦 Layout versioning migration required - starting migration...");
-                    
-                    var layoutCount = await migrationService.MigrateLayoutNumbersAsync();
-                    System.Console.WriteLine($"✅ Migrated {layoutCount} layouts to versioned families");
-                    
-                    await migrationService.MigrateTemplateLayoutNumbersAsync();
-                    System.Console.WriteLine("✅ Template LayoutNumbers updated");
-                    
-                    System.Console.WriteLine("✅ Layout versioning migration completed successfully");
-                }
-                else
-                {
-                    System.Console.WriteLine("✓ Layout versioning already configured - no migration needed");
                 }
             }
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"⚠️ WARNING: Layout versioning migration failed: {ex.Message}");
+            System.Console.WriteLine($"⚠️ WARNING: Multi-tenant migration failed: {ex.Message}");
             System.Console.WriteLine($"   {ex.StackTrace}");
-            System.Console.WriteLine("   Application will continue, but layout versioning may not work correctly.");
-            System.Console.WriteLine("   Please check the logs and database configuration.");
+            System.Console.WriteLine("   Application will continue, but migrations may not be applied to all tenants.");
             // Don't throw - allow app to continue
         }
-    }
-    else
-    {
-        System.Console.WriteLine("⚠️ No connection string found. Skipping layout migration check.");
-        System.Console.WriteLine("   This is normal during initial setup.");
     }
 }
 
@@ -377,11 +524,11 @@ builder.Services.AddScoped<ICommandHandler<SavePageDesignVersionCommand, Command
 builder.Services.AddScoped<ICommandHandler<PublishPageDesignVersionCommand, CommandResult<Template>>, PublishPageDesignVersionHandler>();
 builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
-builder.Services.AddScoped<ILayoutMigrationService, LayoutMigrationService>(); // NEW: Layout versioning migration
+builder.Services.AddScoped<ILayoutMigrationService, LayoutMigrationService>();
 builder.Services.AddScoped<IStorageContext, StorageContext>();
 builder.Services.AddScoped<StorageContext>(); // Register concrete class for Hangfire background jobs
-builder.Services.AddScoped<IEditorSettings, EditorSettings>(); // CHANGED: Scoped for per-request tenant context
-builder.Services.AddScoped<IViewRenderService, ViewRenderService>(); // CHANGED: Scoped for Razor view rendering// Add Email services
+builder.Services.AddScoped<IEditorSettings, EditorSettings>();
+builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 
 // Register tenant-aware email sender (supports multi-tenant with database-driven configuration)
 builder.Services.AddScoped<ICosmosEmailSender, TenantAwareEmailSender>();
@@ -401,10 +548,11 @@ builder.Services.AddTransient<IReservedPaths, ReservedPaths>();
 builder.Services.AddTransient<ISlugService, SlugService>();
 builder.Services.AddTransient<ITitleChangeService, TitleChangeService>();
 builder.Services.AddTransient<IBlogRenderingService, BlogRenderingService>();
-builder.Services.AddTransient<IEmailConfigurationService, EmailConfigurationService>(); // Email configuration service tenant-aware
+builder.Services.AddTransient<IEmailConfigurationService, EmailConfigurationService>();
 builder.Services.AddTransient<ArticleScheduler>();
 builder.Services.AddTransient<ArticleEditLogic>();
 builder.Services.AddTransient<ISetupCheckService, SetupCheckService>();
+builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 
 // Register Contact API services (required for /_api/contact endpoints)
 builder.Services.AddContactApi(builder.Configuration);
@@ -718,7 +866,7 @@ var app = builder.Build();
 
 // ---------------------------------------------------------------
 // CONFIGURE MIDDLEWARE PIPELINE
-// --------------------------------------------------------------
+// ---------------------------------------------------------------
 
 // Multi-tenant middleware (must run early in pipeline)
 if (isMultiTenantEditor)
@@ -817,7 +965,7 @@ app.MapAreaControllerRoute(
 // Map endpoints AFTER tenant context is established
 app.MapRazorPages();
 app.MapControllers();
-app.MapHub<PublishingProgressHub>("/hubs/publishing-progress"); // ✅ Tenant context available
+app.MapHub<PublishingProgressHub>("/hubs/publishing-progress");
 app.MapHub<LiveEditorHub>("/___cwps_hubs_live_editor");
 
 // ---------------------------------------------------------------
