@@ -1,0 +1,77 @@
+site_name: SkyCMS Documentation
+site_description: Fast, edge-native CMS for developers and content teams
+site_url: https://docs.sky-cms.com
+
+# Documentation source directory
+docs_dir: 'Docs'
+
+# Theme configuration
+theme:
+  name: mkdocs
+  highlightjs: true
+  hljs_languages:
+    - yaml
+    - rust
+    - csharp
+    - javascript
+    - typescript
+    - json
+    - bash
+    - powershell
+  navigation_depth: 3
+  nav_style: dark
+
+# Plugins
+plugins:
+  - search
+
+# Markdown extensions
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - def_list
+  - footnotes
+  - meta
+  - tables
+
+# Navigation structure - simplified for header nav (full nav available in sidebar)
+nav:
+  - Home: index.md
+  - Quick Start: QuickStart.md
+  - Installation: Installation/README.md
+  - Configuration: Configuration/Database-Overview.md
+  - API: ContactFormAPI-Usage.md
+  - Reference: FAQ.md
+
+# Site configuration
+site_author: CWALabs
+copyright: Copyright &copy; 2026 Moonrise Software
+
+# Extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/CWALabs/SkyCMS
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/CWALabs
+  analytics:
+    provider: google
+    # property: G-XXXXXXXXXX  # Add your Google Analytics ID if needed
+
+# Files to exclude
+exclude_docs: |
+  .github/
+  .gitignore
+  Gemfile*
+  _*
+  vendor/
+  bin/
+  obj/
+  .vscode/
+  .vs/
+  node_modules/
+  Redirect_Improvements_Complete_Summary.md
+  Editors/LiveEditor/VisualGuide.md
