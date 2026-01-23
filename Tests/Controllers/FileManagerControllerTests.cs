@@ -62,7 +62,9 @@ namespace Sky.Tests.Controllers
                 UserManager,
                 Logic,
                 mockHostEnvironment.Object,
-                mockViewRenderService.Object);
+                mockViewRenderService.Object,
+                Cache,                           // ? Add memory cache
+                DynamicConfigurationProvider);   // ? Add config provider
 
             // Setup HttpContext for the controller
             var httpContext = new DefaultHttpContext();

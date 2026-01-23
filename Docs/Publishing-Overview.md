@@ -19,6 +19,8 @@ chunk_hint: 360
 
 Publishing is the process of making content live on your website. SkyCMS supports multiple publishing modes and workflows to fit different content strategies and team structures.
 
+![Publishing dashboard with modes](images/screenshots/publishing-modes-overview.webp)
+
 ## When to use this
 - You need to choose a publishing mode (Direct, Staged, Static Generation, Git-Based) for your team and hosting model.
 - You want a concise view of workflows, approvals, and rollback options before configuring environments.
@@ -87,6 +89,8 @@ SkyCMS supports different publishing modes to accommodate various hosting and wo
 ---
 
 ## Publishing Modes {#publishing-modes-detail}
+
+![Mode selector showing Direct/Staged/Static/Git](images/screenshots/publishing-mode-selector.webp)
 
 ### 1. Direct Publishing {#direct-publishing}
 
@@ -319,6 +323,8 @@ SkyCMS supports different publishing modes to accommodate various hosting and wo
 5. If approved → Promoted to Production
 6. If rejected → Returned to Draft
 ```
+
+![Staged publishing approval flow](images/screenshots/publishing-staged-approval.webp)
 
 **Time:** Minutes to hours  
 **Approval:** Required  

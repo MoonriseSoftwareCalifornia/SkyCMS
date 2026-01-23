@@ -4,7 +4,7 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
+		<Nullable>disable</Nullable>
 		<UserSecretsId>c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1</UserSecretsId>
 		<Version>9.2.4.25</Version>
 
@@ -19,7 +19,8 @@
 
 	<PropertyGroup>
 		<!-- Suppress CS0618: Using obsolete SaveArticle method for legacy integration tests -->
-		<NoWarn>$(NoWarn);CS0618</NoWarn>
+		<!-- Suppress MSTEST0006: Keep ExpectedException attributes for now, will migrate later -->
+		<NoWarn>$(NoWarn);CS0618;MSTEST0006</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

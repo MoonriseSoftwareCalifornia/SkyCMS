@@ -15,7 +15,7 @@ audience: [developers, administrators]
 
 Configure where SkyCMS stores uploaded files, images, and media.
 
-![Storage Configuration Screen](../assets/setup-step1-storage.png) *(Screenshot placeholder)*
+![Storage configuration step](../images/screenshots/setup-wizard-storage.webp)
 
 ---
 

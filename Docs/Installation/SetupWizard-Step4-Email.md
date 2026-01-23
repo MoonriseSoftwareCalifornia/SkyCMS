@@ -15,7 +15,7 @@ audience: [developers, administrators]
 
 Configure email delivery for user registration, password resets, and notifications.
 
-![Email Configuration Screen](../assets/setup-step4-email.png) *(Screenshot placeholder)*
+![Email provider selection and test send](../images/screenshots/setup-wizard-email.webp)
 
 > **Note**: Email configuration is **optional**. You can skip this step and configure email later.
 

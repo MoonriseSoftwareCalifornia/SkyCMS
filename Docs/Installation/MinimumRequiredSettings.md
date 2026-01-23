@@ -94,6 +94,8 @@ Then navigate to `https://yourdomain.com/___setup` to configure database, storag
 }
 ```
 
+![Multi-tenant architecture showing central config database and per-tenant storage](../images/screenshots/multi-tenant-architecture.webp)
+
 **Key difference**: No setup wizard. Instead:
 - **ConfigDbConnectionString** = Central database that stores all tenant configurations (required)
 - **DataProtectionStorage** = Azure Blob Storage for encryption keys (required, shared by all tenants)

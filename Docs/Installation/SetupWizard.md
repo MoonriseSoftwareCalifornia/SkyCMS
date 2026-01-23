@@ -13,6 +13,8 @@ read_time: 6
 
 The **Setup Wizard** is the easiest way to configure SkyCMS for first-time deployment. It walks you through each configuration step in an interactive web interface.
 
+![Setup wizard welcome screen](../images/screenshots/setup-wizard-welcome.webp)
+
 ## When to use this
 - First-time or single-tenant setups that want guided, interactive configuration.
 - Teams preferring UI-driven setup instead of pre-seeding all env vars.
@@ -80,6 +82,8 @@ The wizard consists of 7 steps, each with a dedicated documentation page:
 7. **[Review & Complete](./SetupWizard-Step6-Review.md)** - Finalize and apply settings
 8. **[Setup Complete](./SetupWizard-Complete.md)** - Post-setup instructions and next steps
 
+![Storage configuration step](../images/screenshots/setup-wizard-storage.webp)
+
 **Time to Complete**: 10-15 minutes
 
 > **Tip**: Click any step above to view detailed instructions, field references, troubleshooting, and pre-configuration examples for that specific step.
@@ -93,6 +97,8 @@ The wizard consists of 7 steps, each with a dedicated documentation page:
 **When NOT to Use**:
 - ❌ Multi-tenant deployments (no wizard support - use [multi-tenant configuration](./MinimumRequiredSettings.md#multi-tenant))
 - ❌ Fully automated deployments (pre-configure everything via environment variables instead)
+
+![Review and complete step](../images/screenshots/setup-wizard-review.webp)
 
 ---
 

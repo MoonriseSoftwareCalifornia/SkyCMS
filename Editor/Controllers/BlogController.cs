@@ -13,10 +13,12 @@ namespace Sky.Editor.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Shared;
@@ -65,6 +67,8 @@ namespace Sky.Editor.Controllers
         /// <param name="blogRenderingService">Blog rendering service.</param>
         /// <param name="titleChangeService">Title change service.</param>
         /// <param name="mediator">Mediator for dispatching commands.</param>
+        /// <param name="memoryCache">Memory cache for layout caching.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public BlogController(
             ApplicationDbContext db,
             ArticleEditLogic articleLogic,
@@ -73,8 +77,10 @@ namespace Sky.Editor.Controllers
             UserManager<IdentityUser> userManager,
             IBlogRenderingService blogRenderingService,
             ITitleChangeService titleChangeService,
-            IMediator mediator)
-            : base(db, userManager)
+            IMediator mediator,
+            IMemoryCache memoryCache,
+            IDynamicConfigurationProvider configProvider)
+            : base(db, userManager, memoryCache, configProvider)
         {
             this.db = db;
             this.articleLogic = articleLogic;

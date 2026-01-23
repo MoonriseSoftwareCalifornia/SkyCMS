@@ -15,7 +15,7 @@ audience: [developers, administrators]
 
 Configure a Content Delivery Network (CDN) for faster global content delivery and caching.
 
-![CDN Configuration Screen](../assets/setup-step5-cdn.png) *(Screenshot placeholder)*
+![CDN provider and purge settings](../images/screenshots/setup-wizard-cdn.webp)
 
 > **Note**: CDN configuration is **optional**. You can skip this step and configure CDN later.
 

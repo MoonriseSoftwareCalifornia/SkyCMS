@@ -475,14 +475,15 @@ builder.Services.AddHttpClient();
 // ---------------------------------------------------------------
 if (isMultiTenantEditor)
 {
-    // Multi-tenant: Dynamic configuration per tenant
+    // Multi-tenant: Dynamic configuration from database
     builder.Services.AddSingleton<IDynamicConfigurationProvider, DynamicConfigurationProvider>();
     builder.Services.AddScoped<IMultiTenantSetupService, MultiTenantSetupService>();
     MultiTenant.Configure(builder, defaultAzureCredential);
 }
 else
 {
-    // Single-tenant: Traditional setup wizard
+    // Single-tenant: Configuration from environment variables/appsettings
+    builder.Services.AddSingleton<IDynamicConfigurationProvider, SingleTenantConfigurationProvider>();
     SingleTenant.Configure(builder);
 }
 
@@ -513,7 +514,6 @@ if (microsoftAuth != null)
 // ---------------------------------------------------------------
 // STEP 6: Register Application Services
 // ---------------------------------------------------------------
-
 // Scoped services (per-request lifecycle, can access HttpContext)
 builder.Services.AddScoped<ISetupService, SetupService>();
 builder.Services.AddScoped<IMediator, Mediator>();

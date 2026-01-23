@@ -71,7 +71,9 @@ namespace Sky.Tests.Controllers
                 EditorSettings,
                 ArticleHtmlService,
                 _mockLogger.Object,
-                LayoutImportService
+                LayoutImportService,
+                Cache,                           // ? Add memory cache
+                DynamicConfigurationProvider     // ? Add config provider
                 );
 
             // Setup HttpContext for the controller

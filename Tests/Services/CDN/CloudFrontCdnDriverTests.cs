@@ -63,7 +63,7 @@ namespace Sky.Tests.Services.CDN
         public void Constructor_WithNullSetting_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.ThrowsException<ArgumentNullException>(() =>
+            Assert.ThrowsExactly<ArgumentNullException>(() =>
             {
                 var driver = new CloudFrontCdnDriver(null, mockLogger.Object);
             });
@@ -80,7 +80,7 @@ namespace Sky.Tests.Services.CDN
             };
 
             // Act & Assert
-            var exception = Assert.ThrowsException<ArgumentException>(() =>
+            var exception = Assert.ThrowsExactly<ArgumentException>(() =>
             {
                 var driver = new CloudFrontCdnDriver(setting, mockLogger.Object);
             });
@@ -99,7 +99,7 @@ namespace Sky.Tests.Services.CDN
             };
 
             // Act & Assert
-            var exception = Assert.ThrowsException<ArgumentException>(() =>
+            var exception = Assert.ThrowsExactly<ArgumentException>(() =>
             {
                 var driver = new CloudFrontCdnDriver(setting, mockLogger.Object);
             });
@@ -118,7 +118,7 @@ namespace Sky.Tests.Services.CDN
             };
 
             // Act & Assert
-            var exception = Assert.ThrowsException<ArgumentException>(() =>
+            var exception = Assert.ThrowsExactly<ArgumentException>(() =>
             {
                 var driver = new CloudFrontCdnDriver(setting, mockLogger.Object);
             });
@@ -137,7 +137,7 @@ namespace Sky.Tests.Services.CDN
             };
 
             // Act & Assert
-            var exception = Assert.ThrowsException<ArgumentException>(() =>
+            var exception = Assert.ThrowsExactly<ArgumentException>(() =>
             {
                 var driver = new CloudFrontCdnDriver(setting, mockLogger.Object);
             });

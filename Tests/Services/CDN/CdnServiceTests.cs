@@ -32,7 +32,7 @@ namespace Sky.Tests.Services.CDN
         private Mock<HttpContext> _mockHttpContext;
 
         [TestInitialize]
-        public new void Setup()
+        public void Setup()
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())

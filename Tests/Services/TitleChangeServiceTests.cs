@@ -672,7 +672,6 @@ namespace Sky.Tests.Services
             var article2 = await Logic.CreateArticle("Another Article", TestUserId);
 
             var articleToChange = await Db.Articles.FirstAsync(a => a.ArticleNumber == article2.ArticleNumber);
-            var conflictingSlug = "original-article";
 
             var oldTitle = articleToChange.Title;
             var oldUrlPath = articleToChange.UrlPath;
@@ -681,7 +680,7 @@ namespace Sky.Tests.Services
             articleToChange.Title = "Original Article";
 
             // Act & Assert
-            var exception = await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
                 async () => await TitleChangeService.HandleTitleChangeAsync(articleToChange, oldTitle, oldUrlPath));
 
             Assert.IsTrue(exception.Message.Contains("original-article"));
@@ -707,7 +706,7 @@ namespace Sky.Tests.Services
             await Db.SaveChangesAsync();
 
             // Act & Assert
-            var exception = await Assert.ThrowsExceptionAsync<ArgumentException>(
+            var exception = await Assert.ThrowsExactlyAsync<ArgumentException>(
                 async () => await TitleChangeService.HandleTitleChangeAsync(article, oldTitle, oldUrlPath));
 
             Assert.IsTrue(exception.Message.Contains("not a valid GUID"));

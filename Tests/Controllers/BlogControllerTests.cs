@@ -1,4 +1,4 @@
-// <copyright file="BlogControllerTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="BlogControllerTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -82,7 +82,9 @@ namespace Sky.Tests.Controllers
                 userManagerMock.Object,
                 blogRenderingServiceMock.Object,  // Use mocked BlogRenderingService
                 TitleChangeService,
-                mediatorMock.Object
+                mediatorMock.Object,
+                Cache,                           // ✅ Add memory cache
+                DynamicConfigurationProvider     // ✅ Add config provider
             );
 
             // Set up controller context with authenticated user

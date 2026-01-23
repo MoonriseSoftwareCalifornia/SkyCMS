@@ -31,7 +31,7 @@ namespace Sky.Tests.Areas.Setup
     [TestClass]
     public class DatabaseInitializationTests : SkyCmsTestBase
     {
-        private IServiceProvider? serviceProvider;
+        private IServiceProvider serviceProvider;
         private string testDbPath = string.Empty;
 
         // In the test, capture the UserManager used by SetupService
@@ -388,9 +388,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region Helper Methods
 
-        private ISetupService CreateSetupService(string? applicationConnection, string? editorConnection = null)
+        private ISetupService CreateSetupService(string applicationConnection, string editorConnection = null)
         {
-            var configValues = new Dictionary<string, string?>
+            var configValues = new Dictionary<string, string>
             {
                 ["ConnectionStrings:ApplicationDbContextConnection"] = applicationConnection ?? $"Data Source={testDbPath}",
                 ["ConnectionStrings:StorageConnectionString"] = "UseDevelopmentStorage=true"

@@ -90,6 +90,17 @@ namespace Cosmos.DynamicConfig
         /// <returns>Domain is valid (true) or not (false).</returns>
         /// <exception cref="ArgumentException">Thrown when ConfigDbConnectionString is not configured.</exception>
         Task<bool> ValidateDomainName(string domainName);
+
+        /// <summary>
+        /// Gets the current tenant's unique identifier from the request context.
+        /// </summary>
+        /// <returns>Tenant ID (Connection.Id), or null if not in a tenant context or if HttpContext is unavailable.</returns>
+        /// <remarks>
+        /// This method uses the request headers to determine the domain name, then retrieves the corresponding
+        /// Connection entity to return its unique ID. The result is cached for performance.
+        /// Useful for scoping operations per tenant in multi-tenant scenarios.
+        /// </remarks>
+        Task<Guid?> GetCurrentTenantIdAsync();
     }
 }
 

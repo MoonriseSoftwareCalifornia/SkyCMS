@@ -59,7 +59,7 @@ namespace Sky.Tests.Services
         private IConfiguration _configuration;
 
         [TestInitialize]
-        public new void Setup()
+        public void Setup()
         {
             // Load test configuration
             _configuration = new ConfigurationBuilder()
@@ -451,7 +451,7 @@ namespace Sky.Tests.Services
             // Arrange
             _mockEditorSettings.Setup(x => x.IsMultiTenantEditor).Returns(true);
             _mockConfigProvider.Setup(x => x.GetTenantConnectionAsync("nonexistent.com", default))
-                .ReturnsAsync((Connection?)null);
+                .ReturnsAsync((Connection)null);
 
             var factory = new TenantArticleLogicFactory(
                 _serviceProvider,

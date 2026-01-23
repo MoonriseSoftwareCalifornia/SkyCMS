@@ -15,7 +15,7 @@ audience: [developers, administrators]
 
 Review all configured settings before finalizing setup.
 
-![Review Configuration Screen](../assets/setup-step6-review.png) *(Screenshot placeholder)*
+![Review and finalize setup](../images/screenshots/setup-wizard-review.webp)
 
 ---
 

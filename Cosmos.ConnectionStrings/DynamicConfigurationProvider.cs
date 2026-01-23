@@ -427,5 +427,37 @@ namespace Cosmos.DynamicConfig
                 _preloadLock.Release();
             }
         }
+
+        /// <summary>
+        /// Gets the current tenant's unique identifier from the request context.
+        /// </summary>
+        /// <returns>Tenant ID (Connection.Id), or null if not in a tenant context or if HttpContext is unavailable.</returns>
+        /// <remarks>
+        /// This method uses the request headers to determine the domain name, then retrieves the corresponding
+        /// Connection entity to return its unique ID. The result is cached for performance via GetTenantConnectionAsync.
+        /// </remarks>
+        public async Task<Guid?> GetCurrentTenantIdAsync()
+        {
+            // Get domain name from the current request
+            var domainName = GetTenantDomainNameFromRequest();
+            
+            if (string.IsNullOrWhiteSpace(domainName))
+            {
+                _logger?.LogWarning("Could not determine tenant domain from request - HttpContext may be unavailable");
+                return null;
+            }
+            
+            // Get the connection entity (leverages existing caching for performance)
+            var connection = await GetTenantConnectionAsync(domainName);
+            
+            if (connection == null)
+            {
+                _logger?.LogWarning("No tenant connection found for domain: {Domain}", domainName);
+                return null;
+            }
+            
+            _logger?.LogDebug("Resolved tenant ID {TenantId} for domain {Domain}", connection.Id, domainName);
+            return connection.Id;
+        }
     }
 }

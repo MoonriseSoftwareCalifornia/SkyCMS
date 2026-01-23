@@ -46,7 +46,26 @@
                 @if (canEdit && canApplyChanges)
                 {
                     <div class="btn-group" role="group" aria-label="Actions">
-                        <a class="btn btn-sm btn-primary" title="Create a new web page" data-bs-toggle='modal' data-bs-target='#updConfModal'>Update all pages </a>
+                        <a class="btn btn-sm btn-info" 
+                           asp-action="PreviewImpact" 
+                           asp-route-id="@template.Id"
+                           title="Preview which articles will be affected">
+                            <i class="fa-solid fa-eye"></i> Preview Impact
+                        </a>
+                        <a class="btn btn-sm btn-primary" 
+                           title="Apply template to all pages (creates drafts)" 
+                           data-bs-toggle='modal' 
+                           data-bs-target='#updConfModal'>
+                            <i class="fa-solid fa-arrows-rotate"></i> Update all pages
+                        </a>
+                        <button type="button" 
+                                class="btn btn-sm btn-success" 
+                                id="publishSelectedBtn"
+                                disabled
+                                title="Publish selected draft versions"
+                                onclick="publishSelectedDrafts()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Publish Selected Drafts
+                        </button>
                     </div>
                 }
             </div>
@@ -62,7 +81,10 @@
                         <thead>
                             <tr>
                                 <th scope="col">
-                                    Select
+                                    <input type="checkbox" 
+                                           id="selectAllCheckbox" 
+                                           title="Select/Deselect all articles"
+                                           onclick="toggleSelectAll(this)" />
                                 </th>
                                 <th scope="col"><i class="fa-solid fa-house"></i></th>
                                 <th scope="col">#</th>
@@ -77,8 +99,12 @@
                             @foreach (var row in Model)
                             {
                                 <tr scope="row">
-                                    <td scope="row" title="Click to select article '@row.Title.'" onclick="openArticleVersions(@row.ArticleNumber)">
-                                        <span class="fa-solid fa-circle-arrow-right"></span>
+                                    <td scope="row">
+                                        <input type="checkbox" 
+                                               class="article-checkbox" 
+                                               value="@row.ArticleNumber" 
+                                               title="Select article '@row.Title' for publishing"
+                                               onchange="updatePublishButton()" />
                                     </td>
                                     <td>
                                         @if (row.UrlPath == "root")
@@ -153,7 +179,9 @@
 </div>
 <form>
     <input id="selected" type="hidden" />
+    @Html.AntiForgeryToken()
 </form>
+
 
 <!-- Modal -->
 <div class="modal fade" id="updConfModal" tabindex="-1" aria-hidden="true">
@@ -164,11 +192,19 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <h5>WARNING!</h5>
-                <p>You are about to update all pages that use this template. <i>This may result in loss of content.</i></p>
-                <p>Tip: Update a single page first to ensure changes will be OK before updating all pages.</p>
-                <h5>IMPORTANT!</h5>
-                <p>Please wait for this to be finished. This may take several minutes if many pages need to be updated.</p>
+                <h5>What will happen?</h5>
+                <p>Applying this template will create <strong>new draft versions</strong> for all articles using this template.</p>
+                <ul>
+                    <li>Published articles will remain unchanged</li>
+                    <li>Draft versions will be created with the new template applied</li>
+                    <li>You can review each draft before publishing</li>
+                    <li>User content in editable regions will be preserved where possible</li>
+                </ul>
+                <h5><i class="fa-solid fa-exclamation-triangle text-warning"></i> Warning!</h5>
+                <p>Content in editable regions that don't exist in the new template will be lost in the draft versions.</p>
+                <p><strong>Tip:</strong> Click <em>Preview Impact</em> first to see which articles may have warnings.</p>
+                <h5>Time Required</h5>
+                <p>This may take several minutes if many pages need to be processed. Please wait until finished.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -185,12 +221,32 @@
                 <h5 class="modal-title" id="exampleModalLabel">Applying Update</h5>
             </div>
             <div class="modal-body">
-                <h5>Working...</h5>
-                <p>The template update is being applied. This may take several minutes. Please wait until finished before closing this window.</p>
+                <h5>Creating Draft Versions...</h5>
+                <p>The template is being applied to all articles. Draft versions are being created. This may take several minutes. Please wait until finished before closing this window.</p>
             </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="publishingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content text-bg-dark mt-5">
+            <div class="modal-header">
+                <h5 class="modal-title">Publishing Drafts</h5>
+            </div>
+            <div class="modal-body">
+                <h5>Publishing Selected Articles...</h5>
+                <p>Draft versions are being published. This will make them live and unpublish the current versions. Please wait...</p>
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Publishing...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script>
 
@@ -221,7 +277,7 @@
         const runningModal = document.getElementById('runningModal');
         const rmodal = bootstrap.Modal.getInstance(runningModal);
         rmodal.show();
-        window.location.href = "@Url.Action("UpdateAll", "Templates", new { id = template.Id })";
+        window.location.href = "@Url.Action("Publish", "Templates", new { id = template.Id })";
     }
 
     function openArticleVersions(id) {
@@ -243,6 +299,94 @@
         });
 
     });
+
+    // ============================================================
+    // SELECTIVE PUBLISHING FUNCTIONS
+    // ============================================================
+
+    /**
+     * Toggle all article checkboxes
+     */
+    function toggleSelectAll(selectAllCheckbox) {
+        const checkboxes = document.querySelectorAll('.article-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        updatePublishButton();
+    }
+
+    /**
+     * Update the state of the Publish Selected button based on checkbox selection
+     */
+    function updatePublishButton() {
+        const checkboxes = document.querySelectorAll('.article-checkbox:checked');
+        const publishBtn = document.getElementById('publishSelectedBtn');
+        
+        if (checkboxes.length > 0) {
+            publishBtn.disabled = false;
+            publishBtn.title = `Publish ${checkboxes.length} selected draft version(s)`;
+        } else {
+            publishBtn.disabled = true;
+            publishBtn.title = 'Select articles to publish';
+        }
+
+        // Update select all checkbox state
+        const allCheckboxes = document.querySelectorAll('.article-checkbox');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        if (allCheckboxes.length > 0) {
+            selectAllCheckbox.checked = checkboxes.length === allCheckboxes.length;
+            selectAllCheckbox.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+        }
+    }
+
+    /**
+     * Publish selected draft versions
+     */
+    function publishSelectedDrafts() {
+        const checkboxes = document.querySelectorAll('.article-checkbox:checked');
+        
+        if (checkboxes.length === 0) {
+            alert('Please select at least one article to publish.');
+            return;
+        }
+
+        const articleNumbers = Array.from(checkboxes).map(cb => cb.value);
+        const count = articleNumbers.length;
+        
+        if (!confirm(`Publish ${count} selected draft version(s)?\n\nThis will unpublish the current versions and make the new drafts live.`)) {
+            return;
+        }
+
+        // Build form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '@Url.Action("PublishDrafts", "Templates", new { id = template.Id })';
+
+        // Add anti-forgery token
+        const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (antiForgeryToken) {
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = '__RequestVerificationToken';
+            tokenInput.value = antiForgeryToken.value;
+            form.appendChild(tokenInput);
+        }
+
+        // Add article numbers
+        articleNumbers.forEach(num => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'articleNumbers';
+            input.value = num;
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+
+
 
 
 </script>

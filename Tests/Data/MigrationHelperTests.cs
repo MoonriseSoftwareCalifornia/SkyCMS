@@ -80,7 +80,7 @@ namespace Sky.Tests.Data
             var connectionString = "Server=localhost;Port=3306;Database=testdb;Uid=user;Pwd=password;";
 
             // Act & Assert - Should fail on connection, not provider detection
-            Exception? exception = null;
+            Exception exception = null;
             try
             {
                 await MigrationHelper.ApplyMigrationsAsync(connectionString, logger);
@@ -109,7 +109,7 @@ namespace Sky.Tests.Data
             var connectionString = "Server=localhost;Database=test;User ID=sa;Password=Test123;TrustServerCertificate=True;";
 
             // Act & Assert - Should fail on connection, not provider detection
-            Exception? exception = null;
+            Exception exception = null;
             try
             {
                 await MigrationHelper.ApplyMigrationsAsync(connectionString, logger);
@@ -138,7 +138,7 @@ namespace Sky.Tests.Data
             var connectionString = "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=dGVzdGtleQ==;Database=testdb;";
 
             // Act & Assert - Should fail on connection (invalid Cosmos DB endpoint)
-            var exception = await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
+            var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
                 await MigrationHelper.ApplyMigrationsAsync(connectionString, logger));
 
             // Verify it attempted Cosmos DB operation
@@ -330,7 +330,7 @@ namespace Sky.Tests.Data
         public async Task ApplyMigrationsAsync_WithNullConnectionString_ThrowsArgumentException()
         {
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<ArgumentException>(async () =>
+            await Assert.ThrowsExactlyAsync<ArgumentException>(async () =>
                 await MigrationHelper.ApplyMigrationsAsync(null!, logger));
         }
 
@@ -340,7 +340,7 @@ namespace Sky.Tests.Data
         public async Task ApplyMigrationsAsync_WithEmptyConnectionString_ThrowsArgumentException()
         {
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<ArgumentException>(async () =>
+            await Assert.ThrowsExactlyAsync<ArgumentException>(async () =>
                 await MigrationHelper.ApplyMigrationsAsync(string.Empty, logger));
         }
 
@@ -353,7 +353,7 @@ namespace Sky.Tests.Data
             var connectionString = $"Data Source={testDbPath}";
 
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<ArgumentException>(async () =>
+            await Assert.ThrowsExactlyAsync<ArgumentException>(async () =>
                 await MigrationHelper.MarkMigrationAsAppliedAsync(connectionString, null!, logger));
         }
 
@@ -367,7 +367,7 @@ namespace Sky.Tests.Data
             var migrationId = "20250105120000_TestMigration";
 
             // Act & Assert
-            var exception = await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
+            var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
                 await MigrationHelper.MarkMigrationAsAppliedAsync(connectionString, migrationId, logger));
 
             Assert.IsTrue(exception.Message.Contains("Cosmos DB does not support migrations"));
@@ -382,8 +382,7 @@ namespace Sky.Tests.Data
             var connectionString = "InvalidConnectionString";
 
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
-                await MigrationHelper.ApplyMigrationsAsync(connectionString, logger));
+            _ = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await MigrationHelper.ApplyMigrationsAsync(connectionString, logger));
         }
 
         #endregion

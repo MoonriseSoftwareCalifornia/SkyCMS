@@ -490,8 +490,8 @@ namespace Sky.Tests.Controllers
                 LogLevel logLevel,
                 EventId eventId,
                 TState state,
-                Exception? exception,
-                Func<TState, Exception?, string> formatter)
+                Exception exception,
+                Func<TState, Exception, string> formatter)
             {
                 LogEntries.Add(new LogEntry
                 {
@@ -507,7 +507,7 @@ namespace Sky.Tests.Controllers
                 public LogLevel LogLevel { get; set; }
                 public EventId EventId { get; set; }
                 public string Message { get; set; } = string.Empty;
-                public Exception? Exception { get; set; }
+                public Exception Exception { get; set; }
             }
         }
 

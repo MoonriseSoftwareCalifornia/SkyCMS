@@ -1,4 +1,4 @@
-// <copyright file="AuthorizationTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="AuthorizationTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -483,7 +483,7 @@ namespace Sky.Tests.Security
         /// <summary>
         /// Creates an EditorController with a user having the specified role.
         /// </summary>
-        private EditorController CreateEditorControllerWithUser(string? roles, bool isAuthenticated = true)
+        private EditorController CreateEditorControllerWithUser(string roles, bool isAuthenticated = true)
         {
             var controller = new EditorController(
                 Logger,
@@ -500,7 +500,9 @@ namespace Sky.Tests.Security
                 ReservedPaths,
                 TitleChangeService,
                 TemplateService,
-                Mediator);
+                Mediator,
+                Cache,                           // ✅ Add memory cache
+                DynamicConfigurationProvider);   // ✅ Add config provider
 
             SetupControllerContext(controller, roles, isAuthenticated);
             return controller;
@@ -509,7 +511,7 @@ namespace Sky.Tests.Security
         /// <summary>
         /// Creates a TemplatesController with a user having the specified role.
         /// </summary>
-        private TemplatesController CreateTemplatesControllerWithUser(string? roles, bool isAuthenticated = true)
+        private TemplatesController CreateTemplatesControllerWithUser(string roles, bool isAuthenticated = true)
         {
             var controller = new TemplatesController(
                 Db,
@@ -519,7 +521,9 @@ namespace Sky.Tests.Security
                 EditorSettings,
                 ArticleHtmlService,
                 TemplateService,
-                Mediator);
+                Mediator,
+                Cache,                           // ✅ Add memory cache
+                DynamicConfigurationProvider);   // ✅ Add config provider
 
             SetupControllerContext(controller, roles, isAuthenticated);
             return controller;
@@ -528,7 +532,7 @@ namespace Sky.Tests.Security
         /// <summary>
         /// Sets up controller context with user claims for the specified roles.
         /// </summary>
-        private void SetupControllerContext(Controller controller, string? roles, bool isAuthenticated)
+        private void SetupControllerContext(Controller controller, string roles, bool isAuthenticated)
         {
             var claims = new System.Collections.Generic.List<Claim>
             {

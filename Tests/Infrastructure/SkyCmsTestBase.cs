@@ -53,7 +53,7 @@ namespace Sky.Tests
     public abstract class SkyCmsTestBase : IAsyncDisposable
     {
         protected AuthorInfoService AuthorInfoService = null!;
-        protected ApplicationDbContext Db = null!;
+        protected ApplicationDbContext Db;
         protected ArticleEditLogic Logic = null!;
         protected CatalogService CatalogService = null!;
         protected StorageContext Storage = null!;
@@ -253,11 +253,17 @@ namespace Sky.Tests
             // ❌ REMOVE THIS - Don't create Logic here, it needs TemplateService which doesn't exist yet
             // Logic = new ArticleEditLogic(Db, Cache, Storage, new NullLogger<ArticleEditLogic>(), EditorSettings, Clock, SlugService, ArticleHtmlService, CatalogService, PublishingService, TitleChangeService, RedirectService, TemplateService);
 
-            DynamicConfigurationProvider = new DynamicConfigurationProvider(
-                configuration,
-                HttpContextAccessor,
-                new MemoryCache(new MemoryCacheOptions()),
-                new Logger<DynamicConfigurationProvider>(new NullLoggerFactory()));
+            // ✅ MOCK DynamicConfigurationProvider to avoid database calls in tests
+            var mockDynamicConfigProvider = new Mock<IDynamicConfigurationProvider>();
+            // Return a fixed tenant ID for tests
+            mockDynamicConfigProvider.Setup(x => x.GetCurrentTenantIdAsync())
+                .ReturnsAsync(Guid.NewGuid());
+            // Return null for connection strings (tests use in-memory database)
+            mockDynamicConfigProvider.Setup(x => x.GetDatabaseConnectionStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string?)null);
+            mockDynamicConfigProvider.Setup(x => x.GetStorageConnectionStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string?)null);
+            DynamicConfigurationProvider = mockDynamicConfigProvider.Object;
 
             // CREATE MOCK TENANT ARTICLE LOGIC FACTORY
             var mockTenantArticleLogicFactory = new Mock<ITenantArticleLogicFactory>();
@@ -393,11 +399,12 @@ namespace Sky.Tests
             // ✅ GET MEDIATOR FROM SERVICE PROVIDER FIRST
             Mediator = Services.GetRequiredService<IMediator>();
 
-            // ✅ NOW CREATE TEMPLATE SERVICE WITH MEDIATOR
+            // ✅ NOW CREATE TEMPLATE SERVICE WITH CONFIGURATION AND SERVICE PROVIDER
             TemplateService = new TemplateService(
                 webHostEnvironment,
                 new LoggerFactory().CreateLogger<TemplateService>(),
-                Db);
+                Db,
+                DynamicConfigurationProvider);      // ✅ Pass service provider (already built)
 
             // ✅ NOW CREATE LOGIC WITH TEMPLATE SERVICE
             Logic = new ArticleEditLogic(
@@ -510,14 +517,14 @@ namespace Sky.Tests
                 return Task.CompletedTask;
             }
 
-            public T? Last<T>() where T : class, IDomainEvent =>
+            public T Last<T>() where T : class, IDomainEvent =>
                 events.LastOrDefault(e => e is T) as T;
 
             public void Clear() => events.Clear();
         }
 
         [TestInitialize]
-        public new void Setup()
+        public void Setup()
         {
             InitializeTestContext();
 
@@ -548,7 +555,9 @@ namespace Sky.Tests
                 ReservedPaths,
                 TitleChangeService,
                 TemplateService,
-                Mediator);
+                Mediator,
+                Cache,                          // ✅ Add memory cache for layout caching
+                DynamicConfigurationProvider);  // ✅ Add config provider for tenant-aware caching
 
             // Setup user context
             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]

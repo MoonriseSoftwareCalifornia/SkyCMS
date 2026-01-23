@@ -7,17 +7,20 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using System.Web;
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
+    using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.Rendering;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
 
     /// <summary>
     /// Base controller.
@@ -26,17 +29,26 @@ namespace Sky.Cms.Controllers
     {
         private readonly UserManager<IdentityUser> baseUserManager;
         private readonly ApplicationDbContext dbContext;
+        private readonly IMemoryCache? memoryCache;
+        private readonly IDynamicConfigurationProvider? configProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseController"/> class.
-        ///     Constructor.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="userManager">User manager.</param>
-        internal BaseController(ApplicationDbContext dbContext, UserManager<IdentityUser> userManager)
+        /// <param name="memoryCache">Memory cache (optional, for layout caching).</param>
+        /// <param name="configProvider">Dynamic configuration provider (optional, for tenant-aware caching).</param>
+        internal BaseController(
+            ApplicationDbContext dbContext,
+            UserManager<IdentityUser> userManager,
+            IMemoryCache? memoryCache = null,
+            IDynamicConfigurationProvider? configProvider = null)
         {
             this.dbContext = dbContext;
             baseUserManager = userManager;
+            this.memoryCache = memoryCache;
+            this.configProvider = configProvider;
         }
 
         /// <summary>
@@ -100,6 +112,113 @@ namespace Sky.Cms.Controllers
             // Get the user's ID for logging.
             var user = await baseUserManager.GetUserAsync(User);
             return user.Id;
+        }
+
+        /// <summary>
+        /// Gets the current default (published) layout for the application.
+        /// </summary>
+        /// <returns>The default layout, or null if no default layout exists.</returns>
+        /// <remarks>
+        /// This method supports three caching scenarios:
+        /// <list type="number">
+        /// <item>Multi-tenant with cache: Uses tenant-scoped cache key "default-layout:{tenantId}"</item>
+        /// <item>Single-tenant with cache: Uses global cache key "default-layout"</item>
+        /// <item>No cache: Direct database query (backward compatible)</item>
+        /// </list>
+        /// Cache duration: 30 seconds sliding expiration, 2 minutes absolute expiration.
+        /// </remarks>
+        protected async Task<Layout?> GetCurrentLayoutAsync()
+        {
+            // Scenario 1: Multi-tenant with tenant-aware caching
+            if (memoryCache != null && configProvider != null)
+            {
+                var tenantId = await configProvider.GetCurrentTenantIdAsync();
+                var cacheKey = $"default-layout:{tenantId ?? Guid.Empty}";
+
+                if (memoryCache.TryGetValue<Layout>(cacheKey, out var cachedLayout))
+                {
+                    return cachedLayout;
+                }
+
+                var layout = await FetchCurrentLayoutAsync();
+
+                if (layout != null)
+                {
+                    var cacheOptions = new MemoryCacheEntryOptions()
+                        .SetSlidingExpiration(TimeSpan.FromSeconds(30))
+                        .SetAbsoluteExpiration(TimeSpan.FromMinutes(2))
+                        .SetPriority(CacheItemPriority.Normal);
+
+                    memoryCache.Set(cacheKey, layout, cacheOptions);
+                }
+
+                return layout;
+            }
+
+            // Scenario 2: Single-tenant with simple caching (no tenant scoping)
+            if (memoryCache != null)
+            {
+                const string cacheKey = "default-layout";
+
+                if (memoryCache.TryGetValue<Layout>(cacheKey, out var cachedLayout))
+                {
+                    return cachedLayout;
+                }
+
+                var layout = await FetchCurrentLayoutAsync();
+
+                if (layout != null)
+                {
+                    var cacheOptions = new MemoryCacheEntryOptions()
+                        .SetSlidingExpiration(TimeSpan.FromSeconds(30))
+                        .SetAbsoluteExpiration(TimeSpan.FromMinutes(2))
+                        .SetPriority(CacheItemPriority.Normal);
+
+                    memoryCache.Set(cacheKey, layout, cacheOptions);
+                }
+
+                return layout;
+            }
+
+            // Scenario 3: No caching - direct database query (current behavior, backward compatible)
+            return await FetchCurrentLayoutAsync();
+        }
+
+        /// <summary>
+        /// Fetches the current default layout from the database.
+        /// </summary>
+        /// <returns>The latest version of the default layout that is currently published, or null if none exists.</returns>
+        private async Task<Layout?> FetchCurrentLayoutAsync()
+        {
+            // Get the latest version of the default layout that is currently published
+            var now = DateTimeOffset.UtcNow;
+            return await dbContext.Layouts
+                .Where(l => l.IsDefault && l.Published <= now)
+                .OrderBy(l => l.Version)
+                .LastOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Gets templates filtered for the current default layout.
+        /// </summary>
+        /// <returns>Queryable collection of templates for the current layout.</returns>
+        /// <remarks>
+        /// This method handles both migrated and unmigrated data by checking both LayoutNumber and LayoutId.
+        /// Templates with LayoutNumber == 0 are considered unmigrated and are matched by LayoutId only.
+        /// </remarks>
+        protected async Task<IQueryable<Template>> GetTemplatesForCurrentLayoutAsync()
+        {
+            var layout = await GetCurrentLayoutAsync();
+            
+            if (layout == null)
+            {
+                // Return empty queryable if no default layout exists
+                return Enumerable.Empty<Template>().AsQueryable();
+            }
+
+            return dbContext.Templates
+                .Where(t => t.LayoutNumber == layout.LayoutNumber || 
+                            (t.LayoutNumber == 0 && t.LayoutId == layout.Id)); // Handles unmigrated data
         }
     }
 }

@@ -62,7 +62,9 @@ namespace Sky.Tests.Controllers
                 EditorSettings,
                 ArticleHtmlService,
                 TemplateService,
-                Mediator);
+                Mediator,
+                Cache,                           // ? Add memory cache
+                DynamicConfigurationProvider);   // ? Add config provider
 
             // Setup HttpContext for the controller
             var httpContext = new DefaultHttpContext();
@@ -76,6 +78,10 @@ namespace Sky.Tests.Controllers
             {
                 HttpContext = httpContext
             };
+
+            // Setup TempData (required for controller actions that use it)
+            var mockTempDataProvider = new Mock<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>();
+            _controller.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(httpContext, mockTempDataProvider.Object);
         }
 
         /// <summary>

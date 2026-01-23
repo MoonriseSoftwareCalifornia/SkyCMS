@@ -77,6 +77,8 @@ After restarting and logging in, you should see the editor dashboard:
 https://your-website-url/editor
 ```
 
+![Editor dashboard after first login](../images/screenshots/live-editor-dashboard.webp)
+
 **What you see**:
 - Left sidebar with navigation
 - Main content area (likely empty for new install)
@@ -90,6 +92,8 @@ Test that file uploads work:
 2. Click **Upload** 
 3. Select a small test image or file
 4. Upload should complete without errors
+
+![File Manager upload test](../images/screenshots/storage-upload-test.webp)
 
 **If upload fails**:
 - Check storage connection string in settings
@@ -197,6 +201,8 @@ If you configured email in the setup wizard:
 3. Enter a test email address (yours or a test account)
 4. Click **Send**
 
+![Email settings with test send](../images/screenshots/settings-email-test.webp)
+
 **Check your inbox**:
 - Email should arrive within 1-2 minutes
 - Check spam folder if not in inbox
@@ -231,6 +237,8 @@ If you configured a CDN:
 2. Verify CDN provider is showing as **Connected**
 3. Look for **"Test Connection"** or similar button
 4. Click to verify CDN connectivity
+
+![CDN settings with test/purge controls](../images/screenshots/settings-cdn-test.webp)
 
 **If CDN test fails**:
 - Verify API credentials

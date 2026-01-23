@@ -13,9 +13,6 @@ namespace Sky.Tests.Services
     using System.Linq;
     using System.Threading.Tasks;
     using Azure;
-    using Azure.Storage.Blobs;
-    using Azure.Storage.Blobs.Models;
-    using Azure.Storage.Blobs.Specialized;
     using Cosmos.DynamicConfig;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Hosting;
@@ -32,8 +29,6 @@ namespace Sky.Tests.Services
     {
         private Mock<IWebHostEnvironment> mockWebHostEnvironment = null!;
         private Mock<IMultiDatabaseManagementUtilities> mockManagementUtilities = null!;
-        private Mock<IConfiguration> mockConfiguration = null!;
-        private Mock<ILogger<MultiDatabaseManagementUtilities>> mockLogger = null!;
         private string testWebRootPath = null!;
         private string testFilePath = null!;
 
@@ -63,9 +58,6 @@ namespace Sky.Tests.Services
                 });
             
             var configuration = configurationBuilder.Build();
-
-            // Setup Logger mock
-            mockLogger = new Mock<ILogger<MultiDatabaseManagementUtilities>>();
 
             // Create mock with real configuration
             mockManagementUtilities = new Mock<IMultiDatabaseManagementUtilities>();

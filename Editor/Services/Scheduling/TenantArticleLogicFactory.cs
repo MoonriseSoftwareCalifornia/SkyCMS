@@ -79,10 +79,10 @@ namespace Sky.Editor.Services.Scheduling
             IMemoryCache memoryCache)
         {
             var connection = await configurationProvider.GetTenantConnectionAsync(domainName);
-            
+
             var dbContext = new ApplicationDbContext(connection.DbConn);
             var storageContext = new StorageContext(connection.StorageConn, memoryCache);
-            
+
             var authorService = new AuthorInfoService(dbContext, memoryCache);
             var blogRenderingService = new BlogRenderingService(dbContext);
             var reservedPaths = new ReservedPaths.ReservedPaths(dbContext);
@@ -126,8 +126,8 @@ namespace Sky.Editor.Services.Scheduling
             var templateService = new TemplateService(
                 scopedServices.GetRequiredService<IWebHostEnvironment>(),
                 scopedServices.GetRequiredService<ILogger<TemplateService>>(),
-                dbContext
-                );
+                dbContext,
+                scopedServices.GetRequiredService<IDynamicConfigurationProvider>());
 
             var layoutPreviewService = new LayoutTemplateService(
                 scopedServices.GetRequiredService<IWebHostEnvironment>(),

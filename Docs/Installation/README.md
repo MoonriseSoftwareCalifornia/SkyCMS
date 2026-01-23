@@ -97,6 +97,8 @@ chunk_hint: 340
 
 SkyCMS offers two ways to configure your installation:
 
+![Setup wizard welcome with configuration options](../images/screenshots/setup-wizard-welcome.webp)
+
 ### 🧙 **Interactive Wizard (Recommended for New Users)** {#wizard}
 - Minimal pre-configuration (just database + enable wizard)
 - Step-by-step guided setup through web UI
@@ -133,6 +135,8 @@ Once setup is finished, follow the **[Post-Installation Configuration Guide](./P
 - Configure security and access control
 - Test email and CDN integration
 - Set up user accounts for your team
+
+![Final review and completion of setup wizard](../images/screenshots/setup-wizard-review.webp)
 
 ---
 

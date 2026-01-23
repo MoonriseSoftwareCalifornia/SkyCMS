@@ -18,6 +18,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.BlobService.Models;
     using Cosmos.Common.Data;
     using Cosmos.Common.Services;
+    using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Http;
@@ -25,6 +26,7 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.ModelBinding;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using MimeTypes;
     using Newtonsoft.Json;
@@ -67,6 +69,8 @@ namespace Sky.Cms.Controllers
         /// <param name="articleLogic">Article logic.</param>
         /// <param name="hostEnvironment">Host environment.</param>
         /// <param name="viewRenderService">View rendering service.</param>
+        /// <param name="memoryCache">Memory cache for layout caching.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public FileManagerController(
             IEditorSettings options,
             ILogger<FileManagerController> logger,
@@ -75,10 +79,10 @@ namespace Sky.Cms.Controllers
             UserManager<IdentityUser> userManager,
             ArticleEditLogic articleLogic,
             IWebHostEnvironment hostEnvironment,
-            IViewRenderService viewRenderService)
-            : base(
-            dbContext,
-            userManager)
+            IViewRenderService viewRenderService,
+            IMemoryCache memoryCache,
+            IDynamicConfigurationProvider configProvider)
+            : base(dbContext, userManager, memoryCache, configProvider)
         {
             this.options = options;
             this.logger = logger;

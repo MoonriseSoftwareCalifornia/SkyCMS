@@ -25,7 +25,7 @@ namespace Sky.Tests.DynamicConfig
         private DbContextOptions<DynamicConfigDbContext> _options;
 
         [TestInitialize]
-        public new void Setup()
+        public void Setup()
         {
             _options = new DbContextOptionsBuilder<DynamicConfigDbContext>()
                 .UseInMemoryDatabase($"DynamicConfigTest_{Guid.NewGuid()}")

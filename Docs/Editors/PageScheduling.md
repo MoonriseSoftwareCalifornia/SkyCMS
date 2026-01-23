@@ -25,6 +25,8 @@ When a scheduled article is published, the system automatically sends an email n
    - Click the **"Review/Publish"** button in the toolbar
    - A preview of your page will appear, showing exactly how it will look when published
 
+   ![Review/Publish dialog with publish options](../images/screenshots/page-scheduling-review-dialog.webp)
+
 3. **Choose Publishing Option**
    
    At the top of the preview, you'll see two buttons:
@@ -37,6 +39,8 @@ When a scheduled article is published, the system automatically sends an email n
    - Select your desired publication date and time from the calendar widget
    - Times are displayed in your local timezone and automatically converted to UTC for storage
    - Click confirm to schedule the publication
+
+   ![Publish later calendar and time picker](../images/screenshots/page-scheduling-calendar.webp)
 
 ### Email Notifications
 
@@ -66,6 +70,8 @@ Administrators and Editors can view scheduled publications through the Hangfire 
 - Access the dashboard by choosing 'Page Scheduler' from the main drop down menu
 - View all scheduled jobs, their status, and execution history
 - Monitor for any failed publications
+
+![Hangfire page scheduler dashboard](../images/screenshots/page-scheduler-dashboard.webp)
 
 ### What Happens at Publication Time
 

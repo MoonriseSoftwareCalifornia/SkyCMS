@@ -33,8 +33,6 @@ namespace Sky.Tests.Services.EditorSettings
         private Mock<IHttpContextAccessor> mockHttpContextAccessor;
         private Mock<IDynamicConfigurationProvider> mockDynamicConfigProvider;
         private IMemoryCache memoryCache;
-        private IConfiguration configuration;
-        private IServiceProvider serviceProvider;
 
         [TestInitialize]
         public new void Setup()

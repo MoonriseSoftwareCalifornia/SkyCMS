@@ -19,6 +19,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
+    using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
@@ -88,6 +89,8 @@ namespace Sky.Cms.Controllers
         /// <param name="htmlService">Html service.</param>
         /// <param name="logger">Logger instance.</param>
         /// <param name="layoutImportService">Layout import service.</param>
+        /// <param name="memoryCache">Memory cache for layout caching.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public LayoutsController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
@@ -98,8 +101,10 @@ namespace Sky.Cms.Controllers
             IEditorSettings editorSettings,
             IArticleHtmlService htmlService,
             ILogger<LayoutsController> logger,
-            ILayoutImportService layoutImportService)
-            : base(dbContext, userManager)
+            ILayoutImportService layoutImportService,
+            IMemoryCache memoryCache,
+            IDynamicConfigurationProvider configProvider)
+            : base(dbContext, userManager, memoryCache, configProvider)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.articleLogic = articleLogic ?? throw new ArgumentNullException(nameof(articleLogic));

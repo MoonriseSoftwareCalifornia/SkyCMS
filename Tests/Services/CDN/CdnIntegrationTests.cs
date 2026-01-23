@@ -31,7 +31,7 @@ namespace Sky.Tests.Services.CDN
         private Mock<ILogger> _mockLogger;
 
         [TestInitialize]
-        public new void Setup()
+        public void Setup()
         {
             // Load configuration from user secrets and appsettings
             _configuration = new ConfigurationBuilder()

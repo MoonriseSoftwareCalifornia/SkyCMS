@@ -48,8 +48,6 @@ namespace Sky.Tests.Areas.Setup
     public class SetupServiceTests : SkyCmsTestBase
     {
         private ISetupService setupService;
-        private Mock<ILogger<SetupService>> mockLogger;
-        private Mock<ILayoutImportService> mockLayoutImportService;
         private IConfiguration testConfiguration;
         private string uniqueSetupDbPath;
 

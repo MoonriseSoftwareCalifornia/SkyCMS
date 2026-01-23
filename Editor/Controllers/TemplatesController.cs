@@ -17,11 +17,13 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
+    using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
     using Sky.Editor.Data;
@@ -58,6 +60,9 @@ namespace Sky.Cms.Controllers
         /// <param name="options">Cosmos Options.</param>
         /// <param name="htmlService">HTML service.</param>
         /// <param name="templateServices">Template services.</param>
+        /// <param name="mediator">Mediator instance.</param>
+        /// <param name="memoryCache">Memory cache for layout caching.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public TemplatesController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
@@ -66,8 +71,10 @@ namespace Sky.Cms.Controllers
             IEditorSettings options,
             IArticleHtmlService htmlService,
             ITemplateService templateServices,
-            IMediator mediator)
-            : base(dbContext, userManager)
+            IMediator mediator,
+            IMemoryCache memoryCache,
+            IDynamicConfigurationProvider configProvider)
+            : base(dbContext, userManager, memoryCache, configProvider)
         {
             this.dbContext = dbContext;
             this.articleLogic = articleLogic;
@@ -92,7 +99,7 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var defautLayout = await dbContext.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
+            var defaultLayout = await GetCurrentLayoutAsync();
 
             ViewData["Layouts"] = await BaseGetLayoutListItems();
 
@@ -103,18 +110,16 @@ namespace Sky.Cms.Controllers
 
             await templateServices.EnsureDefaultTemplatesExistAsync();
 
-            var layoutId = defautLayout.Id;
-
-            var data = await dbContext.Templates.OrderBy(t => t.Title)
-                .Where(w => w.LayoutId == layoutId)
+            var data = (await GetTemplatesForCurrentLayoutAsync())
+                .OrderBy(t => t.Title)
                 .Select(s => new TemplateIndexViewModel
                 {
                     Id = s.Id,
-                    LayoutName = defautLayout.LayoutName,
+                    LayoutName = defaultLayout.LayoutName,
                     Description = s.Description,
                     Title = s.Title,
                     UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
-                }).ToListAsync();
+                }).ToList();
 
             ViewData["RowCount"] = data.Count();
 
@@ -329,16 +334,16 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Create()
         {
-            var defautLayout = await dbContext.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
+            var defaultLayout = await GetCurrentLayoutAsync();
 
             var entity = new Template
             {
                 Title = "New Template " + await dbContext.Templates.CountAsync(),
                 Description = "<p>New template, please add descriptive and helpful information here.</p>",
                 Content = "<p>" + LoremIpsum.SubSection1 + "</p>",
-                LayoutId = defautLayout?.Id,
-                LayoutNumber = defautLayout?.LayoutNumber ?? 0,
-                CommunityLayoutId = defautLayout?.CommunityLayoutId
+                LayoutId = defaultLayout?.Id,
+                LayoutNumber = defaultLayout?.LayoutNumber ?? 0,
+                CommunityLayoutId = defaultLayout?.CommunityLayoutId
             };
 
             entity.Content = htmlService.EnsureEditableMarkers(entity.Content);
@@ -533,7 +538,8 @@ namespace Sky.Cms.Controllers
                 return NotFound();
             }
 
-            var config = new DesignerConfig(await dbContext.Layouts.FirstOrDefaultAsync(f => f.IsDefault), id.ToString(), template.Title);
+            var defaultLayout = await GetCurrentLayoutAsync();
+            var config = new DesignerConfig(defaultLayout, id.ToString(), template.Title);
             var assets = await FileManagerController.GetImageAssetArray(storageContext, "/pub", "/pub/articles");
             if (assets != null)
             {
@@ -639,6 +645,7 @@ namespace Sky.Cms.Controllers
 
         /// <summary>
         /// Updates a page using the latest template version.
+        /// Creates a new draft version with the updated template applied.
         /// </summary>
         /// <param name="id">Article number.</param>
         /// <param name="templateId">Template ID.</param>
@@ -653,16 +660,87 @@ namespace Sky.Cms.Controllers
             var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == templateId);
             if (template == null)
             {
-                return NotFound($"Template with ID '{templateId} was not found.");
+                return NotFound($"Template with ID '{templateId}' was not found.");
             }
 
-            await ApplyTemplateChanges(id, template.Content);
+            // Apply template using the service layer - creates a new draft version
+            var result = await templateServices.ApplyTemplateToArticleAsync(id, templateId);
 
+            if (!result.Success)
+            {
+                TempData["Error"] = $"Failed to apply template: {result.ErrorMessage}";
+                return RedirectToAction("Pages", new { id = templateId });
+            }
+
+            // Show warnings if any content regions were lost
+            if (result.Warnings.Count > 0)
+            {
+                TempData["Warning"] = $"Template applied with warnings: {string.Join(", ", result.Warnings)}";
+            }
+            else
+            {
+                TempData["Success"] = $"Template applied successfully. Draft version {result.NewVersionNumber} created.";
+            }
+
+            // Redirect to editor to review the new DRAFT version
             return RedirectToAction("Edit", "Editor", new { id = id });
         }
 
         /// <summary>
-        /// Updates all the pages that use this template.
+        /// Preview the impact of applying this template to articles.
+        /// Shows which articles will be affected and any merge warnings.
+        /// </summary>
+        /// <param name="id">Template ID.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task<IActionResult> PreviewImpact(Guid id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var preview = await templateServices.PreviewTemplateApplicationAsync(id);
+
+                ViewData["TemplateId"] = id;
+                ViewData["TemplateName"] = preview.TemplateName;
+
+                return View(preview);
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// Preview the impact of applying this template (JSON endpoint for AJAX).
+        /// </summary>
+        /// <param name="id">Template ID.</param>
+        /// <returns>JSON preview data.</returns>
+        [HttpGet]
+        public async Task<IActionResult> PreviewImpactJson(Guid id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var preview = await templateServices.PreviewTemplateApplicationAsync(id);
+                return Json(preview);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Json(new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Applies the template to all pages that use it, creating draft versions.
         /// </summary>
         /// <param name="id">Template ID.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -673,104 +751,87 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            await UpdateAllPages(id);
+            // Apply template to all articles using this template - creates drafts
+            var result = await templateServices.ApplyTemplateToArticlesAsync(id, null);
+
+            if (result.AllSucceeded)
+            {
+                TempData["Success"] = $"Template applied to {result.SuccessCount} articles. Draft versions created. Review and publish individually.";
+            }
+            else
+            {
+                TempData["Warning"] = $"Template applied: {result.SuccessCount} succeeded, {result.FailureCount} failed.";
+            }
 
             return RedirectToAction("Pages", routeValues: new { id });
         }
 
         /// <summary>
-        /// Updates all the pages that use this template.
+        /// Publishes draft versions of selected articles.
         /// </summary>
         /// <param name="id">Template ID.</param>
-        /// <returns>Task.</returns>
-        public async Task UpdateAllPages(Guid id)
+        /// <param name="articleNumbers">List of article numbers to publish (null = all).</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpPost]
+        public async Task<IActionResult> PublishDrafts(Guid id, List<int>? articleNumbers = null)
         {
-            var pages = await dbContext.ArticleCatalog.Where(w => w.TemplateId == id).ToListAsync();
-            var template = await dbContext.Templates.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
-            if (template != null)
+            if (!ModelState.IsValid)
             {
-                foreach (var page in pages)
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var result = await templateServices.PublishTemplateChangesAsync(id, articleNumbers);
+
+                if (result.PublishedCount > 0)
                 {
-                    await ApplyTemplateChanges(page.ArticleNumber, template.Content);
+                    var message = articleNumbers == null || articleNumbers.Count == 0
+                        ? $"Published {result.PublishedCount} articles."
+                        : $"Published {result.PublishedCount} of {articleNumbers.Count} selected articles.";
+
+                    if (result.SkippedCount > 0)
+                    {
+                        message += $" {result.SkippedCount} skipped (no draft version found).";
+                    }
+
+                    TempData["Success"] = message;
                 }
+
+                if (result.FailureCount > 0)
+                {
+                    TempData["Warning"] = $"{result.FailureCount} articles failed to publish. Check logs for details.";
+                }
+
+                if (result.PublishedCount == 0 && result.SkippedCount > 0)
+                {
+                    TempData["Info"] = $"No articles were published. {result.SkippedCount} articles have no draft versions to publish.";
+                }
+
+                return RedirectToAction("Pages", new { id });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error publishing drafts: {ex.Message}";
+                return RedirectToAction("Pages", new { id });
             }
         }
 
         /// <summary>
-        /// Applies the latest template to an article, creating a new version ready to edit.
+        /// Updates all the pages that use this template using the service layer batch operation.
         /// </summary>
-        /// <param name="articleNumber">Article number.</param>
-        /// <param name="templateContent">Latest template to be applied.</param>
-        private async Task ApplyTemplateChanges(int articleNumber, string templateContent)
+        /// <param name="id">Template ID.</param>
+        /// <returns>Task with the batch result.</returns>
+        [Obsolete("Use TemplateService.ApplyTemplateToArticlesAsync directly instead.")]
+        public async Task UpdateAllPages(Guid id)
         {
-            var article = await articleLogic.GetArticleByArticleNumber(articleNumber, null);
-
-            // Pull out the editable DIVs.
-            var articleHtmlDoc = new HtmlDocument();
-            var templateHtmlDoc = new HtmlDocument();
-
-            articleHtmlDoc.LoadHtml(article.Content);
-            templateHtmlDoc.LoadHtml(templateContent);
-
-            var originalEditableDivs = articleHtmlDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]");
-            var templateEditableDivs = templateHtmlDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]");
-
-            // Check for null before iterating
-            if (templateEditableDivs != null && originalEditableDivs != null)
-            {
-                foreach (var div in templateEditableDivs)
-                {
-                    var original = originalEditableDivs.FirstOrDefault(w => w.Attributes["data-ccms-ceid"].Value == div.Attributes["data-ccms-ceid"].Value);
-                    if (original != null)
-                    {
-                        // Update the region now
-                        div.InnerHtml = original.InnerHtml;
-                    }
-                }
-            }
-
-            article.Content = templateHtmlDoc.DocumentNode.OuterHtml;
-
-            // Reset to version 1
-            // First, delete all existing versions
-            var existingVersions = await dbContext.Articles
-                .Where(a => a.ArticleNumber == articleNumber)
-                .ToListAsync();
-            
-            dbContext.Articles.RemoveRange(existingVersions);
-
-            // Get the latest version data before deletion
-            var latestVersion = existingVersions.OrderByDescending(a => a.VersionNumber).First();
-
-            // Create new version 1 with template applied
-            var newArticle = new Article
-            {
-                Id = Guid.NewGuid(),
-                ArticleNumber = latestVersion.ArticleNumber,
-                VersionNumber = 1,
-                Content = article.Content,
-                Title = latestVersion.Title,
-                Updated = DateTimeOffset.UtcNow,
-                HeaderJavaScript = latestVersion.HeaderJavaScript,
-                FooterJavaScript = latestVersion.FooterJavaScript,
-                BannerImage = latestVersion.BannerImage,
-                UserId = latestVersion.UserId,
-                ArticleType = latestVersion.ArticleType,
-                Category = latestVersion.Category,
-                Published = latestVersion.Published,
-                UrlPath = latestVersion.UrlPath,
-                StatusCode = latestVersion.StatusCode,
-                TemplateId = latestVersion.TemplateId,
-                Expires = latestVersion.Expires,
-                Introduction = latestVersion.Introduction,
-                RedirectTarget = latestVersion.RedirectTarget,
-                BlogKey = latestVersion.BlogKey
-            };
-
-            dbContext.Articles.Add(newArticle);
-            await dbContext.SaveChangesAsync();
-
-            Console.WriteLine($"Template applied to article {articleNumber}, version reset to 1");
+            // This method is now a wrapper for backward compatibility
+            // Use the service layer's batch operation instead of looping
+            await templateServices.ApplyTemplateToArticlesAsync(id, null);
         }
+
+        // ApplyTemplateChanges method removed - use TemplateService.ApplyTemplateToArticleAsync instead
+        // This method was destructive (deleted all versions) and has been replaced by the service layer
+        // which properly creates new draft versions while preserving history.
     }
 }

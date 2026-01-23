@@ -35,7 +35,7 @@ namespace Sky.Tests.DatabaseProviders
         private IConfiguration _configuration;
 
         [TestInitialize]
-        public new void Setup()
+        public void Setup()
         {
             // Load configuration from User Secrets
             _configuration = new ConfigurationBuilder()

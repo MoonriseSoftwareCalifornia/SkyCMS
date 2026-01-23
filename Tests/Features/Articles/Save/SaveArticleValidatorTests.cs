@@ -17,7 +17,7 @@ namespace Sky.Tests.Features.Articles.Save
         private SaveArticleValidator validator = null!;
 
         [TestInitialize]
-        public new void Setup()
+        public void Setup()
         {
             validator = new SaveArticleValidator();
         }

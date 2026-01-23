@@ -18,6 +18,8 @@ chunk_hint: 320
 
 Use the new setup wizard for **single-tenant** installs. It walks you through storage, admin user, publisher URL, optional email, and optional CDN. Set `CosmosAllowSetup=true` and make sure `ConnectionStrings:ApplicationDbContextConnection` points to a reachable database before you begin.
 
+![Setup wizard welcome screen](images/screenshots/setup-wizard-welcome.webp)
+
 ## When to use this
 - You want the fastest way to try SkyCMS (single-tenant) locally or on Azure.
 - You prefer a guided wizard instead of manual env-var configuration.
@@ -40,6 +42,8 @@ Use the new setup wizard for **single-tenant** installs. It walks you through st
 1. Run local Docker or deploy to Azure using the main README button.
 2. Browse to `/Setup` and complete the wizard (Storage → Admin → Publisher → optional Email/CDN → Review).
 3. Restart when prompted; sign in with the admin you created.
+
+![Storage configuration step](images/screenshots/setup-wizard-storage.webp)
 
 ## Key facts {#key-facts}
 
@@ -76,6 +80,8 @@ docker run -d -p 8080:8080 \
 - Email (optional): SendGrid, Azure Communication Services, or SMTP; test send available.
 - CDN (optional): Azure CDN/Front Door, Cloudflare, or Sucuri.
 - Review & complete: confirm, finish, restart app to apply. Wizard disables itself after completion.
+
+![Review and complete step](images/screenshots/setup-wizard-review.webp)
 
 ## FAQ {#faq}
 

@@ -19,6 +19,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
+    using Cosmos.DynamicConfig;
     using Cosmos.Editor.Services;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,7 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.SignalR;
     using Microsoft.Azure.Cosmos.Serialization.HybridRow;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using SendGrid.Helpers.Errors.Model;
     using Sky.Cms.Hubs;
@@ -46,7 +48,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.ReservedPaths;
-    using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
 
@@ -63,7 +64,6 @@ namespace Sky.Cms.Controllers
         private readonly ApplicationDbContext dbContext;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly UserManager<IdentityUser> userManager;
-        private readonly string blobPublicAbsoluteUrl;
         private readonly IStorageContext storageContext;
 
         private readonly ILogger<EditorController> logger;
@@ -94,6 +94,8 @@ namespace Sky.Cms.Controllers
         /// <param name="titleChangeService">Title change service.</param>
         /// <param name="templateService">Template service.</param>
         /// <param name="mediator">Mediator instance.</param>
+        /// <param name="memoryCache">Memory cache for layout caching.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public EditorController(
             ILogger<EditorController> logger,
             ApplicationDbContext dbContext,
@@ -109,8 +111,10 @@ namespace Sky.Cms.Controllers
             IReservedPaths reservedPaths,
             ITitleChangeService titleChangeService,
             ITemplateService templateService,
-            IMediator mediator)
-            : base(dbContext, userManager)
+            IMediator mediator,
+            IMemoryCache memoryCache,
+            IDynamicConfigurationProvider configProvider)
+            : base(dbContext, userManager, memoryCache, configProvider)
         {
             this.logger = logger;
             this.dbContext = dbContext;
@@ -128,8 +132,6 @@ namespace Sky.Cms.Controllers
             this.mediator = mediator;
 
             var htmlUtilities = new HtmlUtilities();
-
-            blobPublicAbsoluteUrl = editorSettings.BlobPublicUrl;
 
             this.viewRenderService = viewRenderService;
 
@@ -204,7 +206,8 @@ namespace Sky.Cms.Controllers
                 return NotFound();
             }
 
-            var config = new DesignerConfig(await dbContext.Layouts.FirstOrDefaultAsync(f => f.IsDefault), article.ArticleNumber.ToString(), article.Title);
+            var defaultLayout = await GetCurrentLayoutAsync();
+            var config = new DesignerConfig(defaultLayout, article.ArticleNumber.ToString(), article.Title);
             var assets = await FileManagerController.GetImageAssetArray(storageContext, $"/pub/articles/{id}", string.Empty);
             if (assets != null)
             {
@@ -607,7 +610,7 @@ namespace Sky.Cms.Controllers
                 }
             }
 
-            var defautLayout = await dbContext.Layouts.FirstOrDefaultAsync(l => l.IsDefault);
+            var defaultLayout = await GetCurrentLayoutAsync();
 
             ViewData["Layouts"] = await BaseGetLayoutListItems();
 
@@ -620,17 +623,16 @@ namespace Sky.Cms.Controllers
             existingUrls.AddRange(reserved.Select(s => s.Path));
             ViewData["reservedPaths"] = existingUrls;
 
-            var query = dbContext.Templates.OrderBy(t => t.Title)
-                .Where(w => w.LayoutNumber == defautLayout.LayoutNumber || 
-                            (w.LayoutNumber == 0 && w.LayoutId == defautLayout.Id)) // Handles unmigrated data
+            var query = (await GetTemplatesForCurrentLayoutAsync())
+                .OrderBy(t => t.Title)
                 .Select(s => new TemplateIndexViewModel
                 {
                     Id = s.Id,
-                    LayoutName = defautLayout.LayoutName,
+                    LayoutName = defaultLayout.LayoutName,
                     Description = s.Description,
                     Title = s.Title,
                     UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
-                }).AsQueryable();
+                });
 
             ViewData["RowCount"] = await query.CountAsync();
 
@@ -726,7 +728,7 @@ namespace Sky.Cms.Controllers
                 return RedirectToAction("Versions", "Editor", new { Id = article.ArticleNumber });
             }
 
-            var defautLayout = await dbContext.Layouts.FirstOrDefaultAsync(l => l.IsDefault);
+            var defaultLayout = await GetCurrentLayoutAsync();
 
             ViewData["Layouts"] = await BaseGetLayoutListItems();
 
@@ -735,17 +737,16 @@ namespace Sky.Cms.Controllers
             ViewData["pageNo"] = 0;
             ViewData["pageSize"] = 20;
 
-            var query = dbContext.Templates.OrderBy(t => t.Title)
-               .Where(w => w.LayoutNumber == defautLayout.LayoutNumber || 
-                           (w.LayoutNumber == 0 && w.LayoutId == defautLayout.Id)) // Handles unmigrated data
+            var query = (await GetTemplatesForCurrentLayoutAsync())
+               .OrderBy(t => t.Title)
                .Select(s => new TemplateIndexViewModel
                {
                    Id = s.Id,
-                   LayoutName = defautLayout.LayoutName,
+                   LayoutName = defaultLayout.LayoutName,
                    Description = s.Description,
                    Title = s.Title,
                    UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
-               }).AsQueryable();
+               });
 
             ViewData["RowCount"] = await query.CountAsync();
             ViewData["TemplateList"] = await query.Skip(0 * 20).Take(20).ToListAsync();

@@ -1,4 +1,4 @@
-// <copyright file="EditorControllerSaveTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="EditorControllerSaveTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -53,7 +53,9 @@ namespace Sky.Tests.Controllers
                 ReservedPaths,
                 TitleChangeService,
                 TemplateService,
-                Mediator); // Use Mediator from base class
+                Mediator,                        // Use Mediator from base class
+                Cache,                           // ✅ Add memory cache
+                DynamicConfigurationProvider);   // ✅ Add config provider
 
             // Setup user context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
@@ -125,7 +127,7 @@ namespace Sky.Tests.Controllers
             var jsonResult = (JsonResult)result;
 
             // Verify error structure (SaveCodeResultJsonModel)
-            dynamic? value = jsonResult.Value;
+            dynamic value = jsonResult.Value;
             Assert.IsNotNull(value);
             Assert.IsFalse(value!.IsValid);
             Assert.IsTrue(value.ErrorCount > 0);

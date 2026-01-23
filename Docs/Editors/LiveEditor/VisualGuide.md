@@ -13,6 +13,8 @@ This guide provides descriptions of the Live Editor's visual elements to help yo
 
 ### Main Screen Layout
 
+![Live Editor main layout](../../images/screenshots/live-editor-dashboard.webp)
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ SkyCMS Navigation Bar                                           │
@@ -37,6 +39,8 @@ This guide provides descriptions of the Live Editor's visual elements to help yo
 ## Toolbar Components
 
 ### 1. Main Toolbar (Top)
+
+![Live Editor toolbar over editable region](../../images/screenshots/live-editor-editing-toolbar.webp)
 
 Located at the very top of the editor interface when editing an editable region:
 
@@ -145,6 +149,8 @@ Appears in the left margin when you hover over or click into a paragraph or bloc
 ```
 
 ## Image Editing Interface
+
+![Insert image flow with toolbar](../../images/screenshots/live-editor-insert-image.webp)
 
 ### Inserted Image with Toolbar
 

@@ -15,7 +15,7 @@ audience: [developers, administrators]
 
 Configure how your website operates and publishes content.
 
-![Publisher Settings Screen](../assets/setup-step3-publisher.png) *(Screenshot placeholder)*
+![Publisher settings screen](../images/screenshots/setup-wizard-publisher.webp)
 
 ---
 

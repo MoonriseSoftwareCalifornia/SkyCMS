@@ -15,7 +15,7 @@ audience: [developers, administrators]
 
 Create the first administrator account that will have full access to manage SkyCMS.
 
-![Admin Account Screen](../assets/setup-step2-admin.png) *(Screenshot placeholder)*
+![Admin account screen](../images/screenshots/setup-wizard-admin.webp)
 
 ---
 

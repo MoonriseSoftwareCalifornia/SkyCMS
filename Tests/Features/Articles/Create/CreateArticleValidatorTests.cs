@@ -23,7 +23,7 @@ namespace Sky.Tests.Features.Articles.Create
         private CreateArticleValidator validator = null!;
 
         [TestInitialize]
-        public new void Setup()
+        public void Setup()
         {
             validator = new CreateArticleValidator();
         }

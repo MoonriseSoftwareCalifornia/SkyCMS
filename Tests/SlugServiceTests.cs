@@ -35,7 +35,7 @@ namespace Sky.Tests.Services.Slugs
         public void Normalize_WithNullInput_ReturnsEmptyString()
         {
             // Arrange
-            string? input = null;
+            string input = null;
 
             // Act
             var result = _slugService.Normalize(input);

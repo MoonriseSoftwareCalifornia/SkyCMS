@@ -15,11 +15,15 @@ audience: [content-creators]
 2. Go to **Editor** → **Index**
 3. Find your page and click **Edit**
 
+![Editor page list and entry point](../../images/screenshots/live-editor-dashboard.webp)
+
 ### 2. Start Editing
 
 - **Click** on any editable region (look for dashed borders on hover)
 - **Select text** to see the balloon toolbar
 - **Click the ⊕ button** on the left margin for block options
+
+![Editing canvas with balloon and block toolbar](../../images/screenshots/live-editor-editing-toolbar.webp)
 
 ### 3. Basic Formatting
 
@@ -55,6 +59,8 @@ audience: [content-creators]
 2. Upload or select existing image
 3. Resize by dragging corners
 4. Add caption (optional)
+
+![Insert image dialog and placement](../../images/screenshots/live-editor-insert-image.webp)
 
 ### Create a Table
 

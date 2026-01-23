@@ -84,7 +84,7 @@ namespace AspNetCore.Identity.FlexDb.Containers
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <remarks>WARNING! ALL DATA WILL BE LOST AND THIS CANNOT BE UNDONE!</remarks>
-        public async Task<DatabaseResponse> DeleteDatabaseIfExists(string databaseName)
+        public async Task<DatabaseResponse?> DeleteDatabaseIfExists(string databaseName)
         {
             if (string.IsNullOrEmpty(databaseName))
                 throw new ArgumentNullException(nameof(databaseName));
@@ -152,7 +152,7 @@ namespace AspNetCore.Identity.FlexDb.Containers
         /// <param name="containerName"></param>
         /// <returns>success</returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public async Task<bool> DeleteContainerIfExists(string containerName)
+        public async Task<bool?> DeleteContainerIfExists(string containerName)
         {
             if (string.IsNullOrEmpty(containerName))
                 throw new ArgumentNullException(nameof(containerName));
@@ -160,7 +160,7 @@ namespace AspNetCore.Identity.FlexDb.Containers
             var database = _client.GetDatabase(_databaseName);
             var container = database.GetContainer(containerName);
 
-            ContainerResponse response = null;
+            ContainerResponse response;
             try
             {
                 response = await container.DeleteContainerAsync();
