@@ -540,7 +540,6 @@ namespace Sky.Editor.Services.Titles
         /// <summary>
         /// Creates redirect articles for all URL changes accumulated during a title change operation.
         /// </summary>
-        /// <param name="changedUrls">List of URL changes with published status for redirect creation.</param>
         /// <param name="userId">The string identifier of the user initiating the title change, used for audit tracking in redirect records.</param>
         /// <returns>A <see cref="RedirectCreationResult"/> containing details about the redirect creation operation.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="userId"/> is not a valid GUID format.</exception>

@@ -14,11 +14,9 @@ namespace Cosmos.Common.Data.Logic
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using Cosmos.Cms.Common;
-    using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Models;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.Options;
     using Newtonsoft.Json;
     using X.Web.Sitemap;
 
@@ -381,7 +379,7 @@ namespace Cosmos.Common.Data.Logic
         {
             if (memoryCache == null || layoutCache == null)
             {
-                var entity = await DbContext.Layouts.AsNoTracking().FirstOrDefaultAsync(a => a.IsDefault);
+                var entity = await LayoutHelper.GetCurrentDefaultLayoutAsync(DbContext);
                 return new LayoutViewModel(entity);
             }
 
@@ -389,7 +387,8 @@ namespace Cosmos.Common.Data.Logic
 
             if (model == null)
             {
-                var entity = await DbContext.Layouts.AsNoTracking().FirstOrDefaultAsync(a => a.IsDefault);
+                var entity = await LayoutHelper.GetCurrentDefaultLayoutAsync(DbContext);
+
                 DbContext.Entry(entity).State = EntityState.Detached;
                 model = new LayoutViewModel(entity);
                 memoryCache.Set("defLayout", model, layoutCache.Value);

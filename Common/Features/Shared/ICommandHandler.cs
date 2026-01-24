@@ -5,10 +5,10 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+namespace Cosmos.Common.Features.Shared;
+
 using System.Threading;
 using System.Threading.Tasks;
-
-namespace Cosmos.Common.Features.Shared;
 
 /// <summary>
 /// Handler interface for processing commands in the CQRS pattern.

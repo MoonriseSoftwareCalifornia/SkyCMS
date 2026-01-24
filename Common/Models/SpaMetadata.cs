@@ -71,7 +71,7 @@ public class SpaMetadata
     /// Useful for traceability and debugging. Extracted from webhook payload.
     /// </summary>
     /// <remarks>
-    /// Example: "a3f2b1c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0"
+    /// Example: "a3f2b1c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0".
     /// </remarks>
     [JsonPropertyName("lastCommitSha")]
     public string LastCommitSha { get; set; }
@@ -81,7 +81,7 @@ public class SpaMetadata
     /// Extracted from webhook payload for audit trail.
     /// </summary>
     /// <remarks>
-    /// Example: "MoonriseSoftwareCalifornia/MyReactApp"
+    /// Example: "MoonriseSoftwareCalifornia/MyReactApp".
     /// </remarks>
     [JsonPropertyName("lastDeployedFrom")]
     public string LastDeployedFrom { get; set; }

@@ -879,7 +879,7 @@ namespace Sky.Cms.Controllers
 
                 layout.LayoutNumber = maxLayoutNumber + 1;
 
-                if ((await dbContext.Layouts.FirstOrDefaultAsync(a => a.IsDefault)) == null)
+                if (!await Cosmos.Common.Data.Logic.LayoutHelper.HasDefaultLayoutAsync(dbContext))
                 {
                     layout.Version = 1;
                     layout.IsDefault = true;

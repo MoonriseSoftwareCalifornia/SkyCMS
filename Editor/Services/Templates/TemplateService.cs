@@ -101,7 +101,7 @@ namespace Sky.Editor.Services.Templates
             }
 
             var allTemplates = await GetAllTemplatesAsync();
-            var defaultLayout = await dbContext.Layouts.FirstOrDefaultAsync(l => l.IsDefault == true);
+            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
             
             // If no default layout exists, we can't create templates
             if (defaultLayout == null)

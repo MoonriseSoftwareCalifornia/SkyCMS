@@ -501,7 +501,7 @@ namespace Sky.Editor.Services.Publishing
                 {
                     if (defaultLayout == null) // Double-check after acquiring lock
                     {
-                        var layout = await _db.Layouts.FirstOrDefaultAsync(l => l.IsDefault);
+                        var layout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(_db);
                         defaultLayout = new LayoutViewModel(layout);
                     }
                 }

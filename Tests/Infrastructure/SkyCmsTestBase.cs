@@ -95,7 +95,7 @@ namespace Sky.Tests
                 .FirstOrDefaultAsync(t => t.PageType == "blog-stream");
             if (existingTemplate == null)
             {
-                var defaultLayout = await Db.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
+                var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
                 var t = TemplateService.GetTemplateByKeyAsync("blog-stream").Result;
                 var template = new Template
                 {
@@ -116,7 +116,7 @@ namespace Sky.Tests
 
             if (existingTemplate == null)
             {
-                var defaultLayout = await Db.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
+                var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
                 var t = TemplateService.GetTemplateByKeyAsync("blog-post").Result;
                 var template = new Template
                 {
@@ -260,9 +260,9 @@ namespace Sky.Tests
                 .ReturnsAsync(Guid.NewGuid());
             // Return null for connection strings (tests use in-memory database)
             mockDynamicConfigProvider.Setup(x => x.GetDatabaseConnectionStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((string?)null);
+                .ReturnsAsync((string)null);
             mockDynamicConfigProvider.Setup(x => x.GetStorageConnectionStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((string?)null);
+                .ReturnsAsync((string)null);
             DynamicConfigurationProvider = mockDynamicConfigProvider.Object;
 
             // CREATE MOCK TENANT ARTICLE LOGIC FACTORY

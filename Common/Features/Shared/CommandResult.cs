@@ -27,12 +27,12 @@ public class CommandResult
     /// <summary>
     /// Gets the error message when the command execution fails.
     /// </summary>
-    public string? ErrorMessage { get; init; }
+    public string ErrorMessage { get; init; }
 
     /// <summary>
     /// Gets the validation errors when the command execution fails due to validation issues.
     /// </summary>
-    public Dictionary<string, string[]>? Errors { get; init; }
+    public Dictionary<string, string[]> Errors { get; init; }
 
     /// <summary>
     /// Creates a successful command result.
@@ -71,7 +71,7 @@ public class CommandResult<T> : CommandResult
     /// <summary>
     /// Gets the data returned by the successful command execution.
     /// </summary>
-    public T? Data { get; init; }
+    public T Data { get; init; }
 
     /// <summary>
     /// Creates a successful command result with data.
@@ -79,7 +79,7 @@ public class CommandResult<T> : CommandResult
     /// <param name="data">The data to return.</param>
     /// <returns>A successful command result with data.</returns>
     public static CommandResult<T> Success(T data) =>
-        new() { IsSuccess = true, Data = data };
+        new () { IsSuccess = true, Data = data };
 
     /// <summary>
     /// Creates a failed command result with a single error message.
@@ -87,7 +87,7 @@ public class CommandResult<T> : CommandResult
     /// <param name="errorMessage">The error message.</param>
     /// <returns>A failed command result.</returns>
     public new static CommandResult<T> Failure(string errorMessage) =>
-        new() { IsSuccess = false, ErrorMessage = errorMessage };
+        new () { IsSuccess = false, ErrorMessage = errorMessage };
 
     /// <summary>
     /// Creates a failed command result with validation errors.

@@ -5,9 +5,9 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-using System.Threading.Tasks;
-
 namespace Cosmos.Common.Services.Email;
+
+using System.Threading.Tasks;
 
 /// <summary>
 /// Service interface for retrieving email configuration.

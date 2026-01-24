@@ -312,7 +312,8 @@ namespace Sky.Tests.Controllers
         public async Task Delete_RejectsDefaultLayoutDeletion()
         {
             // Arrange
-            var defaultLayout = await Db.Layouts.FirstAsync(l => l.IsDefault);
+            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            Assert.IsNotNull(defaultLayout, "Default layout should exist for this test");
 
             // Act
             var result = await _controller.Delete(defaultLayout.Id);
@@ -425,7 +426,8 @@ namespace Sky.Tests.Controllers
         public async Task EditCode_CreatesNewVersion_ForDefaultLayout()
         {
             // Arrange
-            var defaultLayout = await Db.Layouts.FirstAsync(l => l.IsDefault);
+            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            Assert.IsNotNull(defaultLayout, "Default layout should exist for this test");
             var initialCount = await Db.Layouts.CountAsync();
 
             // Act
@@ -623,7 +625,8 @@ namespace Sky.Tests.Controllers
         public async Task Publish_UnsetsOtherDefaultLayouts()
         {
             // Arrange
-            var oldDefault = await Db.Layouts.FirstAsync(l => l.IsDefault);
+            var oldDefault = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            Assert.IsNotNull(oldDefault, "Default layout should exist for this test");
             var newLayout = GetLayout();
             newLayout.IsDefault = false;
             newLayout.CommunityLayoutId = Guid.NewGuid().ToString();

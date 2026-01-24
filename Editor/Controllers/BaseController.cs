@@ -145,8 +145,7 @@ namespace Sky.Cms.Controllers
                 if (layout != null)
                 {
                     var cacheOptions = new MemoryCacheEntryOptions()
-                        .SetSlidingExpiration(TimeSpan.FromSeconds(30))
-                        .SetAbsoluteExpiration(TimeSpan.FromMinutes(2))
+                        .SetAbsoluteExpiration(TimeSpan.FromSeconds(10))
                         .SetPriority(CacheItemPriority.Normal);
 
                     memoryCache.Set(cacheKey, layout, cacheOptions);
@@ -170,8 +169,7 @@ namespace Sky.Cms.Controllers
                 if (layout != null)
                 {
                     var cacheOptions = new MemoryCacheEntryOptions()
-                        .SetSlidingExpiration(TimeSpan.FromSeconds(30))
-                        .SetAbsoluteExpiration(TimeSpan.FromMinutes(2))
+                        .SetAbsoluteExpiration(TimeSpan.FromSeconds(10))
                         .SetPriority(CacheItemPriority.Normal);
 
                     memoryCache.Set(cacheKey, layout, cacheOptions);
@@ -190,12 +188,7 @@ namespace Sky.Cms.Controllers
         /// <returns>The latest version of the default layout that is currently published, or null if none exists.</returns>
         private async Task<Layout?> FetchCurrentLayoutAsync()
         {
-            // Get the latest version of the default layout that is currently published
-            var now = DateTimeOffset.UtcNow;
-            return await dbContext.Layouts
-                .Where(l => l.IsDefault && l.Published <= now)
-                .OrderBy(l => l.Version)
-                .LastOrDefaultAsync();
+            return await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
         }
 
         /// <summary>

@@ -161,7 +161,7 @@ namespace Sky.Tests.Areas.Setup
             Assert.IsTrue(result.Success);
             
             using var verifyContext = new ApplicationDbContext(connectionString);
-            var defaultLayout = await verifyContext.Layouts.FirstOrDefaultAsync(l => l.IsDefault);
+            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(verifyContext);
             
             Assert.IsNotNull(defaultLayout, "Default layout should be created");
             Assert.AreEqual("Default Layout", defaultLayout.LayoutName);

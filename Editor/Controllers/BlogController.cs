@@ -133,7 +133,7 @@ namespace Sky.Editor.Controllers
 
             // Create blog stream article.
             model.BlogKey = slugService.Normalize(model.Title);
-            var defautLayout = await db.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
+            var defautLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
 
             var blogEntryTemplage = await db.Templates.FirstOrDefaultAsync(t =>t.LayoutId == defautLayout.Id && t.PageType == "blog-stream");
 
@@ -380,7 +380,7 @@ namespace Sky.Editor.Controllers
         {
             var blogStreamType = (int)ArticleType.BlogStream;
             var blog = await db.Articles.FirstOrDefaultAsync(b => b.BlogKey == blogKey && b.ArticleType == blogStreamType);
-            var defautLayout = await db.Layouts.FirstOrDefaultAsync(f => f.IsDefault);
+            var defautLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
 
             if (blog == null)
             {
