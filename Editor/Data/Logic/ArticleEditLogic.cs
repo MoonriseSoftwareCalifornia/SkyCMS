@@ -28,6 +28,7 @@ namespace Sky.Editor.Data.Logic
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
+    using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Infrastructure.Time;
@@ -225,10 +226,9 @@ namespace Sky.Editor.Data.Logic
         /// Retrieves an article by row (GUID) identifier, excluding deleted versions.
         /// </summary>
         /// <param name="id">Article row ID.</param>
-        /// <param name="controllerName">Legacy controller hint (unused).</param>
         /// <param name="userId">User context (unused).</param>
         /// <returns>Article view model or null.</returns>
-        public async Task<ArticleViewModel> GetArticleById(Guid id, EnumControllerName controllerName, Guid userId)
+        public async Task<ArticleViewModel> GetArticleById(Guid id, Guid userId)
         {
             var entity = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.Id == id && a.StatusCode != (int)StatusCodeEnum.Deleted);
@@ -335,8 +335,52 @@ namespace Sky.Editor.Data.Logic
         /// <param name="userId">Author user id.</param>
         /// <param name="templateId">Optional template ID.</param>
         /// <param name="blogKey">Optional blog key (default "default").</param>
-        /// <param name="articleType">Optional article type (default "General").S</param>
+        /// <param name="articleType">Optional article type (default "General").</param>
         /// <returns>Article view model for editing.</returns>
+        /// <remarks>
+        /// <para>
+        /// <strong>⚠️ DEPRECATED:</strong> This method is obsolete and will be removed in a future major version.
+        /// </para>
+        /// <para>
+        /// <strong>Migration Path:</strong>
+        /// </para>
+        /// <list type="bullet">
+        ///   <item>Use <see cref="CreateArticleHandler"/> via the <see cref="IMediator"/> pattern instead.</item>
+        ///   <item>Create a <see cref="CreateArticleCommand"/> with the article data.</item>
+        ///   <item>Call <c>await mediator.SendAsync(command)</c> to execute the creation.</item>
+        /// </list>
+        /// <para>
+        /// <strong>Example Migration:</strong>
+        /// </para>
+        /// <code>
+        /// // OLD (Obsolete):
+        /// var article = await articleLogic.CreateArticle(title, userId, templateId);
+        /// article.Published = DateTimeOffset.UtcNow;
+        /// await articleLogic.SaveArticle(article, userId);
+        /// 
+        /// // NEW (Recommended):
+        /// var command = new CreateArticleCommand
+        /// {
+        ///     Title = title,
+        ///     TemplateId = templateId,
+        ///     UserId = userId,
+        ///     Published = DateTimeOffset.UtcNow  // Set directly in command
+        /// };
+        /// var result = await mediator.SendAsync(command);
+        /// if (result.IsSuccess) { /* use result.Data */ }
+        /// </code>
+        /// <para>
+        /// <strong>Benefits of New Approach:</strong>
+        /// </para>
+        /// <list type="bullet">
+        ///   <item>Centralized title validation (prevents conflicts with reserved paths)</item>
+        ///   <item>Single atomic operation (no separate Create + Save calls)</item>
+        ///   <item>Consistent error handling via <see cref="CommandResult"/></item>
+        ///   <item>Better testability with handler mocking</item>
+        ///   <item>CQRS pattern compliance</item>
+        /// </list>
+        /// </remarks>
+        [Obsolete("Use CreateArticleCommand via IMediator instead. This method will be removed in version 3.0. See remarks for migration guide.", error: false)]
         public async Task<ArticleViewModel> CreateArticle(string title, Guid userId, Guid? templateId = null, string blogKey = "", ArticleType articleType = ArticleType.General)
         {
             var isFirstArticle = (await DbContext.Articles.CountAsync()) == 0;

@@ -12,6 +12,29 @@ A practical comparison of developer workflows, learning curves, deployment compl
 
 ---
 
+## Why Developers Choose SkyCMS: Best of Both Worlds
+
+### Code-First When You Need It
+
+- **Monaco Editor** (VS Code) for HTML/CSS/JavaScript
+- **Template system** using standard web technologies (no proprietary syntax)
+- **Direct HTML editing** with full control
+- **Git integration** for version control of templates/code
+- **API access** when you need headless capabilities
+
+### Content-Team-Friendly When They Need It
+
+- **WYSIWYG editor** (CKEditor) for non-technical users
+- **Visual designer** (GrapesJS) for layout work
+- **No Git knowledge required** for content updates
+- **Instant preview** before publishing
+
+### The Advantage: No Git Merge Conflicts
+
+Developers control templates and structure with code. Content teams manage content without developer intervention. The result? No more Git merge conflicts from content updates.
+
+---
+
 ## Getting Started: Time to First Page
 
 | Platform | Setup Time | Prerequisites | Complexity |
@@ -39,6 +62,10 @@ A practical comparison of developer workflows, learning curves, deployment compl
 5. Content creators build pages via Live Editor
 6. Developer monitors/maintains
 ```
+
+![SkyCMS setup wizard vs Jekyll CLI vs Gatsby configuration](images/screenshots/developer-experience-comparison-setup.webp) {#developer-experience-comparison-setup}
+
+*Side-by-side comparison showing SkyCMS interactive wizard vs command-line complexity of alternatives*
 
 **Key characteristics:**
 - ✅ Visual feedback (WYSIWYG editor)

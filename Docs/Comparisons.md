@@ -35,6 +35,12 @@ Quick reference for evaluating SkyCMS against traditional CMSs, static site gene
 
 *Depends on cloud provider (S3, Azure Blob, Cloudflare)
 
+### Visual Feature Comparison {#comparison-feature-matrix}
+
+![Visual comparison of SkyCMS features vs alternatives](images/screenshots/comparison-feature-matrix.webp)
+
+*At-a-glance visualization showing SkyCMS advantages across key dimensions: editor UX, performance, cost, and team workflows*
+
 ---
 
 ## Workflow Comparison
@@ -50,6 +56,12 @@ Gatsby:              [Content Created] ──→ [Git Push] ──→ [Build] �
 Contentful:          [Content Created] ──→ [Publish] ──→ [Custom Frontend] (Instant API, slow frontend)
 Sanity:              [Content Created] ──→ [Publish] ──→ [Custom Frontend] (Instant API, slow frontend)
 ```
+
+### Workflow Visualization {#publishing-workflow-comparison}
+
+![Side-by-side workflow comparison: SkyCMS vs JAMstack vs Traditional CMS](images/screenshots/publishing-workflow-comparison.webp)
+
+*Visual comparison showing instant publishing (SkyCMS) vs build pipeline delays (JAMstack) vs database queries (Traditional CMS)*
 
 ### Team Collaboration Model
 

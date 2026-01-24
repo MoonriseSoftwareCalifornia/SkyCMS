@@ -1,9 +1,9 @@
 # Screenshot Index
 
-**Status:** Tracking placeholders — awaiting Phase 2 capture  
-**Last Validated:** Jan 23, 2026 10:06:27 UTC
+**Status:** Phase 3 expansion — 26 total screenshots planned  
+**Last Validated:** Jan 24, 2026 (Phase 3 added)
 
-This index tracks all 20 screenshot placeholders across 14 documentation files. The status emoji updates automatically when files are added.
+This index tracks all 26 screenshot placeholders across 19 documentation files. The status emoji updates automatically when files are added.
 
 ---
 
@@ -17,7 +17,9 @@ This index tracks all 20 screenshot placeholders across 14 documentation files. 
 
 ---
 
-## Screenshot Placeholders (20 Total)
+## Screenshot Placeholders (26 Total)
+
+### Phase 2: Core User Workflows (20 screenshots)
 
 | Filename | Status | Used on |
 |----------|--------|---------|
@@ -42,6 +44,17 @@ This index tracks all 20 screenshot placeholders across 14 documentation files. 
 | `settings-cdn-test.webp` | ⬜ | [Post-Installation.md](../../Installation/Post-Installation.md#settings-cdn-test) |
 | `multi-tenant-architecture.webp` | ⬜ | [MinimumRequiredSettings.md](../../Installation/MinimumRequiredSettings.md#multi-tenant-architecture) |
 
+### Phase 3: Decision-Making & Architecture (6 screenshots)
+
+| Filename | Status | Used on |
+|----------|--------|---------|
+| `comparison-feature-matrix.webp` | ⬜ | [Comparisons.md](../../Comparisons.md#comparison-feature-matrix) |
+| `edge-native-architecture-diagram.webp` | ⬜ | [When-to-Use-SkyCMS.md](../../When-to-Use-SkyCMS.md#edge-native-architecture-diagram) |
+| `publishing-workflow-comparison.webp` | ⬜ | [Comparisons.md](../../Comparisons.md#publishing-workflow-comparison) |
+| `quick-reference-workflow-diagram.webp` | ⬜ | [Quick-Reference.md](../../Quick-Reference.md#quick-reference-workflow-diagram) |
+| `developer-experience-comparison-setup.webp` | ⬜ | [Developer-Experience-Comparison.md](../../Developer-Experience-Comparison.md#developer-experience-comparison-setup) |
+| `cosmosvsheadless-architecture-modes.webp` | ⬜ | [CosmosVsHeadless.md](../../CosmosVsHeadless.md#cosmosvsheadless-architecture-modes) |
+
 ---
 
 ## Reuse Summary
@@ -53,7 +66,7 @@ This index tracks all 20 screenshot placeholders across 14 documentation files. 
 | `live-editor-dashboard.webp` | 3 docs |
 | All others | 1 doc each |
 
-**Efficiency:** 20 placements across 16 unique images = 20% reduction in capture work
+**Efficiency:** 26 placements across 26 unique images (Phase 2: 20%, Phase 3: 0% reuse)
 
 ---
 

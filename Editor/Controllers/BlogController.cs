@@ -20,6 +20,7 @@ namespace Sky.Editor.Controllers
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Models.Blogs;
@@ -125,59 +126,53 @@ namespace Sky.Editor.Controllers
                 return View("Create", model);
             }
 
-            if (!await titleChangeService.ValidateTitle(model.Title, null))
-            {
-                ModelState.AddModelError(nameof(model.BlogKey), "Blog key conflicts with existing page on this website.");
-                return View("Create", model);
-            }
+            // REMOVED: Title validation now handled in CreateArticleHandler
+            // if (!await titleChangeService.ValidateTitle(model.Title, null)) { ... }
 
-            // Create blog stream article.
+            // Normalize blog key from title
             model.BlogKey = slugService.Normalize(model.Title);
-            var defautLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
+            
+            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
 
-            var blogEntryTemplage = await db.Templates.FirstOrDefaultAsync(t =>t.LayoutId == defautLayout.Id && t.PageType == "blog-stream");
+            var blogStreamTemplate = await db.Templates.FirstOrDefaultAsync(t => t.LayoutId == defaultLayout.Id && t.PageType == "blog-stream");
 
-            if (blogEntryTemplage == null)
+            if (blogStreamTemplate == null)
             {
-                throw new InvalidOperationException("Blog entry template not found.");
+                throw new InvalidOperationException("Blog stream template not found.");
             }
 
-            var article = await articleLogic.CreateArticle(model.Title, Guid.Parse(await GetUserId()), blogEntryTemplage.Id, model.BlogKey, ArticleType.BlogStream);
-
-            // Make the image URL relative path if it's absolute.
-            if (string.IsNullOrWhiteSpace(model.HeroImage) == false && Uri.IsWellFormedUriString(model.HeroImage, UriKind.Absolute))
+            // Normalize image URL to relative path if needed (controller-level concern)
+            var heroImage = model.HeroImage;
+            if (!string.IsNullOrWhiteSpace(heroImage) && Uri.IsWellFormedUriString(heroImage, UriKind.Absolute))
             {
-                var uri = new Uri(model.HeroImage);
-
-                // If the URI has a host different from the current request, ignore it.
+                var uri = new Uri(heroImage);
+                
+                // Only convert if it's from the current host
                 if (uri.Host.Equals(Request.Host.Host, StringComparison.OrdinalIgnoreCase))
                 {
-                    model.HeroImage = uri.PathAndQuery;
+                    heroImage = uri.PathAndQuery;
                 }
             }
 
-            article.BannerImage = model.HeroImage ?? string.Empty;
-            article.Introduction = model.Description;
-            article.Content = blogEntryTemplage.Content; // Blog stream articles have no body content.
-            article.Published = model.Published;
-
-            // MIGRATED: Use SaveArticleHandler via mediator
-            var command = new SaveArticleCommand
+            // CreateArticleHandler will validate title and return error if conflicts exist
+            var command = new CreateArticleCommand
             {
-                ArticleNumber = article.ArticleNumber,
-                Title = article.Title,
-                Content = article.Content,
-                BannerImage = article.BannerImage,
-                Introduction = article.Introduction,
-                Published = article.Published,
+                Title = model.Title,
+                TemplateId = blogStreamTemplate.Id,
+                UserId = Guid.Parse(await GetUserId()),
                 ArticleType = ArticleType.BlogStream,
-                UserId = Guid.Parse(await GetUserId())
+                BlogKey = model.BlogKey,
+                BannerImage = heroImage,
+                Introduction = model.Description,
+                ContentOverride = blogStreamTemplate.Content, // Blog streams use template content as-is
+                Published = model.Published
             };
 
             var result = await mediator.SendAsync(command);
 
             if (!result.IsSuccess)
             {
+                // Title validation errors will be in result.Errors["Title"]
                 foreach (var error in result.Errors)
                 {
                     foreach (var message in error.Value)
@@ -185,6 +180,7 @@ namespace Sky.Editor.Controllers
                         ModelState.AddModelError(error.Key, message);
                     }
                 }
+
                 return View("Create", model);
             }
 
@@ -199,7 +195,7 @@ namespace Sky.Editor.Controllers
         [HttpGet("{id:guid}/edit")]
         public async Task<IActionResult> Edit(Guid id)
         {
-            var article = await articleLogic.GetArticleById(id, Cms.Controllers.EnumControllerName.Edit, Guid.Parse(await GetUserId()));
+            var article = await articleLogic.GetArticleById(id, Guid.Parse(await GetUserId()));
             if (article == null)
             {
                 return NotFound();
@@ -380,8 +376,7 @@ namespace Sky.Editor.Controllers
         {
             var blogStreamType = (int)ArticleType.BlogStream;
             var blog = await db.Articles.FirstOrDefaultAsync(b => b.BlogKey == blogKey && b.ArticleType == blogStreamType);
-            var defautLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
-
+            
             if (blog == null)
             {
                 return NotFound("Blog not found.");
@@ -392,41 +387,38 @@ namespace Sky.Editor.Controllers
                 return BadRequest("Title is required.");
             }
 
-            var blogEntryTemplage = await db.Templates.FirstOrDefaultAsync(t => t.LayoutId == defautLayout.Id && t.PageType == "blog-post");
+            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
+            var blogEntryTemplate = await db.Templates.FirstOrDefaultAsync(t => t.LayoutId == defaultLayout.Id && t.PageType == "blog-post");
 
-            if (blogEntryTemplage == null)
+            if (blogEntryTemplate == null)
             {
                 throw new InvalidOperationException("Blog entry template not found.");
             }
 
             var userId = Guid.Parse(await GetUserId());
 
-            var article = await articleLogic.CreateArticle(title, userId, blogEntryTemplage.Id, blogKey);
-
-            article.ArticleType = ArticleType.BlogPost;
-            article.Content = blogEntryTemplage.Content;
-            article.Published = null;
-
-            // MIGRATED: Use SaveArticleHandler via mediator
-            var command = new SaveArticleCommand
+            // REFACTORED: Use CreateArticleCommand via mediator
+            var command = new CreateArticleCommand
             {
-                ArticleNumber = article.ArticleNumber,
-                Title = article.Title,
-                Content = article.Content,
+                Title = title,
+                TemplateId = blogEntryTemplate.Id,
+                UserId = userId,
                 ArticleType = ArticleType.BlogPost,
-                Published = null,
-                UserId = userId
+                BlogKey = blogKey,
+                ContentOverride = blogEntryTemplate.Content, // Blog posts start with template content
+                Published = null // Explicitly unpublished until user publishes
             };
 
             var result = await mediator.SendAsync(command);
 
             if (!result.IsSuccess)
             {
-                // Log error and return error view
-                return StatusCode(500, "Failed to create blog entry");
+                var errorMessage = result.ErrorMessage ?? 
+                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+                return StatusCode(500, $"Failed to create blog entry: {errorMessage}");
             }
 
-            return RedirectToAction("Edit", "Editor", new { id = article.ArticleNumber });
+            return RedirectToAction("Edit", "Editor", new { id = result.Data.ArticleNumber });
         }
 
         /// <summary>

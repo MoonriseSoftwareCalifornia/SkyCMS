@@ -191,7 +191,7 @@ namespace Sky.Cms.Controllers
             {
                 // This is an article preview
                 var userId = new Guid(user.Id);
-                await SetRenderedView(await articleLogic.GetArticleById(itemId.Value, EnumControllerName.Edit, userId));
+                await SetRenderedView(await articleLogic.GetArticleById(itemId.Value, userId));
             }
             else if (previewType == "layouts")
             {

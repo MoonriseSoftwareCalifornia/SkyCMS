@@ -19,7 +19,11 @@ audience: [developers, architects, decision-makers]
 
 **SkyCMS is primarily a traditional content management system that renders complete web pages**, not a headless CMS. Unlike headless CMSs that deliver content via API endpoints, SkyCMS's core strength is generating and serving fully-rendered HTML pages—either as static files or through dynamic server-side rendering.
 
-### Primary Rendering Modes
+### Primary Rendering Modes {#cosmosvsheadless-architecture-modes}
+
+![SkyCMS three rendering modes: Static Generation, Dynamic Rendering, and API Mode](images/screenshots/cosmosvsheadless-architecture-modes.webp)
+
+*Architectural diagram showing SkyCMS's flexible rendering options*
 
 1. **Static Site Generation** (Recommended): SkyCMS generates complete HTML pages and pushes them to cloud storage (Azure Blob Storage, AWS S3, or Cloudflare R2). This provides maximum performance, reliability, and cost-effectiveness.
 

@@ -1,6 +1,6 @@
-// <copyright file="PostSetupInitializationService.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="PostSetupInitializationService.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
-// Licensed under the GNU Public License, Version 3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
@@ -11,14 +11,16 @@ namespace Sky.Editor.Services.Setup
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Cosmos.Cms;
+    using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
-    using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Create;
+    using Sky.Editor.Features.Shared;  // ✅ ADD THIS - Correct IMediator namespace
 
     /// <summary>
     /// Background service that runs post-setup initialization tasks after application restart.
@@ -87,7 +89,7 @@ namespace Sky.Editor.Services.Setup
 
                         if (existingHomePage == null)
                         {
-                            var articleLogic = scope.ServiceProvider.GetRequiredService<ArticleEditLogic>();
+                            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
                             Guid? templateId = null;
                             if (templateIdSetting != null && Guid.TryParse(templateIdSetting.Value, out var parsedTemplateId))
@@ -95,10 +97,33 @@ namespace Sky.Editor.Services.Setup
                                 templateId = parsedTemplateId;
                             }
 
-                            // Create the home page
-                            var model = await articleLogic.CreateArticle(titleSetting.Value, userId, templateId);
+                            // REFACTORED: Use CreateArticleCommand instead of CreateArticle
+                            var createCommand = new CreateArticleCommand
+                            {
+                                Title = titleSetting.Value,
+                                TemplateId = templateId,
+                                UserId = userId,
+                                ArticleType = ArticleType.General,
+                                BlogKey = string.Empty,
 
-                            logger.LogInformation("Home page created successfully with article number {ArticleNumber}", model.ArticleNumber);
+                                // Home page properties (auto-publish first article)
+                                UrlPathOverride = "root",  // Force home page URL
+                                StatusCode = StatusCodeEnum.Active
+                            };
+
+                            var result = await mediator.SendAsync(createCommand);
+
+                            if (!result.IsSuccess)
+                            {
+                                var errorMessage = result.ErrorMessage ??
+                                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+
+                                logger.LogError("Failed to create home page: {Error}", errorMessage);
+                            }
+                            else
+                            {
+                                logger.LogInformation("Home page created successfully with article number {ArticleNumber}", result.Data.ArticleNumber);
+                            }
                         }
                         else
                         {

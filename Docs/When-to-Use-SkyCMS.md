@@ -30,6 +30,41 @@ Before you invest time in evaluating or deploying SkyCMS, use this guide to dete
 
 ---
 
+## What is Edge-Native Architecture?
+
+**SkyCMS is an Edge-Native CMS** — a new category of content management system that combines traditional CMS editing capabilities with modern edge computing principles.
+
+### Edge Computing Explained
+
+Edge computing brings computation and data storage closer to end users by distributing content across global points of presence (PoPs). Instead of serving all requests from a central origin server, content is delivered from the nearest edge location.
+
+![Edge-native architecture: User to Edge PoP vs Traditional origin server](images/screenshots/edge-native-architecture-diagram.webp) {#edge-native-architecture-diagram}
+
+*Comparison showing 20ms response time from edge PoP vs 300ms from distant origin server*
+
+**Traditional Setup:** User → Origin Server (US) → Response (300ms latency from Asia)  
+**Edge-Native:** User → Nearest Edge PoP → Response (20ms latency anywhere)
+
+### Why Edge-Native Matters for SkyCMS
+
+An edge-native CMS is **purpose-built** for edge deployment with five key characteristics:
+
+1. **Static-First Output** - Generates pre-rendered HTML files optimized for CDN distribution
+2. **Integrated Publishing** - Built-in deployment directly to edge storage (no external pipelines)
+3. **Hybrid Capability** - Supports both static and dynamic rendering from the same platform
+4. **Global Distribution** - Designed for multi-region, multi-cloud deployment
+5. **Origin-Optional** - Can operate entirely from edge storage without traditional servers
+
+### How SkyCMS Delivers This
+
+- **Instant publishing** (< 5 seconds) - No build pipelines or CI/CD delays
+- **No Git workflows required** - Content editors use familiar WYSIWYG editor
+- **Multi-cloud flexibility** - Deploy to Azure Blob, AWS S3, Cloudflare R2
+- **Low cost** - Edge storage is cheap; no complex infrastructure needed
+- **Easy maintenance** - Single platform handles publishing, versioning, and delivery
+
+---
+
 ## When to Use SkyCMS
 
 ### ✅ Ideal Use Cases
@@ -265,7 +300,6 @@ SkyCMS is purpose-built for the **intersection of editing simplicity and edge pe
 
 ## Next Steps
 
-- **Learn the Concept**: [What is an Edge-Native CMS?](./Edge-Native-CMS.md)
 - **Compare Alternatives**: [SkyCMS vs Alternatives](./Comparisons.md)
 - **Detailed Comparison**: [Developer Experience Comparison](./Developer-Experience-Comparison.md)
 - **Get Started**: [Installation Overview](./Installation/README.md)
@@ -273,7 +307,6 @@ SkyCMS is purpose-built for the **intersection of editing simplicity and edge pe
 ---
 
 **Related Topics:**
-- [What is an Edge-Native CMS?](./Edge-Native-CMS.md)
 - [SkyCMS vs Alternatives](./Comparisons.md)
 - [Developer Experience Comparison](./Developer-Experience-Comparison.md)
 - [Total Cost of Ownership](./_Marketing/Cost-Comparison.md)

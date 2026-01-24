@@ -78,10 +78,10 @@ audience: [all]
 - Edge-native approach
 - Deployment models
 
-📘 **[Developer Experience Overview](./DeveloperExperience.md)**
-- Development workflow
-- Technology stack
-- Extension points
+📘 **[Developer Experience Comparison](./Developer-Experience-Comparison.md)**
+- Development workflow comparison
+- Technology stack and tooling
+- Why developers choose SkyCMS
 
 ### Step 2: Quick Local Setup (15 min)
 🚀 **[Quick Start Guide](./QuickStart.md)**

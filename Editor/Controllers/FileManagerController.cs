@@ -784,7 +784,7 @@ namespace Sky.Cms.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    var article = await articleLogic.GetArticleById(articleId, EnumControllerName.Edit, Guid.Parse(await GetUserId()));
+                    var article = await articleLogic.GetArticleById(articleId, Guid.Parse(await GetUserId()));
 
                     var originalHtml = await articleLogic.ExportArticle(article, viewRenderService);
                     var originalHtmlDoc = new HtmlAgilityPack.HtmlDocument();

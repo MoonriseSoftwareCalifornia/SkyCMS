@@ -4,7 +4,7 @@
 ## 1. Getting Started
 
 - [Quick Start](./QuickStart.md)
-- [Developer Experience Overview](./DeveloperExperience.md)
+- [Developer Experience Overview](./Project-Documentation/DeveloperExperience.md)
 - [Cost Comparison](./CostComparison.md)
 - [SkyCMS vs Headless CMS](./CosmosVsHeadless.md)
 - [Migrating from JAMstack](./MigratingFromJAMstack.md)
@@ -154,7 +154,7 @@
 ## 13. Additional Reference
 
 - [Master Docs Index (Human-Friendly)](./README.md)
-- [Uploading Secrets to GitHub Repository](./UploadSecretsToGithubRepo.md)
+- [Uploading Secrets to GitHub Repository](../Developer-Guides/UploadSecretsToGithubRepo.md)
 
 ---
 

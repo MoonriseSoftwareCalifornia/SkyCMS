@@ -1,6 +1,7 @@
 namespace Sky.Editor.Features.Articles.Create
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -68,18 +69,34 @@ namespace Sky.Editor.Features.Articles.Create
             CreateArticleCommand command,
             CancellationToken cancellationToken = default)
         {
-            // Validate
+            // Validate command structure (Title not empty, etc.)
             var validationErrors = validator.Validate(command);
             if (validationErrors.Any())
             {
                 return CommandResult<ArticleViewModel>.Failure(validationErrors);
             }
 
+            // Validate title doesn't conflict with existing articles or reserved paths
+            var titleIsValid = await titleChangeService.ValidateTitle(command.Title, null);
+            if (!titleIsValid)
+            {
+                logger.LogWarning(
+                    "Article creation failed: Title '{Title}' conflicts with an existing article or reserved path",
+                    command.Title);
+
+                return CommandResult<ArticleViewModel>.Failure(
+                    new Dictionary<string, string[]>
+                    {
+                        ["Title"] = new[] { $"Title '{command.Title}' conflicts with an existing article or reserved path." }
+                    });
+            }
+
             try
             {
                 logger.LogInformation(
-                    "Creating article '{Title}' for user {UserId}",
+                    "Creating article '{Title}' (Type: {ArticleType}) for user {UserId}",
                     command.Title,
+                    command.ArticleType,
                     command.UserId);
 
                 var isFirstArticle = await dbContext.Articles.CountAsync(cancellationToken) == 0;
@@ -90,24 +107,42 @@ namespace Sky.Editor.Features.Articles.Create
                 var title = command.Title.Trim('/');
                 var now = clock.UtcNow;
 
+                // Determine content: ContentOverride > Template > Default Lorem Ipsum
+                var content = command.ContentOverride 
+                    ?? htmlService.EnsureEditableMarkers(defaultTemplate);
+
+                // Determine published state: explicit > auto-publish first article > null
+                var published = command.Published 
+                    ?? (isFirstArticle ? now : (DateTimeOffset?)null);
+
+                // Determine status code: explicit > default Active
+                var statusCode = (int)(command.StatusCode ?? StatusCodeEnum.Active);
+
                 var article = new Article
                 {
                     BlogKey = command.BlogKey,
                     ArticleNumber = nextArticleNumber,
                     ArticleType = (int)command.ArticleType,
-                    Content = htmlService.EnsureEditableMarkers(defaultTemplate),
-                    StatusCode = (int)StatusCodeEnum.Active,
+                    Content = content,
+                    StatusCode = statusCode,
                     Title = title,
                     Updated = now,
                     VersionNumber = 1,
-                    Published = isFirstArticle ? now : null,
+                    Published = published,
                     UserId = command.UserId.ToString(),
                     TemplateId = command.TemplateId,
-                    BannerImage = string.Empty
+                    
+                    // Apply optional overrides (only properties that exist on Article entity)
+                    Category = command.Category ?? string.Empty,
+                    Introduction = command.Introduction ?? string.Empty,
+                    BannerImage = command.BannerImage ?? string.Empty,
+                    HeaderJavaScript = command.HeadJavaScript,
+                    FooterJavaScript = command.FooterJavaScript
                 };
 
-                // Generate URL path
-                article.UrlPath = isFirstArticle ? "root" : titleChangeService.BuildArticleUrl(article);
+                // Generate URL path: explicit override > "root" for first > generated from title
+                article.UrlPath = command.UrlPathOverride 
+                    ?? (isFirstArticle ? "root" : titleChangeService.BuildArticleUrl(article));
 
                 dbContext.Articles.Add(article);
                 dbContext.ArticleNumbers.Add(new ArticleNumber { LastNumber = nextArticleNumber });
@@ -117,18 +152,20 @@ namespace Sky.Editor.Features.Articles.Create
                 // Update catalog
                 await catalogService.UpsertAsync(article, cancellationToken);
 
-                // Auto-publish first article
-                if (isFirstArticle)
+                // Auto-publish if needed
+                if (article.Published.HasValue)
                 {
                     await publishingService.PublishAsync(article);
                 }
 
                 logger.LogInformation(
-                    "Successfully created article {ArticleNumber} with title '{Title}'",
+                    "Successfully created article {ArticleNumber} with title '{Title}' (Type: {ArticleType}, Published: {Published})",
                     article.ArticleNumber,
-                    article.Title);
+                    article.Title,
+                    command.ArticleType,
+                    article.Published.HasValue);
 
-                // Build view model (simplified - you'll need ArticleLogic or similar)
+                // Build view model (only Article entity properties)
                 var viewModel = new ArticleViewModel
                 {
                     Id = article.Id,
@@ -141,7 +178,11 @@ namespace Sky.Editor.Features.Articles.Create
                     VersionNumber = article.VersionNumber,
                     StatusCode = (StatusCodeEnum)article.StatusCode,
                     ArticleType = command.ArticleType,
-                    BannerImage = article.BannerImage
+                    BannerImage = article.BannerImage,
+                    Category = article.Category,
+                    Introduction = article.Introduction,
+                    HeadJavaScript = article.HeaderJavaScript,
+                    FooterJavaScript = article.FooterJavaScript
                 };
 
                 return CommandResult<ArticleViewModel>.Success(viewModel);

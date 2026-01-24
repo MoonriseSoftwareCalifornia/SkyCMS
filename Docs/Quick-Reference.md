@@ -22,7 +22,11 @@ One-page visual summary of SkyCMS features, workflow, and comparisons.
 
 ---
 
-## Core Workflow
+## Core Workflow {#quick-reference-workflow-diagram}
+
+![SkyCMS workflow: Developer creates layouts/templates, Content Creator uses Live Editor, Publish goes live in <5 seconds](images/screenshots/quick-reference-workflow-diagram.webp)
+
+*Visual workflow showing collaboration between developers and content creators through SkyCMS*
 
 ```
 Developer                          Content Creator

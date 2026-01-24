@@ -5,24 +5,26 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-using Cosmos.Cms.Data;
-using Cosmos.Common.Data;
-using Cosmos.DynamicConfig;
-using Cosmos.Editor.Services;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Sky.Editor.Data.Logic;
-using Sky.Editor.Features.Articles.Save;
-using Sky.Editor.Features.Shared;
-using Sky.Editor.Services.Layouts;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace Sky.Editor.Services.Setup
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Cosmos.Cms.Common;
+    using Cosmos.Cms.Data;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
+    using Cosmos.DynamicConfig;
+    using Cosmos.Editor.Services;
+    using Microsoft.AspNetCore.Identity;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Create;
+    using Sky.Editor.Features.Shared;
+    using Sky.Editor.Services.Layouts;
+
     /// <summary>
     /// Multi-tenant setup service for post-provisioning tenant configuration.
     /// </summary>
@@ -277,33 +279,38 @@ namespace Sky.Editor.Services.Setup
                     templateId = template?.Id;
                 }
 
-                // Create the home page
-                var model = await articleEditLogic.CreateArticle(title, Guid.Parse(adminUser.Id), templateId);
-
-                model.Published = DateTimeOffset.UtcNow;
-                model.UrlPath = "root";
-
-                var saveArticleCommand = new SaveArticleCommand()
+                // REFACTORED: Use CreateArticleCommand instead of CreateArticle + SaveArticle
+                var createCommand = new CreateArticleCommand
                 {
-                    ArticleNumber = model.ArticleNumber,
-                    Title = model.Title,
-                    Content = model.Content,
-                    UrlPath = model.UrlPath,
-                    HeadJavaScript = model.HeadJavaScript,
-                    FooterJavaScript = model.FooterJavaScript,
-                    BannerImage = model.BannerImage,
-                    ArticleType = model.ArticleType,
-                    Category = model.Category,
-                    Introduction = model.Introduction,
-                    Published = model.Published,
+                    Title = title,
+                    TemplateId = templateId,
                     UserId = Guid.Parse(adminUser.Id),
+                    ArticleType = ArticleType.General,
+                    BlogKey = string.Empty,
+
+                    // Special home page properties
+                    Published = DateTimeOffset.UtcNow,      // Auto-publish
+                    StatusCode = StatusCodeEnum.Active,     // Active status
+                    UrlPathOverride = "root"                // Home page must be "root"
                 };
 
-                var result = await mediator.SendAsync(saveArticleCommand);
+                var result = await mediator.SendAsync(createCommand);
 
-                await articleEditLogic.PublishArticle(result.Data.Model.Id, DateTimeOffset.UtcNow);
+                if (!result.IsSuccess)
+                {
+                    var errorMessage = result.ErrorMessage ?? 
+                        string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+                    
+                    logger.LogError("Failed to create home page: {Error}", errorMessage);
+                    
+                    return new SetupCompletionResult
+                    {
+                        Success = false,
+                        Message = $"Failed to create home page: {errorMessage}"
+                    };
+                }
 
-                logger.LogInformation("Home page created successfully with article number {ArticleNumber}", model.ArticleNumber);
+                logger.LogInformation("Home page created successfully with article number {ArticleNumber}", result.Data.ArticleNumber);
 
                 return new SetupCompletionResult
                 {

@@ -31,7 +31,7 @@ audience: [all]
 [![Deploy to AWS](./assets/images/deploy-to-aws.svg)](./InstallScripts/AWS/QUICK_START.html)
 
 ## Quick links
-- [What is an Edge-Native CMS?](./Edge-Native-CMS.md)
+- [When to Use SkyCMS (includes Edge-Native Architecture)](./When-to-Use-SkyCMS.md)
 - [Developer Quick Start](./QuickStart.md)
 - [Installation Overview](./Installation/README.md)
 - [Minimum Required Settings](./Installation/MinimumRequiredSettings.md)
@@ -84,11 +84,10 @@ audience: [all]
 ### Decision Makers
 *Evaluate fit and cost*
 
-**Start here:** [When to Use SkyCMS](./When-to-Use-SkyCMS.md) ⭐ · [What is an Edge-Native CMS?](./Edge-Native-CMS.md) · [About SkyCMS](./About.md)
+**Start here:** [When to Use SkyCMS](./When-to-Use-SkyCMS.md) ⭐ · [About SkyCMS](./About.md)
 - [SkyCMS vs Alternatives](./Comparisons.md)
 - [Developer Experience Comparison](./Developer-Experience-Comparison.md)
 - [Total Cost of Ownership](./_Marketing/Cost-Comparison.md)
-- [Performance Benchmarks](./Edge-Native-CMS.md#performance-benchmarks)
 - [FAQ](./FAQ.md)
 
 ---

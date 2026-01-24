@@ -172,7 +172,7 @@ namespace Sky.Cms.Hubs
 
                 default:
                     {
-                        var model = await articleLogic.GetArticleById(Guid.Parse(id), Controllers.EnumControllerName.Edit, Guid.Empty);
+                        var model = await articleLogic.GetArticleById(Guid.Parse(id), Guid.Empty);
                         return JsonConvert.SerializeObject(model);
                     }
             }
@@ -182,7 +182,7 @@ namespace Sky.Cms.Hubs
         /// Joins users to an editing "room".
         /// </summary>
         /// <param name="id">Article record number is the room name.</param>
-        /// <param name="editorType"></param>
+        /// <param name="editorType">Tyle of editor.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task JoinRoom(string id, string editorType)
         {

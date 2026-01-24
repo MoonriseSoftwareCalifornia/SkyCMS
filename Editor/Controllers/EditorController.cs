@@ -507,8 +507,8 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var left = await articleLogic.GetArticleById(leftId, EnumControllerName.Edit, Guid.Parse(await GetUserId()));
-            var right = await articleLogic.GetArticleById(rightId, EnumControllerName.Edit, Guid.Parse(await GetUserId()));
+            var left = await articleLogic.GetArticleById(leftId, Guid.Parse(await GetUserId()));
+            var right = await articleLogic.GetArticleById(rightId, Guid.Parse(await GetUserId()));
             @ViewData["PageTitle"] = left.Title;
 
             ViewData["LeftVersion"] = left.VersionNumber;
@@ -683,9 +683,7 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        ///     Uses <see cref="ArticleEditLogic.CreateArticle" /> to create an <see cref="ArticleViewModel" /> that is
-        ///     saved to
-        ///     the database with <see cref="ArticleEditLogic.SaveArticle" /> ready for editing.
+        ///     Uses <see cref="CreateArticleCommand"/> via mediator to create an <see cref="ArticleViewModel"/> ready for editing.
         /// </summary>
         /// <param name="model">Create page view model.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -693,65 +691,91 @@ namespace Sky.Cms.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreatePageViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                if (model == null)
-                {
-                    return NotFound();
-                }
+                // Re-populate ViewData for error display
+                var defaultLayout = await GetCurrentLayoutAsync();
+                ViewData["Layouts"] = await BaseGetLayoutListItems();
+                ViewData["sortOrder"] = "asc";
+                ViewData["currentSort"] = "title";
+                ViewData["pageNo"] = 0;
+                ViewData["pageSize"] = 20;
 
-                model.Title = model.Title.TrimStart('/');
+                var query = (await GetTemplatesForCurrentLayoutAsync())
+                   .OrderBy(t => t.Title)
+                   .Select(s => new TemplateIndexViewModel
+                   {
+                       Id = s.Id,
+                       LayoutName = defaultLayout.LayoutName,
+                       Description = s.Description,
+                       Title = s.Title,
+                       UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
+                   });
 
-                var validTitle = await titleChangeService.ValidateTitle(model.Title, null);
+                ViewData["RowCount"] = await query.CountAsync();
+                ViewData["TemplateList"] = await query.Skip(0 * 20).Take(20).ToListAsync();
 
-                if (!validTitle)
-                {
-                    ModelState.AddModelError("Title", $"Title: {model.Title} conflicts with another article title or reserved word.");
-                    return View(model);
-                }
-
-                var command = new CreateArticleCommand
-                {
-                    Title = model.Title,
-                    TemplateId = model.TemplateId,
-                    UserId = Guid.Parse(await GetUserId()),
-                    ArticleType = model.ArticleType,
-                    BlogKey = string.Empty
-                };
-
-                var article = await articleLogic.CreateArticle(model.Title, Guid.Parse(await GetUserId()), model.TemplateId);
-                article.ArticleType = model.ArticleType;
-                article.Category = model.Category ?? string.Empty;
-                article.Introduction = model.Introduction ?? string.Empty;
-                await articleLogic.SaveArticle(article, Guid.Parse(await GetUserId()));
-
-                return RedirectToAction("Versions", "Editor", new { Id = article.ArticleNumber });
+                return View(model);
             }
 
-            var defaultLayout = await GetCurrentLayoutAsync();
+            if (model == null)
+            {
+                return NotFound();
+            }
 
-            ViewData["Layouts"] = await BaseGetLayoutListItems();
+            model.Title = model.Title.TrimStart('/');
 
-            ViewData["sortOrder"] = "asc";
-            ViewData["currentSort"] = "title";
-            ViewData["pageNo"] = 0;
-            ViewData["pageSize"] = 20;
+            // REMOVED: Title validation now handled in CreateArticleHandler
+            // var validTitle = await titleChangeService.ValidateTitle(model.Title, null);
+            // if (!validTitle) { ... }
 
-            var query = (await GetTemplatesForCurrentLayoutAsync())
-               .OrderBy(t => t.Title)
-               .Select(s => new TemplateIndexViewModel
-               {
-                   Id = s.Id,
-                   LayoutName = defaultLayout.LayoutName,
-                   Description = s.Description,
-                   Title = s.Title,
-                   UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
-               });
+            // CreateArticleHandler will validate title and return error if conflicts exist
+            var command = new CreateArticleCommand
+            {
+                Title = model.Title,
+                TemplateId = model.TemplateId,
+                UserId = Guid.Parse(await GetUserId()),
+                ArticleType = model.ArticleType,
+                BlogKey = string.Empty,
+                Category = model.Category,
+                Introduction = model.Introduction
+            };
 
-            ViewData["RowCount"] = await query.CountAsync();
-            ViewData["TemplateList"] = await query.Skip(0 * 20).Take(20).ToListAsync();
+            var result = await mediator.SendAsync(command);
 
-            return View(model);
+            if (!result.IsSuccess)
+            {
+                // Title validation errors will be in result.Errors["Title"]
+                var errorMessage = result.ErrorMessage ??
+                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+                ModelState.AddModelError(string.Empty, errorMessage);
+
+                // Re-populate ViewData for error display
+                var defaultLayout = await GetCurrentLayoutAsync();
+                ViewData["Layouts"] = await BaseGetLayoutListItems();
+                ViewData["sortOrder"] = "asc";
+                ViewData["currentSort"] = "title";
+                ViewData["pageNo"] = 0;
+                ViewData["pageSize"] = 20;
+
+                var query = (await GetTemplatesForCurrentLayoutAsync())
+                   .OrderBy(t => t.Title)
+                   .Select(s => new TemplateIndexViewModel
+                   {
+                       Id = s.Id,
+                       LayoutName = defaultLayout.LayoutName,
+                       Description = s.Description,
+                       Title = s.Title,
+                       UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
+                   });
+
+                ViewData["RowCount"] = await query.CountAsync();
+                ViewData["TemplateList"] = await query.Skip(0 * 20).Take(20).ToListAsync();
+
+                return View(model);
+            }
+
+            return RedirectToAction("Versions", "Editor", new { Id = result.Data.ArticleNumber });
         }
 
         /// <summary>
@@ -892,7 +916,7 @@ namespace Sky.Cms.Controllers
 
             var userId = Guid.Parse(await GetUserId());
 
-            var articleViewModel = await articleLogic.GetArticleById(model.Id, EnumControllerName.Edit, userId);
+            var articleViewModel = await articleLogic.GetArticleById(model.Id, userId);
 
             if (ModelState.IsValid)
             {
@@ -987,7 +1011,7 @@ namespace Sky.Cms.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View(model);
+                return View(viewName: "__NewHomePage", model: model);
             }
 
             if (model == null)
@@ -995,37 +1019,57 @@ namespace Sky.Cms.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            // Verify this is truly the first article
+            if (await dbContext.Articles.CosmosAnyAsync())
             {
-                if (await dbContext.Articles.CosmosAnyAsync())
-                {
-                    ModelState.AddModelError("Title", "This can only be used to create a website's first home page.");
-                }
-
-                model.Title = model.Title.TrimStart('/');
-
-                var validTitle = await titleChangeService.ValidateTitle(model.Title, null);
-
-                if (!validTitle)
-                {
-                    ModelState.AddModelError("Title", $"Title: {model.Title} conflicts with another article title or reserved word.");
-                    return View(viewName: "__NewHomePage", model: model);
-                }
-
-                var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Title.ToLower() == "home page");
-                var article = await articleLogic.CreateArticle(model.Title, Guid.Parse(await GetUserId()), template.Id);
-
-                article.Published = DateTimeOffset.UtcNow;
-                article.StatusCode = (int)StatusCodeEnum.Active;
-                article.Content = template.Content;
-                article.UrlPath = "root";
-
-                await articleLogic.SaveArticle(article, Guid.Parse(await GetUserId()));
-
-                return Redirect("/");
+                ModelState.AddModelError("Title", "This can only be used to create a website's first home page.");
+                return View(viewName: "__NewHomePage", model: model);
             }
 
-            return View(viewName: "__NewHomePage", model: model);
+            model.Title = model.Title.TrimStart('/');
+
+            // REMOVED: Title validation now handled in CreateArticleHandler
+            // var validTitle = await titleChangeService.ValidateTitle(model.Title, null);
+            // if (!validTitle) { ... }
+
+            var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Title.ToLower() == "home page");
+            
+            if (template == null)
+            {
+                ModelState.AddModelError("Title", "Home page template not found.");
+                return View(viewName: "__NewHomePage", model: model);
+            }
+
+            // REFACTORED: Use CreateArticleCommand via mediator
+            var command = new CreateArticleCommand
+            {
+                Title = model.Title,
+                TemplateId = template.Id,
+                UserId = Guid.Parse(await GetUserId()),
+                ArticleType = ArticleType.General,
+                BlogKey = string.Empty,
+                
+                // Special home page properties
+                Published = DateTimeOffset.UtcNow,           // Auto-publish
+                StatusCode = StatusCodeEnum.Active,          // Override default
+                ContentOverride = template.Content,          // Use template as-is
+                UrlPathOverride = "root"                     // CRITICAL: Home page must be "root"
+            };
+
+            var result = await mediator.SendAsync(command);
+
+            if (!result.IsSuccess)
+            {
+                // Handler validation errors (including title conflicts)
+                var errorMessage = result.ErrorMessage ?? 
+                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+                ModelState.AddModelError(string.Empty, errorMessage);
+                
+                return View(viewName: "__NewHomePage", model: model);
+            }
+
+            // Successfully created - redirect to home
+            return Redirect("/");
         }
 
         /// <summary>
@@ -1890,7 +1934,7 @@ namespace Sky.Cms.Controllers
             var userId = Guid.Parse(await GetUserId());
             if (id.HasValue)
             {
-                article = await articleLogic.GetArticleById(id.Value, EnumControllerName.Edit, userId);
+                article = await articleLogic.GetArticleById(id.Value, userId);
             }
             else
             {
@@ -2278,7 +2322,7 @@ namespace Sky.Cms.Controllers
 
         /// <summary>
         /// Sends an article (or page) to trash bin.
- /// </summary>
+        /// </summary>
         /// <param name="id">Article ID.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpGet]
