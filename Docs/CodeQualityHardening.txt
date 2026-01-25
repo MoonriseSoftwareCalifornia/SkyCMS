@@ -1,0 +1,122 @@
+SkyCMS Code Quality Hardening Roadmap
+
+Overview
+- Goal: Raise maintainability from ~7.5/10 to 8.5+ and code quality from ~6.5/10 to 8+
+- Scope: Nullability, LINQ safety, documentation, structure, tests, and CI enforcement
+
+1) Nullable Reference Types Standardization (Highest Impact)
+- Add to ALL .csproj files:
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+- Fix interface nullability mismatches (examples):
+  - IUserEmailStore.SetEmailAsync(TUser, string? email) → implementation must accept string?
+  - IUserPasswordStore.SetPasswordHashAsync(TUser, string? passwordHash) → accept string?
+  - IUserSecurityStampStore.GetSecurityStampAsync(...) → return Task<string?> if null possible
+- Priority files:
+  - AspNetCore.Identity.FlexDb/Stores/CosmosUserStore.cs (several Set*/Get* methods)
+  - AspNetCore.Identity.FlexDb/Stores/CosmosRoleStore.cs (Task<string?> vs Task<string>)
+  - Sky.Cms.Api.Shared/Models/* (use required or nullable members where appropriate)
+- Outcome: Eliminates ~40% of warnings, compile-time null safety
+
+2) LINQ Null Safety in Controllers (Fix current test failures)
+- Pattern: Add guard clauses for model properties used in queries
+- Example (BlogController):
+  // before: FirstOrDefaultAsync(b => b.RowKey == model.RowKey)
+  if (string.IsNullOrEmpty(model.RowKey)) return BadRequest("RowKey is required");
+  var blog = await _dbContext.BlogStreams.FirstOrDefaultAsync(b => b.RowKey == model.RowKey);
+- Affected lines: 137, 391, 506 (BlogController)
+- Outcome: Prevents runtime NREs; converts 6 failing tests to passing
+
+3) XML Documentation for Public APIs (Maintainability)
+- Add /// summary/param/returns/exception docs for:
+  - Editor/Services/Layout/ILayoutFamilyService.cs (8+ methods)
+  - Editor/Services/Layout/LayoutFamilyService.cs (ctor + methods)
+  - Editor/Features/Articles/* (Create/Save handlers)
+  - Sky.Cms.Api.Shared/Controllers/ContactApiController.cs (3+ endpoints)
+- Outcome: IntelliSense clarity; reduces reverse-engineering by newcomers
+
+4) Remove Dead Code & Improve Logging (Hygiene)
+- Replace unused catch variables or log exception messages:
+  catch (Exception ex) { logger.LogError($"Failed: {ex.Message}"); }
+- Files with unused vars: Setup Index.cshtml.cs, Login.cshtml.cs, CosmosUserStore.cs
+- Outcome: Cleaner diffs; less cognitive noise
+
+5) Extract and Organize Program.cs (Clarity & Testability)
+- Current: ~1,001 lines; multiple steps (diagnostics, migrations, services, middleware)
+- Target structure:
+  Extensions/ServiceRegistrationExtensions.cs       (DI registrations)
+  Extensions/MiddlewareExtensions.cs                (pipeline composition)
+  Extensions/DatabaseMigrationExtensions.cs         (schema + data migrations)
+  Extensions/AuthenticationExtensions.cs            (OAuth providers & cookies)
+- Program.cs becomes orchestration-only (200–300 lines)
+- Outcome: Easier to add features; lower merge conflicts; unit-testable startup pieces
+
+6) Test Coverage Expansion to 50%+ (Confidence)
+- Add targeted tests (40–50 total):
+  - Multi-tenant routing & cookie isolation (DomainMiddleware, cookie claim)
+  - Contact form rate limiting & CAPTCHA validation
+  - Layout versioning lifecycle & migration service
+  - Email configuration failover (tenant → admin fallback)
+  - Storage provider failover (S3 → Blob → R2)
+- Outcome: Protects critical flows; catches regressions early
+
+7) StyleCop & EditorConfig Enforcement (Consistency)
+- Add .editorconfig (root):
+  [*.cs]
+  trim_trailing_whitespace = true
+  insert_final_newline = true
+  indent_style = space
+  indent_size = 4
+  dotnet_diagnostic.SA1515.severity = warning
+  dotnet_diagnostic.SA1028.severity = warning
+  dotnet_diagnostic.SA1600.severity = warning
+  dotnet_diagnostic.CS8618.severity = error
+  dotnet_diagnostic.CS8632.severity = error
+- CI step:
+  dotnet build SkyCMS.sln -c Release /p:TreatWarningsAsErrors=true
+  dotnet test SkyCMS.sln --filter "Category!=Integration"
+- Outcome: Prevents warning creep; aligns team standards
+
+8) Resolve Remaining Warning Hotspots
+- Style: Cosmos.BlobService/StorageContext.cs (trailing whitespace; blank lines before comments)
+- Nullability: Adjust return types to nullable where appropriate (Task<string?>, string?)
+- Obsolete usage: EditorController obsolete methods (replace with Mediator handlers or add [Obsolete] with migration note)
+- Outcome: Near-zero warning baseline
+
+9) Multi-Tenant Architecture Documentation (Knowledge Sharing)
+- New doc: docs/ARCHITECTURE_MULTITENANT.md
+  - Request flow: x-origin-hostname → DomainMiddleware → DynamicConfigurationProvider → per-tenant services
+  - Cookie isolation: CookieDomain claim; reject mismatched domains
+  - Tenant onboarding steps: add config row, run migrations, seed default layout/template
+- Outcome: Onboards new developers; reduces misuse of tenant context
+
+10) Startup Lifecycle Documentation (Order Matters)
+- New doc: docs/STARTUP_LIFECYCLE.md
+  - Diagnostic mode: early validation path; exits before normal startup
+  - Single-tenant: schema + data migrations → service registration → HTTP server
+  - Multi-tenant: discover tenants → per-tenant migrations → shared services registration
+  - Critical ordering: DbContext before repos; DynamicConfigurationProvider singleton; SignalR user ID with tenant context
+- Outcome: Fewer initialization defects; clear setup sequence
+
+Prioritized Checklist (Effort → Impact)
+- P0: Enable <Nullable> in all projects (2h) → compile-time null safety
+- P0: Fix BlogController LINQ null safety (1.5h) → test failures pass
+- P0: Add .editorconfig + CI warning gate (1h) → standards enforced
+- P1: Extract Program.cs into extensions (6h) → clarity/testability
+- P1: Add XML docs for public APIs (4h) → onboarding & IntelliSense
+- P1: Document multi-tenant & startup lifecycle (3.5h) → knowledge sharing
+- P2: Expand test coverage to 50%+ (16h) → regression protection
+- P2: Remove dead code; fix residual warnings (2.5h) → cleanliness
+
+Suggested Sprint Plan
+- Sprint 1 (1 day): Nullable enable, LINQ guards, CI + editorconfig, remove dead code
+- Sprint 2 (2 days): Program.cs extraction; XML docs; startup lifecycle doc
+- Sprint 3 (2–3 days): Add 40–50 tests; fix multi-tenant edge cases; multi-tenant architecture doc
+
+Expected Outcomes
+- <5 warnings across solution
+- 50%+ line coverage on critical projects
+- Clear startup flow and multi-tenant behavior
+- Stronger maintainability (8.5+/10) and code quality (8+/10)

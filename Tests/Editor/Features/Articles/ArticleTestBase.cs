@@ -42,6 +42,7 @@ namespace Sky.Tests.Editor.Features.Articles
             // Setup InMemory database
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseInMemoryDatabase(databaseName: $"TestDb_{Guid.NewGuid()}")
+                .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
 
             DbContext = new ApplicationDbContext(options);

@@ -3,14 +3,13 @@
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
-namespace Sky.Tests.Editor.Features.Articles.Clone
+using Sky.Tests.Editor.Features.Articles;
+
+namespace Sky.Tests.Features.Articles.Clone
 {
     using System;
-    using System.Linq;
     using System.Threading.Tasks;
-    using Cosmos.Cms.Common;
     using Cosmos.Common.Models;
-    using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;

@@ -1,0 +1,553 @@
+================================================================================
+SKYCMS EDUCATIONAL MATERIALS IMPLEMENTATION PLAN
+For Web Developers Building Client Websites
+================================================================================
+
+PROJECT OVERVIEW
+================================================================================
+Goal: Create practitioner-focused educational materials for web developers 
+      using SkyCMS to build client websites.
+
+Audience: Web developers building their first SkyCMS client site, transitioning
+         from solo development to team handoff with non-technical content creators.
+
+Output Location: ./Docs/Learn/ (published as docs.skycms.com/learn/)
+Reference Docs: ./Docs/Technical/ (existing reference materials reorganized)
+
+Timeline: Phased approach, high-success-rate small steps
+Documentation: Screenshots marked with placeholders, reusing existing assets
+
+
+FOLDER STRUCTURE
+================================================================================
+
+./Docs/
+├── Learn/                                    ← NEW: Educational materials
+│   ├── index.md                              ← Hub/navigation
+│   ├── Getting-Started/
+│   │   ├── 01-Who-SkyCMS-Is-For.md
+│   │   ├── 02-Your-First-30-Minutes.md
+│   │   ├── 03-The-Big-Picture.md
+│   │   ├── 04-Glossary.md
+│   │   └── images/                           ← Screenshot folder
+│   ├── Fundamentals/
+│   │   ├── 01-Understanding-Layouts.md
+│   │   ├── 02-Understanding-Templates.md
+│   │   ├── 03-Understanding-Articles.md
+│   │   ├── 04-The-Trinity-Diagram.md
+│   │   └── images/
+│   ├── Building-Sites/
+│   │   ├── 01-Handoff-Ready-Templates.md
+│   │   ├── 02-Editable-Regions-Best-Practices.md
+│   │   ├── 03-Navigation-Patterns.md
+│   │   ├── 04-Common-Mistakes.md
+│   │   └── images/
+│   ├── Content-Creators/
+│   │   ├── 01-Live-Editor-From-Both-Sides.md
+│   │   ├── 02-Publishing-Workflows.md
+│   │   ├── 03-Training-Content-Creators.md
+│   │   └── images/
+│   └── Examples/
+│       ├── index.md
+│       ├── Starter-Templates/
+│       └── Before-After-Comparisons/
+│
+├── Technical/                                ← REORGANIZED: Reference docs
+│   ├── index.md                              ← Hub
+│   ├── Architecture/
+│   ├── Components/
+│   ├── API/
+│   └── Configuration/
+│
+├── (existing structure continues...)
+└── images/
+    └── screenshots/                          ← Shared asset location
+
+
+PHASE-BY-PHASE IMPLEMENTATION
+================================================================================
+
+PHASE 1: PLANNING & SETUP (1-2 hours)
+-----------------------------------
+GOAL: Set up folder structure and plan content outlines
+STATUS: Ready to start
+OUTPUT: Folder structure created, outlines written
+
+STEP 1.1: Create folder structure
+  ACTION: Create ./Docs/Learn/ and subdirectories
+  OUTCOME: Empty directories ready for content
+  TIME: 15 minutes
+  RISK: Low
+
+STEP 1.2: Create Learn/index.md (navigation hub)
+  ACTION: Write main hub with links to all sections
+  CONTENT: Overview + pathway choices (Getting Started → Fundamentals → Building)
+  SCREENSHOT PLACEHOLDERS: None
+  TIME: 30 minutes
+  RISK: Low
+
+STEP 1.3: Create Getting-Started section outlines
+  ACTION: Create .md files with structure (headings, sections)
+  FILES:
+    - 01-Who-SkyCMS-Is-For.md
+    - 02-Your-First-30-Minutes.md
+    - 03-The-Big-Picture.md
+    - 04-Glossary.md
+  CONTENT: Section headings only (body content added in Phase 2)
+  TIME: 30 minutes
+  RISK: Low
+
+
+PHASE 2: GETTING-STARTED CONTENT (4-6 hours)
+---------------------------------------------
+GOAL: Write foundational content (who SkyCMS is for, first experience, glossary)
+STATUS: Next to start after Phase 1
+OUTPUT: 4 complete Getting-Started guides
+
+STEP 2.1: Write "Who SkyCMS Is For" (01-Who-SkyCMS-Is-For.md)
+  SECTIONS:
+    - The Collaboration Model (Developer + Content Creator partnership)
+    - Why It Matters (faster handoff, fewer mistakes, better outcomes)
+    - Ideal Profile (web developers with CSS/HTML/JS, working with SMEs)
+    - What You'll Build (client websites, blogs, content sites)
+    - Philosophy (open architecture, ease of use for both roles)
+  SCREENSHOTS: None (philosophy doc)
+  REFERENCES TO: When-to-Use-SkyCMS.md, About.md
+  TIME: 1 hour
+  RISK: Low (clear messaging from planning)
+
+STEP 2.2: Write "Your First 30 Minutes" (02-Your-First-30-Minutes.md)
+  GOAL: Quick win - create a simple page from start to publish
+  SECTIONS:
+    - Prerequisites (SkyCMS running, admin access)
+    - Step 1: Log in and navigate
+    - Step 2: Create first page
+    - Step 3: Add content to editable region
+    - Step 4: Publish
+    - Step 5: View live
+    - Celebrate! What you learned
+  SCREENSHOTS:
+    [SCREENSHOT: admin-dashboard-landing.webp] ← First view after login
+    [SCREENSHOT: create-page-form.webp] ← New page dialog
+    [SCREENSHOT: live-editor-basic.webp] ← Editing experience
+    [SCREENSHOT: publish-dialog.webp] ← Publishing page
+    [SCREENSHOT: published-page-live.webp] ← Result on live site
+  REFERENCES TO: Live Editor docs
+  TIME: 1.5 hours (writing + screenshot planning)
+  RISK: Medium (depends on having screenshots)
+
+STEP 2.3: Write "The Big Picture" (03-The-Big-Picture.md)
+  GOAL: Architectural overview before diving into details
+  SECTIONS:
+    - The Trinity (Layouts, Templates, Articles) with simple definitions
+    - How They Work Together (diagram-based)
+    - Your Development Journey (plan → layout → template → page → handoff)
+    - Key Concepts at a Glance
+  SCREENSHOTS:
+    [SCREENSHOT: trinity-architecture-diagram.webp] ← Main visual
+    [SCREENSHOT: page-hierarchy-example.webp] ← How they nest
+  REFERENCES TO: Fundamentals section (deeper dives)
+  TIME: 1.5 hours
+  RISK: Medium (conceptual, needs good diagrams)
+
+STEP 2.4: Write "Glossary" (04-Glossary.md)
+  GOAL: Quick reference for terminology
+  TERMS: Layout, Template, Article, Page, Editable Region, Content Creator, Live Editor,
+          Publishing, Handoff, Widget, etc.
+  FORMAT: Alphabetical, short definitions, examples
+  SCREENSHOTS: None (reference doc)
+  TIME: 45 minutes
+  RISK: Low
+
+
+PHASE 3: FUNDAMENTALS CONTENT (6-8 hours)
+------------------------------------------
+GOAL: Deep understanding of Layout, Template, Article architecture
+STATUS: After Phase 2
+OUTPUT: 4 complete guides on core concepts
+
+STEP 3.1: Write "Understanding Layouts" (01-Understanding-Layouts.md)
+  GOAL: What layouts are, why they matter, how to think about them
+  SECTIONS:
+    - Concept: Layouts as site-wide structure
+    - DRY Principle (Don't Repeat Yourself)
+    - Anatomy of a layout (head, header, footer, content area)
+    - How all pages use the same layout
+    - Building a simple layout
+    - Modifying layouts site-wide
+    - Responsive layouts
+  SCREENSHOTS:
+    [SCREENSHOT: layout-structure-diagram.webp] ← Visual breakdown
+    [SCREENSHOT: layout-code-editor.webp] ← How it looks in editor
+    [SCREENSHOT: layout-publishing.webp] ← Publishing a layout
+  REFERENCES TO: Developer-Guides/02-Creating-Layouts.md (deeper technical)
+  TIME: 1.5 hours
+  RISK: Medium (needs good visual explanations)
+
+STEP 3.2: Write "Understanding Templates" (02-Understanding-Templates.md)
+  GOAL: Template role in providing structure for page types
+  SECTIONS:
+    - Concept: Templates as page type blueprints
+    - Template vs. Layout (what each does)
+    - Anatomy of a template (editable regions)
+    - Creating your first template
+    - Reusable template patterns (blog post, service page, landing page)
+    - Data-ccms-ceid attribute explained
+    - Why templates enable handoff
+  SCREENSHOTS:
+    [SCREENSHOT: template-with-regions.webp] ← Template showing editable regions
+    [SCREENSHOT: template-code-example.webp] ← HTML structure
+    [SCREENSHOT: multiple-pages-from-template.webp] ← Template reuse
+  REFERENCES TO: Developer-Guides/03-Creating-Templates.md
+  TIME: 1.5 hours
+  RISK: Medium
+
+STEP 3.3: Write "Understanding Articles & Pages" (03-Understanding-Articles.md)
+  GOAL: How pages/articles are created from templates, versioning, publishing
+  SECTIONS:
+    - Concept: Articles as content instances
+    - Article vs. Page (terminology)
+    - Creating a page from a template
+    - Editable regions on pages
+    - Versioning (every save creates a version)
+    - Publishing a page
+    - Blog articles (ArticleType)
+    - URL structure and navigation
+  SCREENSHOTS:
+    [SCREENSHOT: create-page-from-template.webp] ← Page creation
+    [SCREENSHOT: page-versions-list.webp] ← Version history
+    [SCREENSHOT: page-live-editor.webp] ← Editing live
+  REFERENCES TO: Publishing-Overview.md
+  TIME: 1.5 hours
+  RISK: Low-Medium
+
+STEP 3.4: Write "The Trinity in Action" (04-The-Trinity-Diagram.md)
+  GOAL: Show how all three work together with a real example
+  SECTIONS:
+    - Start with a scenario (building a 5-page client blog)
+    - Phase 1: Build one layout (header, nav, footer)
+    - Phase 2: Build three templates (home, blog post, about)
+    - Phase 3: Create 5 pages from templates
+    - Phase 4: Handoff to content creator
+    - Key insights
+  SCREENSHOTS:
+    [SCREENSHOT: scenario-start-plan.webp] ← Planning view
+    [SCREENSHOT: scenario-layout-created.webp] ← Layout after building
+    [SCREENSHOT: scenario-templates-created.webp] ← All templates ready
+    [SCREENSHOT: scenario-pages-created.webp] ← Pages listed
+  REFERENCES TO: Website-Launch-Workflow.md (6-phase approach)
+  TIME: 1 hour
+  RISK: Medium
+
+
+PHASE 4: BUILDING-SITES CONTENT (8-10 hours)
+---------------------------------------------
+GOAL: Practical guidance for building handoff-ready sites
+STATUS: After Phase 3
+OUTPUT: 4 guides on best practices and common mistakes
+
+STEP 4.1: Write "Handoff-Ready Templates" (01-Handoff-Ready-Templates.md)
+  GOAL: Design patterns for templates that work well with non-technical users
+  SECTIONS:
+    - Philosophy: Build for the editor, not the developer
+    - What makes a template "handoff-ready"
+    - Region naming (clear, descriptive names)
+    - Region types (title, body, image, list)
+    - Limiting complexity (fewer regions is better)
+    - Clear visual hierarchy
+    - "Do's and Don'ts" checklist
+    - Example: Good template vs. Bad template
+  SCREENSHOTS:
+    [SCREENSHOT: template-good-example.webp] ← Simple, clear structure
+    [SCREENSHOT: template-bad-example.webp] ← Overcomplicated example
+    [SCREENSHOT: template-in-live-editor.webp] ← How editor sees it
+    [SCREENSHOT: template-with-regions-labeled.webp] ← Region clarity
+  REFERENCES TO: Developer-Guides/03-Creating-Templates.md
+  TIME: 2 hours
+  RISK: Medium-High (best practices need real examples)
+
+STEP 4.2: Write "Editable Regions Best Practices" (02-Editable-Regions-Best-Practices.md)
+  GOAL: Master the data-ccms-ceid attribute and create intuitive regions
+  SECTIONS:
+    - What are editable regions (definition)
+    - Data-ccms-ceid attribute explained
+    - Region naming conventions (cms-hero-title, cms-body-main, etc.)
+    - Region types (rich content, title, image, custom)
+    - CSS class consistency (ck-content for CKEditor styling)
+    - Testing regions (how to verify they work)
+    - Common mistakes (nested regions, undefined IDs)
+    - Accessibility (alt text, labels, semantic HTML)
+  SCREENSHOTS:
+    [SCREENSHOT: region-html-example.webp] ← Code example
+    [SCREENSHOT: region-in-editor.webp] ← How it appears in live editor
+    [SCREENSHOT: region-with-dashed-border.webp] ← Visual feedback
+  REFERENCES TO: Templates/Readme.md (technical reference)
+  TIME: 1.5 hours
+  RISK: Low-Medium
+
+STEP 4.3: Write "Navigation & Site Structure Patterns" (03-Navigation-Patterns.md)
+  GOAL: Building navigation that works for both developers and content creators
+  SECTIONS:
+    - Types of navigation (main menu, sidebar, breadcrumbs, footer)
+    - Static vs. dynamic navigation
+    - Menu hierarchy (how deep is too deep?)
+    - Creating navigation in layouts vs. templates
+    - Managing URLs and slugs
+    - Publishing workflows and navigation consistency
+    - Example: Building a 3-level menu for a small business site
+  SCREENSHOTS:
+    [SCREENSHOT: navigation-example-simple.webp] ← Clean nav
+    [SCREENSHOT: navigation-example-complex.webp] ← Complex example
+    [SCREENSHOT: site-structure-tree.webp] ← Information architecture
+  REFERENCES TO: Publishing-Overview.md
+  TIME: 1.5 hours
+  RISK: Medium
+
+STEP 4.4: Write "Common Mistakes & How to Avoid Them" (04-Common-Mistakes.md)
+  GOAL: Avoid pitfalls that break handoff
+  SECTIONS:
+    - Mistake 1: Over-complicating templates
+    - Mistake 2: Nested editable regions (don't do this)
+    - Mistake 3: Poor region naming (confuses editors)
+    - Mistake 4: Too much CSS in templates
+    - Mistake 5: Not testing with sample content
+    - Mistake 6: Building for developer convenience, not editor usability
+    - Mistake 7: Inconsistent styling across templates
+    - Mistake 8: Forgetting about mobile editing
+    - For each: What it looks like, why it's bad, how to fix it
+  SCREENSHOTS:
+    [SCREENSHOT: mistake-nested-regions.webp] ← What NOT to do
+    [SCREENSHOT: mistake-poor-naming.webp] ← Confusing region names
+    [SCREENSHOT: mistake-overcomplicated.webp] ← Too many regions
+  TIME: 1.5 hours
+  RISK: Low (familiar patterns from existing docs)
+
+
+PHASE 5: CONTENT-CREATORS CONTENT (6-8 hours)
+----------------------------------------------
+GOAL: Bridge content - how developers work with content creators
+STATUS: After Phase 4
+OUTPUT: 3 guides on publishing, training, and workflows
+
+STEP 5.1: Write "Live Editor from Both Sides" (01-Live-Editor-From-Both-Sides.md)
+  GOAL: Developer perspective on building FOR the live editor
+  SECTIONS:
+    - Understanding the content creator experience
+    - Live editor capabilities (what it can do)
+    - Live editor limitations (what it can't do)
+    - Building templates with editor in mind
+    - Testing templates with sample content
+    - Preparing for content creator questions
+    - Walkaround: Developer builds template, creator uses it
+  SCREENSHOTS:
+    [SCREENSHOT: live-editor-developer-view.webp] ← Developer testing
+    [SCREENSHOT: live-editor-creator-view.webp] ← Creator editing
+    [SCREENSHOT: live-editor-toolbar-labeled.webp] ← What tools are available
+    [SCREENSHOT: live-editor-regions-highlighted.webp] ← Visible regions
+  REFERENCES TO: Editors/LiveEditor/README.md
+  TIME: 1.5 hours
+  RISK: Medium
+
+STEP 5.2: Write "Publishing Workflows for Teams" (02-Publishing-Workflows.md)
+  GOAL: Setting up publishing so creators feel confident
+  SECTIONS:
+    - Publishing modes (Direct, Staged, Static)
+    - Choosing the right mode for your team
+    - Draft → Preview → Publish flow
+    - Scheduling posts
+    - Versioning and rollback
+    - CDN and cache considerations
+    - Common workflows (single creator, multiple creators, approval required)
+  SCREENSHOTS:
+    [SCREENSHOT: publish-dialog-with-options.webp] ← Publishing interface
+    [SCREENSHOT: scheduling-calendar.webp] ← Scheduling feature
+    [SCREENSHOT: version-history.webp] ← Version management
+  REFERENCES TO: Publishing-Overview.md
+  TIME: 1.5 hours
+  RISK: Low
+
+STEP 5.3: Write "Training & Handing Off" (03-Training-Content-Creators.md)
+  GOAL: Practical guide for handing off site to non-technical team
+  SECTIONS:
+    - Preparation (what creators need to know)
+    - Training material template (what to include)
+    - Training sessions (what to cover)
+    - Documentation (create simple guides for creators)
+    - Support plan (how they get help)
+    - Success metrics (how do you know it's working?)
+    - Common questions and answers
+  SCREENSHOTS:
+    [SCREENSHOT: training-setup-example.webp] ← Sample training scenario
+  TIME: 1.5 hours
+  RISK: Low
+
+
+PHASE 6: EXAMPLES & TEMPLATES (4-6 hours)
+------------------------------------------
+GOAL: Provide reusable starter templates and before/after examples
+STATUS: After Phase 5
+OUTPUT: Starter templates, comparison docs
+
+STEP 6.1: Create Examples/index.md
+  PURPOSE: Navigation for example section
+  CONTENT: Links to starter templates and comparisons
+  TIME: 30 minutes
+  RISK: Low
+
+STEP 6.2: Create Starter-Templates
+  ACTION: Create sample templates for common page types
+  TEMPLATES:
+    - blog-post-template.html (with annotations)
+    - landing-page-template.html (with annotations)
+    - service-page-template.html (with annotations)
+    - about-page-template.html (with annotations)
+  FORMAT: HTML with comments explaining data-ccms-ceid attributes
+  TIME: 2 hours
+  RISK: Medium (needs testing)
+
+STEP 6.3: Create Before-After-Comparisons
+  GOAL: Visual/code examples of good vs. bad patterns
+  COMPARISONS:
+    - Template Structure (good vs. bad)
+    - Editable Regions (clear vs. confusing)
+    - CSS Approach (maintainable vs. brittle)
+  SCREENSHOTS:
+    [SCREENSHOT: comparison-template-good.webp]
+    [SCREENSHOT: comparison-template-bad.webp]
+    [SCREENSHOT: comparison-regions-good.webp]
+    [SCREENSHOT: comparison-regions-bad.webp]
+  TIME: 1.5 hours
+  RISK: Medium
+
+
+PHASE 7: REORGANIZE TECHNICAL DOCS (3-4 hours)
+-----------------------------------------------
+GOAL: Move existing reference docs to ./Docs/Technical/
+STATUS: Final phase
+OUTPUT: ./Docs/Technical/ fully organized
+
+STEP 7.1: Create ./Docs/Technical/ folder structure
+  SUBFOLDERS:
+    - Architecture/
+    - Components/
+    - API/
+    - Configuration/
+  TIME: 30 minutes
+  RISK: Low
+
+STEP 7.2: Move existing reference documents
+  MOVE FROM: ./Docs/Architecture/, ./Docs/Components/, etc.
+  MOVE TO: ./Docs/Technical/{category}/
+  ACTION: Cut/paste existing files, update cross-references in index.md
+  TIME: 2 hours
+  RISK: Medium (don't break existing links)
+
+STEP 7.3: Create ./Docs/Technical/index.md
+  PURPOSE: Navigation hub for reference docs
+  CONTENT: Links to Architecture, Components, API, Configuration
+  TIME: 30 minutes
+  RISK: Low
+
+
+SCREENSHOT PLANNING
+================================================================================
+
+SCREENSHOT ASSET REUSE:
+  Existing screenshots from Docs/images/screenshots/:
+    - setup-wizard-*.webp (multiple steps)
+    - live-editor-*.webp (existing examples)
+    - publishing-*.webp (existing examples)
+  
+  NEW screenshots needed for Learn section:
+    - Fundamentals:
+      - trinity-architecture-diagram.webp
+      - page-hierarchy-example.webp
+      - layout-structure-diagram.webp
+      - layout-code-editor.webp
+      - template-with-regions.webp
+      - etc. (see placeholders in each step above)
+    
+    - Building-Sites:
+      - template-good-example.webp
+      - template-bad-example.webp
+      - etc.
+
+SCREENSHOT PLACEHOLDER FORMAT:
+  In markdown files, use:
+  [SCREENSHOT: {filename}.webp] — {description}
+  
+  EXAMPLE:
+  [SCREENSHOT: trinity-architecture-diagram.webp] — Shows how Layouts, Templates, 
+  and Articles fit together in a visual hierarchy.
+
+  This allows easy tracking and replacement once screenshots are captured.
+
+
+SUCCESS CRITERIA
+================================================================================
+
+Per-Phase Success:
+
+PHASE 1: ✓ Folder structure created, all .md files with outlines exist
+PHASE 2: ✓ All Getting-Started docs written, placeholders marked
+PHASE 3: ✓ All Fundamentals docs written, placeholders marked
+PHASE 4: ✓ All Building-Sites docs written, placeholders marked, examples clear
+PHASE 5: ✓ All Content-Creators docs written, workflows clear
+PHASE 6: ✓ Starter templates created, comparisons documented
+PHASE 7: ✓ Technical docs organized, cross-references updated
+
+Overall:
+  • All content written with screenshot placeholders clearly marked
+  • No broken cross-references
+  • Learn section complete and ready for screenshot capture
+  • Technical section organized and accessible
+  • docs.skycms.com/learn/ accessible and navigable
+
+
+SCHEDULE
+================================================================================
+
+PHASE 1 (Planning):      1-2 hours
+PHASE 2 (Getting-Started): 4-6 hours
+PHASE 3 (Fundamentals):   6-8 hours
+PHASE 4 (Building-Sites): 8-10 hours
+PHASE 5 (Content-Creators): 6-8 hours
+PHASE 6 (Examples):       4-6 hours
+PHASE 7 (Reorganize):     3-4 hours
+
+TOTAL WRITING TIME: ~32-44 hours (can be parallelized)
+
+THEN: Screenshot capture phase (separate from this plan)
+
+
+NOTES FOR IMPLEMENTATION
+================================================================================
+
+1. CROSS-REFERENCING:
+   - Each Learning material links TO relevant Reference docs
+   - Learning materials are task-focused, Reference docs are deep-dives
+   - Clear navigation paths between sections
+
+2. TONE:
+   - Friendly, encouraging (this is learning material, not API docs)
+   - "We're building together" perspective
+   - Celebrate small wins
+
+3. EXAMPLES:
+   - Real-world scenarios (client blog, small business site)
+   - Before/after code examples
+   - Common use cases
+
+4. ACCESSIBILITY:
+   - Alt text for all screenshots
+   - Plain language explanations
+   - Code examples with comments
+
+5. MAINTENANCE:
+   - Each doc has "Last Updated" date
+   - Links to existing docs are relative paths
+   - Screenshot filenames are stable (if updated, update docs)
+
+================================================================================
+END OF PLAN
+================================================================================
