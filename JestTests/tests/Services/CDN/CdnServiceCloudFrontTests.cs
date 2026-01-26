@@ -33,6 +33,9 @@ namespace Sky.Tests.Services.CDN
             mockHttpContext = new Mock<HttpContext>();
         }
 
+        /// <summary>
+        /// Tests that CdnService_WithCloudFrontSettings_InitializesCorrectly.
+        /// </summary>
         [TestMethod]
         public void CdnService_WithCloudFrontSettings_InitializesCorrectly()
         {
@@ -62,6 +65,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Sky CMD CDN", service.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that CdnService_IsConfigured_WithCloudFront_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public void CdnService_IsConfigured_WithCloudFront_ReturnsTrue()
         {
@@ -92,6 +98,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(isConfigured);
         }
 
+        /// <summary>
+        /// Tests that CdnService_IsConfigured_WithCloudFrontType_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public void CdnService_IsConfigured_WithCloudFrontType_ReturnsTrue()
         {
@@ -122,6 +131,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(isConfigured);
         }
 
+        /// <summary>
+        /// Tests that CdnService_IsConfigured_WithoutCloudFront_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public void CdnService_IsConfigured_WithoutCloudFront_ReturnsFalse()
         {
@@ -136,6 +148,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(isConfigured);
         }
 
+        /// <summary>
+        /// Tests that CdnService_PurgeCdn_WithCloudFront_CallsCloudFrontDriver.
+        /// </summary>
         [TestMethod]
         public async Task CdnService_PurgeCdn_WithCloudFront_CallsCloudFrontDriver()
         {
@@ -168,6 +183,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("CloudFront", results[0].ProviderName);
         }
 
+        /// <summary>
+        /// Tests that CdnService_PurgeCdn_WithMultipleCdns_CallsAllDrivers.
+        /// </summary>
         [TestMethod]
         public async Task CdnService_PurgeCdn_WithMultipleCdns_CallsAllDrivers()
         {
@@ -212,6 +230,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(results.Exists(r => r.ProviderName == "Cloudflare"));
         }
 
+        /// <summary>
+        /// Tests that CdnService_PurgeCdn_NoParameters_CallsCloudFrontWithWildcard.
+        /// </summary>
         [TestMethod]
         public async Task CdnService_PurgeCdn_NoParameters_CallsCloudFrontWithWildcard()
         {

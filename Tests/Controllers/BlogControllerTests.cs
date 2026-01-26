@@ -1,4 +1,4 @@
-﻿// <copyright file="BlogControllerTests.cs" company="Moonrise Software, LLC">
+// <copyright file="BlogControllerTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -111,6 +111,9 @@ namespace Sky.Tests.Controllers
 
         #region Create Blog Stream Tests
 
+        /// <summary>
+        /// Tests that Create_ValidBlogStream_RedirectsToIndex.
+        /// </summary>
         [TestMethod]
         public async Task Create_ValidBlogStream_RedirectsToIndex()
         {
@@ -143,6 +146,9 @@ namespace Sky.Tests.Controllers
                 Times.Once);
         }
 
+        /// <summary>
+        /// Tests that Create_InvalidModel_ReturnsViewWithErrors.
+        /// </summary>
         [TestMethod]
         public async Task Create_InvalidModel_ReturnsViewWithErrors()
         {
@@ -164,6 +170,9 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(controller.ModelState.IsValid);
         }
 
+        /// <summary>
+        /// Tests that Create_SaveFails_ReturnsViewWithValidationErrors.
+        /// </summary>
         [TestMethod]
         public async Task Create_SaveFails_ReturnsViewWithValidationErrors()
         {
@@ -197,6 +206,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(controller.ModelState.ContainsKey("Title"));
         }
 
+        /// <summary>
+        /// Tests that Create_TitleConflict_ReturnsViewWithError.
+        /// </summary>
         [TestMethod]
         public async Task Create_TitleConflict_ReturnsViewWithError()
         {
@@ -235,6 +247,9 @@ namespace Sky.Tests.Controllers
 
         #region Create Blog Entry Tests
 
+        /// <summary>
+        /// Tests that CreateEntry_ValidEntry_RedirectsToEditorEdit.
+        /// </summary>
         [TestMethod]
         public async Task CreateEntry_ValidEntry_RedirectsToEditorEdit()
         {
@@ -264,6 +279,9 @@ namespace Sky.Tests.Controllers
                 Times.Once);
         }
 
+        /// <summary>
+        /// Tests that CreateEntry_InvalidBlogKey_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task CreateEntry_InvalidBlogKey_ReturnsNotFound()
         {
@@ -274,6 +292,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
         }
 
+        /// <summary>
+        /// Tests that CreateEntry_EmptyTitle_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task CreateEntry_EmptyTitle_ReturnsBadRequest()
         {
@@ -288,6 +309,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that CreateEntry_SaveFails_ReturnsServerError.
+        /// </summary>
         [TestMethod]
         public async Task CreateEntry_SaveFails_ReturnsServerError()
         {
@@ -316,6 +340,9 @@ namespace Sky.Tests.Controllers
 
         #region Edit Blog Entry Tests
 
+        /// <summary>
+        /// Tests that EditEntry_ValidEdit_RedirectsToEntries.
+        /// </summary>
         [TestMethod]
         public async Task EditEntry_ValidEdit_RedirectsToEntries()
         {
@@ -360,6 +387,9 @@ namespace Sky.Tests.Controllers
                 Times.Once);
         }
 
+        /// <summary>
+        /// Tests that EditEntry_InvalidModel_ReturnsViewWithErrors.
+        /// </summary>
         [TestMethod]
         public async Task EditEntry_InvalidModel_ReturnsViewWithErrors()
         {
@@ -384,6 +414,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("EditEntry", viewResult.ViewName);
         }
 
+        /// <summary>
+        /// Tests that EditEntry_SaveFails_ReturnsViewWithValidationErrors.
+        /// </summary>
         [TestMethod]
         public async Task EditEntry_SaveFails_ReturnsViewWithValidationErrors()
         {
@@ -420,6 +453,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(controller.ModelState.ContainsKey("Content"));
         }
 
+        /// <summary>
+        /// Tests that EditEntry_WithPublishNow_PublishesArticle.
+        /// </summary>
         [TestMethod]
         public async Task EditEntry_WithPublishNow_PublishesArticle()
         {
@@ -467,6 +503,9 @@ namespace Sky.Tests.Controllers
 
         #region Delete Blog Entry Tests
 
+        /// <summary>
+        /// Tests that ConfirmDeleteEntry_ValidEntry_RedirectsToEntries.
+        /// </summary>
         [TestMethod]
         public async Task ConfirmDeleteEntry_ValidEntry_RedirectsToEntries()
         {
@@ -494,6 +533,9 @@ namespace Sky.Tests.Controllers
 
         #region Integration Tests
 
+        /// <summary>
+        /// Tests that EndToEnd_CreateBlogStreamAndEntry_Success.
+        /// </summary>
         [TestMethod]
         public async Task EndToEnd_CreateBlogStreamAndEntry_Success()
         {
@@ -555,3 +597,4 @@ namespace Sky.Tests.Controllers
         #endregion
     }
 }
+

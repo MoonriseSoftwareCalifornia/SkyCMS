@@ -16,6 +16,9 @@ using Sky.Cms.Api.Shared.Models;
 [TestClass]
 public class ContactApiConfigTests
 {
+    /// <summary>
+    /// Tests that Constructor_ShouldDisableCaptcha_WhenJsonIsNull.
+    /// </summary>
     [TestMethod]
     public void Constructor_ShouldDisableCaptcha_WhenJsonIsNull()
     {
@@ -29,6 +32,9 @@ public class ContactApiConfigTests
         Assert.IsNull(config.CaptchaSecretKey);
     }
 
+    /// <summary>
+    /// Tests that Constructor_ShouldDisableCaptcha_WhenJsonIsEmpty.
+    /// </summary>
     [TestMethod]
     public void Constructor_ShouldDisableCaptcha_WhenJsonIsEmpty()
     {
@@ -39,6 +45,9 @@ public class ContactApiConfigTests
         Assert.IsFalse(config.RequireCaptcha);
     }
 
+    /// <summary>
+    /// Tests that Constructor_ShouldParseTurnstileConfig_WhenValidJson.
+    /// </summary>
     [TestMethod]
     public void Constructor_ShouldParseTurnstileConfig_WhenValidJson()
     {
@@ -55,6 +64,9 @@ public class ContactApiConfigTests
         Assert.AreEqual("test-secret", config.CaptchaSecretKey);
     }
 
+    /// <summary>
+    /// Tests that Constructor_ShouldParseReCaptchaConfig_WhenValidJson.
+    /// </summary>
     [TestMethod]
     public void Constructor_ShouldParseReCaptchaConfig_WhenValidJson()
     {
@@ -71,6 +83,9 @@ public class ContactApiConfigTests
         Assert.AreEqual("recaptcha-secret", config.CaptchaSecretKey);
     }
 
+    /// <summary>
+    /// Tests that Constructor_ShouldDisableCaptcha_WhenProviderMissing.
+    /// </summary>
     [TestMethod]
     public void Constructor_ShouldDisableCaptcha_WhenProviderMissing()
     {
@@ -84,6 +99,9 @@ public class ContactApiConfigTests
         Assert.IsFalse(config.RequireCaptcha); // Should be false because provider is missing
     }
 
+    /// <summary>
+    /// Tests that Constructor_ShouldHandleInvalidJson_Gracefully.
+    /// </summary>
     [TestMethod]
     public void Constructor_ShouldHandleInvalidJson_Gracefully()
     {
@@ -98,6 +116,9 @@ public class ContactApiConfigTests
         Assert.IsNull(config.CaptchaProvider);
     }
 
+    /// <summary>
+    /// Tests that FromDatabaseSettings_ShouldCreateConfig_WithAllSettings.
+    /// </summary>
     [TestMethod]
     public void FromDatabaseSettings_ShouldCreateConfig_WithAllSettings()
     {
@@ -117,6 +138,9 @@ public class ContactApiConfigTests
         Assert.AreEqual("turnstile", config.CaptchaProvider);
     }
 
+    /// <summary>
+    /// Tests that FromDatabaseSettings_ShouldUseDefaults_WhenCaptchaJsonNull.
+    /// </summary>
     [TestMethod]
     public void FromDatabaseSettings_ShouldUseDefaults_WhenCaptchaJsonNull()
     {
@@ -132,6 +156,9 @@ public class ContactApiConfigTests
         Assert.IsFalse(config.RequireCaptcha);
     }
 
+    /// <summary>
+    /// Tests that DefaultConstructor_ShouldSetDefaults.
+    /// </summary>
     [TestMethod]
     public void DefaultConstructor_ShouldSetDefaults()
     {

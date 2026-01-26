@@ -31,6 +31,9 @@ namespace Sky.Tests.Features.Shared
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that Constructor_WithNullServiceProvider_ThrowsArgumentNullException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithNullServiceProvider_ThrowsArgumentNullException()
         {
@@ -43,6 +46,9 @@ namespace Sky.Tests.Features.Shared
             Assert.AreEqual("serviceProvider", exception.ParamName);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithValidServiceProvider_CreatesInstance.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithValidServiceProvider_CreatesInstance()
         {
@@ -61,6 +67,9 @@ namespace Sky.Tests.Features.Shared
 
         #region SendAsync - Null and Validation Tests
 
+        /// <summary>
+        /// Tests that SendAsync_WithNullCommand_ThrowsArgumentNullException.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithNullCommand_ThrowsArgumentNullException()
         {
@@ -73,6 +82,9 @@ namespace Sky.Tests.Features.Shared
             Assert.AreEqual("command", exception.ParamName);
         }
 
+        /// <summary>
+        /// Tests that SendAsync_WithUnregisteredHandler_ThrowsInvalidOperationException.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithUnregisteredHandler_ThrowsInvalidOperationException()
         {
@@ -92,6 +104,9 @@ namespace Sky.Tests.Features.Shared
 
         #region SendAsync - Reflection Tests
 
+        /// <summary>
+        /// Tests that SendAsync_WithValidCommand_UsesReflectionToResolveHandler.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithValidCommand_UsesReflectionToResolveHandler()
         {
@@ -111,6 +126,9 @@ namespace Sky.Tests.Features.Shared
             Assert.IsTrue(result.IsSuccess);
         }
 
+        /// <summary>
+        /// Tests that SendAsync_WithDerivedCommandType_ResolvesCorrectHandler.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithDerivedCommandType_ResolvesCorrectHandler()
         {
@@ -129,6 +147,9 @@ namespace Sky.Tests.Features.Shared
             Assert.IsTrue(result.IsSuccess);
         }
 
+        /// <summary>
+        /// Tests that SendAsync_WithGenericTypeConstruction_CreatesCorrectHandlerType.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithGenericTypeConstruction_CreatesCorrectHandlerType()
         {
@@ -151,6 +172,9 @@ namespace Sky.Tests.Features.Shared
 
         #region SendAsync - Method Invocation Tests
 
+        /// <summary>
+        /// Tests that SendAsync_WhenHandlerReturnsTask_UnwrapsResultCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WhenHandlerReturnsTask_UnwrapsResultCorrectly()
         {
@@ -169,6 +193,9 @@ namespace Sky.Tests.Features.Shared
             Assert.IsInstanceOfType(result, typeof(CommandResult<ArticleViewModel>));
         }
 
+        /// <summary>
+        /// Tests that SendAsync_WithHandlerThrowingException_PropagatesException.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithHandlerThrowingException_PropagatesException()
         {
@@ -197,6 +224,9 @@ namespace Sky.Tests.Features.Shared
 
         #region SendAsync - CancellationToken Tests
 
+        /// <summary>
+        /// Tests that SendAsync_WithCancellationToken_PassesTokenToHandler.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithCancellationToken_PassesTokenToHandler()
         {
@@ -215,6 +245,9 @@ namespace Sky.Tests.Features.Shared
             Assert.IsNotNull(result);
         }
 
+        /// <summary>
+        /// Tests that SendAsync_WithCancelledToken_ThrowsOperationCanceledException.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithCancelledToken_ThrowsOperationCanceledException()
         {
@@ -241,6 +274,9 @@ namespace Sky.Tests.Features.Shared
 
         #region QueryAsync - Null and Validation Tests
 
+        /// <summary>
+        /// Tests that QueryAsync_WithNullQuery_ThrowsArgumentNullException.
+        /// </summary>
         [TestMethod]
         public async Task QueryAsync_WithNullQuery_ThrowsArgumentNullException()
         {
@@ -253,6 +289,9 @@ namespace Sky.Tests.Features.Shared
             Assert.AreEqual("query", exception.ParamName);
         }
 
+        /// <summary>
+        /// Tests that QueryAsync_WithUnregisteredHandler_ThrowsInvalidOperationException.
+        /// </summary>
         [TestMethod]
         public async Task QueryAsync_WithUnregisteredHandler_ThrowsInvalidOperationException()
         {
@@ -272,6 +311,9 @@ namespace Sky.Tests.Features.Shared
 
         #region QueryAsync - Reflection Tests
 
+        /// <summary>
+        /// Tests that QueryAsync_WithValidQuery_UsesReflectionToResolveHandler.
+        /// </summary>
         [TestMethod]
         public async Task QueryAsync_WithValidQuery_UsesReflectionToResolveHandler()
         {
@@ -291,6 +333,9 @@ namespace Sky.Tests.Features.Shared
             Assert.AreEqual("Result: test", result);
         }
 
+        /// <summary>
+        /// Tests that QueryAsync_WithDerivedQueryType_ResolvesCorrectHandler.
+        /// </summary>
         [TestMethod]
         public async Task QueryAsync_WithDerivedQueryType_ResolvesCorrectHandler()
         {
@@ -314,6 +359,9 @@ namespace Sky.Tests.Features.Shared
 
         #region QueryAsync - CancellationToken Tests
 
+        /// <summary>
+        /// Tests that QueryAsync_WithCancellationToken_PassesTokenToHandler.
+        /// </summary>
         [TestMethod]
         public async Task QueryAsync_WithCancellationToken_PassesTokenToHandler()
         {
@@ -334,6 +382,9 @@ namespace Sky.Tests.Features.Shared
             Assert.AreEqual("Result: cancellable", result);
         }
 
+        /// <summary>
+        /// Tests that QueryAsync_WithCancelledToken_ThrowsOperationCanceledException.
+        /// </summary>
         [TestMethod]
         public async Task QueryAsync_WithCancelledToken_ThrowsOperationCanceledException()
         {
@@ -360,6 +411,9 @@ namespace Sky.Tests.Features.Shared
 
         #region Error Handling - Handler Method Not Found
 
+        /// <summary>
+        /// Tests that SendAsync_WhenHandlerMethodNotFound_ThrowsInvalidOperationException.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WhenHandlerMethodNotFound_ThrowsInvalidOperationException()
         {
@@ -383,6 +437,9 @@ namespace Sky.Tests.Features.Shared
 
         #region Error Handling - Wrong Return Type
 
+        /// <summary>
+        /// Tests that SendAsync_WhenHandlerReturnsWrongType_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WhenHandlerReturnsWrongType_ThrowsException()
         {
@@ -414,6 +471,9 @@ namespace Sky.Tests.Features.Shared
 
         #region Thread Safety Tests
 
+        /// <summary>
+        /// Tests that SendAsync_WithConcurrentRequests_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_WithConcurrentRequests_HandlesCorrectly()
         {
@@ -567,3 +627,4 @@ namespace Sky.Tests.Features.Shared
         #endregion
     }
 }
+

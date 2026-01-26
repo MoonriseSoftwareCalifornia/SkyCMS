@@ -83,6 +83,9 @@ namespace Sky.Tests.Services.Titles
             DbContext?.Dispose();
         }
 
+        /// <summary>
+        /// Verifies that validating a new, unique title returns true.
+        /// </summary>
         [TestMethod]
         public async Task ValidateTitle_NewTitle_ReturnsTrue()
         {
@@ -96,6 +99,9 @@ namespace Sky.Tests.Services.Titles
             Assert.IsTrue(result, "New unique title should be valid");
         }
 
+        /// <summary>
+        /// Verifies that validating a duplicate title returns false.
+        /// </summary>
         [TestMethod]
         public async Task ValidateTitle_DuplicateTitle_ReturnsFalse()
         {
@@ -109,6 +115,9 @@ namespace Sky.Tests.Services.Titles
             Assert.IsFalse(result, "Duplicate title should not be valid");
         }
 
+        /// <summary>
+        /// Ensures that titles matching reserved paths are considered invalid.
+        /// </summary>
         [TestMethod]
         public async Task ValidateTitle_ReservedPath_ReturnsFalse()
         {
@@ -140,6 +149,9 @@ namespace Sky.Tests.Services.Titles
             Assert.IsTrue(normalResult, "Normal title should not be reserved");
         }
 
+        /// <summary>
+        /// Confirms that re-saving the same article (same article number) allows the same title.
+        /// </summary>
         [TestMethod]
         public async Task ValidateTitle_SameArticleNumber_AllowsSameTitle()
         {
@@ -153,6 +165,9 @@ namespace Sky.Tests.Services.Titles
             Assert.IsTrue(result, "Should allow keeping the same title when editing the same article");
         }
 
+        /// <summary>
+        /// Generates a slug from the article title and verifies the expected URL path.
+        /// </summary>
         [TestMethod]
         public void BuildArticleUrl_GeneratesCorrectSlug()
         {
@@ -179,6 +194,9 @@ namespace Sky.Tests.Services.Titles
                 "Should generate slug from title");
         }
 
+        /// <summary>
+        /// When an article title changes, creates a redirect from the old URL to the new URL.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_CreatesRedirect()
         {

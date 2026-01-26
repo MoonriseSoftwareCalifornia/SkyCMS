@@ -71,6 +71,9 @@ namespace Sky.Tests.Controllers.Api
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Constructor")]
         public void Constructor_WithNullMediator_ThrowsArgumentNullException()
@@ -84,6 +87,9 @@ namespace Sky.Tests.Controllers.Api
                     Options.Create(_config)));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Constructor")]
         public void Constructor_WithNullAntiforgery_ThrowsArgumentNullException()
@@ -97,6 +103,9 @@ namespace Sky.Tests.Controllers.Api
                     Options.Create(_config)));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Constructor")]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
@@ -110,6 +119,9 @@ namespace Sky.Tests.Controllers.Api
                     Options.Create(_config)));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Constructor")]
         public void Constructor_WithNullConfig_ThrowsArgumentNullException()
@@ -127,6 +139,9 @@ namespace Sky.Tests.Controllers.Api
 
         #region GetContactScript Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("GetContactScript")]
         public void GetContactScript_WithValidRequest_ReturnsJavaScript()
@@ -148,6 +163,9 @@ namespace Sky.Tests.Controllers.Api
             StringAssert.Contains(contentResult.Content, "request-token");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("GetContactScript")]
         public void GetContactScript_WithCaptchaDisabled_GeneratesScriptWithoutCaptcha()
@@ -167,6 +185,9 @@ namespace Sky.Tests.Controllers.Api
             StringAssert.Contains(contentResult.Content, "requireCaptcha: false");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("GetContactScript")]
         public void GetContactScript_WithTurnstileEnabled_GeneratesTurnstileScript()
@@ -192,6 +213,9 @@ namespace Sky.Tests.Controllers.Api
             StringAssert.Contains(contentResult.Content, "challenges.cloudflare.com/turnstile");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("GetContactScript")]
         public void GetContactScript_WithReCaptchaEnabled_GeneratesReCaptchaScript()
@@ -217,6 +241,9 @@ namespace Sky.Tests.Controllers.Api
             StringAssert.Contains(contentResult.Content, "google.com/recaptcha");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("GetContactScript")]
         public void GetContactScript_WhenExceptionOccurs_Returns500()
@@ -235,6 +262,9 @@ namespace Sky.Tests.Controllers.Api
             Assert.AreEqual(500, objectResult.StatusCode);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("GetContactScript")]
         public void GetContactScript_WhenExceptionOccurs_LogsError()
@@ -262,6 +292,9 @@ namespace Sky.Tests.Controllers.Api
 
         #region Submit Tests - Validation
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithInvalidModelState_ReturnsBadRequest()
@@ -288,6 +321,9 @@ namespace Sky.Tests.Controllers.Api
             StringAssert.Contains(response.Message, "Validation failed");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithMissingCaptchaToken_WhenCaptchaRequired_ReturnsBadRequest()
@@ -318,6 +354,9 @@ namespace Sky.Tests.Controllers.Api
 
         #region Submit Tests - CAPTCHA Validation
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithInvalidCaptcha_ReturnsBadRequest()
@@ -352,6 +391,9 @@ namespace Sky.Tests.Controllers.Api
             StringAssert.Contains(response.Message, "CAPTCHA validation failed");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithValidCaptcha_CallsMediatorWithCorrectQuery()
@@ -403,6 +445,9 @@ namespace Sky.Tests.Controllers.Api
 
         #region Submit Tests - Success Cases
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithValidRequest_CallsMediatorWithCorrectCommand()
@@ -442,6 +487,9 @@ namespace Sky.Tests.Controllers.Api
                 Times.Once);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithSuccessfulSubmission_ReturnsOk()
@@ -478,6 +526,9 @@ namespace Sky.Tests.Controllers.Api
             Assert.AreEqual("Thank you for your message. We'll get back to you soon!", response.Message);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithSuccessfulSubmission_LogsInformation()
@@ -518,6 +569,9 @@ namespace Sky.Tests.Controllers.Api
 
         #region Submit Tests - Failure Cases
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithFailedSubmission_ReturnsBadRequest()
@@ -548,6 +602,9 @@ namespace Sky.Tests.Controllers.Api
             StringAssert.Contains(response.Message, "Email sending failed");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WhenExceptionOccurs_Returns500()
@@ -580,6 +637,9 @@ namespace Sky.Tests.Controllers.Api
             StringAssert.Contains(response.Message, "unexpected error occurred");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WhenExceptionOccurs_LogsError()
@@ -616,6 +676,9 @@ namespace Sky.Tests.Controllers.Api
 
         #region Submit Tests - Edge Cases
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithNullRemoteIpAddress_UsesUnknown()
@@ -649,6 +712,9 @@ namespace Sky.Tests.Controllers.Api
                 Times.Once);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithCancellationToken_PassesToMediator()
@@ -681,6 +747,9 @@ namespace Sky.Tests.Controllers.Api
                 Times.Once);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Submit")]
         public async Task Submit_WithMaxMessageLength_AcceptsRequest()

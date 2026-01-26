@@ -88,6 +88,9 @@ namespace Sky.Tests.Controllers
 
         #region Create Tests
 
+        /// <summary>
+        /// Tests that Create_WithValidRoleName_CreatesRole.
+        /// </summary>
         [TestMethod]
         public async Task Create_WithValidRoleName_CreatesRole()
         {
@@ -103,6 +106,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(roleExists);
         }
 
+        /// <summary>
+        /// Tests that Create_WithEmptyRoleName_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Create_WithEmptyRoleName_ReturnsBadRequest()
         {
@@ -115,6 +121,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("Rule name is required.", badRequest.Value);
         }
 
+        /// <summary>
+        /// Tests that Create_WithNullRoleName_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Create_WithNullRoleName_ReturnsBadRequest()
         {
@@ -125,6 +134,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Create_WithDuplicateRoleName_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Create_WithDuplicateRoleName_ReturnsBadRequest()
         {
@@ -141,6 +153,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(badRequest.Value.ToString().Contains("already exists"));
         }
 
+        /// <summary>
+        /// Tests that Create_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Create_WithInvalidModelState_ReturnsBadRequest()
         {
@@ -158,6 +173,9 @@ namespace Sky.Tests.Controllers
 
         #region Index Tests
 
+        /// <summary>
+        /// Tests that Index_ReturnsViewWithAllRoles.
+        /// </summary>
         [TestMethod]
         public async Task Index_ReturnsViewWithAllRoles()
         {
@@ -176,6 +194,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Count >= 2);
         }
 
+        /// <summary>
+        /// Tests that Index_SortsRolesByNameAscending.
+        /// </summary>
         [TestMethod]
         public async Task Index_SortsRolesByNameAscending()
         {
@@ -193,6 +214,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Any(r => r.Name == "ZRole"));
         }
 
+        /// <summary>
+        /// Tests that Index_SortsRolesByNameDescending.
+        /// </summary>
         [TestMethod]
         public async Task Index_SortsRolesByNameDescending()
         {
@@ -210,6 +234,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Any(r => r.Name == "ARole"));
         }
 
+        /// <summary>
+        /// Tests that Index_HandlesPagination.
+        /// </summary>
         [TestMethod]
         public async Task Index_HandlesPagination()
         {
@@ -228,6 +255,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Count <= 10);
         }
 
+        /// <summary>
+        /// Tests that Index_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithInvalidModelState_ReturnsBadRequest()
         {
@@ -241,6 +271,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Index_WithIds_SetsViewData.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithIds_SetsViewData()
         {
@@ -260,6 +293,9 @@ namespace Sky.Tests.Controllers
 
         #region Delete Tests
 
+        /// <summary>
+        /// Tests that Delete_WithValidRoleId_DeletesRole.
+        /// </summary>
         [TestMethod]
         public async Task Delete_WithValidRoleId_DeletesRole()
         {
@@ -277,6 +313,9 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(roleExists);
         }
 
+        /// <summary>
+        /// Tests that Delete_WithProtectedRole_DoesNotDelete.
+        /// </summary>
         [TestMethod]
         public async Task Delete_WithProtectedRole_DoesNotDelete()
         {
@@ -305,6 +344,9 @@ namespace Sky.Tests.Controllers
             }
         }
 
+        /// <summary>
+        /// Tests that Delete_WithMultipleRoles_DeletesAllNonProtected.
+        /// </summary>
         [TestMethod]
         public async Task Delete_WithMultipleRoles_DeletesAllNonProtected()
         {
@@ -323,6 +365,9 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(await RoleManager.RoleExistsAsync("Delete2"));
         }
 
+        /// <summary>
+        /// Tests that Delete_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Delete_WithInvalidModelState_ReturnsBadRequest()
         {
@@ -336,6 +381,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Delete_WithEmptyArray_ReturnsOk.
+        /// </summary>
         [TestMethod]
         public async Task Delete_WithEmptyArray_ReturnsOk()
         {
@@ -350,6 +398,9 @@ namespace Sky.Tests.Controllers
 
         #region GetUsers Tests
 
+        /// <summary>
+        /// Tests that GetUsers_ReturnsAllUsers.
+        /// </summary>
         [TestMethod]
         public async Task GetUsers_ReturnsAllUsers()
         {
@@ -368,6 +419,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(jsonResult.Value);
         }
 
+        /// <summary>
+        /// Tests that GetUsers_WithStartsWith_FiltersUsers.
+        /// </summary>
         [TestMethod]
         public async Task GetUsers_WithStartsWith_FiltersUsers()
         {
@@ -384,6 +438,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
+        /// <summary>
+        /// Tests that GetUsers_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task GetUsers_WithInvalidModelState_ReturnsBadRequest()
         {
@@ -397,6 +454,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that GetUsers_IsCaseInsensitive.
+        /// </summary>
         [TestMethod]
         public async Task GetUsers_IsCaseInsensitive()
         {
@@ -415,6 +475,9 @@ namespace Sky.Tests.Controllers
 
         #region UsersInRole Tests
 
+        /// <summary>
+        /// Tests that UsersInRole_Get_ReturnsUsersInRole.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Get_ReturnsUsersInRole()
         {
@@ -438,6 +501,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Any(u => u.EmailAddress == "roleuser@example.com"));
         }
 
+        /// <summary>
+        /// Tests that UsersInRole_Get_WithInvalidRoleId_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Get_WithInvalidRoleId_ReturnsNotFound()
         {
@@ -448,6 +514,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
+        /// <summary>
+        /// Tests that UsersInRole_Get_SetsViewData.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Get_SetsViewData()
         {
@@ -466,6 +535,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(viewResult.ViewData["currentSort"]);
         }
 
+        /// <summary>
+        /// Tests that UsersInRole_Get_HandlesSorting.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Get_HandlesSorting()
         {
@@ -491,6 +563,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(model);
         }
 
+        /// <summary>
+        /// Tests that UsersInRole_Post_AddsUsersToRole.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Post_AddsUsersToRole()
         {
@@ -518,6 +593,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(userRoles.Contains("TestRole"));
         }
 
+        /// <summary>
+        /// Tests that UsersInRole_Post_WithInvalidModelState_ReturnsViewWithModel.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Post_WithInvalidModelState_ReturnsViewWithModel()
         {
@@ -543,6 +621,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(returnedModel.Users);
         }
 
+        /// <summary>
+        /// Tests that UsersInRole_Get_HandlesPagination.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Get_HandlesPagination()
         {
@@ -571,6 +652,9 @@ namespace Sky.Tests.Controllers
 
         #region RemoveUsers Tests
 
+        /// <summary>
+        /// Tests that RemoveUsers_RemovesUsersFromRole.
+        /// </summary>
         [TestMethod]
         public async Task RemoveUsers_RemovesUsersFromRole()
         {
@@ -592,6 +676,9 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(userRoles.Contains("TestRole"));
         }
 
+        /// <summary>
+        /// Tests that RemoveUsers_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task RemoveUsers_WithInvalidModelState_ReturnsBadRequest()
         {
@@ -605,6 +692,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that RemoveUsers_WithMultipleUsers_RemovesAll.
+        /// </summary>
         [TestMethod]
         public async Task RemoveUsers_WithMultipleUsers_RemovesAll()
         {
@@ -631,6 +721,9 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(user2Roles.Contains("TestRole"));
         }
 
+        /// <summary>
+        /// Tests that RemoveUsers_WithUserAdministratorsRole_MaintainsAtLeastOne.
+        /// </summary>
         [TestMethod]
         public async Task RemoveUsers_WithUserAdministratorsRole_MaintainsAtLeastOne()
         {
@@ -655,6 +748,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(admins.Count >= 1, "At least one User Administrator should remain");
         }
 
+        /// <summary>
+        /// Tests that RemoveUsers_WithEmptyUserArray_ReturnsRedirect.
+        /// </summary>
         [TestMethod]
         public async Task RemoveUsers_WithEmptyUserArray_ReturnsRedirect()
         {
@@ -674,6 +770,9 @@ namespace Sky.Tests.Controllers
 
         #region Edge Case Tests
 
+        /// <summary>
+        /// Tests that UsersInRole_Get_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Get_WithInvalidModelState_ReturnsBadRequest()
         {
@@ -687,6 +786,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that UsersInRole_Get_IncludesRoleMembershipForUsers.
+        /// </summary>
         [TestMethod]
         public async Task UsersInRole_Get_IncludesRoleMembershipForUsers()
         {
@@ -714,6 +816,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(userModel.RoleMembership.Contains("Role2"));
         }
 
+        /// <summary>
+        /// Tests that Delete_WithNullArray_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Delete_WithNullArray_ReturnsBadRequest()
         {
@@ -727,3 +832,4 @@ namespace Sky.Tests.Controllers
         #endregion
     }
 }
+

@@ -72,6 +72,9 @@ public class ContactApiControllerTests
         dbContext?.Dispose();
     }
 
+    /// <summary>
+    /// Tests that GetContactScript_ShouldReturnJavaScript_WhenConfigurationExists.
+    /// </summary>
     [TestMethod]
     public async Task GetContactScript_ShouldReturnJavaScript_WhenConfigurationExists()
     {
@@ -95,6 +98,9 @@ public class ContactApiControllerTests
         Assert.IsTrue(contentResult.Content.Contains("test-request-token"));
     }
 
+    /// <summary>
+    /// Tests that GetContactScript_ShouldFallbackToEmailConfig_WhenAdminEmailNotConfigured.
+    /// </summary>
     [TestMethod]
     public async Task GetContactScript_ShouldFallbackToEmailConfig_WhenAdminEmailNotConfigured()
     {
@@ -124,6 +130,9 @@ public class ContactApiControllerTests
         emailConfigServiceMock.Verify(x => x.GetEmailSettingsAsync(), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that GetContactScript_ShouldIncludeCaptchaConfig_WhenConfigured.
+    /// </summary>
     [TestMethod]
     public async Task GetContactScript_ShouldIncludeCaptchaConfig_WhenConfigured()
     {
@@ -145,6 +154,9 @@ public class ContactApiControllerTests
         Assert.IsTrue(contentResult.Content.Contains("captchaSiteKey: 'test-site-key'"));
     }
 
+    /// <summary>
+    /// Tests that Submit_ShouldReturnOk_WhenSubmissionSucceeds.
+    /// </summary>
     [TestMethod]
     public async Task Submit_ShouldReturnOk_WhenSubmissionSucceeds()
     {
@@ -187,6 +199,9 @@ public class ContactApiControllerTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that Submit_ShouldReturnBadRequest_WhenModelStateInvalid.
+    /// </summary>
     [TestMethod]
     public async Task Submit_ShouldReturnBadRequest_WhenModelStateInvalid()
     {
@@ -209,6 +224,9 @@ public class ContactApiControllerTests
         Assert.IsTrue(response.Message.Contains("Validation failed"));
     }
 
+    /// <summary>
+    /// Tests that Submit_ShouldReturnBadRequest_WhenCaptchaTokenMissingAndRequired.
+    /// </summary>
     [TestMethod]
     public async Task Submit_ShouldReturnBadRequest_WhenCaptchaTokenMissingAndRequired()
     {
@@ -234,6 +252,9 @@ public class ContactApiControllerTests
         Assert.IsTrue(response.Message.Contains("CAPTCHA validation is required"));
     }
 
+    /// <summary>
+    /// Tests that Submit_ShouldValidateCaptcha_WhenRequired.
+    /// </summary>
     [TestMethod]
     public async Task Submit_ShouldValidateCaptcha_WhenRequired()
     {
@@ -271,6 +292,9 @@ public class ContactApiControllerTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that Submit_ShouldReturnBadRequest_WhenCaptchaValidationFails.
+    /// </summary>
     [TestMethod]
     public async Task Submit_ShouldReturnBadRequest_WhenCaptchaValidationFails()
     {
@@ -300,6 +324,9 @@ public class ContactApiControllerTests
         Assert.IsTrue(response.Message.Contains("CAPTCHA validation failed"));
     }
 
+    /// <summary>
+    /// Tests that Submit_ShouldCaptureRemoteIpAddress.
+    /// </summary>
     [TestMethod]
     public async Task Submit_ShouldCaptureRemoteIpAddress()
     {

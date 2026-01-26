@@ -62,6 +62,9 @@ namespace Sky.Tests.Services.Email
 
         #region SendGrid Configuration Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SendGridConfiguration")]
         public async Task GetEmailSettingsAsync_WithSendGridInEnvironment_ReturnsSendGridSettings()
@@ -84,6 +87,9 @@ namespace Sky.Tests.Services.Email
 
         #region Azure Email Configuration Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("AzureConfiguration")]
         public async Task GetEmailSettingsAsync_WithAzureEmailInEnvironment_ReturnsAzureSettings()
@@ -106,6 +112,9 @@ namespace Sky.Tests.Services.Email
 
         #region SMTP Configuration Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SmtpConfiguration")]
         public async Task GetEmailSettingsAsync_WithSmtpInEnvironment_ReturnsSmtpSettings()
@@ -129,6 +138,9 @@ namespace Sky.Tests.Services.Email
             Assert.AreEqual("password", result.SmtpPassword);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SmtpConfiguration")]
         public async Task GetEmailSettingsAsync_WithInvalidSmtpPort_UsesDefaultPort587()
@@ -150,6 +162,9 @@ namespace Sky.Tests.Services.Email
 
         #region Fallback Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Fallback")]
         public async Task GetEmailSettingsAsync_WithAdminEmailFallback_UsesSenderEmail()
@@ -170,6 +185,9 @@ namespace Sky.Tests.Services.Email
 
         #region Database Configuration Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("DatabaseConfiguration")]
         public async Task GetEmailSettingsAsync_WithNoEnvironmentVariables_ChecksDatabase()
@@ -187,6 +205,9 @@ namespace Sky.Tests.Services.Email
             Assert.AreEqual("dbadmin@test.com", result.SenderEmail);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("DatabaseConfiguration")]
         public async Task GetEmailSettingsAsync_WithDatabaseSmtpSettings_ReturnsSmtpFromDatabase()
@@ -208,6 +229,9 @@ namespace Sky.Tests.Services.Email
 
         #region Not Configured Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("NotConfigured")]
         public async Task GetEmailSettingsAsync_WithNoSettingsAnywhere_ReturnsNotConfigured()
@@ -226,6 +250,9 @@ namespace Sky.Tests.Services.Email
 
         #region Error Handling Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ErrorHandling")]
         public async Task GetEmailSettingsAsync_WhenDatabaseThrowsException_LogsError()
@@ -251,6 +278,9 @@ namespace Sky.Tests.Services.Email
 
         #region Provider Priority Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ProviderPriority")]
         public async Task GetEmailSettingsAsync_WithMultipleProviders_PrioritizesSendGrid()
@@ -267,6 +297,9 @@ namespace Sky.Tests.Services.Email
             Assert.AreEqual("SendGrid", result.Provider);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ProviderPriority")]
         public async Task GetEmailSettingsAsync_WithoutSendGridButWithAzure_UsesAzure()
@@ -282,6 +315,9 @@ namespace Sky.Tests.Services.Email
             Assert.AreEqual("AzureCommunication", result.Provider);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ProviderPriority")]
         public async Task GetEmailSettingsAsync_WithOnlySmtp_UsesSmtp()

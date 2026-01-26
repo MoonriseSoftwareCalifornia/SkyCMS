@@ -56,6 +56,9 @@ namespace Sky.Tests.Data
 
         #region Connection String Detection Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("ProviderDetection")]
@@ -71,6 +74,9 @@ namespace Sky.Tests.Data
             Assert.IsTrue(File.Exists(testDbPath), "SQLite database file should be created");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("ProviderDetection")]
@@ -100,6 +106,9 @@ namespace Sky.Tests.Data
                 $"Expected connection error but got: {exception.Message}");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("ProviderDetection")]
@@ -129,6 +138,9 @@ namespace Sky.Tests.Data
                 $"Expected SQL Server connection error but got: {exception.Message}");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("ProviderDetection")]
@@ -150,6 +162,9 @@ namespace Sky.Tests.Data
 
         #region SQLite Migration Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("SQLite")]
@@ -177,6 +192,9 @@ namespace Sky.Tests.Data
             Assert.IsTrue(appliedMigrations.Any(), "Migrations should have been applied");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("SQLite")]
@@ -198,6 +216,9 @@ namespace Sky.Tests.Data
             Assert.IsTrue(appliedMigrations.Any());
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("SQLite")]
@@ -216,6 +237,9 @@ namespace Sky.Tests.Data
             Assert.IsFalse(result, "Database with migrations should return false");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("SQLite")]
@@ -231,6 +255,9 @@ namespace Sky.Tests.Data
             Assert.IsFalse(result, "Non-existent database should return false");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("SQLite")]
@@ -259,6 +286,9 @@ namespace Sky.Tests.Data
 
         #region Mark Migration Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("SQLite")]
@@ -289,6 +319,9 @@ namespace Sky.Tests.Data
             }
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("SQLite")]
@@ -324,6 +357,9 @@ namespace Sky.Tests.Data
 
         #region Validation Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("Validation")]
@@ -334,6 +370,9 @@ namespace Sky.Tests.Data
                 await MigrationHelper.ApplyMigrationsAsync(null!, logger));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("Validation")]
@@ -344,6 +383,9 @@ namespace Sky.Tests.Data
                 await MigrationHelper.ApplyMigrationsAsync(string.Empty, logger));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("Validation")]
@@ -357,6 +399,9 @@ namespace Sky.Tests.Data
                 await MigrationHelper.MarkMigrationAsAppliedAsync(connectionString, null!, logger));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("Validation")]
@@ -373,6 +418,9 @@ namespace Sky.Tests.Data
             Assert.IsTrue(exception.Message.Contains("Cosmos DB does not support migrations"));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("Validation")]
@@ -390,6 +438,9 @@ namespace Sky.Tests.Data
 
         #region Custom Strategy Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("Strategies")]
@@ -423,6 +474,9 @@ namespace Sky.Tests.Data
 
         #region Integration Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("MigrationHelper")]
         [TestCategory("Integration")]

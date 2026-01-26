@@ -68,6 +68,9 @@ namespace Sky.Editor.Tests.Features.Templates
             Db.SaveChanges();
         }
 
+        /// <summary>
+        /// Tests that CreatePageDesignVersion_Should_CreateNewVersion.
+        /// </summary>
         [TestMethod]
         public async Task CreatePageDesignVersion_Should_CreateNewVersion()
         {
@@ -96,6 +99,9 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.IsNotNull(dbVersion);
         }
 
+        /// <summary>
+        /// Tests that CreatePageDesignVersion_Should_IncrementVersionNumber.
+        /// </summary>
         [TestMethod]
         public async Task CreatePageDesignVersion_Should_IncrementVersionNumber()
         {
@@ -128,6 +134,9 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.AreEqual(2, result.Data.Version);
         }
 
+        /// <summary>
+        /// Tests that SavePageDesignVersion_Should_UpdateExistingVersion.
+        /// </summary>
         [TestMethod]
         public async Task SavePageDesignVersion_Should_UpdateExistingVersion()
         {
@@ -167,6 +176,9 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.AreEqual("Updated Title", dbVersion.Title);
         }
 
+        /// <summary>
+        /// Tests that SavePageDesignVersion_Should_ReturnFailure_WhenVersionNotFound.
+        /// </summary>
         [TestMethod]
         public async Task SavePageDesignVersion_Should_ReturnFailure_WhenVersionNotFound()
         {
@@ -187,6 +199,9 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.IsTrue(result.ErrorMessage.Contains("not found"));
         }
 
+        /// <summary>
+        /// Tests that PublishPageDesignVersion_Should_UpdateTemplate.
+        /// </summary>
         [TestMethod]
         public async Task PublishPageDesignVersion_Should_UpdateTemplate()
         {
@@ -230,6 +245,9 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.IsTrue(updatedTemplate.Content.Contains("Published Content"));
         }
 
+        /// <summary>
+        /// Tests that PublishPageDesignVersion_Should_UpdateArticlesUsingTemplate.
+        /// </summary>
         [TestMethod]
         public async Task PublishPageDesignVersion_Should_UpdateArticlesUsingTemplate()
         {
@@ -301,6 +319,9 @@ namespace Sky.Editor.Tests.Features.Templates
                 "Should preserve editable content");
         }
 
+        /// <summary>
+        /// Tests that PublishPageDesignVersion_Should_PreservePublishDate_ForPublishedArticles.
+        /// </summary>
         [TestMethod]
         public async Task PublishPageDesignVersion_Should_PreservePublishDate_ForPublishedArticles()
         {
@@ -365,6 +386,9 @@ namespace Sky.Editor.Tests.Features.Templates
                 "Published date should be preserved");
         }
 
+        /// <summary>
+        /// Tests that PublishPageDesignVersion_Should_ReturnFailure_WhenVersionNotFound.
+        /// </summary>
         [TestMethod]
         public async Task PublishPageDesignVersion_Should_ReturnFailure_WhenVersionNotFound()
         {
@@ -383,6 +407,9 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.IsNotNull(result.ErrorMessage);
         }
 
+        /// <summary>
+        /// Tests that CreatePageDesignVersion_Should_EnsureEditableMarkers.
+        /// </summary>
         [TestMethod]
         public async Task CreatePageDesignVersion_Should_EnsureEditableMarkers()
         {

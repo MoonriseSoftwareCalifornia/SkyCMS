@@ -33,6 +33,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that Constructor_WithValidAzureCdnSettings_InitializesDriver.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithValidAzureCdnSettings_InitializesDriver()
         {
@@ -60,6 +63,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Azure CDN", driver.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithFrontDoorConfig_SetsCorrectProviderName.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithFrontDoorConfig_SetsCorrectProviderName()
         {
@@ -86,6 +92,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Front Door", driver.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithInvalidJson_ThrowsException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithInvalidJson_ThrowsException()
         {
@@ -112,6 +121,9 @@ namespace Sky.Tests.Services.CDN
 
         #region ProviderName Tests
 
+        /// <summary>
+        /// Tests that ProviderName_AzureCdn_ReturnsCorrectName.
+        /// </summary>
         [TestMethod]
         public void ProviderName_AzureCdn_ReturnsCorrectName()
         {
@@ -140,6 +152,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Azure CDN", name);
         }
 
+        /// <summary>
+        /// Tests that ProviderName_FrontDoor_ReturnsCorrectName.
+        /// </summary>
         [TestMethod]
         public void ProviderName_FrontDoor_ReturnsCorrectName()
         {
@@ -172,6 +187,9 @@ namespace Sky.Tests.Services.CDN
 
         #region AzureCdnConfig Tests
 
+        /// <summary>
+        /// Tests that AzureCdnConfig_DefaultValues.
+        /// </summary>
         [TestMethod]
         public void AzureCdnConfig_DefaultValues()
         {
@@ -186,6 +204,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(string.Empty, config.SubscriptionId);
         }
 
+        /// <summary>
+        /// Tests that AzureCdnConfig_SetProperties.
+        /// </summary>
         [TestMethod]
         public void AzureCdnConfig_SetProperties()
         {
@@ -210,6 +231,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(subscriptionId, config.SubscriptionId);
         }
 
+        /// <summary>
+        /// Tests that AzureCdnConfig_SerializeDeserialize_MaintainsValues.
+        /// </summary>
         [TestMethod]
         public void AzureCdnConfig_SerializeDeserialize_MaintainsValues()
         {
@@ -235,6 +259,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(original.SubscriptionId, deserialized.SubscriptionId);
         }
 
+        /// <summary>
+        /// Tests that AzureCdnConfig_ValidationTrigger_CanBeSet.
+        /// </summary>
         [TestMethod]
         public void AzureCdnConfig_ValidationTrigger_CanBeSet()
         {
@@ -252,6 +279,9 @@ namespace Sky.Tests.Services.CDN
 
         #region PurgeCdn Logic Tests (No actual Azure calls)
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithNullUrls_ThrowsArgumentNullException.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithNullUrls_ThrowsArgumentNullException()
         {
@@ -341,6 +371,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Edge Cases
 
+        /// <summary>
+        /// Tests that Constructor_WithMinimalValidConfig_Succeeds.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithMinimalValidConfig_Succeeds()
         {
@@ -366,6 +399,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsNotNull(driver);
         }
 
+        /// <summary>
+        /// Tests that ProviderName_CalledMultipleTimes_ReturnsConsistentValue.
+        /// </summary>
         [TestMethod]
         public void ProviderName_CalledMultipleTimes_ReturnsConsistentValue()
         {
@@ -462,3 +498,4 @@ namespace Sky.Tests.Services.CDN
         //}
     }
 }
+

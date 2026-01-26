@@ -1,4 +1,4 @@
-﻿// <copyright file="TemplateServiceTests.cs" company="Moonrise Software, LLC">
+// <copyright file="TemplateServiceTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -430,6 +430,9 @@ public class TemplateServiceTests
     // BATCH 1: ApplyTemplateToArticleAsync - Happy Path Tests
     // ============================================================
 
+    /// <summary>
+    /// Applies a template to an article and creates a new draft version with expected metadata.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_CreatesNewDraftVersion()
     {
@@ -446,6 +449,9 @@ public class TemplateServiceTests
         Assert.AreNotEqual(Guid.Empty, result.NewVersionId);
     }
 
+    /// <summary>
+    /// Ensures applying a template preserves existing article versions and published state.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_PreservesOldVersions()
     {
@@ -473,6 +479,9 @@ public class TemplateServiceTests
         Assert.IsNotNull(publishedVersion.Published);
     }
 
+    /// <summary>
+    /// Verifies the version number increments when creating a new draft via template application.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_IncrementsVersionNumber()
     {
@@ -492,6 +501,9 @@ public class TemplateServiceTests
         Assert.IsNull(newVersion.Published);
     }
 
+    /// <summary>
+    /// Confirms editable region content from the template merges with user content correctly.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_MergesEditableContentCorrectly()
     {
@@ -551,6 +563,9 @@ public class TemplateServiceTests
     // BATCH 2: ApplyTemplateToArticleAsync - Error Handling Tests
     // ============================================================
 
+    /// <summary>
+    /// Returns a failure result when the template id does not exist for the article operation.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_TemplateNotFound_ReturnsFailureResult()
     {
@@ -571,6 +586,9 @@ public class TemplateServiceTests
         Assert.AreEqual(Guid.Empty, result.NewVersionId);
     }
 
+    /// <summary>
+    /// Returns a failure result when the target article is not found for template application.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_ArticleNotFound_ReturnsFailureResult()
     {
@@ -591,6 +609,9 @@ public class TemplateServiceTests
         Assert.IsFalse(result.Success);
     }
 
+    /// <summary>
+    /// Handles corrupted or malformed HTML in the template without throwing exceptions.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_CorruptedHtml_HandlesGracefully()
     {
@@ -647,6 +668,9 @@ public class TemplateServiceTests
         }
     }
 
+    /// <summary>
+    /// Verifies warnings are produced when a template defines regions that don't match the article's regions.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_MismatchedRegions_GeneratesWarnings()
     {
@@ -702,6 +726,9 @@ public class TemplateServiceTests
         Assert.IsTrue(newVersion.Content.Contains("sidebar"));
     }
 
+    /// <summary>
+    /// Tests that ApplyTemplateToArticleAsync_ArticleWithNoEditableRegions_SucceedsWithWarning.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_ArticleWithNoEditableRegions_SucceedsWithWarning()
     {
@@ -754,6 +781,9 @@ public class TemplateServiceTests
         Assert.IsFalse(newVersion.Content.Contains("completely static content"));
     }
 
+    /// <summary>
+    /// Tests that ApplyTemplateToArticleAsync_ConcurrentVersionCreation_HandlesCorrectly.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticleAsync_ConcurrentVersionCreation_HandlesCorrectly()
     {
@@ -796,6 +826,10 @@ public class TemplateServiceTests
     // BATCH 3: PreviewTemplateApplicationAsync Tests
     // ============================================================
 
+    /// <summary>
+    /// PreviewTemplateApplicationAsync returns a preview containing all articles
+    /// that would be affected by applying the provided template.
+    /// </summary>
     [TestMethod]
     public async Task PreviewTemplateApplicationAsync_ReturnsAllAffectedArticles()
     {
@@ -817,6 +851,10 @@ public class TemplateServiceTests
         }
     }
 
+    /// <summary>
+    /// PreviewTemplateApplicationAsync correctly identifies which articles have
+    /// published versions and exposes their last published metadata.
+    /// </summary>
     [TestMethod]
     public async Task PreviewTemplateApplicationAsync_DetectsPublishedStatus()
     {
@@ -888,6 +926,10 @@ public class TemplateServiceTests
         Assert.IsNull(draftPreview.LastPublished);
     }
 
+    /// <summary>
+    /// PreviewTemplateApplicationAsync detects merge warnings when article
+    /// editable regions differ from the template and surfaces appropriate messages.
+    /// </summary>
     [TestMethod]
     public async Task PreviewTemplateApplicationAsync_DetectsMergeWarnings()
     {
@@ -986,6 +1028,10 @@ public class TemplateServiceTests
         Assert.AreEqual(1, preview.WarningCount);
     }
 
+    /// <summary>
+    /// PreviewTemplateApplicationAsync returns an empty preview when no articles
+    /// are associated with the template and marks the preview as safe.
+    /// </summary>
     [TestMethod]
     public async Task PreviewTemplateApplicationAsync_NoArticles_ReturnsEmptyPreview()
     {
@@ -1012,6 +1058,10 @@ public class TemplateServiceTests
         Assert.AreEqual(0, preview.WarningCount);
     }
 
+    /// <summary>
+    /// PreviewTemplateApplicationAsync includes current version numbers and
+    /// published information for affected articles in the preview.
+    /// </summary>
     [TestMethod]
     public async Task PreviewTemplateApplicationAsync_ShowsCurrentVersionNumbers()
     {
@@ -1036,6 +1086,10 @@ public class TemplateServiceTests
         Assert.IsNotNull(previewItem.LastPublished);
     }
 
+    /// <summary>
+    /// PreviewTemplateApplicationAsync throws InvalidOperationException when
+    /// the provided template id does not exist.
+    /// </summary>
     [TestMethod]
     public async Task PreviewTemplateApplicationAsync_TemplateNotFound_ThrowsException()
     {
@@ -1045,6 +1099,10 @@ public class TemplateServiceTests
             async () => await _templateService!.PreviewTemplateApplicationAsync(nonExistentTemplateId));
     }
 
+    /// <summary>
+    /// PreviewTemplateApplicationAsync reports warnings for articles that have
+    /// no editable regions relative to the template being previewed.
+    /// </summary>
     [TestMethod]
     public async Task PreviewTemplateApplicationAsync_ArticleWithNoEditableRegions_ShowsWarning()
     {
@@ -1112,6 +1170,10 @@ public class TemplateServiceTests
     // BATCH 4: GetTemplateDesignVersionsAsync Tests
     // ============================================================
 
+    /// <summary>
+    /// GetTemplateDesignVersionsAsync auto-creates and returns a default
+    /// published design version when no versions exist for the page type.
+    /// </summary>
     [TestMethod]
     public async Task GetTemplateDesignVersionsAsync_CreatesDefaultVersion_WhenNoneExist()
     {
@@ -1142,6 +1204,10 @@ public class TemplateServiceTests
         Assert.IsNotNull(versions[0].Published, "Auto-created version should be published");
     }
 
+    /// <summary>
+    /// GetTemplateDesignVersionsAsync returns design versions ordered
+    /// descending by version number, with published metadata preserved.
+    /// </summary>
     [TestMethod]
     public async Task GetTemplateDesignVersionsAsync_ReturnsVersionsInDescendingOrder()
     {
@@ -1187,6 +1253,10 @@ public class TemplateServiceTests
         Assert.IsNotNull(versions[1].Published, "Version 2 should be published");
     }
 
+    /// <summary>
+    /// GetTemplateDesignVersionsAsync returns an empty list when no templates
+    /// exist for the provided page type.
+    /// </summary>
     [TestMethod]
     public async Task GetTemplateDesignVersionsAsync_ReturnsEmptyList_WhenTemplateNotFound()
     {
@@ -1198,6 +1268,10 @@ public class TemplateServiceTests
         Assert.AreEqual(0, versions.Count, "Should return empty list when no template found");
     }
 
+    /// <summary>
+    /// GetTemplateDesignVersionsAsync returns existing versions without
+    /// creating a new default when versions already exist for the page type.
+    /// </summary>
     [TestMethod]
     public async Task GetTemplateDesignVersionsAsync_ReturnsExistingVersions_WithoutCreatingNew()
     {
@@ -1244,6 +1318,10 @@ public class TemplateServiceTests
     // BATCH 6: Save and Publish Tests
     // ============================================================
 
+    /// <summary>
+    /// Save creates a new PageDesignVersion in the database when the
+    /// provided version does not already exist.
+    /// </summary>
     [TestMethod]
     public async Task Save_CreatesNewVersion_WhenNotExists()
     {
@@ -1274,6 +1352,10 @@ public class TemplateServiceTests
         Assert.AreEqual(1, savedVersion.Version);
     }
 
+    /// <summary>
+    /// Save updates an existing PageDesignVersion while preserving its
+    /// version number and not altering publish metadata.
+    /// </summary>
     [TestMethod]
     public async Task Save_UpdatesExistingVersion_PreservesVersionNumber()
     {
@@ -1312,6 +1394,10 @@ public class TemplateServiceTests
         Assert.IsNull(updatedVersion.Published, "Published date should not change");
     }
 
+    /// <summary>
+    /// Publish ensures the selected design version becomes published and
+    /// that other versions for the same template are unpublished.
+    /// </summary>
     [TestMethod]
     public async Task Publish_UnpublishesOtherVersions_PublishesSelected()
     {
@@ -1380,6 +1466,10 @@ public class TemplateServiceTests
         Assert.IsTrue(v3Updated.Published >= DateTimeOffset.UtcNow.AddSeconds(-5), "Published date should be recent");
     }
 
+    /// <summary>
+    /// Publish updates the corresponding template record with the new
+    /// content and metadata from the published design version.
+    /// </summary>
     [TestMethod]
     public async Task Publish_UpdatesCorrespondingTemplate_WithNewContent()
     {
@@ -1431,6 +1521,10 @@ public class TemplateServiceTests
     // BATCH 7: Batch Operations Tests
     // ============================================================
 
+    /// <summary>
+    /// ApplyTemplateToArticlesAsync applies the template to all articles
+    /// when the article list parameter is null.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticlesAsync_AppliestoAllArticles_WhenNullList()
     {
@@ -1459,6 +1553,10 @@ public class TemplateServiceTests
         }
     }
 
+    /// <summary>
+    /// ApplyTemplateToArticlesAsync applies the template only to the
+    /// specified list of article numbers when provided.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticlesAsync_AppliesOnlyToSpecified_WhenListProvided()
     {
@@ -1495,6 +1593,10 @@ public class TemplateServiceTests
         }
     }
 
+    /// <summary>
+    /// ApplyTemplateToArticlesAsync continues processing when some
+    /// articles fail and reports success/failure counts and messages.
+    /// </summary>
     [TestMethod]
     public async Task ApplyTemplateToArticlesAsync_ContinuesOnError_ReportsFailures()
     {
@@ -1532,6 +1634,10 @@ public class TemplateServiceTests
             "Failed results should have error messages");
     }
 
+    /// <summary>
+    /// PublishTemplateChangesAsync publishes draft changes for all
+    /// articles when the article list is null.
+    /// </summary>
     [TestMethod]
     public async Task PublishTemplateChangesAsync_PublishesAllArticles_WhenNullList()
     {
@@ -1568,6 +1674,10 @@ public class TemplateServiceTests
         }
     }
 
+    /// <summary>
+    /// PublishTemplateChangesAsync publishes changes only for the
+    /// provided list of article numbers when specified.
+    /// </summary>
     [TestMethod]
     public async Task PublishTemplateChangesAsync_PublishesOnlySpecified_WhenListProvided()
     {
@@ -1617,6 +1727,11 @@ public class TemplateServiceTests
         }
     }
 
+    /// <summary>
+    /// PublishTemplateChangesAsync ensures the newly published version is
+    /// marked published and previous versions for the article are
+    /// un-published as appropriate.
+    /// </summary>
     [TestMethod]
     public async Task PublishTemplateChangesAsync_UnpublishesPreviousVersions()
     {

@@ -27,6 +27,9 @@ namespace Sky.Tests.Features.Articles.Save
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that SaveArticle_TitleChange_SlugConflict_RollsBackChanges.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_TitleChange_SlugConflict_RollsBackChanges()
         {
@@ -83,6 +86,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(originalUrlPath, unchangedArticle2.UrlPath, "UrlPath should not have changed");
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_TitleChange_Success_CommitsAllChanges.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_TitleChange_Success_CommitsAllChanges()
         {
@@ -141,6 +147,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(redirects.Any(r => r.UrlPath == "parent/child"), "Should have redirect from old child URL");
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_TitleChange_MultipleVersions_AllUpdatedAtomically.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_TitleChange_MultipleVersions_AllUpdatedAtomically()
         {
@@ -198,6 +207,9 @@ namespace Sky.Tests.Features.Articles.Save
             }
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_BlogStreamTitleChange_TransactionIncludesAllPosts.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_BlogStreamTitleChange_TransactionIncludesAllPosts()
         {
@@ -276,3 +288,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

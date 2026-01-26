@@ -31,6 +31,9 @@ namespace Sky.Tests.Services.CDN
             mockLogger = new Mock<ILogger>();
         }
 
+        /// <summary>
+        /// Tests that ComputeSha256Hash_WithKnownInput_ReturnsExpectedHash.
+        /// </summary>
         [TestMethod]
         public void ComputeSha256Hash_WithKnownInput_ReturnsExpectedHash()
         {
@@ -58,6 +61,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(expectedHash, result);
         }
 
+        /// <summary>
+        /// Tests that ComputeSha256Hash_EmptyString_ReturnsValidHash.
+        /// </summary>
         [TestMethod]
         public void ComputeSha256Hash_EmptyString_ReturnsValidHash()
         {
@@ -83,6 +89,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(expectedHash, result);
         }
 
+        /// <summary>
+        /// Tests that ComputeHmacSha256_WithKnownValues_ReturnsExpectedHash.
+        /// </summary>
         [TestMethod]
         public void ComputeHmacSha256_WithKnownValues_ReturnsExpectedHash()
         {
@@ -111,6 +120,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(result.All(c => "0123456789abcdef".Contains(c)));
         }
 
+        /// <summary>
+        /// Tests that GetSignatureKey_DifferentDates_ProducesDifferentKeys.
+        /// </summary>
         [TestMethod]
         public void GetSignatureKey_DifferentDates_ProducesDifferentKeys()
         {
@@ -141,6 +153,9 @@ namespace Sky.Tests.Services.CDN
             CollectionAssert.AreNotEqual(key1, key2);
         }
 
+        /// <summary>
+        /// Tests that GetSignatureKey_DifferentRegions_ProducesDifferentKeys.
+        /// </summary>
         [TestMethod]
         public void GetSignatureKey_DifferentRegions_ProducesDifferentKeys()
         {

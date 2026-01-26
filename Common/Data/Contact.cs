@@ -41,7 +41,7 @@ namespace Cosmos.Common.Data
         /// Gets or sets the customer's phone number.
         /// </summary>
         [Required(AllowEmptyStrings = true)]
-        public string Phone { get; set; }
+        public string Phone { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets when this record was created.

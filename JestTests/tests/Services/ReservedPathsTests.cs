@@ -34,6 +34,9 @@ namespace Sky.Tests.Services.ReservedPaths
 
         #region GetReservedPaths Tests
 
+        /// <summary>
+        /// Tests that GetReservedPaths_FirstCall_CreatesDefaultPaths.
+        /// </summary>
         [TestMethod]
         public async Task GetReservedPaths_FirstCall_CreatesDefaultPaths()
         {
@@ -48,6 +51,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(paths.Any(p => p.Path == "blog/*"), "Should contain blog wildcard path");
         }
 
+        /// <summary>
+        /// Tests that GetReservedPaths_SecondCall_ReturnsSamePaths.
+        /// </summary>
         [TestMethod]
         public async Task GetReservedPaths_SecondCall_ReturnsSamePaths()
         {
@@ -62,6 +68,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.AreEqual(firstCount, secondCall.Count, "Should return same number of paths");
         }
 
+        /// <summary>
+        /// Tests that GetReservedPaths_ContainsSystemRequiredPaths.
+        /// </summary>
         [TestMethod]
         public async Task GetReservedPaths_ContainsSystemRequiredPaths()
         {
@@ -76,6 +85,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(systemPaths.Any(p => p.Path == "layouts/*"), "Should have layouts path");
         }
 
+        /// <summary>
+        /// Tests that GetReservedPaths_ContainsIdentityPaths.
+        /// </summary>
         [TestMethod]
         public async Task GetReservedPaths_ContainsIdentityPaths()
         {
@@ -89,6 +101,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(paths.Any(p => p.Path == "register"), "Should have register path");
         }
 
+        /// <summary>
+        /// Tests that GetReservedPaths_ContainsContentPaths.
+        /// </summary>
         [TestMethod]
         public async Task GetReservedPaths_ContainsContentPaths()
         {
@@ -101,6 +116,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(paths.Any(p => p.Path == "toc.json"), "Should have TOC path");
         }
 
+        /// <summary>
+        /// Tests that GetReservedPaths_AllPathsHaveNotes.
+        /// </summary>
         [TestMethod]
         public async Task GetReservedPaths_AllPathsHaveNotes()
         {
@@ -119,6 +137,9 @@ namespace Sky.Tests.Services.ReservedPaths
 
         #region IsReserved Tests
 
+        /// <summary>
+        /// Tests that IsReserved_ExactMatch_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public async Task IsReserved_ExactMatch_ReturnsTrue()
         {
@@ -129,6 +150,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(isReserved, "admin should be reserved");
         }
 
+        /// <summary>
+        /// Tests that IsReserved_CaseInsensitive_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public async Task IsReserved_CaseInsensitive_ReturnsTrue()
         {
@@ -143,6 +167,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(isReservedMixed, "mixed case AdMiN should be reserved");
         }
 
+        /// <summary>
+        /// Tests that IsReserved_NonReservedPath_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public async Task IsReserved_NonReservedPath_ReturnsFalse()
         {
@@ -153,6 +180,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsFalse(isReserved, "custom page should not be reserved");
         }
 
+        /// <summary>
+        /// Tests that IsReserved_RootPath_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public async Task IsReserved_RootPath_ReturnsTrue()
         {
@@ -163,6 +193,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(isReserved, "root should be reserved");
         }
 
+        /// <summary>
+        /// Tests that IsReserved_WildcardPath_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public async Task IsReserved_WildcardPath_ReturnsTrue()
         {
@@ -173,6 +206,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(isReserved, "blog/* should be reserved");
         }
 
+        /// <summary>
+        /// Tests that IsReserved_EmptyString_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public async Task IsReserved_EmptyString_ReturnsFalse()
         {
@@ -187,6 +223,9 @@ namespace Sky.Tests.Services.ReservedPaths
 
         #region Upsert Tests
 
+        /// <summary>
+        /// Tests that Upsert_NewPath_AddsSuccessfully.
+        /// </summary>
         [TestMethod]
         public async Task Upsert_NewPath_AddsSuccessfully()
         {
@@ -207,6 +246,9 @@ namespace Sky.Tests.Services.ReservedPaths
                 "Custom path should be added");
         }
 
+        /// <summary>
+        /// Tests that Upsert_ExistingNonSystemPath_UpdatesSuccessfully.
+        /// </summary>
         [TestMethod]
         public async Task Upsert_ExistingNonSystemPath_UpdatesSuccessfully()
         {
@@ -236,6 +278,9 @@ namespace Sky.Tests.Services.ReservedPaths
                 "Notes should be updated");
         }
 
+        /// <summary>
+        /// Tests that Upsert_SystemRequiredPath_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task Upsert_SystemRequiredPath_ThrowsException()
         {
@@ -253,6 +298,9 @@ namespace Sky.Tests.Services.ReservedPaths
                 "Should not allow updating system required paths");
         }
 
+        /// <summary>
+        /// Tests that Upsert_CaseInsensitiveDuplicate_UpdatesExisting.
+        /// </summary>
         [TestMethod]
         public async Task Upsert_CaseInsensitiveDuplicate_UpdatesExisting()
         {
@@ -287,6 +335,9 @@ namespace Sky.Tests.Services.ReservedPaths
 
         #region Remove Tests
 
+        /// <summary>
+        /// Tests that Remove_NonSystemPath_RemovesSuccessfully.
+        /// </summary>
         [TestMethod]
         public async Task Remove_NonSystemPath_RemovesSuccessfully()
         {
@@ -308,6 +359,9 @@ namespace Sky.Tests.Services.ReservedPaths
                 "Path should be removed");
         }
 
+        /// <summary>
+        /// Tests that Remove_SystemRequiredPath_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task Remove_SystemRequiredPath_ThrowsException()
         {
@@ -317,6 +371,9 @@ namespace Sky.Tests.Services.ReservedPaths
                 "Should not allow removing system required paths");
         }
 
+        /// <summary>
+        /// Tests that Remove_NonExistentPath_DoesNotThrow.
+        /// </summary>
         [TestMethod]
         public async Task Remove_NonExistentPath_DoesNotThrow()
         {
@@ -328,6 +385,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsNotNull(paths);
         }
 
+        /// <summary>
+        /// Tests that Remove_CaseInsensitive_RemovesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task Remove_CaseInsensitive_RemovesCorrectly()
         {
@@ -350,6 +410,9 @@ namespace Sky.Tests.Services.ReservedPaths
                 "Should remove path regardless of case");
         }
 
+        /// <summary>
+        /// Tests that Remove_RootPath_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task Remove_RootPath_ThrowsException()
         {
@@ -363,6 +426,9 @@ namespace Sky.Tests.Services.ReservedPaths
 
         #region Integration Tests
 
+        /// <summary>
+        /// Tests that FullWorkflow_AddUpdateRemove_WorksCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task FullWorkflow_AddUpdateRemove_WorksCorrectly()
         {
@@ -399,6 +465,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsFalse(pathsAfterRemove.Any(p => p.Path == "workflow-test"));
         }
 
+        /// <summary>
+        /// Tests that MultipleCustomPaths_ManageIndependently.
+        /// </summary>
         [TestMethod]
         public async Task MultipleCustomPaths_ManageIndependently()
         {
@@ -440,6 +509,9 @@ namespace Sky.Tests.Services.ReservedPaths
 
         #region Edge Cases
 
+        /// <summary>
+        /// Tests that Upsert_PathWithSlashes_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task Upsert_PathWithSlashes_HandlesCorrectly()
         {
@@ -459,6 +531,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(isReserved, "Nested path should be reserved");
         }
 
+        /// <summary>
+        /// Tests that Upsert_PathWithSpecialCharacters_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task Upsert_PathWithSpecialCharacters_HandlesCorrectly()
         {
@@ -478,6 +553,9 @@ namespace Sky.Tests.Services.ReservedPaths
             Assert.IsTrue(isReserved, "Path with special characters should be reserved");
         }
 
+        /// <summary>
+        /// Tests that GetReservedPaths_AfterMultipleOperations_RemainsConsistent.
+        /// </summary>
         [TestMethod]
         public async Task GetReservedPaths_AfterMultipleOperations_RemainsConsistent()
         {
@@ -520,3 +598,4 @@ namespace Sky.Tests.Services.ReservedPaths
         }
     }
 }
+

@@ -24,6 +24,9 @@ namespace Sky.Tests.Features.Articles.Save
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that SaveArticle_UpdatesCatalogTitle.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_UpdatesCatalogTitle()
         {
@@ -52,6 +55,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Updated Catalog Title", catalogEntry.Title);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_UpdatesCatalogIntroduction.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_UpdatesCatalogIntroduction()
         {
@@ -81,6 +87,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Custom introduction text", catalogEntry.Introduction);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_CatalogReflectsLatestVersion.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_CatalogReflectsLatestVersion()
         {
@@ -110,6 +119,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Version 3", catalogEntry.Title);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_UpdatesCatalogUrlPath.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_UpdatesCatalogUrlPath()
         {
@@ -143,6 +155,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("new-path-title", catalogEntry.UrlPath);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_UpdatesCatalogBannerImage.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_UpdatesCatalogBannerImage()
         {
@@ -172,6 +187,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("https://example.com/new-banner.jpg", catalogEntry.BannerImage);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_CatalogUpdatedTimestamp_ReflectsLatestSave.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_CatalogUpdatedTimestamp_ReflectsLatestSave()
         {
@@ -207,6 +225,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(updatedCatalog.Updated > initialUpdated);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_CatalogEntry_ExistsForAllArticleTypes.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_CatalogEntry_ExistsForAllArticleTypes()
         {
@@ -245,3 +266,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

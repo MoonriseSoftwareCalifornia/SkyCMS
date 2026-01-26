@@ -28,6 +28,9 @@ namespace Sky.Tests.Features.Shared
 
         #region SendAsync Tests
 
+        /// <summary>
+        /// Tests that SendAsync_ValidCommand_CallsHandler.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_ValidCommand_CallsHandler()
         {
@@ -46,6 +49,9 @@ namespace Sky.Tests.Features.Shared
             Assert.IsTrue(result.IsSuccess);
         }
 
+        /// <summary>
+        /// Tests that SendAsync_InvalidCommand_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_InvalidCommand_ReturnsFailure()
         {
@@ -64,6 +70,9 @@ namespace Sky.Tests.Features.Shared
             Assert.IsFalse(result.IsSuccess);
         }
 
+        /// <summary>
+        /// Tests that SendAsync_NullCommand_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_NullCommand_ThrowsException()
         {
@@ -74,6 +83,9 @@ namespace Sky.Tests.Features.Shared
             });
         }
 
+        /// <summary>
+        /// Tests that SendAsync_UnregisteredHandler_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_UnregisteredHandler_ThrowsException()
         {
@@ -91,6 +103,9 @@ namespace Sky.Tests.Features.Shared
 
         #region Handler Resolution Tests
 
+        /// <summary>
+        /// Tests that SendAsync_MultipleHandlerTypes_ResolvesCorrectHandler.
+        /// </summary>
         [TestMethod]
         public async Task SendAsync_MultipleHandlerTypes_ResolvesCorrectHandler()
         {
@@ -120,3 +135,4 @@ namespace Sky.Tests.Features.Shared
         #endregion
     }
 }
+

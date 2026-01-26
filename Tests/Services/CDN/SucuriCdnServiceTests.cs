@@ -34,6 +34,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that Constructor_WithValidSettings_InitializesService.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithValidSettings_InitializesService()
         {
@@ -58,6 +61,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Sucuri", service.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithInvalidJson_ThrowsException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithInvalidJson_ThrowsException()
         {
@@ -81,6 +87,9 @@ namespace Sky.Tests.Services.CDN
             }
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithEmptyConfig_Succeeds.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithEmptyConfig_Succeeds()
         {
@@ -104,6 +113,9 @@ namespace Sky.Tests.Services.CDN
 
         #region ProviderName Tests
 
+        /// <summary>
+        /// Tests that ProviderName_ReturnsSucuri.
+        /// </summary>
         [TestMethod]
         public void ProviderName_ReturnsSucuri()
         {
@@ -129,6 +141,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Sucuri", name);
         }
 
+        /// <summary>
+        /// Tests that ProviderName_CalledMultipleTimes_ReturnsConsistentValue.
+        /// </summary>
         [TestMethod]
         public void ProviderName_CalledMultipleTimes_ReturnsConsistentValue()
         {
@@ -162,6 +177,9 @@ namespace Sky.Tests.Services.CDN
 
         #region SucuriCdnConfig Tests
 
+        /// <summary>
+        /// Tests that SucuriCdnConfig_DefaultValues.
+        /// </summary>
         [TestMethod]
         public void SucuriCdnConfig_DefaultValues()
         {
@@ -174,6 +192,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(string.Empty, config.ValidationTrigger);
         }
 
+        /// <summary>
+        /// Tests that SucuriCdnConfig_SetProperties.
+        /// </summary>
         [TestMethod]
         public void SucuriCdnConfig_SetProperties()
         {
@@ -191,6 +212,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("test", config.ValidationTrigger);
         }
 
+        /// <summary>
+        /// Tests that SucuriCdnConfig_SerializeDeserialize_MaintainsValues.
+        /// </summary>
         [TestMethod]
         public void SucuriCdnConfig_SerializeDeserialize_MaintainsValues()
         {
@@ -214,6 +238,9 @@ namespace Sky.Tests.Services.CDN
 
         #region PurgeCdn Logic Tests
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithEmptyList_ShouldPurgeEverything.
+        /// </summary>
         [TestMethod]
         public void PurgeCdn_WithEmptyList_ShouldPurgeEverything()
         {
@@ -240,6 +267,9 @@ namespace Sky.Tests.Services.CDN
             });
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithMoreThan20Urls_ShouldPurgeEverything.
+        /// </summary>
         [TestMethod]
         public void PurgeCdn_WithMoreThan20Urls_ShouldPurgeEverything()
         {
@@ -271,6 +301,9 @@ namespace Sky.Tests.Services.CDN
             });
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithRootPath_ShouldPurgeEverything.
+        /// </summary>
         [TestMethod]
         public void PurgeCdn_WithRootPath_ShouldPurgeEverything()
         {
@@ -296,6 +329,9 @@ namespace Sky.Tests.Services.CDN
             });
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_NoParameters_ShouldPurgeEverything.
+        /// </summary>
         [TestMethod]
         public void PurgeCdn_NoParameters_ShouldPurgeEverything()
         {
@@ -321,6 +357,9 @@ namespace Sky.Tests.Services.CDN
             });
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithValidUrlCount_ShouldPurgeIndividually.
+        /// </summary>
         [TestMethod]
         public void PurgeCdn_WithValidUrlCount_ShouldPurgeIndividually()
         {
@@ -352,6 +391,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Edge Cases
 
+        /// <summary>
+        /// Tests that Constructor_WithMinimalValidConfig_Succeeds.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithMinimalValidConfig_Succeeds()
         {
@@ -376,6 +418,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Sucuri", service.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithSpecialCharactersInConfig_Succeeds.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithSpecialCharactersInConfig_Succeeds()
         {
@@ -399,6 +444,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsNotNull(service);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithExactly20Urls_ShouldPurgeIndividually.
+        /// </summary>
         [TestMethod]
         public void PurgeCdn_WithExactly20Urls_ShouldPurgeIndividually()
         {
@@ -467,3 +515,4 @@ namespace Sky.Tests.Services.CDN
         #endregion
     }
 }
+

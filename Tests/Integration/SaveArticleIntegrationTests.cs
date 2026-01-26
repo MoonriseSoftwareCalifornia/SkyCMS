@@ -27,6 +27,9 @@ namespace Sky.Tests.Integration
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that FullWorkflow_CreateThenSave_UnpublishedArticle_NoRedirectCreated.
+        /// </summary>
         [TestMethod]
         public async Task FullWorkflow_CreateThenSave_UnpublishedArticle_NoRedirectCreated()
         {
@@ -63,6 +66,9 @@ namespace Sky.Tests.Integration
             Assert.AreEqual(0, redirectArticles, "No redirects for unpublished articles");
         }
 
+        /// <summary>
+        /// Tests that FullWorkflow_CreatePublishThenSave_CreatesRedirect.
+        /// </summary>
         [TestMethod]
         public async Task FullWorkflow_CreatePublishThenSave_CreatesRedirect()
         {
@@ -112,3 +118,4 @@ namespace Sky.Tests.Integration
         }
     }
 }
+

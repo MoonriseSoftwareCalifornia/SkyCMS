@@ -27,6 +27,9 @@ namespace Sky.Tests.Features.Articles.Save
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that SaveArticle_PublishedArticle_TriggersCdnPurge.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_PublishedArticle_TriggersCdnPurge()
         {
@@ -54,6 +57,9 @@ namespace Sky.Tests.Features.Articles.Save
             // Note: CdnResults may be empty in test environment if no CDN is configured
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_UnpublishedThenPublished_UpdatesCatalog.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_UnpublishedThenPublished_UpdatesCatalog()
         {
@@ -83,6 +89,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNotNull(catalogEntry.Published);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_ChangesWhilePublished_MaintainsPublishedState.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_ChangesWhilePublished_MaintainsPublishedState()
         {
@@ -116,6 +125,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(originalPublishedDate, updatedArticle.Published);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_UnpublishingArticle_ClearsCatalogPublishedDate.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_UnpublishingArticle_ClearsCatalogPublishedDate()
         {
@@ -147,6 +159,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNull(updatedArticle!.Published);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_PublishedWithFutureDate_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_PublishedWithFutureDate_HandlesCorrectly()
         {
@@ -179,6 +194,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(savedArticle.Published > Clock.UtcNow);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_UnpublishedArticle_DoesNotTriggerCdnPurge.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_UnpublishedArticle_DoesNotTriggerCdnPurge()
         {
@@ -204,6 +222,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsEmpty(result.Data!.CdnResults);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_PublishingRootPage_UpdatesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_PublishingRootPage_UpdatesCorrectly()
         {
@@ -236,6 +257,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Updated Home Page", updated.Title); // Title should update
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_RootPageMultipleTitleChanges_PreservesRootPath.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_RootPageMultipleTitleChanges_PreservesRootPath()
         {
@@ -277,6 +301,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Landing Page", updated.Title);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_RootPageUnpublished_StillPreservesRootPath.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_RootPageUnpublished_StillPreservesRootPath()
         {
@@ -309,6 +336,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNull(updated.Published);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_RootPageWithVersions_AllVersionsPreserveRoot.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_RootPageWithVersions_AllVersionsPreserveRoot()
         {
@@ -348,6 +378,9 @@ namespace Sky.Tests.Features.Articles.Save
         "All versions should preserve 'root' URL path");
 }
 
+        /// <summary>
+        /// Tests that SaveArticle_NonRootArticle_UrlPathChangesWithTitle.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_NonRootArticle_UrlPathChangesWithTitle()
         {
@@ -393,6 +426,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("root", rootCheck.UrlPath);
 }
 
+        /// <summary>
+        /// Tests that TitleChangeService_RootPageTitleChange_NoRedirectCreated.
+        /// </summary>
         [TestMethod]
         public async Task TitleChangeService_RootPageTitleChange_NoRedirectCreated()
         {
@@ -424,6 +460,9 @@ namespace Sky.Tests.Features.Articles.Save
         "No redirect should be created when root page title changes");
 }
 
+        /// <summary>
+        /// Tests that TitleChangeService_RootPageTitleChange_EventStillDispatched.
+        /// </summary>
         [TestMethod]
         public async Task TitleChangeService_RootPageTitleChange_EventStillDispatched()
         {
@@ -451,6 +490,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Welcome Page", titleChangedEvent.NewTitle);
 }
 
+        /// <summary>
+        /// Tests that SaveArticle_RootPageWithSpecialCharactersInTitle_PreservesRoot.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_RootPageWithSpecialCharactersInTitle_PreservesRoot()
         {
@@ -483,6 +525,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Home & Welcome! 2024", updated.Title);
 }
 
+        /// <summary>
+        /// Tests that SaveArticle_RootPageCaseInsensitive_PreservesRoot.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_RootPageCaseInsensitive_PreservesRoot()
         {
@@ -521,3 +566,4 @@ namespace Sky.Tests.Features.Articles.Save
 }
     }
 }
+

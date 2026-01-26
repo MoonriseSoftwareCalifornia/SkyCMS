@@ -55,6 +55,9 @@ public class SubmitContactFormHandlerTests
         dbContext?.Dispose();
     }
 
+    /// <summary>
+    /// Tests that HandleAsync_ShouldSendEmail_AndReturnSuccess.
+    /// </summary>
     [TestMethod]
     public async Task HandleAsync_ShouldSendEmail_AndReturnSuccess()
     {
@@ -108,6 +111,9 @@ public class SubmitContactFormHandlerTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Tests that HandleAsync_ShouldIncludeRemoteIpInEmail.
+    /// </summary>
     [TestMethod]
     public async Task HandleAsync_ShouldIncludeRemoteIpInEmail()
     {
@@ -163,6 +169,9 @@ public class SubmitContactFormHandlerTests
         Assert.IsTrue(capturedHtmlBody.Contains("203.0.113.42"));
     }
 
+    /// <summary>
+    /// Tests that HandleAsync_ShouldUseFallbackEmail_WhenAdminEmailNotConfigured.
+    /// </summary>
     [TestMethod]
     public async Task HandleAsync_ShouldUseFallbackEmail_WhenAdminEmailNotConfigured()
     {
@@ -207,6 +216,9 @@ public class SubmitContactFormHandlerTests
         emailConfigServiceMock.Verify(x => x.GetEmailSettingsAsync(), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that HandleAsync_ShouldReturnFailure_WhenEmailSendFails.
+    /// </summary>
     [TestMethod]
     public async Task HandleAsync_ShouldReturnFailure_WhenEmailSendFails()
     {
@@ -249,6 +261,9 @@ public class SubmitContactFormHandlerTests
         Assert.IsTrue(result.ErrorMessage.Contains("Failed to send your message"));
     }
 
+    /// <summary>
+    /// Tests that HandleAsync_ShouldEscapeHtmlInMessage.
+    /// </summary>
     [TestMethod]
     public async Task HandleAsync_ShouldEscapeHtmlInMessage()
     {
@@ -303,6 +318,9 @@ public class SubmitContactFormHandlerTests
         Assert.IsTrue(capturedHtmlBody.Contains("&lt;script&gt;"));
     }
 
+    /// <summary>
+    /// Tests that HandleAsync_ShouldFormatEmailProperly.
+    /// </summary>
     [TestMethod]
     public async Task HandleAsync_ShouldFormatEmailProperly()
     {

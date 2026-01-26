@@ -4,6 +4,11 @@ using System.Security.Claims;
 
 namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 {
+    /// <summary>
+    /// Tests the role store implementations against supported database providers.
+    /// Exercises create/delete/find/update operations, claim management, and querying to
+    /// validate consistent store behaviors across providers.
+    /// </summary>
     [TestClass()]
     [DoNotParallelize]
     public class CosmosRoleStoreTests : CosmosIdentityTestsBase
@@ -50,6 +55,10 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             return role;
         }
 
+        /// <summary>
+        /// Creates multiple roles in rapid succession and verifies the expected count
+        /// of roles is present in the database for the provider.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task CreateAsyncTest(TestDatabaseProvider provider)
@@ -69,6 +78,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(35 + currentCount, await dbContext.Roles.CountAsync(), $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Deletes a role and verifies related role claims and user-role links are removed.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task DeleteAsyncTest(TestDatabaseProvider provider)
@@ -97,6 +109,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.IsTrue(await dbContext.UserRoles.Where(a => a.RoleId == roleId).CountAsync() == 0, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Finds a role by id and asserts the returned role id matches.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task FindByIdAsyncTest(TestDatabaseProvider provider)
@@ -114,6 +129,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(role.Id, r.Id, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Finds a role by normalized name and asserts the expected role is returned.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task FindByNameAsyncTest(TestDatabaseProvider provider)
@@ -131,6 +149,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(role.Id, r.Id, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Ensures that retrieving a role by normalized name returns the expected role id.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task GetNormalizedRoleNameAsyncTest(TestDatabaseProvider provider)
@@ -148,6 +169,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(role.Id, r.Id, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Retrieves a role's id via the store API and asserts it matches the role.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task GetRoleIdAsyncTest(TestDatabaseProvider provider)
@@ -165,6 +189,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(role.Id, result, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Retrieves a role's name via the store API and asserts it matches the role.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task GetRoleNameAsyncTest(TestDatabaseProvider provider)
@@ -182,6 +209,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(role.Name, result, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Sets a role's normalized name and verifies the change via the store.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task SetNormalizedRoleNameAsyncTest(TestDatabaseProvider provider)
@@ -201,6 +231,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(newName.ToUpper(), result, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Sets a role's name and verifies the persisted value.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task SetRoleNameAsyncTest(TestDatabaseProvider provider)
@@ -220,6 +253,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(newName, result1, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Updates a role's name and normalized name and verifies the persisted values.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task UpdateAsyncTest(TestDatabaseProvider provider)
@@ -244,6 +280,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(newName.ToLower(), role.NormalizedName, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Adds multiple claims to a role and asserts they are returned by GetClaimsAsync.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task GetClaimsAsyncTest(TestDatabaseProvider provider)
@@ -265,6 +304,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(3, result2.Count, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Adds a claim to a role and asserts the claim is persisted.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task AddClaimAsyncTest(TestDatabaseProvider provider)
@@ -284,6 +326,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(1, result2.Count, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Removes a claim from a role and verifies it is no longer returned.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task RemoveClaimAsyncTest(TestDatabaseProvider provider)
@@ -306,6 +351,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.AreEqual(0, result3.Count, $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Queries the role set and asserts that at least one role exists.
+        /// </summary>
         [TestMethod]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task QueryRolesTest(TestDatabaseProvider provider)

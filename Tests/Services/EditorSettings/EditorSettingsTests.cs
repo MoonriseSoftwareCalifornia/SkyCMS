@@ -53,6 +53,9 @@ namespace Sky.Tests.Services.EditorSettings
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that Constructor_WithValidParameters_CreatesInstance.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithValidParameters_CreatesInstance()
         {
@@ -77,6 +80,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.IsFalse(editorSettings.IsMultiTenantEditor);
         }
 
+        /// <summary>
+        /// Tests that Constructor_MultiTenantMode_RequiresDynamicConfigProvider.
+        /// </summary>
         [TestMethod]
         public void Constructor_MultiTenantMode_RequiresDynamicConfigProvider()
         {
@@ -103,6 +109,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.IsTrue(editorSettings.IsMultiTenantEditor);
         }
 
+        /// <summary>
+        /// Tests that Constructor_BackupStorageConnectionString_IsSet.
+        /// </summary>
         [TestMethod]
         public void Constructor_BackupStorageConnectionString_IsSet()
         {
@@ -130,6 +139,9 @@ namespace Sky.Tests.Services.EditorSettings
 
         #region Single-Tenant Configuration Priority Tests
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_SingleTenant_NoSetup_UsesConfigurationOnly.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_SingleTenant_NoSetup_UsesConfigurationOnly()
         {
@@ -155,6 +167,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.IsTrue(result.StaticWebPages);
         }
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_SingleTenant_SetupComplete_UsesDatabase.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_SingleTenant_SetupComplete_UsesDatabase()
         {
@@ -180,6 +195,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.IsFalse(result.AllowSetup);
         }
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_SingleTenant_EnvironmentOverridesDatabase.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_SingleTenant_EnvironmentOverridesDatabase()
         {
@@ -206,6 +224,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual("/", result.BlobPublicUrl);
         }
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_SingleTenant_UsesDefaultsWhenNothingConfigured.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_SingleTenant_UsesDefaultsWhenNothingConfigured()
         {
@@ -232,6 +253,9 @@ namespace Sky.Tests.Services.EditorSettings
 
         #region Database Loading Tests
 
+        /// <summary>
+        /// Tests that LoadConfigFromDatabase_SetupNotComplete_ReturnsNull.
+        /// </summary>
         [TestMethod]
         public async Task LoadConfigFromDatabase_SetupNotComplete_ReturnsNull()
         {
@@ -260,6 +284,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual("https://fallback.com", result.PublisherUrl);
         }
 
+        /// <summary>
+        /// Tests that LoadConfigFromDatabase_NoSettings_ReturnsNull.
+        /// </summary>
         [TestMethod]
         public async Task LoadConfigFromDatabase_NoSettings_ReturnsNull()
         {
@@ -288,6 +315,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual("https://fallback.com", result.PublisherUrl);
         }
 
+        /// <summary>
+        /// Tests that LoadConfigFromDatabase_ValidSettings_ReturnsConfig.
+        /// </summary>
         [TestMethod]
         public async Task LoadConfigFromDatabase_ValidSettings_ReturnsConfig()
         {
@@ -313,6 +343,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual("app-id-123", result.MicrosoftAppId);
         }
 
+        /// <summary>
+        /// Tests that LoadConfigFromDatabase_BooleanSettings_ParsedCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task LoadConfigFromDatabase_BooleanSettings_ParsedCorrectly()
         {
@@ -341,6 +374,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.IsFalse(result.StaticWebPages);
         }
 
+        /// <summary>
+        /// Tests that LoadConfigFromDatabase_InvalidBooleanValue_ReturnsNull.
+        /// </summary>
         [TestMethod]
         public async Task LoadConfigFromDatabase_InvalidBooleanValue_ReturnsNull()
         {
@@ -371,6 +407,9 @@ namespace Sky.Tests.Services.EditorSettings
 
         #region Caching Tests
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_CalledTwice_ReturnsCachedValue.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_CalledTwice_ReturnsCachedValue()
         {
@@ -400,6 +439,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual("https://database.example.com", result2.PublisherUrl);
         }
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_CacheExpiration_ReloadsFromDatabase.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_CacheExpiration_ReloadsFromDatabase()
         {
@@ -437,6 +479,9 @@ namespace Sky.Tests.Services.EditorSettings
             newCache.Dispose();
         }
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_DifferentDomains_UseDifferentCacheKeys.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_DifferentDomains_UseDifferentCacheKeys()
         {
@@ -465,6 +510,9 @@ namespace Sky.Tests.Services.EditorSettings
 
         #region Multi-Tenant Tests
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_MultiTenant_LoadsFromDynamicProvider.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_MultiTenant_LoadsFromDynamicProvider()
         {
@@ -509,6 +557,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.IsFalse(result.AllowSetup);
         }
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_MultiTenant_NullConnection_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_MultiTenant_NullConnection_ThrowsException()
         {
@@ -533,6 +584,9 @@ namespace Sky.Tests.Services.EditorSettings
                 await editorSettings.GetEditorConfigAsync());
         }
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_MultiTenant_NoDomainName_UsesHttpContext.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_MultiTenant_NoDomainName_UsesHttpContext()
         {
@@ -576,6 +630,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.IsFalse(result.StaticWebPages); // PublisherMode = "Dynamic"
         }
 
+        /// <summary>
+        /// Tests that GetEditorConfigAsync_MultiTenant_NoHttpContext_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task GetEditorConfigAsync_MultiTenant_NoHttpContext_ThrowsException()
         {
@@ -602,6 +659,9 @@ namespace Sky.Tests.Services.EditorSettings
 
         #region Property Accessor Tests
 
+        /// <summary>
+        /// Tests that AllowSetup_ReturnsCorrectValue.
+        /// </summary>
         [TestMethod]
         public async Task AllowSetup_ReturnsCorrectValue()
         {
@@ -622,6 +682,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.IsTrue(result);
         }
 
+        /// <summary>
+        /// Tests that PublisherUrl_ReturnsCorrectValue.
+        /// </summary>
         [TestMethod]
         public async Task PublisherUrl_ReturnsCorrectValue()
         {
@@ -642,6 +705,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual("https://publisher.example.com", result);
         }
 
+        /// <summary>
+        /// Tests that BlobPublicUrl_ReturnsCorrectValue.
+        /// </summary>
         [TestMethod]
         public async Task BlobPublicUrl_ReturnsCorrectValue()
         {
@@ -662,6 +728,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual("/blobs", result);
         }
 
+        /// <summary>
+        /// Tests that AllowedFileTypes_WithCustomValue_ReturnsCustomValue.
+        /// </summary>
         [TestMethod]
         public async Task AllowedFileTypes_WithCustomValue_ReturnsCustomValue()
         {
@@ -682,6 +751,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual(".jpg,.png,.pdf", result);
         }
 
+        /// <summary>
+        /// Tests that GetBlobAbsoluteUrl_AbsoluteUrl_ReturnsAsUri.
+        /// </summary>
         [TestMethod]
         public async Task GetBlobAbsoluteUrl_AbsoluteUrl_ReturnsAsUri()
         {
@@ -706,6 +778,9 @@ namespace Sky.Tests.Services.EditorSettings
 
         #region Error Handling Tests
 
+        /// <summary>
+        /// Tests that LoadConfigFromDatabase_DatabaseConnectionFails_ReturnsNull.
+        /// </summary>
         [TestMethod]
         public async Task LoadConfigFromDatabase_DatabaseConnectionFails_ReturnsNull()
         {
@@ -728,6 +803,9 @@ namespace Sky.Tests.Services.EditorSettings
             Assert.AreEqual("https://fallback.com", result.PublisherUrl);
         }
 
+        /// <summary>
+        /// Tests that LoadConfigFromDatabase_ExceptionThrown_FallsBackToConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task LoadConfigFromDatabase_ExceptionThrown_FallsBackToConfiguration()
         {
@@ -756,6 +834,9 @@ namespace Sky.Tests.Services.EditorSettings
 
         #region Thread Safety Tests
 
+        /// <summary>
+        /// Tests that EnsureConfigLoaded_ConcurrentAccess_LoadsOnlyOnce.
+        /// </summary>
         [TestMethod]
         public async Task EnsureConfigLoaded_ConcurrentAccess_LoadsOnlyOnce()
         {
@@ -852,3 +933,4 @@ namespace Sky.Tests.Services.EditorSettings
         #endregion
     }
 }
+

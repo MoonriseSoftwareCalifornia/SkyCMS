@@ -2,6 +2,10 @@ using System.Security.Claims;
 
 namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 {
+    /// <summary>
+    /// Tests user store claim-related operations (add/replace/remove/get users for claim)
+    /// across supported database providers to ensure claim handling is consistent.
+    /// </summary>
     [TestClass()]
     [DoNotParallelize]
     public class CosmosUserStoreClaimsTests : CosmosIdentityTestsBase
@@ -35,6 +39,10 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
         #region methods implementing IUserClaimStore<TUserEntity>
 
+        /// <summary>
+        /// Consolidated CRUD tests for claim operations on the user store: add, replace,
+        /// and remove claims, verifying expected claim sets after each operation.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task Consolidated_ClaimsAsync_CRUD_Tests(TestDatabaseProvider provider)
@@ -84,6 +92,10 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             Assert.IsFalse(result4.Any(), $"Failed for provider: {provider.DisplayName}");
         }
 
+        /// <summary>
+        /// Adds the same claim to multiple users and verifies GetUsersForClaimAsync
+        /// returns all users that have the claim.
+        /// </summary>
         [TestMethod()]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task GetUsersForClaimAsyncTest(TestDatabaseProvider provider)

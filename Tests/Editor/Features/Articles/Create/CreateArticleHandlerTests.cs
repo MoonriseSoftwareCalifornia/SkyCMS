@@ -37,6 +37,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 Mock.Of<ILogger<CreateArticleHandler>>());
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithValidCommand_CreatesArticle.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithValidCommand_CreatesArticle()
         {
@@ -63,6 +66,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
             Assert.AreEqual("Test Article", article.Title, "Database title should match");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_FirstArticle_AutoPublishesAsRoot.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_FirstArticle_AutoPublishesAsRoot()
         {
@@ -89,6 +95,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 "Should call PublishAsync once for first article");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_SecondArticle_DoesNotAutoPublish.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_SecondArticle_DoesNotAutoPublish()
         {
@@ -117,6 +126,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 "Should not auto-publish second article");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithConflictingTitle_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithConflictingTitle_ReturnsFailure()
         {
@@ -143,6 +155,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 "Error message should mention conflict");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithEmptyTitle_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithEmptyTitle_ReturnsFailure()
         {
@@ -161,6 +176,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
             Assert.IsTrue(result.Errors.ContainsKey("Title"), "Should have Title error");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithTemplate_UsesTemplateContent.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithTemplate_UsesTemplateContent()
         {
@@ -186,6 +204,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 "Should use template content");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithContentOverride_UsesOverride.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithContentOverride_UsesOverride()
         {
@@ -211,6 +232,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 "Should use content override instead of template");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithUrlPathOverride_UsesOverride.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithUrlPathOverride_UsesOverride()
         {
@@ -234,6 +258,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 "Should use URL path override");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithPublishedOverride_PublishesImmediately.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithPublishedOverride_PublishesImmediately()
         {
@@ -263,6 +290,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 "Should publish when Published date provided");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_BlogPost_CreatesWithBlogKey.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_BlogPost_CreatesWithBlogKey()
         {
@@ -287,6 +317,9 @@ namespace Sky.Tests.Editor.Features.Articles.Create
                 "Should set article type to BlogPost");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithAllOptionalProperties_SetsAllProperties.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithAllOptionalProperties_SetsAllProperties()
         {

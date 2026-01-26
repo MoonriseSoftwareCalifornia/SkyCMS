@@ -24,6 +24,9 @@ namespace Sky.Tests.Features.Articles.Save
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that SaveArticle_WithHeadJavaScript_Saves.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_WithHeadJavaScript_Saves()
         {
@@ -52,6 +55,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.Contains("console.log", savedArticle!.HeaderJavaScript);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_WithFooterJavaScript_Saves.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_WithFooterJavaScript_Saves()
         {
@@ -80,6 +86,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.Contains("console.log", savedArticle!.FooterJavaScript);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_WithBothHeadAndFooterJS_SavesBoth.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_WithBothHeadAndFooterJS_SavesBoth()
         {
@@ -110,6 +119,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.Contains("console.log", savedArticle.FooterJavaScript);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_LargeJavaScriptBlock_Saves.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_LargeJavaScriptBlock_Saves()
         {
@@ -142,6 +154,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsGreaterThan(10000, savedArticle!.HeaderJavaScript.Length);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_EmptyJavaScriptBlocks_SavesEmpty.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_EmptyJavaScriptBlocks_SavesEmpty()
         {
@@ -172,6 +187,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(string.Empty, savedArticle.FooterJavaScript);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_NullJavaScriptBlocks_SavesAsEmpty.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_NullJavaScriptBlocks_SavesAsEmpty()
         {
@@ -202,6 +220,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(string.Empty, savedArticle.FooterJavaScript);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_JavaScriptWithSpecialCharacters_Preserves.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_JavaScriptWithSpecialCharacters_Preserves()
         {
@@ -233,3 +254,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

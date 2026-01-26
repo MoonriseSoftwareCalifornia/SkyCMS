@@ -132,6 +132,9 @@ namespace Sky.Tests.Controllers
 
         #region AuthorInfos Tests
 
+        /// <summary>
+        /// Tests that AuthorInfos_ReturnsViewWithAllAuthors.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfos_ReturnsViewWithAllAuthors()
         {
@@ -159,6 +162,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Any(a => a.EmailAddress == "user2@example.com"));
         }
 
+        /// <summary>
+        /// Tests that AuthorInfos_CreatesAuthorInfoForUsersWithoutOne.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfos_CreatesAuthorInfoForUsersWithoutOne()
         {
@@ -175,6 +181,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(user.Email, authorInfo.EmailAddress);
         }
 
+        /// <summary>
+        /// Tests that AuthorInfos_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfos_WithInvalidModelState_ReturnsBadRequest()
         {
@@ -188,6 +197,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that AuthorInfos_SortsByEmailDescending.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfos_SortsByEmailDescending()
         {
@@ -217,6 +229,9 @@ namespace Sky.Tests.Controllers
 
         #region AuthorInfoEdit Tests
 
+        /// <summary>
+        /// Tests that AuthorInfoEdit_Get_ReturnsExistingAuthorInfo.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfoEdit_Get_ReturnsExistingAuthorInfo()
         {
@@ -241,6 +256,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("Test Author", model.AuthorName);
         }
 
+        /// <summary>
+        /// Tests that AuthorInfoEdit_Get_CreatesNewAuthorInfoIfNotExists.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfoEdit_Get_CreatesNewAuthorInfoIfNotExists()
         {
@@ -255,6 +273,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(authorInfo);
         }
 
+        /// <summary>
+        /// Tests that AuthorInfoEdit_Post_UpdatesAuthorInfo.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfoEdit_Post_UpdatesAuthorInfo()
         {
@@ -291,6 +312,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("new@example.com", updated.EmailAddress);
         }
 
+        /// <summary>
+        /// Tests that AuthorInfoEdit_Post_ReturnsNotFoundForNonExistentAuthor.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfoEdit_Post_ReturnsNotFoundForNonExistentAuthor()
         {
@@ -312,6 +336,9 @@ namespace Sky.Tests.Controllers
 
         #region Index Tests
 
+        /// <summary>
+        /// Tests that Index_ReturnsAllUsers.
+        /// </summary>
         [TestMethod]
         public async Task Index_ReturnsAllUsers()
         {
@@ -332,6 +359,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Count >= 2);
         }
 
+        /// <summary>
+        /// Tests that Index_FiltersUsersByRole.
+        /// </summary>
         [TestMethod]
         public async Task Index_FiltersUsersByRole()
         {
@@ -352,6 +382,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Any(u => u.EmailAddress == "test@example.com"));
         }
 
+        /// <summary>
+        /// Tests that Index_IncludesRoleMembership.
+        /// </summary>
         [TestMethod]
         public async Task Index_IncludesRoleMembership()
         {
@@ -378,6 +411,9 @@ namespace Sky.Tests.Controllers
 
         #region ConfirmEmail / UnconfirmEmail Tests
 
+        /// <summary>
+        /// Tests that ConfirmEmail_ConfirmsUserEmail.
+        /// </summary>
         [TestMethod]
         public async Task ConfirmEmail_ConfirmsUserEmail()
         {
@@ -399,6 +435,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(updatedUser.EmailConfirmed);
         }
 
+        /// <summary>
+        /// Tests that ConfirmEmail_ReturnsNotFoundForInvalidUser.
+        /// </summary>
         [TestMethod]
         public async Task ConfirmEmail_ReturnsNotFoundForInvalidUser()
         {
@@ -409,6 +448,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
+        /// <summary>
+        /// Tests that UnconfirmEmail_UnconfirmsUserEmail.
+        /// </summary>
         [TestMethod]
         public async Task UnconfirmEmail_UnconfirmsUserEmail()
         {
@@ -434,6 +476,9 @@ namespace Sky.Tests.Controllers
 
         #region Create Tests
 
+        /// <summary>
+        /// Tests that Create_Get_ReturnsNewViewModel.
+        /// </summary>
         [TestMethod]
         public async Task Create_Get_ReturnsNewViewModel()
         {
@@ -446,6 +491,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(viewResult.Model, typeof(UserCreateViewModel));
         }
 
+        /// <summary>
+        /// Tests that Create_Post_CreatesNewUser.
+        /// </summary>
         [TestMethod]
         public async Task Create_Post_CreatesNewUser()
         {
@@ -472,6 +520,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("555-1234", user.PhoneNumber);
         }
 
+        /// <summary>
+        /// Tests that Create_Post_WithoutPassword_RequiresGenerateRandomPassword.
+        /// </summary>
         [TestMethod]
         public async Task Create_Post_WithoutPassword_RequiresGenerateRandomPassword()
         {
@@ -493,6 +544,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(controller.ModelState.ContainsKey("GenerateRandomPassword"));
         }
 
+        /// <summary>
+        /// Tests that Create_Post_SendsConfirmationEmail.
+        /// </summary>
         [TestMethod]
         public async Task Create_Post_SendsConfirmationEmail()
         {
@@ -518,6 +572,9 @@ namespace Sky.Tests.Controllers
 
         #region DeleteUsers Tests
 
+        /// <summary>
+        /// Tests that DeleteUsers_DeletesNonAdministratorUsers.
+        /// </summary>
         [TestMethod]
         public async Task DeleteUsers_DeletesNonAdministratorUsers()
         {
@@ -545,6 +602,9 @@ namespace Sky.Tests.Controllers
             }
         }
 
+        /// <summary>
+        /// Tests that DeleteUsers_DoesNotDeleteAdministrators.
+        /// </summary>
         [TestMethod]
         public async Task DeleteUsers_DoesNotDeleteAdministrators()
         {
@@ -570,6 +630,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(stillExists);
         }
 
+        /// <summary>
+        /// Tests that DeleteUsers_PreventsDeleteLastUser.
+        /// </summary>
         [TestMethod]
         public async Task DeleteUsers_PreventsDeleteLastUser()
         {
@@ -600,6 +663,9 @@ namespace Sky.Tests.Controllers
 
         #region UserRoles Tests
 
+        /// <summary>
+        /// Tests that UserRoles_Get_ReturnsRoleAssignments.
+        /// </summary>
         [TestMethod]
         public async Task UserRoles_Get_ReturnsRoleAssignments()
         {
@@ -622,6 +688,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.RoleIds.Contains(role.Id));
         }
 
+        /// <summary>
+        /// Tests that UserRoles_Post_UpdatesRoleAssignments.
+        /// </summary>
         [TestMethod]
         public async Task UserRoles_Post_UpdatesRoleAssignments()
         {
@@ -650,6 +719,9 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(userRoles.Contains("Role1"));
         }
 
+        /// <summary>
+        /// Tests that UserRoles_Post_EnsuresAtLeastOneAdministrator.
+        /// </summary>
         [TestMethod]
         public async Task UserRoles_Post_EnsuresAtLeastOneAdministrator()
         {
@@ -687,6 +759,9 @@ namespace Sky.Tests.Controllers
 
         #region GetRoles Tests
 
+        /// <summary>
+        /// Tests that GetRoles_ReturnsAllRoles.
+        /// </summary>
         [TestMethod]
         public async Task GetRoles_ReturnsAllRoles()
         {
@@ -706,6 +781,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(roles);
         }
 
+        /// <summary>
+        /// Tests that GetRoles_FiltersRolesByText.
+        /// </summary>
         [TestMethod]
         public async Task GetRoles_FiltersRolesByText()
         {
@@ -726,6 +804,9 @@ namespace Sky.Tests.Controllers
 
         #region ResendEmailConfirmation Tests
 
+        /// <summary>
+        /// Tests that ResendEmailConfirmation_SendsEmailSuccessfully.
+        /// </summary>
         [TestMethod]
         public async Task ResendEmailConfirmation_SendsEmailSuccessfully()
         {
@@ -752,6 +833,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(resultData.Success || !string.IsNullOrEmpty(resultData.Error));
         }
 
+        /// <summary>
+        /// Tests that ResendEmailConfirmation_ReturnsNotFoundForInvalidUser.
+        /// </summary>
         [TestMethod]
         public async Task ResendEmailConfirmation_ReturnsNotFoundForInvalidUser()
         {
@@ -766,6 +850,9 @@ namespace Sky.Tests.Controllers
 
         #region SendPasswordReset Tests
 
+        /// <summary>
+        /// Tests that SendPasswordReset_SendsResetEmail.
+        /// </summary>
         [TestMethod]
         public async Task SendPasswordReset_SendsResetEmail()
         {
@@ -788,6 +875,9 @@ namespace Sky.Tests.Controllers
                 It.IsAny<string>()), Times.Once);
         }
 
+        /// <summary>
+        /// Tests that SendPasswordReset_ReturnsNotFoundForInvalidEmail.
+        /// </summary>
         [TestMethod]
         public async Task SendPasswordReset_ReturnsNotFoundForInvalidEmail()
         {
@@ -802,6 +892,9 @@ namespace Sky.Tests.Controllers
 
         #region DeleteAuthorInfo Tests
 
+        /// <summary>
+        /// Tests that DeleteAuthorInfo_DeletesAuthorInfo.
+        /// </summary>
         [TestMethod]
         public async Task DeleteAuthorInfo_DeletesAuthorInfo()
         {
@@ -824,6 +917,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNull(deleted);
         }
 
+        /// <summary>
+        /// Tests that DeleteAuthorInfo_ReturnsNotFoundForNonExistentAuthor.
+        /// </summary>
         [TestMethod]
         public async Task DeleteAuthorInfo_ReturnsNotFoundForNonExistentAuthor()
         {
@@ -838,6 +934,9 @@ namespace Sky.Tests.Controllers
 
         #region RoleMembership Tests
 
+        /// <summary>
+        /// Tests that RoleMembership_ReturnsViewForValidUser.
+        /// </summary>
         [TestMethod]
         public async Task RoleMembership_ReturnsViewForValidUser()
         {
@@ -852,6 +951,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
         }
 
+        /// <summary>
+        /// Tests that RoleMembership_ReturnsNotFoundForInvalidUser.
+        /// </summary>
         [TestMethod]
         public async Task RoleMembership_ReturnsNotFoundForInvalidUser()
         {
@@ -866,6 +968,9 @@ namespace Sky.Tests.Controllers
 
         #region Additional Edge Case Tests
 
+        /// <summary>
+        /// Tests that AuthorInfos_HandlesEmptyDatabase.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfos_HandlesEmptyDatabase()
         {
@@ -896,6 +1001,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Count >= 1);
         }
 
+        /// <summary>
+        /// Tests that AuthorInfos_HandlesPagination.
+        /// </summary>
         [TestMethod]
         public async Task AuthorInfos_HandlesPagination()
         {
@@ -916,6 +1024,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Count <= 10, "Page size should be respected");
         }
 
+        /// <summary>
+        /// Tests that Index_HandlesNullRoleId.
+        /// </summary>
         [TestMethod]
         public async Task Index_HandlesNullRoleId()
         {
@@ -933,6 +1044,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(model);
         }
 
+        /// <summary>
+        /// Tests that Index_HandlesInvalidRoleId.
+        /// </summary>
         [TestMethod]
         public async Task Index_HandlesInvalidRoleId()
         {
@@ -946,6 +1060,9 @@ namespace Sky.Tests.Controllers
             });
         }
 
+        /// <summary>
+        /// Tests that DeleteUsers_HandlesInvalidUserId.
+        /// </summary>
         [TestMethod]
         public async Task DeleteUsers_HandlesInvalidUserId()
         {
@@ -962,6 +1079,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
         }
 
+        /// <summary>
+        /// Tests that DeleteUsers_HandlesMixedValidInvalidIds.
+        /// </summary>
         [TestMethod]
         public async Task DeleteUsers_HandlesMixedValidInvalidIds()
         {
@@ -990,6 +1110,9 @@ namespace Sky.Tests.Controllers
             }
         }
 
+        /// <summary>
+        /// Tests that Index_HandlesLockedOutUsers.
+        /// </summary>
         [TestMethod]
         public async Task Index_HandlesLockedOutUsers()
         {
@@ -1019,6 +1142,9 @@ namespace Sky.Tests.Controllers
                 "The controller logic shows IsLockedOut is false when LockoutEnd is in the future");
         }
 
+        /// <summary>
+        /// Tests that SendPasswordReset_HandlesNullEmail.
+        /// </summary>
         [TestMethod]
         public async Task SendPasswordReset_HandlesNullEmail()
         {
@@ -1030,6 +1156,9 @@ namespace Sky.Tests.Controllers
             });
         }
 
+        /// <summary>
+        /// Tests that UserRoles_Post_HandlesInvalidUserId.
+        /// </summary>
         [TestMethod]
         public async Task UserRoles_Post_HandlesInvalidUserId()
         {
@@ -1051,3 +1180,4 @@ namespace Sky.Tests.Controllers
         #endregion
     }
 }
+

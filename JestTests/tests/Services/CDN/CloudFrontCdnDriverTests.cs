@@ -33,6 +33,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that Constructor_WithValidCloudFrontSettings_InitializesDriver.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithValidCloudFrontSettings_InitializesDriver()
         {
@@ -59,6 +62,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("CloudFront", driver.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithNullSetting_ThrowsArgumentNullException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithNullSetting_ThrowsArgumentNullException()
         {
@@ -69,6 +75,9 @@ namespace Sky.Tests.Services.CDN
             });
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithEmptyValue_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithEmptyValue_ThrowsArgumentException()
         {
@@ -88,6 +97,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(exception.Message.Contains("cannot be null or empty"));
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithWhitespaceValue_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithWhitespaceValue_ThrowsArgumentException()
         {
@@ -107,6 +119,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(exception.Message.Contains("cannot be null or empty"));
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithInvalidJson_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithInvalidJson_ThrowsArgumentException()
         {
@@ -126,6 +141,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(exception.Message.Contains("Invalid JSON"));
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithNullJsonObject_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithNullJsonObject_ThrowsArgumentException()
         {
@@ -145,6 +163,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(exception.Message.Contains("Failed to deserialize"));
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithMinimalValidConfig_Succeeds.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithMinimalValidConfig_Succeeds()
         {
@@ -174,6 +195,9 @@ namespace Sky.Tests.Services.CDN
 
         #region ProviderName Tests
 
+        /// <summary>
+        /// Tests that ProviderName_ReturnsCloudFront.
+        /// </summary>
         [TestMethod]
         public void ProviderName_ReturnsCloudFront()
         {
@@ -194,6 +218,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("CloudFront", name);
         }
 
+        /// <summary>
+        /// Tests that ProviderName_CalledMultipleTimes_ReturnsConsistentValue.
+        /// </summary>
         [TestMethod]
         public void ProviderName_CalledMultipleTimes_ReturnsConsistentValue()
         {
@@ -222,6 +249,9 @@ namespace Sky.Tests.Services.CDN
 
         #region CloudFrontCdnConfig Tests
 
+        /// <summary>
+        /// Tests that CloudFrontCdnConfig_DefaultValues.
+        /// </summary>
         [TestMethod]
         public void CloudFrontCdnConfig_DefaultValues()
         {
@@ -235,6 +265,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("us-east-1", config.Region);
         }
 
+        /// <summary>
+        /// Tests that CloudFrontCdnConfig_SetProperties.
+        /// </summary>
         [TestMethod]
         public void CloudFrontCdnConfig_SetProperties()
         {
@@ -254,6 +287,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("eu-west-1", config.Region);
         }
 
+        /// <summary>
+        /// Tests that CloudFrontCdnConfig_SerializeDeserialize_MaintainsValues.
+        /// </summary>
         [TestMethod]
         public void CloudFrontCdnConfig_SerializeDeserialize_MaintainsValues()
         {
@@ -277,6 +313,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(original.Region, deserialized.Region);
         }
 
+        /// <summary>
+        /// Tests that CloudFrontCdnConfig_AllRegions_CanBeSet.
+        /// </summary>
         [TestMethod]
         public void CloudFrontCdnConfig_AllRegions_CanBeSet()
         {
@@ -300,6 +339,9 @@ namespace Sky.Tests.Services.CDN
 
         #region PurgeCdn Method Tests
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithNullUrls_PurgesAllContent.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithNullUrls_PurgesAllContent()
         {
@@ -323,6 +365,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(result[0].IsSuccessStatusCode); // Will fail without real AWS credentials
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithEmptyList_PurgesAllContent.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithEmptyList_PurgesAllContent()
         {
@@ -345,6 +390,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("CloudFront", result[0].ProviderName);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithRootPath_PurgesAllContent.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithRootPath_PurgesAllContent()
         {
@@ -367,6 +415,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("CloudFront", result[0].ProviderName);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithRootKeyword_PurgesAllContent.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithRootKeyword_PurgesAllContent()
         {
@@ -389,6 +440,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("CloudFront", result[0].ProviderName);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithSpecificUrls_ReturnsCdnResult.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithSpecificUrls_ReturnsCdnResult()
         {
@@ -414,6 +468,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsNotNull(result[0].Message);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_NoParameters_CallsOverloadWithWildcard.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_NoParameters_CallsOverloadWithWildcard()
         {
@@ -436,6 +493,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("CloudFront", result[0].ProviderName);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_ReturnsEstimatedFlushDateTime.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_ReturnsEstimatedFlushDateTime()
         {
@@ -461,6 +521,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(result[0].EstimatedFlushDateTime <= afterCall.AddSeconds(5)); // Allow small buffer
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithInvalidCredentials_ReturnsErrorResult.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithInvalidCredentials_ReturnsErrorResult()
         {
@@ -495,6 +558,9 @@ namespace Sky.Tests.Services.CDN
 
         #region CdnResult Validation Tests
 
+        /// <summary>
+        /// Tests that PurgeCdn_Result_HasClientRequestId.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_Result_HasClientRequestId()
         {
@@ -516,6 +582,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreNotEqual(string.Empty, result[0].ClientRequestId);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_Result_HasProviderName.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_Result_HasProviderName()
         {
@@ -536,6 +605,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("CloudFront", result[0].ProviderName);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_Result_HasStatusCode.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_Result_HasStatusCode()
         {
@@ -556,6 +628,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsNotNull(result[0].Status);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_Result_HasReasonPhrase.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_Result_HasReasonPhrase()
         {
@@ -581,6 +656,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Edge Cases
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithDuplicateUrls_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithDuplicateUrls_HandlesCorrectly()
         {
@@ -603,6 +681,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(1, result.Count);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithVeryLongUrl_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithVeryLongUrl_HandlesCorrectly()
         {
@@ -626,6 +707,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(1, result.Count);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithSpecialCharactersInUrl_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithSpecialCharactersInUrl_HandlesCorrectly()
         {
@@ -648,6 +732,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(1, result.Count);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithManyUrls_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithManyUrls_HandlesCorrectly()
         {

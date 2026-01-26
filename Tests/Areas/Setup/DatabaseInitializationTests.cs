@@ -75,6 +75,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region Single Tenant Tests
 
+        /// <summary>
+        /// Tests that SingleTenant_CompleteSetup_InitializesDatabaseSchema.
+        /// </summary>
         [TestMethod]
         public async Task SingleTenant_CompleteSetup_InitializesDatabaseSchema()
         {
@@ -125,6 +128,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.IsTrue(layoutsTableExists, "Layouts table should exist");
         }
         
+        /// <summary>
+        /// Tests that SingleTenant_CompleteSetup_CreatesDefaultLayout.
+        /// </summary>
         [TestMethod]
         public async Task SingleTenant_CompleteSetup_CreatesDefaultLayout()
         {
@@ -171,6 +177,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region Multi-Tenant Tests
 
+        /// <summary>
+        /// Tests that MultiTenant_CompleteSetup_UsesEditorConnection.
+        /// </summary>
         [TestMethod]
         public async Task MultiTenant_CompleteSetup_UsesEditorConnection()
         {
@@ -213,6 +222,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region Database Provider Tests
 
+        /// <summary>
+        /// Tests that CompleteSetup_SqliteProvider_ReturnsCorrectProviderType.
+        /// </summary>
         [TestMethod]
         public async Task CompleteSetup_SqliteProvider_ReturnsCorrectProviderType()
         {
@@ -239,6 +251,9 @@ namespace Sky.Tests.Areas.Setup
             // If not, you'll need to add DatabaseProvider property
         }
 
+        /// <summary>
+        /// Tests that CompleteSetup_ExistingSchema_DoesNotRecreate.
+        /// </summary>
         [TestMethod]
         public async Task CompleteSetup_ExistingSchema_DoesNotRecreate()
         {
@@ -271,6 +286,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region Idempotency Tests
 
+        /// <summary>
+        /// Tests that CompleteSetup_CalledTwice_OnlyCreatesAdminOnce.
+        /// </summary>
         [TestMethod]
         public async Task CompleteSetup_CalledTwice_OnlyCreatesAdminOnce()
         {
@@ -301,6 +319,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.AreEqual(count1, count2, "Admin count should not increase on second completion");
         }
 
+        /// <summary>
+        /// Tests that CompleteSetup_ExistingAdmin_SkipsCreation.
+        /// </summary>
         [TestMethod]
         public async Task CompleteSetup_ExistingAdmin_SkipsCreation()
         {
@@ -347,6 +368,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region Error Handling Tests
 
+        /// <summary>
+        /// Tests that CompleteSetup_MissingRequiredConfig_ReturnsValidationError.
+        /// </summary>
         [TestMethod]
         public async Task CompleteSetup_MissingRequiredConfig_ReturnsValidationError()
         {

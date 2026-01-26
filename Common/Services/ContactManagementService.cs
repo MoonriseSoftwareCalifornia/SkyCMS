@@ -80,7 +80,7 @@ namespace Cosmos.Common.Services
                 var key = settings.FirstOrDefault(f => f.Name == "ApiKey");
                 var list = settings.FirstOrDefault(f => f.Name == "ContactListName");
 
-                if (key == null || list == null)
+                if (key == null || list == null || string.IsNullOrWhiteSpace(key.Value) || string.IsNullOrWhiteSpace(list.Value))
                 {
                     logger.LogWarning("MailChimp settings incomplete. Skipping integration.");
                     return model;

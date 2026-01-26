@@ -20,6 +20,9 @@ namespace Sky.Tests.FlexDb
     [TestClass]
     public class CosmosDbOptionsBuilderTests
     {
+        /// <summary>
+        /// Tests that ConfigureDbOptions_CosmosConnectionString_UsesCosmosStrategy.
+        /// </summary>
         [TestMethod]
         public void ConfigureDbOptions_CosmosConnectionString_UsesCosmosStrategy()
         {
@@ -34,6 +37,9 @@ namespace Sky.Tests.FlexDb
             Assert.IsNotNull(optionsBuilder.Options);
         }
 
+        /// <summary>
+        /// Tests that ConfigureDbOptions_SqlServerConnectionString_UsesSqlServerStrategy.
+        /// </summary>
         [TestMethod]
         public void ConfigureDbOptions_SqlServerConnectionString_UsesSqlServerStrategy()
         {
@@ -48,6 +54,9 @@ namespace Sky.Tests.FlexDb
             Assert.IsNotNull(optionsBuilder.Options);
         }
 
+        /// <summary>
+        /// Tests that ConfigureDbOptions_UnsupportedConnectionString_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void ConfigureDbOptions_UnsupportedConnectionString_ThrowsArgumentException()
         {
@@ -61,6 +70,9 @@ namespace Sky.Tests.FlexDb
             // Assert is handled by ExpectedException
         }
 
+        /// <summary>
+        /// Tests that ConfigureDbOptions_NullOptionsBuilder_ThrowsArgumentNullException.
+        /// </summary>
         [TestMethod]
         public void ConfigureDbOptions_NullOptionsBuilder_ThrowsArgumentNullException()
         {
@@ -73,6 +85,9 @@ namespace Sky.Tests.FlexDb
             // Assert is handled by ExpectedException
         }
 
+        /// <summary>
+        /// Tests that GetDefaultStrategies_ReturnsAllStrategies.
+        /// </summary>
         [TestMethod]
         public void GetDefaultStrategies_ReturnsAllStrategies()
         {
@@ -84,6 +99,9 @@ namespace Sky.Tests.FlexDb
             Assert.HasCount(4, strategies); // Cosmos, SQL Server, MySQL
         }
 
+        /// <summary>
+        /// Tests that ConfigureDbOptions_CustomStrategies_UsesProvidedStrategies.
+        /// </summary>
         [TestMethod]
         public void ConfigureDbOptions_CustomStrategies_UsesProvidedStrategies()
         {
@@ -103,3 +121,4 @@ namespace Sky.Tests.FlexDb
         }
     }
 }
+

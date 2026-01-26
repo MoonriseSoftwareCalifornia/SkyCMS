@@ -1,4 +1,4 @@
-﻿// <copyright file="CloudFrontXmlGenerationTests.cs" company="Moonrise Software, LLC">
+// <copyright file="CloudFrontXmlGenerationTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -17,6 +17,9 @@ namespace Sky.Tests.Services.CDN
     [TestClass]
     public class CloudFrontXmlGenerationTests
     {
+        /// <summary>
+        /// Tests that XmlPayload_WithSpecialCharacters_EscapesCorrectly.
+        /// </summary>
         [TestMethod]
         public void XmlPayload_WithSpecialCharacters_EscapesCorrectly()
         {
@@ -52,6 +55,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(xml.Contains("&lt;") || xml.Contains("&amp;") || xml.Contains("&quot;"));
         }
 
+        /// <summary>
+        /// Tests that XmlPayload_WithUnicodeCharacters_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public void XmlPayload_WithUnicodeCharacters_HandlesCorrectly()
         {
@@ -79,6 +85,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(3, doc.Descendants("Path").Count());
         }
 
+        /// <summary>
+        /// Tests that XmlPayload_WithMaxPaths_GeneratesValidXml.
+        /// </summary>
         [TestMethod]
         public void XmlPayload_WithMaxPaths_GeneratesValidXml()
         {

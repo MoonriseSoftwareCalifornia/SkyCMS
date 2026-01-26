@@ -91,6 +91,9 @@ namespace Sky.Tests.Controllers
 
         #region Deploy Method Tests
 
+        /// <summary>
+        /// Tests that Deploy_ValidRequest_ReturnsOkWithMetadata.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_ValidRequest_ReturnsOkWithMetadata()
         {
@@ -115,6 +118,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(1, (int)deploymentCountProp.GetValue(okResult.Value)!, "Deployment count should be 1");
         }
 
+        /// <summary>
+        /// Tests that Deploy_InvalidArticleId_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_InvalidArticleId_ReturnsNotFound()
         {
@@ -140,6 +146,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("SPA article not found", (string)errorProp.GetValue(notFoundResult.Value)!);
         }
 
+        /// <summary>
+        /// Tests that Deploy_InvalidPassword_ReturnsUnauthorized.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_InvalidPassword_ReturnsUnauthorized()
         {
@@ -165,6 +174,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("Invalid deployment key", (string)errorProp.GetValue(unauthorizedResult.Value)!);
         }
 
+        /// <summary>
+        /// Tests that Deploy_NonSpaArticle_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_NonSpaArticle_ReturnsNotFound()
         {
@@ -191,6 +203,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Deploy_NullZipFile_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_NullZipFile_ReturnsBadRequest()
         {
@@ -212,6 +227,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("No file uploaded", (string)errorProp.GetValue(badRequestResult.Value)!);
         }
 
+        /// <summary>
+        /// Tests that Deploy_EmptyZipFile_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_EmptyZipFile_ReturnsBadRequest()
         {
@@ -227,6 +245,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Deploy_OversizedZipFile_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_OversizedZipFile_ReturnsBadRequest()
         {
@@ -251,6 +272,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(errorMessage.Contains("exceeds maximum"), $"Error message should mention 'exceeds maximum', got: {errorMessage}");
         }
 
+        /// <summary>
+        /// Tests that Deploy_NonZipFile_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_NonZipFile_ReturnsBadRequest()
         {
@@ -273,6 +297,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("File must be a .zip archive", (string)errorProp.GetValue(badRequestResult.Value)!);
         }
 
+        /// <summary>
+        /// Tests that Deploy_UpdatesDeploymentCount.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_UpdatesDeploymentCount()
         {
@@ -308,6 +335,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(2, (int)deploymentCountProp.GetValue(okResult.Value)!, "Deployment count should be 2 after second deployment");
         }
 
+        /// <summary>
+        /// Tests that Deploy_ExtractsGitHubHeaders.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_ExtractsGitHubHeaders()
         {
@@ -339,6 +369,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("owner/repo", metadata.LastDeployedFrom, "Last deployed from should be extracted from header");
         }
 
+        /// <summary>
+        /// Tests that Deploy_WithoutWebhookSignature_StillSucceeds.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_WithoutWebhookSignature_StillSucceeds()
         {
@@ -357,6 +390,9 @@ namespace Sky.Tests.Controllers
 
         #region Password Rotation Tests
 
+        /// <summary>
+        /// Tests that Deploy_WithRotatedPassword_AcceptsPreviousKeyInGracePeriod.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_WithRotatedPassword_AcceptsPreviousKeyInGracePeriod()
         {
@@ -388,6 +424,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(OkObjectResult), "Deployment with old password should succeed within grace period");
         }
 
+        /// <summary>
+        /// Tests that Deploy_WithRotatedPassword_RejectsOldKeyAfterGracePeriod.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_WithRotatedPassword_RejectsOldKeyAfterGracePeriod()
         {
@@ -423,6 +462,9 @@ namespace Sky.Tests.Controllers
 
         #region File Validation Tests
 
+        /// <summary>
+        /// Tests that Deploy_WithPathTraversalAttempt_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_WithPathTraversalAttempt_ThrowsException()
         {
@@ -436,6 +478,9 @@ namespace Sky.Tests.Controllers
             });
         }
 
+        /// <summary>
+        /// Tests that Deploy_WithValidHtmlCssJs_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_WithValidHtmlCssJs_Succeeds()
         {
@@ -453,6 +498,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(OkObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Deploy_UpdatesArticleTimestamp.
+        /// </summary>
         [TestMethod]
         public async Task Deploy_UpdatesArticleTimestamp()
         {

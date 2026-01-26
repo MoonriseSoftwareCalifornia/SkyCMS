@@ -160,6 +160,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region InitializeSetupAsync Tests
 
+        /// <summary>
+        /// Tests that InitializeSetupAsync_CreatesNewSetupConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task InitializeSetupAsync_CreatesNewSetupConfiguration()
         {
@@ -172,6 +175,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.AreEqual(1, result.CurrentStep);
         }
 
+        /// <summary>
+        /// Tests that InitializeSetupAsync_CalledTwice_ReturnsSameConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task InitializeSetupAsync_CalledTwice_ReturnsSameConfiguration()
         {
@@ -187,6 +193,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region GetCurrentSetupAsync Tests
 
+        /// <summary>
+        /// Tests that GetCurrentSetupAsync_NoSetupExists_ReturnsNull.
+        /// </summary>
         [TestMethod]
         public async Task GetCurrentSetupAsync_NoSetupExists_ReturnsNull()
         {
@@ -197,6 +206,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.IsNull(result);
         }
 
+        /// <summary>
+        /// Tests that GetCurrentSetupAsync_SetupExists_ReturnsConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task GetCurrentSetupAsync_SetupExists_ReturnsConfiguration()
         {
@@ -214,6 +226,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region UpdateTenantModeAsync Tests
 
+        /// <summary>
+        /// Tests that UpdateTenantModeAsync_ValidMode_UpdatesConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task UpdateTenantModeAsync_ValidMode_UpdatesConfiguration()
         {
@@ -232,6 +247,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region TestDatabaseConnectionAsync Tests
 
+        /// <summary>
+        /// Tests that TestDatabaseConnectionAsync_InvalidConnection_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task TestDatabaseConnectionAsync_InvalidConnection_ReturnsError()
         {
@@ -246,6 +264,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.IsFalse(string.IsNullOrEmpty(result.Message));
         }
 
+        /// <summary>
+        /// Tests that TestDatabaseConnectionAsync_EmptyConnectionString_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task TestDatabaseConnectionAsync_EmptyConnectionString_ReturnsError()
         {
@@ -261,6 +282,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region UpdateDatabaseConfigAsync Tests
 
+        /// <summary>
+        /// Tests that UpdateDatabaseConfigAsync_ValidConnection_UpdatesConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task UpdateDatabaseConfigAsync_ValidConnection_UpdatesConfiguration()
         {
@@ -280,6 +304,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region TestStorageConnectionAsync Tests
 
+        /// <summary>
+        /// Tests that TestStorageConnectionAsync_ValidAzureConnection_ReturnsSuccess.
+        /// </summary>
         [TestMethod]
         public async Task TestStorageConnectionAsync_ValidAzureConnection_ReturnsSuccess()
         {
@@ -294,6 +321,9 @@ namespace Sky.Tests.Areas.Setup
             // Note: May succeed or fail depending on whether Azurite is running
         }
 
+        /// <summary>
+        /// Tests that TestStorageConnectionAsync_InvalidConnection_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task TestStorageConnectionAsync_InvalidConnection_ReturnsError()
         {
@@ -312,6 +342,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region UpdateAdminAccountAsync Tests
 
+        /// <summary>
+        /// Tests that UpdateAdminAccountAsync_ValidCredentials_UpdatesConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task UpdateAdminAccountAsync_ValidCredentials_UpdatesConfiguration()
         {
@@ -333,6 +366,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region UpdatePublisherConfigAsync Tests
 
+        /// <summary>
+        /// Tests that UpdatePublisherConfigAsync_ValidConfiguration_UpdatesSetup.
+        /// </summary>
         [TestMethod]
         public async Task UpdatePublisherConfigAsync_ValidConfiguration_UpdatesSetup()
         {
@@ -366,6 +402,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region TestEmailConfigAsync Tests
 
+        /// <summary>
+        /// Tests that TestEmailConfigAsync_SendGrid_ValidKey_ReturnsSuccess.
+        /// </summary>
         [TestMethod]
         public async Task TestEmailConfigAsync_SendGrid_ValidKey_ReturnsSuccess()
         {
@@ -392,6 +431,9 @@ namespace Sky.Tests.Areas.Setup
             // Note: Will fail without valid SendGrid key, but tests the flow
         }
 
+        /// <summary>
+        /// Tests that TestEmailConfigAsync_MissingProvider_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task TestEmailConfigAsync_MissingProvider_ReturnsError()
         {
@@ -415,6 +457,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region UpdateEmailConfigAsync Tests
 
+        /// <summary>
+        /// Tests that UpdateEmailConfigAsync_SendGridProvider_UpdatesConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task UpdateEmailConfigAsync_SendGridProvider_UpdatesConfiguration()
         {
@@ -439,6 +484,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.AreEqual(apiKey, result.SendGridApiKey);
         }
 
+        /// <summary>
+        /// Tests that UpdateEmailConfigAsync_SmtpProvider_UpdatesConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task UpdateEmailConfigAsync_SmtpProvider_UpdatesConfiguration()
         {
@@ -472,6 +520,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region UpdateCdnConfigAsync Tests
 
+        /// <summary>
+        /// Tests that UpdateCdnConfigAsync_AzureCdn_UpdatesConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task UpdateCdnConfigAsync_AzureCdn_UpdatesConfiguration()
         {
@@ -507,6 +558,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.AreEqual(endpointName, result.AzureCdnEndpointName);
         }
 
+        /// <summary>
+        /// Tests that UpdateCdnConfigAsync_Cloudflare_UpdatesConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task UpdateCdnConfigAsync_Cloudflare_UpdatesConfiguration()
         {
@@ -538,6 +592,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.AreEqual(zoneId, result.CloudflareZoneId);
         }
 
+        /// <summary>
+        /// Tests that UpdateCdnConfigAsync_NoCdn_ClearsConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task UpdateCdnConfigAsync_NoCdn_ClearsConfiguration()
         {
@@ -571,6 +628,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region UpdateStepAsync Tests
 
+        /// <summary>
+        /// Tests that UpdateStepAsync_ValidStep_UpdatesCurrentStep.
+        /// </summary>
         [TestMethod]
         public async Task UpdateStepAsync_ValidStep_UpdatesCurrentStep()
         {
@@ -585,6 +645,9 @@ namespace Sky.Tests.Areas.Setup
             Assert.AreEqual(3, result.CurrentStep);
         }
 
+        /// <summary>
+        /// Tests that UpdateStepAsync_ProgressiveSteps_UpdatesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task UpdateStepAsync_ProgressiveSteps_UpdatesCorrectly()
         {
@@ -605,6 +668,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region CompleteSetupAsync Tests
 
+        /// <summary>
+        /// Tests that CompleteSetupAsync_MissingDatabaseConfig_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task CompleteSetupAsync_MissingDatabaseConfig_ReturnsError()
         {
@@ -627,6 +693,9 @@ namespace Sky.Tests.Areas.Setup
                           result.Message.Contains("Publisher URL", StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>
+        /// Tests that CompleteSetupAsync_MissingAdminAccount_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task CompleteSetupAsync_MissingAdminAccount_ReturnsError()
         {
@@ -645,6 +714,9 @@ namespace Sky.Tests.Areas.Setup
                          result.Message.Contains("Admin", StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>
+        /// Tests that CompleteSetupAsync_InvalidSetupId_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task CompleteSetupAsync_InvalidSetupId_ReturnsError()
         {
@@ -659,6 +731,9 @@ namespace Sky.Tests.Areas.Setup
 
         #region Additional Tests
 
+        /// <summary>
+        /// Tests that ShouldValidateStorageConfiguration.
+        /// </summary>
         [TestMethod]
         public async Task ShouldValidateStorageConfiguration()
         {
@@ -685,3 +760,4 @@ namespace Sky.Tests.Areas.Setup
         #endregion
     }
 }
+

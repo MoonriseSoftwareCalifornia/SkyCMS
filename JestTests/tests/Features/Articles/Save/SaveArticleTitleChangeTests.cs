@@ -26,6 +26,9 @@ namespace Sky.Tests.Features.Articles.Save
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         public async Task SaveArticle_TitleChange_CreatesRedirectFromOldSlug()
@@ -69,6 +72,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNotNull(redirect, "Redirect should be created from old slug");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("TitleChanges")]
         [TestCategory("Slugs")]
@@ -110,6 +116,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.DoesNotContain("@", updatedArticle.UrlPath);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         public async Task SaveArticle_MinorTitleChange_CaseOnly_DoesNotCreateRedirect()
@@ -145,6 +154,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(0, redirectCount);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("TitleChanges")]
         [TestCategory("Slugs")]
@@ -182,6 +194,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.DoesNotContain("--", updatedArticle.UrlPath);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("TitleChanges")]
         [TestCategory("Slugs")]
@@ -220,6 +235,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsLessThan(300, updatedArticle.UrlPath.Length);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("TitleChanges")]
         [TestCategory("Slugs")]
@@ -261,6 +279,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("trimmed-title", updatedArticle.UrlPath);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         public async Task SaveArticle_MultipleTitleChanges_CreatesMultipleRedirects()
@@ -312,3 +333,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

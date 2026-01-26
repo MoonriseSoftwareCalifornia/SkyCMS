@@ -14,6 +14,9 @@ namespace Sky.Tests.Services
 
         #region Basic Title Change Tests
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_RootPage_PreservesRootUrlPath.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_RootPage_PreservesRootUrlPath()
         {
@@ -39,6 +42,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual("New Home Page", updated.Title);
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_NonRootPage_ChangesUrlPath.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_NonRootPage_ChangesUrlPath()
         {
@@ -66,6 +72,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual("company-information", updated.UrlPath);
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_RootPageWithChildren_ChildrenUnaffected.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_RootPageWithChildren_ChildrenUnaffected()
         {
@@ -95,6 +104,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual("root/child", updatedChild.UrlPath);
         }
 
+        /// <summary>
+        /// Tests that BuildArticleUrl_RootPage_ReturnsNormalizedSlug.
+        /// </summary>
         [TestMethod]
         public async Task BuildArticleUrl_RootPage_ReturnsNormalizedSlug()
         {
@@ -115,6 +127,9 @@ namespace Sky.Tests.Services
 
         #region Version Cascade Tests - Requirement 1 & 2
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_WithVersions_CascadesTitleToAllVersions.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_WithVersions_CascadesTitleToAllVersions()
         {
@@ -171,6 +186,9 @@ namespace Sky.Tests.Services
             Assert.IsTrue(allVersions.All(v => v.Title == "Updated Title"), "All versions should have the updated title");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_WithVersions_CascadesUrlPathAndSlugToAllVersions.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_WithVersions_CascadesUrlPathAndSlugToAllVersions()
         {
@@ -232,6 +250,9 @@ namespace Sky.Tests.Services
                 $"All versions should have the updated URL path/slug '{expectedNewUrlPath}'");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_RootPageWithVersions_PreservesRootUrlPathInAllVersions.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_RootPageWithVersions_PreservesRootUrlPathInAllVersions()
         {
@@ -292,6 +313,9 @@ namespace Sky.Tests.Services
                 "All versions should have the updated title");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_BlogPostWithVersions_CascadesBlogKeyToAllVersions.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_BlogPostWithVersions_CascadesBlogKeyToAllVersions()
         {
@@ -360,6 +384,9 @@ namespace Sky.Tests.Services
 
         #region Redirect Creation Tests - Requirement 4
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_PublishedNonRootPage_CreatesRedirectFromOldToNewUrl.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_PublishedNonRootPage_CreatesRedirectFromOldToNewUrl()
         {
@@ -399,6 +426,9 @@ namespace Sky.Tests.Services
                 "Redirect should point to the NEW URL in the redirect script");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_UnpublishedNonRootPage_DoesNotCreateRedirect.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_UnpublishedNonRootPage_DoesNotCreateRedirect()
         {
@@ -432,6 +462,9 @@ namespace Sky.Tests.Services
             Assert.IsNull(redirect, "No redirect should be created for unpublished articles");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_PublishedRootPage_DoesNotCreateRedirect.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_PublishedRootPage_DoesNotCreateRedirect()
         {
@@ -467,6 +500,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual(0, redirectCount, "No redirect should be created from root URL path");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_PublishedPageWithVersions_CreatesRedirectAndUpdatesAllVersions.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_PublishedPageWithVersions_CreatesRedirectAndUpdatesAllVersions()
         {
@@ -528,6 +564,9 @@ namespace Sky.Tests.Services
 
         #region Case Sensitivity Tests - Requirement 5
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_CaseOnlyChange_UpdatesTitleButPreservesUrlPath.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_CaseOnlyChange_UpdatesTitleButPreservesUrlPath()
         {
@@ -552,6 +591,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual("about-us", updatedArticle.UrlPath, "URL path should remain unchanged (URLs/slugs are case insensitive)");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_CaseOnlyChangeWithVersions_UpdatesAllVersionTitlesButNotUrls.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_CaseOnlyChangeWithVersions_UpdatesAllVersionTitlesButNotUrls()
         {
@@ -598,6 +640,9 @@ namespace Sky.Tests.Services
                 "All versions should preserve the same URL path (URLs/slugs are case insensitive)");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_CaseOnlyChangePublished_DoesNotCreateRedirect.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_CaseOnlyChangePublished_DoesNotCreateRedirect()
         {
@@ -633,6 +678,9 @@ namespace Sky.Tests.Services
                 "No redirect should be created when only title case changes (slug/URL remains the same)");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_MixedCaseTitle_UrlNormalizedToLowercase.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_MixedCaseTitle_UrlNormalizedToLowercase()
         {
@@ -663,6 +711,9 @@ namespace Sky.Tests.Services
 
         #region Error Handling Tests
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_SlugConflict_ThrowsInvalidOperationException.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_SlugConflict_ThrowsInvalidOperationException()
         {
@@ -688,6 +739,9 @@ namespace Sky.Tests.Services
             Assert.IsTrue(exception.Message.Contains("already in use"));
         }
 
+        /// <summary>
+        /// Tests that CreateRedirectsAsync_InvalidUserId_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public async Task CreateRedirectsAsync_InvalidUserId_ThrowsArgumentException()
         {
@@ -717,6 +771,9 @@ namespace Sky.Tests.Services
 
         #region Blog Stream Tests
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_BlogStreamWithMultipleEntries_UpdatesAllEntries.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_BlogStreamWithMultipleEntries_UpdatesAllEntries()
         {
@@ -779,6 +836,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual(0, oldPosts, "No posts should remain with old blog key");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_BlogStreamWithVersions_CascadesToAllPostVersions.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_BlogStreamWithVersions_CascadesToAllPostVersions()
         {
@@ -842,6 +902,9 @@ namespace Sky.Tests.Services
 
         #region Hierarchical/Nested Article Tests
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_DeepNestedChildren_CascadesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_DeepNestedChildren_CascadesCorrectly()
         {
@@ -888,6 +951,9 @@ namespace Sky.Tests.Services
 
         #region Edge Cases
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_SameTitle_NoUnnecessaryChanges.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_SameTitle_NoUnnecessaryChanges()
         {
@@ -919,6 +985,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual(0, redirectCount, "No redirect should be created when slug doesn't change");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_SpecialCharactersInTitle_NormalizesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_SpecialCharactersInTitle_NormalizesCorrectly()
         {
@@ -950,6 +1019,9 @@ namespace Sky.Tests.Services
 
         #region Concurrency/Batching Tests
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_Exactly20Versions_BatchSavesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_Exactly20Versions_BatchSavesCorrectly()
         {
@@ -997,6 +1069,9 @@ namespace Sky.Tests.Services
                 "All 21 versions should have the updated URL path");
         }
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_MoreThan40Versions_AllUpdatedCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_MoreThan40Versions_AllUpdatedCorrectly()
         {
@@ -1046,6 +1121,9 @@ namespace Sky.Tests.Services
 
         #region Publishing Integration Tests
 
+        /// <summary>
+        /// Tests that HandleTitleChangeAsync_FuturePublishedDate_DoesNotRepublish.
+        /// </summary>
         [TestMethod]
         public async Task HandleTitleChangeAsync_FuturePublishedDate_DoesNotRepublish()
         {
@@ -1083,6 +1161,9 @@ namespace Sky.Tests.Services
 
         #region Reserved Paths Tests
 
+        /// <summary>
+        /// Tests that ValidateTitle_ReservedPath_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public async Task ValidateTitle_ReservedPath_ReturnsFalse()
         {
@@ -1097,6 +1178,9 @@ namespace Sky.Tests.Services
             Assert.IsFalse(isValid, "Reserved path 'admin' should not be valid as a title");
         }
 
+        /// <summary>
+        /// Tests that ValidateTitle_EmptyOrWhitespace_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public async Task ValidateTitle_EmptyOrWhitespace_ReturnsFalse()
         {
@@ -1106,6 +1190,9 @@ namespace Sky.Tests.Services
             Assert.IsFalse(await TitleChangeService.ValidateTitle(null, null));
         }
 
+        /// <summary>
+        /// Tests that ValidateTitle_DuplicateTitle_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public async Task ValidateTitle_DuplicateTitle_ReturnsFalse()
         {
@@ -1120,6 +1207,9 @@ namespace Sky.Tests.Services
             Assert.IsFalse(isValid, "Duplicate title should not be valid");
         }
 
+        /// <summary>
+        /// Tests that ValidateTitle_ValidTitle_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public async Task ValidateTitle_ValidTitle_ReturnsTrue()
         {
@@ -1136,3 +1226,4 @@ namespace Sky.Tests.Services
         #endregion
     }
 }
+

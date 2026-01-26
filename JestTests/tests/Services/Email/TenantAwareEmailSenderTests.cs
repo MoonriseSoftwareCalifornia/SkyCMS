@@ -54,6 +54,9 @@ namespace Sky.Tests.Services.Email
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Constructor")]
         public void Constructor_InitializesSendResult()
@@ -66,6 +69,9 @@ namespace Sky.Tests.Services.Email
 
         #region Email Not Configured Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("NotConfigured")]
         public async Task SendEmailAsync_WithEmailNotConfigured_ReturnsServiceUnavailableStatus()
@@ -89,6 +95,9 @@ namespace Sky.Tests.Services.Email
             StringAssert.Contains(_sut.SendResult.Message, "not configured");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("NotConfigured")]
         public async Task SendEmailAsync_WithEmailNotConfigured_LogsWarning()
@@ -117,6 +126,9 @@ namespace Sky.Tests.Services.Email
 
         #region Exception Handling Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ExceptionHandling")]
         public async Task SendEmailAsync_WhenConfigServiceThrowsException_ReturnsInternalServerError()
@@ -134,6 +146,9 @@ namespace Sky.Tests.Services.Email
             StringAssert.Contains(_sut.SendResult.Message, "Failed to send email");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ExceptionHandling")]
         public async Task SendEmailAsync_WhenConfigServiceThrowsException_LogsError()
@@ -162,6 +177,9 @@ namespace Sky.Tests.Services.Email
 
         #region Provider Selection Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ProviderSelection")]
         public async Task SendEmailAsync_WithUnknownProvider_UsesNoOpSender()
@@ -192,6 +210,9 @@ namespace Sky.Tests.Services.Email
                 Times.Once);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ProviderSelection")]
         [DataRow("SendGrid")]
@@ -239,6 +260,9 @@ namespace Sky.Tests.Services.Email
 
         #region Email Message Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("EmailMessage")]
         public async Task SendEmailAsync_WithHtmlOnlyMessage_UsesHtmlVersion()
@@ -269,6 +293,9 @@ namespace Sky.Tests.Services.Email
             Assert.IsNotNull(_sut.SendResult);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("EmailMessage")]
         public async Task SendEmailAsync_WithTextAndHtmlVersions_UsesBothVersions()
@@ -304,6 +331,9 @@ namespace Sky.Tests.Services.Email
 
         #region From Address Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("FromAddress")]
         public async Task SendEmailAsync_WithCustomFromAddress_UsesProvidedFromAddress()
@@ -338,6 +368,9 @@ namespace Sky.Tests.Services.Email
             Assert.IsNotNull(_sut.SendResult);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("FromAddress")]
         public async Task SendEmailAsync_WithNullFromAddress_UsesDefaultSenderEmail()
@@ -374,6 +407,9 @@ namespace Sky.Tests.Services.Email
 
         #region SMTP Port Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SmtpConfiguration")]
         public async Task SendEmailAsync_WithSmtpPort465_UsesSsl()
@@ -401,6 +437,9 @@ namespace Sky.Tests.Services.Email
             Assert.IsNotNull(_sut.SendResult);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SmtpConfiguration")]
         public async Task SendEmailAsync_WithSmtpPort587_DoesNotUseSsl()
@@ -432,6 +471,9 @@ namespace Sky.Tests.Services.Email
 
         #region State Management Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("StateManagement")]
         public async Task SendEmailAsync_CalledTwice_UpdatesSendResult()

@@ -26,6 +26,9 @@ namespace Sky.Tests.Features.Articles.Save
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that SaveArticle_AfterMultipleSaves_MaintainsVersionHistory.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_AfterMultipleSaves_MaintainsVersionHistory()
         {
@@ -58,6 +61,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Version 5", latest.Title);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_UpdatesTimestamp_OnEachSave.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_UpdatesTimestamp_OnEachSave()
         {
@@ -87,6 +93,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(updatedArticle!.Updated > initialTimestamp);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_PreservesArticleNumber_AcrossMultipleSaves.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_PreservesArticleNumber_AcrossMultipleSaves()
         {
@@ -116,6 +125,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(allArticles.All(a => a.ArticleNumber == originalNumber));
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_PreservesOriginalId_OnUpdate.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_PreservesOriginalId_OnUpdate()
         {
@@ -143,6 +155,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(originalId, updatedArticle!.Id);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_MultipleUsers_TracksLastUser.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_MultipleUsers_TracksLastUser()
         {
@@ -170,3 +185,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

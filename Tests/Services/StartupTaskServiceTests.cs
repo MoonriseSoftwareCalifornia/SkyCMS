@@ -75,6 +75,9 @@ namespace Sky.Tests.Services
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Constructor creates an instance when provided valid parameters.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithValidParameters_CreatesInstance()
         {
@@ -87,6 +90,10 @@ namespace Sky.Tests.Services
             Assert.IsNotNull(service);
         }
 
+        /// <summary>
+        /// Constructor throws <see cref="ArgumentNullException"/> when the
+        /// <see cref="IWebHostEnvironment"/> parameter is null.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithNullWebHostEnvironment_ThrowsArgumentNullException()
         {
@@ -99,6 +106,10 @@ namespace Sky.Tests.Services
             });
         }
 
+        /// <summary>
+        /// Constructor throws <see cref="ArgumentNullException"/> when the
+        /// management utilities parameter is null.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithNullManagementUtilities_ThrowsArgumentNullException()
         {
@@ -115,6 +126,9 @@ namespace Sky.Tests.Services
 
         #region RunAsync - File Reading Tests
 
+        /// <summary>
+        /// RunAsync reads the expected file when it exists and calls GetConnections.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithExistingFile_ReadsFileSuccessfully()
         {
@@ -134,6 +148,10 @@ namespace Sky.Tests.Services
             Assert.IsTrue(File.Exists(testFilePath));
         }
 
+        /// <summary>
+        /// RunAsync throws <see cref="FileNotFoundException"/> when the expected
+        /// file has been removed prior to execution.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithMissingFile_ThrowsFileNotFoundException()
         {
@@ -153,6 +171,10 @@ namespace Sky.Tests.Services
             });
         }
 
+        /// <summary>
+        /// RunAsync throws <see cref="DirectoryNotFoundException"/> when the
+        /// configured web root path does not exist.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithInvalidWebRootPath_ThrowsDirectoryNotFoundException()
         {
@@ -178,6 +200,9 @@ namespace Sky.Tests.Services
 
         #region RunAsync - Connection Tests
 
+        /// <summary>
+        /// RunAsync completes successfully when no connections are configured.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithNoConnections_CompletesSuccessfully()
         {
@@ -196,6 +221,10 @@ namespace Sky.Tests.Services
             mockManagementUtilities.Verify(m => m.GetConnections(), Times.Once);
         }
 
+        /// <summary>
+        /// RunAsync attempts to upload to a single configured connection; in
+        /// test environments this may raise connection-related exceptions.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithSingleConnection_UploadsToOneConnection()
         {
@@ -241,6 +270,9 @@ namespace Sky.Tests.Services
 
         #region RunAsync - Error Handling Tests
 
+        /// <summary>
+        /// RunAsync propagates exceptions thrown while retrieving connections.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WhenGetConnectionsThrows_PropagatesException()
         {
@@ -261,6 +293,10 @@ namespace Sky.Tests.Services
             Assert.AreEqual("Database connection failed", exception.Message);
         }
 
+        /// <summary>
+        /// RunAsync throws <see cref="ArgumentNullException"/> when a connection
+        /// contains a null storage connection string.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithNullStorageConnection_ThrowsException()
         {
@@ -288,6 +324,10 @@ namespace Sky.Tests.Services
             });
         }
 
+        /// <summary>
+        /// RunAsync throws <see cref="ArgumentException"/> when a connection
+        /// contains an empty storage connection string.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithEmptyStorageConnection_ThrowsException()
         {
@@ -319,6 +359,9 @@ namespace Sky.Tests.Services
 
         #region RunAsync - File Stream Tests
 
+        /// <summary>
+        /// RunAsync disposes file streams so files are not locked after execution.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_ProperlyDisposesFileStream()
         {
@@ -343,6 +386,9 @@ namespace Sky.Tests.Services
             File.WriteAllText(testFilePath, "/* Test CSS Content */");
         }
 
+        /// <summary>
+        /// RunAsync copies file content into a memory stream and leaves the file intact.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_CopiesFileToMemoryStream()
         {
@@ -370,6 +416,9 @@ namespace Sky.Tests.Services
 
         #region RunAsync - Large File Tests
 
+        /// <summary>
+        /// RunAsync handles large files without failing and still retrieves connections.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithLargeFile_HandlesSuccessfully()
         {
@@ -396,6 +445,9 @@ namespace Sky.Tests.Services
 
         #region RunAsync - Empty File Tests
 
+        /// <summary>
+        /// RunAsync processes empty files without error and calls GetConnections.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithEmptyFile_HandlesSuccessfully()
         {
@@ -420,6 +472,9 @@ namespace Sky.Tests.Services
 
         #region RunAsync - Special Characters Tests
 
+        /// <summary>
+        /// RunAsync correctly handles files containing special and Unicode characters.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithSpecialCharactersInFile_HandlesSuccessfully()
         {
@@ -447,6 +502,9 @@ namespace Sky.Tests.Services
 
         #region RunAsync - Concurrent Execution Tests
 
+        /// <summary>
+        /// RunAsync can be executed concurrently and will call GetConnections for each run.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_CalledConcurrently_HandlesCorrectly()
         {
@@ -473,6 +531,9 @@ namespace Sky.Tests.Services
 
         #region File Path Construction Tests
 
+        /// <summary>
+        /// Verifies file path construction using a normal web root path produces the expected path.
+        /// </summary>
         [TestMethod]
         public void FilePathConstruction_WithNormalWebRootPath_BuildsCorrectPath()
         {
@@ -484,6 +545,9 @@ namespace Sky.Tests.Services
             Assert.IsTrue(File.Exists(testFilePath));
         }
 
+        /// <summary>
+        /// RunAsync handles a web root path that ends with a trailing slash.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_WithTrailingSlashInWebRootPath_HandlesCorrectly()
         {
@@ -509,6 +573,10 @@ namespace Sky.Tests.Services
 
         #region Integration-Like Tests
 
+        /// <summary>
+        /// Full workflow test that runs RunAsync with a real file and mocked connections;
+        /// may surface external connection exceptions in CI environments.
+        /// </summary>
         [TestMethod]
         public async Task RunAsync_FullWorkflow_WithRealFileAndMockedConnections()
         {

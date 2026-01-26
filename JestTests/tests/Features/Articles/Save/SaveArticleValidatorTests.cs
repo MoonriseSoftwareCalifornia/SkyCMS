@@ -22,6 +22,9 @@ namespace Sky.Tests.Features.Articles.Save
             validator = new SaveArticleValidator();
         }
 
+        /// <summary>
+        /// Tests that Validate_ValidCommand_ReturnsNoErrors.
+        /// </summary>
         [TestMethod]
         public void Validate_ValidCommand_ReturnsNoErrors()
         {
@@ -41,6 +44,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsEmpty(errors);
         }
 
+        /// <summary>
+        /// Tests that Validate_ZeroArticleNumber_ReturnsError.
+        /// </summary>
         [TestMethod]
         public void Validate_ZeroArticleNumber_ReturnsError()
         {
@@ -60,6 +66,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(errors.ContainsKey(nameof(command.ArticleNumber)));
         }
 
+        /// <summary>
+        /// Tests that Validate_EmptyTitle_ReturnsError.
+        /// </summary>
         [TestMethod]
         public void Validate_EmptyTitle_ReturnsError()
         {
@@ -79,6 +88,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(errors.ContainsKey(nameof(command.Title)));
         }
 
+        /// <summary>
+        /// Tests that Validate_TitleTooLong_ReturnsError.
+        /// </summary>
         [TestMethod]
         public void Validate_TitleTooLong_ReturnsError()
         {
@@ -98,6 +110,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(errors.ContainsKey(nameof(command.Title)));
         }
 
+        /// <summary>
+        /// Tests that Validate_EmptyContent_ReturnsError.
+        /// </summary>
         [TestMethod]
         public void Validate_EmptyContent_ReturnsError()
         {
@@ -117,6 +132,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(errors.ContainsKey(nameof(command.Content)));
         }
 
+        /// <summary>
+        /// Tests that Validate_EmptyUserId_ReturnsError.
+        /// </summary>
         [TestMethod]
         public void Validate_EmptyUserId_ReturnsError()
         {
@@ -137,3 +155,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

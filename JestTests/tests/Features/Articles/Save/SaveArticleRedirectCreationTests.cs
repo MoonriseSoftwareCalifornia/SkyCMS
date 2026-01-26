@@ -28,6 +28,9 @@ namespace Sky.Tests.Features.Articles.Save
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         [TestCategory("Hierarchy")]
@@ -97,6 +100,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNull(unpublishedRedirect, "Unpublished child should NOT have a redirect");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         [TestCategory("BlogPosts")]
@@ -176,6 +182,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNull(draftRedirect, "Draft post should NOT have a redirect");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         [TestCategory("Hierarchy")]
@@ -229,6 +238,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("renamed-draft-parent/published-child", childRedirect.RedirectTarget);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         public async Task SaveArticle_TitleChange_DuplicateUrlHandling()
@@ -283,6 +295,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(2, oldUrls.Distinct().Count(), "Should not have duplicate redirect source URLs");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         [TestCategory("Hierarchy")]
@@ -344,6 +359,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNotNull(redirects.FirstOrDefault(r => r.UrlPath == "docs/api/methods" && r.RedirectTarget == "documentation/api/methods"));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Redirects")]
         public async Task SaveArticle_RedirectChainPrevention_RedirectsToFinalDestination()
@@ -406,3 +424,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

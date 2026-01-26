@@ -67,6 +67,9 @@ namespace Sky.Tests.Controllers
 
         #region CCMS_GetArticleFolderContents Tests
 
+        /// <summary>
+        /// Tests that GetArticleFolderContents_ValidArticle_ReturnsJsonResult.
+        /// </summary>
         [TestMethod]
         public async Task GetArticleFolderContents_ValidArticle_ReturnsJsonResult()
         {
@@ -84,6 +87,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
+        /// <summary>
+        /// Tests that GetArticleFolderContents_InvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task GetArticleFolderContents_InvalidModelState_ReturnsBadRequest()
         {
@@ -97,6 +103,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that GetArticleFolderContents_ArticleNotFound_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task GetArticleFolderContents_ArticleNotFound_ReturnsNotFound()
         {
@@ -111,6 +120,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
         }
 
+        /// <summary>
+        /// Tests that GetArticleFolderContents_WithPath_ReturnsSubfolderContents.
+        /// </summary>
         [TestMethod]
         public async Task GetArticleFolderContents_WithPath_ReturnsSubfolderContents()
         {
@@ -134,6 +146,9 @@ namespace Sky.Tests.Controllers
 
         #region GetTOC Tests
 
+        /// <summary>
+        /// Tests that GetTOC_RootPage_ReturnsTopLevelPages.
+        /// </summary>
         [TestMethod]
         public async Task GetTOC_RootPage_ReturnsTopLevelPages()
         {
@@ -161,6 +176,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(toc.TotalCount >= 2, $"Expected at least 2 pages, but got {toc.TotalCount}");
         }
 
+        /// <summary>
+        /// Tests that GetTOC_WithParentPath_ReturnsChildPages.
+        /// </summary>
         [TestMethod]
         public async Task GetTOC_WithParentPath_ReturnsChildPages()
         {
@@ -177,6 +195,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
+        /// <summary>
+        /// Tests that GetTOC_OrderByPublishDate_ReturnsChronologicalOrder.
+        /// </summary>
         [TestMethod]
         public async Task GetTOC_OrderByPublishDate_ReturnsChronologicalOrder()
         {
@@ -204,6 +225,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotEmpty(toc.Items);
         }
 
+        /// <summary>
+        /// Tests that GetTOC_InvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task GetTOC_InvalidModelState_ReturnsBadRequest()
         {
@@ -217,6 +241,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that GetTOC_Pagination_ReturnsCorrectPage.
+        /// </summary>
         [TestMethod]
         public async Task GetTOC_Pagination_ReturnsCorrectPage()
         {
@@ -248,6 +275,9 @@ namespace Sky.Tests.Controllers
 
         #region CCMS_POSTCONTACT_INFO Tests
 
+        /// <summary>
+        /// Tests that PostContactInfo_ValidModel_ReturnsJsonResult.
+        /// </summary>
         [TestMethod]
         public async Task PostContactInfo_ValidModel_ReturnsJsonResult()
         {
@@ -274,6 +304,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
+        /// <summary>
+        /// Tests that PostContactInfo_NullModel_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task PostContactInfo_NullModel_ReturnsNotFound()
         {
@@ -284,6 +317,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
+        /// <summary>
+        /// Tests that PostContactInfo_InvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task PostContactInfo_InvalidModelState_ReturnsBadRequest()
         {
@@ -302,6 +338,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that PostContactInfo_SetsTimestamps_Correctly.
+        /// </summary>
         [TestMethod]
         public async Task PostContactInfo_SetsTimestamps_Correctly()
         {
@@ -336,6 +375,9 @@ namespace Sky.Tests.Controllers
 
         #region CCMS___SEARCH Tests
 
+        /// <summary>
+        /// Tests that Search_ValidQuery_ReturnsResults.
+        /// </summary>
         [TestMethod]
         public async Task Search_ValidQuery_ReturnsResults()
         {
@@ -360,6 +402,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotEmpty(results);
         }
 
+        /// <summary>
+        /// Tests that Search_EmptyQuery_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Search_EmptyQuery_ReturnsBadRequest()
         {
@@ -370,6 +415,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Search_NullQuery_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Search_NullQuery_ReturnsBadRequest()
         {
@@ -380,6 +428,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Search_MultipleTerms_ReturnsMatchingResults.
+        /// </summary>
         [TestMethod]
         public async Task Search_MultipleTerms_ReturnsMatchingResults()
         {
@@ -398,6 +449,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
+        /// <summary>
+        /// Tests that Search_NoMatches_ReturnsEmptyList.
+        /// </summary>
         [TestMethod]
         public async Task Search_NoMatches_ReturnsEmptyList()
         {
@@ -417,6 +471,9 @@ namespace Sky.Tests.Controllers
             Assert.IsEmpty(results);
         }
 
+        /// <summary>
+        /// Tests that Search_InvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Search_InvalidModelState_ReturnsBadRequest()
         {
@@ -434,6 +491,9 @@ namespace Sky.Tests.Controllers
 
         #region GetArticleNumberFromRequestHeaders Tests
 
+        /// <summary>
+        /// Tests that GetArticleNumber_FromQueryString_ReturnsCorrectNumber.
+        /// </summary>
         [TestMethod]
         public async Task GetArticleNumber_FromQueryString_ReturnsCorrectNumber()
         {
@@ -452,6 +512,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
+        /// <summary>
+        /// Tests that GetArticleNumber_FromEditorPath_ReturnsCorrectNumber.
+        /// </summary>
         [TestMethod]
         public async Task GetArticleNumber_FromEditorPath_ReturnsCorrectNumber()
         {
@@ -470,6 +533,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
+        /// <summary>
+        /// Tests that GetArticleNumber_FromPublishedPage_ReturnsCorrectNumber.
+        /// </summary>
         [TestMethod]
         public async Task GetArticleNumber_FromPublishedPage_ReturnsCorrectNumber()
         {
@@ -507,3 +573,4 @@ namespace Sky.Tests.Controllers
         }
     }
 }
+

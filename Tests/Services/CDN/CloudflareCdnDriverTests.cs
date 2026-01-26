@@ -34,6 +34,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that Constructor_WithValidSettings_InitializesDriver.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithValidSettings_InitializesDriver()
         {
@@ -58,6 +61,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Cloudflare", driver.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithInvalidJson_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithInvalidJson_ThrowsArgumentException()
         {
@@ -80,6 +86,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsInstanceOfType(exception.InnerException, typeof(Newtonsoft.Json.JsonReaderException));
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithEmptyConfig_Succeeds.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithEmptyConfig_Succeeds()
         {
@@ -103,6 +112,9 @@ namespace Sky.Tests.Services.CDN
 
         #region ProviderName Tests
 
+        /// <summary>
+        /// Tests that ProviderName_ReturnsCloudflare.
+        /// </summary>
         [TestMethod]
         public void ProviderName_ReturnsCloudflare()
         {
@@ -128,6 +140,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Cloudflare", name);
         }
 
+        /// <summary>
+        /// Tests that ProviderName_CalledMultipleTimes_ReturnsConsistentValue.
+        /// </summary>
         [TestMethod]
         public void ProviderName_CalledMultipleTimes_ReturnsConsistentValue()
         {
@@ -161,6 +176,9 @@ namespace Sky.Tests.Services.CDN
 
         #region CloudflareCdnConfig Tests
 
+        /// <summary>
+        /// Tests that CloudflareCdnConfig_DefaultValues.
+        /// </summary>
         [TestMethod]
         public void CloudflareCdnConfig_DefaultValues()
         {
@@ -173,6 +191,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(string.Empty, config.ValidationTrigger);
         }
 
+        /// <summary>
+        /// Tests that CloudflareCdnConfig_SetProperties.
+        /// </summary>
         [TestMethod]
         public void CloudflareCdnConfig_SetProperties()
         {
@@ -190,6 +211,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("test", config.ValidationTrigger);
         }
 
+        /// <summary>
+        /// Tests that CloudflareCdnConfig_SerializeDeserialize_MaintainsValues.
+        /// </summary>
         [TestMethod]
         public void CloudflareCdnConfig_SerializeDeserialize_MaintainsValues()
         {
@@ -213,6 +237,9 @@ namespace Sky.Tests.Services.CDN
 
         #region PurgeCdn Logic Tests
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithNullUrlList_ShouldCallPurgeEverything.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithNullUrlList_ShouldCallPurgeEverything()
         {
@@ -240,6 +267,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsInstanceOfType(result, typeof(List<CdnResult>));
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithEmptyUrlList_ShouldCallPurgeEverything.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithEmptyUrlList_ShouldCallPurgeEverything()
         {
@@ -268,6 +298,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(result[0].IsSuccessStatusCode);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithRootPath_ShouldCallPurgeEverything.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithRootPath_ShouldCallPurgeEverything()
         {
@@ -294,6 +327,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(1, result.Count);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithRootKeyword_ShouldCallPurgeEverything.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithRootKeyword_ShouldCallPurgeEverything()
         {
@@ -320,6 +356,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(1, result.Count);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_NoParameters_ShouldCallPurgeEverything.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_NoParameters_ShouldCallPurgeEverything()
         {
@@ -350,6 +389,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Edge Cases
 
+        /// <summary>
+        /// Tests that Constructor_WithMinimalValidConfig_Succeeds.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithMinimalValidConfig_Succeeds()
         {
@@ -374,6 +416,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Cloudflare", driver.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithSpecialCharactersInConfig_Succeeds.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithSpecialCharactersInConfig_Succeeds()
         {
@@ -435,6 +480,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Additional Tests
 
+        /// <summary>
+        /// Tests that PurgeAsync_EmptyApiToken_ReturnsUnsuccessfulResult.
+        /// </summary>
         [TestMethod]
         public async Task PurgeAsync_EmptyApiToken_ReturnsUnsuccessfulResult()
         {
@@ -466,3 +514,4 @@ namespace Sky.Tests.Services.CDN
         #endregion
     }
 }
+

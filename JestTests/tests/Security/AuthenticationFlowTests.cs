@@ -117,6 +117,9 @@ namespace Sky.Tests.Security
 
         #region Local Account Authentication Tests
 
+        /// <summary>
+        /// Tests that Login_ValidCredentials_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Login_ValidCredentials_Succeeds()
         {
@@ -144,6 +147,9 @@ namespace Sky.Tests.Security
             Assert.IsTrue(result.Succeeded, "Login should succeed with valid credentials");
         }
 
+        /// <summary>
+        /// Tests that Login_InvalidPassword_Fails.
+        /// </summary>
         [TestMethod]
         public async Task Login_InvalidPassword_Fails()
         {
@@ -168,6 +174,9 @@ namespace Sky.Tests.Security
             Assert.IsFalse(result.Succeeded, "Login should fail with invalid password");
         }
 
+        /// <summary>
+        /// Tests that Login_NonExistentUser_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task Login_NonExistentUser_ReturnsFailure()
         {
@@ -178,6 +187,9 @@ namespace Sky.Tests.Security
             Assert.IsNull(user, "Non-existent user should return null");
         }
 
+        /// <summary>
+        /// Tests that Login_UnconfirmedEmail_RequiresConfirmation.
+        /// </summary>
         [TestMethod]
         public async Task Login_UnconfirmedEmail_RequiresConfirmation()
         {
@@ -200,6 +212,9 @@ namespace Sky.Tests.Security
             Assert.IsFalse(canSignIn, "User with unconfirmed email should not be able to sign in");
         }
 
+        /// <summary>
+        /// Tests that Login_MaxFailedAttempts_LocksAccount.
+        /// </summary>
         [TestMethod]
         public async Task Login_MaxFailedAttempts_LocksAccount()
         {
@@ -232,6 +247,9 @@ namespace Sky.Tests.Security
             Assert.IsTrue(isLockedOut, "Account should be locked after max failed attempts");
         }
 
+        /// <summary>
+        /// Tests that Login_LockedAccount_ReturnsLockedOut.
+        /// </summary>
         [TestMethod]
         public async Task Login_LockedAccount_ReturnsLockedOut()
         {
@@ -265,6 +283,9 @@ namespace Sky.Tests.Security
 
         #region Password Policy Tests
 
+        /// <summary>
+        /// Tests that CreateUser_WeakPassword_Fails.
+        /// </summary>
         [TestMethod]
         public async Task CreateUser_WeakPassword_Fails()
         {
@@ -294,6 +315,9 @@ namespace Sky.Tests.Security
             }
         }
 
+        /// <summary>
+        /// Tests that CreateUser_StrongPassword_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task CreateUser_StrongPassword_Succeeds()
         {
@@ -312,6 +336,9 @@ namespace Sky.Tests.Security
             Assert.IsTrue(result.Succeeded, $"Strong password should be accepted. Errors: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
+        /// <summary>
+        /// Tests that ChangePassword_RequiresCurrentPassword.
+        /// </summary>
         [TestMethod]
         public async Task ChangePassword_RequiresCurrentPassword()
         {
@@ -335,6 +362,9 @@ namespace Sky.Tests.Security
             Assert.IsFalse(result.Succeeded, "Password change should fail with incorrect current password");
         }
 
+        /// <summary>
+        /// Tests that ChangePassword_ValidCurrentPassword_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task ChangePassword_ValidCurrentPassword_Succeeds()
         {
@@ -374,6 +404,9 @@ namespace Sky.Tests.Security
 
         #region Email Confirmation Tests
 
+        /// <summary>
+        /// Tests that EmailConfirmation_ValidToken_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task EmailConfirmation_ValidToken_Succeeds()
         {
@@ -399,6 +432,9 @@ namespace Sky.Tests.Security
             Assert.IsTrue(updatedUser.EmailConfirmed, "Email should be marked as confirmed");
         }
 
+        /// <summary>
+        /// Tests that EmailConfirmation_InvalidToken_Fails.
+        /// </summary>
         [TestMethod]
         public async Task EmailConfirmation_InvalidToken_Fails()
         {
@@ -420,6 +456,9 @@ namespace Sky.Tests.Security
             Assert.IsFalse(result.Succeeded, "Email confirmation should fail with invalid token");
         }
 
+        /// <summary>
+        /// Tests that EmailConfirmation_ExpiredToken_Fails.
+        /// </summary>
         [TestMethod]
         public async Task EmailConfirmation_ExpiredToken_Fails()
         {
@@ -451,6 +490,9 @@ namespace Sky.Tests.Security
 
         #region Password Reset Tests
 
+        /// <summary>
+        /// Tests that PasswordReset_ValidToken_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task PasswordReset_ValidToken_Succeeds()
         {
@@ -478,6 +520,9 @@ namespace Sky.Tests.Security
             Assert.IsTrue(passwordWorks, "New password should work after reset");
         }
 
+        /// <summary>
+        /// Tests that PasswordReset_InvalidToken_Fails.
+        /// </summary>
         [TestMethod]
         public async Task PasswordReset_InvalidToken_Fails()
         {
@@ -498,6 +543,9 @@ namespace Sky.Tests.Security
             Assert.IsFalse(result.Succeeded, "Password reset should fail with invalid token");
         }
 
+        /// <summary>
+        /// Tests that PasswordReset_TokenReuse_Fails.
+        /// </summary>
         [TestMethod]
         public async Task PasswordReset_TokenReuse_Fails()
         {
@@ -529,6 +577,9 @@ namespace Sky.Tests.Security
 
         #region Two-Factor Authentication Tests
 
+        /// <summary>
+        /// Tests that TwoFactorAuth_EnableForUser_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task TwoFactorAuth_EnableForUser_Succeeds()
         {
@@ -557,6 +608,9 @@ namespace Sky.Tests.Security
 
         #region OAuth Provider Tests
 
+        /// <summary>
+        /// Tests that OAuthLogin_ExternalProvider_CreatesLocalAccount.
+        /// </summary>
         [TestMethod]
         public async Task OAuthLogin_ExternalProvider_CreatesLocalAccount()
         {
@@ -587,6 +641,9 @@ namespace Sky.Tests.Security
 
         #region Security Stamp Tests
 
+        /// <summary>
+        /// Tests that SecurityStamp_ChangedOnPasswordChange_InvalidatesSessions.
+        /// </summary>
         [TestMethod]
         public async Task SecurityStamp_ChangedOnPasswordChange_InvalidatesSessions()
         {
@@ -612,6 +669,9 @@ namespace Sky.Tests.Security
             Assert.AreNotEqual(oldStamp, newStamp, "Security stamp should change on password change");
         }
 
+        /// <summary>
+        /// Tests that SecurityStamp_ManualUpdate_InvalidatesTokens.
+        /// </summary>
         [TestMethod]
         public async Task SecurityStamp_ManualUpdate_InvalidatesTokens()
         {
@@ -643,6 +703,9 @@ namespace Sky.Tests.Security
 
         #region Account Lockout Recovery Tests
 
+        /// <summary>
+        /// Tests that AccountLockout_AutomaticallyExpires.
+        /// </summary>
         [TestMethod]
         public async Task AccountLockout_AutomaticallyExpires()
         {
@@ -673,6 +736,9 @@ namespace Sky.Tests.Security
             Assert.IsFalse(isLocked, "Account lockout should have expired");
         }
 
+        /// <summary>
+        /// Tests that AccountLockout_ManualUnlock_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task AccountLockout_ManualUnlock_Succeeds()
         {
@@ -704,6 +770,9 @@ namespace Sky.Tests.Security
 
         #region Role-Based Authentication Tests
 
+        /// <summary>
+        /// Tests that UserInRole_Administrator_HasAccess.
+        /// </summary>
         [TestMethod]
         public async Task UserInRole_Administrator_HasAccess()
         {
@@ -734,6 +803,9 @@ namespace Sky.Tests.Security
             Assert.IsTrue(isInRole, "User should be in Administrator role");
         }
 
+        /// <summary>
+        /// Tests that UserInRole_MultipleRoles_AllAssigned.
+        /// </summary>
         [TestMethod]
         public async Task UserInRole_MultipleRoles_AllAssigned()
         {
@@ -775,3 +847,4 @@ namespace Sky.Tests.Security
         #endregion
     }
 }
+

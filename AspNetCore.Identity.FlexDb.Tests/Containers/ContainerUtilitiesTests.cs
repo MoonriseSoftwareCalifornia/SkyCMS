@@ -50,6 +50,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
         //    await containerUtilities.DeleteRequiredContainers();
         //}
 
+        /// <summary>
+        /// Deletes the test database if it exists, ensuring a clean start for the suite.
+        /// </summary>
         [TestMethod()]
         public async Task A1_DeleteDatabaseIfExistsTest()
         {
@@ -58,6 +61,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
             Assert.IsTrue(result == null || result.StatusCode == System.Net.HttpStatusCode.OK || result.StatusCode == System.Net.HttpStatusCode.NoContent);
         }
 
+        /// <summary>
+        /// Creates the test database and verifies it exists after creation.
+        /// </summary>
         [TestMethod()]
         public async Task A2_CreateDatabaseIfExistsTest()
         {
@@ -75,6 +81,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
         //    Assert.IsNotNull(containerUtilities);
         //}
 
+        /// <summary>
+        /// Ensures required containers are created and accessible for identity stores.
+        /// </summary>
         [TestMethod()]
         public async Task A3_CreateRequiredContainersTest()
         {

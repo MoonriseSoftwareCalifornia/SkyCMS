@@ -39,6 +39,9 @@ namespace Sky.Tests.Services
             _provider = new SingleTenantConfigurationProvider(_configuration);
         }
 
+        /// <summary>
+        /// Tests that IsMultiTenantConfigured_ShouldReturnFalse.
+        /// </summary>
         [TestMethod]
         public void IsMultiTenantConfigured_ShouldReturnFalse()
         {
@@ -49,6 +52,9 @@ namespace Sky.Tests.Services
             Assert.IsFalse(result);
         }
 
+        /// <summary>
+        /// Tests that GetCurrentTenantIdAsync_ShouldReturnGuidEmpty.
+        /// </summary>
         [TestMethod]
         public async Task GetCurrentTenantIdAsync_ShouldReturnGuidEmpty()
         {
@@ -59,6 +65,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual(Guid.Empty, tenantId);
         }
 
+        /// <summary>
+        /// Tests that GetDatabaseConnectionStringAsync_ShouldReturnConnectionString.
+        /// </summary>
         [TestMethod]
         public async Task GetDatabaseConnectionStringAsync_ShouldReturnConnectionString()
         {
@@ -69,6 +78,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual("Server=localhost;Database=TestDb;", connectionString);
         }
 
+        /// <summary>
+        /// Tests that GetStorageConnectionStringAsync_ShouldReturnStorageConnectionString.
+        /// </summary>
         [TestMethod]
         public async Task GetStorageConnectionStringAsync_ShouldReturnStorageConnectionString()
         {
@@ -79,6 +91,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual("UseDevelopmentStorage=true", connectionString);
         }
 
+        /// <summary>
+        /// Tests that GetAllDomainNamesAsync_ShouldReturnEmptyList.
+        /// </summary>
         [TestMethod]
         public async Task GetAllDomainNamesAsync_ShouldReturnEmptyList()
         {
@@ -90,6 +105,9 @@ namespace Sky.Tests.Services
             Assert.AreEqual(0, domainNames.Count);
         }
 
+        /// <summary>
+        /// Tests that GetTenantDomainNameFromRequest_ShouldReturnEmpty.
+        /// </summary>
         [TestMethod]
         public void GetTenantDomainNameFromRequest_ShouldReturnEmpty()
         {

@@ -71,6 +71,9 @@ namespace Sky.Tests.Controllers
 
         #region EditCode Method Tests
 
+        /// <summary>
+        /// Tests that EditCode_Post_UsesSaveArticleCommand.
+        /// </summary>
         [TestMethod]
         public async Task EditCode_Post_UsesSaveArticleCommand()
         {
@@ -100,6 +103,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("Updated via EditCode", updatedArticle.Title);
         }
 
+        /// <summary>
+        /// Tests that EditCode_Post_WithValidationErrors_ReturnsErrors.
+        /// </summary>
         [TestMethod]
         public async Task EditCode_Post_WithValidationErrors_ReturnsErrors()
         {
@@ -135,6 +141,9 @@ namespace Sky.Tests.Controllers
 
         #region Edit (WYSIWYG) Method Tests
 
+        /// <summary>
+        /// Tests that Edit_Post_UsesSaveArticleCommand.
+        /// </summary>
         [TestMethod]
         public async Task Edit_Post_UsesSaveArticleCommand()
         {
@@ -219,6 +228,9 @@ namespace Sky.Tests.Controllers
 updatedArticle.Content, "Content should be preserved when EditorId is not specified");
         }
 
+        /// <summary>
+        /// Tests that Edit_Post_WithEditorRegion_UpdatesContentCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task Edit_Post_WithEditorRegion_UpdatesContentCorrectly()
         {
@@ -253,6 +265,9 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
 
         #region Designer Method Tests
 
+        /// <summary>
+        /// Tests that Designer_Post_UsesSaveArticleCommand.
+        /// </summary>
         [TestMethod]
         public async Task Designer_Post_UsesSaveArticleCommand()
         {
@@ -280,6 +295,9 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             Assert.IsTrue(designerResult.success);
         }
 
+        /// <summary>
+        /// Tests that Designer_Post_WithNestedEditableRegions_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task Designer_Post_WithNestedEditableRegions_ReturnsBadRequest()
         {
@@ -307,6 +325,9 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
 
         #region Title Change Integration
 
+        /// <summary>
+        /// Tests that EditCode_Post_WithTitleChange_CreatesRedirect.
+        /// </summary>
         [TestMethod]
         public async Task EditCode_Post_WithTitleChange_CreatesRedirect()
         {
@@ -413,6 +434,9 @@ redirect.Content, "Redirect content should have clickable link to new URL");
 
         #region Mediator Tests
 
+        /// <summary>
+        /// Tests that Mediator_CanResolve_SaveArticleHandler.
+        /// </summary>
         [TestMethod]
         public void Mediator_CanResolve_SaveArticleHandler()
         {
@@ -446,3 +470,4 @@ redirect.Content, "Redirect content should have clickable link to new URL");
         #endregion
     }
 }
+

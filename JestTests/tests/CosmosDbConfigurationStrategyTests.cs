@@ -11,6 +11,9 @@ namespace Sky.Tests.FlexDb
     [TestClass]
     public class CosmosDbConfigurationStrategyTests
     {
+        /// <summary>
+        /// Tests that CanHandle_ValidCosmosConnectionString_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public void CanHandle_ValidCosmosConnectionString_ReturnsTrue()
         {
@@ -25,6 +28,9 @@ namespace Sky.Tests.FlexDb
             Assert.IsTrue(result);
         }
 
+        /// <summary>
+        /// Tests that CanHandle_SqlServerConnectionString_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public void CanHandle_SqlServerConnectionString_ReturnsFalse()
         {
@@ -39,6 +45,9 @@ namespace Sky.Tests.FlexDb
             Assert.IsFalse(result);
         }
 
+        /// <summary>
+        /// Tests that CanHandle_EmptyString_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public void CanHandle_EmptyString_ReturnsFalse()
         {
@@ -52,6 +61,9 @@ namespace Sky.Tests.FlexDb
             Assert.IsFalse(result);
         }
 
+        /// <summary>
+        /// Tests that CanHandle_NullString_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public void CanHandle_NullString_ReturnsFalse()
         {
@@ -65,6 +77,9 @@ namespace Sky.Tests.FlexDb
             Assert.IsFalse(result);
         }
 
+        /// <summary>
+        /// Tests that Configure_MissingAccountEndpoint_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void Configure_MissingAccountEndpoint_ThrowsArgumentException()
         {
@@ -79,6 +94,9 @@ namespace Sky.Tests.FlexDb
             // Assert is handled by ExpectedException
         }
 
+        /// <summary>
+        /// Tests that Configure_MissingAccountKey_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void Configure_MissingAccountKey_ThrowsArgumentException()
         {
@@ -93,6 +111,9 @@ namespace Sky.Tests.FlexDb
             // Assert is handled by ExpectedException
         }
 
+        /// <summary>
+        /// Tests that Configure_MissingDatabase_ThrowsArgumentException.
+        /// </summary>
         [TestMethod]
         public void Configure_MissingDatabase_ThrowsArgumentException()
         {
@@ -107,6 +128,9 @@ namespace Sky.Tests.FlexDb
             // Assert is handled by ExpectedException ArgumentException
         }
 
+        /// <summary>
+        /// Tests that Configure_NullOptionsBuilder_ThrowsArgumentNullException.
+        /// </summary>
         [TestMethod]
         public void Configure_NullOptionsBuilder_ThrowsArgumentNullException()
         {
@@ -120,6 +144,9 @@ namespace Sky.Tests.FlexDb
             // Assert is handled by ExpectedException
         }
 
+        /// <summary>
+        /// Tests that Configure_NullConnectionString_ThrowsArgumentNullException.
+        /// </summary>
         [TestMethod]
         public void Configure_NullConnectionString_ThrowsArgumentNullException()
         {
@@ -133,6 +160,9 @@ namespace Sky.Tests.FlexDb
             // Assert is handled by ExpectedException
         }
 
+        /// <summary>
+        /// Tests that ProviderName_ReturnsCorrectValue.
+        /// </summary>
         [TestMethod]
         public void ProviderName_ReturnsCorrectValue()
         {
@@ -146,6 +176,9 @@ namespace Sky.Tests.FlexDb
             Assert.AreEqual("Microsoft.EntityFrameworkCore.Cosmos", providerName);
         }
 
+        /// <summary>
+        /// Tests that Priority_ReturnsCorrectValue.
+        /// </summary>
         [TestMethod]
         public void Priority_ReturnsCorrectValue()
         {
@@ -160,3 +193,4 @@ namespace Sky.Tests.FlexDb
         }
     }
 }
+

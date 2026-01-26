@@ -37,6 +37,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
 
     #region CreateHomePage
 
+    /// <summary>
+    /// Tests that CreateHomePage_SwitchesRootAndPublishesBoth.
+    /// </summary>
     [TestMethod]
     public async Task CreateHomePage_SwitchesRootAndPublishesBoth()
     {
@@ -68,6 +71,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
 
     #region DeleteArticle
 
+    /// <summary>
+    /// Tests that DeleteArticle_MarksDeleted_RemovesPagesAndCatalog.
+    /// </summary>
     [TestMethod]
     public async Task DeleteArticle_MarksDeleted_RemovesPagesAndCatalog()
     {
@@ -88,6 +94,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
         Assert.IsNull(await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == art.ArticleNumber));
     }
 
+    /// <summary>
+    /// Tests that DeleteArticle_Root_Throws.
+    /// </summary>
     [TestMethod]
     public async Task DeleteArticle_Root_Throws()
     {
@@ -100,6 +109,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
 
     #region RestoreArticle
 
+    /// <summary>
+    /// Tests that RestoreArticle_RestoresToActiveAndClearsPublished.
+    /// </summary>
     [TestMethod]
     public async Task RestoreArticle_RestoresToActiveAndClearsPublished()
     {
@@ -121,6 +133,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
 
     #region CheckCatalogEntries
 
+    /// <summary>
+    /// Tests that CheckCatalogEntries_DoesNotDuplicateExistingEntries.
+    /// </summary>
     [TestMethod]
     public async Task CheckCatalogEntries_DoesNotDuplicateExistingEntries()
     {
@@ -140,6 +155,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
 
     #region ValidateTitle Edge Cases
 
+    /// <summary>
+    /// Tests that ValidateTitle_SameArticleNumber_AllowsRetainingSameTitle.
+    /// </summary>
     [TestMethod]
     public async Task ValidateTitle_SameArticleNumber_AllowsRetainingSameTitle()
     {
@@ -150,6 +168,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
         Assert.IsTrue(valid);
     }
 
+    /// <summary>
+    /// Tests that ValidateTitle_ReservedCaseInsensitive_ReturnsFalse.
+    /// </summary>
     [TestMethod]
     public async Task ValidateTitle_ReservedCaseInsensitive_ReturnsFalse()
     {
@@ -162,6 +183,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
 
     #region GetCatalogEntry
 
+    /// <summary>
+    /// Tests that GetCatalogEntry_ByArticle_CreatesWhenMissing.
+    /// </summary>
     [TestMethod]
     public async Task GetCatalogEntry_ByArticle_CreatesWhenMissing()
     {
@@ -178,6 +202,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
         Assert.AreEqual(page.ArticleNumber, entry.ArticleNumber);
     }
 
+    /// <summary>
+    /// Tests that GetCatalogEntry_ByViewModel_ReturnsExisting.
+    /// </summary>
     [TestMethod]
     public async Task GetCatalogEntry_ByViewModel_ReturnsExisting()
     {
@@ -196,6 +223,9 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
 
     #region CreateRedirect (Title Change)
 
+    /// <summary>
+    /// Tests that SaveArticle_TitleChange_CreatesRedirect.
+    /// </summary>
     [TestMethod]
     public async Task SaveArticle_TitleChange_CreatesRedirect()
     {
@@ -258,3 +288,4 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
         }
     }
 }
+

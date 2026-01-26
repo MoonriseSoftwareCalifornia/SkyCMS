@@ -50,6 +50,9 @@ namespace Sky.Tests.Services.CDN
 
         #region GetCdnService Tests
 
+        /// <summary>
+        /// Tests that GetCdnService_WithNoSettings_ReturnsServiceWithEmptySettings.
+        /// </summary>
         [TestMethod]
         public void GetCdnService_WithNoSettings_ReturnsServiceWithEmptySettings()
         {
@@ -61,6 +64,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(service.IsConfigured());
         }
 
+        /// <summary>
+        /// Tests that GetCdnService_WithAzureCdnSettings_LoadsSettings.
+        /// </summary>
         [TestMethod]
         public async Task GetCdnService_WithAzureCdnSettings_LoadsSettings()
         {
@@ -99,6 +105,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(service.IsConfigured(CdnProviderEnum.AzureCDN));
         }
 
+        /// <summary>
+        /// Tests that GetCdnService_WithInvalidJson_RemovesInvalidSetting.
+        /// </summary>
         [TestMethod]
         public async Task GetCdnService_WithInvalidJson_RemovesInvalidSetting()
         {
@@ -125,6 +134,9 @@ namespace Sky.Tests.Services.CDN
 
         #region IsConfigured Tests
 
+        /// <summary>
+        /// Tests that IsConfigured_WithNoSettings_ReturnsFalse.
+        /// </summary>
         [TestMethod]
         public void IsConfigured_WithNoSettings_ReturnsFalse()
         {
@@ -135,6 +147,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(service.IsConfigured());
         }
 
+        /// <summary>
+        /// Tests that IsConfigured_WithSettings_ReturnsTrue.
+        /// </summary>
         [TestMethod]
         public void IsConfigured_WithSettings_ReturnsTrue()
         {
@@ -149,6 +164,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(service.IsConfigured());
         }
 
+        /// <summary>
+        /// Tests that IsConfigured_WithSpecificProvider_ReturnsCorrectly.
+        /// </summary>
         [TestMethod]
         public void IsConfigured_WithSpecificProvider_ReturnsCorrectly()
         {
@@ -165,6 +183,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(service.IsConfigured(CdnProviderEnum.Sucuri));
         }
 
+        /// <summary>
+        /// Tests that IsConfigured_MultipleProviders_IdentifiesEachCorrectly.
+        /// </summary>
         [TestMethod]
         public void IsConfigured_MultipleProviders_IdentifiesEachCorrectly()
         {
@@ -186,6 +207,9 @@ namespace Sky.Tests.Services.CDN
 
         #region PurgeCdn Tests
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithUrls_RemovesDuplicates.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithUrls_RemovesDuplicates()
         {
@@ -202,6 +226,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsNotNull(results);
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_WithNoSettings_ReturnsEmptyResults.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_WithNoSettings_ReturnsEmptyResults()
         {
@@ -216,6 +243,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(results.Any());
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_MultipleProviders_CallsAll.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_MultipleProviders_CallsAll()
         {
@@ -247,6 +277,9 @@ namespace Sky.Tests.Services.CDN
             // Consider using integration tests for full provider testing
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_NoParameters_CallsWithEmptyUrls.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_NoParameters_CallsWithEmptyUrls()
         {
@@ -261,6 +294,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(results.Any());
         }
 
+        /// <summary>
+        /// Tests that PurgeCdn_EmptyUrlList_HandlesGracefully.
+        /// </summary>
         [TestMethod]
         public async Task PurgeCdn_EmptyUrlList_HandlesGracefully()
         {
@@ -279,6 +315,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Provider Name Tests
 
+        /// <summary>
+        /// Tests that ProviderName_ReturnsCorrectName.
+        /// </summary>
         [TestMethod]
         public void ProviderName_ReturnsCorrectName()
         {
@@ -297,6 +336,9 @@ namespace Sky.Tests.Services.CDN
 
         #region CdnSetting Tests
 
+        /// <summary>
+        /// Tests that CdnSetting_DefaultValues.
+        /// </summary>
         [TestMethod]
         public void CdnSetting_DefaultValues()
         {
@@ -308,6 +350,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual(string.Empty, setting.Value);
         }
 
+        /// <summary>
+        /// Tests that CdnSetting_SetProperties.
+        /// </summary>
         [TestMethod]
         public void CdnSetting_SetProperties()
         {
@@ -327,6 +372,9 @@ namespace Sky.Tests.Services.CDN
 
         #region CdnResult Tests
 
+        /// <summary>
+        /// Tests that CdnResult_ToString_ReturnsFormattedString.
+        /// </summary>
         [TestMethod]
         public void CdnResult_ToString_ReturnsFormattedString()
         {
@@ -347,6 +395,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(stringResult.Contains("Test Provider"));
         }
 
+        /// <summary>
+        /// Tests that CdnResult_Properties_SetCorrectly.
+        /// </summary>
         [TestMethod]
         public void CdnResult_Properties_SetCorrectly()
         {
@@ -379,6 +430,9 @@ namespace Sky.Tests.Services.CDN
 
         #region CdnProviderEnum Tests
 
+        /// <summary>
+        /// Tests that CdnProviderEnum_HasAllExpectedValues.
+        /// </summary>
         [TestMethod]
         public void CdnProviderEnum_HasAllExpectedValues()
         {
@@ -390,6 +444,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(Enum.IsDefined(typeof(CdnProviderEnum), CdnProviderEnum.None));
         }
 
+        /// <summary>
+        /// Tests that CdnProviderEnum_CanConvertToString.
+        /// </summary>
         [TestMethod]
         public void CdnProviderEnum_CanConvertToString()
         {
@@ -405,6 +462,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Edge Cases
 
+        /// <summary>
+        /// Tests that GetCdnService_EmptyValueSettings_SkipsSettings.
+        /// </summary>
         [TestMethod]
         public async Task GetCdnService_EmptyValueSettings_SkipsSettings()
         {
@@ -426,6 +486,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsFalse(service.IsConfigured());
         }
 
+        /// <summary>
+        /// Tests that GetCdnService_NullValueSettings_SkipsSettings.
+        /// </summary>
         [TestMethod]
         public async Task GetCdnService_NullValueSettings_SkipsSettings()
         {
@@ -461,3 +524,4 @@ namespace Sky.Tests.Services.CDN
         #endregion
     }
 }
+

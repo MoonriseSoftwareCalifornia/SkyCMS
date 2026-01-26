@@ -24,6 +24,9 @@ namespace Sky.Tests.Features.Articles.Save
         [TestInitialize]
         public new void Setup() => InitializeTestContext();
 
+        /// <summary>
+        /// Tests that SaveArticle_BlogPost_WithCategory_SavesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_BlogPost_WithCategory_SavesCorrectly()
         {
@@ -55,6 +58,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual((int)ArticleType.BlogPost, savedArticle.ArticleType);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_BlogPost_ChangingCategory_UpdatesCatalog.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_BlogPost_ChangingCategory_UpdatesCatalog()
         {
@@ -93,6 +99,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("Science", savedArticle!.Category);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_BlogPost_WithIntroduction_PreservesIntro.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_BlogPost_WithIntroduction_PreservesIntro()
         {
@@ -121,6 +130,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("This is the intro text", savedArticle!.Introduction);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_BlogPost_NoCategoryProvided_SavesEmpty.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_BlogPost_NoCategoryProvided_SavesEmpty()
         {
@@ -149,6 +161,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsTrue(string.IsNullOrEmpty(savedArticle!.Category));
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_ConvertingToBlogPost_UpdatesArticleType.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_ConvertingToBlogPost_UpdatesArticleType()
         {
@@ -186,6 +201,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual((int)ArticleType.BlogPost, savedArticle!.ArticleType);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_BlogPost_WithBannerImage_Saves.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_BlogPost_WithBannerImage_Saves()
         {
@@ -214,6 +232,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("https://example.com/banner.jpg", savedArticle!.BannerImage);
         }
 
+        /// <summary>
+        /// Tests that SaveArticle_BlogPost_PublishedWithCategory_IndexesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task SaveArticle_BlogPost_PublishedWithCategory_IndexesCorrectly()
         {
@@ -243,3 +264,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

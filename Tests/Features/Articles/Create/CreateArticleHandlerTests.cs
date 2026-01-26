@@ -44,6 +44,9 @@ namespace Sky.Tests.Features.Articles.Create
             DbContext?.Dispose();
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithValidCommand_CreatesArticle.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithValidCommand_CreatesArticle()
         {
@@ -73,6 +76,9 @@ namespace Sky.Tests.Features.Articles.Create
             Assert.AreEqual(userId.ToString(), article.UserId, "UserId should be stored in entity");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_FirstArticle_AutoPublishesAsRoot.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_FirstArticle_AutoPublishesAsRoot()
         {
@@ -113,6 +119,9 @@ namespace Sky.Tests.Features.Articles.Create
                 "Should auto-publish first article");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_SecondArticle_DoesNotAutoPublish.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_SecondArticle_DoesNotAutoPublish()
         {
@@ -153,6 +162,9 @@ namespace Sky.Tests.Features.Articles.Create
                 "Should not auto-publish second article");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithConflictingTitle_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithConflictingTitle_ReturnsFailure()
         {
@@ -185,6 +197,9 @@ namespace Sky.Tests.Features.Articles.Create
             Assert.AreEqual(1, count, "Should still have only one article with that title");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithEmptyTitle_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithEmptyTitle_ReturnsFailure()
         {
@@ -209,6 +224,9 @@ namespace Sky.Tests.Features.Articles.Create
             Assert.AreEqual(0, count, "No article should be created with empty title");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithTemplate_UsesTemplateContent.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithTemplate_UsesTemplateContent()
         {
@@ -239,6 +257,9 @@ namespace Sky.Tests.Features.Articles.Create
                 "TemplateId should be stored");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithContentOverride_UsesOverride.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithContentOverride_UsesOverride()
         {
@@ -269,6 +290,9 @@ namespace Sky.Tests.Features.Articles.Create
                 "Should NOT use template content when override is provided");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithUrlPathOverride_UsesOverride.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithUrlPathOverride_UsesOverride()
         {
@@ -301,6 +325,9 @@ namespace Sky.Tests.Features.Articles.Create
                 "Database should have custom URL path");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_BlogPost_CreatesWithBlogKey.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_BlogPost_CreatesWithBlogKey()
         {
@@ -334,6 +361,9 @@ namespace Sky.Tests.Features.Articles.Create
                 "Introduction should be set");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithPublishedOverride_PublishesImmediately.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithPublishedOverride_PublishesImmediately()
         {
@@ -374,6 +404,9 @@ namespace Sky.Tests.Features.Articles.Create
                 "Should publish when Published date is explicitly provided");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithAllOptionalProperties_SetsAllProperties.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithAllOptionalProperties_SetsAllProperties()
         {
@@ -440,3 +473,4 @@ namespace Sky.Tests.Features.Articles.Create
         }
     }
 }
+

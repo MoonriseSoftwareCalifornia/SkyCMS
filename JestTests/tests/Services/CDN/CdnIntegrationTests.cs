@@ -45,6 +45,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Azure CDN Integration Tests
 
+        /// <summary>
+        /// Tests that AzureCdn_PurgeWithValidCredentials_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task AzureCdn_PurgeWithValidCredentials_Succeeds()
         {
@@ -76,6 +79,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Azure CDN", results[0].ProviderName);
         }
 
+        /// <summary>
+        /// Tests that AzureFrontDoor_PurgeWithValidCredentials_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task AzureFrontDoor_PurgeWithValidCredentials_Succeeds()
         {
@@ -107,6 +113,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Front Door", results[0].ProviderName);
         }
 
+        /// <summary>
+        /// Tests that AzureCdn_PurgeEntireCdn_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task AzureCdn_PurgeEntireCdn_Succeeds()
         {
@@ -139,6 +148,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Cloudflare Integration Tests
 
+        /// <summary>
+        /// Tests that Cloudflare_PurgeWithValidCredentials_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_PurgeWithValidCredentials_Succeeds()
         {
@@ -172,6 +184,9 @@ namespace Sky.Tests.Services.CDN
                 "Cloudflare flush should complete within 30 seconds");
         }
 
+        /// <summary>
+        /// Tests that Cloudflare_PurgeEverything_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_PurgeEverything_Succeeds()
         {
@@ -200,6 +215,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(results[0].IsSuccessStatusCode);
         }
 
+        /// <summary>
+        /// Tests that Cloudflare_PurgeMultipleUrls_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_PurgeMultipleUrls_Succeeds()
         {
@@ -238,6 +256,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Sucuri Integration Tests
 
+        /// <summary>
+        /// Tests that Sucuri_PurgeWithValidCredentials_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Sucuri_PurgeWithValidCredentials_Succeeds()
         {
@@ -271,6 +292,9 @@ namespace Sky.Tests.Services.CDN
                 "Sucuri flush should complete within 2 minutes");
         }
 
+        /// <summary>
+        /// Tests that Sucuri_PurgeEntireCache_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Sucuri_PurgeEntireCache_Succeeds()
         {
@@ -299,6 +323,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(results[0].IsSuccessStatusCode);
         }
 
+        /// <summary>
+        /// Tests that Sucuri_PurgeMultipleFiles_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Sucuri_PurgeMultipleFiles_Succeeds()
         {
@@ -334,6 +361,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(results.TrueForAll(r => r.IsSuccessStatusCode));
         }
 
+        /// <summary>
+        /// Tests that Sucuri_PurgeMoreThan20Files_PurgesEntireCache.
+        /// </summary>
         [TestMethod]
         public async Task Sucuri_PurgeMoreThan20Files_PurgesEntireCache()
         {
@@ -372,6 +402,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Multi-Provider Integration Tests
 
+        /// <summary>
+        /// Tests that MultipleProviders_PurgeAllConfigured_AllSucceed.
+        /// </summary>
         [TestMethod]
         public async Task MultipleProviders_PurgeAllConfigured_AllSucceed()
         {
@@ -446,6 +479,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Error Handling Tests
 
+        /// <summary>
+        /// Tests that AzureCdn_InvalidCredentials_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task AzureCdn_InvalidCredentials_ReturnsError()
         {
@@ -480,6 +516,9 @@ namespace Sky.Tests.Services.CDN
             }
         }
 
+        /// <summary>
+        /// Tests that Cloudflare_InvalidApiToken_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_InvalidApiToken_ReturnsFailure()
         {
@@ -623,6 +662,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Cloudflare-Specific Advanced Tests
 
+        /// <summary>
+        /// Tests that Cloudflare_SequentialPurgeOperations_AllSucceed.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_SequentialPurgeOperations_AllSucceed()
         {
@@ -655,6 +697,9 @@ namespace Sky.Tests.Services.CDN
             Assert.IsTrue(result3[0].IsSuccessStatusCode, "Third purge should succeed");
         }
 
+        /// <summary>
+        /// Tests that Cloudflare_PurgeLargeUrlList_SucceedsWithinRateLimits.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_PurgeLargeUrlList_SucceedsWithinRateLimits()
         {
@@ -691,6 +736,9 @@ namespace Sky.Tests.Services.CDN
                 $"Large batch purge should succeed. Status: {results[0].Status}, Message: {results[0].Message}");
         }
 
+        /// <summary>
+        /// Tests that Cloudflare_VerifyResponseDetails_ContainsExpectedData.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_VerifyResponseDetails_ContainsExpectedData()
         {
@@ -729,6 +777,9 @@ namespace Sky.Tests.Services.CDN
                 "EstimatedFlushDateTime should be within 1 minute");
         }
 
+        /// <summary>
+        /// Tests that Cloudflare_PurgeWithWildcard_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_PurgeWithWildcard_Succeeds()
         {
@@ -769,6 +820,9 @@ namespace Sky.Tests.Services.CDN
 
         #region Diagnostic Tests
 
+        /// <summary>
+        /// Tests that Diagnostic_VerifyCloudflareConfiguration.
+        /// </summary>
         [TestMethod]
         public void Diagnostic_VerifyCloudflareConfiguration()
         {
@@ -796,6 +850,9 @@ namespace Sky.Tests.Services.CDN
             Console.WriteLine($"  ApiToken: {config.ApiToken.Substring(0, 8)}... (truncated)");
         }
 
+        /// <summary>
+        /// Tests that Diagnostic_ListConfiguredProviders.
+        /// </summary>
         [TestMethod]
         public void Diagnostic_ListConfiguredProviders()
         {
@@ -820,6 +877,9 @@ namespace Sky.Tests.Services.CDN
 
         #region New Cloudflare Test
 
+        /// <summary>
+        /// Tests that Cloudflare_SingleProviderInCdnService_Succeeds.
+        /// </summary>
         [TestMethod]
         public async Task Cloudflare_SingleProviderInCdnService_Succeeds()
         {
@@ -857,3 +917,4 @@ namespace Sky.Tests.Services.CDN
         #endregion
     }
 }
+

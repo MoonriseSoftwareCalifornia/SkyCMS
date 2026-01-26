@@ -267,6 +267,9 @@ namespace Sky.Tests.Services.Html
 
         #region ExtractIntroduction Tests
 
+        /// <summary>
+        /// Tests that ExtractIntroduction_HtmlEntities_DecodesEntities.
+        /// </summary>
         [TestMethod]
         public void ExtractIntroduction_HtmlEntities_DecodesEntities()  // ? New test
         {
@@ -292,3 +295,4 @@ namespace Sky.Tests.Services.Html
         }
     }
 }
+

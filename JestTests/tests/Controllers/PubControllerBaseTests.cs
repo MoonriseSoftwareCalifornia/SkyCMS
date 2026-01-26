@@ -73,6 +73,9 @@ namespace Sky.Tests.Controllers
 
         #region Constructor Tests
 
+        /// <summary>
+        /// Tests that Constructor_WithNullLogger_DoesNotThrow.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithNullLogger_DoesNotThrow()
         {
@@ -89,6 +92,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(testController);
         }
 
+        /// <summary>
+        /// Tests that Constructor_WithAllDependencies_InitializesSuccessfully.
+        /// </summary>
         [TestMethod]
         public void Constructor_WithAllDependencies_InitializesSuccessfully()
         {
@@ -100,6 +106,9 @@ namespace Sky.Tests.Controllers
 
         #region Index Tests - Basic File Serving
 
+        /// <summary>
+        /// Tests that Index_WithoutAuthentication_ReturnsNotFoundForNonExistentFile.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithoutAuthentication_ReturnsNotFoundForNonExistentFile()
         {
@@ -127,6 +136,9 @@ namespace Sky.Tests.Controllers
 
         #region Authentication Tests
 
+        /// <summary>
+        /// Tests that Index_RequiresAuth_UnauthenticatedUser_ReturnsUnauthorized.
+        /// </summary>
         [TestMethod]
         public async Task Index_RequiresAuth_UnauthenticatedUser_ReturnsUnauthorized()
         {
@@ -155,6 +167,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
         }
 
+        /// <summary>
+        /// Tests that Index_RequiresAuth_ArticlePath_InvalidArticleNumber_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task Index_RequiresAuth_ArticlePath_InvalidArticleNumber_ReturnsNotFound()
         {
@@ -186,6 +201,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
+        /// <summary>
+        /// Tests that Index_RequiresAuth_ArticlePath_ValidArticleNumber_UnauthorizedUser.
+        /// </summary>
         [TestMethod]
         public async Task Index_RequiresAuth_ArticlePath_ValidArticleNumber_UnauthorizedUser()
         {
@@ -225,6 +243,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
         }
 
+        /// <summary>
+        /// Tests that Index_RequiresAuth_ArticlePath_AuthorizedUser_ReturnsNotFoundForMissingFile.
+        /// </summary>
         [TestMethod]
         public async Task Index_RequiresAuth_ArticlePath_AuthorizedUser_ReturnsNotFoundForMissingFile()
         {
@@ -304,6 +325,9 @@ namespace Sky.Tests.Controllers
 
         #region Logging Tests
 
+        /// <summary>
+        /// Tests that Index_LogsWarning_WhenUnauthorizedAccessAttempt.
+        /// </summary>
         [TestMethod]
         public async Task Index_LogsWarning_WhenUnauthorizedAccessAttempt()
         {
@@ -337,6 +361,9 @@ namespace Sky.Tests.Controllers
                 e.Message.Contains("Unauthorized access attempt")));
         }
 
+        /// <summary>
+        /// Tests that Index_LogsWarning_WhenFileNotFound.
+        /// </summary>
         [TestMethod]
         public async Task Index_LogsWarning_WhenFileNotFound()
         {
@@ -364,6 +391,9 @@ namespace Sky.Tests.Controllers
                 e.Message.Contains("File not found")));
         }
 
+        /// <summary>
+        /// Tests that Index_LogsWarning_WhenFileNotFoundInStorage.
+        /// </summary>
         [TestMethod]
         public async Task Index_LogsWarning_WhenFileNotFoundInStorage()
         {
@@ -398,6 +428,9 @@ namespace Sky.Tests.Controllers
 
         #region Path Parsing Tests
 
+        /// <summary>
+        /// Tests that Index_PathNormalization_AvoidsDuplicateToStringCalls.
+        /// </summary>
         [TestMethod]
         public async Task Index_PathNormalization_AvoidsDuplicateToStringCalls()
         {
@@ -421,6 +454,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(testLogger.LogEntries.Any());
         }
 
+        /// <summary>
+        /// Tests that Index_CaseInsensitiveArticlePathCheck_WorksCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task Index_CaseInsensitiveArticlePathCheck_WorksCorrectly()
         {
@@ -514,3 +550,4 @@ namespace Sky.Tests.Controllers
         #endregion
     }
 }
+

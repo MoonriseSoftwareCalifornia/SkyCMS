@@ -30,6 +30,9 @@ namespace Sky.Tests.Features.Articles.Create
 
         #region Validation Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Validation")]
         public async Task HandleAsync_EmptyTitle_ReturnsValidationError()
@@ -51,6 +54,9 @@ namespace Sky.Tests.Features.Articles.Create
             Assert.AreEqual(0, await ArticleCountAsync());
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Validation")]
         public async Task HandleAsync_TitleTooLong_ReturnsValidationError()
@@ -71,6 +77,9 @@ namespace Sky.Tests.Features.Articles.Create
             Assert.IsTrue(result.Errors.ContainsKey(nameof(command.Title)));
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Validation")]
         public async Task HandleAsync_EmptyUserId_ReturnsValidationError()
@@ -95,6 +104,9 @@ namespace Sky.Tests.Features.Articles.Create
 
         #region Success Scenarios
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Articles")]
         public async Task HandleAsync_ValidCommand_ReturnsSuccess()
@@ -118,6 +130,9 @@ namespace Sky.Tests.Features.Articles.Create
             Assert.IsNull(result.Errors);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Articles")]
         public async Task HandleAsync_ValidCommand_CreatesArticleInDatabase()
@@ -143,6 +158,9 @@ namespace Sky.Tests.Features.Articles.Create
 
         #region First Article Behavior
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Articles")]
         public async Task HandleAsync_FirstArticle_BecomesRoot()
@@ -162,6 +180,9 @@ namespace Sky.Tests.Features.Articles.Create
             Assert.AreEqual("root", result.Data!.UrlPath);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Publishing")]
         public async Task HandleAsync_FirstArticle_IsPublishedAutomatically()
@@ -185,3 +206,4 @@ namespace Sky.Tests.Features.Articles.Create
         #endregion
     }
 }
+

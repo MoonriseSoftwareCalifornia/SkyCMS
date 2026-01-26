@@ -30,6 +30,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Basic Functionality Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BasicFunctionality")]
         public void Normalize_WithNullInput_ReturnsEmptyString()
@@ -44,6 +47,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual(string.Empty, result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BasicFunctionality")]
         public void Normalize_WithEmptyInput_ReturnsEmptyString()
@@ -58,6 +64,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual(string.Empty, result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BasicFunctionality")]
         public void Normalize_WithWhitespaceInput_ReturnsEmptyString()
@@ -72,6 +81,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual(string.Empty, result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BasicFunctionality")]
         public void Normalize_WithSimpleText_ReturnsLowercaseSlug()
@@ -86,6 +98,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("hello-world", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BasicFunctionality")]
         public void Normalize_WithUppercaseText_ReturnsLowercaseSlug()
@@ -100,6 +115,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("hello-world", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BasicFunctionality")]
         public void Normalize_WithMixedCaseText_ReturnsLowercaseSlug()
@@ -118,6 +136,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Special Character Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SpecialCharacters")]
         public void Normalize_WithHyphens_PreservesHyphens()
@@ -132,6 +153,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("hello-world-test", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SpecialCharacters")]
         [DataRow("hello@world", "hello-world")]
@@ -149,6 +173,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual(expected, result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SpecialCharacters")]
         public void Normalize_WithMultipleSpaces_CollapsesToSingleHyphen()
@@ -163,6 +190,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("hello-world", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SpecialCharacters")]
         public void Normalize_WithMultipleHyphens_CollapsesToSingleHyphen()
@@ -177,6 +207,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("hello-world", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SpecialCharacters")]
         public void Normalize_WithLeadingAndTrailingSpaces_TrimsSpaces()
@@ -191,6 +224,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("hello-world", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("SpecialCharacters")]
         public void Normalize_WithLeadingAndTrailingHyphens_TrimsHyphens()
@@ -209,6 +245,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Diacritics and Accents Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Diacritics")]
         [DataRow("café", "cafe")]
@@ -225,6 +264,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual(expected, result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Diacritics")]
         public void Normalize_WithComplexDiacritics_RemovesAllDiacritics()
@@ -243,6 +285,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Numbers and Alphanumeric Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Alphanumeric")]
         public void Normalize_WithNumbers_PreservesNumbers()
@@ -257,6 +302,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("hello-123-world", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Alphanumeric")]
         public void Normalize_WithAlphanumeric_PreservesAlphanumeric()
@@ -275,6 +323,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Forward Slash Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ForwardSlash")]
         public void Normalize_WithForwardSlash_PreservesForwardSlash()
@@ -289,6 +340,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("path/to/resource", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ForwardSlash")]
         public void Normalize_WithLeadingSlash_TrimsLeadingSlash()
@@ -303,6 +357,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("path/to/resource", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("ForwardSlash")]
         public void Normalize_WithTrailingSlash_TrimsTrailingSlash()
@@ -321,6 +378,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Reserved Dot-Segment Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("DotSegments")]
         public void Normalize_WithSingleDot_ReplacesWithHyphen()
@@ -335,6 +395,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("-", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("DotSegments")]
         public void Normalize_WithDoubleDot_ReplacesWithHyphens()
@@ -349,6 +412,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("--", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("DotSegments")]
         public void Normalize_WithDotInMiddle_RemovesDot()
@@ -367,6 +433,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Blog Key Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BlogKey")]
         public void Normalize_WithBlogKey_PrependsBlogKey()
@@ -382,6 +451,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("technology/my-article", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BlogKey")]
         public void Normalize_WithEmptyBlogKey_DoesNotPrependSlash()
@@ -397,6 +469,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("my-article", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BlogKey")]
         public void Normalize_WithWhitespaceBlogKey_DoesNotPrependSlash()
@@ -412,6 +487,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("my-article", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("BlogKey")]
         public void Normalize_WithBlogKeyAndComplexInput_NormalizesAndPrepends()
@@ -431,6 +509,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Real-World Scenarios
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("RealWorld")]
         [DataRow("The Quick Brown Fox", "the-quick-brown-fox")]
@@ -447,6 +528,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual(expected, result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("RealWorld")]
         public void Normalize_WithLongTitle_HandlesCorrectly()
@@ -461,6 +545,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("this-is-a-very-long-title-with-many-words-that-should-be-converted-to-a-slug", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("RealWorld")]
         public void Normalize_WithUnicodeCharacters_HandlesCorrectly()
@@ -479,6 +566,9 @@ namespace Sky.Tests.Services.Slugs
 
         #region Edge Cases
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("EdgeCases")]
         public void Normalize_WithOnlySpecialCharacters_ReturnsEmptyString()
@@ -493,6 +583,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual(string.Empty, result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("EdgeCases")]
         public void Normalize_WithMixedSlashesAndHyphens_NormalizesCorrectly()
@@ -507,6 +600,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("path/to/my-resource", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("EdgeCases")]
         public void Normalize_WithUnderscores_ReplacesWithHyphens()
@@ -521,6 +617,9 @@ namespace Sky.Tests.Services.Slugs
             Assert.AreEqual("hello-world-test", result);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("EdgeCases")]
         public void Normalize_WithTildes_RemovesTildes()
@@ -538,3 +637,4 @@ namespace Sky.Tests.Services.Slugs
         #endregion
     }
 }
+

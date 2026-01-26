@@ -117,6 +117,9 @@ namespace Sky.Tests.Services.CDN
 
         #region SkyCMS CloudFront Driver Tests
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
         [TestCategory("CloudFront")]
@@ -136,6 +139,9 @@ namespace Sky.Tests.Services.CDN
             Assert.AreEqual("Sky CMD CDN", service.ProviderName);
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
         [TestCategory("CloudFront")]
@@ -163,6 +169,9 @@ namespace Sky.Tests.Services.CDN
             TestContext.WriteLine($"Status: {results[0].Message}");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
         [TestCategory("CloudFront")]
@@ -193,6 +202,9 @@ namespace Sky.Tests.Services.CDN
             TestContext.WriteLine($"Invalidation ID: {results[0].Id}");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
         [TestCategory("CloudFront")]
@@ -221,6 +233,9 @@ namespace Sky.Tests.Services.CDN
             TestContext.WriteLine($"Invalidation ID: {results[0].Id}");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
         [TestCategory("CloudFront")]
@@ -243,6 +258,9 @@ namespace Sky.Tests.Services.CDN
             TestContext.WriteLine($"Invalidation ID: {results[0].Id}");
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
         [TestCategory("CloudFront")]
@@ -275,6 +293,9 @@ namespace Sky.Tests.Services.CDN
             }
         }
 
+        /// <summary>
+        /// Tests that TestMethod.
+        /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
         [TestCategory("CloudFront")]

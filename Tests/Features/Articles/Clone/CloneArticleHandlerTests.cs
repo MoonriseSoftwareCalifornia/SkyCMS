@@ -39,6 +39,9 @@ namespace Sky.Tests.Features.Articles.Clone
         }
 
 
+        /// <summary>
+        /// Tests that HandleAsync_ClonesArticleWithNewTitle.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_ClonesArticleWithNewTitle()
         {
@@ -81,6 +84,9 @@ namespace Sky.Tests.Features.Articles.Clone
                 "Should dispatch CreateArticleCommand with source content");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithConflictingTitle_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithConflictingTitle_ReturnsFailure()
         {
@@ -107,6 +113,9 @@ namespace Sky.Tests.Features.Articles.Clone
             Assert.IsTrue(result.Errors.ContainsKey("NewTitle"), "Should have NewTitle error");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithNonexistentSource_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithNonexistentSource_ReturnsFailure()
         {
@@ -127,6 +136,9 @@ namespace Sky.Tests.Features.Articles.Clone
                 "Error should mention source not found");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_CopiesAllProperties.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_CopiesAllProperties()
         {
@@ -174,6 +186,9 @@ namespace Sky.Tests.Features.Articles.Clone
             Assert.AreEqual("<script>footer</script>", capturedCommand.FooterJavaScript, "Should copy footer script");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithPublishedOverride_UsesNewPublishDate.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithPublishedOverride_UsesNewPublishDate()
         {

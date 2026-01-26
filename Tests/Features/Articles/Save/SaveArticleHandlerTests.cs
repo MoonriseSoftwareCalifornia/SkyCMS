@@ -46,6 +46,9 @@ namespace Sky.Tests.Features.Articles.Save
             DbContext?.Dispose();
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithValidCommand_SavesArticle.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithValidCommand_SavesArticle()
         {
@@ -90,6 +93,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(TestNow, updatedArticle.Updated, "Updated timestamp should be set");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_TitleChange_TriggersRedirect.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_TitleChange_TriggersRedirect()
         {
@@ -139,6 +145,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual("original-title", capturedOldUrlPath, "Should pass old URL path");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_InvalidArticleNumber_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_InvalidArticleNumber_ReturnsFailure()
         {
@@ -162,6 +171,9 @@ namespace Sky.Tests.Features.Articles.Save
                 "Error should mention article not found");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_WithEmptyTitle_ReturnsFailure.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_WithEmptyTitle_ReturnsFailure()
         {
@@ -191,6 +203,9 @@ namespace Sky.Tests.Features.Articles.Save
                 "Title should remain unchanged");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_UpdatesCatalog.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_UpdatesCatalog()
         {
@@ -221,6 +236,9 @@ namespace Sky.Tests.Features.Articles.Save
                 "Should update catalog after save");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_PublishedArticle_CallsPublishingService.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_PublishedArticle_CallsPublishingService()
         {
@@ -256,6 +274,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNotNull(updatedArticle.Published, "Article should remain published");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_UnpublishedArticle_DoesNotPublish.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_UnpublishedArticle_DoesNotPublish()
         {
@@ -292,6 +313,9 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.IsNull(updatedArticle.Published, "Article should remain unpublished");
         }
 
+        /// <summary>
+        /// Tests that HandleAsync_ConcurrentEdit_HandlesGracefully.
+        /// </summary>
         [TestMethod]
         public async Task HandleAsync_ConcurrentEdit_HandlesGracefully()
         {
@@ -336,3 +360,4 @@ namespace Sky.Tests.Features.Articles.Save
         }
     }
 }
+

@@ -129,6 +129,9 @@ namespace Sky.Tests.Controllers
 
         #region Index Action Tests
 
+        /// <summary>
+        /// Tests that Index_WithNullOrEmptyTarget_RedirectsToPub.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithNullOrEmptyTarget_RedirectsToPub()
         {
@@ -141,6 +144,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("/pub", redirectResult.RouteValues["target"]);
         }
 
+        /// <summary>
+        /// Tests that Index_WithValidTarget_ReturnsViewResult.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithValidTarget_ReturnsViewResult()
         {
@@ -156,6 +162,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(viewResult.Model);
         }
 
+        /// <summary>
+        /// Tests that Index_WithImagesOnlyFilter_FiltersCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithImagesOnlyFilter_FiltersCorrectly()
         {
@@ -171,6 +180,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
         }
 
+        /// <summary>
+        /// Tests that Index_WithDirectoryOnlyFilter_ReturnsOnlyDirectories.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithDirectoryOnlyFilter_ReturnsOnlyDirectories()
         {
@@ -189,6 +201,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.All(m => m.IsDirectory));
         }
 
+        /// <summary>
+        /// Tests that Index_WithPagination_ReturnsCorrectPageSize.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithPagination_ReturnsCorrectPageSize()
         {
@@ -209,6 +224,9 @@ namespace Sky.Tests.Controllers
             Assert.HasCount(10, model);
         }
 
+        /// <summary>
+        /// Tests that Index_WithSorting_AppliesCorrectOrder.
+        /// </summary>
         [TestMethod]
         public async Task Index_WithSorting_AppliesCorrectOrder()
         {
@@ -241,6 +259,9 @@ namespace Sky.Tests.Controllers
 
         #region File Upload Tests
 
+        /// <summary>
+        /// Tests that Upload_WithValidFile_ReturnsSuccessResult.
+        /// </summary>
         [TestMethod]
         public async Task Upload_WithValidFile_ReturnsSuccessResult()
         {
@@ -261,6 +282,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(uploadResult.uploaded);
         }
 
+        /// <summary>
+        /// Tests that Upload_WithEmptyPath_ReturnsUnauthorized.
+        /// </summary>
         [TestMethod]
         public async Task Upload_WithEmptyPath_ReturnsUnauthorized()
         {
@@ -278,6 +302,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
         }
 
+        /// <summary>
+        /// Tests that Upload_WithNonPubPath_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task Upload_WithNonPubPath_ThrowsException()
         {
@@ -295,6 +322,9 @@ namespace Sky.Tests.Controllers
             });
         }
 
+        /// <summary>
+        /// Tests that Upload_WithChunkedFile_HandlesAllChunks.
+        /// </summary>
         [TestMethod]
         public async Task Upload_WithChunkedFile_HandlesAllChunks()
         {
@@ -321,6 +351,9 @@ namespace Sky.Tests.Controllers
 
         #region UploadImage Tests
 
+        /// <summary>
+        /// Tests that UploadImage_WithValidImage_ReturnsImageUrl.
+        /// </summary>
         [TestMethod]
         public async Task UploadImage_WithValidImage_ReturnsImageUrl()
         {
@@ -351,6 +384,9 @@ namespace Sky.Tests.Controllers
             StringAssert.Contains(contentResult.Content, "test.jpg");
         }
 
+        /// <summary>
+        /// Tests that UploadImage_WithOversizedImage_ReturnsError.
+        /// </summary>
         [TestMethod]
         public async Task UploadImage_WithOversizedImage_ReturnsError()
         {
@@ -381,6 +417,9 @@ namespace Sky.Tests.Controllers
 
         #region SimpleUpload Tests
 
+        /// <summary>
+        /// Tests that SimpleUpload_ForArticle_ReturnsImageUrl.
+        /// </summary>
         [TestMethod]
         public async Task SimpleUpload_ForArticle_ReturnsImageUrl()
         {
@@ -402,6 +441,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(jsonResult.Value);
         }
 
+        /// <summary>
+        /// Tests that SimpleUpload_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task SimpleUpload_WithInvalidModelState_ReturnsBadRequest()
         {
@@ -419,6 +461,9 @@ namespace Sky.Tests.Controllers
 
         #region File and Folder Operations Tests
 
+        /// <summary>
+        /// Tests that NewFile_WithValidExtension_CreatesFile.
+        /// </summary>
         [TestMethod]
         public async Task NewFile_WithValidExtension_CreatesFile()
         {
@@ -438,6 +483,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(await Storage.BlobExistsAsync("/pub/files/newfile.txt"));
         }
 
+        /// <summary>
+        /// Tests that NewFile_WithInvalidExtension_ReturnsBadRequest.
+        /// </summary>
         [TestMethod]
         public async Task NewFile_WithInvalidExtension_ReturnsBadRequest()
         {
@@ -455,6 +503,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
+        /// <summary>
+        /// Tests that NewFolder_WithValidName_CreatesFolder.
+        /// </summary>
         [TestMethod]
         public async Task NewFolder_WithValidName_CreatesFolder()
         {
@@ -473,6 +524,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(OkResult));
         }
 
+        /// <summary>
+        /// Tests that Delete_WithValidPaths_DeletesItems.
+        /// </summary>
         [TestMethod]
         public async Task Delete_WithValidPaths_DeletesItems()
         {
@@ -491,6 +545,9 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(await Storage.BlobExistsAsync("/pub/test/delete.txt"));
         }
 
+        /// <summary>
+        /// Tests that Copy_WithValidPaths_CopiesFiles.
+        /// </summary>
         [TestMethod]
         public async Task Copy_WithValidPaths_CopiesFiles()
         {
@@ -555,6 +612,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(".txt", destFileMetadata.Extension, "File extension should be preserved");
         }
 
+        /// <summary>
+        /// Tests that Copy_WithMultipleFiles_CopiesAllFiles.
+        /// </summary>
         [TestMethod]
         public async Task Copy_WithMultipleFiles_CopiesAllFiles()
         {
@@ -585,6 +645,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/file3.txt"));
         }
 
+        /// <summary>
+        /// Tests that Copy_WithNestedPath_PreservesFilename.
+        /// </summary>
         [TestMethod]
         public async Task Copy_WithNestedPath_PreservesFilename()
         {
@@ -668,6 +731,9 @@ namespace Sky.Tests.Controllers
             }
         }
 
+        /// <summary>
+        /// Tests that Copy_WithSpecialCharactersInFilename_HandlesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task Copy_WithSpecialCharactersInFilename_HandlesCorrectly()
         {
@@ -689,6 +755,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/test-file_2024.txt"));
         }
 
+        /// <summary>
+        /// Tests that Move_WithValidPaths_MovesFiles.
+        /// </summary>
         [TestMethod]
         public async Task Move_WithValidPaths_MovesFiles()
         {
@@ -710,6 +779,9 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(await Storage.BlobExistsAsync("/pub/source/moveme.txt"));
         }
 
+        /// <summary>
+        /// Tests that Rename_WithValidNames_RenamesFile.
+        /// </summary>
         [TestMethod]
         public async Task Rename_WithValidNames_RenamesFile()
         {
@@ -734,6 +806,9 @@ namespace Sky.Tests.Controllers
 
         #region Download Tests
 
+        /// <summary>
+        /// Tests that Download_WithValidFile_ReturnsFileResult.
+        /// </summary>
         [TestMethod]
         public async Task Download_WithValidFile_ReturnsFileResult()
         {
@@ -749,6 +824,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("application/octet-stream", fileResult.ContentType);
         }
 
+        /// <summary>
+        /// Tests that Download_WithNonExistentFile_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task Download_WithNonExistentFile_ReturnsNotFound()
         {
@@ -759,6 +837,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
+        /// <summary>
+        /// Tests that Download_WithNullPath_ReturnsNotFound.
+        /// </summary>
         [TestMethod]
         public async Task Download_WithNullPath_ReturnsNotFound()
         {
@@ -773,6 +854,9 @@ namespace Sky.Tests.Controllers
 
         #region Path Helper Tests
 
+        /// <summary>
+        /// Tests that ParsePath_WithMultipleParts_ReturnsArray.
+        /// </summary>
         [TestMethod]
         public void ParsePath_WithMultipleParts_ReturnsArray()
         {
@@ -786,6 +870,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("file.txt", result[2]);
         }
 
+        /// <summary>
+        /// Tests that ParsePath_WithSlashes_RemovesSlashes.
+        /// </summary>
         [TestMethod]
         public void ParsePath_WithSlashes_RemovesSlashes()
         {
@@ -798,6 +885,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("test", result[1]);
         }
 
+        /// <summary>
+        /// Tests that TrimPathPart_WithSlashes_TrimsCorrectly.
+        /// </summary>
         [TestMethod]
         public void TrimPathPart_WithSlashes_TrimsCorrectly()
         {
@@ -808,6 +898,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("test", result);
         }
 
+        /// <summary>
+        /// Tests that UrlEncode_WithSpecialCharacters_EncodesCorrectly.
+        /// </summary>
         [TestMethod]
         public void UrlEncode_WithSpecialCharacters_EncodesCorrectly()
         {
@@ -822,6 +915,9 @@ namespace Sky.Tests.Controllers
 
         #region Image Operations Tests
 
+        /// <summary>
+        /// Tests that GetImageThumbnail_WithValidImage_ReturnsThumbnail.
+        /// </summary>
         [TestMethod]
         public async Task GetImageThumbnail_WithValidImage_ReturnsThumbnail()
         {
@@ -837,6 +933,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("image/webp", fileResult.ContentType);
         }
 
+        /// <summary>
+        /// Tests that GetImageThumbnail_WithUnsupportedFormat_ThrowsException.
+        /// </summary>
         [TestMethod]
         public async Task GetImageThumbnail_WithUnsupportedFormat_ThrowsException()
         {
@@ -850,6 +949,9 @@ namespace Sky.Tests.Controllers
             });
         }
 
+        /// <summary>
+        /// Tests that EditImage_WithValidImage_ReturnsView.
+        /// </summary>
         [TestMethod]
         public void EditImage_WithValidImage_ReturnsView()
         {
@@ -860,6 +962,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
         }
 
+        /// <summary>
+        /// Tests that EditImage_WithUnsupportedFormat_ReturnsUnsupportedMediaType.
+        /// </summary>
         [TestMethod]
         public void EditImage_WithUnsupportedFormat_ReturnsUnsupportedMediaType()
         {
@@ -874,6 +979,9 @@ namespace Sky.Tests.Controllers
 
         #region Static Helper Tests
 
+        /// <summary>
+        /// Tests that FixPath_WithAbsoluteUrl_ReturnsUnchanged.
+        /// </summary>
         [TestMethod]
         public void FixPath_WithAbsoluteUrl_ReturnsUnchanged()
         {
@@ -884,6 +992,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("https://example.com/image.jpg", result);
         }
 
+        /// <summary>
+        /// Tests that FixPath_WithRelativePath_AddLeadingSlash.
+        /// </summary>
         [TestMethod]
         public void FixPath_WithRelativePath_AddLeadingSlash()
         {
@@ -894,6 +1005,9 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("/images/test.jpg", result);
         }
 
+        /// <summary>
+        /// Tests that GetImageAssetArray_WithImages_ReturnsImagePaths.
+        /// </summary>
         [TestMethod]
         public async Task GetImageAssetArray_WithImages_ReturnsImagePaths()
         {
@@ -939,6 +1053,9 @@ namespace Sky.Tests.Controllers
                 FileManagerController.ValidImageExtensions.Contains(Path.GetExtension(r).ToLower())));
         }
 
+        /// <summary>
+        /// Tests that GetImageAssetArray_WithExcludePath_ExcludesCorrectly.
+        /// </summary>
         [TestMethod]
         public async Task GetImageAssetArray_WithExcludePath_ExcludesCorrectly()
         {
@@ -1161,3 +1278,4 @@ namespace Sky.Tests.Controllers
         #endregion
     }
 }
+
