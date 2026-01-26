@@ -199,6 +199,12 @@ public class DeploymentController : ControllerBase
                 cdnPurged = cdnPurged
             });
         }
+        catch (System.Text.Json.JsonException ex)
+        {
+            // Invalid JSON in SPA metadata
+            logger.LogError(ex, "Invalid JSON in SPA metadata for article {ArticleId}", articleId);
+            return BadRequest(new { success = false, error = "Invalid SPA metadata" });
+        }
         catch (InvalidOperationException)
         {
             // Re-throw security validation exceptions (e.g., path traversal attempts)

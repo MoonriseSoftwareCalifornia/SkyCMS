@@ -716,6 +716,7 @@ namespace Sky.Editor.Data.Logic
             article.Content = model.Content;
             article.Title = model.Title;
             article.Updated = clock.UtcNow;
+            model.Updated = article.Updated; // Sync the updated timestamp back to the model
             article.HeaderJavaScript = model.HeadJavaScript;
             article.FooterJavaScript = model.FooterJavaScript;
             article.BannerImage = model.BannerImage ?? string.Empty;
@@ -727,6 +728,11 @@ namespace Sky.Editor.Data.Logic
             if (!string.IsNullOrWhiteSpace(model.Introduction))
             {
                 article.Introduction = model.Introduction;
+            }
+            else if (model.ArticleType == ArticleType.BlogPost)
+            {
+                // Auto-generate introduction from content for blog posts
+                article.Introduction = htmlService.ExtractIntroduction(model.Content);
             }
 
             var saved = false;

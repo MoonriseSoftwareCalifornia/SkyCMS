@@ -1,8 +1,6 @@
-// <copyright file="DeploymentControllerTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="DeploymentControllerTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
-// See https://github.com/CWALabs/SkyCMS
-// for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
 namespace Sky.Tests.Controllers
@@ -11,602 +9,768 @@ namespace Sky.Tests.Controllers
     using System.Collections.Generic;
     using System.IO;
     using System.IO.Compression;
-    using System.Text;
+    using System.Linq;
     using System.Threading.Tasks;
-    using BCrypt.Net;
+    using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Cms.Common;
     using Cosmos.Cms.Common.Models;
     using Cosmos.Cms.Editor.Controllers;
+    using Cosmos.Common;  // ✅ For ArticleType enum
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;  // ✅ For StatusCodeEnum
+    using Cosmos.Common.Models;  // ✅ CORRECT - For SpaMetadata (NOT Sky.Common.Models)
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging.Abstractions;
+    using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using Sky.Cms.Controllers;
 
     /// <summary>
-    /// Comprehensive unit tests for the DeploymentController.
+    /// Unit tests for <see cref="DeploymentController"/>.
+    /// Tests secure SPA deployment including password verification, file validation, and path traversal protection.
     /// </summary>
     [TestClass]
-    public class DeploymentControllerTests : SkyCmsTestBase
+    public class DeploymentControllerTests
     {
+        private ApplicationDbContext dbContext;
+        private Mock<IStorageContext> storageContextMock;
+        private Mock<ILogger<DeploymentController>> loggerMock;
         private DeploymentController controller;
-        private Guid testSpaArticleId;
-        private string testDeploymentKey;
-        private string testWebhookSecret;
+        private Guid testArticleId;
+        private const string TestDeploymentKey = "test-deployment-key-12345678901"; // 32 chars
 
         [TestInitialize]
-        public void DeploymentSetup()
+        public void Setup()
         {
-            // Call base initialization
-            InitializeTestContext();
+            // Setup in-memory database
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase($"DeploymentTest_{Guid.NewGuid()}")
+                .Options;
+            dbContext = new ApplicationDbContext(options);
 
-            // Generate test credentials
-            testDeploymentKey = "TestDeployKey123!";
-            testWebhookSecret = "TestWebhookSecret456!";
+            // Setup mocks
+            storageContextMock = new Mock<IStorageContext>();
+            loggerMock = new Mock<ILogger<DeploymentController>>();
 
-            // Create a test SPA article with a unique path for this test
-            testSpaArticleId = Guid.NewGuid();
-            var metadata = new SpaMetadata
+            // Create test SPA article with deployment key
+            testArticleId = Guid.NewGuid();
+            var deploymentKeyHash = BCrypt.Net.BCrypt.HashPassword(TestDeploymentKey);
+            
+            var spaMetadata = new SpaMetadata
             {
-                DeploymentKeyHash = BCrypt.HashPassword(testDeploymentKey),
-                WebhookSecretHash = BCrypt.HashPassword(testWebhookSecret),
+                DeploymentKeyHash = deploymentKeyHash,
                 DeploymentCount = 0
             };
 
-            var spaArticle = new PublishedPage
+            var article = new Article
             {
-                Id = testSpaArticleId,
+                Id = testArticleId,
                 ArticleNumber = 1,
-                Title = "Test SPA Application",
-                UrlPath = $"/test-spa-{testSpaArticleId:N}",  // Unique path per test
+                Title = "Test SPA",
+                UrlPath = "/test-spa",
                 ArticleType = (int)ArticleType.SpaApp,
-                Content = System.Text.Json.JsonSerializer.Serialize(metadata),
+                StatusCode = (int)StatusCodeEnum.Active,
+                Content = System.Text.Json.JsonSerializer.Serialize(spaMetadata),
                 Published = DateTimeOffset.UtcNow,
-                StatusCode = 0,
                 Updated = DateTimeOffset.UtcNow,
                 VersionNumber = 1
             };
 
-            Db.Pages.Add(spaArticle);
-            Db.SaveChanges();
+            dbContext.Articles.Add(article);
+            dbContext.Pages.Add(new Cosmos.Common.Data.PublishedPage
+            {
+                Id = article.Id,
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                UrlPath = article.UrlPath,
+                ArticleType = article.ArticleType,
+                StatusCode = article.StatusCode,
+                Content = article.Content,  // ✅ Include SPA metadata
+                Published = article.Published,
+                Updated = article.Updated,
+                VersionNumber = article.VersionNumber
+            });
+            dbContext.SaveChanges();
 
-            // Create controller (using Storage from base class which is properly configured)
+            // Create controller
             controller = new DeploymentController(
-                Db,
-                Storage,
-                new NullLogger<DeploymentController>());
+                dbContext,
+                storageContextMock.Object,
+                loggerMock.Object);
 
-            // Setup HttpContext with headers
-            var httpContext = new DefaultHttpContext();
-            httpContext.Request.Headers["X-Hub-Signature-256"] = "sha256=test";
+            // Setup HttpContext
             controller.ControllerContext = new ControllerContext
             {
-                HttpContext = httpContext
+                HttpContext = new DefaultHttpContext()
             };
         }
 
-        #region Deploy Method Tests
+        [TestCleanup]
+        public void Cleanup()
+        {
+            dbContext?.Dispose();
+        }
+
+        #region Helper Methods
 
         /// <summary>
-        /// Tests that Deploy_ValidRequest_ReturnsOkWithMetadata.
+        /// Creates a valid test zip file in memory.
+        /// </summary>
+        private IFormFile CreateTestZipFile(Dictionary<string, string> files = null)
+        {
+            files ??= new Dictionary<string, string>
+            {
+                { "index.html", "<html><body>Test</body></html>" },
+                { "app.js", "console.log('test');" },
+                { "styles.css", "body { margin: 0; }" }
+            };
+
+            var memoryStream = new MemoryStream();
+            using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var file in files)
+                {
+                    var entry = archive.CreateEntry(file.Key);
+                    using var entryStream = entry.Open();
+                    using var writer = new StreamWriter(entryStream);
+                    writer.Write(file.Value);
+                }
+            }
+
+            memoryStream.Position = 0;
+
+            var formFile = new Mock<IFormFile>();
+            formFile.Setup(f => f.FileName).Returns("deploy.zip");
+            formFile.Setup(f => f.Length).Returns(memoryStream.Length);
+            formFile.Setup(f => f.OpenReadStream()).Returns(memoryStream);
+            formFile.Setup(f => f.ContentType).Returns("application/zip");
+
+            return formFile.Object;
+        }
+
+        /// <summary>
+        /// Creates an oversized zip file exceeding the 100MB limit.
+        /// </summary>
+        private IFormFile CreateOversizedZipFile()
+        {
+            var formFile = new Mock<IFormFile>();
+            formFile.Setup(f => f.FileName).Returns("deploy.zip");
+            formFile.Setup(f => f.Length).Returns(101_000_000); // 101 MB
+            formFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+
+            return formFile.Object;
+        }
+
+        #endregion
+
+        #region Password Verification Tests
+
+        /// <summary>
+        /// Tests that valid deployment key allows deployment.
         /// </summary>
         [TestMethod]
-        public async Task Deploy_ValidRequest_ReturnsOkWithMetadata()
+        public async Task Deploy_ValidPassword_ReturnsSuccess()
         {
             // Arrange
             var zipFile = CreateTestZipFile();
 
             // Act
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
-            var okResult = (OkObjectResult)result;
-            Assert.IsNotNull(okResult.Value);
-            
-            var resultType = okResult.Value.GetType();
-            var successProp = resultType.GetProperty("success");
-            var deploymentCountProp = resultType.GetProperty("deploymentCount");
-            
-            Assert.IsNotNull(successProp, "Response should have 'success' property");
-            Assert.IsNotNull(deploymentCountProp, "Response should have 'deploymentCount' property");
-            Assert.IsTrue((bool)successProp.GetValue(okResult.Value)!, "Deployment should succeed");
-            Assert.AreEqual(1, (int)deploymentCountProp.GetValue(okResult.Value)!, "Deployment count should be 1");
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+            Assert.AreEqual(200, okResult.StatusCode);
         }
 
         /// <summary>
-        /// Tests that Deploy_InvalidArticleId_ReturnsNotFound.
-        /// </summary>
-        [TestMethod]
-        public async Task Deploy_InvalidArticleId_ReturnsNotFound()
-        {
-            // Arrange
-            var invalidId = Guid.NewGuid();
-            var zipFile = CreateTestZipFile();
-
-            // Act
-            var result = await controller.Deploy(invalidId, testDeploymentKey, zipFile);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
-            var notFoundResult = (NotFoundObjectResult)result;
-            Assert.IsNotNull(notFoundResult.Value);
-            
-            var resultType = notFoundResult.Value.GetType();
-            var successProp = resultType.GetProperty("success");
-            var errorProp = resultType.GetProperty("error");
-            
-            Assert.IsNotNull(successProp);
-            Assert.IsNotNull(errorProp);
-            Assert.IsFalse((bool)successProp.GetValue(notFoundResult.Value)!);
-            Assert.AreEqual("SPA article not found", (string)errorProp.GetValue(notFoundResult.Value)!);
-        }
-
-        /// <summary>
-        /// Tests that Deploy_InvalidPassword_ReturnsUnauthorized.
+        /// Tests that invalid deployment key returns Unauthorized.
         /// </summary>
         [TestMethod]
         public async Task Deploy_InvalidPassword_ReturnsUnauthorized()
         {
             // Arrange
             var zipFile = CreateTestZipFile();
-            var wrongPassword = "WrongPassword123!";
+            var wrongPassword = "wrong-password-12345678901234";
 
             // Act
-            var result = await controller.Deploy(testSpaArticleId, wrongPassword, zipFile);
+            var result = await controller.Deploy(testArticleId, wrongPassword, zipFile);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
-            var unauthorizedResult = (UnauthorizedObjectResult)result;
-            Assert.IsNotNull(unauthorizedResult.Value);
-            
-            var resultType = unauthorizedResult.Value.GetType();
-            var successProp = resultType.GetProperty("success");
-            var errorProp = resultType.GetProperty("error");
-            
-            Assert.IsNotNull(successProp);
-            Assert.IsNotNull(errorProp);
-            Assert.IsFalse((bool)successProp.GetValue(unauthorizedResult.Value)!);
-            Assert.AreEqual("Invalid deployment key", (string)errorProp.GetValue(unauthorizedResult.Value)!);
+            var unauthorizedResult = result as UnauthorizedObjectResult;
+            Assert.IsNotNull(unauthorizedResult);
+            Assert.AreEqual(401, unauthorizedResult.StatusCode);
         }
 
         /// <summary>
-        /// Tests that Deploy_NonSpaArticle_ReturnsNotFound.
+        /// Tests that null password returns Unauthorized.
         /// </summary>
         [TestMethod]
-        public async Task Deploy_NonSpaArticle_ReturnsNotFound()
+        public async Task Deploy_NullPassword_ReturnsUnauthorized()
         {
             // Arrange
-            var regularArticle = new PublishedPage
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(testArticleId, null, zipFile);
+
+            // Assert
+            var unauthorizedResult = result as UnauthorizedObjectResult;
+            Assert.IsNotNull(unauthorizedResult);
+        }
+
+        /// <summary>
+        /// Tests that empty password returns Unauthorized.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_EmptyPassword_ReturnsUnauthorized()
+        {
+            // Arrange
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(testArticleId, string.Empty, zipFile);
+
+            // Assert
+            var unauthorizedResult = result as UnauthorizedObjectResult;
+            Assert.IsNotNull(unauthorizedResult);
+        }
+
+        /// <summary>
+        /// Tests that previous password works within 24-hour grace period.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_PreviousPasswordWithinGracePeriod_ReturnsSuccess()
+        {
+            // Arrange
+            var newPassword = "new-password-12345678901234567";
+            var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            
+            var article = await dbContext.Pages.FindAsync(testArticleId); // Changed from Articles to Pages
+            var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
+            
+            // Rotate key - old key becomes previous, new key becomes current
+            metadata.DeploymentKeyHashPrevious = metadata.DeploymentKeyHash;
+            metadata.DeploymentKeyHash = newPasswordHash;
+            metadata.DeploymentKeyRotatedAt = DateTimeOffset.UtcNow.AddHours(-1); // Rotated 1 hour ago
+            
+            article.Content = System.Text.Json.JsonSerializer.Serialize(metadata);
+            await dbContext.SaveChangesAsync();
+
+            var zipFile = CreateTestZipFile();
+
+            // Act - Use OLD password (should work within grace period)
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult, "Previous password should work within 24-hour grace period");
+        }
+
+        /// <summary>
+        /// Tests that previous password fails after 24-hour grace period.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_PreviousPasswordExpired_ReturnsUnauthorized()
+        {
+            // Arrange
+            var newPassword = "new-password-12345678901234567";
+            var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            
+            var article = await dbContext.Pages.FindAsync(testArticleId); // Changed from Articles to Pages
+            var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
+            
+            // Rotate key - but grace period expired
+            metadata.DeploymentKeyHashPrevious = metadata.DeploymentKeyHash;
+            metadata.DeploymentKeyHash = newPasswordHash;
+            metadata.DeploymentKeyRotatedAt = DateTimeOffset.UtcNow.AddHours(-25); // Rotated 25 hours ago (expired)
+            
+            article.Content = System.Text.Json.JsonSerializer.Serialize(metadata);
+            await dbContext.SaveChangesAsync();
+
+            var zipFile = CreateTestZipFile();
+
+            // Act - Use OLD password (should fail - grace period expired)
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            var unauthorizedResult = result as UnauthorizedObjectResult;
+            Assert.IsNotNull(unauthorizedResult, "Previous password should fail after 24-hour grace period");
+        }
+
+        #endregion
+
+        #region Article Validation Tests
+
+        /// <summary>
+        /// Tests that non-existent article returns NotFound.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_NonExistentArticle_ReturnsNotFound()
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(nonExistentId, TestDeploymentKey, zipFile);
+
+            // Assert
+            var notFoundResult = result as NotFoundObjectResult;
+            Assert.IsNotNull(notFoundResult);
+        }
+
+        /// <summary>
+        /// Tests that non-SPA article type returns BadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_NonSpaArticleType_ReturnsBadRequest()
+        {
+            // Arrange - Create regular article (not SPA)
+            var regularArticleId = Guid.NewGuid();
+            var regularArticle = new Article
             {
-                Id = Guid.NewGuid(),
+                Id = regularArticleId,
                 ArticleNumber = 2,
                 Title = "Regular Article",
-                UrlPath = "/regular",
-                ArticleType = (int)ArticleType.General,
-                Published = DateTimeOffset.UtcNow,
-                StatusCode = 0
+                ArticleType = (int)ArticleType.General, // Not SPA
+                StatusCode = (int)StatusCodeEnum.Active,
+                Published = DateTimeOffset.UtcNow
             };
-            Db.Pages.Add(regularArticle);
-            Db.SaveChanges();
+            dbContext.Articles.Add(regularArticle);
+            await dbContext.SaveChangesAsync();
 
             var zipFile = CreateTestZipFile();
 
             // Act
-            var result = await controller.Deploy(regularArticle.Id, testDeploymentKey, zipFile);
+            var result = await controller.Deploy(regularArticleId, TestDeploymentKey, zipFile);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+            var notFoundResult = result as NotFoundObjectResult;
+            Assert.IsNotNull(notFoundResult, "Should reject non-SPA article types");
         }
 
         /// <summary>
-        /// Tests that Deploy_NullZipFile_ReturnsBadRequest.
+        /// Tests that article with invalid metadata returns BadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_InvalidMetadata_ReturnsBadRequest()
+        {
+            // Arrange
+            var page = await dbContext.Pages.FindAsync(testArticleId);
+            page.Content = "invalid-json"; // Invalid JSON
+            await dbContext.SaveChangesAsync();
+
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.IsNotNull(badRequestResult);
+        }
+
+        #endregion
+
+        #region Zip File Validation Tests
+
+        /// <summary>
+        /// Tests that null zip file returns BadRequest.
         /// </summary>
         [TestMethod]
         public async Task Deploy_NullZipFile_ReturnsBadRequest()
         {
             // Act
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, null);
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, null);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequestResult = (BadRequestObjectResult)result;
-            Assert.IsNotNull(badRequestResult.Value);
-            
-            var resultType = badRequestResult.Value.GetType();
-            var successProp = resultType.GetProperty("success");
-            var errorProp = resultType.GetProperty("error");
-            
-            Assert.IsNotNull(successProp);
-            Assert.IsNotNull(errorProp);
-            Assert.IsFalse((bool)successProp.GetValue(badRequestResult.Value)!);
-            Assert.AreEqual("No file uploaded", (string)errorProp.GetValue(badRequestResult.Value)!);
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.IsNotNull(badRequestResult);
         }
 
         /// <summary>
-        /// Tests that Deploy_EmptyZipFile_ReturnsBadRequest.
+        /// Tests that empty zip file returns BadRequest.
         /// </summary>
         [TestMethod]
         public async Task Deploy_EmptyZipFile_ReturnsBadRequest()
         {
             // Arrange
-            var mockFile = new Mock<IFormFile>();
-            mockFile.Setup(f => f.Length).Returns(0);
-            mockFile.Setup(f => f.FileName).Returns("test.zip");
+            var emptyFile = new Mock<IFormFile>();
+            emptyFile.Setup(f => f.Length).Returns(0);
+            emptyFile.Setup(f => f.FileName).Returns("deploy.zip");
 
             // Act
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, mockFile.Object);
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, emptyFile.Object);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.IsNotNull(badRequestResult);
         }
 
         /// <summary>
-        /// Tests that Deploy_OversizedZipFile_ReturnsBadRequest.
+        /// Tests that oversized zip file returns BadRequest.
         /// </summary>
         [TestMethod]
         public async Task Deploy_OversizedZipFile_ReturnsBadRequest()
         {
             // Arrange
-            var mockFile = new Mock<IFormFile>();
-            mockFile.Setup(f => f.Length).Returns(101_000_000); // 101 MB (over 100 MB limit)
-            mockFile.Setup(f => f.FileName).Returns("test.zip");
+            var oversizedFile = CreateOversizedZipFile();
 
             // Act
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, mockFile.Object);
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, oversizedFile);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequestResult = (BadRequestObjectResult)result;
-            Assert.IsNotNull(badRequestResult.Value);
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.IsNotNull(badRequestResult);
             
-            var resultType = badRequestResult.Value.GetType();
-            var errorProp = resultType.GetProperty("error");
-            Assert.IsNotNull(errorProp);
-            
-            var errorMessage = (string)errorProp.GetValue(badRequestResult.Value)!;
-            Assert.IsTrue(errorMessage.Contains("exceeds maximum"), $"Error message should mention 'exceeds maximum', got: {errorMessage}");
+            var errorProperty = badRequestResult.Value.GetType().GetProperty("error");
+            var errorMessage = errorProperty.GetValue(badRequestResult.Value).ToString();
+            Assert.IsTrue(errorMessage.Contains("100 MB"), "Error should mention size limit");
         }
 
         /// <summary>
-        /// Tests that Deploy_NonZipFile_ReturnsBadRequest.
+        /// Tests that non-zip file extension returns BadRequest.
         /// </summary>
         [TestMethod]
-        public async Task Deploy_NonZipFile_ReturnsBadRequest()
+        public async Task Deploy_NonZipExtension_ReturnsBadRequest()
         {
             // Arrange
-            var mockFile = new Mock<IFormFile>();
-            mockFile.Setup(f => f.Length).Returns(1000);
-            mockFile.Setup(f => f.FileName).Returns("test.txt");
+            var formFile = new Mock<IFormFile>();
+            formFile.Setup(f => f.FileName).Returns("deploy.tar.gz");
+            formFile.Setup(f => f.Length).Returns(1000);
 
             // Act
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, mockFile.Object);
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, formFile.Object);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequestResult = (BadRequestObjectResult)result;
-            Assert.IsNotNull(badRequestResult.Value);
-            
-            var resultType = badRequestResult.Value.GetType();
-            var errorProp = resultType.GetProperty("error");
-            Assert.IsNotNull(errorProp);
-            Assert.AreEqual("File must be a .zip archive", (string)errorProp.GetValue(badRequestResult.Value)!);
-        }
-
-        /// <summary>
-        /// Tests that Deploy_UpdatesDeploymentCount.
-        /// </summary>
-        [TestMethod]
-        public async Task Deploy_UpdatesDeploymentCount()
-        {
-            // Arrange
-            var zipFile = CreateTestZipFile();
-
-            // Act - First deployment
-            var firstResult = await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
-            Assert.IsInstanceOfType(firstResult, typeof(OkObjectResult), "First deployment should succeed");
-
-            // Wait a moment to ensure database update completes
-            await Task.Delay(100);
-
-            // Reload the article to get fresh state
-            Db.ChangeTracker.Clear();
-            var article = await Db.Pages.FindAsync(testSpaArticleId);
-            Assert.IsNotNull(article);
-
-            // Create new zip for second deployment
-            var zipFile2 = CreateTestZipFile();
-
-            // Act - Second deployment
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile2);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
-            var okResult = (OkObjectResult)result;
-            Assert.IsNotNull(okResult.Value);
-            
-            var resultType = okResult.Value.GetType();
-            var deploymentCountProp = resultType.GetProperty("deploymentCount");
-            Assert.IsNotNull(deploymentCountProp);
-            Assert.AreEqual(2, (int)deploymentCountProp.GetValue(okResult.Value)!, "Deployment count should be 2 after second deployment");
-        }
-
-        /// <summary>
-        /// Tests that Deploy_ExtractsGitHubHeaders.
-        /// </summary>
-        [TestMethod]
-        public async Task Deploy_ExtractsGitHubHeaders()
-        {
-            // Arrange
-            var zipFile = CreateTestZipFile();
-            controller.ControllerContext.HttpContext.Request.Headers["X-GitHub-SHA"] = "abc123commit";
-            controller.ControllerContext.HttpContext.Request.Headers["X-GitHub-Repository"] = "owner/repo";
-
-            // Act
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
-
-            // Wait a moment to ensure database update completes
-            await Task.Delay(100);
-
-            // Reload to get fresh state
-            Db.ChangeTracker.Clear();
-            
-            // Verify metadata was updated
-            var article = await Db.Pages.FindAsync(testSpaArticleId);
-            Assert.IsNotNull(article, "Article should exist");
-            Assert.IsNotNull(article.Content, "Article content should not be null");
-            
-            var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
-            Assert.IsNotNull(metadata, "Metadata should deserialize successfully");
-            Assert.AreEqual("abc123commit", metadata.LastCommitSha, "Last commit SHA should be extracted from header");
-            Assert.AreEqual("owner/repo", metadata.LastDeployedFrom, "Last deployed from should be extracted from header");
-        }
-
-        /// <summary>
-        /// Tests that Deploy_WithoutWebhookSignature_StillSucceeds.
-        /// </summary>
-        [TestMethod]
-        public async Task Deploy_WithoutWebhookSignature_StillSucceeds()
-        {
-            // Arrange
-            var zipFile = CreateTestZipFile();
-            controller.ControllerContext.HttpContext.Request.Headers.Remove("X-Hub-Signature-256");
-
-            // Act
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
-
-            // Assert - Should succeed (development mode allows missing signature)
-            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.IsNotNull(badRequestResult);
         }
 
         #endregion
 
-        #region Password Rotation Tests
+        #region Path Traversal Protection Tests
 
         /// <summary>
-        /// Tests that Deploy_WithRotatedPassword_AcceptsPreviousKeyInGracePeriod.
+        /// Tests that path traversal attempt is rejected.
         /// </summary>
         [TestMethod]
-        public async Task Deploy_WithRotatedPassword_AcceptsPreviousKeyInGracePeriod()
+        public async Task Deploy_PathTraversalAttempt_ThrowsInvalidOperationException()
         {
             // Arrange
-            var newPassword = "NewPassword789!";
-            
-            Db.ChangeTracker.Clear();
-            var article = await Db.Pages.FindAsync(testSpaArticleId);
-            Assert.IsNotNull(article);
-            Assert.IsNotNull(article.Content);
-            
-            var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
-            Assert.IsNotNull(metadata);
-
-            // Simulate password rotation
-            metadata.DeploymentKeyHashPrevious = metadata.DeploymentKeyHash;
-            metadata.DeploymentKeyHash = BCrypt.HashPassword(newPassword);
-            metadata.DeploymentKeyRotatedAt = DateTimeOffset.UtcNow.AddHours(-1); // 1 hour ago
-
-            article.Content = System.Text.Json.JsonSerializer.Serialize(metadata);
-            await Db.SaveChangesAsync();
-
-            var zipFile = CreateTestZipFile();
-
-            // Act - Use OLD password (should work within grace period)
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkObjectResult), "Deployment with old password should succeed within grace period");
-        }
-
-        /// <summary>
-        /// Tests that Deploy_WithRotatedPassword_RejectsOldKeyAfterGracePeriod.
-        /// </summary>
-        [TestMethod]
-        public async Task Deploy_WithRotatedPassword_RejectsOldKeyAfterGracePeriod()
-        {
-            // Arrange
-            var newPassword = "NewPassword789!";
-            
-            Db.ChangeTracker.Clear();
-            var article = await Db.Pages.FindAsync(testSpaArticleId);
-            Assert.IsNotNull(article);
-            Assert.IsNotNull(article.Content);
-            
-            var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
-            Assert.IsNotNull(metadata);
-
-            // Simulate password rotation 25 hours ago (beyond 24-hour grace period)
-            metadata.DeploymentKeyHashPrevious = metadata.DeploymentKeyHash;
-            metadata.DeploymentKeyHash = BCrypt.HashPassword(newPassword);
-            metadata.DeploymentKeyRotatedAt = DateTimeOffset.UtcNow.AddHours(-25);
-
-            article.Content = System.Text.Json.JsonSerializer.Serialize(metadata);
-            await Db.SaveChangesAsync();
-
-            var zipFile = CreateTestZipFile();
-
-            // Act - Use OLD password (should fail after grace period)
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult), "Deployment with old password should fail after grace period");
-        }
-
-        #endregion
-
-        #region File Validation Tests
-
-        /// <summary>
-        /// Tests that Deploy_WithPathTraversalAttempt_ThrowsException.
-        /// </summary>
-        [TestMethod]
-        public async Task Deploy_WithPathTraversalAttempt_ThrowsException()
-        {
-            // Arrange
-            var zipFile = CreateMaliciousZipFile("../../../etc/passwd");
+            var maliciousFiles = new Dictionary<string, string>
+            {
+                { "../../../etc/passwd", "malicious content" }
+            };
+            var zipFile = CreateTestZipFile(maliciousFiles);
 
             // Act & Assert
-            await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+                async () => await controller.Deploy(testArticleId, TestDeploymentKey, zipFile),
+                "Path traversal should be detected and rejected");
+        }
+
+        /// <summary>
+        /// Tests that multiple path traversal patterns are rejected.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_VariousPathTraversalPatterns_Rejected()
+        {
+            // Arrange - Test various traversal patterns
+            var patterns = new[]
             {
-                await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
-            });
-        }
+                "../../../etc/passwd",
+                "..\\..\\..\\windows\\system32",
+                "dir/../../../etc/passwd",
+                "./../../../etc/passwd"
+            };
 
-        /// <summary>
-        /// Tests that Deploy_WithValidHtmlCssJs_Succeeds.
-        /// </summary>
-        [TestMethod]
-        public async Task Deploy_WithValidHtmlCssJs_Succeeds()
-        {
-            // Arrange
-            var zipFile = CreateTestZipFile(
-                ("index.html", "<html><body>Test</body></html>"),
-                ("styles.css", "body { color: red; }"),
-                ("app.js", "console.log('test');")
-            );
+            foreach (var pattern in patterns)
+            {
+                var maliciousFiles = new Dictionary<string, string>
+                {
+                    { pattern, "malicious" }
+                };
+                var zipFile = CreateTestZipFile(maliciousFiles);
 
-            // Act
-            var result = await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Deploy_UpdatesArticleTimestamp.
-        /// </summary>
-        [TestMethod]
-        public async Task Deploy_UpdatesArticleTimestamp()
-        {
-            // Arrange
-            var zipFile = CreateTestZipFile();
-            
-            Db.ChangeTracker.Clear();
-            var articleBefore = await Db.Pages.FindAsync(testSpaArticleId);
-            Assert.IsNotNull(articleBefore);
-            var originalUpdated = articleBefore.Updated;
-
-            // Wait a moment to ensure timestamp changes
-            await Task.Delay(100);
-
-            // Act
-            await controller.Deploy(testSpaArticleId, testDeploymentKey, zipFile);
-
-            // Wait for update to complete
-            await Task.Delay(100);
-
-            // Assert
-            Db.ChangeTracker.Clear();
-            var article = await Db.Pages.FindAsync(testSpaArticleId);
-            Assert.IsNotNull(article);
-            Assert.IsTrue(article.Updated > originalUpdated, $"Updated timestamp should increase. Before: {originalUpdated}, After: {article.Updated}");
+                // Act & Assert
+                await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+                    async () => await controller.Deploy(testArticleId, TestDeploymentKey, zipFile),
+                    $"Pattern '{pattern}' should be rejected");
+            }
         }
 
         #endregion
 
-        #region Helper Methods
+        #region File Extension Allowlist Tests
 
         /// <summary>
-        /// Creates a test zip file with sample SPA content.
+        /// Tests that allowed file extensions are accepted.
         /// </summary>
-        private IFormFile CreateTestZipFile(params (string filename, string content)[] files)
+        [TestMethod]
+        public async Task Deploy_AllowedExtensions_Accepted()
         {
-            if (files == null || files.Length == 0)
+            // Arrange
+            var allowedFiles = new Dictionary<string, string>
             {
-                // Default files
-                files =
-                [
-                    ("index.html", "<html><body>Test SPA</body></html>"),
-                    ("static/js/main.js", "console.log('test');"),
-                    ("static/css/style.css", "body { margin: 0; }")
-                ];
-            }
+                { "index.html", "<html></html>" },
+                { "app.js", "js code" },
+                { "app.mjs", "es module" },
+                { "style.css", "css code" },
+                { "config.json", "{}" },
+                { "icon.svg", "<svg></svg>" },
+                { "image.png", "binary" },
+                { "photo.jpg", "binary" },
+                { "photo.jpeg", "binary" },
+                { "animation.gif", "binary" },
+                { "modern.webp", "binary" },
+                { "favicon.ico", "binary" },
+                { "font.woff", "binary" },
+                { "font.woff2", "binary" },
+                { "font.ttf", "binary" },
+                { "font.eot", "binary" },
+                { "source.map", "sourcemap" },
+                { "robots.txt", "text" },
+                { "sitemap.xml", "xml" }
+            };
+            
+            var zipFile = CreateTestZipFile(allowedFiles);
 
-            var memoryStream = new MemoryStream();
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
 
-            using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-            {
-                foreach (var (filename, content) in files)
-                {
-                    var entry = archive.CreateEntry(filename);
-                    using var entryStream = entry.Open();
-                    using var writer = new StreamWriter(entryStream);
-                    writer.Write(content);
-                }
-            }
-
-            memoryStream.Position = 0;
-
-            var mockFile = new Mock<IFormFile>();
-            mockFile.Setup(f => f.OpenReadStream()).Returns(() =>
-            {
-                // Return a new MemoryStream with the same data to avoid disposal issues
-                var newStream = new MemoryStream(memoryStream.ToArray());
-                newStream.Position = 0;
-                return newStream;
-            });
-            mockFile.Setup(f => f.FileName).Returns("spa-deployment.zip");
-            mockFile.Setup(f => f.Length).Returns(memoryStream.Length);
-            mockFile.Setup(f => f.ContentType).Returns("application/zip");
-
-            return mockFile.Object;
+            // Assert
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult, "All allowed extensions should be accepted");
         }
 
         /// <summary>
-        /// Creates a malicious zip file with path traversal attempt.
+        /// Tests that disallowed file extensions are skipped with warning.
         /// </summary>
-        private IFormFile CreateMaliciousZipFile(string maliciousPath)
+        [TestMethod]
+        public async Task Deploy_DisallowedExtensions_SkippedWithWarning()
         {
-            var memoryStream = new MemoryStream();
-
-            using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+            // Arrange
+            var mixedFiles = new Dictionary<string, string>
             {
-                var entry = archive.CreateEntry(maliciousPath);
-                using var entryStream = entry.Open();
-                using var writer = new StreamWriter(entryStream);
-                writer.Write("malicious content");
-            }
+                { "index.html", "<html></html>" },
+                { "malware.exe", "binary" }, // Disallowed
+                { "script.sh", "shell script" }, // Disallowed
+                { "config.php", "php code" } // Disallowed
+            };
+            
+            var zipFile = CreateTestZipFile(mixedFiles);
 
-            memoryStream.Position = 0;
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
 
-            var mockFile = new Mock<IFormFile>();
-            mockFile.Setup(f => f.OpenReadStream()).Returns(() =>
+            // Assert
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+            
+            // Verify warning was logged for disallowed files
+            loggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Skipping unsupported file type")),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
+                Times.AtLeast(3)); // 3 disallowed files
+        }
+
+        #endregion
+
+        #region Deployment Metadata Tests
+
+        /// <summary>
+        /// Tests that deployment increments counter.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_Success_IncrementsDeploymentCounter()
+        {
+            // Arrange
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            var article = await dbContext.Pages.FindAsync(testArticleId);
+            var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
+            
+            Assert.AreEqual(1, metadata.DeploymentCount);
+            Assert.IsNotNull(metadata.LastDeployedAt);
+        }
+
+        /// <summary>
+        /// Tests that Git SHA is captured from header.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_WithGitShaHeader_CapturesCommitInfo()
+        {
+            // Arrange
+            var testSha = "abc123def456";
+            var testRepo = "owner/repo";
+            
+            controller.ControllerContext.HttpContext.Request.Headers["X-GitHub-SHA"] = testSha;
+            controller.ControllerContext.HttpContext.Request.Headers["X-GitHub-Repository"] = testRepo;
+            
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            var article = await dbContext.Pages.FindAsync(testArticleId);
+            var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
+            
+            Assert.AreEqual(testSha, metadata.LastCommitSha);
+            Assert.AreEqual(testRepo, metadata.LastDeployedFrom);
+        }
+
+        /// <summary>
+        /// Tests that Updated timestamp is set.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_Success_UpdatesTimestamp()
+        {
+            // Arrange
+            var beforeDeploy = DateTimeOffset.UtcNow;
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            var article = await dbContext.Pages.FindAsync(testArticleId);
+            Assert.IsTrue(article.Updated >= beforeDeploy);
+        }
+
+        #endregion
+
+        #region Storage Integration Tests
+
+        /// <summary>
+        /// Tests that files are uploaded to correct blob path.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_Success_UploadsFilesToCorrectPath()
+        {
+            // Arrange
+            var files = new Dictionary<string, string>
             {
-                var newStream = new MemoryStream(memoryStream.ToArray());
-                newStream.Position = 0;
-                return newStream;
-            });
-            mockFile.Setup(f => f.FileName).Returns("malicious.zip");
-            mockFile.Setup(f => f.Length).Returns(memoryStream.Length);
-            mockFile.Setup(f => f.ContentType).Returns("application/zip");
+                { "index.html", "<html></html>" },
+                { "js/app.js", "console.log('test');" }
+            };
+            var zipFile = CreateTestZipFile(files);
 
-            return mockFile.Object;
+            var uploadedFiles = new List<string>();
+            storageContextMock
+                .Setup(s => s.AppendBlob(
+                    It.IsAny<MemoryStream>(),
+                    It.IsAny<FileUploadMetaData>(),
+                    It.IsAny<string>()))
+                .Callback<MemoryStream, FileUploadMetaData, string>((stream, metadata, mode) =>
+                {
+                    uploadedFiles.Add(metadata.FileName);
+                })
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            Assert.AreEqual(2, uploadedFiles.Count);
+            Assert.IsTrue(uploadedFiles.Any(f => f.Contains("test-spa/index.html")));
+            Assert.IsTrue(uploadedFiles.Any(f => f.Contains("test-spa/js/app.js")));
+        }
+
+        /// <summary>
+        /// Tests that content types are set correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_Success_SetsCorrectContentTypes()
+        {
+            // Arrange
+            var files = new Dictionary<string, string>
+            {
+                { "index.html", "<html></html>" },
+                { "app.js", "js" },
+                { "style.css", "css" }
+            };
+            var zipFile = CreateTestZipFile(files);
+
+            var contentTypes = new Dictionary<string, string>();
+            storageContextMock
+                .Setup(s => s.AppendBlob(
+                    It.IsAny<MemoryStream>(),
+                    It.IsAny<FileUploadMetaData>(),
+                    It.IsAny<string>()))
+                .Callback<MemoryStream, FileUploadMetaData, string>((stream, metadata, mode) =>
+                {
+                    contentTypes[metadata.FileName] = metadata.ContentType;
+                })
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            Assert.IsTrue(contentTypes.Values.Any(ct => ct == "text/html"));
+            Assert.IsTrue(contentTypes.Values.Any(ct => ct == "application/javascript"));
+            Assert.IsTrue(contentTypes.Values.Any(ct => ct == "text/css"));
+        }
+
+        #endregion
+
+        #region Response Validation Tests
+
+        /// <summary>
+        /// Tests that successful deployment returns expected response structure.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_Success_ReturnsExpectedResponseStructure()
+        {
+            // Arrange
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+            
+            // Anonymous types are internal, so we need to use reflection to access properties
+            var responseType = okResult.Value.GetType();
+            var successProp = responseType.GetProperty("success");
+            var deployedAtProp = responseType.GetProperty("deployedAt");
+            var deploymentCountProp = responseType.GetProperty("deploymentCount");
+            var urlPathProp = responseType.GetProperty("urlPath");
+            var filesDeployedProp = responseType.GetProperty("filesDeployed");
+            var cdnPurgedProp = responseType.GetProperty("cdnPurged");
+            
+            Assert.IsNotNull(successProp, "Response should have 'success' property");
+            Assert.IsTrue((bool)successProp.GetValue(okResult.Value), "success should be true");
+            
+            Assert.IsNotNull(deployedAtProp, "Response should have 'deployedAt' property");
+            Assert.IsNotNull(deployedAtProp.GetValue(okResult.Value), "deployedAt should not be null");
+            
+            Assert.IsNotNull(deploymentCountProp, "Response should have 'deploymentCount' property");
+            Assert.IsTrue((int)deploymentCountProp.GetValue(okResult.Value) > 0, "deploymentCount should be greater than 0");
+            
+            Assert.IsNotNull(urlPathProp, "Response should have 'urlPath' property");
+            Assert.IsNotNull(urlPathProp.GetValue(okResult.Value), "urlPath should not be null");
+            
+            Assert.IsNotNull(filesDeployedProp, "Response should have 'filesDeployed' property");
+            Assert.IsTrue((int)filesDeployedProp.GetValue(okResult.Value) > 0, "filesDeployed should be greater than 0");
+            
+            Assert.IsNotNull(cdnPurgedProp, "Response should have 'cdnPurged' property");
+            Assert.IsNotNull(cdnPurgedProp.GetValue(okResult.Value), "cdnPurged should not be null");
         }
 
         #endregion

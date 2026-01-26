@@ -1,7 +1,7 @@
 # Test Documentation Report
 
 
-Generated: 2026-01-26T11:52:38.1749267-06:00
+Generated: 2026-01-26T13:05:53.5667843-06:00
 
 
 | File | Line | Method | HasXmlSummary |
@@ -56,27 +56,27 @@ Generated: 2026-01-26T11:52:38.1749267-06:00
 | D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 747 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
 | D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 780 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
 | D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 809 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 842 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 874 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 901 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 921 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 944 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 964 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 987 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1010 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1033 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1057 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1079 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1098 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1118 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1140 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1160 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1182 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1206 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1225 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1248 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1270 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
-| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1296 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 846 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 878 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 905 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 925 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 948 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 968 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 991 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1014 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1037 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1061 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1083 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1102 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1122 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1144 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1164 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1186 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1210 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1229 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1252 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1274 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
+| D:\source\SkyCMS\AspNetCore.Identity.FlexDb.Tests\UserManagerInterOperabilityTests.cs | 1300 | [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)] | True |
 | D:\source\SkyCMS\JestTests\tests\Areas\Setup\DatabaseInitializationTests.cs | 81 | SingleTenant_CompleteSetup_InitializesDatabaseSchema | True |
 | D:\source\SkyCMS\JestTests\tests\Areas\Setup\DatabaseInitializationTests.cs | 134 | SingleTenant_CompleteSetup_CreatesDefaultLayout | True |
 | D:\source\SkyCMS\JestTests\tests\Areas\Setup\DatabaseInitializationTests.cs | 183 | MultiTenant_CompleteSetup_UsesEditorConnection | True |
@@ -1326,22 +1326,29 @@ Generated: 2026-01-26T11:52:38.1749267-06:00
 | D:\source\SkyCMS\Tests\Controllers\ContactsControllerTests.cs | 1400 | RemoveMailChimp_WithMultipleMailChimpSettings_RemovesAll | True |
 | D:\source\SkyCMS\Tests\Controllers\ContactsControllerTests.cs | 1428 | ExportContacts_OnError_LogsWithErrorLevel | True |
 | D:\source\SkyCMS\Tests\Controllers\ContactsControllerTests.cs | 1451 | MailChimp_Post_OnSuccess_LogsInformation | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 97 | Deploy_ValidRequest_ReturnsOkWithMetadata | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 124 | Deploy_InvalidArticleId_ReturnsNotFound | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 152 | Deploy_InvalidPassword_ReturnsUnauthorized | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 180 | Deploy_NonSpaArticle_ReturnsNotFound | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 209 | Deploy_NullZipFile_ReturnsBadRequest | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 233 | Deploy_EmptyZipFile_ReturnsBadRequest | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 251 | Deploy_OversizedZipFile_ReturnsBadRequest | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 278 | Deploy_NonZipFile_ReturnsBadRequest | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 303 | Deploy_UpdatesDeploymentCount | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 341 | Deploy_ExtractsGitHubHeaders | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 375 | Deploy_WithoutWebhookSignature_StillSucceeds | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 396 | Deploy_WithRotatedPassword_AcceptsPreviousKeyInGracePeriod | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 430 | Deploy_WithRotatedPassword_RejectsOldKeyAfterGracePeriod | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 468 | Deploy_WithPathTraversalAttempt_ThrowsException | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 484 | Deploy_WithValidHtmlCssJs_Succeeds | True |
-| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 504 | Deploy_UpdatesArticleTimestamp | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 171 | Deploy_ValidPassword_ReturnsSuccess | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 189 | Deploy_InvalidPassword_ReturnsUnauthorized | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 208 | Deploy_NullPassword_ReturnsUnauthorized | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 225 | Deploy_EmptyPassword_ReturnsUnauthorized | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 242 | Deploy_PreviousPasswordWithinGracePeriod_ReturnsSuccess | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 273 | Deploy_PreviousPasswordExpired_ReturnsUnauthorized | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 308 | Deploy_NonExistentArticle_ReturnsNotFound | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 326 | Deploy_NonSpaArticleType_ReturnsBadRequest | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 356 | Deploy_InvalidMetadata_ReturnsBadRequest | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 381 | Deploy_NullZipFile_ReturnsBadRequest | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 395 | Deploy_EmptyZipFile_ReturnsBadRequest | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 414 | Deploy_OversizedZipFile_ReturnsBadRequest | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 434 | Deploy_NonZipExtension_ReturnsBadRequest | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 457 | Deploy_PathTraversalAttempt_ThrowsInvalidOperationException | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 476 | Deploy_VariousPathTraversalPatterns_Rejected | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 510 | Deploy_AllowedExtensions_Accepted | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 550 | Deploy_DisallowedExtensions_SkippedWithWarning | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 589 | Deploy_Success_IncrementsDeploymentCounter | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 609 | Deploy_WithGitShaHeader_CapturesCommitInfo | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 635 | Deploy_Success_UpdatesTimestamp | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 657 | Deploy_Success_UploadsFilesToCorrectPath | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 692 | Deploy_Success_SetsCorrectContentTypes | True |
+| D:\source\SkyCMS\Tests\Controllers\DeploymentControllerTests.cs | 732 | Deploy_Success_ReturnsExpectedResponseStructure | True |
 | D:\source\SkyCMS\Tests\Controllers\EditorControllerSaveTests.cs | 79 | EditCode_Post_UsesSaveArticleCommand | True |
 | D:\source\SkyCMS\Tests\Controllers\EditorControllerSaveTests.cs | 111 | EditCode_Post_WithValidationErrors_ReturnsErrors | True |
 | D:\source\SkyCMS\Tests\Controllers\EditorControllerSaveTests.cs | 149 | Edit_Post_UsesSaveArticleCommand | True |

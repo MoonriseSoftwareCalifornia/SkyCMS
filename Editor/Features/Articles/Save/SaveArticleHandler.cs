@@ -130,7 +130,21 @@ namespace Sky.Editor.Features.Articles.Save
                 currentArticle.Category = command.Category ?? string.Empty;
                 currentArticle.Published = command.Published;
                 currentArticle.UrlPath = command.UrlPath ?? currentArticle.UrlPath;
-                currentArticle.Introduction = !string.IsNullOrWhiteSpace(command.Introduction) ? command.Introduction : currentArticle.Introduction;
+                
+                // Handle introduction: use provided value, or auto-generate for blog posts
+                if (!string.IsNullOrWhiteSpace(command.Introduction))
+                {
+                    currentArticle.Introduction = command.Introduction;
+                }
+                else if (command.ArticleType == Cosmos.Cms.Common.ArticleType.BlogPost)
+                {
+                    // Auto-generate introduction from content for blog posts
+                    currentArticle.Introduction = htmlService.ExtractIntroduction(processedContent);
+                }
+                else
+                {
+                    currentArticle.Introduction = currentArticle.Introduction;
+                }
 
                 // Check if title is changing
                 var isTitleChanging = !oldTitle.Equals(currentArticle.Title);

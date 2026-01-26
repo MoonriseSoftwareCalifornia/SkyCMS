@@ -1,0 +1,319 @@
+// <copyright file="BlogServiceTests.cs" company="Moonrise Software, LLC">
+// Copyright (c) Moonrise Software, LLC. All rights reserved.
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// </copyright>
+
+namespace Sky.Tests.Services
+{
+    using Cosmos.Cms.Common;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+
+    /// <summary>
+    /// Unit tests for blog-related functionality.
+    /// Tests blog post creation, listing, pagination, categories, and RSS feed generation.
+    /// </summary>
+    [TestClass]
+    [DoNotParallelize]
+    public class BlogServiceTests : SkyCmsTestBase
+    {
+        [TestInitialize]
+        public void Setup()
+        {
+            InitializeTestContext(seedLayout: true);
+        }
+
+        #region Blog Post Creation Tests
+
+        /// <summary>
+        /// Tests that creating a blog post sets correct article type.
+        /// </summary>
+        [TestMethod]
+        public async Task CreateBlogPost_SetsArticleTypeToBlogPost()
+        {
+            // Act
+            var blogPost = await Logic.CreateArticle("My Blog Post", TestUserId, null, "default", ArticleType.BlogPost);
+
+            // Assert
+            Assert.AreEqual(ArticleType.BlogPost, blogPost.ArticleType);
+        }
+
+        /// <summary>
+        /// Tests that blog post has correct blog key.
+        /// </summary>
+        [TestMethod]
+        public async Task CreateBlogPost_SetsBlogKey()
+        {
+            // Act
+            var blogPost = await Logic.CreateArticle("Test Post", TestUserId, null, "tech-blog", ArticleType.BlogPost);
+
+            // Assert
+            var dbArticle = await Db.Articles.FindAsync(blogPost.Id);
+            Assert.AreEqual("tech-blog", dbArticle.BlogKey);
+        }
+
+        /// <summary>
+        /// Tests that blog post URL includes date in path.
+        /// </summary>
+        [TestMethod]
+        public async Task CreateBlogPost_GeneratesDateBasedUrl()
+        {
+            // Arrange
+            // Create home page first
+            await Logic.CreateArticle("Home", TestUserId);
+
+            // Act
+            var blogPost = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
+
+            // Assert
+            // URL should contain year or be formatted appropriately
+            Assert.IsNotNull(blogPost.UrlPath);
+            Assert.IsTrue(blogPost.UrlPath.Length > 0);
+        }
+
+        /// <summary>
+        /// Tests that blog post can have category.
+        /// </summary>
+        [TestMethod]
+        public async Task CreateBlogPost_WithCategory_SetsCategory()
+        {
+            // Arrange
+            var blogPost = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
+            blogPost.Category = "Technology";
+
+            // Act
+            var result = await Logic.SaveArticle(blogPost, TestUserId);
+
+            // Assert
+            Assert.AreEqual("Technology", result.Model.Category);
+        }
+
+        #endregion
+
+        #region Blog Listing and Pagination Tests
+
+        /// <summary>
+        /// Tests that blog posts can be retrieved by blog key.
+        /// </summary>
+        [TestMethod]
+        public async Task GetBlogPosts_FiltersByBlogKey()
+        {
+            // Arrange
+            await Logic.CreateArticle("Home", TestUserId); // Home page
+            await Logic.CreateArticle("Post 1", TestUserId, null, "blog1", ArticleType.BlogPost);
+            await Logic.CreateArticle("Post 2", TestUserId, null, "blog1", ArticleType.BlogPost);
+            await Logic.CreateArticle("Post 3", TestUserId, null, "blog2", ArticleType.BlogPost);
+
+            // Act
+            var blog1Posts = await Db.Articles
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost && a.BlogKey == "blog1")
+                .CountAsync();
+
+            // Assert
+            Assert.AreEqual(2, blog1Posts);
+        }
+
+        /// <summary>
+        /// Tests that published blog posts can be queried.
+        /// </summary>
+        [TestMethod]
+        public async Task GetPublishedBlogPosts_ReturnsOnlyPublished()
+        {
+            // Arrange
+            await Logic.CreateArticle("Home", TestUserId);
+            
+            var post1 = await Logic.CreateArticle("Published Post", TestUserId, null, "default", ArticleType.BlogPost);
+            await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow);
+            
+            var post2 = await Logic.CreateArticle("Draft Post", TestUserId, null, "default", ArticleType.BlogPost);
+            // Don't publish post2
+
+            // Act
+            var publishedCount = await Db.Articles
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
+                    && a.BlogKey == "default" 
+                    && a.Published != null)
+                .CountAsync();
+
+            // Assert
+            Assert.AreEqual(1, publishedCount);
+        }
+
+        /// <summary>
+        /// Tests that blog posts are ordered by published date descending.
+        /// </summary>
+        [TestMethod]
+        public async Task GetBlogPosts_OrdersByPublishedDateDescending()
+        {
+            // Arrange
+            await Logic.CreateArticle("Home", TestUserId);
+            
+            var post1 = await Logic.CreateArticle("Old Post", TestUserId, null, "default", ArticleType.BlogPost);
+            await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow.AddDays(-2));
+            
+            await Task.Delay(100); // Ensure different timestamps
+            
+            var post2 = await Logic.CreateArticle("New Post", TestUserId, null, "default", ArticleType.BlogPost);
+            await Logic.PublishArticle(post2.Id, DateTimeOffset.UtcNow);
+
+            // Act
+            var posts = await Db.Articles
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
+                    && a.BlogKey == "default" 
+                    && a.Published != null)
+                .OrderByDescending(a => a.Published)
+                .ToListAsync();
+
+            // Assert
+            Assert.AreEqual(2, posts.Count);
+            Assert.IsTrue(posts[0].Published > posts[1].Published);
+        }
+
+        /// <summary>
+        /// Tests pagination of blog posts.
+        /// </summary>
+        [TestMethod]
+        public async Task GetBlogPosts_Pagination_ReturnsCorrectPage()
+        {
+            // Arrange
+            await Logic.CreateArticle("Home", TestUserId);
+            
+            for (int i = 1; i <= 15; i++)
+            {
+                var post = await Logic.CreateArticle($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
+                await Logic.PublishArticle(post.Id, DateTimeOffset.UtcNow.AddMinutes(i));
+                await Task.Delay(10); // Ensure different timestamps
+            }
+
+            // Act - Get page 2 with 5 items per page
+            var pageSize = 5;
+            var pageNumber = 2;
+            var page2Posts = await Db.Articles
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
+                    && a.BlogKey == "default" 
+                    && a.Published != null)
+                .OrderByDescending(a => a.Published)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Assert
+            Assert.AreEqual(5, page2Posts.Count);
+        }
+
+        #endregion
+
+        #region Blog Categories Tests
+
+        /// <summary>
+        /// Tests that blog posts can be filtered by category.
+        /// </summary>
+        [TestMethod]
+        public async Task GetBlogPosts_FiltersByCategory()
+        {
+            // Arrange
+            await Logic.CreateArticle("Home", TestUserId);
+            
+            var post1 = await Logic.CreateArticle("Tech Post", TestUserId, null, "default", ArticleType.BlogPost);
+            post1.Category = "Technology";
+            await Logic.SaveArticle(post1, TestUserId);
+            await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow);
+            
+            var post2 = await Logic.CreateArticle("Science Post", TestUserId, null, "default", ArticleType.BlogPost);
+            post2.Category = "Science";
+            await Logic.SaveArticle(post2, TestUserId);
+            await Logic.PublishArticle(post2.Id, DateTimeOffset.UtcNow);
+
+            // Act
+            var techPosts = await Db.Articles
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
+                    && a.Category == "Technology")
+                .CountAsync();
+
+            // Assert
+            Assert.AreEqual(1, techPosts);
+        }
+
+        /// <summary>
+        /// Tests getting distinct categories from blog posts.
+        /// </summary>
+        [TestMethod]
+        public async Task GetBlogCategories_ReturnsDistinctCategories()
+        {
+            // Arrange
+            await Logic.CreateArticle("Home", TestUserId);
+            
+            var categories = new[] { "Tech", "Science", "Tech", "Sports" };
+            foreach (var category in categories)
+            {
+                var post = await Logic.CreateArticle($"{category} Post", TestUserId, null, "default", ArticleType.BlogPost);
+                post.Category = category;
+                await Logic.SaveArticle(post, TestUserId);
+            }
+
+            // Act
+            var distinctCategories = await Db.Articles
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
+                    && !string.IsNullOrEmpty(a.Category))
+                .Select(a => a.Category)
+                .Distinct()
+                .ToListAsync();
+
+            // Assert
+            Assert.AreEqual(3, distinctCategories.Count);
+            Assert.IsTrue(distinctCategories.Contains("Tech"));
+            Assert.IsTrue(distinctCategories.Contains("Science"));
+            Assert.IsTrue(distinctCategories.Contains("Sports"));
+        }
+
+        #endregion
+
+        #region Blog Introduction/Excerpt Tests
+
+        /// <summary>
+        /// Tests that blog post introduction is auto-generated from content.
+        /// </summary>
+        [TestMethod]
+        public async Task SaveBlogPost_AutoGeneratesIntroduction()
+        {
+            // Arrange
+            await Logic.CreateArticle("Home", TestUserId);
+            var post = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
+            post.Content = "<p>This is the first paragraph that should become the introduction.</p><p>This is the second paragraph.</p>";
+            post.Introduction = null; // Explicitly null
+
+            // Act
+            await Logic.SaveArticle(post, TestUserId);
+
+            // Assert
+            var dbArticle = await Db.Articles.FindAsync(post.Id);
+            Assert.IsNotNull(dbArticle.Introduction);
+            Assert.IsTrue(dbArticle.Introduction.Contains("first paragraph"));
+        }
+
+        /// <summary>
+        /// Tests that custom introduction is preserved.
+        /// </summary>
+        [TestMethod]
+        public async Task SaveBlogPost_PreservesCustomIntroduction()
+        {
+            // Arrange
+            await Logic.CreateArticle("Home", TestUserId);
+            var post = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
+            post.Content = "<p>Content paragraph.</p>";
+            post.Introduction = "Custom introduction text";
+
+            // Act
+            await Logic.SaveArticle(post, TestUserId);
+
+            // Assert
+            var dbArticle = await Db.Articles.FindAsync(post.Id);
+            Assert.AreEqual("Custom introduction text", dbArticle.Introduction);
+        }
+
+        #endregion
+    }
+}
