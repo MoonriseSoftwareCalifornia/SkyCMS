@@ -57,6 +57,12 @@ public class SubmitContactFormHandler : ICommandHandler<SubmitContactFormCommand
                 .ToListAsync(cancellationToken);
 
             var emailSettings = await emailConfigService.GetEmailSettingsAsync();
+            if (emailSettings == null || string.IsNullOrEmpty(emailSettings.SenderEmail))
+            {
+                logger.LogError("Email settings not configured");
+                return CommandResult<ContactFormResponse>.Failure("System configuration error");
+            }
+
             var adminEmail = emailSettings.SenderEmail;
 
             var request = command.Request;

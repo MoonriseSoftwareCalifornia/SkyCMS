@@ -133,7 +133,7 @@ namespace Sky.Cms.Controllers
             if (memoryCache != null && configProvider != null)
             {
                 var tenantId = await configProvider.GetCurrentTenantIdAsync();
-                var cacheKey = $"default-layout:{tenantId ?? Guid.Empty}";
+                var cacheKey = tenantId.HasValue ? $"default-layout:{tenantId.Value}" : "default-layout:no-tenant";
 
                 if (memoryCache.TryGetValue<Layout>(cacheKey, out var cachedLayout))
                 {

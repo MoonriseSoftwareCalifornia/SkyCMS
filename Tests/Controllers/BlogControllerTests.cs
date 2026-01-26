@@ -10,6 +10,7 @@ namespace Sky.Tests.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Models;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Controllers;
+    using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Models.Blogs;
@@ -121,15 +123,11 @@ namespace Sky.Tests.Controllers
             };
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleUpdateResult>
+                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
+                .ReturnsAsync(new CommandResult<ArticleViewModel>
                 {
                     IsSuccess = true,
-                    Data = new ArticleUpdateResult
-                    {
-                        ServerSideSuccess = true,
-                        CdnResults = new List<CdnResult>()
-                    }
+                    Data = new ArticleViewModel()
                 });
 
             // Act
@@ -141,7 +139,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(nameof(BlogController.Index), redirectResult.ActionName);
 
             mediatorMock.Verify(
-                m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default),
+                m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default),
                 Times.Once);
         }
 
@@ -182,8 +180,8 @@ namespace Sky.Tests.Controllers
             };
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleUpdateResult>
+                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
+                .ReturnsAsync(new CommandResult<ArticleViewModel>
                 {
                     IsSuccess = false,
                     Errors = errors
@@ -211,6 +209,19 @@ namespace Sky.Tests.Controllers
                 Description = "Description"
             };
 
+            var errors = new Dictionary<string, string[]>
+            {
+                { nameof(model.BlogKey), new[] { "A blog with this key already exists" } }
+            };
+
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
+                .ReturnsAsync(new CommandResult<ArticleViewModel>
+                {
+                    IsSuccess = false,
+                    Errors = errors
+                });
+
             // Act
             var result = await controller.Create(model);
 
@@ -232,11 +243,11 @@ namespace Sky.Tests.Controllers
             await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleUpdateResult>
+                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
+                .ReturnsAsync(new CommandResult<ArticleViewModel>
                 {
                     IsSuccess = true,
-                    Data = new ArticleUpdateResult { ServerSideSuccess = true }
+                    Data = new ArticleViewModel { ArticleNumber = 123 }
                 });
 
             // Act
@@ -249,7 +260,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("Editor", redirectResult.ControllerName);
 
             mediatorMock.Verify(
-                m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default),
+                m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default),
                 Times.Once);
         }
 
@@ -285,8 +296,8 @@ namespace Sky.Tests.Controllers
             await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleUpdateResult>
+                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
+                .ReturnsAsync(new CommandResult<ArticleViewModel>
                 {
                     IsSuccess = false,
                     ErrorMessage = "Save failed"
@@ -486,39 +497,59 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task EndToEnd_CreateBlogStreamAndEntry_Success()
         {
-            // Arrange
-            var streamModel = new BlogStreamViewModel
-            {
-                Title = "My Tech Blog",
-                Description = "A blog about tech",
-                HeroImage = "https://example.com/hero.jpg"
-            };
+            // Arrange - Create blog stream using ArticleLogic directly (like other tests)
+            var blogStream = await Logic.CreateArticle(
+                "My Tech Blog", 
+                TestUserId, 
+                null, 
+                "my-tech-blog", 
+                ArticleType.BlogStream);
+            
+            // Update introduction via database
+            var blogStreamEntity = await Db.Articles
+                .FirstOrDefaultAsync(a => a.ArticleNumber == blogStream.ArticleNumber);
+            Assert.IsNotNull(blogStreamEntity);
+            blogStreamEntity.Introduction = "A blog about tech";
+            await Db.SaveChangesAsync();
 
+            // Verify blog stream exists and has correct properties
+            Assert.AreEqual("My Tech Blog", blogStreamEntity.Title);
+            Assert.AreEqual((int)ArticleType.BlogStream, blogStreamEntity.ArticleType);
+            Assert.AreEqual("my-tech-blog", blogStreamEntity.BlogKey);
+
+            // Mock CreateArticleCommand for blog entry creation
+            var mockEntryArticle = new ArticleViewModel 
+            { 
+                ArticleNumber = 99, 
+                Title = "First Post" 
+            };
+            
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleUpdateResult>
+                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
+                .ReturnsAsync(new CommandResult<ArticleViewModel>
                 {
                     IsSuccess = true,
-                    Data = new ArticleUpdateResult { ServerSideSuccess = true }
+                    Data = mockEntryArticle
                 });
 
-            // Act - Create blog stream
-            var createResult = await controller.Create(streamModel);
-            Assert.IsInstanceOfType(createResult, typeof(RedirectToActionResult));
-
-            // Verify blog stream exists
-            var blogStream = await Db.Articles
-                .FirstOrDefaultAsync(a => a.Title == "My Tech Blog");
-            Assert.IsNotNull(blogStream);
-            Assert.AreEqual((int)ArticleType.BlogStream, blogStream.ArticleType);
-
-            // Act - Create blog entry
-            var entryResult = await controller.CreateEntry(blogStream.BlogKey, "First Post");
+            // Act - Create blog entry via controller
+            var entryResult = await controller.CreateEntry(blogStreamEntity.BlogKey, "First Post");
+            
+            // Assert
             Assert.IsInstanceOfType(entryResult, typeof(RedirectToActionResult));
+            var redirectResult = (RedirectToActionResult)entryResult;
+            Assert.AreEqual("Edit", redirectResult.ActionName);
+            Assert.AreEqual("Editor", redirectResult.ControllerName);
+            Assert.AreEqual(mockEntryArticle.ArticleNumber, redirectResult.RouteValues["id"]);
 
+            // Verify mediator was called with correct command
             mediatorMock.Verify(
-                m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default),
-                Times.Exactly(2)); // Once for stream, once for entry
+                m => m.SendAsync(It.Is<CreateArticleCommand>(cmd => 
+                    cmd.Title == "First Post" && 
+                    cmd.BlogKey == blogStreamEntity.BlogKey &&
+                    cmd.ArticleType == ArticleType.BlogPost), 
+                default),
+                Times.Once);
         }
 
         #endregion

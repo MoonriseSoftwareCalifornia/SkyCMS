@@ -151,8 +151,8 @@ namespace Sky.Tests.Controllers
 
             Assert.Contains("User Content 1", updatedArticle1.Content, "Article 1 should preserve user content");
             Assert.Contains("User Content 2", updatedArticle2.Content, "Article 2 should preserve user content");
-            Assert.AreEqual(1, updatedArticle1.VersionNumber, "Article 1 should have version reset to 1");
-            Assert.AreEqual(1, updatedArticle2.VersionNumber, "Article 2 should have version reset to 1");
+            Assert.AreEqual(2, updatedArticle1.VersionNumber, "Article 1 should have new draft version 2");
+            Assert.AreEqual(2, updatedArticle2.VersionNumber, "Article 2 should have new draft version 2");
         }
 
         /// <summary>

@@ -152,6 +152,7 @@ namespace Sky.Tests
                     Id = Guid.NewGuid(),
                     LayoutName = "Default",
                     IsDefault = true,
+                    Published = DateTimeOffset.UtcNow.AddDays(-1), // Set Published date to the past so it's valid
                     Head = string.Empty,
                     HtmlHeader = string.Empty,
                     FooterHtmlContent = string.Empty

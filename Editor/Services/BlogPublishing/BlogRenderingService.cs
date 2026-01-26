@@ -42,19 +42,25 @@ namespace Sky.Editor.Services.BlogPublishing
         public async Task<string> GenerateBlogStreamHtml(Article article)
         {
             var template = await dbContext.Templates.FirstOrDefaultAsync(t => t.PageType == "blog-stream");
+            if (template == null)
+            {
+                throw new InvalidOperationException("Blog stream template not found");
+            }
+
             var htmlAgilityPack = new HtmlAgilityPack.HtmlDocument();
             htmlAgilityPack.LoadHtml(template.Content);
 
-            // Find the blog stream banner image node and set its src attribute.
             var bannerImageNode = htmlAgilityPack.DocumentNode.SelectSingleNode("//img[@class='stream-banner']");
-            if (!string.IsNullOrEmpty(article.BannerImage))
+            if (bannerImageNode != null)
             {
-                bannerImageNode.SetAttributeValue("src", article.BannerImage);
-            }
-            else
-            {
-                // Set style to display none if no banner image is set.
-                bannerImageNode.SetAttributeValue("style", "display:none;");
+                if (!string.IsNullOrEmpty(article.BannerImage))
+                {
+                    bannerImageNode.SetAttributeValue("src", article.BannerImage);
+                }
+                else
+                {
+                    bannerImageNode.SetAttributeValue("style", "display:none;");
+                }
             }
 
             // Find the blog stream title node and set its inner text.

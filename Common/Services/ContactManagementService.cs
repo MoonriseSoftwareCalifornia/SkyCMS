@@ -52,6 +52,11 @@ namespace Cosmos.Common.Services
         /// <returns>ContactViewModel.</returns>
         public async Task<ContactViewModel> AddContactAsync(ContactViewModel model)
         {
+            if (string.IsNullOrWhiteSpace(model.Email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(model.Email))
+            {
+                throw new ArgumentException("Invalid email address", nameof(model.Email));
+            }
+
             var contact = await dbContext.Contacts.FirstOrDefaultAsync(f => f.Email.ToLower() == model.Email.ToLower());
 
             if (contact == null)
@@ -74,7 +79,14 @@ namespace Cosmos.Common.Services
             {
                 var key = settings.FirstOrDefault(f => f.Name == "ApiKey");
                 var list = settings.FirstOrDefault(f => f.Name == "ContactListName");
-                IMailChimpManager manager = new MailChimpManager(key.Value);
+
+                if (key == null || list == null)
+                {
+                    logger.LogWarning("MailChimp settings incomplete. Skipping integration.");
+                    return model;
+                }
+
+                var manager = new MailChimpManager(key.Value);
 
                 var lists = await manager.Lists.GetAllAsync();
                 var mclist = lists.FirstOrDefault(w => w.Name.Equals(list.Value, StringComparison.OrdinalIgnoreCase));
@@ -97,6 +109,12 @@ namespace Cosmos.Common.Services
             {
                 // Not using UserManager because we don't want to require injection for that in this base class.
                 var adminUserGroup = await dbContext.Roles.FirstOrDefaultAsync(w => w.NormalizedName == "ADMINISTRATORS");
+                if (adminUserGroup == null)
+                {
+                    logger.LogWarning("Administrators role not found. Cannot send contact alerts.");
+                    return model;
+                }
+
                 var roleUsers = await dbContext.UserRoles.Where(w => w.RoleId == adminUserGroup.Id).Select(s => s.UserId).ToArrayAsync();
                 var admins = await dbContext.Users.Where(w => roleUsers.Contains(w.Id)).Select(s => s.Email).ToArrayAsync();
 
