@@ -1,0 +1,151 @@
+@{
+    ViewData["Title"] = "Search";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model Cosmos.Cms.Publisher.Controllers.PublicSearchViewModel
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="text-center mb-4">Search</h1>
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-warning" role="alert">
+                    @TempData["ErrorMessage"]
+                </div>
+            }
+
+            <!-- Search Form -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <form method="get" action="/Search" class="d-flex">
+                        <div class="flex-grow-1 me-3">
+                            <input type="text" class="form-control form-control-lg" name="q" value="@Model.Query" placeholder="Search..." autocomplete="off" />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Search Results -->
+            @if (!string.IsNullOrEmpty(Model.Query))
+            {
+                <div class="search-results">
+                    @if (!string.IsNullOrEmpty(Model.SearchSummary))
+                    {
+                        <p class="text-muted mb-3">@Model.SearchSummary</p>
+                    }
+
+                    @if (Model.HasResults)
+                    {
+                        <!-- Results -->
+                        @foreach (var result in Model.Results!.Results)
+                        {
+                            <div class="search-result card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a href="@result.Url" class="text-decoration-none">@result.Title</a>
+                                    </h5>
+                                    
+                                    @if (result.PublishDate.HasValue)
+                                    {
+                                        <small class="text-muted d-block mb-2">
+                                            Published @result.PublishDate.Value.ToString("MMMM d, yyyy")
+                                        </small>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(result.HighlightedContent))
+                                    {
+                                        <p class="card-text">@Html.Raw(result.HighlightedContent)</p>
+                                    }
+                                    else if (!string.IsNullOrEmpty(result.Content))
+                                    {
+                                        <p class="card-text text-muted">@result.Content</p>
+                                    }
+
+                                    <a href="@result.Url" class="btn btn-outline-primary btn-sm">Read More</a>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Pagination -->
+                        @if (Model.TotalPages > 1)
+                        {
+                            <nav aria-label="Search results pagination" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    @if (Model.Page > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="/Search?q=@Uri.EscapeDataString(Model.Query)&page=@(Model.Page - 1)">Previous</a>
+                                        </li>
+                                    }
+
+                                    @{
+                                        int startPage = Math.Max(1, Model.Page - 2);
+                                        int endPage = Math.Min(Model.TotalPages, Model.Page + 2);
+                                    }
+
+                                    @for (int i = startPage; i <= endPage; i++)
+                                    {
+                                        <li class="page-item @(i == Model.Page ? "active" : "")">
+                                            <a class="page-link" href="/Search?q=@Uri.EscapeDataString(Model.Query)&page=@i">@i</a>
+                                        </li>
+                                    }
+
+                                    @if (Model.Page < Model.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="/Search?q=@Uri.EscapeDataString(Model.Query)&page=@(Model.Page + 1)">Next</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+                        }
+                    }
+                    else if (Model.Results != null)
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h4>No results found</h4>
+                            <p class="text-muted">Try adjusting your search terms or browse our content.</p>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4>Start your search</h4>
+                    <p class="text-muted">Enter keywords to find content across our site.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .search-result {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .search-result:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    mark {
+        background-color: #fff3cd;
+        padding: 0.2em 0.4em;
+        border-radius: 0.25rem;
+        font-weight: bold;
+    }
+    
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+</style>

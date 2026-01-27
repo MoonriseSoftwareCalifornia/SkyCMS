@@ -66,6 +66,16 @@
 	  <Compile Remove="Validators\**" />
 	  <EmbeddedResource Remove="Validators\**" />
 	  <None Remove="Validators\**" />
+	  <!-- Temporarily exclude broken search service implementations -->
+	  <Compile Remove="Services\Search\Implementations.broken\**" />
+	  <Compile Remove="Services\Search\Extensions.broken\**" />
+	  <Compile Remove="Services\Search\Storage.broken\**" />
+	  <EmbeddedResource Remove="Services\Search\Implementations.broken\**" />
+	  <EmbeddedResource Remove="Services\Search\Extensions.broken\**" />
+	  <EmbeddedResource Remove="Services\Search\Storage.broken\**" />
+	  <None Remove="Services\Search\Implementations.broken\**" />
+	  <None Remove="Services\Search\Extensions.broken\**" />
+	  <None Remove="Services\Search\Storage.broken\**" />
 	</ItemGroup>
 
 	<ItemGroup>

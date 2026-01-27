@@ -12,6 +12,7 @@ using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Shared;
 using Cosmos.EmailServices;
 using Cosmos.MicrosoftGraph;
 using Microsoft.AspNetCore.Antiforgery;
@@ -21,6 +22,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Serialization;
+using Cosmos.Common.Services.Search;
+using Cosmos.Common.Services.Search.Configuration;
 
 namespace Cosmos.Publisher.Boot
 {
@@ -126,7 +129,6 @@ namespace Cosmos.Publisher.Boot
             //-------------------------------
             // Add Google if keys are present
             var googleOAuth = builder.Configuration.GetSection("GoogleOAuth").Get<Cosmos.Common.Services.Configurations.OAuth>();
-
             if (googleOAuth != null && googleOAuth.IsConfigured())
             {
                 builder.Services.AddAuthentication().AddGoogle(options =>
@@ -139,7 +141,6 @@ namespace Cosmos.Publisher.Boot
             // ---------------------------------
             // Add Microsoft if keys are present
             var entraIdOAuth = builder.Configuration.GetSection("MicrosoftOAuth").Get<Cosmos.Common.Services.Configurations.OAuth>();
-
             if (entraIdOAuth != null && entraIdOAuth.IsConfigured())
             {
                 // Add Graph services
@@ -221,6 +222,20 @@ namespace Cosmos.Publisher.Boot
                     options.Window = TimeSpan.FromSeconds(8);
                     options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     options.QueueLimit = 2;
+                })
+                .AddFixedWindowLimiter(policyName: "search-policy", options =>
+                {
+                    options.PermitLimit = 20; // More generous for search
+                    options.Window = TimeSpan.FromMinutes(1);
+                    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    options.QueueLimit = 5;
+                })
+                .AddFixedWindowLimiter(policyName: "search-api-policy", options =>
+                {
+                    options.PermitLimit = 30; // API endpoints
+                    options.Window = TimeSpan.FromMinutes(1);
+                    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    options.QueueLimit = 10;
                 }));
 
             // END
@@ -232,6 +247,12 @@ namespace Cosmos.Publisher.Boot
                 settings.CosmosRequiresAuthentication = builder.Configuration.GetValue<bool?>("CosmosRequiresAuthentication") ?? false;
                 settings.AllowLocalAccounts = builder.Configuration.GetValue<bool?>("AllowLocalAccounts") ?? true;
             });
+
+            // Add search services for CQRS
+            builder.Services.AddScoped<IQueryHandler<Sky.Cms.Api.Shared.Features.Search.Query.SearchQuery, Sky.Cms.Api.Shared.Models.Search.SearchApiResponse>, Sky.Cms.Api.Shared.Features.Search.Query.SearchQueryHandler>();
+            builder.Services.AddScoped<IQueryHandler<Sky.Cms.Api.Shared.Features.Search.Query.SearchHealthQuery, Sky.Cms.Api.Shared.Models.Search.SearchHealthApiResponse>, Sky.Cms.Api.Shared.Features.Search.Query.SearchHealthQueryHandler>();
+            builder.Services.AddScoped<IQueryHandler<Sky.Cms.Api.Shared.Features.Search.Suggest.SearchSuggestionsQuery, Sky.Cms.Api.Shared.Models.Search.SearchSuggestionsApiResponse>, Sky.Cms.Api.Shared.Features.Search.Suggest.SearchSuggestionsQueryHandler>();
+            builder.Services.AddScoped<Cosmos.Common.Data.Logic.ArticleLogic>();
 
             builder.Services.AddControllersWithViews();
 

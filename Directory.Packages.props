@@ -54,10 +54,10 @@
     <PackageVersion Include="Azure.ResourceManager.Cdn" Version="1.5.1" />
     <!-- Search packages for hybrid search implementation -->
     <PackageVersion Include="Azure.Search.Documents" Version="11.5.1" />
-    <PackageVersion Include="Lucene.Net" Version="4.8.0" />
-    <PackageVersion Include="Lucene.Net.Analysis.Common" Version="4.8.0" />
-    <PackageVersion Include="Lucene.Net.Highlighter" Version="4.8.0" />
-    <PackageVersion Include="Lucene.Net.QueryParser" Version="4.8.0" />
+    <PackageVersion Include="Lucene.Net" Version="4.8.0-beta00016" />
+    <PackageVersion Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00016" />
+    <PackageVersion Include="Lucene.Net.Highlighter" Version="4.8.0-beta00016" />
+    <PackageVersion Include="Lucene.Net.QueryParser" Version="4.8.0-beta00016" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="[9.0.10,10.0)" />
     <!-- AWS packages -->
     <PackageVersion Include="AWSSDK.S3" Version="4.0.14.1" />

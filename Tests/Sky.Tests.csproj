@@ -43,11 +43,19 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Cosmos.BlobService\Cosmos.BlobService.csproj" />
+		<ProjectReference Include="..\Common\Cosmos.Common.csproj" />
 		<ProjectReference Include="..\Editor\Sky.Editor.csproj" />
+		<ProjectReference Include="..\Sky.Cms.Api.Shared\Sky.Cms.Api.Shared.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <!-- Add if you want to test search functionality directly -->
+	  <PackageReference Include="Lucene.Net" />
+	  <PackageReference Include="Lucene.Net.Analysis.Common" />
 	</ItemGroup>
 
 </Project>

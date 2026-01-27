@@ -121,6 +121,24 @@ namespace Cosmos.Common.Data
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
         /// <summary>
+        /// Gets or sets Lucene search documents stored in the database.
+        /// Provides multi-tenant search capabilities with database backend.
+        /// </summary>
+        public DbSet<LuceneDocument> LuceneDocuments { get; set; } = null!;
+
+        /// <summary>
+        /// Gets or sets Lucene index metadata for configuration and statistics.
+        /// Tracks index health and tenant-specific search configurations.
+        /// </summary>
+        public DbSet<LuceneIndexMetadata> LuceneIndexMetadata { get; set; } = null!;
+
+        /// <summary>
+        /// Gets or sets Lucene index files stored in the database.
+        /// Enables containerized deployments without file system dependencies.
+        /// </summary>
+        public DbSet<LuceneIndexFile> LuceneIndexFiles { get; set; } = null!;
+
+        /// <summary>
         /// Ensure database exists and returns status.
         /// </summary>
         /// <param name="connectionString">Connection string.</param>

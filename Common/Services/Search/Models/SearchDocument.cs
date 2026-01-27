@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using Cosmos.Common.Data;
+
 namespace Cosmos.Common.Services.Search.Models;
 
 /// <summary>
@@ -147,10 +151,10 @@ public class SearchDocument
             Summary = article.BannerImage ?? string.Empty, // Using BannerImage as summary field
             Url = $"/article/{article.UrlPath}",
             ContentType = "article",
-            Status = article.StatusCode?.ToLowerInvariant() ?? "published",
-            PublishedDate = article.Published,
-            ModifiedDate = article.Updated ?? article.Published ?? DateTimeOffset.UtcNow,
-            Author = article.AuthorInfo,
+            Status = article.StatusCode.ToString(),
+            PublishedDate = article.Published ?? DateTimeOffset.UtcNow,
+            ModifiedDate = article.Published.HasValue ? (article.Updated > article.Published.Value ? article.Updated : article.Published.Value) : article.Updated,
+            Author = article.UserId,
             TenantDomain = tenantDomain,
             Priority = 1,
             ViewCount = 0 // Would need to be populated from analytics

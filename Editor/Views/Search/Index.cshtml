@@ -1,0 +1,158 @@
+@{
+    ViewData["Title"] = "Search Content";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model Sky.Cms.Controllers.SearchPageViewModel
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Search Content</h1>
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @TempData["ErrorMessage"]
+                </div>
+            }
+
+            <!-- Search Form -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" action="/Search" class="d-flex">
+                        <div class="flex-grow-1 me-3">
+                            <input type="text" class="form-control" name="query" value="@Model.Query" placeholder="Search articles, pages, and content..." autocomplete="off" />
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Search Results -->
+            @if (!string.IsNullOrEmpty(Model.Query))
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            @if (Model.Results != null)
+                            {
+                                @if (Model.Results.TotalResults == 0)
+                                {
+                                    <span>No results found for "@Model.Query"</span>
+                                }
+                                else
+                                {
+                                    <span>@Model.Results.TotalResults.ToString("N0") result(s) found for "@Model.Query" (@Model.Results.SearchTimeMs ms)</span>
+                                }
+                            }
+                        </h5>
+                    </div>
+
+                    @if (Model.HasResults)
+                    {
+                        <div class="card-body">
+                            <!-- Results -->
+                            @foreach (var result in Model.Results!.Results)
+                            {
+                                <div class="search-result mb-4 pb-3 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">
+                                                <a href="@result.Url" class="text-decoration-none">@result.Title</a>
+                                            </h6>
+                                            <small class="text-muted">
+                                                @result.ContentType
+                                                @if (result.PublishDate.HasValue)
+                                                {
+                                                    <span> • Published @result.PublishDate.Value.ToString("MMM d, yyyy")</span>
+                                                }
+                                                @if (result.LastModified.HasValue)
+                                                {
+                                                    <span> • Modified @result.LastModified.Value.ToString("MMM d, yyyy")</span>
+                                                }
+                                            </small>
+                                            
+                                            @if (!string.IsNullOrEmpty(result.HighlightedContent))
+                                            {
+                                                <p class="mt-2 mb-1">
+                                                    @Html.Raw(result.HighlightedContent)
+                                                </p>
+                                            }
+                                            else if (!string.IsNullOrEmpty(result.Content))
+                                            {
+                                                <p class="mt-2 mb-1 text-muted">
+                                                    @result.Content
+                                                </p>
+                                            }
+                                        </div>
+                                        <div class="ms-3">
+                                            <small class="text-muted">Score: @result.Score.ToString("F2")</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Pagination -->
+                            @if (Model.TotalPages > 1)
+                            {
+                                <nav aria-label="Search results pagination">
+                                    <ul class="pagination justify-content-center">
+                                        @if (Model.HasPreviousPage)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="/Search?query=@Uri.EscapeDataString(Model.Query)&page=@(Model.Page - 1)">Previous</a>
+                                            </li>
+                                        }
+
+                                        @for (int i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++)
+                                        {
+                                            <li class="page-item @(i == Model.Page ? "active" : "")">
+                                                <a class="page-link" href="/Search?query=@Uri.EscapeDataString(Model.Query)&page=@i">@i</a>
+                                            </li>
+                                        }
+
+                                        @if (Model.HasNextPage)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="/Search?query=@Uri.EscapeDataString(Model.Query)&page=@(Model.Page + 1)">Next</a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </nav>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .search-result:hover {
+        background-color: #f8f9fa;
+    }
+    
+    mark {
+        background-color: #fff3cd;
+        padding: 0.2em 0.4em;
+        border-radius: 0.25rem;
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    // Add autocomplete functionality
+    $('input[name="query"]').on('input', function() {
+        var term = $(this).val();
+        if (term.length >= 2) {
+            $.get('/Search/Suggest', { term: term }, function(suggestions) {
+                // Simple suggestion display (you can enhance this with a proper autocomplete library)
+                console.log('Suggestions:', suggestions);
+            });
+        }
+    });
+});
+</script>

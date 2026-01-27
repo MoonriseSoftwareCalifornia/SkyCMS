@@ -1,135 +1,64 @@
+using System;
+using System.Collections.Generic;
+
+// <copyright file="SearchResults.cs" company="Moonrise Software, LLC">
+// Copyright (c) Moonrise Software, LLC. All rights reserved.
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// See https://github.com/CWALabs/SkyCMS
+// for more information concerning the license and the contributors participating to this project.
+// </copyright>
+
 namespace Cosmos.Common.Services.Search.Models;
 
 /// <summary>
-/// Search results container with pagination and metadata
+/// Search results container.
 /// </summary>
 public class SearchResults
 {
     /// <summary>
-    /// Found documents
+    /// Gets or sets the search result items.
     /// </summary>
-    public IEnumerable<SearchResultItem> Items { get; set; } = new List<SearchResultItem>();
+    public IEnumerable<SearchResultItem> Items { get; set; } = Array.Empty<SearchResultItem>();
 
     /// <summary>
-    /// Total number of matching documents
+    /// Gets or sets the total number of results.
     /// </summary>
-    public long TotalCount { get; set; }
+    public int TotalCount { get; set; }
 
     /// <summary>
-    /// Current page number
+    /// Gets or sets the current page number (0-based).
     /// </summary>
     public int Page { get; set; }
 
     /// <summary>
-    /// Results per page
+    /// Gets or sets the page size.
     /// </summary>
     public int PageSize { get; set; }
 
     /// <summary>
-    /// Total number of pages
+    /// Gets the total number of pages (calculated property).
     /// </summary>
-    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
 
     /// <summary>
-    /// Whether there are more results
+    /// Gets or sets the search execution time in milliseconds.
     /// </summary>
-    public bool HasNextPage => Page < TotalPages;
+    public long SearchTimeMs { get; set; }
 
     /// <summary>
-    /// Whether this is not the first page
+    /// Gets or sets the available facets.
     /// </summary>
-    public bool HasPreviousPage => Page > 1;
+    public Dictionary<string, List<FacetItem>> Facets { get; set; } = new();
 
     /// <summary>
-    /// Search execution time in milliseconds
+    /// Gets a value indicating whether there is a next page available.
     /// </summary>
-    public long ExecutionTimeMs { get; set; }
+    public bool HasNextPage => Page < TotalPages - 1;
 
     /// <summary>
-    /// Facets for filtering (categories, tags, etc.)
+    /// Gets a value indicating whether there is a previous page available.
     /// </summary>
-    public Dictionary<string, IEnumerable<SearchFacet>> Facets { get; set; } = new();
-
-    /// <summary>
-    /// Search suggestions for query correction
-    /// </summary>
-    public IEnumerable<string> Suggestions { get; set; } = new List<string>();
-
-    /// <summary>
-    /// Empty search results
-    /// </summary>
-    public static SearchResults Empty => new();
-}
-
-/// <summary>
-/// Individual search result item
-/// </summary>
-public class SearchResultItem
-{
-    /// <summary>
-    /// Unique document identifier
-    /// </summary>
-    public string Id { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Document title
-    /// </summary>
-    public string Title { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Document content/body
-    /// </summary>
-    public string Content { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Document URL/path
-    /// </summary>
-    public string Url { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Content type (article, page, etc.)
-    /// </summary>
-    public string ContentType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Publication date
-    /// </summary>
-    public DateTimeOffset? PublishedDate { get; set; }
-
-    /// <summary>
-    /// Last modified date
-    /// </summary>
-    public DateTimeOffset? ModifiedDate { get; set; }
-
-    /// <summary>
-    /// Author information
-    /// </summary>
-    public string? Author { get; set; }
-
-    /// <summary>
-    /// Associated tags
-    /// </summary>
-    public IEnumerable<string> Tags { get; set; } = new List<string>();
-
-    /// <summary>
-    /// Search relevance score
-    /// </summary>
-    public double Score { get; set; }
-
-    /// <summary>
-    /// Highlighted text snippets
-    /// </summary>
-    public Dictionary<string, IEnumerable<string>> Highlights { get; set; } = new();
-
-    /// <summary>
-    /// Tenant domain
-    /// </summary>
-    public string? TenantDomain { get; set; }
-
-    /// <summary>
-    /// Document thumbnail/image URL
-    /// </summary>
-    public string? ImageUrl { get; set; }
+    public bool HasPreviousPage => Page > 0;
 }
 
 /// <summary>
@@ -138,17 +67,17 @@ public class SearchResultItem
 public class SearchFacet
 {
     /// <summary>
-    /// Facet value
+    /// Facet value.
     /// </summary>
     public string Value { get; set; } = string.Empty;
 
     /// <summary>
-    /// Number of documents with this facet value
+    /// Number of documents with this facet value.
     /// </summary>
     public long Count { get; set; }
 
     /// <summary>
-    /// Whether this facet is currently selected
+    /// Whether this facet is currently selected.
     /// </summary>
     public bool IsSelected { get; set; }
 }

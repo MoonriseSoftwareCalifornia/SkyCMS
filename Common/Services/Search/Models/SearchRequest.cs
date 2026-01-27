@@ -1,106 +1,56 @@
+// <copyright file="SearchRequest.cs" company="Moonrise Software, LLC">
+// Copyright (c) Moonrise Software, LLC. All rights reserved.
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// See https://github.com/CWALabs/SkyCMS
+// for more information concerning the license and the contributors participating to this project.
+// </copyright>
+
 namespace Cosmos.Common.Services.Search.Models;
 
+using System;
+
 /// <summary>
-/// Search request with filtering and pagination for SkyCMS
+/// Request model for search operations.
 /// </summary>
 public class SearchRequest
 {
     /// <summary>
-    /// Search query string
+    /// Gets or sets the search query text.
     /// </summary>
     public string Query { get; set; } = string.Empty;
 
     /// <summary>
-    /// Tenant domain for multi-tenant filtering
+    /// Gets or sets the page number (0-based).
     /// </summary>
-    public string? TenantDomain { get; set; }
+    public int Page { get; set; } = 0;
 
     /// <summary>
-    /// Content types to include (article, page, etc.)
-    /// </summary>
-    public IEnumerable<string> ContentTypes { get; set; } = new List<string>();
-
-    /// <summary>
-    /// Tags to filter by
-    /// </summary>
-    public IEnumerable<string> Tags { get; set; } = new List<string>();
-
-    /// <summary>
-    /// Author filter
-    /// </summary>
-    public string? Author { get; set; }
-
-    /// <summary>
-    /// Date range filter - start date
-    /// </summary>
-    public DateTimeOffset? FromDate { get; set; }
-
-    /// <summary>
-    /// Date range filter - end date
-    /// </summary>
-    public DateTimeOffset? ToDate { get; set; }
-
-    /// <summary>
-    /// Only include published content
-    /// </summary>
-    public bool PublishedOnly { get; set; } = true;
-
-    /// <summary>
-    /// Page number for pagination (1-based)
-    /// </summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>
-    /// Results per page
+    /// Gets or sets the page size.
     /// </summary>
     public int PageSize { get; set; } = 20;
 
     /// <summary>
-    /// Maximum results per page (safety limit)
+    /// Gets or sets content types to filter by.
     /// </summary>
-    public static int MaxPageSize => 100;
+    public string[]? ContentTypes { get; set; }
 
     /// <summary>
-    /// Sort field
+    /// Gets or sets the start date filter.
     /// </summary>
-    public string SortBy { get; set; } = "relevance";
+    public DateTime? DateFrom { get; set; }
 
     /// <summary>
-    /// Sort direction
+    /// Gets or sets the end date filter.
     /// </summary>
-    public SortDirection SortDirection { get; set; } = SortDirection.Descending;
+    public DateTime? DateTo { get; set; }
 
     /// <summary>
-    /// Include highlights in results
+    /// Gets or sets the sort field.
     /// </summary>
-    public bool IncludeHighlights { get; set; } = true;
+    public string? SortBy { get; set; }
 
     /// <summary>
-    /// Include facets for filtering UI
+    /// Gets or sets the tenant domain for multi-tenancy filtering.
     /// </summary>
-    public bool IncludeFacets { get; set; } = false;
-
-    /// <summary>
-    /// Validate and sanitize search request
-    /// </summary>
-    public void Validate()
-    {
-        if (PageSize > MaxPageSize)
-            PageSize = MaxPageSize;
-        
-        if (Page < 1)
-            Page = 1;
-
-        // Sanitize query to prevent injection
-        Query = Query?.Trim() ?? string.Empty;
-    }
-}
-
-/// <summary>
-/// Sort direction enumeration
-/// </summary>
-public enum SortDirection
-{
-    Ascending,
-    Descending
+    public string TenantDomain { get; set; } = string.Empty;
 }

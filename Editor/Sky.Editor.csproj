@@ -122,6 +122,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Common\Cosmos.Common.csproj" />
+	  <ProjectReference Include="..\Cosmos.ConnectionStrings\Cosmos.DynamicConfig.csproj" />
 	  <ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
 	  <ProjectReference Include="..\Sky.Cms.Api.Shared\Sky.Cms.Api.Shared.csproj" />
 	</ItemGroup>

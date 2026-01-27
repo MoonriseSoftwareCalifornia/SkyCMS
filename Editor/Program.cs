@@ -16,6 +16,8 @@ using Cosmos.Common.Services.Configurations;
 using Cosmos.Common.Services.Email;
 using Cosmos.DynamicConfig;
 using Cosmos.EmailServices;
+using Cosmos.Common.Services.Search;
+using Cosmos.Common.Services.Search.Configuration;
 using Hangfire;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
@@ -272,7 +274,19 @@ if (microsoftAuth != null)
 
 // Scoped services (per-request lifecycle, can access HttpContext)
 builder.Services.AddScoped<ISetupService, SetupService>();
-builder.Services.AddScoped<IMediator, Mediator>();
+
+// Register Editor's local IMediator for commands
+builder.Services.AddScoped<Sky.Editor.Features.Shared.IMediator, Sky.Editor.Features.Shared.Mediator>();
+
+// Register Cosmos.Common IMediator for search queries (used by inherited SearchApiController)
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IMediator, Cosmos.Common.Features.Shared.Mediator>();
+
+// Add search query handlers for Cosmos.Common IMediator
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Cms.Api.Shared.Features.Search.Query.SearchQuery, Sky.Cms.Api.Shared.Models.Search.SearchApiResponse>, Sky.Cms.Api.Shared.Features.Search.Query.SearchQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Cms.Api.Shared.Features.Search.Query.SearchHealthQuery, Sky.Cms.Api.Shared.Models.Search.SearchHealthApiResponse>, Sky.Cms.Api.Shared.Features.Search.Query.SearchHealthQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Cms.Api.Shared.Features.Search.Suggest.SearchSuggestionsQuery, Sky.Cms.Api.Shared.Models.Search.SearchSuggestionsApiResponse>, Sky.Cms.Api.Shared.Features.Search.Suggest.SearchSuggestionsQueryHandler>();
+
+// Add command handlers (queries will be handled by inherited SearchApiController)
 builder.Services.AddScoped<ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>, CreateArticleHandler>();
 builder.Services.AddScoped<ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>, SaveArticleHandler>();
 builder.Services.AddScoped<ICommandHandler<CreatePageDesignVersionCommand, CommandResult<PageDesignVersion>>, CreatePageDesignVersionHandler>();
@@ -750,5 +764,23 @@ catch (Exception ex)
 {
     app.Logger.LogWarning(ex, "⚠️ Hangfire recurring jobs could not be configured: {Message}", ex.Message);
 }
+
+// Register Lucene Search Service
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddLuceneSearch(LuceneSearchPresets.Development);
+}
+else if (builder.Environment.IsProduction())
+{
+    builder.Services.AddLuceneSearch(LuceneSearchPresets.Production);
+}
+else
+{
+    // Testing or other environments
+    builder.Services.AddLuceneSearchForEnvironment(builder.Environment);
+}
+
+// OR the simplest approach - auto-detect environment:
+builder.Services.AddLuceneSearchForEnvironment(builder.Environment);
 
 await app.RunAsync();

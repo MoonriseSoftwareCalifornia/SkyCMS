@@ -713,10 +713,8 @@ namespace Sky.Cms.Controllers
                     Title = model.Title,
                     TemplateId = model.TemplateId,
                     UserId = Guid.Parse(await GetUserId()),
-                     ArticleType = model.ArticleType,
-                      BlogKey = model.BlogKey,
-                       Category = model.Category,
-                        Introduction = model.Introduction
+                    ArticleType = model.ArticleType,
+                    BlogKey = "default"
                 };
 
                 var article = await articleLogic.CreateArticle(model.Title, Guid.Parse(await GetUserId()), model.TemplateId);

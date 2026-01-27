@@ -138,6 +138,35 @@
           "Microsoft.AspNetCore.DataProtection.Abstractions": "10.0.0"
         }
       },
+      "J2N": {
+        "type": "Transitive",
+        "resolved": "2.0.0",
+        "contentHash": "M5bwDajAARZiyqupU+rHQJnsVLxNBOHJ8vKYHd8LcLIb1FgLfzzcJvc31Qo5Xz/GEHFjDF9ScjKL/ks/zRTXuA=="
+      },
+      "Lucene.Net.Memory": {
+        "type": "Transitive",
+        "resolved": "4.8.0-beta00016",
+        "contentHash": "ftg9aSJpSR5SW8TiTTofi3IIT/Jgc6Ytn53rsemIiZvlXWEggMcFJo8gq2GwBuP1UPgEdHjKQw64Fib6FL/g2w==",
+        "dependencies": {
+          "Lucene.Net": "4.8.0-beta00016"
+        }
+      },
+      "Lucene.Net.Queries": {
+        "type": "Transitive",
+        "resolved": "4.8.0-beta00016",
+        "contentHash": "XBzdMDlan68V2ZlhAlP8Fd+Xx2Le8ec7cEN1kFF45Sipa3Q8L/tilJfwS9VHvMTvGkwPM/yj62eGbfGBgIMR8Q==",
+        "dependencies": {
+          "Lucene.Net": "4.8.0-beta00016"
+        }
+      },
+      "Lucene.Net.Sandbox": {
+        "type": "Transitive",
+        "resolved": "4.8.0-beta00016",
+        "contentHash": "wMsRZtbNx0wvX3mtNjpOwQmKx3Ij4UGHWIYHbvnzMWlPUTgtOpYSj02REL4hOxI71WBZylpGB5EWfQ2eEld63g==",
+        "dependencies": {
+          "Lucene.Net": "4.8.0-beta00016"
+        }
+      },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
         "resolved": "2.23.0",
@@ -1575,10 +1604,10 @@
           "Azure.Search.Documents": "[11.5.1, )",
           "Cosmos.BlobService": "[9.2.4.25, )",
           "Cosmos.DynamicConfig": "[9.2.4.25, )",
-          "Lucene.Net": "[4.8.0, )",
-          "Lucene.Net.Analysis.Common": "[4.8.0, )",
-          "Lucene.Net.Highlighter": "[4.8.0, )",
-          "Lucene.Net.QueryParser": "[4.8.0, )",
+          "Lucene.Net": "[4.8.0-beta00016, )",
+          "Lucene.Net.Analysis.Common": "[4.8.0-beta00016, )",
+          "Lucene.Net.Highlighter": "[4.8.0-beta00016, )",
+          "Lucene.Net.QueryParser": "[4.8.0-beta00016, )",
           "MailChimp.Net.V3": "[5.8.2, 6.0.0)",
           "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore": "[9.0.10, 10.0.0)",
           "Microsoft.Extensions.Diagnostics.HealthChecks": "[9.0.10, 10.0.0)",
@@ -1603,6 +1632,14 @@
           "Microsoft.AspNetCore.Identity.UI": "[9.0.11, )",
           "Microsoft.Extensions.Logging": "[9.0.11, )",
           "SendGrid": "[9.29.3, )"
+        }
+      },
+      "sky.cms.api.shared": {
+        "type": "Project",
+        "dependencies": {
+          "Cosmos.Common": "[9.2.4.25, )",
+          "Cosmos.DynamicConfig": "[9.2.4.25, )",
+          "Cosmos.EmailServices": "[9.2.4.25, )"
         }
       },
       "AWSSDK.S3": {
@@ -1702,11 +1739,45 @@
         "resolved": "1.12.4",
         "contentHash": "ljqvBabvFwKoLniuoQKO8b5bJfJweKLs4fUNS/V5dsvpo0A8MlJqxxn9XVmP2DaskbUXty6IYaWAi1SArGIMeQ=="
       },
+      "Lucene.Net": {
+        "type": "CentralTransitive",
+        "requested": "[4.8.0-beta00016, )",
+        "resolved": "4.8.0-beta00016",
+        "contentHash": "DCtUbE/NIrisNI7hRwU+UKS3Cr6S2vH1XB9wvEHHI3anu5OUpX1Fkr/PDC7oFCaol/QCvzVLbLZVizAT1aTLpA==",
+        "dependencies": {
+          "J2N": "2.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "2.0.0"
+        }
+      },
       "Lucene.Net.Analysis.Common": {
         "type": "CentralTransitive",
-        "requested": "[4.8.0, )",
-        "resolved": "4.9.0",
-        "contentHash": "bvw39HHvWKU8Ym7WM0Ru4XB8NrKyKmcqURplhAvGo2WBAqwYDe1Av9cnhZ1tNbrACG2CnSeY53U6qlWwdNysAA=="
+        "requested": "[4.8.0-beta00016, )",
+        "resolved": "4.8.0-beta00016",
+        "contentHash": "7pjEAIliWdih6E3I0hCE8hKcKKRx1LLzeQBslF1fhvzE1Sal4NyHd8RFJHV1Z+yHlBw4gCyyVIDZADiIoyqwxg==",
+        "dependencies": {
+          "Lucene.Net": "4.8.0-beta00016"
+        }
+      },
+      "Lucene.Net.Highlighter": {
+        "type": "CentralTransitive",
+        "requested": "[4.8.0-beta00016, )",
+        "resolved": "4.8.0-beta00016",
+        "contentHash": "UegB+fL8pa+rAFvQh+sSJ6s7OS8wSo94ejJak5vPwTalVZqRgqiVC1TbZM91YZYY3ftbgD1VpGRpUHKCKVuuJg==",
+        "dependencies": {
+          "Lucene.Net.Memory": "4.8.0-beta00016",
+          "Lucene.Net.Queries": "4.8.0-beta00016"
+        }
+      },
+      "Lucene.Net.QueryParser": {
+        "type": "CentralTransitive",
+        "requested": "[4.8.0-beta00016, )",
+        "resolved": "4.8.0-beta00016",
+        "contentHash": "5dVvjXmzPaK8GD/eblJopTJMQmO6c6fvVPfBIOw46+jyZR+yESkUnWF1LtLoLXZQNrl4Dx8LKdes5G1QAM7eGA==",
+        "dependencies": {
+          "Lucene.Net.Analysis.Common": "4.8.0-beta00016",
+          "Lucene.Net.Queries": "4.8.0-beta00016",
+          "Lucene.Net.Sandbox": "4.8.0-beta00016"
+        }
       },
       "MailChimp.Net.V3": {
         "type": "CentralTransitive",

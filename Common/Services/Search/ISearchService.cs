@@ -1,6 +1,8 @@
-using Cosmos.Common.Models;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Cosmos.Common.Models;
+using Cosmos.Common.Services.Search.Models;
 
 namespace Cosmos.Common.Services.Search;
 
