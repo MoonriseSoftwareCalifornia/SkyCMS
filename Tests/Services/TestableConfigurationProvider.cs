@@ -6,11 +6,13 @@
 namespace Sky.Tests.Services
 {
     using Cosmos.DynamicConfig;
+    using Cosmos.DynamicConfig.Configurations;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.Options;
 
     /// <summary>
     /// Testable version of DynamicConfigurationProvider that allows injecting a test DbContext.
@@ -32,8 +34,9 @@ namespace Sky.Tests.Services
             IHttpContextAccessor httpContextAccessor,
             IMemoryCache memoryCache,
             ILogger<DynamicConfigurationProvider> logger,
-            DbContextOptions<DynamicConfigDbContext> testDbContextOptions)
-            : base(configuration, httpContextAccessor, memoryCache, logger)
+            DbContextOptions<DynamicConfigDbContext> testDbContextOptions,
+            IOptions<ProxySettings> proxyOptions)
+            : base(configuration, httpContextAccessor, memoryCache, logger, proxyOptions)
         {
             this.testDbContextOptions = testDbContextOptions;
         }

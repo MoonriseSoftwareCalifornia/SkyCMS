@@ -5,19 +5,21 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.DynamicConfig;
+    using Cosmos.DynamicConfig.Configurations;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.Options;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="DynamicConfigurationProvider"/>.
@@ -32,6 +34,7 @@ namespace Sky.Tests.Services
         private Mock<ILogger<DynamicConfigurationProvider>> loggerMock;
         private TestableConfigurationProvider provider;
         private DynamicConfigDbContext dbContext;
+        private Mock<IOptions<ProxySettings>> proxyOptionsMock;
 
         private const string TestConfigConnectionString = "Data Source=:memory:";
         private const string TestTenant1Domain = "tenant1.example.com";
@@ -77,7 +80,8 @@ namespace Sky.Tests.Services
                 httpContextAccessorMock.Object,
                 memoryCache,
                 loggerMock.Object,
-                options);
+                options,
+                proxyOptionsMock.Object);
         }
 
         [TestCleanup]

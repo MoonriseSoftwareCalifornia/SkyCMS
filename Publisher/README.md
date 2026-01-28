@@ -1,3 +1,26 @@
+# Sky.Publisher — Developer README
+
+Purpose
+- Publisher project responsible for serving published content and static proxy endpoints used in production delivery.
+
+Quick start (local)
+```powershell
+dotnet build SkyCMS.sln
+dotnet run --project Publisher
+```
+
+Where to look
+- Entry point: `Publisher/Program.cs`.
+- Static proxy and routing controllers: `Publisher/Controllers`.
+- Refer to `Editor` for how content is produced and `Cosmos.*` projects for storage patterns.
+
+Tests
+- Run tests with `dotnet test SkyCMS.sln` or target specific test projects.
+
+Notes & conventions
+- Avoid changing public-facing routes without tests and coordination.
+- Follow DI and scoped service conventions used across the solution.
+- Ask before editing `.github/workflows/*` or release pipelines.
 # SkyCMS Publisher
 
 The SkyCMS Publisher is the public-facing web application component of the SkyCMS system that **renders and serves complete web pages** to end users. It operates in multiple modes to provide flexible deployment options for different performance and architectural requirements.

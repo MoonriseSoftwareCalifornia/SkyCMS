@@ -5,12 +5,15 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using Cosmos.DynamicConfig.Configurations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Net;
+using System.Text;
 
 namespace Cosmos.DynamicConfig
 {
@@ -28,6 +31,8 @@ namespace Cosmos.DynamicConfig
         private readonly StringBuilder errorMessages = new();
         private readonly string connectionString;
         private readonly ILogger<DynamicConfigurationProvider> _logger;
+        private readonly ProxySettings proxySettings;
+        private readonly HashSet<IPAddress> trustedProxyIPs;
 
         private const string CacheKeyPrefix = "tenant:connection:";
 
@@ -57,6 +62,7 @@ namespace Cosmos.DynamicConfig
         /// <param name="httpContextAccessor">HTTP context accessor.</param>
         /// <param name="logger">Log service.</param>
         /// <param name="memoryCache">Memory cache.</param>
+        /// <param name="proxyOptions">Proxy settings.</param>
         /// <remarks>
         /// For unit tests, use <see cref="TestableConfigurationProvider"/> to avoid real database connections.
         /// </remarks>
@@ -64,9 +70,11 @@ namespace Cosmos.DynamicConfig
             IConfiguration configuration,
             IHttpContextAccessor httpContextAccessor,
             IMemoryCache memoryCache,
-            ILogger<DynamicConfigurationProvider> logger)
+            ILogger<DynamicConfigurationProvider> logger,
+            IOptions<ProxySettings> proxyOptions)
         {
             this.configuration = configuration;
+            this.proxySettings = proxyOptions.Value;
             this.httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
 
             connectionString = this.configuration.GetConnectionString("ConfigDbConnectionString") ?? string.Empty;
@@ -77,6 +85,31 @@ namespace Cosmos.DynamicConfig
 
             this.memoryCache = memoryCache;
             _logger = logger;
+
+            // Parse trusted proxy IPs (IPv4 and IPv6 supported)
+            trustedProxyIPs = new HashSet<IPAddress>();
+            if (proxySettings.TrustedProxyIPs != null)
+            {
+                foreach (var ip in proxySettings.TrustedProxyIPs)
+                {
+                    if (IPAddress.TryParse(ip, out var parsedIp))
+                    {
+                        trustedProxyIPs.Add(parsedIp);
+                    }
+                    else
+                    {
+                        _logger?.LogWarning("Invalid IP address in TrustedProxyIPs: {IP}", ip);
+                    }
+                }
+            }
+
+        }
+
+        // Helper to check if the request is from a trusted proxy
+        private bool IsFromTrustedProxy(HttpContext context)
+        {
+            var remoteIp = context.Connection.RemoteIpAddress;
+            return remoteIp != null && trustedProxyIPs.Contains(remoteIp);
         }
 
         /// <summary>
@@ -207,10 +240,14 @@ namespace Cosmos.DynamicConfig
                 throw new InvalidOperationException("HTTP request is not available.");
             }
 
-            var xhostHeader = httpContextAccessor.HttpContext.Request.Headers["x-origin-hostname"].ToString();
-            if (!string.IsNullOrWhiteSpace(xhostHeader))
+            // Only trust x-origin-hostname if enabled and from a trusted proxy
+            if (proxySettings.TrustXOriginHostname && IsFromTrustedProxy(httpContextAccessor.HttpContext))
             {
-                return xhostHeader.ToLowerInvariant();
+                var xhostHeader = httpContextAccessor.HttpContext.Request.Headers["x-origin-hostname"].ToString();
+                if (!string.IsNullOrWhiteSpace(xhostHeader))
+                {
+                    return xhostHeader.ToLowerInvariant();
+                }
             }
 
             var hostDomain = httpContextAccessor.HttpContext.Request.Host.Host.ToLowerInvariant();

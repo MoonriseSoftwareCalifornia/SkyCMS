@@ -1,9 +1,12 @@
 using Cosmos.DynamicConfig;
+using Cosmos.DynamicConfig.Configurations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
 
 namespace Sky.Tests.TestHelpers
 {
@@ -13,14 +16,16 @@ namespace Sky.Tests.TestHelpers
     internal class TestableConfigurationProvider : DynamicConfigurationProvider
     {
         private readonly DbContextOptions<DynamicConfigDbContext> _testOptions;
+        private Mock<IOptions<ProxySettings>> proxyOptionsMock;
 
         public TestableConfigurationProvider(
             IConfiguration configuration,
             IHttpContextAccessor httpContextAccessor,
             IMemoryCache memoryCache,
             ILogger<DynamicConfigurationProvider> logger,
-            DbContextOptions<DynamicConfigDbContext> testOptions)
-            : base(configuration, httpContextAccessor, memoryCache, logger)
+            DbContextOptions<DynamicConfigDbContext> testOptions,
+            IOptions<ProxySettings> proxySettings)
+            : base(configuration, httpContextAccessor, memoryCache, logger, proxySettings)
         {
             _testOptions = testOptions;
         }

@@ -12,6 +12,7 @@
     <PackageVersion Include="Azure.Communication.Email" Version="1.1.0" />
     <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageVersion Include="coverlet.msbuild" Version="6.0.4" />
+    <PackageVersion Include="IPAddressRange" Version="6.3.0" />
     <PackageVersion Include="MediatR" Version="14.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Antiforgery" Version="2.3.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.9" />

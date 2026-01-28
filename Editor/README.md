@@ -1,3 +1,23 @@
+# Sky.Editor — Developer README
+
+Purpose
+- The `Editor` project contains the web-based editor UI and related backend components used during content editing.
+
+Quick start (local)
+```powershell
+dotnet build SkyCMS.sln
+dotnet run --project Editor\Sky.Editor.csproj
+```
+
+Where to look
+- Static assets and third-party frontend libraries: `Editor/wwwroot/lib`.
+- Frontend package manifest: `Editor/package.json`.
+- Key controllers and boot code: `Editor/Program.cs`, `Editor/Boot` and `Editor/Controllers`.
+
+Developer tips
+- Respect `Editor/stylecop.json` and the repository `Directory.Packages.props` versions.
+- Prefer using existing frontend libraries present under `Editor/wwwroot/lib` rather than adding new frameworks.
+- When making server-side changes, add unit tests in the matching `Tests` project and run `dotnet test`.
 # SkyCMS Editor
 
 The SkyCMS Editor is the authoring & administration application of the SkyCMS platform. It provides multiple authoring modes (visual, rich‑text, and code), asset & permission management, versioning, and publishing workflows targeting the SkyCMS Publisher (dynamic, static, headless, or decoupled modes).

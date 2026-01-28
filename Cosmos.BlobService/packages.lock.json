@@ -1127,7 +1127,8 @@
       "cosmos.dynamicconfig": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[9.2.3.22, )",
+          "AspNetCore.Identity.FlexDb": "[9.2.4.25, )",
+          "IPAddressRange": "[6.3.0, )",
           "Microsoft.EntityFrameworkCore": "[9.0.10, 10.0.0)",
           "Microsoft.EntityFrameworkCore.Cosmos": "[9.0.10, 10.0.0)"
         }
@@ -1165,6 +1166,12 @@
           "Duende.IdentityServer.Storage": "7.4.3",
           "Microsoft.EntityFrameworkCore.Relational": "9.0.9"
         }
+      },
+      "IPAddressRange": {
+        "type": "CentralTransitive",
+        "requested": "[6.3.0, )",
+        "resolved": "6.3.0",
+        "contentHash": "VrGoeUz+ZK2QiwHNj+vab9uOvTDucenRseJZjc4uB7ASduQ7RNWnpd8gy1e9z2BsY4VoigVaCRrcQCQKuQVSiw=="
       },
       "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
         "type": "CentralTransitive",

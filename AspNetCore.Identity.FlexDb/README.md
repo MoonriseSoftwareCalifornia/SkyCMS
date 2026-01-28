@@ -1,3 +1,20 @@
+# AspNetCore.Identity.FlexDb — Developer README
+
+Purpose
+- Identity store implementation and related tests using Cosmos-backed storage.
+
+Quick start
+```powershell
+dotnet build SkyCMS.sln
+dotnet test AspNetCore.Identity.FlexDb.Tests\AspNetCore.Identity.FlexDb.Tests.csproj
+```
+
+Where to look
+- Store implementations: `AspNetCore.Identity.FlexDb/Stores`.
+- Containers & utilities: `AspNetCore.Identity.FlexDb/Containers`.
+
+Notes
+- Identity changes are sensitive; add tests and check for compatibility with ASP.NET Identity abstractions.
 # AspNetCore.Identity.FlexDb - Flexible Database Provider for ASP.NET Core Identity
 
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)

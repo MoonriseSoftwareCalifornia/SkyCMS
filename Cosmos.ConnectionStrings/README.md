@@ -1,3 +1,19 @@
+# Cosmos.ConnectionStrings — Developer README
+
+Purpose
+- Contains helpers for loading and managing Cosmos DB connection strings and configuration providers.
+
+Quick start
+```powershell
+dotnet build SkyCMS.sln
+```
+
+Where to look
+- Providers and configuration classes: `Cosmos.ConnectionStrings/*`.
+- Single-tenant vs multi-tenant configuration implementations.
+
+Notes
+- Changing connection string handling affects all Cosmos consumers; coordinate changes and add tests.
 # Cosmos.DynamicConfig - Multi-Tenant Configuration Provider
 
 > **Note:** This project is located in the `Cosmos.ConnectionStrings/` folder but the project file is `Cosmos.DynamicConfig.csproj`. Both names refer to the same package - the namespace and assembly name is `Cosmos.DynamicConfig`.

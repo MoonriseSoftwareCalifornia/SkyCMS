@@ -496,6 +496,7 @@ namespace Cosmos.BlobService
 
         /// <summary>
         /// Gets the driver from a connection string.
+        /// CRITICAL: Implements driver caching with tenant-specific cache keys for multi-tenant isolation.
         /// </summary>
         /// <param name="connectionString">Connection string.</param>
         /// <returns>ICosmosStorage driver.</returns>
@@ -507,6 +508,19 @@ namespace Cosmos.BlobService
                 return null;
             }
 
+            // CRITICAL: Use connection string hash as cache key to ensure tenant isolation
+            // Different tenants with different connection strings will have different cache keys
+            var cacheKey = DriverCacheKeyPrefix + connectionString.GetHashCode();
+
+            // Try to get cached driver first
+            if (memoryCache != null && memoryCache.TryGetValue(cacheKey, out ICosmosStorage cachedDriver))
+            {
+                return cachedDriver;
+            }
+
+            // Cache miss - create new driver
+            ICosmosStorage driver;
+
             if (connectionString.StartsWith("DefaultEndpointsProtocol=", StringComparison.CurrentCultureIgnoreCase))
             {
                 // Check if this is Azurite (local emulator)
@@ -517,7 +531,7 @@ namespace Cosmos.BlobService
                 // Azurite doesn't use Azure AD credentials, so we can skip DefaultAzureCredential
                 // Pass null for Azurite to avoid unnecessary credential initialization
                 var credential = isAzurite ? null : new DefaultAzureCredential();
-                return new AzureStorage(connectionString, credential);
+                driver = new AzureStorage(connectionString, credential);
             }
             else if (connectionString.Contains("accountid", StringComparison.CurrentCultureIgnoreCase))
             {
@@ -541,7 +555,7 @@ namespace Cosmos.BlobService
                 var keyId = keyIdPart.Split("=")[1];
                 var key = keyPart.Split("=")[1];
 
-                return new AmazonStorage(
+                driver = new AmazonStorage(
                     new AmazonStorageConfig()
                     {
                         AccountId = accountId,
@@ -573,7 +587,7 @@ namespace Cosmos.BlobService
                 var keyId = keyIdPart.Split("=")[1];
                 var key = keyPart.Split("=")[1];
 
-                return new AmazonStorage(
+                driver = new AmazonStorage(
                     new AmazonStorageConfig()
                     {
                         AmazonRegion = region,
@@ -590,6 +604,19 @@ namespace Cosmos.BlobService
                     "Supported formats: Azure Blob Storage (DefaultEndpointsProtocol=...), " +
                     "Amazon S3 (Bucket=...;Region=... or AccountId=...;Bucket=...).");
             }
+
+            // Cache the driver with sliding expiration for performance
+            // CRITICAL: Each tenant's driver is cached separately based on their connection string
+            if (memoryCache != null)
+            {
+                memoryCache.Set(cacheKey, driver, new MemoryCacheEntryOptions
+                {
+                    SlidingExpiration = DriverCacheExpiration,
+                    Size = 1 // Each driver instance counts as 1 unit; adjust if you want to track actual memory usage
+                });
+            }
+
+            return driver;
         }
     }
 }

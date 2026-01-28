@@ -12,6 +12,7 @@ namespace Cosmos.Common.Data
     using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data.SQlite;
+    using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Azure.Cosmos;
@@ -25,6 +26,8 @@ namespace Cosmos.Common.Data
     /// </summary>
     public class ApplicationDbContext : CosmosIdentityDbContext<IdentityUser, IdentityRole, string>, IDataProtectionKeyContext, IApplicationDbContext
     {
+        private readonly IDynamicConfigurationProvider? _configurationProvider;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationDbContext"/> class.
         /// </summary>
@@ -36,6 +39,20 @@ namespace Cosmos.Common.Data
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="ApplicationDbContext"/> class with tenant configuration.
+        /// </summary>
+        /// <param name="options">Database context options.</param>
+        /// <param name="configurationProvider">Dynamic configuration provider for tenant resolution.</param>
+        public ApplicationDbContext(
+            DbContextOptions<ApplicationDbContext> options,
+            IDynamicConfigurationProvider? configurationProvider)
+            : base(options, true)
+        {
+            _configurationProvider = configurationProvider;
+            CurrentTenantDomain = _configurationProvider?.GetTenantDomainNameFromRequest();
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationDbContext"/> class with connection string.
         /// Automatically determines if connection string is for Cosmos DB, MySQL or SQL Server.
         /// </summary>
@@ -44,6 +61,17 @@ namespace Cosmos.Common.Data
             : base(CosmosDbOptionsBuilder.GetDbOptions<ApplicationDbContext>(connectionString), true)
         {
         }
+
+        /// <summary>
+        /// Gets the current tenant domain captured at DbContext creation time.
+        /// </summary>
+        /// <remarks>
+        /// This property is used by EF Core query filters to automatically filter entities by tenant.
+        /// The value is captured once when the DbContext is instantiated for better performance
+        /// and improved compatibility across all database providers (Cosmos DB, SQL Server, MySQL, SQLite).
+        /// Null indicates no tenant filtering (e.g., in testing or non-web contexts).
+        /// </remarks>
+        public string? CurrentTenantDomain { get; private set; }
 
         /// <summary>
         /// Gets or sets catalog of Articles (flattened listing metadata + permissions).
@@ -428,7 +456,7 @@ namespace Cosmos.Common.Data
                 modelBuilder.Entity<CatalogEntry>().Property(e => e.RowVersion).IsETagConcurrency();
                 modelBuilder.Entity<PublishedPage>().Property(e => e.RowVersion).IsETagConcurrency();
                 modelBuilder.Entity<PageDesignVersion>().Property(e => e.RowVersion).IsETagConcurrency();
-                    .HasQueryFilter(a => _currentTenantDomain == null || a.TenantDomain == _currentTenantDomain);
+
             }
 
             base.OnModelCreating(modelBuilder);

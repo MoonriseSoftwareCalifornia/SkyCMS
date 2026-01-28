@@ -1373,6 +1373,8 @@ namespace Sky.Tests.Controllers
         public async Task RemoveMailChimp_OnlyRemovesMailChimpSettings_PreservesOtherSettings()
         {
             // Arrange
+            Db.Settings.RemoveRange(Db.Settings); // Clear all settings to avoid contamination
+            await Db.SaveChangesAsync();
             Db.Settings.AddRange(
                 new Setting { Group = "MailChimp", Name = "ApiKey", Value = "test", Description = "Test" },
                 new Setting { Group = "ContactsConfig", Name = "EnableAlerts", Value = "true", Description = "Test" },

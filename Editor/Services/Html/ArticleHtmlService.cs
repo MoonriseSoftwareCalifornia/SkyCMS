@@ -19,6 +19,11 @@ namespace Sky.Editor.Services.Html
         /// <inheritdoc />
         public string EnsureEditableMarkers(string html)
         {
+            if (html == null)
+            {
+                return null;
+            }
+
             if (string.IsNullOrWhiteSpace(html))
             {
                 return string.Empty;

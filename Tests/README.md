@@ -1,3 +1,20 @@
+# Tests — Developer README
+
+Purpose
+- Contains unit and integration tests for SkyCMS server-side logic.
+
+Quick start
+```powershell
+dotnet test Tests\Sky.Tests.csproj
+```
+
+Where to look
+- Individual test classes: `Tests/*`.
+- Shared test utilities: `Sky.TestSetup` project.
+
+Notes
+- Tests are run in CI; aim to keep tests deterministic and fast.
+- If adding new code, add tests in the appropriate test project and run `dotnet test` locally before pushing.
 # Sky.Tests — SkyCMS Test Suite
 
 Comprehensive test suite for the SkyCMS platform covering Editor functionality, security, authentication, authorization, and multi-database support.

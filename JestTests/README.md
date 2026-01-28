@@ -1,3 +1,21 @@
+# JestTests — Frontend Test README
+
+Purpose
+- Contains JavaScript frontend tests and toolchain configuration (Jest).
+
+Quick start
+```powershell
+cd JestTests
+npm install
+npm test
+```
+
+Where to look
+- Test files under `JestTests/__tests__` or `JestTests/tests`.
+- Frontend fixtures and mocks in the same folder.
+
+Notes
+- Use the local Node/NPM version recommended by the project (check `package.json`) and run tests after updating frontend assets.
 # JestTests
 
 JavaScript unit testing for SkyCMS using Jest.

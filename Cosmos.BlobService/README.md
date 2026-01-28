@@ -1,3 +1,18 @@
+# Cosmos.BlobService — Developer README
+
+Purpose
+- Blob storage helpers and abstractions for storing binary assets in Cosmos/Blob-backed stores.
+
+Quick start
+```powershell
+dotnet build SkyCMS.sln
+```
+
+Where to look
+- Storage context and helpers: `Cosmos.BlobService/StorageContext.cs` and related classes.
+
+Notes
+- Review storage configuration and container/partition strategies before making changes.
 README.md
 # Cosmos.BlobService - Sky CMS Azure Storage Provider
 

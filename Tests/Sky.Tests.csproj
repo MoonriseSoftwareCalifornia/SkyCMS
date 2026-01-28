@@ -24,6 +24,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Sky.Tests\**" />
+	  <EmbeddedResource Remove="Sky.Tests\**" />
+	  <None Remove="Sky.Tests\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="coverlet.collector">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -43,16 +49,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Common\Cosmos.Common.csproj" />
 		<ProjectReference Include="..\Cosmos.BlobService\Cosmos.BlobService.csproj" />
+		<ProjectReference Include="..\Cosmos.ConnectionStrings\Cosmos.DynamicConfig.csproj" />
 		<ProjectReference Include="..\Editor\Sky.Editor.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Sky.Tests\Services\Templates\" />
 	</ItemGroup>
 
 </Project>

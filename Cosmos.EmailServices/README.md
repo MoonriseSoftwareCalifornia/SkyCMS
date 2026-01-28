@@ -1,4 +1,21 @@
-﻿# Cosmos.EmailServices - Multi-service IEmailSender
+﻿# Cosmos.EmailServices — Developer README
+
+Purpose
+- Email/smtp integration helpers and services that integrate with Azure Cosmos-backed configuration.
+
+Quick start
+```powershell
+dotnet build SkyCMS.sln
+```
+
+Where to look
+- Service implementations: `Cosmos.EmailServices/Services`.
+- Configuration wiring and DI: check project `Program` or consuming projects.
+
+Notes
+- Review how secrets and SMTP credentials are loaded; avoid committing credentials.
+- Add unit tests for new features and ensure they do not require external email providers in CI.
+# Cosmos.EmailServices - Multi-service IEmailSender
 
 This is an IEmailSender implementation for [Cosmos CMS](https://github.com/MoonriseSoftwareCalifornia/CosmosCMS)
 and for use with any ASP.NET Core Identity web app. Instructions for setting up

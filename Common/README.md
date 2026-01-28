@@ -1,3 +1,27 @@
+# Common — Developer README
+
+Purpose
+- Utility and shared helper code used by many projects (data helpers, shared services, and cross-cutting concerns).
+
+Quick start (local)
+```powershell
+dotnet build SkyCMS.sln
+```
+
+Where to look
+- Data access and helpers: `Common/Data`.
+- Shared features and utilities: `Common/Features`.
+
+Tests
+- Run solution tests or target specific test projects that depend on `Common`:
+```powershell
+dotnet test SkyCMS.sln
+```
+
+Notes & conventions
+- Keep `Common` low-dependency and focused on reusable logic.
+- When changing data-layer helpers, ensure affected projects have tests updated and run full solution tests.
+- Prefer adding small, well-documented helpers rather than large utility classes.
 # Cosmos.Common - SkyCMS Core Library
 
 > **Package Info:** This is the `Cosmos.Common` package with namespace `Cosmos.Common.*`. It provides shared functionality for both Sky.Editor and Cosmos.Publisher applications.

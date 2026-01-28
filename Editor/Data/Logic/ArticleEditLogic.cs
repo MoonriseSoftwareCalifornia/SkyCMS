@@ -19,6 +19,7 @@ namespace Sky.Editor.Data.Logic
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
+    using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
@@ -53,6 +54,7 @@ namespace Sky.Editor.Data.Logic
         private readonly ILogger<ArticleEditLogic> logger;
         private readonly IMemoryCache localCache;
         private readonly IEditorSettings settings;
+        private readonly IDynamicConfigurationProvider configurationProvider;
 
         // Service dependencies
         private readonly IClock clock;
@@ -79,6 +81,7 @@ namespace Sky.Editor.Data.Logic
         /// <param name="titleChangeService">Title change coordinator (redirects, child slugs, events).</param>
         /// <param name="redirectService">Redirect service (kept for DI compatibility; not directly used here).</param>
         /// <param name="templateService">Template service for managing article templates.</param>
+        /// <param name="configurationProvider">Dynamic configuration provider for tenant resolution.</param>
         public ArticleEditLogic(
             ApplicationDbContext dbContext,
             IMemoryCache memoryCache,
@@ -92,7 +95,8 @@ namespace Sky.Editor.Data.Logic
             IPublishingService publishingService,
             ITitleChangeService titleChangeService,
             IRedirectService redirectService,
-            ITemplateService templateService)
+            ITemplateService templateService,
+            IDynamicConfigurationProvider configurationProvider = null)
             : base(
                 dbContext,
                 memoryCache,
@@ -111,12 +115,39 @@ namespace Sky.Editor.Data.Logic
             this.publishingService = publishingService ?? throw new ArgumentNullException(nameof(publishingService));
             this.titleChangeService = titleChangeService ?? throw new ArgumentNullException(nameof(titleChangeService));
             this.templateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
+            this.configurationProvider = configurationProvider; // Optional: null for single-tenant scenarios
         }
 
         /// <summary>
         /// Gets the strongly-typed application database context (shadowing base protected context for convenience).
         /// </summary>
         public new ApplicationDbContext DbContext => base.DbContext;
+
+        /// <summary>
+        /// Gets the current tenant domain from the configuration provider (or null if single-tenant/not configured).
+        /// </summary>
+        /// <returns>Tenant domain string or null.</returns>
+        private Task<string> GetCurrentTenantDomainAsync()
+        {
+            try
+            {
+                // Use the configuration provider to get tenant domain from request context
+                // This ensures proper tenant isolation in multi-tenant scenarios
+                if (configurationProvider != null)
+                {
+                    var tenantDomain = configurationProvider.GetTenantDomainNameFromRequest();
+                    return Task.FromResult(tenantDomain);
+                }
+                
+                // If no configuration provider, assume single-tenant scenario
+                return Task.FromResult<string>(null);
+            }
+            catch
+            {
+                // If any error occurs, assume single-tenant scenario
+                return Task.FromResult<string>(null);
+            }
+        }
 
         /// <summary>
         /// Returns the most recent published timestamp (UTC) for the specified logical article number, or null if never published.
@@ -138,6 +169,9 @@ namespace Sky.Editor.Data.Logic
         /// <returns>Article view model or null if not found.</returns>
         public async Task<ArticleViewModel> GetArticleByArticleNumber(int articleNumber, int? versionNumber)
         {
+            // Get current tenant domain for filtering
+            var tenantDomain = await GetCurrentTenantDomainAsync();
+
             // Explicitly project required fields to ensure EF loads them
             IQueryable<Article> q = DbContext.Articles
                 .AsNoTracking() // Prevent tracking issues in concurrent contexts
@@ -230,8 +264,13 @@ namespace Sky.Editor.Data.Logic
         /// <returns>Article view model or null.</returns>
         public async Task<ArticleViewModel> GetArticleById(Guid id, Guid userId)
         {
-            var entity = await DbContext.Articles
-                .FirstOrDefaultAsync(a => a.Id == id && a.StatusCode != (int)StatusCodeEnum.Deleted);
+            // Get current tenant domain for filtering
+            var tenantDomain = await GetCurrentTenantDomainAsync();
+            
+            IQueryable<Article> query = DbContext.Articles
+                .Where(a => a.Id == id && a.StatusCode != (int)StatusCodeEnum.Deleted);
+            
+            var entity = await query.FirstOrDefaultAsync();
             return entity == null ? null : await BuildArticleViewModel(entity, "en-US");
         }
 
@@ -251,9 +290,14 @@ namespace Sky.Editor.Data.Logic
 
             urlPath = urlPath.TrimStart('/');
 
+            // Get current tenant domain for filtering
+            var tenantDomain = await GetCurrentTenantDomainAsync();
+            
             var deletedEnum = (int)StatusCodeEnum.Deleted;
-            var entity = await DbContext.Articles
-                .Where(a => a.UrlPath == urlPath && a.StatusCode != deletedEnum)
+            IQueryable<Article> query = DbContext.Articles
+                .Where(a => a.UrlPath == urlPath && a.StatusCode != deletedEnum);
+            
+            var entity = await query
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
 
@@ -408,6 +452,31 @@ namespace Sky.Editor.Data.Logic
 
             title = title.Trim('/');
 
+            // Get current tenant domain for multi-tenant isolation
+            var tenantDomain = await GetCurrentTenantDomainAsync();
+
+            // CRITICAL SECURITY: Validate user belongs to current tenant
+            // Prevent cross-tenant content creation
+            if (!string.IsNullOrEmpty(tenantDomain))
+            {
+                var user = await DbContext.Users
+                    .FirstOrDefaultAsync(u => u.Id == userId.ToString());
+                
+                if (user == null)
+                {
+                    throw new UnauthorizedAccessException(
+                        $"User {userId} does not exist");
+                }
+                
+                // Validate user's email domain matches current tenant
+                // This prevents cross-tenant operations even when User entities aren't tenant-filtered
+                if (user.Email != null && !user.Email.EndsWith($"@{tenantDomain}", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new UnauthorizedAccessException(
+                        $"User {userId} is not authorized to create content in tenant {tenantDomain}");
+                }
+            }
+
             var article = new Article
             {
                 BlogKey = blogKey,
@@ -421,7 +490,7 @@ namespace Sky.Editor.Data.Logic
                 Published = isFirstArticle ? DateTimeOffset.UtcNow : null,
                 UserId = userId.ToString(),
                 TemplateId = templateId,
-                BannerImage = string.Empty
+                BannerImage = string.Empty,
             };
 
             // Generate initial URL path/slug

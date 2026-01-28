@@ -157,6 +157,18 @@ namespace Sky.Tests
                     HtmlHeader = string.Empty,
                     FooterHtmlContent = string.Empty
                 });
+
+                // Disable static web page generation in tests to avoid Azure Storage issues
+                Db.Settings.Add(new Setting
+                {
+                    Id = Guid.NewGuid(),
+                    Group = "Publishing",
+                    Name = "StaticWebPages",
+                    Value = "false",
+                    IsRequired = false,
+                    Description = "Disable static web page generation for tests"
+                });
+
                 Db.SaveChanges();
             }
 
@@ -471,6 +483,57 @@ namespace Sky.Tests
         protected virtual void AfterInitialize() { }
 
         protected Task<int> ArticleCountAsync() => Db.Articles.CountAsync();
+
+        /// <summary>
+        /// Creates a new tenant test context for multi-tenant isolation testing.
+        /// </summary>
+        /// <param name="tenantDomain">Tenant domain name (e.g., "tenant1.example.com").</param>
+        /// <param name="sharedDatabaseName">Optional shared database name for testing data isolation across tenants in same DB.</param>
+        /// <param name="sharedCache">Optional shared cache for testing cache isolation.</param>
+        /// <returns>Initialized tenant test context.</returns>
+        protected async Task<TenantTestContext> CreateTenantContextAsync(
+            string tenantDomain,
+            string sharedDatabaseName = null,
+            IMemoryCache sharedCache = null)
+        {
+            var tenantId = Guid.NewGuid();
+            var context = new TenantTestContext(
+                tenantId,
+                tenantDomain,
+                sharedDatabaseName,
+                sharedCache ?? Cache,
+                Storage);
+
+            await context.InitializeAsync(seedLayout: true, baseTestContext: this);
+            return context;
+        }
+
+        /// <summary>
+        /// Creates multiple tenant contexts for testing tenant isolation.
+        /// All tenants share the same in-memory database to test data isolation.
+        /// </summary>
+        /// <param name="tenantDomains">Array of tenant domain names.</param>
+        /// <param name="useSharedCache">Whether tenants share a cache instance.</param>
+        /// <returns>Array of initialized tenant contexts.</returns>
+        protected async Task<TenantTestContext[]> CreateMultipleTenantContextsAsync(
+            string[] tenantDomains,
+            bool useSharedCache = false)
+        {
+            // Create shared database name for all tenants
+            var sharedDbName = $"MultiTenant_{Guid.NewGuid()}";
+            var sharedCache = useSharedCache ? Cache : null;
+
+            var contexts = new TenantTestContext[tenantDomains.Length];
+            for (int i = 0; i < tenantDomains.Length; i++)
+            {
+                contexts[i] = await CreateTenantContextAsync(
+                    tenantDomains[i],
+                    sharedDbName,
+                    sharedCache);
+            }
+
+            return contexts;
+        }
 
         public virtual async ValueTask DisposeAsync()
         {

@@ -2,6 +2,12 @@
   "version": 2,
   "dependencies": {
     "net9.0": {
+      "IPAddressRange": {
+        "type": "Direct",
+        "requested": "[6.3.0, )",
+        "resolved": "6.3.0",
+        "contentHash": "VrGoeUz+ZK2QiwHNj+vab9uOvTDucenRseJZjc4uB7ASduQ7RNWnpd8gy1e9z2BsY4VoigVaCRrcQCQKuQVSiw=="
+      },
       "Microsoft.EntityFrameworkCore": {
         "type": "Direct",
         "requested": "[9.0.10, 10.0.0)",

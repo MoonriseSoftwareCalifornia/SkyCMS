@@ -39,7 +39,7 @@ namespace Sky.Cms.Controllers
         /// <param name="userManager">User manager.</param>
         /// <param name="memoryCache">Memory cache (optional, for layout caching).</param>
         /// <param name="configProvider">Dynamic configuration provider (optional, for tenant-aware caching).</param>
-        internal BaseController(
+        public BaseController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
             IMemoryCache? memoryCache = null,
@@ -63,7 +63,7 @@ namespace Sky.Cms.Controllers
         ///         It uses an instance of <see cref="HtmlAgilityPack.HtmlDocument" /> to check HTML formatting.
         ///     </para>
         /// </remarks>
-        internal string BaseValidateHtml(string fieldName, string inputHtml)
+        public string BaseValidateHtml(string fieldName, string inputHtml)
         {
             if (!string.IsNullOrEmpty(inputHtml))
             {
@@ -79,7 +79,7 @@ namespace Sky.Cms.Controllers
         ///     Get Layout List Items.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        internal async Task<List<SelectListItem>> BaseGetLayoutListItems()
+        public async Task<List<SelectListItem>> BaseGetLayoutListItems()
         {
             var layouts = await dbContext.Layouts.Select(s => new SelectListItem
             {

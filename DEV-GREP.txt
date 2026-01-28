@@ -1,0 +1,31 @@
+Key files and symbols to grep for when exploring SkyCMS
+
+Program and startup
+- Program.cs
+- Editor/Program.cs
+
+Package & build
+- Directory.Packages.props
+- *.csproj
+
+Secrets & deployment
+- UploadSecretsToGithubRepo.ps1
+- AddMigrationScript.ps1
+- .github/workflows/**
+
+Editor / frontend
+- Editor/wwwroot/**
+- Editor/package.json
+- Editor/stylecop.json
+
+Storage & integrations
+- Cosmos.* (projects)
+- Cosmos.ConnectionStrings
+
+Tests
+- dotnet test
+- Tests/**
+
+Other
+- docker-compose.yml
+- SkyCMS.sln

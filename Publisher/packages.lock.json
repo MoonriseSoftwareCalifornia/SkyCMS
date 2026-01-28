@@ -1560,7 +1560,7 @@
       "cosmos.common": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[9.2.4.24, )",
+          "AspNetCore.Identity.FlexDb": "[9.2.4.25, )",
           "Azure.Monitor.Query": "[1.5.0, )",
           "Cosmos.BlobService": "[9.2.4.25, )",
           "Cosmos.DynamicConfig": "[9.2.4.25, )",
@@ -1573,7 +1573,8 @@
       "cosmos.dynamicconfig": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[9.2.4.24, )",
+          "AspNetCore.Identity.FlexDb": "[9.2.4.25, )",
+          "IPAddressRange": "[6.3.0, )",
           "Microsoft.EntityFrameworkCore": "[9.0.10, 10.0.0)",
           "Microsoft.EntityFrameworkCore.Cosmos": "[9.0.10, 10.0.0)"
         }
@@ -1674,6 +1675,12 @@
         "requested": "[1.12.4, )",
         "resolved": "1.12.4",
         "contentHash": "ljqvBabvFwKoLniuoQKO8b5bJfJweKLs4fUNS/V5dsvpo0A8MlJqxxn9XVmP2DaskbUXty6IYaWAi1SArGIMeQ=="
+      },
+      "IPAddressRange": {
+        "type": "CentralTransitive",
+        "requested": "[6.3.0, )",
+        "resolved": "6.3.0",
+        "contentHash": "VrGoeUz+ZK2QiwHNj+vab9uOvTDucenRseJZjc4uB7ASduQ7RNWnpd8gy1e9z2BsY4VoigVaCRrcQCQKuQVSiw=="
       },
       "MailChimp.Net.V3": {
         "type": "CentralTransitive",

@@ -16,6 +16,7 @@ using Cosmos.Common.Models;
 using Cosmos.Common.Services.Configurations;
 using Cosmos.Common.Services.Email;
 using Cosmos.DynamicConfig;
+using Cosmos.DynamicConfig.Configurations;
 using Cosmos.EmailServices;
 using Hangfire;
 using Microsoft.AspNetCore.Antiforgery;
@@ -205,6 +206,9 @@ if (enableDiagnostics)
 //   - Multi-Tenant: Discovers all tenants via DynamicConfigurationProvider
 //                    and migrates each tenant's database independently
 // ---------------------------------------------------------------
+// The following gets the proxy settings for multi-tenant scenarios.
+// These settings are used by the DynamicConfigurationProvider.
+builder.Services.Configure<ProxySettings>(builder.Configuration.GetSection("ProxySettings"));
 if (allowSetup)
 {
     if (!isMultiTenantEditor)
@@ -516,7 +520,13 @@ if (microsoftAuth != null)
 // ---------------------------------------------------------------
 // Scoped services (per-request lifecycle, can access HttpContext)
 builder.Services.AddScoped<ISetupService, SetupService>();
-builder.Services.AddScoped<IMediator, Mediator>();
+builder.Services.AddScoped<Mediator>(); // ← Concrete type registration
+builder.Services.AddScoped<IMediator>(sp =>   // ← Interface registration
+    new MultiTenantMediator(
+        new Mediator(sp),
+        sp.GetRequiredService<ApplicationDbContext>(),
+        sp.GetService<IDynamicConfigurationProvider>(),
+        sp.GetRequiredService<ILogger<MultiTenantMediator>>()));
 builder.Services.AddScoped<ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>, CreateArticleHandler>();
 builder.Services.AddScoped<ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>, SaveArticleHandler>();
 builder.Services.AddScoped<ICommandHandler<CreatePageDesignVersionCommand, CommandResult<PageDesignVersion>>, CreatePageDesignVersionHandler>();
@@ -562,6 +572,9 @@ if (allowSetup)
 {
     builder.Services.AddScoped<ConfigurationValidator>();
 }
+
+// Additional authorization policies
+builder.Services.AddAuthorization();
 
 // ---------------------------------------------------------------
 // STEP 7: Register Background Job Services
@@ -825,6 +838,7 @@ builder.Services.AddRateLimiter(options =>
             opt.Window = TimeSpan.FromMinutes(5);
             opt.PermitLimit = 3;
         }
+
         opt.QueueLimit = 0;   // Reject immediately when limit reached
     });
 
@@ -912,7 +926,16 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
+    // Handle unhandled exceptions (500, etc.)
+    app.UseExceptionHandler("/Error"); // Use your generic error page
+
+    // Handle status codes (404, 403, etc.) by redirecting to the same error page
+    app.UseStatusCodePages(context =>
+    {
+        context.HttpContext.Response.Redirect("/Error");
+        return Task.CompletedTask;
+    });
+
     app.UseHsts();
 }
 
