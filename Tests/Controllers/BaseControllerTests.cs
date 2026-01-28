@@ -12,6 +12,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Sky.Cms.Controllers;
+using System.Security.Claims;
 
 namespace Sky.Tests.Controllers
 {
@@ -24,7 +25,18 @@ namespace Sky.Tests.Controllers
         public void TestInitialize()
         {
             InitializeTestContext();
+            // Add a user to the in-memory database so UserManager can find it
+            var testUser = new IdentityUser { Id = TestUserId.ToString(), UserName = "testuser" };
+            Db.Users.Add(testUser);
+            Db.SaveChanges();
             _controller = new TestableBaseController(Db, UserManager, Cache, DynamicConfigurationProvider);
+            // Set up a valid ClaimsPrincipal for the controller
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()) };
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext();
+            _controller.ControllerContext.HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            _controller.ControllerContext.HttpContext.User = principal;
         }
 
         [TestMethod]

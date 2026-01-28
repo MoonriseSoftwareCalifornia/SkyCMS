@@ -69,7 +69,7 @@ namespace Sky.Cms.Controllers
             {
                 var contentHtmlDocument = new HtmlDocument();
                 contentHtmlDocument.LoadHtml(HttpUtility.HtmlDecode(inputHtml));
-                return contentHtmlDocument.ParsedText.Trim();
+                return contentHtmlDocument.DocumentNode.InnerText.Trim();
             }
 
             return string.Empty;

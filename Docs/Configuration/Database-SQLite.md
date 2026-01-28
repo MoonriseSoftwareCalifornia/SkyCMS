@@ -73,6 +73,28 @@ ENTRYPOINT ["dotnet", "Sky.Editor.dll"]
 $env:ConnectionStrings__ApplicationDbContextConnection = "Data Source=/app/data/skycms.db"
 ```
 
+## In-memory examples (ephemeral)
+
+If you need a temporary, process-local database (typically for automated tests or short-lived development runs), use an in-memory SQLite connection string. Note these databases do not persist to disk and are lost when the process exits.
+
+```json
+{
+  "ConnectionStrings": {
+    "ApplicationDbContextConnection": "Data Source=:memory:"
+  }
+}
+```
+
+Shared in-memory databases (multiple connections in the same process) can use a URI-style filename with `mode=memory` and `cache=shared`:
+
+```json
+{
+  "ConnectionStrings": {
+    "ApplicationDbContextConnection": "Data Source=file:memdb1?mode=memory&cache=shared"
+  }
+}
+```
+
 ## Best practices
 
 - **Backup the .db file** regularly if using SQLite in production (small deployment).
@@ -80,6 +102,8 @@ $env:ConnectionStrings__ApplicationDbContextConnection = "Data Source=/app/data/
 - **Single instance only**: SQLite is not suitable for multi-instance deployments (horizontal scaling).
 - **Monitor file size**: SQLite files can grow; ensure sufficient disk space.
 - **No concurrent writes**: If you need high concurrency, migrate to a centralized database (SQL Server, MySQL, Cosmos DB).
+
+**Note — In-memory usage:** Only use in-memory SQLite for testing and ephemeral development scenarios. In-memory databases do not persist across process or container restarts and are not suitable for any workload that requires durable storage.
 
 ## Tips and troubleshooting
 

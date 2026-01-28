@@ -32,12 +32,17 @@ namespace Cosmos.DynamicConfig
         /// <param name="modelBuilder"></param>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Connection>()
-                .ToContainer("config");
-
-            modelBuilder.Entity<Metric>()
-                .ToContainer("Metrics");
-
+            var provider = Database.ProviderName;
+            if (provider != null && provider.Contains("Cosmos", StringComparison.OrdinalIgnoreCase))
+            {
+                modelBuilder.Entity<Connection>().ToContainer("config");
+                modelBuilder.Entity<Metric>().ToContainer("Metrics");
+            }
+            else
+            {
+                modelBuilder.Entity<Connection>();
+                modelBuilder.Entity<Metric>();
+            }
             base.OnModelCreating(modelBuilder);
         }
     }
