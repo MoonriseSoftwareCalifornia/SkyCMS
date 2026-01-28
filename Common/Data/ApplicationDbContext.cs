@@ -428,6 +428,7 @@ namespace Cosmos.Common.Data
                 modelBuilder.Entity<CatalogEntry>().Property(e => e.RowVersion).IsETagConcurrency();
                 modelBuilder.Entity<PublishedPage>().Property(e => e.RowVersion).IsETagConcurrency();
                 modelBuilder.Entity<PageDesignVersion>().Property(e => e.RowVersion).IsETagConcurrency();
+                    .HasQueryFilter(a => _currentTenantDomain == null || a.TenantDomain == _currentTenantDomain);
             }
 
             base.OnModelCreating(modelBuilder);
