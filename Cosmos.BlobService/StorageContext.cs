@@ -78,6 +78,7 @@ namespace Cosmos.BlobService
             {
                 // ✅ Multi-tenant: Use dynamic configuration provider (resolved per request)
                 dynamicConfigurationProvider = serviceProvider.GetRequiredService<IDynamicConfigurationProvider>();
+
                 // DON'T set primaryDriver here - it's resolved per request in GetPrimaryDriver()
             }
             else

@@ -12,8 +12,10 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Cosmos.DynamicConfig
 {
@@ -33,6 +35,11 @@ namespace Cosmos.DynamicConfig
         private readonly ILogger<DynamicConfigurationProvider> _logger;
         private readonly ProxySettings proxySettings;
         private readonly HashSet<IPAddress> trustedProxyIPs;
+
+        private static readonly Regex DnsRegex = new(
+            @"^(?=.{1,255}$)(?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]?)(\.[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$",
+            RegexOptions.Compiled);
+
 
         private const string CacheKeyPrefix = "tenant:connection:";
 
@@ -241,17 +248,41 @@ namespace Cosmos.DynamicConfig
             }
 
             // Only trust x-origin-hostname if enabled and from a trusted proxy
+            // Hardened x-origin-hostname header handling to gracefully reject malformed hostnames
             if (proxySettings.TrustXOriginHostname && IsFromTrustedProxy(httpContextAccessor.HttpContext))
             {
-                var xhostHeader = httpContextAccessor.HttpContext.Request.Headers["x-origin-hostname"].ToString();
+                var xhostHeader = GetValidHostName(httpContextAccessor.HttpContext.Request.Headers["x-origin-hostname"].ToString());
                 if (!string.IsNullOrWhiteSpace(xhostHeader))
                 {
-                    return xhostHeader.ToLowerInvariant();
+                    // Attempt to parse as URI, fallback to basic hostname validation
+                    string? safeHost = null;
+                    if (Uri.TryCreate("http://" + xhostHeader, UriKind.Absolute, out var uri))
+                    {
+                        safeHost = uri.Host.ToLowerInvariant();
+                    }
+                    else
+                    {
+                        // Basic hostname validation: allow only letters, digits, hyphens, and dots
+                        var hostPattern = @"^[a-zA-Z0-9\-\.]+$";
+                        if (System.Text.RegularExpressions.Regex.IsMatch(xhostHeader, hostPattern))
+                        {
+                            safeHost = xhostHeader.ToLowerInvariant();
+                        }
+                        else
+                        {
+                            _logger?.LogWarning("Rejected malformed x-origin-hostname header: {Header}", xhostHeader);
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(safeHost))
+                    {
+                        return safeHost;
+                    }
                 }
             }
 
             var hostDomain = httpContextAccessor.HttpContext.Request.Host.Host.ToLowerInvariant();
-            return hostDomain;
+            return GetValidHostName(hostDomain);
         }
 
         /// <summary>
@@ -334,30 +365,41 @@ namespace Cosmos.DynamicConfig
         }
 
         /// <summary>
-        /// Normalizes a domain name to lowercase for consistent comparison and caching.
+        /// Gets a validated host name from the provided hostname.
         /// </summary>
-        /// <param name="domainName">Domain name to normalize.</param>
-        /// <returns>Normalized domain name.</returns>
-        private static string NormalizeDomainName(string domainName)
+        /// <param name="hostname"></param>
+        /// <returns></returns>
+        /// <remarks>If the host name is invalid, returns string.Empty and writes an entry to the log.</remarks>
+        public string GetValidHostName(string hostname)
         {
-            if (string.IsNullOrWhiteSpace(domainName))
+            if (!string.IsNullOrWhiteSpace(hostname))
             {
-                return domainName;
+                try
+                {
+                    var idn = new IdnMapping();
+                    string ascii = idn.GetAscii(hostname);
+                    if (!DnsRegex.IsMatch(ascii)) return string.Empty;
+                    if (Uri.CheckHostName(ascii) == UriHostNameType.Dns)
+                    {
+                        // Success!
+                        return ascii.ToLowerInvariant();
+                    }
+
+                    _logger?.LogWarning($"Rejected malformed host name: {hostname}", hostname);
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogError($"Rejected malformed host name: {hostname}", hostname, e);
+                }
             }
 
-            return domainName.Trim().ToLowerInvariant();
+            return string.Empty;
         }
 
         /// <summary>
-        /// Gets the cache key for a domain name with proper namespacing.
+        /// Gets the dynamic configuration database context.
         /// </summary>
-        /// <param name="domainName">Domain name.</param>
-        /// <returns>Cache key.</returns>
-        private static string GetCacheKey(string domainName)
-        {
-            return $"{CacheKeyPrefix}{NormalizeDomainName(domainName)}";
-        }
-
+        /// <returns></returns>
         protected virtual DynamicConfigDbContext GetDbContext()
         {
             var options = AspNetCore.Identity.FlexDb.CosmosDbOptionsBuilder.GetDbOptions<DynamicConfigDbContext>(this.connectionString);
@@ -495,6 +537,31 @@ namespace Cosmos.DynamicConfig
             
             _logger?.LogDebug("Resolved tenant ID {TenantId} for domain {Domain}", connection.Id, domainName);
             return connection.Id;
+        }
+
+        /// <summary>
+        /// Normalizes a domain name to lowercase for consistent comparison and caching.
+        /// </summary>
+        /// <param name="domainName">Domain name to normalize.</param>
+        /// <returns>Normalized domain name.</returns>
+        private static string NormalizeDomainName(string domainName)
+        {
+            if (string.IsNullOrWhiteSpace(domainName))
+            {
+                return domainName;
+            }
+
+            return domainName.Trim().ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Gets the cache key for a domain name with proper namespacing.
+        /// </summary>
+        /// <param name="domainName">Domain name.</param>
+        /// <returns>Cache key.</returns>
+        private static string GetCacheKey(string domainName)
+        {
+            return $"{CacheKeyPrefix}{NormalizeDomainName(domainName)}";
         }
     }
 }
