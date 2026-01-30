@@ -6,6 +6,7 @@
 namespace Sky.Tests.Services
 {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Services;
@@ -127,7 +128,7 @@ namespace Sky.Tests.Services
             Assert.IsTrue(storedToken.CreatedAt >= beforeGeneration);
             Assert.IsTrue(storedToken.CreatedAt <= afterGeneration);
             Assert.IsTrue(storedToken.ExpiresAt > storedToken.CreatedAt);
-            
+
             // Default expiration is 15 minutes
             var expectedExpiration = storedToken.CreatedAt.AddMinutes(15);
             var timeDifference = Math.Abs((storedToken.ExpiresAt - expectedExpiration).TotalSeconds);
@@ -205,7 +206,7 @@ namespace Sky.Tests.Services
 
             // Assert
             Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result);
-            
+
             var storedToken = await dbContext.TotpTokens.FirstOrDefaultAsync(t => t.Token == token);
             Assert.IsNull(storedToken, "Token should be removed from database after validation");
         }
@@ -224,7 +225,7 @@ namespace Sky.Tests.Services
 
             // Assert
             Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result);
-            
+
             var storedToken = await dbContext.TotpTokens.FirstOrDefaultAsync(t => t.Token == token);
             Assert.IsNotNull(storedToken, "Token should remain in database when removeToken is false");
         }
@@ -433,33 +434,51 @@ namespace Sky.Tests.Services
         /// Tests that null user throws ArgumentNullException.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
-        public async Task ValidateAsync_NullUser_ThrowsArgumentNullException()
+        public void ValidateAsync_NullUser_ThrowsArgumentNullException()
         {
-            // Act
-            await tokenProvider.ValidateAsync("some-token", null);
+            try
+            {
+                tokenProvider.ValidateAsync("some-token", null).GetAwaiter().GetResult();
+                Assert.Fail("Expected ArgumentNullException was not thrown.");
+            }
+            catch (ArgumentNullException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>
         /// Tests that null dbContext throws ArgumentNullException.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
-        public async Task Constructor_NullDbContext_ThrowsArgumentNullException()
+        public void Constructor_NullDbContext_ThrowsArgumentNullException()
         {
-            // Act
-            var _ = new OneTimeTokenProvider<IdentityUser>(null, loggerMock.Object);
+            try
+            {
+                var _ = new OneTimeTokenProvider<IdentityUser>(null, loggerMock.Object);
+                Assert.Fail("Expected ArgumentNullException was not thrown.");
+            }
+            catch (ArgumentNullException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>
         /// Tests that null logger throws ArgumentNullException.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
-        public async Task Constructor_NullLogger_ThrowsArgumentNullException()
+        public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            // Act
-            var _ = new OneTimeTokenProvider<IdentityUser>(dbContext, null);
+            try
+            {
+                var _ = new OneTimeTokenProvider<IdentityUser>(dbContext, null);
+                Assert.Fail("Expected ArgumentNullException was not thrown.");
+            }
+            catch (ArgumentNullException)
+            {
+                // Test passes
+            }
         }
 
         #endregion
@@ -487,7 +506,7 @@ namespace Sky.Tests.Services
 
             // Either both succeeded (if both read before either deleted), or one succeeded and one failed
             Assert.IsTrue(validResults >= 1, "At least one validation should succeed");
-            
+
             // Token should be removed only once
             var storedToken = await dbContext.TotpTokens.FirstOrDefaultAsync(t => t.Token == token);
             Assert.IsNull(storedToken, "Token should be removed from database");
@@ -561,7 +580,7 @@ namespace Sky.Tests.Services
             }
 
             // Assert - All should be unique (no collisions)
-            Assert.AreEqual(iterations, tokens.Count, 
+            Assert.AreEqual(iterations, tokens.Count,
                 "All generated tokens should be unique (no collisions in 100 iterations)");
 
             // Check character distribution (should use full alphanumeric set)

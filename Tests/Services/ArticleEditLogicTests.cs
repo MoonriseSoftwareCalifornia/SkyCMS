@@ -355,7 +355,6 @@ namespace Sky.Tests.Services
         /// Tests that root page cannot be deleted.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
         public async Task DeleteArticle_RootPage_ThrowsNotSupportedException()
         {
             // Arrange

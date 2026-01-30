@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -24,19 +24,19 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="Sky.Tests\**" />
-	  <EmbeddedResource Remove="Sky.Tests\**" />
-	  <None Remove="Sky.Tests\**" />
+		<Compile Remove="Sky.Tests\**" />
+		<EmbeddedResource Remove="Sky.Tests\**" />
+		<None Remove="Sky.Tests\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="coverlet.collector">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="coverlet.msbuild">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="MediatR" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />

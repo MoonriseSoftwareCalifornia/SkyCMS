@@ -468,9 +468,15 @@ namespace Sky.Tests.Controllers
             var zipFile = CreateTestZipFile(maliciousFiles);
 
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
-                async () => await controller.Deploy(testArticleId, TestDeploymentKey, zipFile),
-                "Path traversal should be detected and rejected");
+            try
+            {
+                await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+                Assert.Fail("Expected InvalidOperationException was not thrown.");
+            }
+            catch (InvalidOperationException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>
@@ -497,9 +503,15 @@ namespace Sky.Tests.Controllers
                 var zipFile = CreateTestZipFile(maliciousFiles);
 
                 // Act & Assert
-                await Assert.ThrowsExceptionAsync<InvalidOperationException>(
-                    async () => await controller.Deploy(testArticleId, TestDeploymentKey, zipFile),
-                    $"Pattern '{pattern}' should be rejected");
+                try
+                {
+                    await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+                    Assert.Fail($"Expected InvalidOperationException was not thrown for pattern '{pattern}'.");
+                }
+                catch (InvalidOperationException)
+                {
+                    // Test passes
+                }
             }
         }
 

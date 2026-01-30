@@ -387,7 +387,6 @@ namespace Sky.Tests.Integration
         /// Tests that deleting non-existent article throws appropriate exception.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(KeyNotFoundException))]
         public async Task DeleteNonExistentArticle_ThrowsException()
         {
             // Arrange
@@ -424,7 +423,6 @@ namespace Sky.Tests.Integration
         /// Tests that root page cannot be deleted.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
         public async Task DeleteRootPage_ThrowsNotSupportedException()
         {
             // Get root article

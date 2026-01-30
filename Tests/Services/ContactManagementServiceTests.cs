@@ -202,7 +202,6 @@ namespace Sky.Tests.Services
         /// Tests that invalid email throws ArgumentException.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
         public async Task AddContactAsync_InvalidEmail_ThrowsArgumentException()
         {
             // Arrange
@@ -213,15 +212,22 @@ namespace Sky.Tests.Services
                 Phone = string.Empty
             };
 
-            // Act
-            await service.AddContactAsync(model);
+            // Act & Assert
+            try
+            {
+                await service.AddContactAsync(model);
+                Assert.Fail("Expected ArgumentException was not thrown.");
+            }
+            catch (ArgumentException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>
         /// Tests that null email throws ArgumentException.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
         public async Task AddContactAsync_NullEmail_ThrowsArgumentException()
         {
             // Arrange
@@ -232,15 +238,22 @@ namespace Sky.Tests.Services
                 Phone = string.Empty
             };
 
-            // Act
-            await service.AddContactAsync(model);
+            // Act & Assert
+            try
+            {
+                await service.AddContactAsync(model);
+                Assert.Fail("Expected ArgumentException was not thrown.");
+            }
+            catch (ArgumentException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>
         /// Tests that empty email throws ArgumentException.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
         public async Task AddContactAsync_EmptyEmail_ThrowsArgumentException()
         {
             // Arrange
@@ -251,15 +264,22 @@ namespace Sky.Tests.Services
                 Phone = string.Empty
             };
 
-            // Act
-            await service.AddContactAsync(model);
+            // Act & Assert
+            try
+            {
+                await service.AddContactAsync(model);
+                Assert.Fail("Expected ArgumentException was not thrown.");
+            }
+            catch (ArgumentException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>
         /// Tests that whitespace email throws ArgumentException.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
         public async Task AddContactAsync_WhitespaceEmail_ThrowsArgumentException()
         {
             // Arrange
@@ -270,8 +290,16 @@ namespace Sky.Tests.Services
                 Phone = string.Empty
             };
 
-            // Act
-            await service.AddContactAsync(model);
+            // Act & Assert
+            try
+            {
+                await service.AddContactAsync(model);
+                Assert.Fail("Expected ArgumentException was not thrown.");
+            }
+            catch (ArgumentException)
+            {
+                // Test passes
+            }
         }
 
         #endregion
@@ -688,8 +716,15 @@ namespace Sky.Tests.Services
             };
 
             // Act & Assert - Should throw (currently no error handling)
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
-                async () => await service.AddContactAsync(model));
+            try
+            {
+                await service.AddContactAsync(model);
+                Assert.Fail("Expected InvalidOperationException was not thrown.");
+            }
+            catch (InvalidOperationException)
+            {
+                // Test passes
+            }
 
             // Contact should still be saved before the exception
             var contact = await dbContext.Contacts.FirstOrDefaultAsync(c => c.Email == TestEmail.ToLower());

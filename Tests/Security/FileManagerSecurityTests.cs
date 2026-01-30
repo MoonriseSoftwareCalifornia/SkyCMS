@@ -365,9 +365,15 @@ namespace Sky.Tests.Security
             };
 
             // Act & Assert - Should throw because email is NULL (cannot validate tenant)
-            await Assert.ThrowsExceptionAsync<UnauthorizedAccessException>(
-                async () => await mediator.SendAsync(command),
-                "Mediator should reject user with NULL email (cannot validate tenant affiliation)");
+            try
+            {
+                await mediator.SendAsync(command);
+                Assert.Fail("Expected UnauthorizedAccessException was not thrown.");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>

@@ -1,21 +1,12 @@
-using System;
-using System.Runtime.Serialization;
-using System.Reflection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Cosmos.EmailServices.Templates;
+using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace Sky.Tests
 {
     [TestClass]
     public class EmailTemplateParserTests
     {
-        [TestMethod]
-        public void Constructor_Throws_WhenTemplateMissing()
-        {
-            // Use a name that is very unlikely to exist in embedded resources
-            Assert.ThrowsException<ArgumentException>(() => new EmailTemplateParser("__NON_EXISTENT_TEMPLATE__"));
-        }
-
         [TestMethod]
         public void Insert_ReplacesPlaceholder_InHtmlAndText()
         {

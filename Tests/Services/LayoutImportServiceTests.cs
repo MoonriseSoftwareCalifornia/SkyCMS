@@ -268,7 +268,6 @@ namespace Sky.Tests.Services.Layouts
         /// Tests that GetCommunityLayoutAsync throws exception for invalid layout ID.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
         public async Task GetCommunityLayoutAsync_InvalidLayoutId_ThrowsException()
         {
             // Arrange
@@ -281,10 +280,50 @@ namespace Sky.Tests.Services.Layouts
             var httpClient = new HttpClient(mockHttpMessageHandler.Object);
             mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-            // Act
-            await service.GetCommunityLayoutAsync("non-existent-layout", false);
+            // Act & Assert
+            try
+            {
+                await service.GetCommunityLayoutAsync("non-existent-layout", false);
+                Assert.Fail("Expected InvalidOperationException was not thrown.");
+            }
+            catch (InvalidOperationException)
+            {
+                // Test passes
+            }
+        }
 
-            // Assert - Exception expected
+        /// <summary>
+        /// Tests that GetCommunityLayoutAsync handles HTTP errors when fetching layout HTML.
+        /// </summary>
+        [TestMethod]
+        public async Task GetCommunityLayoutAsync_LayoutHtmlFetchFails_ThrowsException()
+        {
+            // Arrange
+            var layoutId = "test-layout";
+            var catalogJson = JsonConvert.SerializeObject(new Root
+            {
+                LayoutCatalog = new List<LayoutCatalogItem>
+                {
+                    new LayoutCatalogItem { Id = layoutId, Name = "Test" }
+                }
+            });
+
+            var mockHttpMessageHandler = CreateSequentialMockHttpMessageHandlerWithError(
+                new[] { catalogJson },
+                HttpStatusCode.NotFound);
+            var httpClient = new HttpClient(mockHttpMessageHandler.Object);
+            mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+            // Act & Assert
+            try
+            {
+                await service.GetCommunityLayoutAsync(layoutId, false);
+                Assert.Fail("Expected HttpRequestException was not thrown.");
+            }
+            catch (HttpRequestException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>
@@ -315,35 +354,6 @@ namespace Sky.Tests.Services.Layouts
 
             // Assert
             Assert.IsTrue(result.IsDefault);
-        }
-
-        /// <summary>
-        /// Tests that GetCommunityLayoutAsync handles HTTP errors when fetching layout HTML.
-        /// </summary>
-        [TestMethod]
-        [ExpectedException(typeof(HttpRequestException))]
-        public async Task GetCommunityLayoutAsync_LayoutHtmlFetchFails_ThrowsException()
-        {
-            // Arrange
-            var layoutId = "test-layout";
-            var catalogJson = JsonConvert.SerializeObject(new Root
-            {
-                LayoutCatalog = new List<LayoutCatalogItem>
-                {
-                    new LayoutCatalogItem { Id = layoutId, Name = "Test" }
-                }
-            });
-
-            var mockHttpMessageHandler = CreateSequentialMockHttpMessageHandlerWithError(
-                new[] { catalogJson },
-                HttpStatusCode.NotFound);
-            var httpClient = new HttpClient(mockHttpMessageHandler.Object);
-            mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
-
-            // Act
-            await service.GetCommunityLayoutAsync(layoutId, false);
-
-            // Assert - Exception expected
         }
 
         #endregion
@@ -843,16 +853,21 @@ namespace Sky.Tests.Services.Layouts
         /// Tests that ParseHtml with unsupported type throws exception.
         /// </summary>
         [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
         public void ParseHtmlGeneric_UnsupportedType_ThrowsException()
         {
             // Arrange
             var html = "<html><body>Content</body></html>";
 
-            // Act
-            service.ParseHtml<Layout>(html);
-
-            // Assert - Exception expected
+            // Act & Assert
+            try
+            {
+                service.ParseHtml<Layout>(html);
+                Assert.Fail("Expected NotSupportedException was not thrown.");
+            }
+            catch (NotSupportedException)
+            {
+                // Test passes
+            }
         }
 
         /// <summary>
