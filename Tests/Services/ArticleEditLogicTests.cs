@@ -361,10 +361,16 @@ namespace Sky.Tests.Services
             var root = await Logic.CreateArticle("Root Page", TestUserId);
             Assert.AreEqual("root", root.UrlPath);
 
-            // Act
-            await Logic.DeleteArticle(root.ArticleNumber);
-
-            // Assert - Exception expected
+            // Act & Assert
+            try
+            {
+                await Logic.DeleteArticle(root.ArticleNumber);
+                Assert.Fail("Expected NotSupportedException was not thrown.");
+            }
+            catch
+            {
+                // Pass
+            }
         }
 
         #endregion

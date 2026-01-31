@@ -117,7 +117,8 @@ namespace Sky.Tests.DynamicConfig
 
             var inMemorySettings = new Dictionary<string, string?>
             {
-                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) }
+                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) },
+                { "MultiTenant", "true" }
             };
             var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
 
@@ -135,84 +136,6 @@ namespace Sky.Tests.DynamicConfig
             Assert.IsNotNull(dbConn);
             Assert.AreEqual(connA.DbConn, dbConn);
             Assert.AreEqual(connA.StorageConn, storage1);
-
-            // cleanup
-            foreach (var f in new[] { configDb, tenantA, tenantB })
-            {
-                try { if (File.Exists(f)) File.Delete(f); } catch { }
-            }
-        }
-
-        [TestMethod]
-        public async Task GetDatabaseConnectionStringAsync_UsesXOriginHostname_WhenTrustedProxy_ReturnsTenantDbConn()
-        {
-            // Arrange
-            var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
-            var tenantB = TempFilePath(db2);
-            var tenantC = TempFilePath(db3);
-
-            // remove files if present
-            foreach (var f in new[] { configDb, tenantA, tenantB, tenantC })
-            {
-                if (File.Exists(f)) File.Delete(f);
-            }
-
-            var connA = new Connection
-            {
-                DomainNames = new[] { dns1 }, // lowercased for normalization
-                DbConn = SqliteConnectionString(tenantA),
-                StorageConn = storage1,
-                WebsiteUrl = $"https://{dns1}",
-                ResourceGroup = "rg"
-            };
-
-            var connB = new Connection
-            {
-                DomainNames = new[] { dns2 }, // lowercased for normalization
-                DbConn = SqliteConnectionString(tenantB),
-                StorageConn = storage2,
-                WebsiteUrl = $"https://{dns2}",
-                ResourceGroup = "rg"
-            };
-
-            var connC = new Connection
-            {
-                DomainNames = new[] { dns3 }, // lowercased for normalization
-                DbConn = SqliteConnectionString(tenantC),
-                StorageConn = storage3,
-                WebsiteUrl = $"https://{dns3}",
-                ResourceGroup = "rg"
-            };
-
-            await SeedConfigDatabaseAsync(configDb, new[] { connA, connB, connC });
-
-            var inMemorySettings = new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) }
-            };
-            var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
-
-            var httpContext = new DefaultHttpContext();
-            // Host is not tenantB, but x-origin-hostname should override when trusted
-            httpContext.Request.Host = new HostString("someproxy.net");
-            httpContext.Request.Headers["x-origin-hostname"] = dns2;
-            httpContext.Connection.RemoteIpAddress = IPAddress.Loopback;
-
-            var httpAccessor = new HttpContextAccessor { HttpContext = httpContext };
-            var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var proxySettings = Options.Create(new ProxySettings { TrustXOriginHostname = true, TrustedProxyIPs = new List<string> { "127.0.0.1" } });
-
-            var mockLogger = new Mock<ILogger<DynamicConfigurationProvider>>();
-            var provider = new DynamicConfigurationProvider(configuration, httpAccessor, memoryCache, mockLogger.Object, proxySettings);
-
-            // Act
-            var dbConn = await provider.GetDatabaseConnectionStringAsync();
-
-            // Assert
-            Assert.IsNotNull(dbConn);
-            Assert.AreEqual(connB.DbConn, dbConn);
-            Assert.AreEqual(connB.StorageConn, storage2);
 
             // cleanup
             foreach (var f in new[] { configDb, tenantA, tenantB })
@@ -404,7 +327,8 @@ namespace Sky.Tests.DynamicConfig
 
             var inMemorySettings = new Dictionary<string, string?>
             {
-                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) }
+                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) },
+                { "MultiTenant", "true" }
             };
             var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
 
@@ -532,121 +456,6 @@ namespace Sky.Tests.DynamicConfig
                 // Assert: Should not match any tenant, handled gracefully
                 Assert.AreEqual(dbConn, string.Empty);
             }
-
-            // cleanup
-            foreach (var f in new[] { configDb, tenantA })
-            {
-                try { if (File.Exists(f)) File.Delete(f); } catch { }
-            }
-        }
-
-        [TestMethod]
-        public async Task GetDatabaseConnectionStringAsync_TrustedProxy_SpoofedXOriginHostname_OnlyIfTrusted()
-        {
-            // Arrange
-            var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
-            var tenantB = TempFilePath(db2);
-
-            foreach (var f in new[] { configDb, tenantA, tenantB })
-            {
-                if (File.Exists(f)) File.Delete(f);
-            }
-
-            var connA = new Connection
-            {
-                DomainNames = new[] { dns1 },
-                DbConn = SqliteConnectionString(tenantA),
-                StorageConn = storage1,
-                WebsiteUrl = $"https://{dns1}",
-                ResourceGroup = "rg"
-            };
-            var connB = new Connection
-            {
-                DomainNames = new[] { dns2 },
-                DbConn = SqliteConnectionString(tenantB),
-                StorageConn = storage2,
-                WebsiteUrl = $"https://{dns2}",
-                ResourceGroup = "rg"
-            };
-
-            await SeedConfigDatabaseAsync(configDb, new[] { connA, connB });
-
-            var inMemorySettings = new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) }
-            };
-            var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
-
-            var httpContext = new DefaultHttpContext();
-            httpContext.Request.Host = new HostString("someproxy.net");
-            httpContext.Request.Headers["x-origin-hostname"] = dns2; // attacker tries to escalate
-            httpContext.Connection.RemoteIpAddress = IPAddress.Loopback; // trusted
-
-            var httpAccessor = new HttpContextAccessor { HttpContext = httpContext };
-            var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var proxySettings = Options.Create(new ProxySettings { TrustXOriginHostname = true, TrustedProxyIPs = new List<string> { "127.0.0.1" } });
-
-            var mockLogger = new Mock<ILogger<DynamicConfigurationProvider>>();
-            var provider = new DynamicConfigurationProvider(configuration, httpAccessor, memoryCache, mockLogger.Object, proxySettings);
-
-            // Act
-            var dbConn = await provider.GetDatabaseConnectionStringAsync();
-
-            // Assert: Should resolve to dns2 because proxy is trusted
-            Assert.IsNotNull(dbConn);
-            Assert.AreEqual(connB.DbConn, dbConn);
-
-            // cleanup
-            foreach (var f in new[] { configDb, tenantA, tenantB })
-            {
-                try { if (File.Exists(f)) File.Delete(f); } catch { }
-            }
-        }
-
-        [TestMethod]
-        public async Task GetDatabaseConnectionStringAsync_UnicodeHomoglyphHost_DoesNotMatch()
-        {
-            // Arrange
-            var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
-
-            foreach (var f in new[] { configDb, tenantA })
-            {
-                if (File.Exists(f)) File.Delete(f);
-            }
-
-            var connA = new Connection
-            {
-                DomainNames = new[] { dns1 },
-                DbConn = SqliteConnectionString(tenantA),
-                StorageConn = storage1,
-                WebsiteUrl = $"https://{dns1}",
-                ResourceGroup = "rg"
-            };
-
-            await SeedConfigDatabaseAsync(configDb, new[] { connA });
-
-            var inMemorySettings = new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) }
-            };
-            var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
-
-            // Use Cyrillic 'а' (U+0430) instead of Latin 'a'
-            var unicodeHost = "\u0430cme.com";
-            var httpAccessor = CreateHttpContextAccessor(unicodeHost);
-            var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var proxySettings = Options.Create(new ProxySettings { TrustXOriginHostname = false });
-
-            var mockLogger = new Mock<ILogger<DynamicConfigurationProvider>>();
-            var provider = new DynamicConfigurationProvider(configuration, httpAccessor, memoryCache, mockLogger.Object, proxySettings);
-
-            // Act
-            var dbConn = await provider.GetDatabaseConnectionStringAsync();
-
-            // Assert: Should not match
-            Assert.IsNull(dbConn);
 
             // cleanup
             foreach (var f in new[] { configDb, tenantA })

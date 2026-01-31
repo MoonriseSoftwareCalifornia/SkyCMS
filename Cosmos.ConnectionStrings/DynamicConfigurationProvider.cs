@@ -16,6 +16,8 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Cosmos.DynamicConfig
 {
@@ -35,6 +37,7 @@ namespace Cosmos.DynamicConfig
         private readonly ILogger<DynamicConfigurationProvider> _logger;
         private readonly ProxySettings proxySettings;
         private readonly HashSet<IPAddress> trustedProxyIPs;
+        private readonly List<IPAddressRange> trustedProxyRanges;
 
         private static readonly Regex DnsRegex = new(
             @"^(?=.{1,255}$)(?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]?)(\.[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$",
@@ -46,11 +49,6 @@ namespace Cosmos.DynamicConfig
         private readonly SemaphoreSlim _preloadLock = new(1, 1);
         private DateTime _lastPreloadTime = DateTime.MinValue;
         private const int PreloadIntervalMinutes = 30;
-
-        /// <summary>
-        /// Gets the database connection
-        /// </summary>
-        //private readonly Connection? connection;
 
         /// <summary>
         /// Gets a value indicating whether the connection is configured for multi-tenant.
@@ -93,19 +91,30 @@ namespace Cosmos.DynamicConfig
             this.memoryCache = memoryCache;
             _logger = logger;
 
-            // Parse trusted proxy IPs (IPv4 and IPv6 supported)
+            // Parse trusted proxy IPs (IPv4 and IPv6 supported), also accept CIDR and ranges
             trustedProxyIPs = new HashSet<IPAddress>();
+            trustedProxyRanges = new List<IPAddressRange>();
             if (proxySettings.TrustedProxyIPs != null)
             {
-                foreach (var ip in proxySettings.TrustedProxyIPs)
+                foreach (var entry in proxySettings.TrustedProxyIPs)
                 {
-                    if (IPAddress.TryParse(ip, out var parsedIp))
+                    if (string.IsNullOrWhiteSpace(entry)) continue;
+
+                    var ipString = entry.Trim();
+                    if (IPAddress.TryParse(ipString, out var parsedIp))
                     {
                         trustedProxyIPs.Add(parsedIp);
+                        continue;
                     }
-                    else
+
+                    try
                     {
-                        _logger?.LogWarning("Invalid IP address in TrustedProxyIPs: {IP}", ip);
+                        var range = IPAddressRange.Parse(ipString);
+                        trustedProxyRanges.Add(range);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogWarning(ex, "Invalid entry in TrustedProxyIPs: {Entry}", entry);
                     }
                 }
             }
@@ -116,7 +125,13 @@ namespace Cosmos.DynamicConfig
         private bool IsFromTrustedProxy(HttpContext context)
         {
             var remoteIp = context.Connection.RemoteIpAddress;
-            return remoteIp != null && trustedProxyIPs.Contains(remoteIp);
+            if (remoteIp == null) return false;
+
+            if (trustedProxyIPs.Contains(remoteIp)) return true;
+
+            if (trustedProxyRanges != null && trustedProxyRanges.Any(r => r.Contains(remoteIp))) return true;
+
+            return false;
         }
 
         /// <summary>
@@ -247,9 +262,9 @@ namespace Cosmos.DynamicConfig
                 throw new InvalidOperationException("HTTP request is not available.");
             }
 
-            // Only trust x-origin-hostname if enabled and from a trusted proxy
+            // Only trust x-origin-hostname when running in multi-tenant mode, if enabled, and from a trusted proxy
             // Hardened x-origin-hostname header handling to gracefully reject malformed hostnames
-            if (proxySettings.TrustXOriginHostname && IsFromTrustedProxy(httpContextAccessor.HttpContext))
+            if (IsMultiTenantConfigured && proxySettings.TrustXOriginHostname && IsFromTrustedProxy(httpContextAccessor.HttpContext))
             {
                 var xhostHeader = GetValidHostName(httpContextAccessor.HttpContext.Request.Headers["x-origin-hostname"].ToString());
                 if (!string.IsNullOrWhiteSpace(xhostHeader))
@@ -473,38 +488,49 @@ namespace Cosmos.DynamicConfig
 
                 _logger?.LogInformation("Preloading all tenant connections into cache");
 
-                await using var dbContext = GetDbContext();
-                var allConnections = await dbContext.Connections
-                    .AsNoTracking()
-                    .ToListAsync(cancellationToken);
-
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(30))
-                    .SetAbsoluteExpiration(TimeSpan.FromHours(1))
-                    .SetPriority(CacheItemPriority.High);
-
-                foreach (var connection in allConnections)
-                {
-                    if (connection.DomainNames != null)
-                    {
-                        foreach (var domain in connection.DomainNames)
-                        {
-                            var normalizedDomain = NormalizeDomainName(domain);
-                            var cacheKey = GetCacheKey(normalizedDomain);
-                            memoryCache.Set(cacheKey, connection, cacheOptions);
-                        }
-                    }
-                }
+                // Call the core implementation (overridable for tests)
+                await PreloadAllConnectionsCoreAsync(cancellationToken);
 
                 _lastPreloadTime = DateTime.UtcNow;
-                _logger?.LogInformation("Preloaded {Count} tenant connections for {DomainCount} domains",
-                    allConnections.Count,
-                    allConnections.SelectMany(c => c.DomainNames ?? Array.Empty<string>()).Count());
             }
             finally
             {
                 _preloadLock.Release();
             }
+        }
+
+        /// <summary>
+        /// Core preload implementation. Split out so tests can override the DB/cache behavior.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        protected virtual async Task PreloadAllConnectionsCoreAsync(CancellationToken cancellationToken = default)
+        {
+            await using var dbContext = GetDbContext();
+            var allConnections = await dbContext.Connections
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30))
+                .SetAbsoluteExpiration(TimeSpan.FromHours(1))
+                .SetPriority(CacheItemPriority.High);
+
+            foreach (var connection in allConnections)
+            {
+                if (connection.DomainNames != null)
+                {
+                    foreach (var domain in connection.DomainNames)
+                    {
+                        var normalizedDomain = NormalizeDomainName(domain);
+                        var cacheKey = GetCacheKey(normalizedDomain);
+                        memoryCache.Set(cacheKey, connection, cacheOptions);
+                    }
+                }
+            }
+
+            _logger?.LogInformation("Preloaded {Count} tenant connections for {DomainCount} domains",
+                allConnections.Count,
+                allConnections.SelectMany(c => c.DomainNames ?? Array.Empty<string>()).Count());
         }
 
         /// <summary>

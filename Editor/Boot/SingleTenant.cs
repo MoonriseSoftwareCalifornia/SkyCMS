@@ -10,7 +10,6 @@ namespace Sky.Editor.Boot
     using System;
     using System.Linq;
     using AspNetCore.Identity.FlexDb;
-    using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.EntityFrameworkCore;

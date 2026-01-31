@@ -393,9 +393,16 @@ namespace Sky.Tests.Integration
             var nonExistentArticleNumber = 99999;
 
             // Act
-            await Logic.DeleteArticle(nonExistentArticleNumber);
-
-            // Assert - Exception expected
+            try
+            {
+                await Logic.DeleteArticle(nonExistentArticleNumber);
+                Assert.Fail("Expected KeyNotFoundException was not thrown.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // Assert
+                StringAssert.Contains(ex.Message, nonExistentArticleNumber.ToString());
+            }
         }
 
         #endregion
@@ -429,10 +436,15 @@ namespace Sky.Tests.Integration
             var rootArticle = await Logic.CreateArticle("Root Page", TestUserId);
             Assert.AreEqual("root", rootArticle.UrlPath);
 
-            // Attempt to delete
-            await Logic.DeleteArticle(rootArticle.ArticleNumber);
-
-            // Assert - Exception expected
+            try
+            {
+                await Logic.DeleteArticle(rootArticle.ArticleNumber);
+                Assert.Fail("Expected NotSupportedException was not thrown.");
+            }
+            catch (NotSupportedException ex)
+            {
+                Assert.AreEqual("Cannot trash the home page. Replace it then delete.", ex.Message);
+            }
         }
 
         #endregion
