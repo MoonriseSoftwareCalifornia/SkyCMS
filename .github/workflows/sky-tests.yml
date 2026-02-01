@@ -59,6 +59,14 @@ jobs:
       
     - name: Build Sky.Tests
       run: dotnet build $TEST_PROJECT --no-restore --configuration Release
+
+    - name: Debug .NET environment
+      if: always()
+      run: |
+        echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
+        echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+        dotnet --info || true
+        dotnet --version || true
       
     - name: Run Sky.Tests (All tests)
       if: ${{ inputs.test_filter == '' }}
@@ -84,7 +92,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
-        dotnet test $TEST_PROJECT \
+        dotnet test --project $TEST_PROJECT \
           --no-build \
           --configuration Release \
           --collect:"XPlat Code Coverage" \
@@ -113,7 +121,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
-        dotnet test $TEST_PROJECT \
+        dotnet test --project $TEST_PROJECT \
           --no-build \
           --configuration Release \
           --filter "${{ inputs.test_filter }}" \
