@@ -84,18 +84,13 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
-        dotnet build Tests/Sky.Tests.csproj --no-restore --configuration Release
-        TEST_DLL="$(pwd)/Tests/bin/Release/net9.0/Sky.Tests.dll"
-        if [ ! -f "$TEST_DLL" ]; then
-          echo "Test assembly not found: $TEST_DLL"
-          ls -R Tests || true
-          exit 1
-        fi
-        dotnet vstest "$TEST_DLL" \
+        dotnet test $TEST_PROJECT \
+          --no-build \
+          --configuration Release \
           --collect:"XPlat Code Coverage" \
-          /Logger:Console;Verbosity=${{ inputs.verbosity }} \
-          /Logger:trx;LogFileName=sky-test-results.trx \
-          /ResultsDirectory:./TestResults
+          --logger "console;verbosity=${{ inputs.verbosity }}" \
+          --logger "trx;LogFileName=sky-test-results.trx" \
+          --results-directory ./TestResults
       
     - name: Run Sky.Tests (Filtered)
       if: ${{ inputs.test_filter != '' }}
@@ -118,19 +113,14 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
-        dotnet build Tests/Sky.Tests.csproj --no-restore --configuration Release
-        TEST_DLL="$(pwd)/Tests/bin/Release/net9.0/Sky.Tests.dll"
-        if [ ! -f "$TEST_DLL" ]; then
-          echo "Test assembly not found: $TEST_DLL"
-          ls -R Tests || true
-          exit 1
-        fi
-        dotnet vstest "$TEST_DLL" \
-          /TestCaseFilter:"${{ inputs.test_filter }}" \
+        dotnet test $TEST_PROJECT \
+          --no-build \
+          --configuration Release \
+          --filter "${{ inputs.test_filter }}" \
           --collect:"XPlat Code Coverage" \
-          /Logger:Console;Verbosity=${{ inputs.verbosity }} \
-          /Logger:trx;LogFileName=sky-test-results.trx \
-          /ResultsDirectory:./TestResults
+          --logger "console;verbosity=${{ inputs.verbosity }}" \
+          --logger "trx;LogFileName=sky-test-results.trx" \
+          --results-directory ./TestResults
 
     - name: Ensure coverage files exist
       if: always()
