@@ -93,9 +93,9 @@ jobs:
         fi
         dotnet vstest "$TEST_DLL" \
           --collect:"XPlat Code Coverage" \
-          --logger:"console;verbosity=${{ inputs.verbosity }}" \
-          --logger:"trx;LogFileName=sky-test-results.trx" \
-          --results-directory ./TestResults
+          /Logger:Console;Verbosity=${{ inputs.verbosity }} \
+          /Logger:trx;LogFileName=sky-test-results.trx \
+          /ResultsDirectory:./TestResults
       
     - name: Run Sky.Tests (Filtered)
       if: ${{ inputs.test_filter != '' }}
@@ -126,17 +126,17 @@ jobs:
           exit 1
         fi
         dotnet vstest "$TEST_DLL" \
-          --TestCaseFilter:"${{ inputs.test_filter }}" \
+          /TestCaseFilter:"${{ inputs.test_filter }}" \
           --collect:"XPlat Code Coverage" \
-          --logger:"console;verbosity=${{ inputs.verbosity }}" \
-          --logger:"trx;LogFileName=sky-test-results.trx" \
-          --results-directory ./TestResults
+          /Logger:Console;Verbosity=${{ inputs.verbosity }} \
+          /Logger:trx;LogFileName=sky-test-results.trx \
+          /ResultsDirectory:./TestResults
 
     - name: Ensure coverage files exist
       if: always()
       run: |
         shopt -s globstar nullglob
-        files=(TestResults/**/coverage.cobertura.xml)
+        files=(TestResults/**/coverage.*.xml TestResults/**/coverage.json)
         if [ ${#files[@]} -eq 0 ]; then
           echo "No coverage files found in TestResults/"
           ls -R TestResults || true
@@ -154,12 +154,13 @@ jobs:
         dotnet tool install --tool-path ../.tools dotnet-reportgenerator-globaltool
         popd
         echo "$GITHUB_WORKSPACE/.tools" >> $GITHUB_PATH
+        rm -rf ./.toolstmp || true
 
     - name: Generate Code Coverage Report
       if: always()
       run: |
         reportgenerator \
-          -reports:"TestResults/**/coverage.cobertura.xml" \
+          -reports:"TestResults/**/coverage.*.xml;TestResults/**/coverage.json" \
           -targetdir:"TestResults/CoverageReport" \
           -reporttypes:"Html;JsonSummary"
 
