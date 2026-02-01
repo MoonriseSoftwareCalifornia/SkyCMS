@@ -13,9 +13,9 @@ $coverage = 0
 # Parse test results
 if ($trxFile) {
     [xml]$xml = Get-Content $trxFile.FullName
-    $passed = [int]($xml.TestRun.ResultSummary.Counters.passed | Select-Object -DefaultValue 0)
-    $failed = [int]($xml.TestRun.ResultSummary.Counters.failed | Select-Object -DefaultValue 0)
-    $skipped = [int]($xml.TestRun.ResultSummary.Counters.skipped | Select-Object -DefaultValue 0)
+    if ($xml.TestRun.ResultSummary.Counters.passed) { $passed = [int]$xml.TestRun.ResultSummary.Counters.passed }
+    if ($xml.TestRun.ResultSummary.Counters.failed) { $failed = [int]$xml.TestRun.ResultSummary.Counters.failed }
+    if ($xml.TestRun.ResultSummary.Counters.skipped) { $skipped = [int]$xml.TestRun.ResultSummary.Counters.skipped }
     Write-Host "Test Results: $passed passed, $failed failed, $skipped skipped"
 } else {
     Write-Host "No TRX file found"
@@ -24,9 +24,13 @@ if ($trxFile) {
 # Parse coverage from JSON summary
 $coverageJson = Get-ChildItem -Path "./TestResults/CoverageReport" -Filter "Summary.json" -ErrorAction SilentlyContinue
 if ($coverageJson) {
-    $summary = Get-Content $coverageJson.FullName | ConvertFrom-Json
+  $summary = Get-Content $coverageJson.FullName | ConvertFrom-Json
+  if ($summary -and $summary.summary -and $summary.summary.linecoverage) {
     $coverage = [math]::Round($summary.summary.linecoverage, 1)
     Write-Host "Code Coverage: $coverage%"
+  } else {
+    Write-Host "Coverage summary not found in Summary.json"
+  }
 } else {
     Write-Host "No coverage report found"
 }
