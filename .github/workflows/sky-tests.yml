@@ -52,10 +52,10 @@ jobs:
         echo "  Storage: Real Azure Blob Storage"
         
     - name: Restore dependencies
-      run: dotnet restore Tests/Sky.Tests.csproj
+      run: dotnet restore --project Tests/Sky.Tests.csproj
       
     - name: Build Sky.Tests
-      run: dotnet build Tests/Sky.Tests.csproj --no-restore --configuration Release
+      run: dotnet build --project Tests/Sky.Tests.csproj --no-restore --configuration Release
       
     - name: Run Sky.Tests (All tests)
       if: ${{ inputs.test_filter == '' }}
@@ -81,7 +81,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
-        dotnet test Tests/Sky.Tests.csproj \
+        dotnet test --project Tests/Sky.Tests.csproj \
           --no-build \
           --configuration Release \
           --collect:"XPlat Code Coverage" \
@@ -111,7 +111,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
-        dotnet test Tests/Sky.Tests.csproj \
+        dotnet test --project Tests/Sky.Tests.csproj \
           --no-build \
           --configuration Release \
           --filter "${{ inputs.test_filter }}" \
@@ -123,7 +123,9 @@ jobs:
 
     - name: Install ReportGenerator
       if: always()
-      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+      run: |
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
     - name: Generate Code Coverage Report
       if: always()
