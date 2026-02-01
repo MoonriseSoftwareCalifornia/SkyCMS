@@ -52,10 +52,10 @@ jobs:
         echo "  Storage: Real Azure Blob Storage"
         
     - name: Restore dependencies
-      run: dotnet restore --project Tests/Sky.Tests.csproj
+      run: dotnet restore Tests/Sky.Tests.csproj
       
     - name: Build Sky.Tests
-      run: dotnet build --project Tests/Sky.Tests.csproj --no-restore --configuration Release
+      run: dotnet build Tests/Sky.Tests.csproj --no-restore --configuration Release
       
     - name: Run Sky.Tests (All tests)
       if: ${{ inputs.test_filter == '' }}
@@ -121,11 +121,11 @@ jobs:
           --logger "html;LogFileName=sky-test-results.html" \
           --results-directory ./TestResults
 
-    - name: Install ReportGenerator
+    - name: Install ReportGenerator (local)
       if: always()
       run: |
-        dotnet tool install -g dotnet-reportgenerator-globaltool
-        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+        dotnet tool install --tool-path ./.tools dotnet-reportgenerator-globaltool
+        echo "$PWD/.tools" >> $GITHUB_PATH
 
     - name: Generate Code Coverage Report
       if: always()
