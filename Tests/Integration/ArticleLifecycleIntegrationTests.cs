@@ -9,8 +9,6 @@ namespace Sky.Tests.Integration
     using System.Linq;
     using System.Threading.Tasks;
     using Cosmos.Cms.Common;
-    using Cosmos.Common;
-    using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;

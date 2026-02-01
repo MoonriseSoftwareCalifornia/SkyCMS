@@ -27,6 +27,20 @@ COPY ["Sky.Cms.Api.Shared/Sky.Cms.Api.Shared.csproj", "Sky.Cms.Api.Shared/"]
 COPY ["Editor/Sky.Editor.csproj", "Editor/"]
 RUN dotnet restore "./Editor/Sky.Editor.csproj"
 COPY . .
+# Install Node.js (required for npm & LibMan filesystem provider)
+RUN apt-get update \
+	&& apt-get install -y curl gnupg \
+	&& curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+	&& apt-get install -y nodejs \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Install npm dependencies for the Editor so LibMan can copy from node_modules
+RUN cd Editor && npm ci --silent
+
+# Install LibMan CLI and restore libraries that reference node_modules
+RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+ENV PATH="${PATH}:/root/.dotnet/tools"
+RUN cd Editor && libman restore
 WORKDIR "/src/Editor"
 
 RUN dotnet build "./Sky.Editor.csproj" -c $BUILD_CONFIGURATION -o /app/build
