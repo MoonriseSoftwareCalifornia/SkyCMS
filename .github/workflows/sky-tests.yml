@@ -26,6 +26,8 @@ jobs:
   sky-tests:
     name: Run Sky.Tests
     runs-on: ubuntu-latest
+    env:
+      DOTNET_NO_GLOBAL_JSON: true
     
     steps:
     - name: Checkout code
@@ -121,11 +123,28 @@ jobs:
           --logger "html;LogFileName=sky-test-results.html" \
           --results-directory ./TestResults
 
+    - name: Ensure coverage files exist
+      if: always()
+      run: |
+        shopt -s globstar nullglob
+        files=(TestResults/**/coverage.cobertura.xml)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No coverage files found in TestResults/"
+          ls -R TestResults || true
+          exit 1
+        else
+          echo "Found coverage files:"
+          printf "%s\n" "${files[@]}"
+        fi
+
     - name: Install ReportGenerator (local)
       if: always()
       run: |
-        dotnet tool install --tool-path ./.tools dotnet-reportgenerator-globaltool
-        echo "$PWD/.tools" >> $GITHUB_PATH
+        mkdir -p ./.toolstmp
+        pushd ./.toolstmp
+        dotnet tool install --tool-path ../.tools dotnet-reportgenerator-globaltool
+        popd
+        echo "$GITHUB_WORKSPACE/.tools" >> $GITHUB_PATH
 
     - name: Generate Code Coverage Report
       if: always()
