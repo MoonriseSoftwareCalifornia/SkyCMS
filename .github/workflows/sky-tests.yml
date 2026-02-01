@@ -71,6 +71,7 @@ jobs:
     - name: Run Sky.Tests (All tests)
       if: ${{ inputs.test_filter == '' }}
       env:
+        DOTNET_NO_GLOBAL_JSON: true
         # CRITICAL: These environment variable names must match what your PowerShell script uploads
         # The double underscores (__) map to nested config in .NET (ConnectionStrings:StorageConnectionString)
         
@@ -92,6 +93,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
+        echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
         dotnet test --project $TEST_PROJECT \
           --no-build \
           --configuration Release \
@@ -103,6 +105,7 @@ jobs:
     - name: Run Sky.Tests (Filtered)
       if: ${{ inputs.test_filter != '' }}
       env:
+        DOTNET_NO_GLOBAL_JSON: true
         ADMINEMAIL: ${{ secrets.ADMINEMAIL }}
         COSMOSIDENTITYDBNAME: ${{ secrets.COSMOSIDENTITYDBNAME }}
 
@@ -121,6 +124,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
+        echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
         dotnet test --project $TEST_PROJECT \
           --no-build \
           --configuration Release \
