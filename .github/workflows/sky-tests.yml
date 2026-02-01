@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOTNET_NO_GLOBAL_JSON: true
+      TEST_PROJECT: Tests/Sky.Tests.csproj
     
     steps:
     - name: Checkout code
@@ -54,10 +55,10 @@ jobs:
         echo "  Storage: Real Azure Blob Storage"
         
     - name: Restore dependencies
-      run: dotnet restore Tests/Sky.Tests.csproj
+      run: dotnet restore $TEST_PROJECT
       
     - name: Build Sky.Tests
-      run: dotnet build Tests/Sky.Tests.csproj --no-restore --configuration Release
+      run: dotnet build $TEST_PROJECT --no-restore --configuration Release
       
     - name: Run Sky.Tests (All tests)
       if: ${{ inputs.test_filter == '' }}
@@ -83,13 +84,17 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
-        dotnet test --project Tests/Sky.Tests.csproj \
-          --no-build \
-          --configuration Release \
+        dotnet build Tests/Sky.Tests.csproj --no-restore --configuration Release
+        TEST_DLL="$(pwd)/Tests/bin/Release/net9.0/Sky.Tests.dll"
+        if [ ! -f "$TEST_DLL" ]; then
+          echo "Test assembly not found: $TEST_DLL"
+          ls -R Tests || true
+          exit 1
+        fi
+        dotnet vstest "$TEST_DLL" \
           --collect:"XPlat Code Coverage" \
-          --logger "console;verbosity=${{ inputs.verbosity }}" \
-          --logger "trx;LogFileName=sky-test-results.trx" \
-          --logger "html;LogFileName=sky-test-results.html" \
+          --logger:"console;verbosity=${{ inputs.verbosity }}" \
+          --logger:"trx;LogFileName=sky-test-results.trx" \
           --results-directory ./TestResults
       
     - name: Run Sky.Tests (Filtered)
@@ -113,14 +118,18 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
-        dotnet test --project Tests/Sky.Tests.csproj \
-          --no-build \
-          --configuration Release \
-          --filter "${{ inputs.test_filter }}" \
+        dotnet build Tests/Sky.Tests.csproj --no-restore --configuration Release
+        TEST_DLL="$(pwd)/Tests/bin/Release/net9.0/Sky.Tests.dll"
+        if [ ! -f "$TEST_DLL" ]; then
+          echo "Test assembly not found: $TEST_DLL"
+          ls -R Tests || true
+          exit 1
+        fi
+        dotnet vstest "$TEST_DLL" \
+          --TestCaseFilter:"${{ inputs.test_filter }}" \
           --collect:"XPlat Code Coverage" \
-          --logger "console;verbosity=${{ inputs.verbosity }}" \
-          --logger "trx;LogFileName=sky-test-results.trx" \
-          --logger "html;LogFileName=sky-test-results.html" \
+          --logger:"console;verbosity=${{ inputs.verbosity }}" \
+          --logger:"trx;LogFileName=sky-test-results.trx" \
           --results-directory ./TestResults
 
     - name: Ensure coverage files exist
