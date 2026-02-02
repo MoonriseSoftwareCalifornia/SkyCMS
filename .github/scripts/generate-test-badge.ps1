@@ -35,19 +35,31 @@ if ($coverageJson) {
     Write-Host "No coverage report found"
 }
 
-# Determine badge color based on results
-$badgeColor = if ($failed -gt 0) {
-    "red"  # Red when tests fail
-} else {
-    "green"  # Green when all tests pass
+# Build a two-part badge: left shows total tests, right shows percent passing with color buckets
+# Compute totals and percent passing
+$total = $passed + $failed + $skipped
+$total = [int]$total
+$percent = 0
+if ($total -gt 0) {
+    $percent = [math]::Round((($passed / $total) * 100), 1)
 }
 
-# Create comprehensive badge text showing Passing/Failing counts
-$badgeText = "Passing: $passed Failing: $failed | Cov: $coverage%"
+# Choose color thresholds (typical):
+#  - Green: >= 95%
+#  - Yellow: >= 80% and < 95%
+#  - Red: < 80%
+$percentColor = if ($percent -ge 95) { '#4c1' } elseif ($percent -ge 80) { '#dfb317' } else { '#e05d44' }
 
-# Create badge SVG
+$leftText = "${total} tests"
+$rightText = "${percent}% passing"
+
+# SVG dimensions (left/right widths tuned for typical lengths)
+$leftWidth = 140
+$rightWidth = 140
+$totalWidth = $leftWidth + $rightWidth
+
 $badgeSvg = @"
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="20">
+<svg xmlns="http://www.w3.org/2000/svg" width="$totalWidth" height="20">
   <defs>
     <linearGradient id="b" x2="0" y2="100%">
       <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
@@ -55,25 +67,25 @@ $badgeSvg = @"
     </linearGradient>
   </defs>
   <clipPath id="a">
-    <rect width="280" height="20" rx="3" fill="#fff"/>
+    <rect width="$totalWidth" height="20" rx="3" fill="#fff"/>
   </clipPath>
   <g clip-path="url(#a)">
-    <path fill="#555" d="M0 0h90v20H0z"/>
-    <path fill="$badgeColor" d="M90 0h230v20H90z"/>
-    <path fill="url(#b)" d="M0 0h320v20H0z"/>
+    <path fill="#555" d="M0 0h${leftWidth}v20H0z"/>
+    <path fill="$percentColor" d="M${leftWidth} 0h${rightWidth}v20H${leftWidth}z"/>
+    <path fill="url(#b)" d="M0 0h${totalWidth}v20H0z"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
-    <text x="46" y="15" fill="#010101" fill-opacity=".3">tests</text>
-    <text x="45" y="14">tests</text>
-    <text x="204" y="15" fill="#010101" fill-opacity=".3">$badgeText</text>
-    <text x="203" y="14">$badgeText</text>
+    <text x="${([int]($leftWidth/2))}" y="14" fill="#010101" fill-opacity=".3">${leftText}</text>
+    <text x="${([int]($leftWidth/2))}" y="13">${leftText}</text>
+    <text x="${([int]($leftWidth + $rightWidth/2))}" y="14" fill="#010101" fill-opacity=".3">${rightText}</text>
+    <text x="${([int]($leftWidth + $rightWidth/2))}" y="13">${rightText}</text>
   </g>
 </svg>
 "@
 
-# Save badge
+# Save main test badge
 $badgeSvg | Out-File -FilePath "./test-badge.svg" -Encoding UTF8
-Write-Host "[OK] Badge generated successfully (color: $badgeColor)"
+Write-Host "[OK] Test badge generated: $leftText | $rightText (color: $percentColor)"
 
 # Save metrics to GitHub environment
 if ($env:GITHUB_ENV) {
