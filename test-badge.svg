@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="20">
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="20">
   <defs>
     <linearGradient id="b" x2="0" y2="100%">
       <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
@@ -9,14 +9,14 @@
     <rect width="280" height="20" rx="3" fill="#fff"/>
   </clipPath>
   <g clip-path="url(#a)">
-    <path fill="#555" d="M0 0h90v20H0z"/>
-    <path fill="green" d="M90 0h230v20H90z"/>
-    <path fill="url(#b)" d="M0 0h320v20H0z"/>
+    <path fill="#555" d="M0 0h140v20H0z"/>
+    <path fill="#4c1" d="M140 0h140v20H140z"/>
+    <path fill="url(#b)" d="M0 0h280v20H0z"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
-    <text x="46" y="15" fill="#010101" fill-opacity=".3">tests</text>
-    <text x="45" y="14">tests</text>
-    <text x="204" y="15" fill="#010101" fill-opacity=".3">Passing: 1379 Failing: 0 | Cov: 19.2%</text>
-    <text x="203" y="14">Passing: 1379 Failing: 0 | Cov: 19.2%</text>
+    <text x="" y="14" fill="#010101" fill-opacity=".3">1379 tests</text>
+    <text x="" y="13">1379 tests</text>
+    <text x="" y="14" fill="#010101" fill-opacity=".3">100% passing</text>
+    <text x="" y="13">100% passing</text>
   </g>
 </svg>
