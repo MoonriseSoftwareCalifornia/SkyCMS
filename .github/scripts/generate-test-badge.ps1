@@ -82,3 +82,44 @@ if ($env:GITHUB_ENV) {
     Add-Content -Path $env:GITHUB_ENV -Value "TEST_SKIPPED=$skipped"
     Add-Content -Path $env:GITHUB_ENV -Value "TEST_COVERAGE=$coverage"
 }
+
+# --- Additional outputs: coverage-only badge (SVG) and Shields-compatible JSON ---
+
+# Determine coverage badge color by thresholds
+$coverageColor = if ($coverage -ge 90) { "green" } elseif ($coverage -ge 75) { "yellow" } else { "red" }
+$coverageMessage = "${coverage}%"
+
+# Create coverage badge SVG
+$coverageBadgeSvg = @"
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20">
+  <defs>
+    <linearGradient id="b" x2="0" y2="100%">
+      <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+      <stop offset="1" stop-opacity=".1"/>
+    </linearGradient>
+  </defs>
+  <clipPath id="a">
+    <rect width="120" height="20" rx="3" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#a)">
+    <path fill="#555" d="M0 0h60v20H0z"/>
+    <path fill="$coverageColor" d="M60 0h60v20H60z"/>
+    <path fill="url(#b)" d="M0 0h120v20H0z"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
+    <text x="30" y="14" fill="#010101" fill-opacity=".3">coverage</text>
+    <text x="30" y="13">coverage</text>
+    <text x="90" y="14" fill="#010101" fill-opacity=".3">$coverageMessage</text>
+    <text x="90" y="13">$coverageMessage</text>
+  </g>
+</svg>
+"@
+
+$coverageBadgeSvg | Out-File -FilePath "./coverage-badge.svg" -Encoding UTF8
+Write-Host "[OK] Coverage badge generated (coverage: $coverage%, color: $coverageColor)"
+
+# Create a Shields-compatible JSON endpoint so the README can reference it via img.shields.io/endpoint
+$shieldsObj = @{ schemaVersion = 1; label = 'coverage'; message = "$coverage%"; color = $coverageColor }
+$shieldsJson = $shieldsObj | ConvertTo-Json -Compress
+$shieldsJson | Out-File -FilePath "./coverage-results.json" -Encoding UTF8
+Write-Host "[OK] Coverage JSON written to ./coverage-results.json"

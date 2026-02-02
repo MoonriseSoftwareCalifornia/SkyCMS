@@ -20,7 +20,7 @@ robots: "index,follow"
 
 [![CodeQL](https://github.com/CWALabs/SkyCMS/actions/workflows/codeql.yml/badge.svg)](https://github.com/CWALabs/SkyCMS/actions/workflows/codeql.yml)
 [![Publish Docker Images CI](https://github.com/CWALabs/SkyCMS/actions/workflows/docker-image.yml/badge.svg)](https://github.com/CWALabs/SkyCMS/actions/workflows/docker-image.yml)
-[![Unit tests](https://raw.githubusercontent.com/MoonriseSoftwareCalifornia/SkyCMS/main/test-badge.svg)](https://github.com/MoonriseSoftwareCalifornia/SkyCMS/actions)
+[![Unit tests](https://raw.githubusercontent.com/MoonriseSoftwareCalifornia/SkyCMS/main/test-badge.svg)](https://github.com/MoonriseSoftwareCalifornia/SkyCMS/actions) [![Coverage](https://raw.githubusercontent.com/MoonriseSoftwareCalifornia/SkyCMS/main/coverage-badge.svg)](https://github.com/MoonriseSoftwareCalifornia/SkyCMS/actions)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
 [![Documentation](https://img.shields.io/badge/docs-complete-brightgreen.svg)](https://docs.sky-cms.com)
 
