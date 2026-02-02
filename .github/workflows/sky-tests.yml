@@ -177,10 +177,21 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        if (Test-Path "./test-badge.svg") {
-          git add test-badge.svg
-          git diff --staged --quiet || git commit -m "docs: update test badge [skip ci]"
-          git push
+        $files = @()
+        if (Test-Path "./test-badge.svg") { $files += 'test-badge.svg' }
+        if (Test-Path "./coverage-badge.svg") { $files += 'coverage-badge.svg' }
+        if (Test-Path "./coverage-results.json") { $files += 'coverage-results.json' }
+        if ($files.Count -gt 0) {
+          git add $files
+          git diff --staged --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "docs: update test/coverage badges [skip ci]"
+            git push
+          } else {
+            Write-Host "No staged changes to commit"
+          }
+        } else {
+          Write-Host "No badge files found to commit"
         }
       
     - name: Upload test results
