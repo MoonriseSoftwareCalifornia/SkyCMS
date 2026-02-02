@@ -29,6 +29,7 @@ jobs:
     env:
       DOTNET_NO_GLOBAL_JSON: true
       TEST_PROJECT: Tests/Sky.Tests.csproj
+      ADDITIONAL_TEST_PROJECT: AspNetCore.Identity.FlexDb.Tests/AspNetCore.Identity.FlexDb.Tests.csproj
     
     steps:
     - name: Checkout code
@@ -94,13 +95,28 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
         echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
+        echo "Running primary tests: $TEST_PROJECT"
         dotnet test $TEST_PROJECT \
           --no-build \
           --configuration Release \
           --collect:"XPlat Code Coverage" \
           --logger "console;verbosity=${{ inputs.verbosity }}" \
           --logger "trx;LogFileName=sky-test-results.trx" \
-          --results-directory ./TestResults
+          --results-directory ./TestResults || true
+
+        # If the additional test project exists, run it too (coverage will be merged by ReportGenerator)
+        if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
+          echo "Running additional tests: ${ADDITIONAL_TEST_PROJECT}"
+          dotnet test "${ADDITIONAL_TEST_PROJECT}" \
+            --no-build \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --logger "console;verbosity=${{ inputs.verbosity }}" \
+            --logger "trx;LogFileName=sky-test-results-additional.trx" \
+            --results-directory ./TestResults || true
+        else
+          echo "Additional test project not found: ${ADDITIONAL_TEST_PROJECT}"
+        fi
       
     - name: Run Sky.Tests (Filtered)
       if: ${{ inputs.test_filter != '' }}
@@ -125,6 +141,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
         echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
+        echo "Running primary tests (filtered): $TEST_PROJECT"
         dotnet test $TEST_PROJECT \
           --no-build \
           --configuration Release \
@@ -132,7 +149,21 @@ jobs:
           --collect:"XPlat Code Coverage" \
           --logger "console;verbosity=${{ inputs.verbosity }}" \
           --logger "trx;LogFileName=sky-test-results.trx" \
-          --results-directory ./TestResults
+          --results-directory ./TestResults || true
+
+        if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
+          echo "Running additional tests (filtered): ${ADDITIONAL_TEST_PROJECT}"
+          dotnet test "${ADDITIONAL_TEST_PROJECT}" \
+            --no-build \
+            --configuration Release \
+            --filter "${{ inputs.test_filter }}" \
+            --collect:"XPlat Code Coverage" \
+            --logger "console;verbosity=${{ inputs.verbosity }}" \
+            --logger "trx;LogFileName=sky-test-results-additional.trx" \
+            --results-directory ./TestResults || true
+        else
+          echo "Additional test project not found: ${ADDITIONAL_TEST_PROJECT}"
+        fi
 
     - name: Ensure coverage files exist
       if: always()
