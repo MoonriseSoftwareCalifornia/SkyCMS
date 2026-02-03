@@ -87,6 +87,12 @@
           "MySqlConnector": "2.4.0"
         }
       },
+      "Roslynator.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.12.9, )",
+        "resolved": "4.12.9",
+        "contentHash": "X6lDpN/D5wuinq37KIx+l3GSUe9No+8bCjGBTI5sEEtxapLztkHg6gzNVhMXpXw8P+/5gFYxTXJ5Pf8O4iNz/w=="
+      },
       "SQLitePCLRaw.bundle_e_sqlcipher": {
         "type": "Direct",
         "requested": "[2.1.11, )",

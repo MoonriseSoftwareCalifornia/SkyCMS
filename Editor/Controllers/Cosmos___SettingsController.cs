@@ -64,8 +64,7 @@ namespace Sky.Editor.Controllers
         /// <returns>IActionResult.</returns>
         public async Task<IActionResult> Index()
         {
-            var config = await settings.GetEditorConfigAsync();
-            var model = new EditorConfig(settings);
+            var model = await settings.GetEditorConfigAsync();
             return View(model);
         }
 
@@ -308,7 +307,7 @@ namespace Sky.Editor.Controllers
         {
             try
             {
-                var cdnService = cdnServiceFactory.CreateCdnService(dbContext, logger, HttpContext);
+                var cdnService = await cdnServiceFactory.CreateCdnServiceAsync(dbContext, logger, HttpContext);
                 var result = await cdnService.PurgeCdn(new List<string> { "/" });
                 return result;
             }

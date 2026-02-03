@@ -7,6 +7,7 @@
 
 namespace Sky.Editor.Services.CDN
 {
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.Logging;
@@ -17,9 +18,9 @@ namespace Sky.Editor.Services.CDN
     public class CdnServiceFactory : ICdnServiceFactory
     {
         /// <inheritdoc/>
-        public CdnService CreateCdnService(ApplicationDbContext dbContext, ILogger logger, HttpContext httpContext)
+        public async Task<CdnService> CreateCdnServiceAsync(ApplicationDbContext dbContext, ILogger logger, HttpContext httpContext)
         {
-            return CdnService.GetCdnService(dbContext, logger, httpContext);
+            return await CdnService.GetCdnServiceAsync(dbContext, logger, httpContext);
         }
     }
 }

@@ -308,7 +308,7 @@ public class DeploymentController : ControllerBase
     {
         try
         {
-            var cdnService = CdnService.GetCdnService(dbContext, logger, HttpContext);
+            var cdnService = await CdnService.GetCdnServiceAsync(dbContext, logger, HttpContext);
 
             if (!cdnService.IsConfigured())
             {

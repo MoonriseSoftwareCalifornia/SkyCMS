@@ -80,7 +80,7 @@ public class ContactApiController : ControllerBase
         catch (Exception ex)
         {
             logger.LogError(ex, "Error generating contact form JavaScript");
-            return StatusCode(500, "// Error generating script");
+            return StatusCode(500, new { error = "Error generating script" });
         }
     }
 

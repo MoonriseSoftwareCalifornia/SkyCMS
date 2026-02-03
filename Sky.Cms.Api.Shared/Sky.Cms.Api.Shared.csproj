@@ -9,6 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Roslynator.Analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Common\Cosmos.Common.csproj" />
     <ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
   </ItemGroup>

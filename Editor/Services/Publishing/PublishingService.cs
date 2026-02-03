@@ -404,7 +404,7 @@ namespace Sky.Editor.Services.Publishing
                 pageIds.Count,
                 "Purging CDN cache...");
             
-            var cdnService = CdnService.GetCdnService(_db, _logger, _accessor.HttpContext);
+            var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _accessor.HttpContext);
             if (cdnService != null)
             {
                 await cdnService.PurgeCdn();
@@ -901,7 +901,7 @@ namespace Sky.Editor.Services.Publishing
             var results = new List<CdnResult>();
             try
             {
-                var cdnService = CdnService.GetCdnService(_db, _logger, _accessor.HttpContext);
+                var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _accessor.HttpContext);
                 if (cdnService == null)
                 {
                     return results;

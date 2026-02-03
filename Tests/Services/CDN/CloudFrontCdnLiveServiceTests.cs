@@ -123,11 +123,11 @@ namespace Sky.Tests.Services.CDN
         [TestMethod]
         [TestCategory("Integration")]
         [TestCategory("CloudFront")]
-        public void CloudFrontDriver_IsConfigured_ReturnsTrue()
+        public async Task CloudFrontDriver_IsConfigured_ReturnsTrue()
         {
             // Arrange
             var logger = new NullLogger<CdnService>();
-            var service = CdnService.GetCdnService(dbContext, logger, httpContext);
+            var service = await CdnService.GetCdnServiceAsync(dbContext, logger, httpContext);
 
             // Act
             var isConfigured = service.IsConfigured();
@@ -149,7 +149,7 @@ namespace Sky.Tests.Services.CDN
         {
             // Arrange
             var logger = new NullLogger<CdnService>();
-            var service = CdnService.GetCdnService(dbContext, logger, httpContext);
+            var service = await CdnService.GetCdnServiceAsync(dbContext, logger, httpContext);
 
             var testPath = $"/test/skycms-purge-{Guid.NewGuid()}.html";
             var paths = new List<string> { testPath };
@@ -179,7 +179,7 @@ namespace Sky.Tests.Services.CDN
         {
             // Arrange
             var logger = new NullLogger<CdnService>();
-            var service = CdnService.GetCdnService(dbContext, logger, httpContext);
+            var service = await CdnService.GetCdnServiceAsync(dbContext, logger, httpContext);
 
             var testId = Guid.NewGuid();
             var paths = new List<string>
@@ -212,7 +212,7 @@ namespace Sky.Tests.Services.CDN
         {
             // Arrange
             var logger = new NullLogger<CdnService>();
-            var service = CdnService.GetCdnService(dbContext, logger, httpContext);
+            var service = await CdnService.GetCdnServiceAsync(dbContext, logger, httpContext);
 
             var paths = new List<string>
             {
@@ -243,7 +243,7 @@ namespace Sky.Tests.Services.CDN
         {
             // Arrange
             var logger = new NullLogger<CdnService>();
-            var service = CdnService.GetCdnService(dbContext, logger, httpContext);
+            var service = await CdnService.GetCdnServiceAsync(dbContext, logger, httpContext);
 
             // Act - Calling with no paths should purge everything
             var results = await service.PurgeCdn();
@@ -268,7 +268,7 @@ namespace Sky.Tests.Services.CDN
         {
             // Arrange
             var logger = new NullLogger<CdnService>();
-            var service = CdnService.GetCdnService(dbContext, logger, httpContext);
+            var service = await CdnService.GetCdnServiceAsync(dbContext, logger, httpContext);
 
             // Simulate a real SPA deployment purge
             var spaPath = "my-app";
@@ -303,7 +303,7 @@ namespace Sky.Tests.Services.CDN
         {
             // Arrange
             var logger = new NullLogger<CdnService>();
-            var service = CdnService.GetCdnService(dbContext, logger, httpContext);
+            var service = await CdnService.GetCdnServiceAsync(dbContext, logger, httpContext);
             var paths = new List<string> { $"/test/timing-{Guid.NewGuid()}.html" };
 
             // Act

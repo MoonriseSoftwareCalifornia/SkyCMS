@@ -53,10 +53,17 @@ $percentColor = if ($percent -ge 95) { '#4c1' } elseif ($percent -ge 80) { '#dfb
 $leftText = "${total} tests"
 $rightText = "${percent}% passing"
 
-# SVG dimensions (left/right widths tuned for typical lengths)
-$leftWidth = 140
-$rightWidth = 140
+# SVG dimensions - calculate dynamically based on text length
+# Estimate character width at font-size 11: roughly 6.5 pixels per character
+$leftTextLen = $leftText.Length
+$rightTextLen = $rightText.Length
+$leftWidth = [Math]::Max(80, $leftTextLen * 7 + 20)
+$rightWidth = [Math]::Max(80, $rightTextLen * 7 + 20)
 $totalWidth = $leftWidth + $rightWidth
+
+# Calculate x positions for centered text
+$leftTextX = [int]($leftWidth / 2)
+$rightTextX = [int]($leftWidth + $rightWidth / 2)
 
 $badgeSvg = @"
 <svg xmlns="http://www.w3.org/2000/svg" width="$totalWidth" height="20">
@@ -75,10 +82,10 @@ $badgeSvg = @"
     <path fill="url(#b)" d="M0 0h${totalWidth}v20H0z"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
-    <text x="${([int]($leftWidth/2))}" y="14" fill="#010101" fill-opacity=".3">${leftText}</text>
-    <text x="${([int]($leftWidth/2))}" y="13">${leftText}</text>
-    <text x="${([int]($leftWidth + $rightWidth/2))}" y="14" fill="#010101" fill-opacity=".3">${rightText}</text>
-    <text x="${([int]($leftWidth + $rightWidth/2))}" y="13">${rightText}</text>
+    <text x="$leftTextX" y="14" fill="#010101" fill-opacity=".3">${leftText}</text>
+    <text x="$leftTextX" y="13">${leftText}</text>
+    <text x="$rightTextX" y="14" fill="#010101" fill-opacity=".3">${rightText}</text>
+    <text x="$rightTextX" y="13">${rightText}</text>
   </g>
 </svg>
 "@

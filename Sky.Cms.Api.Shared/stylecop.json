@@ -1,0 +1,19 @@
+{
+  // ACTION REQUIRED: This file was automatically added to your project, but it
+  // will not take effect until additional steps are taken to enable it. See the
+  // following page for additional information:
+  //
+  // https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/EnableConfiguration.md
+
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "documentationRules": {
+      "companyName": "Moonrise Software, LLC",
+      "copyrightText": "Copyright (c) {companyName}. All rights reserved.\nLicensed under the {licenseName} ({licenseFile})\nSee https://github.com/CWALabs/SkyCMS\nfor more information concerning the license and the contributors participating to this project.",
+      "variables": {
+        "licenseName": "MIT License",
+        "licenseFile": "https://opensource.org/licenses/MIT"
+      }
+    }
+  }
+}

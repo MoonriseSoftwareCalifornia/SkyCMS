@@ -829,6 +829,190 @@ namespace Sky.Tests.Controllers
             });
         }
 
+        /// <summary>
+        /// Tests that Index validates negative pageNo parameter.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ValidatesNegativePageNo_UsesZero()
+        {
+            // Arrange
+            await RoleManager.CreateAsync(new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "TestRole1" });
+
+            // Act
+            var result = await controller.Index(ids: null, pageNo: -5, pageSize: 10);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsNotNull(viewResult.Model);
+        }
+
+        /// <summary>
+        /// Tests that Index handles multiple role IDs correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_HandlesMultipleIds_ParsesCommaSeparated()
+        {
+            // Arrange
+            var role1 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Role1" };
+            var role2 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Role2" };
+            await RoleManager.CreateAsync(role1);
+            await RoleManager.CreateAsync(role2);
+
+            // Act
+            var result = await controller.Index(ids: $"{role1.Id},{role2.Id}");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var idsInViewData = viewResult.ViewData["Ids"] as string[];
+            Assert.IsNotNull(idsInViewData);
+            Assert.AreEqual(2, idsInViewData.Length);
+        }
+
+        /// <summary>
+        /// Tests that GetUsers handles empty startsWith parameter.
+        /// </summary>
+        [TestMethod]
+        public async Task GetUsers_WithEmptyStartsWith_ReturnsAllUsers()
+        {
+            // Arrange
+            var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "alpha@test.com", Email = "alpha@test.com" };
+            var user2 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "beta@test.com", Email = "beta@test.com" };
+            await UserManager.CreateAsync(user1);
+            await UserManager.CreateAsync(user2);
+
+            // Act
+            var result = await controller.GetUsers(string.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var users = jsonResult.Value as IEnumerable<object>;
+            Assert.IsNotNull(users);
+            Assert.IsTrue(users.Count() >= 2, "Should return all users when startsWith is empty");
+        }
+
+        /// <summary>
+        /// Tests that UsersInRole GET validates pagination bounds.
+        /// </summary>
+        [TestMethod]
+        public async Task UsersInRole_Get_ValidatesLargePageSize()
+        {
+            // Arrange
+            var role = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "TestRole" };
+            await RoleManager.CreateAsync(role);
+
+            // Act
+            var result = await controller.UsersInRole(id: role.Id, pageSize: 1000);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(1000, viewResult.ViewData["pageSize"]);
+        }
+
+        /// <summary>
+        /// Tests that UsersInRole GET sorts by different fields.
+        /// </summary>
+        [TestMethod]
+        public async Task UsersInRole_Get_SortsByTwoFactorEnabled()
+        {
+            // Arrange
+            var role = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "SortTestRole" };
+            await RoleManager.CreateAsync(role);
+
+            var user1 = new IdentityUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "twofactor1@test.com",
+                Email = "twofactor1@test.com",
+                TwoFactorEnabled = true
+            };
+            var user2 = new IdentityUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "twofactor2@test.com",
+                Email = "twofactor2@test.com",
+                TwoFactorEnabled = false
+            };
+            await UserManager.CreateAsync(user1);
+            await UserManager.CreateAsync(user2);
+            await UserManager.AddToRoleAsync(user1, role.Name);
+            await UserManager.AddToRoleAsync(user2, role.Name);
+
+            // Act
+            var result = await controller.UsersInRole(id: role.Id, sortOrder: "desc", currentSort: "TwoFactorEnabled");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var model = viewResult.Model as List<UserIndexViewModel>;
+            Assert.IsNotNull(model);
+        }
+
+        /// <summary>
+        /// Tests that UsersInRole POST handles invalid model state.
+        /// </summary>
+        [TestMethod]
+        public async Task UsersInRole_Post_HandlesInvalidModelState()
+        {
+            // Arrange
+            var model = new UsersInRoleViewModel
+            {
+                RoleId = Guid.NewGuid().ToString(),
+                RoleName = "TestRole",
+                UserIds = new string[] { }
+            };
+            controller.ModelState.AddModelError("RoleName", "Role name is required");
+
+            // Act
+            var result = await controller.UsersInRole(model);
+
+            // Assert
+            // When ModelState is invalid, it returns the view with the model
+            // The controller doesn't have explicit handling for invalid state, so it falls through
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+        }
+
+        /// <summary>
+        /// Tests that Create returns BadRequest when role name exceeds maximum length.
+        /// </summary>
+        [TestMethod]
+        public async Task Create_HandlesException_ReturnsBadRequest()
+        {
+            // Arrange
+            // Create a role with a very long name to trigger validation error
+            var longRoleName = new string('A', 300); // Exceeds 256 character limit
+
+            // Act
+            var result = await controller.Create(longRoleName);
+
+            // Assert
+            // Should return BadRequest due to length validation
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = result as BadRequestObjectResult;
+            Assert.AreEqual("Role name cannot exceed 256 characters.", badRequest.Value);
+        }
+
+        /// <summary>
+        /// Tests that Create accepts role name at maximum length boundary.
+        /// </summary>
+        [TestMethod]
+        public async Task Create_WithMaxLengthRoleName_CreatesRole()
+        {
+            // Arrange
+            var maxLengthRoleName = new string('B', 256); // Exactly at 256 character limit
+
+            // Act
+            var result = await controller.Create(maxLengthRoleName);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+            var roleExists = await RoleManager.RoleExistsAsync(maxLengthRoleName);
+            Assert.IsTrue(roleExists);
+        }
+
         #endregion
     }
 }

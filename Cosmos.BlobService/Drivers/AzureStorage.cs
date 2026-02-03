@@ -106,10 +106,25 @@ namespace Cosmos.BlobService.Drivers
 
             var blobClient = this.GetBlobClient(fileMetaData.RelativePath);
 
+
             var appendClient = this.GetAppendBlobClient(fileMetaData.RelativePath);
 
             if (fileMetaData.ChunkIndex == 0)
             {
+                // Break any existing lease before attempting to delete
+                if (await appendClient.ExistsAsync())
+                {
+                    var leaseClient = appendClient.GetBlobLeaseClient();
+                    try
+                    {
+                        await leaseClient.BreakAsync(TimeSpan.Zero);
+                    }
+                    catch (Azure.RequestFailedException)
+                    {
+                        // If breaking the lease fails (e.g., no lease exists), continue with deletion
+                    }
+                }
+
                 var deleteResult = await appendClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
 
                 // If the blob was deleted, we need to wait for it to be removed from the storage account.
@@ -134,6 +149,64 @@ namespace Cosmos.BlobService.Drivers
                 };
 
                 _ = await appendClient.SetMetadataAsync(dictionaryObject);
+            }
+            else
+            {
+                // For non-first chunks, ensure the append blob exists and is appendable
+                // If it doesn't exist, is the wrong type, or is sealed, create/recreate it
+                var blobExists = await blobClient.ExistsAsync();
+                bool needsRecreation = false;
+                
+                if (blobExists)
+                {
+                    try
+                    {
+                        // Check if the existing blob is the correct type
+                        var properties = await blobClient.GetPropertiesAsync();
+                        if (properties.Value.BlobType != Azure.Storage.Blobs.Models.BlobType.Append)
+                        {
+                            needsRecreation = true;
+                        }
+                        else
+                        {
+                            // Check if the append blob is sealed by trying to get append blob properties
+                            var appendProperties = await appendClient.GetPropertiesAsync();
+                            if (appendProperties.Value.IsSealed == true)
+                            {
+                                needsRecreation = true;
+                            }
+                        }
+                    }
+                    catch (Azure.RequestFailedException)
+                    {
+                        // If we can't get properties, recreate to be safe
+                        needsRecreation = true;
+                    }
+                    
+                    if (needsRecreation)
+                    {
+                        // Wrong blob type or sealed - delete it and create a new append blob
+                        await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
+                        await DeleteAppendBlobWithRetryAsync(appendClient);
+                        
+                        var headers = new BlobHttpHeaders
+                        {
+                            ContentType = Utilities.GetContentType(fileMetaData),
+                            CacheControl = fileMetaData.CacheControl,
+                        };
+                        await appendClient.CreateIfNotExistsAsync(headers);
+                    }
+                }
+                else
+                {
+                    // Blob doesn't exist - create it as an append blob
+                    var headers = new BlobHttpHeaders
+                    {
+                        ContentType = Utilities.GetContentType(fileMetaData),
+                        CacheControl = fileMetaData.CacheControl,
+                    };
+                    await appendClient.CreateIfNotExistsAsync(headers);
+                }
             }
 
             // AWS Multi part upload requires parts or chunks to be 5MB, which
@@ -194,14 +267,19 @@ namespace Cosmos.BlobService.Drivers
                 var lease = sourceBlob.GetBlobLeaseClient();
                 await lease.AcquireAsync(TimeSpan.FromSeconds(-1));
 
-                // Get a BlobClient representing the destination blob with a unique name.
-                var destBlob = containerClient.GetBlobClient(destination);
+                try
+                {
+                    // Get a BlobClient representing the destination blob with a unique name.
+                    var destBlob = containerClient.GetBlobClient(destination);
 
-                // Start the copy operation.
-                var c = await destBlob.StartCopyFromUriAsync(sourceBlob.Uri);
-                await c.WaitForCompletionAsync();
-
-                await lease.ReleaseAsync();
+                    // Start the copy operation.
+                    var c = await destBlob.StartCopyFromUriAsync(sourceBlob.Uri);
+                    await c.WaitForCompletionAsync();
+                }
+                finally
+                {
+                    await lease.ReleaseAsync();
+                }
             }
         }
 
@@ -299,6 +377,29 @@ namespace Cosmos.BlobService.Drivers
         public async Task DeleteIfExistsAsync(string path)
         {
             var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
+            
+            // Try to break any existing lease before deletion
+            try
+            {
+                var blobClient = containerClient.GetBlobClient(path);
+                if (await blobClient.ExistsAsync())
+                {
+                    var leaseClient = blobClient.GetBlobLeaseClient();
+                    try
+                    {
+                        await leaseClient.BreakAsync(TimeSpan.Zero);
+                    }
+                    catch (Azure.RequestFailedException)
+                    {
+                        // If breaking the lease fails (e.g., no lease exists), continue with deletion
+                    }
+                }
+            }
+            catch (Azure.RequestFailedException)
+            {
+                // Ignore errors during lease breaking
+            }
+            
             await containerClient.DeleteBlobIfExistsAsync(path, DeleteSnapshotsOption.IncludeSnapshots);
             var extension = Path.GetExtension(path);
             if (Utilities.ImageThumbnailTypes.Contains(extension))
@@ -917,6 +1018,20 @@ namespace Cosmos.BlobService.Drivers
             // Ensure container exists before upload
             var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
             await containerClient.CreateIfNotExistsAsync();
+
+            // Break any existing lease before attempting to delete
+            if (await blockClient.ExistsAsync())
+            {
+                var leaseClient = blockClient.GetBlobLeaseClient();
+                try
+                {
+                    await leaseClient.BreakAsync(TimeSpan.Zero);
+                }
+                catch (Azure.RequestFailedException)
+                {
+                    // If breaking the lease fails (e.g., no lease exists), continue with deletion
+                }
+            }
 
             await blockClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
 

@@ -39,8 +39,16 @@ namespace Sky.Tests
 
             var storage = new StorageContext(configuration, cache, null);
 
-            var task = storage.DeleteFolderAsync("/");
-            task.Wait();
+            try
+            {
+                var task = storage.DeleteFolderAsync("/");
+                task.Wait();
+            }
+            catch (Exception ex)
+            {
+                // Ignore cleanup errors - tests should still run
+                context?.WriteLine($"Warning: Failed to clean storage during initialization: {ex.Message}");
+            }
         }
 
         [AssemblyCleanup]

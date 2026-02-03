@@ -531,6 +531,554 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
+        #region Additional CRUD Tests
+
+        /// <summary>
+        /// Tests that Index_ReturnsView.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ReturnsView()
+        {
+            // Act
+            var result = await controller.Index();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual("Index", viewResult.ViewName);
+        }
+
+        /// <summary>
+        /// Tests that Create_Get_ReturnsCreateView.
+        /// </summary>
+        [TestMethod]
+        public void Create_Get_ReturnsCreateView()
+        {
+            // Act
+            var result = controller.Create();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual("Create", viewResult.ViewName);
+            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogStreamViewModel));
+        }
+
+        /// <summary>
+        /// Tests that Delete_Get_ReturnsDeleteConfirmationView.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_Get_ReturnsDeleteConfirmationView()
+        {
+            // Arrange
+            var blog = await Logic.CreateArticle("Blog to Delete", TestUserId, null, "blog-delete", ArticleType.BlogStream);
+            var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
+
+            // Act
+            var result = await controller.Delete(blogEntity.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual("Delete", viewResult.ViewName);
+            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogStreamViewModel));
+            
+            var model = (BlogStreamViewModel)viewResult.Model;
+            Assert.AreEqual(blogEntity.Id, model.Id);
+            Assert.AreEqual("Blog to Delete", model.Title);
+        }
+
+        /// <summary>
+        /// Tests that Delete_Get_ReturnsNotFound_WhenBlogNotExists.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_Get_ReturnsNotFound_WhenBlogNotExists()
+        {
+            // Act
+            var result = await controller.Delete(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        #endregion
+
+        #region Edit Blog Stream Tests
+
+        /// <summary>
+        /// Tests that Edit_Get_ReturnsEditView_WhenBlogExists.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Get_ReturnsEditView_WhenBlogExists()
+        {
+            // Arrange
+            var blog = await Logic.CreateArticle("Edit Test Blog", TestUserId, null, "edit-test", ArticleType.BlogStream);
+            var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
+            blogEntity.Introduction = "Test description";
+            blogEntity.BannerImage = "/images/hero.jpg";
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Edit(blogEntity.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual("Edit", viewResult.ViewName);
+            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogStreamViewModel));
+            
+            var model = (BlogStreamViewModel)viewResult.Model;
+            Assert.AreEqual("Edit Test Blog", model.Title);
+            Assert.AreEqual("Test description", model.Description);
+            Assert.AreEqual("/images/hero.jpg", model.HeroImage);
+        }
+
+        /// <summary>
+        /// Tests that Edit_Get_ReturnsNotFound_WhenBlogNotExists.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Get_ReturnsNotFound_WhenBlogNotExists()
+        {
+            // Act
+            var result = await controller.Edit(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        /// <summary>
+        /// Tests that Edit_Post_UpdatesBlogStream_WhenValid.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_UpdatesBlogStream_WhenValid()
+        {
+            // Arrange
+            var blog = await Logic.CreateArticle("Original Blog", TestUserId, null, "original", ArticleType.BlogStream);
+            var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
+
+            var model = new BlogStreamViewModel
+            {
+                Id = blogEntity.Id,
+                Title = "Updated Blog Title",
+                Description = "Updated description",
+                HeroImage = "/images/updated-hero.jpg",
+                Published = DateTimeOffset.UtcNow
+            };
+
+            // Act
+            var result = await controller.Edit(blogEntity.Id, model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            
+            // Verify changes were saved
+            var updatedEntity = await Db.Articles.FirstAsync(a => a.Id == blogEntity.Id);
+            Assert.AreEqual("Updated Blog Title", updatedEntity.Title);
+            Assert.AreEqual("Updated description", updatedEntity.Introduction);
+            Assert.AreEqual("/images/updated-hero.jpg", updatedEntity.BannerImage);
+        }
+
+        /// <summary>
+        /// Tests that Edit_Post_ReturnsBadRequest_WhenIdMismatch.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_ReturnsBadRequest_WhenIdMismatch()
+        {
+            // Arrange
+            var blog = await Logic.CreateArticle("Test Blog", TestUserId, null, "test", ArticleType.BlogStream);
+            var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
+
+            var model = new BlogStreamViewModel
+            {
+                Id = Guid.NewGuid(), // Different ID
+                Title = "Updated Title"
+            };
+
+            // Act
+            var result = await controller.Edit(blogEntity.Id, model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestResult));
+        }
+
+        /// <summary>
+        /// Tests that Edit_Post_ValidatesTitleConflict.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_ValidatesTitleConflict()
+        {
+            // Arrange
+            var blog1 = await Logic.CreateArticle("Existing Blog", TestUserId, null, "existing", ArticleType.BlogStream);
+            var blog2 = await Logic.CreateArticle("Test Blog", TestUserId, null, "test", ArticleType.BlogStream);
+            var blog2Entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog2.ArticleNumber);
+
+            var model = new BlogStreamViewModel
+            {
+                Id = blog2Entity.Id,
+                Title = "Existing Blog", // Conflicts with blog1
+                Description = "Test"
+            };
+
+            // Act
+            var result = await controller.Edit(blog2Entity.Id, model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            Assert.IsFalse(controller.ModelState.IsValid);
+            Assert.IsTrue(controller.ModelState.ContainsKey("BlogKey"));
+        }
+
+        #endregion
+
+        #region Blog Entry Listing Tests
+
+        /// <summary>
+        /// Tests that Entries_ReturnsEntriesView_WithBlogEntries.
+        /// </summary>
+        [TestMethod]
+        public async Task Entries_ReturnsEntriesView_WithBlogEntries()
+        {
+            // Arrange
+            var blogKey = "tech-blog";
+            var blog = await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry1 = await Logic.CreateArticle("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var entry2 = await Logic.CreateArticle("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
+            
+            // Update catalog entries to link them to the blog
+            var catalog1 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry1.ArticleNumber);
+            var catalog2 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry2.ArticleNumber);
+            catalog1.BlogKey = blogKey;
+            catalog2.BlogKey = blogKey;
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Entries(blogKey);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual("Entries", viewResult.ViewName);
+            
+            var model = viewResult.Model as BlogEntriesListViewModel;
+            Assert.IsNotNull(model);
+            Assert.AreEqual(blogKey, model.BlogKey);
+            Assert.AreEqual(2, model.Entries.Count);
+        }
+
+        /// <summary>
+        /// Tests that Entries_ReturnsBadRequest_WhenBlogKeyNull.
+        /// </summary>
+        [TestMethod]
+        public async Task Entries_ReturnsBadRequest_WhenBlogKeyNull()
+        {
+            // Act
+            var result = await controller.Entries(null);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestResult));
+        }
+
+        /// <summary>
+        /// Tests that Entries_ReturnsNotFound_WhenBlogNotExists.
+        /// </summary>
+        [TestMethod]
+        public async Task Entries_ReturnsNotFound_WhenBlogNotExists()
+        {
+            // Act
+            var result = await controller.Entries("nonexistent-blog");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        #endregion
+
+        #region JSON API Tests
+
+        /// <summary>
+        /// Tests that GetBlogs_ReturnsJsonListOfBlogs.
+        /// </summary>
+        [TestMethod]
+        public async Task GetBlogs_ReturnsJsonListOfBlogs()
+        {
+            // Arrange
+            var blog1 = await Logic.CreateArticle("Blog A", TestUserId, null, "blog-a", ArticleType.BlogStream);
+            var blog2 = await Logic.CreateArticle("Blog B", TestUserId, null, "blog-b", ArticleType.BlogStream);
+
+            // Act
+            var result = await controller.GetBlogs();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var data = jsonResult.Value as List<BlogStreamViewModel>;
+            
+            Assert.IsNotNull(data);
+            Assert.IsTrue(data.Count >= 2, $"Expected at least 2 blogs, found {data.Count}");
+            Assert.IsTrue(data.Any(b => b.Title == "Blog A"));
+            Assert.IsTrue(data.Any(b => b.Title == "Blog B"));
+        }
+
+        /// <summary>
+        /// Tests that GetEntries_ReturnsJsonListOfEntries.
+        /// </summary>
+        [TestMethod]
+        public async Task GetEntries_ReturnsJsonListOfEntries()
+        {
+            // Arrange
+            var blogKey = "tech-blog";
+            var blog = await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry1 = await Logic.CreateArticle("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var entry2 = await Logic.CreateArticle("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
+
+            // Act
+            var result = await controller.GetEntries(blogKey);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+        }
+
+        /// <summary>
+        /// Tests that GetEntries_ReturnsBadRequest_WhenBlogKeyNull.
+        /// </summary>
+        [TestMethod]
+        public async Task GetEntries_ReturnsBadRequest_WhenBlogKeyNull()
+        {
+            // Act
+            var result = await controller.GetEntries(null);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestResult));
+        }
+
+        /// <summary>
+        /// Tests that GetEntries_ReturnsNotFound_WhenBlogNotExists.
+        /// </summary>
+        [TestMethod]
+        public async Task GetEntries_ReturnsNotFound_WhenBlogNotExists()
+        {
+            // Act
+            var result = await controller.GetEntries("nonexistent");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        #endregion
+
+        #region Delete Entry Tests
+
+        /// <summary>
+        /// Tests that DeleteEntry_Get_ReturnsDeleteConfirmationView.
+        /// </summary>
+        [TestMethod]
+        public async Task DeleteEntry_Get_ReturnsDeleteConfirmationView()
+        {
+            // Arrange
+            var blogKey = "tech-blog";
+            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry = await Logic.CreateArticle("Entry to Delete", TestUserId, null, blogKey, ArticleType.BlogPost);
+            
+            var catalog = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry.ArticleNumber);
+            catalog.BlogKey = blogKey;
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.DeleteEntry(blogKey, entry.ArticleNumber);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual("DeleteEntry", viewResult.ViewName);
+            
+            var model = viewResult.Model as BlogEntryListItem;
+            Assert.IsNotNull(model);
+            Assert.AreEqual(entry.ArticleNumber, model.ArticleNumber);
+        }
+
+        /// <summary>
+        /// Tests that DeleteEntry_Get_ReturnsNotFound_WhenEntryNotExists.
+        /// </summary>
+        [TestMethod]
+        public async Task DeleteEntry_Get_ReturnsNotFound_WhenEntryNotExists()
+        {
+            // Act
+            var result = await controller.DeleteEntry("tech-blog", 99999);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        /// <summary>
+        /// Tests that DeleteEntry_Get_ReturnsNotFound_WhenBlogKeyMismatch.
+        /// </summary>
+        [TestMethod]
+        public async Task DeleteEntry_Get_ReturnsNotFound_WhenBlogKeyMismatch()
+        {
+            // Arrange
+            var entry = await Logic.CreateArticle("Entry", TestUserId, null, "blog-a", ArticleType.BlogPost);
+            var catalog = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry.ArticleNumber);
+            catalog.BlogKey = "blog-a";
+            await Db.SaveChangesAsync();
+
+            // Act - Try to delete with wrong blog key
+            var result = await controller.DeleteEntry("blog-b", entry.ArticleNumber);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        #endregion
+
+        #region Preview Tests
+
+        /// <summary>
+        /// Tests that PreviewStream_ReturnsPreviewView_WhenBlogExists.
+        /// </summary>
+        [TestMethod]
+        public async Task PreviewStream_ReturnsPreviewView_WhenBlogExists()
+        {
+            // Arrange
+            var blogKey = "preview-blog";
+            var blog = await Logic.CreateArticle("Preview Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+
+            // Act
+            var result = await controller.PreviewStream(blogKey);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsTrue(viewResult.ViewName.EndsWith("/Views/Home/Preview.cshtml"));
+        }
+
+        /// <summary>
+        /// Tests that PreviewStream_ReturnsNotFound_WhenBlogNotExists.
+        /// </summary>
+        [TestMethod]
+        public async Task PreviewStream_ReturnsNotFound_WhenBlogNotExists()
+        {
+            // Act
+            var result = await controller.PreviewStream("nonexistent-blog");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        #endregion
+
+        #region Delete Blog Stream Tests
+
+        /// <summary>
+        /// Tests that ConfirmDelete_DeletesBlogAndAllEntries.
+        /// </summary>
+        [TestMethod]
+        public async Task ConfirmDelete_DeletesBlogAndAllEntries()
+        {
+            // Arrange
+            // Create a home page first to avoid the blog being marked as the home page
+            await Logic.CreateArticle("Home Page", TestUserId, null, "", ArticleType.General);
+            
+            var blogKey = "delete-test";
+            var blog = await Logic.CreateArticle("Blog to Delete", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry1 = await Logic.CreateArticle("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var entry2 = await Logic.CreateArticle("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
+            
+            var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
+
+            // Act
+            var result = await controller.ConfirmDelete(blogEntity.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            var redirectResult = (RedirectToActionResult)result;
+            Assert.AreEqual(nameof(BlogController.Index), redirectResult.ActionName);
+
+            // Verify blog and entries were soft deleted
+            var deletedBlog = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
+            Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedBlog.StatusCode);
+            
+            var deletedEntry1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry1.ArticleNumber);
+            var deletedEntry2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry2.ArticleNumber);
+            Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedEntry1.StatusCode);
+            Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedEntry2.StatusCode);
+        }
+
+        /// <summary>
+        /// Tests that ConfirmDelete_ReturnsNotFound_WhenBlogNotExists.
+        /// </summary>
+        [TestMethod]
+        public async Task ConfirmDelete_ReturnsNotFound_WhenBlogNotExists()
+        {
+            // Act
+            var result = await controller.ConfirmDelete(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        #endregion
+
+        #region Create Entry Error Handling Tests
+
+        /// <summary>
+        /// Tests that CreateEntry_ReturnsNotFound_WhenBlogNotExists.
+        /// </summary>
+        [TestMethod]
+        public async Task CreateEntry_ReturnsNotFound_WhenBlogNotExists()
+        {
+            // Act
+            var result = await controller.CreateEntry("nonexistent-blog", "Test Entry");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that CreateEntry_ReturnsBadRequest_WhenTitleEmpty.
+        /// </summary>
+        [TestMethod]
+        public async Task CreateEntry_ReturnsBadRequest_WhenTitleEmpty()
+        {
+            // Arrange
+            var blogKey = "tech-blog";
+            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+
+            // Act
+            var result = await controller.CreateEntry(blogKey, "");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that CreateEntry_ReturnsError_WhenMediatorFails.
+        /// </summary>
+        [TestMethod]
+        public async Task CreateEntry_ReturnsError_WhenMediatorFails()
+        {
+            // Arrange
+            var blogKey = "tech-blog";
+            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
+                .ReturnsAsync(new CommandResult<ArticleViewModel>
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Failed to create entry"
+                });
+
+            // Act
+            var result = await controller.CreateEntry(blogKey, "New Entry");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ObjectResult));
+            var objectResult = (ObjectResult)result;
+            Assert.AreEqual(500, objectResult.StatusCode);
+        }
+
+        #endregion
+
         #region Integration Tests
 
         /// <summary>

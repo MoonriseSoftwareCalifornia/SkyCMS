@@ -55,10 +55,10 @@ namespace Sky.Editor.Services.CDN
         /// <param name="logger">Log service.</param>
         /// <param name="context">HTTP context.</param>
         /// <returns>CdnService.</returns>
-        public static CdnService GetCdnService(ApplicationDbContext dbContext, ILogger logger, HttpContext context)
+        public static async Task<CdnService> GetCdnServiceAsync(ApplicationDbContext dbContext, ILogger logger, HttpContext context)
         {
-            var data = dbContext.Settings
-                .Where(f => f.Group == CDNGROUPNAME && f.Value != null && f.Value != "").ToListAsync().Result;
+            var data = await dbContext.Settings
+                .Where(f => f.Group == CDNGROUPNAME && f.Value != null && f.Value != "").ToListAsync();
 
             var cdnSettings = new List<CdnSetting>();
 
@@ -73,7 +73,7 @@ namespace Sky.Editor.Services.CDN
                 {
                     // Invalid JSON, remove setting
                     dbContext.Settings.Remove(setting);
-                    _ = dbContext.SaveChangesAsync().Result;
+                    await dbContext.SaveChangesAsync();
                 }
             }
 

@@ -118,7 +118,25 @@ namespace Sky.Cms.Controllers
         {
             get
             {
-                return new string[] { ".apng", ".avif", ".gif", ".jpg", "jpeg", ".png", ".svg", ".webp" };
+                return new string[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico" };
+            }
+        }
+
+        /// <summary>
+        /// File extensions that are not allowed for upload due to security concerns.
+        /// </summary>
+        public static string[] DangerousFileExtensions
+        {
+            get
+            {
+                return new string[]
+                {
+                    ".exe", ".dll", ".bat", ".cmd", ".sh", ".ps1", ".psm1", ".psd1",
+                    ".vbs", ".vbe", ".jse", ".wsf", ".wsh", ".msi", ".msp",
+                    ".scr", ".hta", ".cpl", ".msc", ".jar", ".app", ".deb", ".rpm",
+                    ".dmg", ".pkg", ".run", ".bin", ".com", ".gadget", ".application",
+                    ".pif", ".lnk", ".inf", ".reg"
+                };
             }
         }
 
@@ -129,6 +147,11 @@ namespace Sky.Cms.Controllers
         /// <returns>fixed path.</returns>
         public static string FixPath(string path)
         {
+            if (string.IsNullOrEmpty(path))
+            {
+                return "/";
+            }
+
             if (path.StartsWith("http://") || path.StartsWith("https://"))
             {
                 return path;
@@ -139,7 +162,7 @@ namespace Sky.Cms.Controllers
 
         /// <summary>
         /// Gets images for the design editor.
-        /// </summary>
+        /// /// </summary>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="path">Path to retrieve images.</param>
         /// <param name="exclude">Path to exclude images.</param>
@@ -380,18 +403,37 @@ namespace Sky.Cms.Controllers
 
             try
             {
+                // Validate that the destination folder exists
+                var destinationExists = await storageContext.BlobExistsAsync(model.Destination + "/folder.stubxx");
+                if (!destinationExists)
+                {
+                    return BadRequest($"Destination folder '{model.Destination}' does not exist.");
+                }
+
                 foreach (var item in model.Items)
                 {
                     string dest;
 
                     if (item.EndsWith("/"))
                     {
-                        // moving a directory
+                        // copying a directory
+                        var folderExists = await storageContext.BlobExistsAsync(item + "folder.stubxx");
+                        if (!folderExists)
+                        {
+                            return BadRequest($"Source folder '{item}' does not exist.");
+                        }
+
                         dest = model.Destination + item.TrimEnd('/').Split('/').LastOrDefault();
                     }
                     else
                     {
-                        // moving a file
+                        // copying a file
+                        var fileExists = await storageContext.BlobExistsAsync(item);
+                        if (!fileExists)
+                        {
+                            return BadRequest($"Source file '{item}' does not exist.");
+                        }
+
                         var fileName = Path.GetFileName(item);
                         dest = model.Destination + "/" + fileName;
                     }
@@ -434,6 +476,13 @@ namespace Sky.Cms.Controllers
 
             try
             {
+                // Validate that the destination folder exists
+                var destinationExists = await storageContext.BlobExistsAsync(model.Destination + "/folder.stubxx");
+                if (!destinationExists)
+                {
+                    return BadRequest($"Destination folder '{model.Destination}' does not exist.");
+                }
+
                 foreach (var item in model.Items)
                 {
                     string dest;
@@ -441,12 +490,24 @@ namespace Sky.Cms.Controllers
                     if (item.EndsWith("/"))
                     {
                         // moving a directory
+                        var folderExists = await storageContext.BlobExistsAsync(item + "folder.stubxx");
+                        if (!folderExists)
+                        {
+                            return BadRequest($"Source folder '{item}' does not exist.");
+                        }
+
                         dest = model.Destination + item.TrimEnd('/').Split('/').LastOrDefault();
                         await storageContext.MoveFolderAsync(item, dest);
                     }
                     else
                     {
                         // moving a file
+                        var fileExists = await storageContext.BlobExistsAsync(item);
+                        if (!fileExists)
+                        {
+                            return BadRequest($"Source file '{item}' does not exist.");
+                        }
+
                         var fileName = Path.GetFileName(item);
                         dest = model.Destination + "/" + fileName;
                         await storageContext.MoveFileAsync(item, dest);
@@ -503,11 +564,26 @@ namespace Sky.Cms.Controllers
             }
 
             var extension = Path.GetExtension(file.FileName).ToLower();
+            
+            // Validate that the file is an image based on MIME type
+            if (!mime.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(ReturnSimpleErrorMessage($"The file '{file.FileName}' is not a valid image file."));
+            }
+            
             var blobEndPoint = options.BlobPublicUrl.TrimEnd('/');
             var directory = parsed.Path.TrimEnd('/');
             var fileName = file.FileName.ToLower();
 
-            var image = await Image.LoadAsync(file.OpenReadStream());
+            Image image;
+            try
+            {
+                image = await Image.LoadAsync(file.OpenReadStream());
+            }
+            catch (UnknownImageFormatException)
+            {
+                return Json(ReturnSimpleErrorMessage($"The file '{file.FileName}' could not be loaded as an image."));
+            }
 
             string relativePath = UrlEncode($"{directory}/{fileName}");
 
@@ -774,6 +850,12 @@ namespace Sky.Cms.Controllers
                 throw new Exception("Could not read the file's metadata");
             }
 
+            // Validate against path traversal in metadata
+            if (fileMetaData.RelativePath?.Contains("..") == true || fileMetaData.FileName?.Contains("..") == true)
+            {
+                return Unauthorized("Path traversal attempts are not allowed.");
+            }
+
             var uploadResult = new PageImportResult
             {
                 uploaded = fileMetaData.TotalChunks - 1 <= fileMetaData.ChunkIndex,
@@ -980,6 +1062,17 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
+            if (string.IsNullOrWhiteSpace(model.FolderName))
+            {
+                return BadRequest("Folder name is required.");
+            }
+
+            // Validate against path traversal attempts
+            if (model.FolderName.Contains("..") || model.ParentFolder?.Contains("..") == true)
+            {
+                return BadRequest("Path traversal attempts are not allowed.");
+            }
+
             var relativePath = string.Join('/', ParsePath(model.ParentFolder, model.FolderName));
             relativePath = UrlEncode(relativePath);
 
@@ -1100,7 +1193,7 @@ namespace Sky.Cms.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View(model);
+                return BadRequest(ModelState);
             }
 
             foreach (var item in model.Paths)
@@ -1153,7 +1246,11 @@ namespace Sky.Cms.Controllers
 
                 var dest = $"{model.BlobRootPath.TrimEnd('/')}/{UrlEncode(model.ToBlobName)}";
 
-                await storageContext.MoveFileAsync(target, dest);
+                // Skip move operation if source and destination are the same
+                if (!target.Equals(dest, StringComparison.OrdinalIgnoreCase))
+                {
+                    await storageContext.MoveFileAsync(target, dest);
+                }
             }
 
             return Ok();
@@ -1538,6 +1635,17 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
+            // Use default values if negative dimensions are provided
+            if (width <= 0)
+            {
+                width = 120;
+            }
+
+            if (height <= 0)
+            {
+                height = 120;
+            }
+
             var extension = Path.GetExtension(target.ToLower());
 
             var filter = new[] { ".png", ".jpg", ".gif", ".jpeg", ".webp" };
@@ -1584,6 +1692,12 @@ namespace Sky.Cms.Controllers
                 return Unauthorized("Cannot upload here. Please select the 'pub' folder first, or sub-folder below that, then try again.");
             }
 
+            // Validate against path traversal attempts
+            if (path.Contains(".."))
+            {
+                return Unauthorized("Path traversal attempts are not allowed.");
+            }
+
             // Get information about the chunk we are on.
             var ms = new MemoryStream(Encoding.UTF8.GetBytes(metaData));
 
@@ -1598,6 +1712,23 @@ namespace Sky.Cms.Controllers
             if (fileMetaData == null)
             {
                 throw new ArgumentException("Could not read the file's metadata");
+            }
+
+            // Validate against path traversal in metadata
+            if (fileMetaData.RelativePath?.Contains("..") == true || fileMetaData.FileName?.Contains("..") == true)
+            {
+                return Unauthorized("Path traversal attempts are not allowed.");
+            }
+
+            // Validate against dangerous file extensions
+            var fileExtension = Path.GetExtension(fileMetaData.FileName).ToLower();
+            if (DangerousFileExtensions.Contains(fileExtension))
+            {
+                return Json(new FileUploadResult
+                {
+                    uploaded = false,
+                    fileUid = fileMetaData.UploadUid
+                });
             }
 
             var file = files.FirstOrDefault();
@@ -1620,7 +1751,7 @@ namespace Sky.Cms.Controllers
             {
                 if (i == 0 && parts[i] != "pub")
                 {
-                    throw new ArgumentException("Must upload folders and files under /pub directory.");
+                    return Unauthorized("Must upload folders and files under /pub directory.");
                 }
 
                 part = $"{part}/{parts[i]}";
@@ -1662,7 +1793,7 @@ namespace Sky.Cms.Controllers
                 {
                     metaData.RelativePath
                 };
-                var cdnService = CdnService.GetCdnService(dbContext, logger, HttpContext);
+                var cdnService = await CdnService.GetCdnServiceAsync(dbContext, logger, HttpContext);
                 _ = await cdnService.PurgeCdn(purgeUrls);
             }
         }

@@ -81,6 +81,12 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
+            // Validate pageNo is not negative
+            if (pageNo < 0)
+            {
+                pageNo = 0;
+            }
+
             ViewData["sortOrder"] = sortOrder;
             ViewData["currentSort"] = currentSort;
             ViewData["pageNo"] = pageNo;
@@ -204,6 +210,12 @@ namespace Sky.Cms.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            // Validate pageNo is not negative
+            if (pageNo < 0)
+            {
+                pageNo = 0;
             }
 
             ViewData["sortOrder"] = sortOrder;

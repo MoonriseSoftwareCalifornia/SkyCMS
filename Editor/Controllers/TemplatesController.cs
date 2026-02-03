@@ -7,25 +7,17 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
-    using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Cms.Models;
-    using Sky.Cms.Services;
     using Sky.Editor.Data;
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Shared;
@@ -34,6 +26,10 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Templates;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Templates controller.
@@ -806,6 +802,11 @@ namespace Sky.Cms.Controllers
                 if (result.PublishedCount == 0 && result.SkippedCount > 0)
                 {
                     TempData["Info"] = $"No articles were published. {result.SkippedCount} articles have no draft versions to publish.";
+                }
+
+                if (result.PublishedCount == 0 && result.SkippedCount == 0 && result.FailureCount == 0)
+                {
+                    TempData["Error"] = "No template or articles found to publish.";
                 }
 
                 return RedirectToAction("Pages", new { id });
