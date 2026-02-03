@@ -7,14 +7,6 @@
 		<Nullable>disable</Nullable>
 		<UserSecretsId>c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1</UserSecretsId>
 		<Version>9.2.4.25</Version>
-
-
-		<!-- Enable code coverage -->
-		<CollectCoverage>true</CollectCoverage>
-		<CoverletOutputFormat>cobertura,json,lcov,opencover</CoverletOutputFormat>
-		<CoverletOutput>./TestResults/</CoverletOutput>
-		<!-- Exclude: test projects, migrations, boot/startup, and model/DTO classes -->
-		<Exclude>[*.Tests]*,[*.Tests.*]*,[*]*.Migrations.*,[*].Boot.*,[*].Models.*</Exclude>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -30,14 +22,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="coverlet.collector">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="coverlet.msbuild">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="MediatR" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
