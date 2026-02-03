@@ -22,6 +22,10 @@
 		<EnableSdkContainerSupport>true</EnableSdkContainerSupport>
 		<DockerfileContext>..\..\..</DockerfileContext>
 	</PropertyGroup>
+	
+	<ItemGroup>
+		<InternalsVisibleTo Include="Sky.Tests" />
+	</ItemGroup>
 
 	<PropertyGroup>
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
@@ -138,6 +142,10 @@
 		<None Include="wwwroot\**\*">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <Folder Include="Services\Migrations\Testing\" />
 	</ItemGroup>
 
 	<ProjectExtensions>
