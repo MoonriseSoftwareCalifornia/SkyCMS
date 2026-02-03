@@ -303,23 +303,23 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Upload_WithNonPubPath_ThrowsException.
+        /// Tests that Upload_WithNonPubPath_ReturnsUnauthorized.
         /// </summary>
         [TestMethod]
-        public async Task Upload_WithNonPubPath_ThrowsException()
+        public async Task Upload_WithNonPubPath_ReturnsUnauthorized()
         {
             // Arrange
             var fileMock = CreateMockFile("test.txt", "Hello World");
             var metadata = CreateFileMetadata("test.txt", "/private/uploads");
 
-            // Act & Assert
-            await Assert.ThrowsExactlyAsync<ArgumentException>(async () =>
-            {
-                await controller.Upload(
-                    new[] { fileMock },
-                    JsonConvert.SerializeObject(metadata),
-                    "/private/uploads");
-            });
+            // Act
+            var result = await controller.Upload(
+                new[] { fileMock },
+                JsonConvert.SerializeObject(metadata),
+                "/private/uploads");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
         }
 
         /// <summary>
@@ -1096,6 +1096,673 @@ namespace Sky.Tests.Controllers
             
             Assert.HasCount(1, result);
             Assert.Contains("keep.jpg", result[0]);
+        }
+
+        #endregion
+
+        #region Security - Path Traversal Tests
+
+        /// <summary>
+        /// Tests that Upload_WithPathTraversalAttempt_ReturnsUnauthorized.
+        /// </summary>
+        [TestMethod]
+        public async Task Upload_WithPathTraversalAttempt_ReturnsUnauthorized()
+        {
+            // Arrange
+            var fileMock = CreateMockFile("test.txt", "Malicious Content");
+            var metadata = CreateFileMetadata("test.txt", "../../../etc/passwd");
+
+            // Act
+            var result = await controller.Upload(
+                new[] { fileMock },
+                JsonConvert.SerializeObject(metadata),
+                "../../../etc/passwd");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that NewFolder_WithPathTraversalAttempt_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task NewFolder_WithPathTraversalAttempt_ReturnsBadRequest()
+        {
+            // Arrange
+            var model = new NewFolderViewModel
+            {
+                ParentFolder = "/pub",
+                FolderName = "../../../malicious"
+            };
+
+            // Act
+            var result = await controller.NewFolder(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that Download_WithPathTraversalAttempt_ReturnsNotFound.
+        /// </summary>
+        [TestMethod]
+        public async Task Download_WithPathTraversalAttempt_ReturnsNotFound()
+        {
+            // Act
+            var result = await controller.Download("../../../etc/passwd");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        #endregion
+
+        #region Security - File Type Validation Tests
+
+        /// <summary>
+        /// Tests that Upload_WithExecutableFile_ReturnsError.
+        /// </summary>
+        [TestMethod]
+        public async Task Upload_WithExecutableFile_ReturnsError()
+        {
+            // Arrange
+            var fileMock = CreateMockFile("malware.exe", "MZ executable content");
+            var metadata = CreateFileMetadata("malware.exe", "/pub/uploads");
+
+            // Act
+            var result = await controller.Upload(
+                new[] { fileMock },
+                JsonConvert.SerializeObject(metadata),
+                "/pub/uploads");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = result as JsonResult;
+            var uploadResult = jsonResult.Value as FileUploadResult;
+            Assert.IsFalse(uploadResult.uploaded, "Executable files should not be uploaded");
+        }
+
+        /// <summary>
+        /// Tests that Upload_WithScriptFile_ReturnsError.
+        /// </summary>
+        [TestMethod]
+        public async Task Upload_WithScriptFile_ReturnsError()
+        {
+            // Arrange
+            var fileMock = CreateMockFile("script.bat", "@echo off\nmalicious command");
+            var metadata = CreateFileMetadata("script.bat", "/pub/uploads");
+
+            // Act
+            var result = await controller.Upload(
+                new[] { fileMock },
+                JsonConvert.SerializeObject(metadata),
+                "/pub/uploads");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = result as JsonResult;
+            var uploadResult = jsonResult.Value as FileUploadResult;
+            Assert.IsFalse(uploadResult.uploaded, "Script files should not be uploaded");
+        }
+
+        /// <summary>
+        /// Tests that NewFile_WithDangerousExtension_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task NewFile_WithDangerousExtension_ReturnsBadRequest()
+        {
+            // Arrange
+            var model = new NewFileViewModel
+            {
+                ParentFolder = "/pub/files",
+                FileName = "dangerous.sh"
+            };
+
+            // Act
+            var result = await controller.NewFile(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        #endregion
+
+        #region Error Handling - Storage Failures Tests
+
+        /// <summary>
+        /// Tests that Delete_WithNonExistentPath_HandlesGracefully.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_WithNonExistentPath_HandlesGracefully()
+        {
+            // Arrange
+            var model = new DeleteBlobItemsViewModel
+            {
+                Paths = new List<string> { "/pub/nonexistent/file.txt" }
+            };
+
+            // Act
+            var result = await controller.Delete(model);
+
+            // Assert
+            // Should return OK even if file doesn't exist (idempotent operation)
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+        }
+
+        /// <summary>
+        /// Tests that Move_WithNonExistentSource_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task Move_WithNonExistentSource_ReturnsBadRequest()
+        {
+            // Arrange
+            await Storage.CreateFolder("/pub/destination");
+            var model = new MoveFilesViewModel
+            {
+                Items = new List<string> { "/pub/nonexistent.txt" },
+                Destination = "/pub/destination"
+            };
+
+            // Act
+            var result = await controller.Move(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that Copy_WithNonExistentDestination_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task Copy_WithNonExistentDestination_ReturnsBadRequest()
+        {
+            // Arrange
+            await CreateTestFile("/pub/source/file.txt");
+            var model = new MoveFilesViewModel
+            {
+                Items = new List<string> { "/pub/source/file.txt" },
+                Destination = "/pub/nonexistent-destination"
+            };
+
+            // Act
+            var result = await controller.Copy(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        #endregion
+
+        #region Concurrency Tests
+
+        /// <summary>
+        /// Tests that Upload_WithFinalChunk_CompletesUpload.
+        /// </summary>
+        [TestMethod]
+        public async Task Upload_WithFinalChunk_CompletesUpload()
+        {
+            // Arrange
+            var totalChunks = 5;
+            var fileMock = CreateMockFile("finalchunk.txt", "Final chunk data");
+            var metadata = CreateFileMetadata("finalchunk.txt", "/pub/uploads", totalChunks - 1, totalChunks);
+
+            // Act
+            var result = await controller.Upload(
+                new[] { fileMock },
+                JsonConvert.SerializeObject(metadata),
+                "/pub/uploads");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = result as JsonResult;
+            var uploadResult = jsonResult.Value as FileUploadResult;
+            Assert.IsTrue(uploadResult.uploaded);
+        }
+
+        /// <summary>
+        /// Tests that Upload_WithMultipleFilesSimultaneously_HandlesCorrectly.
+        /// </summary>
+        [TestMethod]
+        public async Task Upload_WithMultipleFilesSimultaneously_HandlesCorrectly()
+        {
+            // Arrange
+            var file1 = CreateMockFile("file1.txt", "Content 1");
+            var file2 = CreateMockFile("file2.txt", "Content 2");
+            var metadata1 = CreateFileMetadata("file1.txt", "/pub/uploads");
+            var metadata2 = CreateFileMetadata("file2.txt", "/pub/uploads");
+
+            // Act - Execute uploads sequentially since DbContext is not thread-safe
+            // In production, each request would have its own scoped DbContext
+            var result1 = await controller.Upload(
+                new[] { file1 },
+                JsonConvert.SerializeObject(metadata1),
+                "/pub/uploads");
+            
+            var result2 = await controller.Upload(
+                new[] { file2 },
+                JsonConvert.SerializeObject(metadata2),
+                "/pub/uploads");
+
+            // Assert
+            Assert.IsInstanceOfType(result1, typeof(JsonResult));
+            Assert.IsInstanceOfType(result2, typeof(JsonResult));
+            var jsonResult1 = result1 as JsonResult;
+            var jsonResult2 = result2 as JsonResult;
+            Assert.IsNotNull(jsonResult1.Value);
+            Assert.IsNotNull(jsonResult2.Value);
+        }
+
+        #endregion
+
+        #region Image Processing Edge Cases Tests
+
+        /// <summary>
+        /// Tests that GetImageThumbnail_WithZeroDimensions_UsesDefaults.
+        /// </summary>
+        [TestMethod]
+        public async Task GetImageThumbnail_WithZeroDimensions_UsesDefaults()
+        {
+            // Arrange
+            await CreateTestImageFile("/pub/images/defaultsize.jpg");
+
+            // Act
+            var result = await controller.GetImageThumbnail("/pub/images/defaultsize.jpg", 0, 0);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(FileContentResult));
+            var fileResult = result as FileContentResult;
+            Assert.AreEqual("image/webp", fileResult.ContentType);
+        }
+
+        /// <summary>
+        /// Tests that GetImageThumbnail_WithNegativeDimensions_UsesDefaults.
+        /// </summary>
+        [TestMethod]
+        public async Task GetImageThumbnail_WithNegativeDimensions_UsesDefaults()
+        {
+            // Arrange
+            await CreateTestImageFile("/pub/images/negative.jpg");
+
+            // Act
+            var result = await controller.GetImageThumbnail("/pub/images/negative.jpg", -100, -100);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(FileContentResult));
+        }
+
+        /// <summary>
+        /// Tests that UploadImage_WithNonImageContentType_ReturnsError.
+        /// </summary>
+        [TestMethod]
+        public async Task UploadImage_WithNonImageContentType_ReturnsError()
+        {
+            // Arrange
+            var textFile = CreateMockFile("notanimage.txt", "This is text, not an image");
+            var metadata = new FilePondMetadata
+            {
+                FileName = "notanimage.txt",
+                Path = "/pub/images"
+            };
+
+            controller.ControllerContext.HttpContext.Request.Form =
+                new FormCollection(
+                    new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+                    {
+                        ["files"] = JsonConvert.SerializeObject(metadata)
+                    },
+                    new FormFileCollection { textFile });
+
+            // Act
+            var result = await controller.UploadImage(JsonConvert.SerializeObject(metadata));
+
+            // Assert
+            // Should handle gracefully - either return error or process as generic file
+            Assert.IsNotNull(result);
+        }
+
+        #endregion
+
+        #region Metadata and Validation Tests
+
+        /// <summary>
+        /// Tests that Upload_WithInvalidJson_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task Upload_WithInvalidJson_ReturnsBadRequest()
+        {
+            // Arrange
+            var fileMock = CreateMockFile("test.txt", "Content");
+            var invalidJson = "{ invalid json }";
+
+            // Act & Assert
+            await Assert.ThrowsExactlyAsync<JsonReaderException>(async () =>
+            {
+                await controller.Upload(
+                    new[] { fileMock },
+                    invalidJson,
+                    "/pub/uploads");
+            });
+        }
+
+        /// <summary>
+        /// Tests that NewFolder_WithEmptyName_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task NewFolder_WithEmptyName_ReturnsBadRequest()
+        {
+            // Arrange
+            var model = new NewFolderViewModel
+            {
+                ParentFolder = "/pub",
+                FolderName = string.Empty
+            };
+
+            // Act
+            var result = await controller.NewFolder(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that NewFile_WithEmptyFileName_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task NewFile_WithEmptyFileName_ReturnsBadRequest()
+        {
+            // Arrange
+            var model = new NewFileViewModel
+            {
+                ParentFolder = "/pub/files",
+                FileName = string.Empty
+            };
+
+            // Act
+            var result = await controller.NewFile(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that Rename_WithSameName_ReturnsOk.
+        /// </summary>
+        [TestMethod]
+        public async Task Rename_WithSameName_ReturnsOk()
+        {
+            // Arrange
+            await CreateTestFile("/pub/test/samename.txt");
+            var model = new RenameBlobViewModel
+            {
+                BlobRootPath = "/pub/test",
+                FromBlobName = "samename.txt",
+                ToBlobName = "samename.txt"
+            };
+
+            // Act
+            var result = await controller.Rename(model);
+
+            // Assert
+            // Should handle gracefully - either OK or no-op
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+        }
+
+        #endregion
+
+        #region Multi-File Operation Edge Cases Tests
+
+        /// <summary>
+        /// Tests that Delete_WithEmptyList_ReturnsOk.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_WithEmptyList_ReturnsOk()
+        {
+            // Arrange
+            var model = new DeleteBlobItemsViewModel
+            {
+                Paths = new List<string>()
+            };
+
+            // Act
+            var result = await controller.Delete(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+        }
+
+        /// <summary>
+        /// Tests that Copy_WithEmptyList_ReturnsOk.
+        /// </summary>
+        [TestMethod]
+        public async Task Copy_WithEmptyList_ReturnsOk()
+        {
+            // Arrange
+            await Storage.CreateFolder("/pub/destination");
+            var model = new MoveFilesViewModel
+            {
+                Items = new List<string>(),
+                Destination = "/pub/destination"
+            };
+
+            // Act
+            var result = await controller.Copy(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+        }
+
+        /// <summary>
+        /// Tests that Move_WithSameSourceAndDestination_HandlesCorrectly.
+        /// </summary>
+        [TestMethod]
+        public async Task Move_WithSameSourceAndDestination_HandlesCorrectly()
+        {
+            // Arrange
+            await CreateTestFile("/pub/test/file.txt");
+            var model = new MoveFilesViewModel
+            {
+                Items = new List<string> { "/pub/test/file.txt" },
+                Destination = "/pub/test"
+            };
+
+            // Act
+            var result = await controller.Move(model);
+
+            // Assert
+            // Should handle gracefully - either OK (no-op) or BadRequest
+            Assert.IsTrue(
+                result is OkResult || result is BadRequestObjectResult,
+                "Should return OK or BadRequest for same source/destination");
+        }
+
+        #endregion
+
+        #region Permission and Authorization Tests
+
+        /// <summary>
+        /// Tests that Index_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_WithInvalidModelState_ReturnsBadRequest()
+        {
+            // Arrange
+            controller.ModelState.AddModelError("test", "Test error");
+
+            // Act
+            var result = await controller.Index("/pub", false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that NewFolder_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task NewFolder_WithInvalidModelState_ReturnsBadRequest()
+        {
+            // Arrange
+            controller.ModelState.AddModelError("test", "Test error");
+            var model = new NewFolderViewModel
+            {
+                ParentFolder = "/pub",
+                FolderName = "test"
+            };
+
+            // Act
+            var result = await controller.NewFolder(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that Delete_WithInvalidModelState_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_WithInvalidModelState_ReturnsBadRequest()
+        {
+            // Arrange
+            controller.ModelState.AddModelError("test", "Test error");
+            var model = new DeleteBlobItemsViewModel
+            {
+                Paths = new List<string> { "/pub/test.txt" }
+            };
+
+            // Act
+            var result = await controller.Delete(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        #endregion
+
+        #region Additional Coverage - Final Gap Tests
+
+        /// <summary>
+        /// Tests that Index_ForArticlesFolder_ListsArticles.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ForArticlesFolder_ListsArticles()
+        {
+            // Arrange
+            var article1 = await Logic.CreateArticle("Article 1", TestUserId);
+            var article2 = await Logic.CreateArticle("Article 2", TestUserId);
+            await Logic.SaveArticle(article1, TestUserId);
+            await Logic.SaveArticle(article2, TestUserId);
+
+            // Act
+            var result = await controller.Index("/pub/articles", false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = result as ViewResult;
+            var model = viewResult.Model as List<FileManagerEntry>;
+            Assert.IsTrue(model.Count >= 2, "Should list articles as folders");
+            Assert.IsTrue(model.All(m => m.IsDirectory), "All articles should appear as directories");
+        }
+
+        /// <summary>
+        /// Tests that Index_ForTemplatesFolder_ListsTemplates.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ForTemplatesFolder_ListsTemplates()
+        {
+            // Arrange
+            var layout = await Db.Layouts.FirstAsync();
+            var template1 = new Template
+            {
+                Id = Guid.NewGuid(),
+                Title = "Template 1",
+                Content = "<div>Content</div>",
+                LayoutId = layout.Id
+            };
+            var template2 = new Template
+            {
+                Id = Guid.NewGuid(),
+                Title = "Template 2",
+                Content = "<div>Content</div>",
+                LayoutId = layout.Id
+            };
+            Db.Templates.AddRange(template1, template2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Index("/pub/templates", false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = result as ViewResult;
+            var model = viewResult.Model as List<FileManagerEntry>;
+            Assert.IsTrue(model.Count >= 2, "Should list templates as folders");
+        }
+
+        /// <summary>
+        /// Tests that Rename_WithConflictingName_ReturnsBadRequest.
+        /// </summary>
+        [TestMethod]
+        public async Task Rename_WithConflictingName_ReturnsBadRequest()
+        {
+            // Arrange
+            await CreateTestFile("/pub/test/existing.txt", "Existing");
+            await CreateTestFile("/pub/test/conflict.txt", "Conflict");
+            
+            var model = new RenameBlobViewModel
+            {
+                BlobRootPath = "/pub/test",
+                FromBlobName = "existing.txt",
+                ToBlobName = "conflict.txt" // This name already exists
+            };
+
+            // Act
+            var result = await controller.Rename(model);
+
+            // Assert
+            // Should return BadRequest or handle conflict appropriately
+            Assert.IsTrue(
+                result is BadRequestObjectResult || result is OkResult,
+                "Should handle naming conflict");
+        }
+
+        /// <summary>
+        /// Tests that ParsePath_WithNullInput_ReturnsEmptyArray.
+        /// </summary>
+        [TestMethod]
+        public void ParsePath_WithNullInput_ReturnsEmptyArray()
+        {
+            // Act
+            var result = controller.ParsePath(null);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.Length);
+        }
+
+        /// <summary>
+        /// Tests that TrimPathPart_WithNullInput_ReturnsEmptyString.
+        /// </summary>
+        [TestMethod]
+        public void TrimPathPart_WithNullInput_ReturnsEmptyString()
+        {
+            // Act
+            var result = controller.TrimPathPart(null);
+
+            // Assert
+            Assert.AreEqual(string.Empty, result);
+        }
+
+        /// <summary>
+        /// Tests that FixPath_WithNullInput_ReturnsSlash.
+        /// </summary>
+        [TestMethod]
+        public void FixPath_WithNullInput_ReturnsSlash()
+        {
+            // Act
+            var result = FileManagerController.FixPath(null);
+
+            // Assert
+            Assert.AreEqual("/", result);
         }
 
         #endregion

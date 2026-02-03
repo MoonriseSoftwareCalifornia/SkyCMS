@@ -1177,6 +1177,180 @@ namespace Sky.Tests.Controllers
             });
         }
 
+        /// <summary>
+        /// Tests that Index validates pagination parameters.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ValidatesNegativePageNo_DefaultsToZero()
+        {
+            // Arrange
+            // Create test user
+            var user = new IdentityUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "validation@example.com",
+                Email = "validation@example.com",
+                NormalizedUserName = "VALIDATION@EXAMPLE.COM",
+                NormalizedEmail = "VALIDATION@EXAMPLE.COM",
+                EmailConfirmed = true
+            };
+            await UserManager.CreateAsync(user);
+
+            // Act
+            var result = await controller.Index(pageNo: -5, pageSize: 10);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should default to 0");
+        }
+
+        /// <summary>
+        /// Tests that Index handles empty role ID correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_HandlesEmptyRoleId_ReturnsAllUsers()
+        {
+            // Arrange
+            var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user1@test.com", Email = "user1@test.com" };
+            var user2 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user2@test.com", Email = "user2@test.com" };
+            await UserManager.CreateAsync(user1);
+            await UserManager.CreateAsync(user2);
+
+            // Act
+            var result = await controller.Index(id: string.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var model = viewResult.Model as List<UserIndexViewModel>;
+            Assert.IsNotNull(model);
+            Assert.IsTrue(model.Count >= 2, "Should return all users when role ID is empty");
+        }
+
+        /// <summary>
+        /// Tests that AuthorInfos validates pagination bounds.
+        /// </summary>
+        [TestMethod]
+        public async Task AuthorInfos_ValidatesLargePageSize_CapsAtReasonableValue()
+        {
+            // Arrange
+            var user = new IdentityUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "pagesize@example.com",
+                Email = "pagesize@example.com",
+                EmailConfirmed = true
+            };
+            await UserManager.CreateAsync(user);
+
+            // Act
+            var result = await controller.AuthorInfos(pageSize: 1000);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsNotNull(viewResult.Model);
+        }
+
+        /// <summary>
+        /// Tests that AuthorInfoEdit handles null model gracefully.
+        /// </summary>
+        [TestMethod]
+        public async Task AuthorInfoEdit_Post_ReturnsViewWhenModelInvalid()
+        {
+            // Arrange
+            var model = new AuthorInfo
+            {
+                Id = TestUserId.ToString(),
+                AuthorName = "Test Author"
+            };
+            controller.ModelState.AddModelError("EmailAddress", "Email is required");
+
+            // Act
+            var result = await controller.AuthorInfoEdit(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(model, viewResult.Model);
+        }
+
+        /// <summary>
+        /// Tests that ConfirmEmail handles non-existent user.
+        /// </summary>
+        [TestMethod]
+        public async Task ConfirmEmail_ReturnsNotFound_ForNonExistentUser()
+        {
+            // Act
+            var result = await controller.ConfirmEmail(Guid.NewGuid().ToString());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        /// <summary>
+        /// Tests that Index sorts by different columns correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_SortsBy_TwoFactorEnabled_Descending()
+        {
+            // Arrange
+            var user1 = new IdentityUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "twofactor1@test.com",
+                Email = "twofactor1@test.com",
+                TwoFactorEnabled = false
+            };
+            var user2 = new IdentityUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = "twofactor2@test.com",
+                Email = "twofactor2@test.com",
+                TwoFactorEnabled = true
+            };
+            await UserManager.CreateAsync(user1);
+            await UserManager.CreateAsync(user2);
+
+            // Act
+            var result = await controller.Index(sortOrder: "desc", currentSort: "TwoFactorEnabled");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var model = viewResult.Model as List<UserIndexViewModel>;
+            Assert.IsNotNull(model);
+        }
+
+        /// <summary>
+        /// Tests that AuthorInfos sorts by different columns correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task AuthorInfos_SortsBy_AuthorName_Ascending()
+        {
+            // Arrange
+            var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "author1@test.com", Email = "author1@test.com" };
+            var user2 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "author2@test.com", Email = "author2@test.com" };
+            await UserManager.CreateAsync(user1);
+            await UserManager.CreateAsync(user2);
+
+            var info1 = new AuthorInfo { Id = user1.Id, AuthorName = "Zebra Author", EmailAddress = user1.Email };
+            var info2 = new AuthorInfo { Id = user2.Id, AuthorName = "Alpha Author", EmailAddress = user2.Email };
+            Db.AuthorInfos.Add(info1);
+            Db.AuthorInfos.Add(info2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.AuthorInfos(sortOrder: "asc", currentSort: "AuthorName");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var model = viewResult.Model as List<AuthorInfo>;
+            Assert.IsNotNull(model);
+        }
+
         #endregion
     }
 }

@@ -5,6 +5,8 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System.ComponentModel.DataAnnotations;
+
 namespace Sky.Cms.Models
 {
     /// <summary>
@@ -20,6 +22,7 @@ namespace Sky.Cms.Models
         /// <summary>
         /// Gets or sets new folder name.
         /// </summary>
+        [Required(AllowEmptyStrings = false, ErrorMessage = "Folder name is required.")]
         public string FolderName { get; set; }
 
         /// <summary>

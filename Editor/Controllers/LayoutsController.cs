@@ -707,21 +707,21 @@ namespace Sky.Cms.Controllers
         /// </summary>
         /// <param name="id">ID of the layout.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<IActionResult> EditPreview(int id)
+        public async Task<IActionResult> EditPreview(Guid? id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
 
-            if (id <= 0)
+            if (!id.HasValue || id.Value == Guid.Empty)
             {
                 return BadRequest("Invalid layout ID");
             }
 
             try
             {
-                var layout = await dbContext.Layouts.FindAsync(id);
+                var layout = await dbContext.Layouts.FindAsync(id.Value);
 
                 if (layout == null)
                 {
@@ -729,6 +729,12 @@ namespace Sky.Cms.Controllers
                 }
 
                 var model = await articleLogic.GetArticleByUrl(string.Empty);
+                
+                if (model == null)
+                {
+                    return BadRequest("Unable to load root article for preview. Please ensure a root article exists.");
+                }
+
                 model.Layout = new LayoutViewModel(layout);
                 model.EditModeOn = true;
                 model.ReadWriteMode = true;
@@ -1205,9 +1211,9 @@ namespace Sky.Cms.Controllers
         /// </summary>
         private void UpdateLayoutFromModel(Layout layout, LayoutCodeViewModel model)
         {
-            layout.FooterHtmlContent = BaseValidateHtml("FooterHtmlContent", model.FooterHtmlContent);
-            layout.Head = BaseValidateHtml("Head", model.Head);
-            layout.HtmlHeader = BaseValidateHtml("HtmlHeader", model.HtmlHeader);
+            layout.FooterHtmlContent = model.FooterHtmlContent ?? string.Empty;
+            layout.Head = model.Head ?? string.Empty;
+            layout.HtmlHeader = model.HtmlHeader ?? string.Empty;
             layout.BodyHtmlAttributes = model.BodyHtmlAttributes;
             layout.LastModified = DateTimeOffset.UtcNow;
         }
@@ -1305,7 +1311,7 @@ namespace Sky.Cms.Controllers
                 FooterHtmlContent = layout.FooterHtmlContent,
                 IsDefault = false,
                 LayoutNumber = layout.LayoutNumber,
-                Version = (await dbContext.Layouts.CountAsync()) + 1,
+                Version = (await dbContext.Layouts.Where(l => l.LayoutNumber == layout.LayoutNumber).CountAsync()) + 1,
                 LastModified = DateTimeOffset.UtcNow,
                 Published = null,
                 Id = Guid.NewGuid()

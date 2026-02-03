@@ -7,6 +7,7 @@
 
 namespace Sky.Editor.Services.CDN
 {
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.Logging;
@@ -23,6 +24,6 @@ namespace Sky.Editor.Services.CDN
         /// <param name="logger">Logger instance.</param>
         /// <param name="httpContext">HTTP context.</param>
         /// <returns>CDN service instance.</returns>
-        CdnService CreateCdnService(ApplicationDbContext dbContext, ILogger logger, HttpContext httpContext);
+        Task<CdnService> CreateCdnServiceAsync(ApplicationDbContext dbContext, ILogger logger, HttpContext httpContext);
     }
 }

@@ -67,6 +67,12 @@ namespace Sky.Editor.Controllers
                 return BadRequest("Rule name is required.");
             }
 
+            // Validate role name length (IdentityRole has a 256 character limit)
+            if (roleName.Length > 256)
+            {
+                return BadRequest("Role name cannot exceed 256 characters.");
+            }
+
             if (await roleManager.RoleExistsAsync(roleName))
             {
                 return BadRequest($"Role '{roleName}' already exists");

@@ -17,6 +17,9 @@ site/
 # Mono auto generated files
 mono_crash.*
 
+# Keep .runsettings tracked
+!.runsettings
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

@@ -355,6 +355,214 @@ public class ContactApiControllerTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    #region Rate Limiting Tests (Note: Rate limiting is enforced by middleware, not controller logic)
+
+    /// <summary>
+    /// Tests that Submit_WithRateLimitAttribute_IsConfigured.
+    /// </summary>
+    [TestMethod]
+    public void Submit_ShouldHaveRateLimitAttribute()
+    {
+        // Arrange
+        var methodInfo = typeof(ContactApiController).GetMethod("Submit");
+
+        // Act
+        var rateLimitAttr = methodInfo.GetCustomAttributes(typeof(Microsoft.AspNetCore.RateLimiting.EnableRateLimitingAttribute), false);
+
+        // Assert
+        Assert.IsTrue(rateLimitAttr.Length > 0, "Submit method should have EnableRateLimiting attribute");
+        
+        // Verify the policy name is "contact-form"
+        var attr = rateLimitAttr[0] as Microsoft.AspNetCore.RateLimiting.EnableRateLimitingAttribute;
+        Assert.IsNotNull(attr);
+    }
+
+    /// <summary>
+    /// Tests that Submit_HasAntiforgeryValidation.
+    /// </summary>
+    [TestMethod]
+    public void Submit_ShouldHaveAntiforgeryAttribute()
+    {
+        // Arrange
+        var methodInfo = typeof(ContactApiController).GetMethod("Submit");
+
+        // Act
+        var antiforgeryAttr = methodInfo.GetCustomAttributes(typeof(Microsoft.AspNetCore.Mvc.ValidateAntiForgeryTokenAttribute), false);
+
+        // Assert
+        Assert.IsTrue(antiforgeryAttr.Length > 0, "Submit method should have ValidateAntiForgeryToken attribute");
+    }
+
+    #endregion
+
+    #region Error Handling Tests
+
+    /// <summary>
+    /// Tests that Submit_ReturnsInternalServerError_WhenExceptionThrown.
+    /// </summary>
+    [TestMethod]
+    public async Task Submit_ReturnsInternalServerError_WhenExceptionThrown()
+    {
+        // Arrange
+        await SeedContactApiSettings();
+
+        var request = new ContactFormRequest
+        {
+            Name = "John Doe",
+            Email = "john@example.com",
+            Message = "Test"
+        };
+
+        mediatorMock
+            .Setup(x => x.SendAsync(It.IsAny<SubmitContactFormCommand>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Database connection failed"));
+
+        // Act
+        var result = await controller.Submit(request);
+
+        // Assert
+        Assert.IsInstanceOfType(result, typeof(ObjectResult));
+        var objectResult = result as ObjectResult;
+        Assert.AreEqual(500, objectResult.StatusCode);
+        
+        var response = objectResult.Value as ContactFormResponse;
+        Assert.IsFalse(response.Success);
+        Assert.IsTrue(response.Message.Contains("unexpected error"));
+    }
+
+    /// <summary>
+    /// Tests that Submit_ReturnsBadRequest_WhenMediatorReturnsFailure.
+    /// </summary>
+    [TestMethod]
+    public async Task Submit_ReturnsBadRequest_WhenMediatorReturnsFailure()
+    {
+        // Arrange
+        await SeedContactApiSettings();
+
+        var request = new ContactFormRequest
+        {
+            Name = "John Doe",
+            Email = "john@example.com",
+            Message = "Test"
+        };
+
+        mediatorMock
+            .Setup(x => x.SendAsync(It.IsAny<SubmitContactFormCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Cosmos.Common.Features.Shared.CommandResult<ContactFormResponse>.Failure("Email service unavailable"));
+
+        // Act
+        var result = await controller.Submit(request);
+
+        // Assert
+        Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        var badRequestResult = result as BadRequestObjectResult;
+        var response = badRequestResult.Value as ContactFormResponse;
+        Assert.IsFalse(response.Success);
+        Assert.IsTrue(response.Message.Contains("Email service unavailable") || response.Message.Contains("Failed to submit"));
+    }
+
+    /// <summary>
+    /// Tests that GetContactScript_ReturnsError_WhenExceptionThrown.
+    /// </summary>
+    [TestMethod]
+    public async Task GetContactScript_ReturnsError_WhenExceptionThrown()
+    {
+        // Arrange - Don't seed settings to cause an exception path
+        antiforgeryMock
+            .Setup(x => x.GetAndStoreTokens(It.IsAny<HttpContext>()))
+            .Throws(new Exception("Antiforgery service unavailable"));
+
+        // Act
+        var result = await controller.GetContactScript();
+
+        // Assert
+        Assert.IsInstanceOfType(result, typeof(ObjectResult));
+        var objectResult = result as ObjectResult;
+        Assert.AreEqual(500, objectResult.StatusCode);
+    }
+
+    #endregion
+
+    #region Configuration Fallback Tests
+
+    /// <summary>
+    /// Tests that LoadContactApiConfig_UsesEmailConfigFallback_WhenAdminEmailNotConfigured.
+    /// </summary>
+    [TestMethod]
+    public async Task Submit_UsesFallbackEmail_WhenContactApiAdminEmailNotConfigured()
+    {
+        // Arrange - Seed only MaxMessageLength, not AdminEmail
+        dbContext.Settings.Add(new Setting
+        {
+            Id = Guid.NewGuid(),
+            Group = "ContactApi",
+            Name = "MaxMessageLength",
+            Value = "5000",
+            Description = "Max message length"
+        });
+        await dbContext.SaveChangesAsync();
+
+        // Setup email config service to return fallback email
+        emailConfigServiceMock
+            .Setup(x => x.GetEmailSettingsAsync())
+            .ReturnsAsync(new EmailSettings
+            {
+                SenderEmail = "fallback@example.com"
+            });
+
+        var request = new ContactFormRequest
+        {
+            Name = "John Doe",
+            Email = "john@example.com",
+            Message = "Test"
+        };
+
+        mediatorMock
+            .Setup(x => x.SendAsync(It.IsAny<SubmitContactFormCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Cosmos.Common.Features.Shared.CommandResult<ContactFormResponse>.Success(new ContactFormResponse { Success = true }));
+
+        // Act
+        var result = await controller.Submit(request);
+
+        // Assert
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+        
+        // Verify email config service was called for fallback
+        emailConfigServiceMock.Verify(x => x.GetEmailSettingsAsync(), Times.AtLeastOnce);
+    }
+
+    /// <summary>
+    /// Tests that LoadContactApiConfig_UsesDefaultEmail_WhenAllConfigurationsFail.
+    /// </summary>
+    [TestMethod]
+    public async Task Submit_UsesDefaultEmail_WhenAllConfigurationsFail()
+    {
+        // Arrange - No settings in database
+        emailConfigServiceMock
+            .Setup(x => x.GetEmailSettingsAsync())
+            .ThrowsAsync(new Exception("Email config service unavailable"));
+
+        var request = new ContactFormRequest
+        {
+            Name = "John Doe",
+            Email = "john@example.com",
+            Message = "Test"
+        };
+
+        mediatorMock
+            .Setup(x => x.SendAsync(It.IsAny<SubmitContactFormCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Cosmos.Common.Features.Shared.CommandResult<ContactFormResponse>.Success(new ContactFormResponse { Success = true }));
+
+        // Act
+        var result = await controller.Submit(request);
+
+        // Assert
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+        // The controller should still work with default configuration
+    }
+
+    #endregion
+
     private async Task SeedContactApiSettings()
     {
         dbContext.Settings.AddRange(

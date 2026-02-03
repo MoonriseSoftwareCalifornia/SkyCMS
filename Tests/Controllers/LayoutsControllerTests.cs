@@ -1,0 +1,1975 @@
+// <copyright file="LayoutsControllerTests.cs" company="Moonrise Software, LLC">
+// Copyright (c) Moonrise Software, LLC. All rights reserved.
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// See https://github.com/CWALabs/SkyCMS
+// for more information concerning the license and the contributors participating to this project.
+// </copyright>
+
+namespace Sky.Tests.Controllers
+{
+    using System;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Identity;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging.Abstractions;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+    using Sky.Cms.Controllers;
+    using Sky.Cms.Models;
+    using Sky.Editor.Models;
+
+    /// <summary>
+    /// Tests for LayoutsController.
+    /// </summary>
+    [TestClass]
+    [DoNotParallelize]
+    public class LayoutsControllerTests : SkyCmsTestBase
+    {
+        private LayoutsController controller = null!;
+        private Mock<Sky.Editor.Services.Layouts.ILayoutImportService> layoutImportServiceMock = null!;
+
+        [TestInitialize]
+        public new void Setup()
+        {
+            base.Setup();
+
+            // Setup mock for ILayoutImportService
+            layoutImportServiceMock = new Mock<Sky.Editor.Services.Layouts.ILayoutImportService>();
+            var mockCatalog = new Cosmos.Cms.Data.Logic.Root
+            {
+                LayoutCatalog = new System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>
+                {
+                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem
+                    {
+                        Id = "test-layout-1",
+                        Name = "Test Layout 1",
+                        Description = "Test description",
+                        License = "MIT"
+                    }
+                }
+            };
+            layoutImportServiceMock.Setup(s => s.GetCommunityCatalogAsync())
+                .ReturnsAsync(mockCatalog);
+
+            // Create controller with all dependencies
+            controller = new LayoutsController(
+                Db,
+                UserManager,
+                Logic,
+                EditorSettings,
+                Storage,
+                ViewRenderService,
+                EditorSettings,
+                ArticleHtmlService,
+                NullLogger<LayoutsController>.Instance,
+                layoutImportServiceMock.Object,
+                Cache,
+                DynamicConfigurationProvider);
+
+            // Setup user context
+            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()),
+                new Claim(ClaimTypes.Name, "test@example.com"),
+                new Claim(ClaimTypes.Role, "Administrators")
+            }, "TestAuth"));
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+            };
+        }
+
+        #region Phase 1: Core CRUD Operations
+
+        /// <summary>
+        /// Test that Index returns view with layouts list.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ReturnsView_WithLayoutsList()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                Notes = "Test notes",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Index();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsNotNull(viewResult.Model);
+            
+            var model = viewResult.Model as System.Collections.Generic.List<LayoutIndexViewModel>;
+            Assert.IsNotNull(model);
+            Assert.IsTrue(model.Count > 0, "Should have at least one layout");
+        }
+
+        /// <summary>
+        /// Test that Index shows CreateFirstLayout when no layouts exist.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ShowsCreateFirstLayout_WhenNoLayoutsExist()
+        {
+            // Arrange - Ensure no layouts exist
+            var existingLayouts = await Db.Layouts.ToListAsync();
+            Db.Layouts.RemoveRange(existingLayouts);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Index();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsTrue((bool)viewResult.ViewData["ShowCreateFirstLayout"], 
+                "Should show create first layout button");
+        }
+
+        /// <summary>
+        /// Test that Create creates new layout with incremented layout number.
+        /// </summary>
+        [TestMethod]
+        public async Task Create_CreatesNewLayout_WithIncrementedLayoutNumber()
+        {
+            // Arrange - Clear any existing layouts from base setup
+            var existingLayouts = await Db.Layouts.ToListAsync();
+            Db.Layouts.RemoveRange(existingLayouts);
+            await Db.SaveChangesAsync();
+            
+            var existingLayout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Existing Layout",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(existingLayout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Create();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            var redirect = (RedirectToActionResult)result;
+            Assert.AreEqual("EditCode", redirect.ActionName);
+
+            // Verify new layout was created
+            var layouts = await Db.Layouts.OrderBy(l => l.LayoutNumber).ToListAsync();
+            Assert.AreEqual(2, layouts.Count, "Should have 2 layouts now");
+            Assert.AreEqual(2, layouts[1].LayoutNumber, "New layout should have LayoutNumber = 2");
+            Assert.AreEqual(1, layouts[1].Version, "New layout should have Version = 1");
+        }
+
+        /// <summary>
+        /// Test that Delete deletes layout when not default.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_DeletesLayout_WhenNotDefault()
+        {
+            // Arrange
+            var defaultLayout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Default Layout",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            var layoutToDelete = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Layout to Delete",
+                IsDefault = false,
+                LayoutNumber = 2,
+                Version = 1
+            };
+            Db.Layouts.Add(defaultLayout);
+            Db.Layouts.Add(layoutToDelete);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Delete(layoutToDelete.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            
+            // Verify layout was deleted
+            var deletedLayout = await Db.Layouts.FindAsync(layoutToDelete.Id);
+            Assert.IsNull(deletedLayout, "Layout should be deleted");
+        }
+
+        /// <summary>
+        /// Test that Delete returns BadRequest when deleting default layout.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_ReturnsBadRequest_WhenDeletingDefaultLayout()
+        {
+            // Arrange
+            var defaultLayout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Default Layout",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(defaultLayout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Delete(defaultLayout.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            Assert.IsTrue(badRequest.Value.ToString().Contains("Cannot delete the default layout"));
+        }
+
+        /// <summary>
+        /// Test that Delete deletes associated templates when deleting layout.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_DeletesAssociatedTemplates_WhenDeletingLayout()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Layout with Templates",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            var template = new Template
+            {
+                Id = Guid.NewGuid(),
+                Title = "Associated Template",
+                LayoutId = layout.Id,
+                Content = "<div>Test</div>"
+            };
+            Db.Templates.Add(template);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Delete(layout.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            
+            // Verify template was deleted
+            var deletedTemplate = await Db.Templates.FindAsync(template.Id);
+            Assert.IsNull(deletedTemplate, "Associated template should be deleted");
+        }
+
+        /// <summary>
+        /// Test that GetLayouts returns JSON list of layouts.
+        /// </summary>
+        [TestMethod]
+        public async Task GetLayouts_ReturnsJsonList_OfLayouts()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetLayouts();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            Assert.IsNotNull(jsonResult.Value);
+            
+            var layouts = jsonResult.Value as System.Collections.Generic.List<LayoutIndexViewModel>;
+            Assert.IsNotNull(layouts);
+            Assert.IsTrue(layouts.Count > 0, "Should have at least one layout");
+        }
+
+        /// <summary>
+        /// Test that GetLayouts initializes versions when needed.
+        /// </summary>
+        [TestMethod]
+        public async Task GetLayouts_InitializesVersions_WhenNeeded()
+        {
+            // Arrange
+            var layoutWithoutVersion = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Layout Without Version",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = null // Uninitialized version
+            };
+            Db.Layouts.Add(layoutWithoutVersion);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetLayouts();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            
+            // Verify version was initialized
+            var updatedLayout = await Db.Layouts.FindAsync(layoutWithoutVersion.Id);
+            Assert.IsTrue(updatedLayout.Version.HasValue, "Version should be initialized");
+            Assert.IsTrue(updatedLayout.Version > 0, "Version should be greater than 0");
+        }
+
+        #endregion
+
+        #region Phase 2: Edit Operations
+
+        /// <summary>
+        /// Test that EditCode GET returns view model with layout data.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Get_ReturnsViewModel_WithLayoutData()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                Head = "<style>body { margin: 0; }</style>",
+                HtmlHeader = "<header>Header</header>",
+                FooterHtmlContent = "<footer>Footer</footer>",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.EditCode(layout.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsNotNull(viewResult.Model);
+            Assert.IsInstanceOfType(viewResult.Model, typeof(LayoutCodeViewModel));
+            
+            var model = (LayoutCodeViewModel)viewResult.Model;
+            Assert.AreEqual(layout.Id, model.Id);
+            Assert.AreEqual(layout.Head, model.Head);
+        }
+
+        /// <summary>
+        /// Test that EditCode GET returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Get_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Act
+            var result = await controller.EditCode(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that EditCode POST saves layout changes.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Post_SavesLayoutChanges()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Original Layout",
+                Head = "<style>body { margin: 0; }</style>",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            var model = new LayoutCodeViewModel
+            {
+                Id = layout.Id,
+                EditorTitle = "Updated Layout",
+                Head = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<style>body { margin: 10px; }</style>"),
+                HtmlHeader = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<header>New Header</header>"),
+                FooterHtmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<footer>New Footer</footer>"),
+                BodyHtmlAttributes = string.Empty
+            };
+
+            // Act
+            var result = await controller.EditCode(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            
+            // Verify changes were saved
+            var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
+            Assert.IsNotNull(updatedLayout);
+            Assert.Contains("margin: 10px", updatedLayout.Head);
+            Assert.Contains("New Header", updatedLayout.HtmlHeader);
+        }
+
+        /// <summary>
+        /// Test that EditCode POST decrypts content before saving.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Post_DecryptsContent_BeforeSaving()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            var encryptedContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div>Encrypted Content</div>");
+            var model = new LayoutCodeViewModel
+            {
+                Id = layout.Id,
+                EditorTitle = "Test",
+                Head = encryptedContent,
+                HtmlHeader = encryptedContent,
+                FooterHtmlContent = encryptedContent,
+                BodyHtmlAttributes = string.Empty
+            };
+
+            // Act
+            var result = await controller.EditCode(model);
+
+            // Assert
+            var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
+            Assert.IsNotNull(updatedLayout);
+            Assert.Contains("Encrypted Content", updatedLayout.Head, 
+                "Content should be decrypted and saved");
+        }
+
+        /// <summary>
+        /// Test that EditNotes GET returns view model.
+        /// </summary>
+        [TestMethod]
+        public async Task EditNotes_Get_ReturnsViewModel()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                Notes = "Test notes",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.EditNotes();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsNotNull(viewResult.Model);
+            Assert.IsInstanceOfType(viewResult.Model, typeof(LayoutIndexViewModel));
+        }
+
+        /// <summary>
+        /// Test that EditNotes POST saves notes when valid.
+        /// </summary>
+        [TestMethod]
+        public async Task EditNotes_Post_SavesNotes_WhenValid()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                Notes = "Original notes",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            var model = new LayoutIndexViewModel
+            {
+                Id = layout.Id,
+                LayoutName = "Updated Layout Name",
+                Notes = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Updated notes"),
+                IsDefault = false
+            };
+
+            // Act
+            var result = await controller.EditNotes(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            
+            // Verify notes were saved
+            var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
+            Assert.IsNotNull(updatedLayout);
+            Assert.AreEqual("Updated notes", updatedLayout.Notes);
+            Assert.AreEqual("Updated Layout Name", updatedLayout.LayoutName);
+        }
+
+        /// <summary>
+        /// Test that EditNotes POST validates HTML in notes.
+        /// </summary>
+        [TestMethod]
+        public async Task EditNotes_Post_ValidatesHtml_InNotes()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                Notes = "Original notes",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            var model = new LayoutIndexViewModel
+            {
+                Id = layout.Id,
+                LayoutName = "Test",
+                Notes = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<p>Valid HTML notes</p>"),
+                IsDefault = false
+            };
+
+            // Act
+            var result = await controller.EditNotes(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            
+            // Verify notes were saved
+            var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
+            Assert.Contains("Valid HTML notes", updatedLayout.Notes);
+        }
+
+        #endregion
+
+        #region Phase 4: Publishing & Versioning
+
+        /// <summary>
+        /// Test that Publish sets layout as default.
+        /// </summary>
+        [TestMethod]
+        public async Task Publish_SetsLayoutAsDefault()
+        {
+            // Arrange
+            var layout1 = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Current Default",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1,
+                Published = DateTimeOffset.UtcNow
+            };
+            var layout2 = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "New Default",
+                IsDefault = false,
+                LayoutNumber = 2,
+                Version = 1
+            };
+            Db.Layouts.Add(layout1);
+            Db.Layouts.Add(layout2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Publish(layout2.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            
+            // Verify layout2 is now default
+            var updatedLayout2 = await Db.Layouts.FindAsync(layout2.Id);
+            Assert.IsTrue(updatedLayout2.IsDefault, "Layout should be set as default");
+            Assert.IsNotNull(updatedLayout2.Published, "Published date should be set");
+        }
+
+        /// <summary>
+        /// Test that Publish unpublishes other layouts when publishing.
+        /// </summary>
+        [TestMethod]
+        public async Task Publish_UnpublishesOtherLayouts_WhenPublishing()
+        {
+            // Arrange
+            var layout1 = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Current Default",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1,
+                Published = DateTimeOffset.UtcNow
+            };
+            var layout2 = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "New Default",
+                IsDefault = false,
+                LayoutNumber = 2,
+                Version = 1
+            };
+            Db.Layouts.Add(layout1);
+            Db.Layouts.Add(layout2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await controller.Publish(layout2.Id);
+
+            // Assert
+            var updatedLayout1 = await Db.Layouts.FindAsync(layout1.Id);
+            Assert.IsFalse(updatedLayout1.IsDefault, "Old default should be unpublished");
+            Assert.IsNull(updatedLayout1.Published, "Published date should be cleared");
+        }
+
+        /// <summary>
+        /// Test that Promote creates new version with incremented version.
+        /// </summary>
+        [TestMethod]
+        public async Task Promote_CreatesNewVersion_WithIncrementedVersion()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1,
+                Head = "<style>body {}</style>"
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Promote(layout.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            
+            // Verify new version was created
+            var layouts = await Db.Layouts.Where(l => l.LayoutNumber == layout.LayoutNumber).OrderByDescending(l => l.Version).ToListAsync();
+            Assert.AreEqual(2, layouts.Count, "Should have 2 versions now");
+            Assert.AreEqual(2, layouts[0].Version, "New version should have Version = 2");
+            Assert.AreEqual(2, (int)jsonResult.Value, "Should return new version number");
+        }
+
+        /// <summary>
+        /// Test that Promote preserves LayoutNumber across versions.
+        /// </summary>
+        [TestMethod]
+        public async Task Promote_PreservesLayoutNumber_AcrossVersions()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = false,
+                LayoutNumber = 5,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await controller.Promote(layout.Id);
+
+            // Assert
+            var layouts = await Db.Layouts.Where(l => l.LayoutNumber == 5).ToListAsync();
+            Assert.AreEqual(2, layouts.Count, "Should have 2 versions with same LayoutNumber");
+            Assert.IsTrue(layouts.All(l => l.LayoutNumber == 5), 
+                "All versions should have LayoutNumber = 5");
+        }
+
+        #endregion
+
+        #region Phase 3: Designer Operations
+
+        /// <summary>
+        /// Test that Designer GET returns designer view.
+        /// </summary>
+        [TestMethod]
+        public async Task Designer_Get_ReturnsDesignerView()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Designer();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(true, viewResult.ViewData["IsDesigner"]);
+        }
+
+        /// <summary>
+        /// Test that DesignerData GET returns project JSON.
+        /// </summary>
+        [TestMethod]
+        public async Task DesignerData_Get_ReturnsProjectJson()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                HtmlHeader = "<header>Test Header</header>",
+                FooterHtmlContent = "<footer>Test Footer</footer>",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.DesignerData();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            Assert.IsNotNull(jsonResult.Value);
+        }
+
+        /// <summary>
+        /// Test that DesignerData POST saves designer changes.
+        /// </summary>
+        [TestMethod]
+        public async Task DesignerData_Post_SavesDesignerChanges()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(
+                "<body><!--CCMS--START--HEADER--><header>New Header</header><!--CCMS--END--HEADER-->" +
+                "<!--CCMS--START--FOOTER--><footer>New Footer</footer><!--CCMS--END--FOOTER--></body>");
+            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(".test { color: red; }");
+
+            // Act
+            var result = await controller.DesignerData(layout.Id, "Test", htmlContent, cssContent);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            
+            // Verify changes were saved
+            var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
+            Assert.Contains("New Header", updatedLayout.HtmlHeader);
+            Assert.Contains("New Footer", updatedLayout.FooterHtmlContent);
+        }
+
+        /// <summary>
+        /// Test that DesignerData POST validates nested regions.
+        /// </summary>
+        [TestMethod]
+        public async Task DesignerData_Post_ValidatesNestedRegions()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            var htmlWithNestedRegions = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(
+                "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>");
+            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(string.Empty);
+
+            // Act
+            var result = await controller.DesignerData(layout.Id, "Test", htmlWithNestedRegions, cssContent);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            Assert.IsTrue(badRequest.Value.ToString().Contains("nested editable regions"));
+        }
+
+        #endregion
+
+        #region Phase 5: Import/Export & Community Features
+
+        /// <summary>
+        /// Test that ExportLayout returns HTML file.
+        /// </summary>
+        [TestMethod]
+        public async Task ExportLayout_ReturnsHtmlFile()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Export Test Layout",
+                Head = "<style>body {}</style>",
+                HtmlHeader = "<header>Header</header>",
+                FooterHtmlContent = "<footer>Footer</footer>",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Create a root article for export
+            var article = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "Home",
+                UrlPath = "root",
+                Content = "<p>Test content</p>",
+                Published = DateTimeOffset.UtcNow,
+                Updated = DateTimeOffset.UtcNow
+            };
+            Db.Articles.Add(article);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.ExportLayout(layout.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(FileContentResult));
+            var fileResult = (FileContentResult)result;
+            Assert.AreEqual("application/octet-stream", fileResult.ContentType);
+            Assert.IsTrue(fileResult.FileDownloadName.Contains("layout-"));
+            Assert.IsTrue(fileResult.FileContents.Length > 0);
+        }
+
+        /// <summary>
+        /// Test that CommunityLayouts returns view with catalog.
+        /// </summary>
+        [TestMethod]
+        public async Task CommunityLayouts_ReturnsView_WithCatalog()
+        {
+            // Act
+            var result = await controller.CommunityLayouts();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsNotNull(viewResult.Model);
+        }
+
+        /// <summary>
+        /// Test that Create sets version to 1 for new layout.
+        /// </summary>
+        [TestMethod]
+        public async Task Create_SetsVersionToOne_ForNewLayout()
+        {
+            // Act
+            var result = await controller.Create();
+
+            // Assert
+            var layouts = await Db.Layouts.ToListAsync();
+            var newLayout = layouts.OrderByDescending(l => l.LastModified).First();
+            Assert.AreEqual(1, newLayout.Version, "New layout should have Version = 1");
+        }
+
+        /// <summary>
+        /// Test that Import imports community layout successfully.
+        /// </summary>
+        [TestMethod]
+        public async Task Import_ImportsCommunityLayout_Successfully()
+        {
+            // Arrange
+            var communityLayoutId = "test-layout-1";
+            var mockLayout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Community Layout",
+                CommunityLayoutId = communityLayoutId,
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1,
+                Head = "<style>body {}</style>",
+                HtmlHeader = "<header>Community Header</header>",
+                FooterHtmlContent = "<footer>Community Footer</footer>"
+            };
+
+            var mockTemplates = new List<Template>
+            {
+                new Template
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Community Template",
+                    Content = "<div>Community Content</div>",
+                    CommunityLayoutId = communityLayoutId,
+                    PageType = "page"
+                }
+            };
+
+            layoutImportServiceMock.Setup(s => s.GetCommunityLayoutAsync(communityLayoutId, false))
+                .ReturnsAsync(mockLayout);
+            layoutImportServiceMock.Setup(s => s.GetCommunityTemplatePagesAsync(communityLayoutId))
+                .ReturnsAsync(mockTemplates);
+
+            // Act
+            var result = await controller.Import(communityLayoutId);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            
+            // Verify layout was imported
+            var importedLayout = await Db.Layouts.FirstOrDefaultAsync(l => l.CommunityLayoutId == communityLayoutId);
+            Assert.IsNotNull(importedLayout, "Community layout should be imported");
+            Assert.AreEqual(mockLayout.LayoutName, importedLayout.LayoutName);
+        }
+
+        /// <summary>
+        /// Test that Import returns BadRequest when layout already exists.
+        /// </summary>
+        [TestMethod]
+        public async Task Import_ReturnsBadRequest_WhenLayoutAlreadyExists()
+        {
+            // Arrange
+            var communityLayoutId = "test-layout-1";
+            var existingLayout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Existing Community Layout",
+                CommunityLayoutId = communityLayoutId,
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(existingLayout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Import(communityLayoutId);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            Assert.IsTrue(badRequest.Value.ToString().Contains("already loaded"));
+        }
+
+        /// <summary>
+        /// Test that Import returns BadRequest when ID is null or empty.
+        /// </summary>
+        [TestMethod]
+        public async Task Import_ReturnsBadRequest_WhenIdNullOrEmpty()
+        {
+            // Act
+            var result = await controller.Import(string.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Import sets layout as default when no default exists.
+        /// </summary>
+        [TestMethod]
+        public async Task Import_SetsLayoutAsDefault_WhenNoDefaultExists()
+        {
+            // Arrange - Remove default layout
+            var existingLayouts = await Db.Layouts.ToListAsync();
+            Db.Layouts.RemoveRange(existingLayouts);
+            await Db.SaveChangesAsync();
+
+            var communityLayoutId = "test-layout-new";
+            var mockLayout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "First Community Layout",
+                CommunityLayoutId = communityLayoutId,
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1,
+                Head = "<style>body {}</style>"
+            };
+
+            layoutImportServiceMock.Setup(s => s.GetCommunityLayoutAsync(communityLayoutId, false))
+                .ReturnsAsync(mockLayout);
+            layoutImportServiceMock.Setup(s => s.GetCommunityTemplatePagesAsync(communityLayoutId))
+                .ReturnsAsync(new List<Template>());
+
+            // Act
+            var result = await controller.Import(communityLayoutId);
+
+            // Assert
+            var importedLayout = await Db.Layouts.FirstOrDefaultAsync(l => l.CommunityLayoutId == communityLayoutId);
+            Assert.IsNotNull(importedLayout);
+            Assert.IsTrue(importedLayout.IsDefault, "Should be set as default when no default exists");
+            Assert.AreEqual(1, importedLayout.Version, "Version should be 1");
+        }
+
+        /// <summary>
+        /// Test that Import imports templates with layout.
+        /// </summary>
+        [TestMethod]
+        public async Task Import_ImportsTemplates_WithLayout()
+        {
+            // Arrange
+            var communityLayoutId = "test-layout-with-templates";
+            var mockLayout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Layout with Templates",
+                CommunityLayoutId = communityLayoutId,
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+
+            var mockTemplates = new List<Template>
+            {
+                new Template
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Template 1",
+                    Content = "<div>Content 1</div>",
+                    CommunityLayoutId = communityLayoutId,
+                    PageType = "page"
+                },
+                new Template
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Template 2",
+                    Content = "<div>Content 2</div>",
+                    CommunityLayoutId = communityLayoutId,
+                    PageType = "article"
+                }
+            };
+
+            layoutImportServiceMock.Setup(s => s.GetCommunityLayoutAsync(communityLayoutId, false))
+                .ReturnsAsync(mockLayout);
+            layoutImportServiceMock.Setup(s => s.GetCommunityTemplatePagesAsync(communityLayoutId))
+                .ReturnsAsync(mockTemplates);
+
+            // Act
+            var result = await controller.Import(communityLayoutId);
+
+            // Assert
+            var importedTemplates = await Db.Templates.Where(t => t.CommunityLayoutId == communityLayoutId).ToListAsync();
+            Assert.AreEqual(2, importedTemplates.Count, "Should import 2 templates");
+            Assert.IsTrue(importedTemplates.Any(t => t.Title == "Template 1"));
+            Assert.IsTrue(importedTemplates.Any(t => t.Title == "Template 2"));
+        }
+
+        #endregion
+
+        #region Phase 6: Preview & Helper Methods
+
+        /// <summary>
+        /// Test that EditPreview returns view with layout preview.
+        /// </summary>
+        [TestMethod]
+        public async Task EditPreview_ReturnsView_WithLayoutPreview()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Preview Layout",
+                Head = "<style>body {}</style>",
+                HtmlHeader = "<header>Header</header>",
+                FooterHtmlContent = "<footer>Footer</footer>",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Create a root article for preview
+            var article = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "Home",
+                UrlPath = "root",
+                Content = "<p>Preview content</p>",
+                Published = DateTimeOffset.UtcNow,
+                Updated = DateTimeOffset.UtcNow
+            };
+            Db.Articles.Add(article);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.EditPreview(layout.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual("~/Views/Home/Index.cshtml", viewResult.ViewName);
+        }
+
+        /// <summary>
+        /// Test that EditPreview returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task EditPreview_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Act
+            var result = await controller.EditPreview(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that EditPreview returns BadRequest for invalid ID.
+        /// </summary>
+        [TestMethod]
+        public async Task EditPreview_ReturnsBadRequest_ForInvalidId()
+        {
+            // Act
+            var result = await controller.EditPreview(Guid.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        #endregion
+
+        #region Phase 7: Edge Cases & Validation
+
+        /// <summary>
+        /// Test that EditCode POST returns BadRequest when model invalid.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Post_ReturnsBadRequest_WhenModelInvalid()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            var model = new LayoutCodeViewModel
+            {
+                Id = layout.Id,
+                EditorTitle = "Test",
+                Head = null, // Invalid
+                HtmlHeader = null,
+                FooterHtmlContent = null
+            };
+
+            // Add model error manually
+            controller.ModelState.AddModelError("Head", "Required");
+
+            // Act
+            var result = await controller.EditCode(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            Assert.IsFalse(controller.ModelState.IsValid);
+        }
+
+        /// <summary>
+        /// Test that Delete returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Act
+            var result = await controller.Delete(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that DesignerData POST returns BadRequest when HTML content missing.
+        /// </summary>
+        [TestMethod]
+        public async Task DesignerData_Post_ReturnsBadRequest_WhenHtmlContentMissing()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act - Pass empty HTML content
+            var result = await controller.DesignerData(layout.Id, "Test", string.Empty, string.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Index validates pagination parameters.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ValidatesPaginationParameters()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act - Pass negative pageNo and invalid pageSize
+            var result = await controller.Index(pageNo: -1, pageSize: 200);
+
+            // Assert - Should still return view but with corrected parameters
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            
+            // Verify corrected pagination
+            Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should be corrected to 0");
+            Assert.AreEqual(10, viewResult.ViewData["pageSize"], "Invalid pageSize should be corrected to 10");
+        }
+
+        /// <summary>
+        /// Test that CommunityLayouts validates pagination parameters.
+        /// </summary>
+        [TestMethod]
+        public async Task CommunityLayouts_ValidatesPaginationParameters()
+        {
+            // Act - Pass negative pageNo and invalid pageSize
+            var result = await controller.CommunityLayouts(pageNo: -1, pageSize: 200);
+
+            // Assert - Should still return view but with corrected parameters
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            
+            // Verify corrected pagination
+            Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should be corrected to 0");
+            Assert.AreEqual(10, viewResult.ViewData["pageSize"], "Invalid pageSize should be corrected to 10");
+        }
+
+        /// <summary>
+        /// Test that Promote returns BadRequest for empty GUID.
+        /// </summary>
+        [TestMethod]
+        public async Task Promote_ReturnsBadRequest_ForEmptyGuid()
+        {
+            // Act
+            var result = await controller.Promote(Guid.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Promote returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task Promote_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Act
+            var result = await controller.Promote(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Publish returns BadRequest for empty GUID.
+        /// </summary>
+        [TestMethod]
+        public async Task Publish_ReturnsBadRequest_ForEmptyGuid()
+        {
+            // Act
+            var result = await controller.Publish(Guid.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Publish returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task Publish_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Act
+            var result = await controller.Publish(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Publish returns OK when layout is already default.
+        /// </summary>
+        [TestMethod]
+        public async Task Publish_ReturnsOk_WhenLayoutAlreadyDefault()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Already Default",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1,
+                Published = DateTimeOffset.UtcNow
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Publish(layout.Id);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+        }
+
+        /// <summary>
+        /// Test that EditCode POST returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Post_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Arrange
+            var model = new LayoutCodeViewModel
+            {
+                Id = Guid.NewGuid(),
+                EditorTitle = "Test",
+                Head = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<style>body {}</style>"),
+                HtmlHeader = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<header>Header</header>"),
+                FooterHtmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<footer>Footer</footer>"),
+                BodyHtmlAttributes = string.Empty
+            };
+
+            // Act
+            var result = await controller.EditCode(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that EditCode POST returns BadRequest when model is null.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Post_ReturnsBadRequest_WhenModelNull()
+        {
+            // Act
+            var result = await controller.EditCode((LayoutCodeViewModel)null);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that EditCode POST returns BadRequest for empty GUID.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Post_ReturnsBadRequest_ForEmptyGuid()
+        {
+            // Arrange
+            var model = new LayoutCodeViewModel
+            {
+                Id = Guid.Empty,
+                EditorTitle = "Test",
+                Head = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<style>body {}</style>"),
+                HtmlHeader = string.Empty,
+                FooterHtmlContent = string.Empty,
+                BodyHtmlAttributes = string.Empty
+            };
+
+            // Act
+            var result = await controller.EditCode(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that EditCode GET returns BadRequest for empty GUID.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Get_ReturnsBadRequest_ForEmptyGuid()
+        {
+            // Act
+            var result = await controller.EditCode(Guid.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that EditNotes POST returns BadRequest when model is null.
+        /// </summary>
+        [TestMethod]
+        public async Task EditNotes_Post_ReturnsBadRequest_WhenModelNull()
+        {
+            // Act
+            var result = await controller.EditNotes((LayoutIndexViewModel)null);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that EditNotes POST returns BadRequest for empty GUID.
+        /// </summary>
+        [TestMethod]
+        public async Task EditNotes_Post_ReturnsBadRequest_ForEmptyGuid()
+        {
+            // Arrange
+            var model = new LayoutIndexViewModel
+            {
+                Id = Guid.Empty,
+                LayoutName = "Test",
+                Notes = "Test notes",
+                IsDefault = false
+            };
+
+            // Act
+            var result = await controller.EditNotes(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that EditNotes POST returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task EditNotes_Post_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Arrange
+            var model = new LayoutIndexViewModel
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test",
+                Notes = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Test notes"),
+                IsDefault = false
+            };
+
+            // Act
+            var result = await controller.EditNotes(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Delete returns BadRequest for empty GUID.
+        /// </summary>
+        [TestMethod]
+        public async Task Delete_ReturnsBadRequest_ForEmptyGuid()
+        {
+            // Act
+            var result = await controller.Delete(Guid.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that DesignerData POST returns BadRequest for empty GUID.
+        /// </summary>
+        [TestMethod]
+        public async Task DesignerData_Post_ReturnsBadRequest_ForEmptyGuid()
+        {
+            // Act
+            var result = await controller.DesignerData(Guid.Empty, "Test", "<div>content</div>", string.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that DesignerData POST returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task DesignerData_Post_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Arrange
+            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(
+                "<body><!--CCMS--START--HEADER--><header>Header</header><!--CCMS--END--HEADER-->" +
+                "<!--CCMS--START--FOOTER--><footer>Footer</footer><!--CCMS--END--FOOTER--></body>");
+            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(".test { color: red; }");
+
+            // Act
+            var result = await controller.DesignerData(Guid.NewGuid(), "Test", htmlContent, cssContent);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that ExportLayout returns BadRequest for null or empty GUID.
+        /// </summary>
+        [TestMethod]
+        public async Task ExportLayout_ReturnsBadRequest_ForEmptyGuid()
+        {
+            // Act
+            var result = await controller.ExportLayout(Guid.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Test that ExportLayout returns NotFound when layout does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task ExportLayout_ReturnsNotFound_WhenLayoutDoesNotExist()
+        {
+            // Act
+            var result = await controller.ExportLayout(Guid.NewGuid());
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Promote copies all layout properties to new version.
+        /// </summary>
+        [TestMethod]
+        public async Task Promote_CopiesAllProperties_ToNewVersion()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout With Properties",
+                IsDefault = false,
+                LayoutNumber = 1,
+                Version = 1,
+                Head = "<style>body { margin: 0; }</style>",
+                HtmlHeader = "<header>Test Header</header>",
+                FooterHtmlContent = "<footer>Test Footer</footer>",
+                BodyHtmlAttributes = "class='test-body'",
+                Notes = "Test notes",
+                CommunityLayoutId = "test-community-id"
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Promote(layout.Id);
+
+            // Assert
+            var layouts = await Db.Layouts.Where(l => l.LayoutNumber == layout.LayoutNumber)
+                .OrderByDescending(l => l.Version)
+                .ToListAsync();
+            
+            Assert.AreEqual(2, layouts.Count);
+            var newVersion = layouts[0];
+            
+            Assert.AreEqual(layout.LayoutName, newVersion.LayoutName, "LayoutName should be copied");
+            Assert.AreEqual(layout.Head, newVersion.Head, "Head should be copied");
+            Assert.AreEqual(layout.HtmlHeader, newVersion.HtmlHeader, "HtmlHeader should be copied");
+            Assert.AreEqual(layout.FooterHtmlContent, newVersion.FooterHtmlContent, "FooterHtmlContent should be copied");
+            Assert.AreEqual(layout.BodyHtmlAttributes, newVersion.BodyHtmlAttributes, "BodyHtmlAttributes should be copied");
+            Assert.AreEqual(layout.Notes, newVersion.Notes, "Notes should be copied");
+            Assert.AreEqual(layout.CommunityLayoutId, newVersion.CommunityLayoutId, "CommunityLayoutId should be copied");
+            Assert.IsFalse(newVersion.IsDefault, "New version should not be default");
+            Assert.IsNull(newVersion.Published, "New version should not be published");
+        }
+
+        /// <summary>
+        /// Test that Create increments LayoutNumber correctly with gaps.
+        /// </summary>
+        [TestMethod]
+        public async Task Create_IncrementsLayoutNumber_WithGaps()
+        {
+            // Arrange - Clear existing layouts and create layouts with gaps
+            var existingLayouts = await Db.Layouts.ToListAsync();
+            Db.Layouts.RemoveRange(existingLayouts);
+            await Db.SaveChangesAsync();
+            
+            var layout1 = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Layout 1",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            var layout5 = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Layout 5",
+                IsDefault = false,
+                LayoutNumber = 5,
+                Version = 1
+            };
+            Db.Layouts.Add(layout1);
+            Db.Layouts.Add(layout5);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Create();
+
+            // Assert
+            var layouts = await Db.Layouts.OrderByDescending(l => l.LayoutNumber).ToListAsync();
+            var newLayout = layouts.First();
+            Assert.AreEqual(6, newLayout.LayoutNumber, "New layout should have LayoutNumber = 6 (max + 1)");
+        }
+
+        /// <summary>
+        /// Test that Index returns correct pagination data.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ReturnsCorrectPagination_WithMultipleLayouts()
+        {
+            // Arrange - Create 15 layouts
+            var existingLayouts = await Db.Layouts.ToListAsync();
+            Db.Layouts.RemoveRange(existingLayouts);
+            await Db.SaveChangesAsync();
+
+            for (int i = 1; i <= 15; i++)
+            {
+                Db.Layouts.Add(new Layout
+                {
+                    Id = Guid.NewGuid(),
+                    LayoutName = $"Layout {i}",
+                    IsDefault = i == 1,
+                    LayoutNumber = i,
+                    Version = 1
+                });
+            }
+            await Db.SaveChangesAsync();
+
+            // Act - Get page 1 with page size 10
+            var result = await controller.Index(pageNo: 1, pageSize: 10);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var model = viewResult.Model as System.Collections.Generic.List<LayoutIndexViewModel>;
+            
+            Assert.IsNotNull(model);
+            Assert.AreEqual(5, model.Count, "Page 2 should have 5 layouts (15 total - 10 on page 1)");
+            Assert.AreEqual(15, (int)viewResult.ViewData["RowCount"], "RowCount should be 15");
+        }
+
+        /// <summary>
+        /// Test that GetLayouts returns layouts ordered by version descending.
+        /// </summary>
+        [TestMethod]
+        public async Task GetLayouts_ReturnsLayouts_OrderedByVersionDescending()
+        {
+            // Arrange - Create multiple versions
+            var existingLayouts = await Db.Layouts.ToListAsync();
+            Db.Layouts.RemoveRange(existingLayouts);
+            await Db.SaveChangesAsync();
+
+            for (int i = 1; i <= 5; i++)
+            {
+                Db.Layouts.Add(new Layout
+                {
+                    Id = Guid.NewGuid(),
+                    LayoutName = "Test Layout",
+                    IsDefault = i == 5,
+                    LayoutNumber = 1,
+                    Version = i
+                });
+            }
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetLayouts();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var layouts = jsonResult.Value as System.Collections.Generic.List<LayoutIndexViewModel>;
+            
+            Assert.IsNotNull(layouts);
+            Assert.AreEqual(5, layouts.Count);
+            Assert.AreEqual(5, layouts[0].Version, "First layout should be version 5");
+            Assert.AreEqual(1, layouts[4].Version, "Last layout should be version 1");
+        }
+
+        /// <summary>
+        /// Test that Index with sorting sorts layouts correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_SortsLayouts_ByLayoutNameDescending()
+        {
+            // Arrange
+            var existingLayouts = await Db.Layouts.ToListAsync();
+            Db.Layouts.RemoveRange(existingLayouts);
+            await Db.SaveChangesAsync();
+
+            Db.Layouts.Add(new Layout { Id = Guid.NewGuid(), LayoutName = "Alpha", IsDefault = true, LayoutNumber = 1, Version = 1 });
+            Db.Layouts.Add(new Layout { Id = Guid.NewGuid(), LayoutName = "Beta", IsDefault = false, LayoutNumber = 2, Version = 1 });
+            Db.Layouts.Add(new Layout { Id = Guid.NewGuid(), LayoutName = "Gamma", IsDefault = false, LayoutNumber = 3, Version = 1 });
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Index(sortOrder: "desc", currentSort: "LayoutName");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var model = viewResult.Model as System.Collections.Generic.List<LayoutIndexViewModel>;
+            
+            Assert.IsNotNull(model);
+            Assert.AreEqual("Gamma", model[0].LayoutName);
+            Assert.AreEqual("Alpha", model[2].LayoutName);
+        }
+
+        /// <summary>
+        /// Test that CommunityLayouts with sorting sorts catalog correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task CommunityLayouts_SortsCatalog_ByNameDescending()
+        {
+            // Arrange - Mock catalog with multiple items
+            var mockCatalog = new Cosmos.Cms.Data.Logic.Root
+            {
+                LayoutCatalog = new System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>
+                {
+                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "1", Name = "Alpha", Description = "First", License = "MIT" },
+                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "2", Name = "Beta", Description = "Second", License = "MIT" },
+                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "3", Name = "Gamma", Description = "Third", License = "Apache" }
+                }
+            };
+            layoutImportServiceMock.Setup(s => s.GetCommunityCatalogAsync())
+                .ReturnsAsync(mockCatalog);
+
+            // Act
+            var result = await controller.CommunityLayouts(sortOrder: "desc", currentSort: "Name");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var model = viewResult.Model as System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>;
+            
+            Assert.IsNotNull(model);
+            Assert.AreEqual("Gamma", model[0].Name);
+            Assert.AreEqual("Alpha", model[2].Name);
+        }
+
+        /// <summary>
+        /// Test that Index validates negative pageNo parameter.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ValidatesNegativePageNo_DefaultsToZero()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Index(pageNo: -5, pageSize: 10);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should default to 0");
+        }
+
+        /// <summary>
+        /// Test that Index validates invalid pageSize parameter.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ValidatesInvalidPageSize_DefaultsTo10()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act - pageSize of 0 should default to 10
+            var result = await controller.Index(pageNo: 0, pageSize: 0);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(10, viewResult.ViewData["pageSize"], "PageSize of 0 should default to 10");
+        }
+
+        /// <summary>
+        /// Test that Index validates excessively large pageSize parameter.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_ValidatesLargePageSize_CapsAt10()
+        {
+            // Arrange
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Test Layout",
+                IsDefault = true,
+                LayoutNumber = 1,
+                Version = 1
+            };
+            Db.Layouts.Add(layout);
+            await Db.SaveChangesAsync();
+
+            // Act - pageSize > 100 should default to 10
+            var result = await controller.Index(pageNo: 0, pageSize: 200);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(10, viewResult.ViewData["pageSize"], "PageSize > 100 should default to 10");
+        }
+
+        /// <summary>
+        /// Test that CommunityLayouts validates negative pageNo parameter.
+        /// </summary>
+        [TestMethod]
+        public async Task CommunityLayouts_ValidatesNegativePageNo_DefaultsToZero()
+        {
+            // Arrange
+            var mockCatalog = new Cosmos.Cms.Data.Logic.Root
+            {
+                LayoutCatalog = new System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>
+                {
+                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "1", Name = "Test", Description = "Test", License = "MIT" }
+                }
+            };
+            layoutImportServiceMock.Setup(s => s.GetCommunityCatalogAsync()).ReturnsAsync(mockCatalog);
+
+            // Act
+            var result = await controller.CommunityLayouts(pageNo: -10, pageSize: 10);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should default to 0");
+        }
+
+        /// <summary>
+        /// Test that CommunityLayouts validates invalid pageSize parameter.
+        /// </summary>
+        [TestMethod]
+        public async Task CommunityLayouts_ValidatesInvalidPageSize_DefaultsTo10()
+        {
+            // Arrange
+            var mockCatalog = new Cosmos.Cms.Data.Logic.Root
+            {
+                LayoutCatalog = new System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>
+                {
+                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "1", Name = "Test", Description = "Test", License = "MIT" }
+                }
+            };
+            layoutImportServiceMock.Setup(s => s.GetCommunityCatalogAsync()).ReturnsAsync(mockCatalog);
+
+            // Act
+            var result = await controller.CommunityLayouts(pageNo: 0, pageSize: 150);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.AreEqual(10, viewResult.ViewData["pageSize"], "PageSize > 100 should default to 10");
+        }
+
+        /// <summary>
+        /// Test that GetLayouts handles exception gracefully.
+        /// </summary>
+        [TestMethod]
+        public async Task GetLayouts_ReturnsInternalServerError_WhenExceptionThrown()
+        {
+            // Arrange - Dispose the database to force an exception
+            await Db.DisposeAsync();
+
+            // Act
+            var result = await controller.GetLayouts();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ObjectResult));
+            var objectResult = (ObjectResult)result;
+            Assert.AreEqual(500, objectResult.StatusCode);
+            Assert.IsTrue(objectResult.Value.ToString().Contains("error"));
+        }
+
+        #endregion
+    }
+}
+

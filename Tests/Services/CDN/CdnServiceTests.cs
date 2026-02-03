@@ -54,10 +54,10 @@ namespace Sky.Tests.Services.CDN
         /// Tests that GetCdnService_WithNoSettings_ReturnsServiceWithEmptySettings.
         /// </summary>
         [TestMethod]
-        public void GetCdnService_WithNoSettings_ReturnsServiceWithEmptySettings()
+        public async Task GetCdnService_WithNoSettings_ReturnsServiceWithEmptySettings()
         {
             // Act
-            var service = CdnService.GetCdnService(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
+            var service = await CdnService.GetCdnServiceAsync(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
 
             // Assert
             Assert.IsNotNull(service);
@@ -97,7 +97,7 @@ namespace Sky.Tests.Services.CDN
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var service = CdnService.GetCdnService(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
+            var service = await CdnService.GetCdnServiceAsync(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
 
             // Assert
             Assert.IsNotNull(service);
@@ -123,7 +123,7 @@ namespace Sky.Tests.Services.CDN
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var service = CdnService.GetCdnService(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
+            var service = await CdnService.GetCdnServiceAsync(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
 
             // Assert
             Assert.IsFalse(service.IsConfigured());
@@ -233,7 +233,7 @@ namespace Sky.Tests.Services.CDN
         public async Task PurgeCdn_WithNoSettings_ReturnsEmptyResults()
         {
             // Arrange
-            var service = CdnService.GetCdnService(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
+            var service = await CdnService.GetCdnServiceAsync(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
 
             // Act
             var results = await service.PurgeCdn(new List<string> { "https://example.com/test" });
@@ -284,7 +284,7 @@ namespace Sky.Tests.Services.CDN
         public async Task PurgeCdn_NoParameters_CallsWithEmptyUrls()
         {
             // Arrange
-            var service = CdnService.GetCdnService(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
+            var service = await CdnService.GetCdnServiceAsync(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
 
             // Act
             var results = await service.PurgeCdn();
@@ -301,7 +301,7 @@ namespace Sky.Tests.Services.CDN
         public async Task PurgeCdn_EmptyUrlList_HandlesGracefully()
         {
             // Arrange
-            var service = CdnService.GetCdnService(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
+            var service = await CdnService.GetCdnServiceAsync(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
 
             // Act
             var results = await service.PurgeCdn(new List<string>());
@@ -480,7 +480,7 @@ namespace Sky.Tests.Services.CDN
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var service = CdnService.GetCdnService(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
+            var service = await CdnService.GetCdnServiceAsync(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
 
             // Assert
             Assert.IsFalse(service.IsConfigured());
@@ -514,7 +514,7 @@ namespace Sky.Tests.Services.CDN
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var service = CdnService.GetCdnService(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
+            var service = await CdnService.GetCdnServiceAsync(_dbContext, _mockLogger.Object, _mockHttpContext.Object);
 
             // Assert
             Assert.IsTrue(service.IsConfigured());

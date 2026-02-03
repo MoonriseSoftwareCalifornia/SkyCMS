@@ -199,7 +199,7 @@ namespace Sky.Cms.Controllers
             }
             else if (previewType == "templates")
             {
-                await SetRenderedView(await GetTemplatePreview(itemId.Value));
+                await SetRenderedView(await GetTemplatePreview(itemId));
             }
             else
             {
@@ -265,13 +265,33 @@ namespace Sky.Cms.Controllers
 
         private async Task<ArticleViewModel> GetLayoutPreview(Guid? itemId)
         {
+            if (!itemId.HasValue)
+            {
+                throw new ArgumentNullException(nameof(itemId), "Layout ID cannot be null for preview");
+            }
+
             var entity = await dbContext.Layouts.FirstOrDefaultAsync(f => f.Id == itemId);
+
+            if (entity == null)
+            {
+                throw new InvalidOperationException($"Layout with ID {itemId} not found");
+            }
 
             var layoutTemplateService
                 = HttpContext.RequestServices.GetService(typeof(ILayoutTemplateService)) as ILayoutTemplateService;
 
+            if (layoutTemplateService == null)
+            {
+                throw new InvalidOperationException("Layout template service is not available");
+            }
+
             var previews = await layoutTemplateService.GetAllTemplatesAsync();
-            var defaultPreview = previews.FirstOrDefault();
+            var defaultPreview = previews?.FirstOrDefault();
+
+            if (defaultPreview == null)
+            {
+                throw new InvalidOperationException("No default preview template available");
+            }
 
             ArticleViewModel model = new ()
             {
@@ -296,12 +316,28 @@ namespace Sky.Cms.Controllers
 
         private async Task<ArticleViewModel> GetTemplatePreview(Guid? itemId)
         {
+            if (!itemId.HasValue)
+            {
+                throw new ArgumentNullException(nameof(itemId), "Template ID cannot be null for preview");
+            }
+
             var entity = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == itemId);
+
+            if (entity == null)
+            {
+                throw new InvalidOperationException($"Template with ID {itemId} not found");
+            }
 
             var guid = Guid.NewGuid();
 
             // Prepare preview content: ensure markers, then populate editable regions with Lorem Ipsum.
             var htmlService = HttpContext.RequestServices.GetService(typeof(IArticleHtmlService)) as IArticleHtmlService;
+
+            if (htmlService == null)
+            {
+                throw new InvalidOperationException("Article HTML service is not available");
+            }
+
             var markedHtml = htmlService.EnsureEditableMarkers(entity.Content);
 
             var doc = new HtmlDocument();

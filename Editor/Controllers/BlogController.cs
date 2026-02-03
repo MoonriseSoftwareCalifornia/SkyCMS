@@ -340,16 +340,21 @@ namespace Sky.Editor.Controllers
 
             var entries = await db.ArticleCatalog
                 .Where(c => c.BlogKey == blogKey)
-                .Select(c => new BlogEntryListItem
+                .Join(db.Articles,
+                    catalog => catalog.ArticleNumber,
+                    article => article.ArticleNumber,
+                    (catalog, article) => new { Catalog = catalog, Article = article })
+                .Where(x => x.Article.ArticleType == (int)ArticleType.BlogPost)
+                .Select(x => new BlogEntryListItem
                 {
-                    BlogKey = c.BlogKey,
-                    ArticleNumber = c.ArticleNumber,
-                    Title = c.Title,
-                    Published = c.Published,
-                    Updated = c.Updated,
-                    UrlPath = c.UrlPath,
-                    Introduction = c.Introduction,
-                    BannerImage = c.BannerImage
+                    BlogKey = x.Catalog.BlogKey,
+                    ArticleNumber = x.Catalog.ArticleNumber,
+                    Title = x.Catalog.Title,
+                    Published = x.Catalog.Published,
+                    Updated = x.Catalog.Updated,
+                    UrlPath = x.Catalog.UrlPath,
+                    Introduction = x.Catalog.Introduction,
+                    BannerImage = x.Catalog.BannerImage
                 })
                 .ToListAsync();
 
@@ -683,7 +688,7 @@ namespace Sky.Editor.Controllers
             var streamType = (int)ArticleType.BlogStream;
 
             var entity = await db.Articles
-                .Where(a => a.UrlPath == blogKey && a.StatusCode != deletedEnum && a.ArticleType == streamType)
+                .Where(a => a.BlogKey == blogKey && a.StatusCode != deletedEnum && a.ArticleType == streamType)
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
 

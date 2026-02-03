@@ -70,6 +70,7 @@
     <!-- Common library packages -->
     <PackageVersion Include="MailChimp.Net.V3" Version="[5.8.2,6.0)" />
     <PackageVersion Include="Otp.NET" Version="1.4.1" />
+    <PackageVersion Include="Roslynator.Analyzers" Version="4.12.9" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.1.118" />
     <PackageVersion Include="X.Web.Sitemap" Version="[2.11.3,3.0)" />
     <PackageVersion Include="Newtonsoft.Json" Version="[13.0.3,14.0)" />

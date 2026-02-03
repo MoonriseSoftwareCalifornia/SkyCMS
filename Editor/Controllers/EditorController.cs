@@ -853,7 +853,14 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var lastVersion = await dbContext.Articles.Where(a => a.ArticleNumber == id).MaxAsync(m => m.VersionNumber);
+            var articlesQuery = dbContext.Articles.Where(a => a.ArticleNumber == id);
+            
+            if (!await articlesQuery.CosmosAnyAsync())
+            {
+                return NotFound();
+            }
+
+            var lastVersion = await articlesQuery.MaxAsync(m => m.VersionNumber);
 
             var articleViewModel = await articleLogic.GetArticleByArticleNumber(id, lastVersion);
 
@@ -1143,11 +1150,13 @@ namespace Sky.Cms.Controllers
                     logger.LogWarning("Redirect to unauthorized path: {Path}", path);
                     return RedirectToAction("Index", "Editor");
                 }
+
+                await articleLogic.PublishArticle(articleId, datetime);
+                return Redirect(editorUrl);
             }
 
             await articleLogic.PublishArticle(articleId, datetime);
-
-            return Redirect(editorUrl);
+            return Redirect("/Editor/Index");
         }
 
         /// <summary>
@@ -1194,7 +1203,7 @@ namespace Sky.Cms.Controllers
             ViewData["pageSize"] = pageSize;
             ViewData["showingRoles"] = forRoles;
 
-            var article = await dbContext.Articles.FindAsync(id);
+            var article = await dbContext.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == id);
 
             var catalogEntry = await articleLogic.GetCatalogEntry(article);
 
@@ -1423,7 +1432,7 @@ namespace Sky.Cms.Controllers
 
             query = query.Skip(pageNo * pageSize).Take(pageSize);
 
-            return View(await query.ToListAsync());
+            return View(query.ToList());
         }
 
         /// <summary>
@@ -2406,7 +2415,7 @@ namespace Sky.Cms.Controllers
         {
             try
             {
-                var cdnService = CdnService.GetCdnService(dbContext, logger, HttpContext);
+                var cdnService = await CdnService.GetCdnServiceAsync(dbContext, logger, HttpContext);
 
                 if (cdnService == null)
                 {

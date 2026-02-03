@@ -785,6 +785,267 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(cdnPurgedProp.GetValue(okResult.Value), "cdnPurged should not be null");
         }
 
+        /// <summary>
+        /// Test that Deploy handles null zipFile parameter gracefully.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_ReturnsError_WhenZipFileIsNull()
+        {
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, null);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            var response = badRequest.Value;
+            var responseType = response.GetType();
+            var errorProp = responseType.GetProperty("error");
+            Assert.IsNotNull(errorProp);
+            Assert.IsTrue(errorProp.GetValue(response).ToString().Contains("No file uploaded"));
+        }
+
+        /// <summary>
+        /// Test that Deploy handles empty deployment key.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_ReturnsUnauthorized_WhenPasswordIsEmpty()
+        {
+            // Arrange
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(testArticleId, string.Empty, zipFile);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Deploy handles whitespace-only deployment key.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_ReturnsUnauthorized_WhenPasswordIsWhitespace()
+        {
+            // Arrange
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(testArticleId, "   ", zipFile);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
+        }
+
+        /// <summary>
+        /// Test that Deploy handles SPA article with null metadata content.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_ReturnsBadRequest_WhenSpaMetadataIsNull()
+        {
+            // Arrange
+            var articleId = Guid.NewGuid();
+            var article = new Article
+            {
+                Id = articleId,
+                ArticleNumber = 99,
+                Title = "SPA with Null Metadata",
+                UrlPath = "/null-metadata-spa",
+                ArticleType = (int)ArticleType.SpaApp,
+                StatusCode = (int)StatusCodeEnum.Active,
+                Content = null, // Null metadata
+                Published = DateTimeOffset.UtcNow,
+                Updated = DateTimeOffset.UtcNow,
+                VersionNumber = 1
+            };
+            dbContext.Articles.Add(article);
+            dbContext.Pages.Add(new Cosmos.Common.Data.PublishedPage
+            {
+                Id = article.Id,
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                UrlPath = article.UrlPath,
+                ArticleType = article.ArticleType,
+                StatusCode = article.StatusCode,
+                Content = article.Content,
+                Published = article.Published,
+                Updated = article.Updated,
+                VersionNumber = article.VersionNumber
+            });
+            await dbContext.SaveChangesAsync();
+
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(articleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            var response = badRequest.Value;
+            var responseType = response.GetType();
+            var errorProp = responseType.GetProperty("error");
+            Assert.IsTrue(errorProp.GetValue(response).ToString().Contains("Invalid SPA metadata"));
+        }
+
+        /// <summary>
+        /// Test that Deploy handles SPA article with malformed JSON metadata.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_ReturnsBadRequest_WhenSpaMetadataIsInvalidJson()
+        {
+            // Arrange
+            var articleId = Guid.NewGuid();
+            var article = new Article
+            {
+                Id = articleId,
+                ArticleNumber = 100,
+                Title = "SPA with Invalid JSON",
+                UrlPath = "/invalid-json-spa",
+                ArticleType = (int)ArticleType.SpaApp,
+                StatusCode = (int)StatusCodeEnum.Active,
+                Content = "{invalid json content here", // Malformed JSON
+                Published = DateTimeOffset.UtcNow,
+                Updated = DateTimeOffset.UtcNow,
+                VersionNumber = 1
+            };
+            dbContext.Articles.Add(article);
+            dbContext.Pages.Add(new Cosmos.Common.Data.PublishedPage
+            {
+                Id = article.Id,
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                UrlPath = article.UrlPath,
+                ArticleType = article.ArticleType,
+                StatusCode = article.StatusCode,
+                Content = article.Content,
+                Published = article.Published,
+                Updated = article.Updated,
+                VersionNumber = article.VersionNumber
+            });
+            await dbContext.SaveChangesAsync();
+
+            var zipFile = CreateTestZipFile();
+
+            // Act
+            var result = await controller.Deploy(articleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            var response = badRequest.Value;
+            var responseType = response.GetType();
+            var errorProp = responseType.GetProperty("error");
+            Assert.IsTrue(errorProp.GetValue(response).ToString().Contains("Invalid SPA metadata"));
+        }
+
+        /// <summary>
+        /// Test that Deploy handles non-zip file extension.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_ReturnsBadRequest_WhenFileIsNotZip()
+        {
+            // Arrange
+            var content = new byte[] { 0x01, 0x02, 0x03 };
+            var stream = new MemoryStream(content);
+            var formFile = new FormFile(stream, 0, content.Length, "file", "app.tar.gz")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/x-gzip"
+            };
+
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, formFile);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            var response = badRequest.Value;
+            var responseType = response.GetType();
+            var errorProp = responseType.GetProperty("error");
+            Assert.IsTrue(errorProp.GetValue(response).ToString().Contains("must be a .zip archive"));
+        }
+
+        /// <summary>
+        /// Test that Deploy handles zero-length zip file.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_ReturnsBadRequest_WhenZipFileIsEmpty()
+        {
+            // Arrange
+            var emptyStream = new MemoryStream();
+            var formFile = new FormFile(emptyStream, 0, 0, "file", "empty.zip")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/zip"
+            };
+
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, formFile);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            var response = badRequest.Value;
+            var responseType = response.GetType();
+            var errorProp = responseType.GetProperty("error");
+            Assert.IsTrue(errorProp.GetValue(response).ToString().Contains("No file uploaded"));
+        }
+
+        /// <summary>
+        /// Test that Deploy handles zip file exceeding size limit.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_ReturnsBadRequest_WhenZipFileExceedsSizeLimit()
+        {
+            // Arrange
+            // Create a large dummy file (101 MB to exceed the 100 MB limit)
+            var largeContent = new byte[101_000_001];
+            var stream = new MemoryStream(largeContent);
+            var formFile = new FormFile(stream, 0, largeContent.Length, "file", "toolarge.zip")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/zip"
+            };
+
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, formFile);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            var response = badRequest.Value;
+            var responseType = response.GetType();
+            var errorProp = responseType.GetProperty("error");
+            Assert.IsTrue(errorProp.GetValue(response).ToString().Contains("exceeds maximum allowed size"));
+        }
+
+        /// <summary>
+        /// Test that Deploy increments deployment count after successful deployment.
+        /// </summary>
+        [TestMethod]
+        public async Task Deploy_IncrementsDeploymentCount_AfterSuccessfulDeployment()
+        {
+            // Arrange
+            var zipFile = CreateTestZipFile();
+            storageContextMock.Setup(s => s.AppendBlob(It.IsAny<MemoryStream>(), It.IsAny<FileUploadMetaData>()))
+                .Returns(Task.CompletedTask);
+
+            var initialArticle = await dbContext.Pages.FirstOrDefaultAsync(p => p.Id == testArticleId);
+            var initialMetadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(initialArticle.Content);
+            var initialCount = initialMetadata.DeploymentCount;
+
+            // Act
+            var result = await controller.Deploy(testArticleId, TestDeploymentKey, zipFile);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+            
+            var updatedArticle = await dbContext.Pages.FirstOrDefaultAsync(p => p.Id == testArticleId);
+            var updatedMetadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(updatedArticle.Content);
+            
+            Assert.AreEqual(initialCount + 1, updatedMetadata.DeploymentCount, "Deployment count should increment");
+        }
+
         #endregion
     }
 }
