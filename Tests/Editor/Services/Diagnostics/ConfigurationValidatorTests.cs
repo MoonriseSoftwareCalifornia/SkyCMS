@@ -10,6 +10,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
@@ -179,6 +180,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             Assert.IsNotNull(adminEmailCheck);
             Assert.AreEqual(CheckStatus.Error, adminEmailCheck.Status);
             Assert.AreEqual("Invalid email format", adminEmailCheck.Message);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(adminEmailCheck.Details));
+            StringAssert.Contains(adminEmailCheck.Details, "***");
         }
 
         [TestMethod]
@@ -477,6 +480,44 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
+        public async Task ValidateAsync_SingleTenantSqliteConnection_CreatesFileAndConnects()
+        {
+            // Arrange
+            var dbPath = Path.Combine(Path.GetTempPath(), $"skycms-config-validator-{Guid.NewGuid()}.db");
+            var connectionStrings = new Dictionary<string, string?>
+            {
+                ["ApplicationDbContextConnection"] = $"Data Source={dbPath}"
+            };
+            var values = new Dictionary<string, object?>
+            {
+                ["MultiTenantEditor"] = false,
+                ["AdminEmail"] = "admin@example.com"
+            };
+            SetupConfiguration(connectionStrings, values);
+
+            try
+            {
+                // Act
+                var result = await validator.ValidateAsync();
+
+                // Assert
+                Assert.IsNotNull(result);
+                var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
+                Assert.IsNotNull(dbCheck);
+                StringAssert.Contains(dbCheck.Message, "Connection successful");
+                Assert.IsTrue(File.Exists(dbPath), "SQLite database file should be created");
+            }
+            finally
+            {
+                if (File.Exists(dbPath))
+                {
+                    File.Delete(dbPath);
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("ConfigurationValidator")]
         public async Task ValidateAsync_SingleTenantCosmosConnection_DetectsCorrectDatabaseType()
         {
             // Arrange
@@ -613,6 +654,34 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
             Assert.IsNotNull(storageCheck);
             StringAssert.Contains(storageCheck.Message, "Azure Blob Storage");
+        }
+
+        [TestMethod]
+        [TestCategory("ConfigurationValidator")]
+        public async Task ValidateAsync_SingleTenantAzureBlobStorage_ConnectionWarningWhenUnreachable()
+        {
+            // Arrange
+            var connectionStrings = new Dictionary<string, string?>
+            {
+                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;",
+                ["StorageConnectionString"] = "DefaultEndpointsProtocol=https;AccountName=fake;AccountKey=fake;"
+            };
+            var values = new Dictionary<string, object?>
+            {
+                ["MultiTenantEditor"] = false,
+                ["AdminEmail"] = "admin@example.com"
+            };
+            SetupConfiguration(connectionStrings, values);
+
+            // Act
+            var result = await validator.ValidateAsync();
+
+            // Assert
+            Assert.IsNotNull(result);
+            var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
+            Assert.IsNotNull(storageCheck);
+            Assert.AreEqual(CheckStatus.Warning, storageCheck.Status);
+            StringAssert.Contains(storageCheck.Message, "Cannot connect");
         }
 
         [TestMethod]
@@ -1200,6 +1269,32 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             Assert.IsNotNull(dbCheck);
             StringAssert.DoesNotContain(dbCheck.Details, "SuperSecretValue");
             StringAssert.Contains(dbCheck.Details, "ClientSecret=***");
+        }
+
+        [TestMethod]
+        [TestCategory("ConfigurationValidator")]
+        public async Task ValidateAsync_ConnectionStringMasking_KeyMasked()
+        {
+            // Arrange
+            var connectionStrings = new Dictionary<string, string?>
+            {
+                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Key=UltraSecretKeyValue;"
+            };
+            var values = new Dictionary<string, object?>
+            {
+                ["MultiTenantEditor"] = false,
+                ["AdminEmail"] = "admin@example.com"
+            };
+            SetupConfiguration(connectionStrings, values);
+
+            // Act
+            var result = await validator.ValidateAsync();
+
+            // Assert
+            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
+            Assert.IsNotNull(dbCheck);
+            StringAssert.DoesNotContain(dbCheck.Details, "UltraSecretKeyValue");
+            StringAssert.Contains(dbCheck.Details, "Key=***");
         }
 
         #endregion
