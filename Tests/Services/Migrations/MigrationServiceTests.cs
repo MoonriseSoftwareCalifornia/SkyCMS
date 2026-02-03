@@ -324,6 +324,318 @@ namespace Sky.Tests.Services.Migrations
         }
 
         /// <summary>
+        /// Tests that DetermineProvider correctly identifies SQL Server connection strings.
+        /// </summary>
+        [TestMethod]
+        public void DetermineProvider_SqlServerConnectionString_ReturnsSqlServer()
+        {
+            // Arrange
+            var sqlServerConnectionString = "Server=localhost;Database=TestDb;Trusted_Connection=True;";
+
+            // Act
+            var provider = MigrationService.DetermineProvider(sqlServerConnectionString);
+
+            // Assert
+            Assert.AreEqual(DatabaseProvider.SqlServer, provider);
+        }
+
+        /// <summary>
+        /// Tests that DetermineProvider correctly identifies MySQL connection strings.
+        /// </summary>
+        [TestMethod]
+        public void DetermineProvider_MySqlConnectionString_ReturnsMySql()
+        {
+            // Arrange
+            // MySQL connection strings use 'uid=' for user identification
+            var mySqlConnectionString = "server=localhost;port=3306;database=testdb;uid=root;password=password";
+
+            // Act
+            var provider = MigrationService.DetermineProvider(mySqlConnectionString);
+
+            // Assert
+            Assert.AreEqual(DatabaseProvider.MySql, provider);
+        }
+
+        /// <summary>
+        /// Tests that DetermineProvider correctly identifies Cosmos DB connection strings.
+        /// </summary>
+        [TestMethod]
+        public void DetermineProvider_CosmosDbConnectionString_ReturnsCosmosDb()
+        {
+            // Arrange
+            var cosmosConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
+
+            // Act
+            var provider = MigrationService.DetermineProvider(cosmosConnectionString);
+
+            // Assert
+            Assert.AreEqual(DatabaseProvider.CosmosDb, provider);
+        }
+
+        /// <summary>
+        /// Tests that RecordMigrationAsync throws ArgumentException when MigrationId is null.
+        /// </summary>
+        [TestMethod]
+        public async Task RecordMigrationAsync_NullMigrationId_ThrowsArgumentException()
+        {
+            // Arrange
+            using var context = new ApplicationDbContext(_options);
+            await context.Database.EnsureCreatedAsync();
+            
+            var migrationService = new MigrationService(_loggerMock.Object);
+            var migrationContext = new MigrationContext
+            {
+                DbContext = context,
+                Provider = DatabaseProvider.Sqlite,
+                ConnectionString = "DataSource=:memory:",
+                Logger = _loggerMock.Object
+            };
+
+            var invalidMigration = new TestMigrationWithNullId();
+
+            // Act & Assert
+            var exceptionThrown = false;
+            try
+            {
+                // Use reflection to call private RecordMigrationAsync method
+                var method = typeof(MigrationService).GetMethod("RecordMigrationAsync", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var task = (Task)method.Invoke(migrationService, new object[] { migrationContext, invalidMigration });
+                await task;
+            }
+            catch (ArgumentException ex)
+            {
+                exceptionThrown = true;
+                Assert.IsTrue(ex.Message.Contains("MigrationId"));
+            }
+            
+            Assert.IsTrue(exceptionThrown, "Expected ArgumentException was not thrown");
+        }
+
+        /// <summary>
+        /// Tests that RecordMigrationAsync throws ArgumentException when Version is null.
+        /// </summary>
+        [TestMethod]
+        public async Task RecordMigrationAsync_NullVersion_ThrowsArgumentException()
+        {
+            // Arrange
+            using var context = new ApplicationDbContext(_options);
+            await context.Database.EnsureCreatedAsync();
+            
+            var migrationService = new MigrationService(_loggerMock.Object);
+            var migrationContext = new MigrationContext
+            {
+                DbContext = context,
+                Provider = DatabaseProvider.Sqlite,
+                ConnectionString = "DataSource=:memory:",
+                Logger = _loggerMock.Object
+            };
+
+            var invalidMigration = new TestMigrationWithNullVersion();
+
+            // Act & Assert
+            var exceptionThrown = false;
+            try
+            {
+                // Use reflection to call private RecordMigrationAsync method
+                var method = typeof(MigrationService).GetMethod("RecordMigrationAsync", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var task = (Task)method.Invoke(migrationService, new object[] { migrationContext, invalidMigration });
+                await task;
+            }
+            catch (ArgumentException ex)
+            {
+                exceptionThrown = true;
+                Assert.IsTrue(ex.Message.Contains("Version"));
+            }
+            
+            Assert.IsTrue(exceptionThrown, "Expected ArgumentException was not thrown");
+        }
+
+        /// <summary>
+        /// Tests that ApplyMigrationAsync wraps migration exceptions in InvalidOperationException.
+        /// </summary>
+        [TestMethod]
+        public async Task ApplyMigrationAsync_MigrationThrowsException_WrapsInInvalidOperationException()
+        {
+            // Arrange
+            using var context = new ApplicationDbContext(_options);
+            await context.Database.EnsureCreatedAsync();
+            
+            // Manually create MigrationHistory table
+            await context.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS MigrationHistory (
+                    Id TEXT PRIMARY KEY,
+                    MigrationId TEXT NOT NULL,
+                    Version TEXT NOT NULL,
+                    Description TEXT,
+                    AppliedAt TEXT NOT NULL,
+                    Provider TEXT NOT NULL,
+                    ApplicationVersion TEXT
+                )");
+
+            var migrationService = new MigrationService(_loggerMock.Object);
+            var migrationContext = new MigrationContext
+            {
+                DbContext = context,
+                Provider = DatabaseProvider.Sqlite,
+                ConnectionString = "DataSource=:memory:",
+                Logger = _loggerMock.Object
+            };
+
+            var failingMigration = new TestFailingMigration();
+
+            // Act & Assert
+            var exceptionThrown = false;
+            InvalidOperationException capturedException = null;
+            
+            try
+            {
+                // Use reflection to call private ApplyMigrationAsync method
+                var method = typeof(MigrationService).GetMethod("ApplyMigrationAsync", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var task = (Task)method.Invoke(migrationService, new object[] { migrationContext, failingMigration });
+                await task;
+            }
+            catch (InvalidOperationException ex)
+            {
+                exceptionThrown = true;
+                capturedException = ex;
+            }
+            
+            Assert.IsTrue(exceptionThrown, "Expected InvalidOperationException was not thrown");
+            Assert.IsNotNull(capturedException);
+            
+            // Assert the exception message contains migration details
+            Assert.IsTrue(capturedException.Message.Contains("FAIL001"));
+            Assert.IsTrue(capturedException.Message.Contains("Test migration that fails"));
+            Assert.IsNotNull(capturedException.InnerException);
+            Assert.IsInstanceOfType(capturedException.InnerException, typeof(InvalidOperationException));
+        }
+
+        /// <summary>
+        /// Tests that RecordMigrationAsync handles null Description gracefully.
+        /// </summary>
+        [TestMethod]
+        public async Task RecordMigrationAsync_NullDescription_InsertsEmptyString()
+        {
+            // Arrange
+            using var context = new ApplicationDbContext(_options);
+            await context.Database.EnsureCreatedAsync();
+            
+            // Manually create MigrationHistory table
+            await context.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS MigrationHistory (
+                    Id TEXT PRIMARY KEY,
+                    MigrationId TEXT NOT NULL,
+                    Version TEXT NOT NULL,
+                    Description TEXT,
+                    AppliedAt TEXT NOT NULL,
+                    Provider TEXT NOT NULL,
+                    ApplicationVersion TEXT
+                )");
+
+            var migrationService = new MigrationService(_loggerMock.Object);
+            var migrationContext = new MigrationContext
+            {
+                DbContext = context,
+                Provider = DatabaseProvider.Sqlite,
+                ConnectionString = "DataSource=:memory:",
+                Logger = _loggerMock.Object
+            };
+
+            var migrationWithNullDescription = new TestMigrationWithNullDescription();
+
+            // Act - Use reflection to call private RecordMigrationAsync method
+            var method = typeof(MigrationService).GetMethod("RecordMigrationAsync", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            await (Task)method.Invoke(migrationService, new object[] { migrationContext, migrationWithNullDescription });
+
+            // Assert - Verify the migration was recorded with empty description
+            var recorded = await context.Set<MigrationHistory>()
+                .FirstOrDefaultAsync(m => m.MigrationId == "NULLDESC001");
+            
+            Assert.IsNotNull(recorded);
+            Assert.IsNotNull(recorded.Description); // Should be empty string, not null
+        }
+
+        /// <summary>
+        /// Tests that the virtual bootstrap migration cannot be rolled back.
+        /// This verifies the VirtualMigration.RollbackAsync throws NotSupportedException.
+        /// </summary>
+        [TestMethod]
+        public async Task VirtualMigration_RollbackAsync_ThrowsNotSupportedException()
+        {
+            // Arrange
+            using var context = new ApplicationDbContext(_options);
+            var migrationContext = new MigrationContext
+            {
+                DbContext = context,
+                Provider = DatabaseProvider.Sqlite,
+                ConnectionString = "DataSource=:memory:",
+                Logger = _loggerMock.Object
+            };
+
+            // Bootstrap a new database to get Migration 000 created
+            var migrationService = new MigrationService(_loggerMock.Object);
+            await migrationService.RunMigrationsAsync(migrationContext);
+
+            // Verify Migration 000 exists
+            var migration000 = await context.Set<MigrationHistory>()
+                .FirstOrDefaultAsync(m => m.MigrationId == "000");
+            Assert.IsNotNull(migration000, "Migration 000 should exist after bootstrap");
+
+            // Act & Assert - Try to rollback the virtual migration
+            // Get the VirtualMigration type using reflection
+            var virtualMigrationType = typeof(MigrationService)
+                .GetNestedType("VirtualMigration", System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(virtualMigrationType, "VirtualMigration type should exist");
+
+            // Create instance of VirtualMigration
+            var virtualMigration = Activator.CreateInstance(virtualMigrationType);
+            
+            // Set properties
+            virtualMigrationType.GetProperty("MigrationId").SetValue(virtualMigration, "000");
+            virtualMigrationType.GetProperty("Version").SetValue(virtualMigration, "1.0.0");
+            virtualMigrationType.GetProperty("Description").SetValue(virtualMigration, "Test");
+
+            // Get RollbackAsync method
+            var rollbackMethod = virtualMigrationType.GetMethod("RollbackAsync");
+
+            // Invoke RollbackAsync and expect NotSupportedException
+            // When calling async methods through reflection, the exception is NOT wrapped in TargetInvocationException
+            var exceptionThrown = false;
+            NotSupportedException capturedException = null;
+            
+            try
+            {
+                // For async methods, we need to await the task returned by Invoke
+                var task = rollbackMethod.Invoke(virtualMigration, new object[] { migrationContext }) as Task;
+                if (task != null)
+                {
+                    await task;
+                }
+            }
+            catch (NotSupportedException ex)
+            {
+                exceptionThrown = true;
+                capturedException = ex;
+            }
+            catch (System.Reflection.TargetInvocationException ex) when (ex.InnerException is NotSupportedException)
+            {
+                exceptionThrown = true;
+                capturedException = ex.InnerException as NotSupportedException;
+            }
+            
+            Assert.IsTrue(exceptionThrown, "Expected NotSupportedException was not thrown");
+            Assert.IsNotNull(capturedException);
+            
+            // Verify exception message
+            Assert.IsTrue(capturedException.Message.Contains("Virtual migration 000"));
+            Assert.IsTrue(capturedException.Message.Contains("cannot be rolled back"));
+        }
+
+        /// <summary>
         /// Helper method to check if a table exists in the database.
         /// </summary>
         private async Task<bool> TableExistsAsync(ApplicationDbContext context, string tableName)
@@ -393,5 +705,106 @@ namespace Sky.Tests.Services.Migrations
                 return Task.CompletedTask;
             }
         }
+
+        /// <summary>
+        /// Test migration with null MigrationId for validation testing.
+        /// </summary>
+        private class TestMigrationWithNullId : IMigration
+        {
+            public string MigrationId => null;
+            public string Version => "1.0.0";
+            public string Description => "Test migration with null ID";
+
+            public Task ApplyAsync(MigrationContext context)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task<bool> IsAppliedAsync(MigrationContext context)
+            {
+                return Task.FromResult(false);
+            }
+
+            public Task RollbackAsync(MigrationContext context)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        /// <summary>
+        /// Test migration with null Version for validation testing.
+        /// </summary>
+        private class TestMigrationWithNullVersion : IMigration
+        {
+            public string MigrationId => "TEST001";
+            public string Version => null;
+            public string Description => "Test migration with null version";
+
+            public Task ApplyAsync(MigrationContext context)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task<bool> IsAppliedAsync(MigrationContext context)
+            {
+                return Task.FromResult(false);
+            }
+
+            public Task RollbackAsync(MigrationContext context)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        /// <summary>
+        /// Test migration that throws an exception during ApplyAsync.
+        /// </summary>
+        private class TestFailingMigration : IMigration
+        {
+            public string MigrationId => "FAIL001";
+            public string Version => "1.0.0";
+            public string Description => "Test migration that fails";
+
+            public Task ApplyAsync(MigrationContext context)
+            {
+                throw new InvalidOperationException("Simulated migration failure");
+            }
+
+            public Task<bool> IsAppliedAsync(MigrationContext context)
+            {
+                return Task.FromResult(false);
+            }
+
+            public Task RollbackAsync(MigrationContext context)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        /// <summary>
+        /// Test migration with null Description for testing DBNull handling.
+        /// </summary>
+        private class TestMigrationWithNullDescription : IMigration
+        {
+            public string MigrationId => "NULLDESC001";
+            public string Version => "1.0.0";
+            public string Description => null;
+
+            public Task ApplyAsync(MigrationContext context)
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task<bool> IsAppliedAsync(MigrationContext context)
+            {
+                return Task.FromResult(false);
+            }
+
+            public Task RollbackAsync(MigrationContext context)
+            {
+                return Task.CompletedTask;
+            }
+        }
     }
 }
+
