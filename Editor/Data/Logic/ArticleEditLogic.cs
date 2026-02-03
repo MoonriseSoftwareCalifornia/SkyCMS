@@ -514,7 +514,9 @@ namespace Sky.Editor.Data.Logic
 
             await DbContext.SaveChangesAsync();
 
-            await UpsertCatalogEntry(article);
+            // Skip catalog entry creation here - will be created when article is published
+            // For unpublished articles, catalog entry creation can be deferred or handled separately
+            // await UpsertCatalogEntry(article);
 
             if (isFirstArticle)
             {
@@ -973,7 +975,7 @@ namespace Sky.Editor.Data.Logic
             if (oldEntry != null)
             {
                 DbContext.ArticleCatalog.Remove(oldEntry);
-                await DbContext.SaveChangesAsync();
+                // Don't save yet - will save after adding new entry
             }
 
             var entry = new CatalogEntry
@@ -992,7 +994,7 @@ namespace Sky.Editor.Data.Logic
             };
 
             DbContext.ArticleCatalog.Add(entry);
-            await DbContext.SaveChangesAsync();
+            await DbContext.SaveChangesAsync(); // Single SaveChangesAsync for both remove and add
             return entry;
         }
 

@@ -21,26 +21,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          ruby-version: '3.4'
-          bundler-cache: true
-          working-directory: ./Docs
+          python-version: '3.11'
+          cache: 'pip'
       
-      - name: Build Jekyll site
-        working-directory: ./Docs
+      - name: Install MkDocs and dependencies
         run: |
-          bundle exec jekyll build --config _config.yml --destination ./_site
-        env:
-          JEKYLL_ENV: production
-          PAGES_REPO_NWO: ${{ github.repository }}
+          python -m pip install --upgrade pip
+          pip install mkdocs mkdocs-material
       
-      - name: Convert .md links to .html in built site
-        working-directory: ./Docs/_site
+      - name: Build MkDocs site
         run: |
-          find . -name "*.html" -type f -exec sed -i 's/\(href="[^":#]*\)\.md\([")#]\)/\1.html\2/g' {} +
-          echo "✅ Converted .md links to .html in built HTML files"
+          python -m mkdocs build --config-file mkdocs.yml --site-dir ./site
       
       - name: Configure AWS CLI for CloudFlare R2
         run: |
@@ -50,7 +44,7 @@ jobs:
       
       - name: Deploy HTML files to CloudFlare R2
         run: |
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude "*" \
             --include "*.html" \
@@ -60,7 +54,7 @@ jobs:
       
       - name: Deploy CSS files to CloudFlare R2
         run: |
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude "*" \
             --include "*.css" \
@@ -71,7 +65,7 @@ jobs:
       
       - name: Deploy JavaScript files to CloudFlare R2
         run: |
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude "*" \
             --include "*.js" \
@@ -81,35 +75,35 @@ jobs:
       
       - name: Deploy image files to CloudFlare R2
         run: |
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude "*" \
             --include "*.png" \
             --content-type "image/png" \
             --cache-control "public, max-age=31536000"
           
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude "*" \
             --include "*.jpg" --include "*.jpeg" \
             --content-type "image/jpeg" \
             --cache-control "public, max-age=31536000"
           
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude "*" \
             --include "*.svg" \
             --content-type "image/svg+xml" \
             --cache-control "public, max-age=31536000"
           
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude "*" \
             --include "*.gif" \
             --content-type "image/gif" \
             --cache-control "public, max-age=31536000"
           
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --exclude "*" \
             --include "*.webp" \
@@ -118,7 +112,7 @@ jobs:
       
       - name: Deploy remaining files to CloudFlare R2
         run: |
-          aws s3 sync ./Docs/site s3://${{ secrets.R2_BUCKET_NAME }} \
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --delete \
             --exclude "*.html" --exclude "*.css" --exclude "*.js" \

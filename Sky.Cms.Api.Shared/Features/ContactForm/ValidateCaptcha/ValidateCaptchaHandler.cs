@@ -35,9 +35,9 @@ public class ValidateCaptchaHandler : IQueryHandler<ValidateCaptchaQuery, bool>
         ILogger<ValidateCaptchaHandler> logger,
         IOptions<ContactApiConfig> config)
     {
-        this.httpClientFactory = httpClientFactory;
-        this.logger = logger;
-        this.config = config.Value;
+        this.httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.config = (config ?? throw new ArgumentNullException(nameof(config))).Value;
     }
 
     /// <inheritdoc/>

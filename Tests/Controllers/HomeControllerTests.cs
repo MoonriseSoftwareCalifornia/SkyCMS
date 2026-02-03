@@ -508,6 +508,12 @@ namespace Sky.Tests.Controllers
                 Assert.Inconclusive("This test requires AllowSetup to be enabled in EditorSettings configuration");
                 return;
             }
+
+            // Ensure the "Administrators" role exists
+            if (!await RoleManager.RoleExistsAsync("Administrators"))
+            {
+                await RoleManager.CreateAsync(new IdentityRole("Administrators"));
+            }
             
             // Create a root article for the index to load
             var rootArticle = new Article
@@ -536,6 +542,17 @@ namespace Sky.Tests.Controllers
                 // Remove the role to test auto-promotion
                 await UserManager.RemoveFromRoleAsync(user, "Administrators");
             }
+
+            // Update the controller's User principal to remove the Administrators role claim
+            // This is necessary because User.IsInRole() checks claims, not the database
+            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()),
+                new Claim(ClaimTypes.Name, "test@example.com")
+                // Intentionally NOT including the Administrators role claim
+            }, "TestAuth"));
+
+            homeController.ControllerContext.HttpContext.User = claimsPrincipal;
 
             // Act
             var result = await homeController.Index();

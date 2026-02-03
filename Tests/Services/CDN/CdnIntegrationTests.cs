@@ -870,7 +870,10 @@ namespace Sky.Tests.Services.CDN
             var configuredCount = (hasAzure ? 1 : 0) + (hasCloudflare ? 1 : 0) + (hasSucuri ? 1 : 0);
             Console.WriteLine($"\nTotal Configured: {configuredCount}/3");
 
-            Assert.IsTrue(configuredCount > 0, "At least one provider should be configured for integration tests");
+            if (configuredCount == 0)
+            {
+                Assert.Inconclusive("No CDN providers are configured. Add credentials to user secrets to run integration tests.");
+            }
         }
 
         #endregion

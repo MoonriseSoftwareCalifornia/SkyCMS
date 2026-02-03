@@ -24,8 +24,17 @@ namespace AspNetCore.Identity.FlexDb.Strategies
         /// <inheritdoc/>
         public bool CanHandle(string connectionString)
         {
-            return !string.IsNullOrWhiteSpace(connectionString) &&
-                   connectionString.Contains("User ID", StringComparison.InvariantCultureIgnoreCase);
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return false;
+            }
+
+            // SQL Server connection strings can use different authentication methods:
+            // - SQL Server Authentication: User ID/Password
+            // - Windows Authentication: Trusted_Connection or Integrated Security
+            return connectionString.Contains("User ID", StringComparison.InvariantCultureIgnoreCase) ||
+                   connectionString.Contains("Trusted_Connection", StringComparison.InvariantCultureIgnoreCase) ||
+                   connectionString.Contains("Integrated Security", StringComparison.InvariantCultureIgnoreCase);
         }
 
         /// <inheritdoc/>
