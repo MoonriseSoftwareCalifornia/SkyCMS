@@ -7,7 +7,28 @@ docs_dir: 'Docs'
 
 # Theme configuration
 theme:
-  name: mkdocs
+  name: material
+  palette:
+    - scheme: light
+      primary: blue
+      accent: blue
+    - scheme: dark
+      primary: blue
+      accent: blue
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.select
   highlightjs: true
   hljs_languages:
     - yaml
@@ -18,8 +39,6 @@ theme:
     - json
     - bash
     - powershell
-  navigation_depth: 3
-  nav_style: dark
 
 # Plugins
 plugins:
@@ -30,12 +49,17 @@ markdown_extensions:
   - toc:
       permalink: true
   - admonition
-  - codehilite:
-      guess_lang: false
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
   - def_list
   - footnotes
   - meta
   - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 # Navigation structure - simplified for header nav (full nav available in sidebar)
 nav:
