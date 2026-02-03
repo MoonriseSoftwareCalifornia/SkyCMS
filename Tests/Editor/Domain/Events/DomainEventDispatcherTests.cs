@@ -278,7 +278,7 @@ namespace Sky.Tests.Editor.Domain.Events
         public void Constructor_WithNullResolver_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.ThrowsException<ArgumentNullException>(() =>
+            Assert.ThrowsExactly<ArgumentNullException>(() =>
                 new DomainEventDispatcher((Func<Type, IEnumerable<object>>)null!));
         }
 
@@ -290,7 +290,7 @@ namespace Sky.Tests.Editor.Domain.Events
         public void Constructor_WithNullHandlers_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.ThrowsException<ArgumentNullException>(() =>
+            Assert.ThrowsExactly<ArgumentNullException>(() =>
                 new DomainEventDispatcher((IEnumerable<object>)null!));
         }
 
@@ -495,7 +495,7 @@ namespace Sky.Tests.Editor.Domain.Events
             var dispatcher = new DomainEventDispatcher(new[] { (object)failingHandler });
 
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
                 await dispatcher.DispatchAsync(new TestEvent("fail")));
         }
 
@@ -636,7 +636,7 @@ namespace Sky.Tests.Editor.Domain.Events
             cts.Cancel();
 
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<OperationCanceledException>(async () =>
+            await Assert.ThrowsExactlyAsync<OperationCanceledException>(async () =>
                 await dispatcher.DispatchAsync(new TestEvent("pre-cancel"), cts.Token));
         }
 
@@ -766,7 +766,7 @@ namespace Sky.Tests.Editor.Domain.Events
             await Task.Delay(10);
             cts.Cancel();
 
-            await Assert.ThrowsExceptionAsync<OperationCanceledException>(async () =>
+            await Assert.ThrowsExactlyAsync<OperationCanceledException>(async () =>
                 await dispatchTask);
         }
 

@@ -303,11 +303,10 @@ namespace Sky.Tests.Services.Scheduling
         /// </summary>
         [TestMethod]
         [TestCategory("HangFire.EdgeCases")]
-        [ExpectedException(typeof(ArgumentNullException))]
         public void AddHangFireScheduling_NullConfiguration_ThrowsArgumentNull()
         {
-            // Act
-            _services.AddHangFireScheduling(null);
+            // Act & Assert
+            Assert.ThrowsExactly<ArgumentNullException>(() => _services.AddHangFireScheduling(null));
         }
 
         /// <summary>

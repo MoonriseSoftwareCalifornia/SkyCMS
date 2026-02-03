@@ -76,12 +76,12 @@ namespace Sky.Tests.Services.Scheduling
             _serviceCollection.AddScoped(_ => new Mock<IConfiguration>().Object);
             _serviceCollection.AddScoped(_ => new Mock<UserManager<IdentityUser>>(
                 new Mock<IUserStore<IdentityUser>>().Object, null, null, null, null, null, null, null, null).Object);
-            _serviceCollection.AddScoped(_ => Logic.Factory);
             _serviceCollection.AddLogging();
             _serviceCollection.AddMemoryCache();
 
             _serviceProvider = _serviceCollection.BuildServiceProvider();
-            _scheduler = new ArticleScheduler(_mockSettings.Object, _mockClock.Object, _serviceProvider);
+            var logger = _serviceProvider.GetRequiredService<ILogger<ArticleScheduler>>();
+            _scheduler = new ArticleScheduler(logger, _mockSettings.Object, _mockClock.Object, _serviceProvider);
         }
 
         /// <summary>
@@ -97,19 +97,19 @@ namespace Sky.Tests.Services.Scheduling
         #region Constructor Tests
 
         /// <summary>
-        /// Test: ArticleScheduler constructor throws when logger is null.
+        /// Test: ArticleScheduler constructor throws when settings is null.
         /// </summary>
         [TestMethod]
         [TestCategory("ArticleScheduler.Constructor")]
-        [ExpectedException(typeof(ArgumentNullException))]
         public void Constructor_NullSettings_ThrowsArgumentNull()
         {
-            // Act
-            new ArticleScheduler(
-                new Mock<ILogger<ArticleScheduler>>().Object,
-                null, // null settings
-                _mockClock.Object,
-                _serviceProvider);
+            // Act & Assert
+            Assert.ThrowsExactly<ArgumentNullException>(() => 
+                new ArticleScheduler(
+                    new Mock<ILogger<ArticleScheduler>>().Object,
+                    null, // null settings
+                    _mockClock.Object,
+                    _serviceProvider));
         }
 
         /// <summary>
@@ -117,15 +117,15 @@ namespace Sky.Tests.Services.Scheduling
         /// </summary>
         [TestMethod]
         [TestCategory("ArticleScheduler.Constructor")]
-        [ExpectedException(typeof(ArgumentNullException))]
         public void Constructor_NullClock_ThrowsArgumentNull()
         {
-            // Act
-            new ArticleScheduler(
-                new Mock<ILogger<ArticleScheduler>>().Object,
-                _mockSettings.Object,
-                null, // null clock
-                _serviceProvider);
+            // Act & Assert
+            Assert.ThrowsExactly<ArgumentNullException>(() => 
+                new ArticleScheduler(
+                    new Mock<ILogger<ArticleScheduler>>().Object,
+                    _mockSettings.Object,
+                    null, // null clock
+                    _serviceProvider));
         }
 
         /// <summary>
@@ -133,15 +133,15 @@ namespace Sky.Tests.Services.Scheduling
         /// </summary>
         [TestMethod]
         [TestCategory("ArticleScheduler.Constructor")]
-        [ExpectedException(typeof(ArgumentNullException))]
         public void Constructor_NullServiceProvider_ThrowsArgumentNull()
         {
-            // Act
-            new ArticleScheduler(
-                new Mock<ILogger<ArticleScheduler>>().Object,
-                _mockSettings.Object,
-                _mockClock.Object,
-                null); // null service provider
+            // Act & Assert
+            Assert.ThrowsExactly<ArgumentNullException>(() => 
+                new ArticleScheduler(
+                    new Mock<ILogger<ArticleScheduler>>().Object,
+                    _mockSettings.Object,
+                    _mockClock.Object,
+                    null)); // null service provider
         }
 
         #endregion
@@ -172,7 +172,7 @@ namespace Sky.Tests.Services.Scheduling
                 VersionNumber = 2,
                 Published = _testNow.AddHours(1),
                 StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId
+                UserId = TestUserId.ToString()
             };
             Db.Articles.Add(futureVersion);
             await Db.SaveChangesAsync();
@@ -223,7 +223,7 @@ namespace Sky.Tests.Services.Scheduling
             var home = await Logic.CreateArticle("Home", TestUserId);
             var deletedArticle = await Logic.CreateArticle("Deleted", TestUserId);
             deletedArticle.Published = _testNow.AddHours(-1);
-            deletedArticle.StatusCode = (int)StatusCodeEnum.Deleted;
+            deletedArticle.StatusCode = StatusCodeEnum.Deleted;
             await Db.SaveChangesAsync();
 
             var versionCount = await Db.Articles
@@ -268,7 +268,7 @@ namespace Sky.Tests.Services.Scheduling
                 VersionNumber = 2,
                 Published = _testNow.AddHours(-1),
                 StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId
+                UserId = TestUserId.ToString()
             };
             Db.Articles.Add(v2);
             await Db.SaveChangesAsync();
@@ -281,7 +281,7 @@ namespace Sky.Tests.Services.Scheduling
                 VersionNumber = 3,
                 Published = _testNow.AddHours(2),
                 StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId
+                UserId = TestUserId.ToString()
             };
             Db.Articles.Add(v3);
             await Db.SaveChangesAsync();
@@ -325,7 +325,7 @@ namespace Sky.Tests.Services.Scheduling
                 VersionNumber = 2,
                 Published = _testNow.AddHours(-1),
                 StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId
+                UserId = TestUserId.ToString()
             };
             Db.Articles.Add(v2);
             await Db.SaveChangesAsync();
@@ -366,7 +366,7 @@ namespace Sky.Tests.Services.Scheduling
                 VersionNumber = 2,
                 Published = _testNow.AddHours(4),
                 StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId
+                UserId = TestUserId.ToString()
             };
             Db.Articles.Add(futureVersion);
             await Db.SaveChangesAsync();
@@ -414,7 +414,7 @@ namespace Sky.Tests.Services.Scheduling
                 VersionNumber = 2,
                 Published = _testNow.AddHours(1),
                 StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId
+                UserId = TestUserId.ToString()
             };
             Db.Articles.Add(v2);
             await Db.SaveChangesAsync();

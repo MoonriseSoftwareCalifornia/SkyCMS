@@ -30,13 +30,10 @@ public class NoOpEmailServiceTests
     #region SendEmailAsync(string to, string subject, string htmlMessage, string textMessage) Tests
 
     [TestMethod]
-    public async Task SendEmailAsync_ThreeParametersWithoutFromAddress_ReturnsTrue()
+    public async Task SendEmailAsync_ThreeParametersWithoutFromAddress_CompletesSuccessfully()
     {
-        // Act
-        var result = await service.SendEmailAsync("test@example.com", "Test Subject", "<p>HTML content</p>");
-
-        // Assert
-        Assert.IsTrue(result);
+        // Act & Assert - Should complete without throwing
+        await service.SendEmailAsync("test@example.com", "Test Subject", "<p>HTML content</p>");
     }
 
     [TestMethod]
@@ -344,7 +341,8 @@ public class NoOpEmailServiceTests
         var tasks = new List<Task>();
         for (int i = 0; i < 5; i++)
         {
-            tasks.Add(service.SendEmailAsync($"test{i}@example.com", "Setup Email", "<p>Test</p>"));
+            // Use 4-parameter overload which returns Task<bool>
+            tasks.Add(service.SendEmailAsync($"test{i}@example.com", "Setup Email", "<p>Test</p>", null));
         }
 
         // Act & Assert - All should complete successfully
@@ -412,13 +410,12 @@ public class NoOpEmailServiceTests
     public async Task SendEmailAsync_AllOverloadsReturnSuccessfully()
     {
         // Act
-        var result1 = await service.SendEmailAsync("test@example.com", "Subject", "<p>HTML</p>");
+        await service.SendEmailAsync("test@example.com", "Subject", "<p>HTML</p>"); // Returns Task (void)
         var result2 = await service.SendEmailAsync("test@example.com", "Subject", "<p>HTML</p>", "Text");
         var result3 = await service.SendEmailAsync("from@example.com", "to@example.com", "Subject", "<p>HTML</p>");
         var result4 = await service.SendEmailAsync("from@example.com", "to@example.com", "Subject", "<p>HTML</p>", "Text");
 
-        // Assert
-        Assert.IsTrue(result1);
+        // Assert - Only 4 and 5 parameter overloads return bool
         Assert.IsTrue(result2);
         Assert.IsTrue(result3);
         Assert.IsTrue(result4);
@@ -459,8 +456,15 @@ public class NoOpEmailServiceTests
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var exception = Assert.ThrowsException<ArgumentNullException>(() => new NoOpEmailService(null));
-        Assert.IsNotNull(exception);
+        try
+        {
+            var testService = new NoOpEmailService(null);
+            Assert.Fail("Expected ArgumentNullException was not thrown");
+        }
+        catch (ArgumentNullException)
+        {
+            // Expected exception
+        }
     }
 
     #endregion
@@ -470,11 +474,11 @@ public class NoOpEmailServiceTests
     [TestMethod]
     public async Task SendEmailAsync_MultipleConcurrentCalls_AllSucceed()
     {
-        // Arrange
+        // Arrange - Use 4-parameter overload which returns Task<bool>
         var tasks = new List<Task<bool>>();
         for (int i = 0; i < 10; i++)
         {
-            tasks.Add(service.SendEmailAsync($"test{i}@example.com", $"Subject{i}", "<p>HTML</p>"));
+            tasks.Add(service.SendEmailAsync($"test{i}@example.com", $"Subject{i}", "<p>HTML</p>", null));
         }
 
         // Act

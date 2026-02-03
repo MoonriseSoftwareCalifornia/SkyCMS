@@ -35,6 +35,29 @@ public class EmailConfigurationServiceTests
         service = new EmailConfigurationService(mockConfiguration.Object, mockDbContext.Object, mockLogger.Object);
     }
 
+    private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(IEnumerable<T> source)
+    {
+        foreach (var item in source)
+        {
+            yield return item;
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private static void SetupMockDbSet<T>(Mock<DbSet<T>> mockDbSet, List<T> data)
+        where T : class
+    {
+        var asyncEnumerable = ToAsyncEnumerable(data);
+        var queryable = data.AsQueryable();
+
+        mockDbSet.As<IAsyncEnumerable<T>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(asyncEnumerable.GetAsyncEnumerator());
+        mockDbSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(queryable.Provider);
+        mockDbSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
+        mockDbSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
+        mockDbSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(queryable.GetEnumerator());
+    }
+
     #region SendGrid Configuration Tests
 
     [TestMethod]
@@ -62,22 +85,17 @@ public class EmailConfigurationServiceTests
         // Arrange
         var dbSettings = new List<Setting>
         {
-            new Setting { Id = "1", Group = "EMAIL", Name = "SendGridApiKey", Value = "sg-db-key" }
-        }.AsAsyncEnumerable();
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "SendGridApiKey", Value = "sg-db-key" }
+        };
 
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(dbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, dbSettings);
 
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
         mockConfiguration.Setup(c => c["CosmosSendGridApiKey"]).Returns((string)null);
         mockConfiguration.Setup(c => c.GetConnectionString("AzureCommunicationConnection")).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns((string)null);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(dbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(dbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(dbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(dbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
@@ -118,22 +136,17 @@ public class EmailConfigurationServiceTests
         const string azureConnString = "endpoint=https://cosmos.communication.azure.com/;accesskey=test123";
         var dbSettings = new List<Setting>
         {
-            new Setting { Id = "1", Group = "EMAIL", Name = "AzureEmailConnectionString", Value = azureConnString }
-        }.AsAsyncEnumerable();
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "AzureEmailConnectionString", Value = azureConnString }
+        };
 
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(dbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, dbSettings);
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
 
         mockConfiguration.Setup(c => c["CosmosSendGridApiKey"]).Returns((string)null);
         mockConfiguration.Setup(c => c.GetConnectionString("AzureCommunicationConnection")).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns((string)null);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(dbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(dbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(dbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(dbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
@@ -231,25 +244,20 @@ public class EmailConfigurationServiceTests
         // Arrange
         var dbSettings = new List<Setting>
         {
-            new Setting { Id = "1", Group = "EMAIL", Name = "SmtpHost", Value = "smtp.db.com" },
-            new Setting { Id = "2", Group = "EMAIL", Name = "SmtpPort", Value = "not-a-port" },
-            new Setting { Id = "3", Group = "EMAIL", Name = "SmtpUsername", Value = "user" },
-            new Setting { Id = "4", Group = "EMAIL", Name = "SmtpPassword", Value = "pass" }
-        }.AsAsyncEnumerable();
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "SmtpHost", Value = "smtp.db.com" },
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "SmtpPort", Value = "not-a-port" },
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "SmtpUsername", Value = "user" },
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "SmtpPassword", Value = "pass" }
+        };
 
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(dbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, dbSettings);
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
 
         mockConfiguration.Setup(c => c["CosmosSendGridApiKey"]).Returns((string)null);
         mockConfiguration.Setup(c => c.GetConnectionString("AzureCommunicationConnection")).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns((string)null);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(dbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(dbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(dbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(dbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
@@ -335,23 +343,18 @@ public class EmailConfigurationServiceTests
         // Arrange
         var dbSettings = new List<Setting>
         {
-            new Setting { Id = "1", Group = "EMAIL", Name = "SendGridApiKey", Value = "sg-key" },
-            new Setting { Id = "2", Group = "EMAIL", Name = "AdminEmail", Value = "db-admin@example.com" }
-        }.AsAsyncEnumerable();
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "SendGridApiKey", Value = "sg-key" },
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "AdminEmail", Value = "db-admin@example.com" }
+        };
 
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(dbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, dbSettings);
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
 
         mockConfiguration.Setup(c => c["CosmosSendGridApiKey"]).Returns((string)null);
         mockConfiguration.Setup(c => c.GetConnectionString("AzureCommunicationConnection")).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns((string)null);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(dbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(dbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(dbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(dbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
@@ -370,22 +373,17 @@ public class EmailConfigurationServiceTests
         // Arrange
         var dbSettings = new List<Setting>
         {
-            new Setting { Id = "1", Group = "EMAIL", Name = "SendGridApiKey", Value = "sg-db-key" }
-        }.AsAsyncEnumerable();
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "SendGridApiKey", Value = "sg-db-key" }
+        };
 
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(dbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, dbSettings);
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
 
         mockConfiguration.Setup(c => c["CosmosSendGridApiKey"]).Returns((string)null);
         mockConfiguration.Setup(c => c.GetConnectionString("AzureCommunicationConnection")).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns((string)null);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(dbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(dbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(dbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(dbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
@@ -467,21 +465,16 @@ public class EmailConfigurationServiceTests
     public async Task GetEmailSettingsAsync_WithNoDatabaseSettings_ReturnsUnconfigured()
     {
         // Arrange
-        var emptyDbSettings = new List<Setting>().AsAsyncEnumerable();
+        var emptyDbSettings = new List<Setting>();
 
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(emptyDbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, emptyDbSettings);
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
 
         mockConfiguration.Setup(c => c["CosmosSendGridApiKey"]).Returns((string)null);
         mockConfiguration.Setup(c => c.GetConnectionString("AzureCommunicationConnection")).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns((string)null);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(emptyDbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(emptyDbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(emptyDbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(emptyDbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
@@ -504,15 +497,10 @@ public class EmailConfigurationServiceTests
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns((string)null);
 
-        var emptyDbSettings = new List<Setting>().AsAsyncEnumerable();
+        var emptyDbSettings = new List<Setting>();
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(emptyDbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, emptyDbSettings);
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(emptyDbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(emptyDbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(emptyDbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(emptyDbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
@@ -531,15 +519,10 @@ public class EmailConfigurationServiceTests
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns(string.Empty);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns(string.Empty);
 
-        var emptyDbSettings = new List<Setting>().AsAsyncEnumerable();
+        var emptyDbSettings = new List<Setting>();
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(emptyDbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, emptyDbSettings);
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(emptyDbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(emptyDbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(emptyDbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(emptyDbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
@@ -558,23 +541,18 @@ public class EmailConfigurationServiceTests
         // Arrange - Only EMAIL group settings should be used
         var dbSettings = new List<Setting>
         {
-            new Setting { Id = "1", Group = "EMAIL", Name = "SendGridApiKey", Value = "sg-key" },
-            new Setting { Id = "2", Group = "OTHER_GROUP", Name = "SendGridApiKey", Value = "ignore-this" }
-        }.AsAsyncEnumerable();
+            new Setting { Id = Guid.NewGuid(), Group = "EMAIL", Name = "SendGridApiKey", Value = "sg-key" },
+            new Setting { Id = Guid.NewGuid(), Group = "OTHER_GROUP", Name = "SendGridApiKey", Value = "ignore-this" }
+        };
 
         var mockDbSet = new Mock<DbSet<Setting>>();
-        mockDbSet.As<IAsyncEnumerable<Setting>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(dbSettings.GetAsyncEnumerator());
+        SetupMockDbSet(mockDbSet, dbSettings);
         mockDbContext.Setup(db => db.Settings).Returns(mockDbSet.Object);
 
         mockConfiguration.Setup(c => c["CosmosSendGridApiKey"]).Returns((string)null);
         mockConfiguration.Setup(c => c.GetConnectionString("AzureCommunicationConnection")).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions:Host"]).Returns((string)null);
         mockConfiguration.Setup(c => c["SmtpEmailProviderOptions__Host"]).Returns((string)null);
-
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Provider).Returns(dbSettings.AsQueryable().Provider);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.Expression).Returns(dbSettings.AsQueryable().Expression);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.ElementType).Returns(dbSettings.AsQueryable().ElementType);
-        mockDbSet.As<IQueryable<Setting>>().Setup(m => m.GetEnumerator()).Returns(dbSettings.AsQueryable().GetEnumerator());
 
         // Act
         var settings = await service.GetEmailSettingsAsync();
