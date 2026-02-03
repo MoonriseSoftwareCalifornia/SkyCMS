@@ -19,6 +19,8 @@ Key idea: Unlike traditional static hosting that serves from a single origin, ed
 - You want origin-less static hosting with Cloudflare R2 + Rules (no Workers required).
 - You need a low-cost, globally distributed static site backed by S3-compatible storage.
 
+**Note**: Cloudflare also offers [Cloud Connector (beta)](./CloudflareCloudConnector.md), which simplifies routing to cloud storage by automatically configuring headers and SSL/TLS. See [Cloud Connector vs. Edge Hosting](./CloudflareCloudConnector.md#comparison-cloud-connector-vs-manual-rules) for when to use each approach.
+
 ## Why this matters
 - Removes origin servers, reducing ops overhead and latency.
 - Clarifies the minimal setup: R2 bucket + custom domain + rules for HTTPS and index rewrites.
