@@ -194,6 +194,14 @@ namespace Sky.Editor.Areas.Setup.Pages
                 return RedirectToPage("./Index");
             }
 
+            // If CDN is pre-configured, skip this step
+            if (IsPreconfigured)
+            {
+                logger.LogInformation("Step5_Cdn GET - CDN pre-configured, skipping to next step");
+                await setupService.UpdateStepAsync(SetupId, 5);
+                return RedirectToPage("./Step6_Review");
+            }
+
             SetupId = config.Id;
 
             // Load existing CDN configuration if any

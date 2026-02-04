@@ -15,20 +15,73 @@
 
 <div class="card mb-4 bg-secondary text-light">
     <div class="card-body">
-        <h5 class="card-title"><i class="fas fa-info-circle"></i> Before You Begin</h5>
-        <p class="card-text">Please ensure you have the following information ready:</p>
-        <ul>
-            <li><strong>Storage Connection String</strong> - For Azure Blob Storage, AWS S3 (or compatible), or Cloudflare R2</li>
-            <li><strong>Administrator Email & Password</strong> - For the initial admin account</li>
-            <li><strong>Publisher URL</strong> - The public URL of your website</li>
-            <li><strong>(Optional)</strong> Email service credentials (SendGrid, Azure Communication Services, or SMTP)</li>
-            <li><strong>(Optional)</strong> CDN service credentials (Azure, CloudFlare or Securi)</li>
-        </ul>
+       
+
+        @*
+            If any of the services are pre-configured, show what is configured.
+        *@
+        @if (Model.CdnIsPreconfigured || Model.EmailIsPreConfigured || Model.StorageIsPreConfigured)
+        {
+            <h5 class="card-title"><i class="fas fa-info-circle"></i> Things to setup:</h5>
+            <p class="card-text">Please ensure you have the following information ready before continuing.</p>
+            <ul>
+                @if (!Model.StorageIsPreConfigured)
+                {
+                    <li><strong>Storage Connection String</strong> - For Azure Blob Storage, AWS S3 (or compatible), or Cloudflare R2</li>
+                }
+                <li><strong>Administrator Email & Password</strong> - For the initial admin account</li>
+                @if (Model.PublisherIsPreConfigured)
+                {
+                    <li><strong>Publisher URL</strong> - The public URL of your website</li>
+                }
+                @if (Model.EmailIsPreConfigured)
+                {
+                    <li><strong>(Optional)</strong> Email service credentials (SendGrid, Azure Communication Services, or SMTP)</li>
+                }
+                @if (Model.CdnIsPreconfigured)
+                {
+                    <li><strong>(Optional)</strong> CDN service credentials (Azure, CloudFlare or Securi)</li>
+                }
+            </ul>
+            <hr />
+            <h5 class="card-title"><i class="fa-solid fa-circle-check"></i> Already set up:</h5>
+            <p class="card-text">The following is already setup.</p>
+            <ul>
+                @if (Model.StorageIsPreConfigured)
+                {
+                    <li>Storage is pre-configured</li>
+                }
+                @if (Model.PublisherIsPreConfigured)
+                {
+                    <li>The public URL of your website</li>
+                }
+                @if (Model.EmailIsPreConfigured)
+                {
+                    <li>Email service is pre-configured</li>
+                }
+                @if (Model.CdnIsPreconfigured)
+                {
+                    <li>CDN is pre-configured</li>
+                }
+            </ul>
+        }
+        else
+        {
+            <h5 class="card-title"><i class="fas fa-info-circle"></i> Things to setup:</h5>
+            <p class="card-text">Please ensure you have the following information ready before continuing.</p>
+            <ul>
+                <li><strong>Storage Connection String</strong> - For Azure Blob Storage, AWS S3 (or compatible), or Cloudflare R2</li>
+                <li><strong>Administrator Email & Password</strong> - For the initial admin account</li>
+                <li><strong>Publisher URL</strong> - The public URL of your website</li>
+                <li><strong>(Optional)</strong> Email service credentials (SendGrid, Azure Communication Services, or SMTP)</li>
+                <li><strong>(Optional)</strong> CDN service credentials (Azure, CloudFlare or Securi)</li>
+            </ul>
+        }
     </div>
 </div>
 
 <div class="alert alert-info">
-    <strong><i class="fas fa-lock"></i> Security Note:</strong> 
+    <strong><i class="fas fa-lock"></i> Security Note:</strong>
     The database connection string must be configured in your environment/user secrets before running this wizard.
     All other settings will be stored in the database and can be changed later through the admin interface.
 </div>

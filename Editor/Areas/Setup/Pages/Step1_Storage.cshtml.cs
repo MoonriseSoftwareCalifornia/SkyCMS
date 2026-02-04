@@ -96,7 +96,6 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Page result.</returns>
         public async Task<IActionResult> OnGetAsync()
         {
-
             // Check if setup has been completed
             if (await setupCheckService.IsSetup())
             {
@@ -110,6 +109,14 @@ namespace Sky.Editor.Areas.Setup.Pages
                 if (config == null)
                 {
                     return RedirectToPage("./Index");
+                }
+
+                // If storage is pre-configured, skip to next step
+                if (config.StoragePreConfigured)
+                {
+                    logger.LogInformation("Step1_Storage GET - Storage is pre-configured, skipping to next step");
+                    await setupService.UpdateStepAsync(config.Id, 1);
+                    return RedirectToPage("./Step2_AdminAccount");
                 }
 
                 SetupId = config.Id;

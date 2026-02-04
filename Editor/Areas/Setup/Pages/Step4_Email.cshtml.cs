@@ -136,6 +136,15 @@ namespace Sky.Editor.Areas.Setup.Pages
                 return RedirectToPage("./Index");
             }
 
+            // If email provider is pre-configured, skip to next step
+            if (config.EmailProviderPreConfigured)
+            {
+                await setupService.UpdateStepAsync(config.Id, 4);
+
+                logger.LogInformation("Step4_Email POST - Successfully completed Step4, redirecting to Step5");
+                return RedirectToPage("./Step5_Cdn");
+            }
+
             SetupId = config.Id;
             SendGridApiKey = config.SendGridApiKey;
             AzureEmailConnectionString = config.AzureEmailConnectionString;

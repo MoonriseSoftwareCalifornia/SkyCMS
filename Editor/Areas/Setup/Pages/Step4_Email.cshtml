@@ -205,9 +205,12 @@
                         break;
                     case 'SendGrid':
                         $('#sendGridOptions').removeClass('d-none');
-                        $('#testEmailButton').show();
-                        $('input[name="SendGridApiKey"]').attr('required', 'required');
-                        $('input[name="SenderEmail"]').attr('required', 'required');
+                        if (isPreConfigured) {
+                            $('#testEmailButton').show();
+                            $('input[name="SendGridApiKey"]').attr('required', 'required');
+                            $('input[name="SenderEmail"]').attr('required', 'required');
+                            break;
+                        }
                         break;
                     case 'AzureCommunication':
                         $('#azureCommOptions').removeClass('d-none');

@@ -77,7 +77,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         [BindProperty]
         [Required(ErrorMessage = "Password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters")]
-        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$", 
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$",
             ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")]
         [Display(Name = "Password")]
         public string AdminPassword { get; set; }
@@ -138,54 +138,54 @@ namespace Sky.Editor.Areas.Setup.Pages
         }
 
         /// <summary>
-/// Handles POST requests.
-/// </summary>
-/// <returns>Redirect to next step.</returns>
-public async Task<IActionResult> OnPostAsync()
-{
-    logger.LogInformation("Step2_AdminAccount POST - SetupId: {SetupId}, AdminEmail: {Email}", 
-        SetupId, AdminEmail);
-
-    // Check if setup has been completed
-    if (await setupCheckService.IsSetup())
-    {
-        logger.LogWarning("Step2_AdminAccount POST - Setup already completed, redirecting to home");
-        Response.Redirect("/");
-    }
-
-    if (!ModelState.IsValid)
-    {
-        logger.LogWarning("Step2_AdminAccount POST - ModelState validation failed");
-        foreach (var key in ModelState.Keys)
+        /// Handles POST requests.
+        /// </summary>
+        /// <returns>Redirect to next step.</returns>
+        public async Task<IActionResult> OnPostAsync()
         {
-            var state = ModelState[key];
-            if (state.Errors.Count > 0)
+            logger.LogInformation("Step2_AdminAccount POST - SetupId: {SetupId}, AdminEmail: {Email}",
+                SetupId, AdminEmail);
+
+            // Check if setup has been completed
+            if (await setupCheckService.IsSetup())
             {
-                foreach (var error in state.Errors)
+                logger.LogWarning("Step2_AdminAccount POST - Setup already completed, redirecting to home");
+                Response.Redirect("/");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                logger.LogWarning("Step2_AdminAccount POST - ModelState validation failed");
+                foreach (var key in ModelState.Keys)
                 {
-                    logger.LogError("Step2_AdminAccount POST - Validation error for {Field}: {Error}", 
-                        key, error.ErrorMessage ?? error.Exception?.Message);
+                    var state = ModelState[key];
+                    if (state.Errors.Count > 0)
+                    {
+                        foreach (var error in state.Errors)
+                        {
+                            logger.LogError("Step2_AdminAccount POST - Validation error for {Field}: {Error}",
+                                key, error.ErrorMessage ?? error.Exception?.Message);
+                        }
+                    }
                 }
+                return Page();
+            }
+
+            try
+            {
+                logger.LogInformation("Step2_AdminAccount POST - Updating admin account");
+                await setupService.UpdateAdminAccountAsync(SetupId, AdminEmail, AdminPassword);
+                await setupService.UpdateStepAsync(SetupId, 2);
+
+                logger.LogInformation("Step2_AdminAccount POST - Successfully completed Step2, redirecting to Step3");
+                return RedirectToPage("./Step3_Publisher");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Step2_AdminAccount POST - Failed to save admin account");
+                ErrorMessage = $"Failed to save admin account: {ex.Message}";
+                return Page();
             }
         }
-        return Page();
-    }
-
-    try
-    {
-        logger.LogInformation("Step2_AdminAccount POST - Updating admin account");
-        await setupService.UpdateAdminAccountAsync(SetupId, AdminEmail, AdminPassword);
-        await setupService.UpdateStepAsync(SetupId, 2);
-        
-        logger.LogInformation("Step2_AdminAccount POST - Successfully completed Step2, redirecting to Step3");
-        return RedirectToPage("./Step3_Publisher");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Step2_AdminAccount POST - Failed to save admin account");
-        ErrorMessage = $"Failed to save admin account: {ex.Message}";
-        return Page();
-    }
-}
     }
 }
