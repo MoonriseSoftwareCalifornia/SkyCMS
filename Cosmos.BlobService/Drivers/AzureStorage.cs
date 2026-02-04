@@ -597,7 +597,7 @@ namespace Cosmos.BlobService.Drivers
                         continue;
                     }
 
-                    var fileName = Path.GetFileNameWithoutExtension(blob.Blob.Name);
+                    var fileName = Path.GetFileName(blob.Blob.Name);
 
                     var modified = blob.Blob.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
 
