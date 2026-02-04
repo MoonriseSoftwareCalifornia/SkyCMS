@@ -48,6 +48,27 @@ namespace Sky.Editor.Areas.Setup.Pages
         public DbStatus? DbStatus { get; set; }
 
         /// <summary>
+        /// Gets a value indicating whether storage is pre-configured.
+        /// </summary>
+        [BindProperty]
+        public bool StorageIsPreConfigured { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the publisher URL is pre-configured.
+        /// </summary>
+        public bool PublisherIsPreConfigured { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the email configuration is pre-configured.
+        /// </summary>
+        public bool EmailIsPreConfigured { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether any CDN configuration is pre-configured.
+        /// </summary>
+        public bool CdnIsPreconfigured { get; private set; }
+
+        /// <summary>
         /// Handles GET requests.
         /// </summary>
         /// <returns>Page result or redirect.</returns>
@@ -59,6 +80,43 @@ namespace Sky.Editor.Areas.Setup.Pages
                 // Redirect to setup page
                 Response.Redirect("/");
             }
+
+            var config = await setupService.GetCurrentSetupAsync();
+
+            StorageIsPreConfigured = config.StoragePreConfigured;
+            PublisherIsPreConfigured = config.PublisherPreConfigured;
+            EmailIsPreConfigured = config.EmailProviderPreConfigured;
+
+            var azurePreConfigured = false;
+            var sucuriPreConfigured = false;
+            var cloudflarePreConfigured = false;
+            var cloudFrontPreConfigured = false;
+
+            // Load existing CDN configuration if any
+            if (!string.IsNullOrEmpty(config.AzureCdnSubscriptionId) &&
+                !string.IsNullOrEmpty(config.AzureCdnResourceGroup) &&
+                !string.IsNullOrEmpty(config.AzureCdnProfileName) &&
+                !string.IsNullOrEmpty(config.AzureCdnEndpointName))
+            {
+                azurePreConfigured = true;
+            }
+            else if (!string.IsNullOrEmpty(config.CloudflareApiToken))
+            {
+                cloudflarePreConfigured = true;
+            }
+            else if (!string.IsNullOrEmpty(config.SucuriApiKey))
+            {
+                sucuriPreConfigured = true;
+            }
+            else if (!string.IsNullOrEmpty(config.CloudFrontDistributionId) &&
+                     !string.IsNullOrEmpty(config.CloudFrontAccessKeyId) &&
+                     !string.IsNullOrEmpty(config.CloudFrontSecretAccessKey) &&
+                     !string.IsNullOrEmpty(config.CloudFrontRegion))
+            {
+                cloudFrontPreConfigured = true;
+            }
+
+            CdnIsPreconfigured = azurePreConfigured || sucuriPreConfigured || cloudflarePreConfigured || cloudFrontPreConfigured;
 
             // Check if setup is allowed
             var allowSetup = configuration.GetValue<bool?>("CosmosAllowSetup") ?? false;

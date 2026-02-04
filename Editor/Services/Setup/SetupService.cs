@@ -127,6 +127,11 @@ namespace Sky.Editor.Services.Setup
             {
                 var config = await GetSetupStateAsync();
 
+                if (config == null)
+                {
+                    config = new SetupConfiguration();
+                }
+
                 GetEnvironmentVariables(config);
 
                 if (config != null && !config.IsComplete)

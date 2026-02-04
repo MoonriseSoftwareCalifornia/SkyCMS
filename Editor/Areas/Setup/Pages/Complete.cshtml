@@ -64,16 +64,18 @@
         <p>Learn more about SkyCMS:</p>
         <ul>
             <li><a href="https://github.com/CWALabs/SkyCMS" target="_blank">GitHub Repository</a></li>
-            <li><a href="https://github.com/CWALabs/SkyCMS/wiki" target="_blank">Documentation Wiki</a></li>
+            <li><a href="https://docs.sky-cms.com" target="_blank">Documentation</a></li>
             <li><a href="https://github.com/CWALabs/SkyCMS/issues" target="_blank">Report Issues</a></li>
         </ul>
     </div>
 </div>
 
 <div class="text-center mt-4">
-    <a href="/Identity/Account/Login" class="btn btn-primary btn-lg">
-        <i class="fas fa-sign-in-alt"></i> Go to Login
-    </a>
+    <form method="post" asp-page-handler="CompleteSetup">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-sign-in-alt"></i> Go to Login
+        </button>
+    </form>
 </div>
 
 @section Scripts {

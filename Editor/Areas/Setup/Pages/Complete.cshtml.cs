@@ -11,8 +11,10 @@ namespace Sky.Editor.Areas.Setup.Pages
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Hosting;
+    using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
@@ -28,6 +30,10 @@ namespace Sky.Editor.Areas.Setup.Pages
         private readonly ILogger<CompleteModel> logger;
         private readonly ISetupCheckService setupCheckService;
         private readonly ApplicationDbContext dbContext;
+        private readonly IMemoryCache memoryCache;
+        
+        private const string SETUP_CACHE_KEY_PREFIX = "SetupComplete";
+        private const string HEADER_ORIGIN_HOSTNAME = "x-origin-hostname";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CompleteModel"/> class.
@@ -38,13 +44,15 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <param name="logger">Logger instance.</param>
         /// <param name="setupCheckService">Setup check service.</param>
         /// <param name="dbContext">Database context.</param>
+        /// <param name="memoryCache">Memory cache instance.</param>
         public CompleteModel(
                 ISetupService setupService,
                 IHostApplicationLifetime hostApplicationLifetime,
                 IWebHostEnvironment webHostEnvironment,
                 ILogger<CompleteModel> logger,
                 ISetupCheckService setupCheckService,
-                ApplicationDbContext dbContext)
+                ApplicationDbContext dbContext,
+                IMemoryCache memoryCache)
         {
             this.setupService = setupService;
             this.hostApplicationLifetime = hostApplicationLifetime;
@@ -52,6 +60,7 @@ namespace Sky.Editor.Areas.Setup.Pages
             this.logger = logger;
             this.setupCheckService = setupCheckService;
             this.dbContext = dbContext;
+            this.memoryCache = memoryCache;
         }
 
         /// <summary>
@@ -111,6 +120,38 @@ namespace Sky.Editor.Areas.Setup.Pages
 
             // Detect if running in Docker
             IsDocker = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+        }
+        
+        /// <summary>
+        /// Handles POST requests to commit setup completion and redirect to login.
+        /// </summary>
+        /// <returns>Redirect result.</returns>
+        public IActionResult OnPostCompleteSetup()
+        {
+            // Invalidate setup cache - user is committing to the setup configuration
+            InvalidateSetupCache();
+            
+            logger.LogInformation("Setup committed by user, redirecting to login page");
+            
+            // Redirect to login page using PRG pattern
+            return Redirect("/Identity/Account/Login");
+        }
+        
+        /// <summary>
+        /// Invalidates the setup completion cache for the current hostname.
+        /// </summary>
+        private void InvalidateSetupCache()
+        {
+            var hostname = Request.Headers[HEADER_ORIGIN_HOSTNAME].ToString().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(hostname))
+            {
+                hostname = Request.Host.Host.ToLowerInvariant();
+            }
+            
+            var cacheKey = $"{SETUP_CACHE_KEY_PREFIX}:{hostname}";
+            memoryCache.Remove(cacheKey);
+            
+            logger.LogInformation("Invalidated setup cache for hostname: {Hostname}", hostname);
         }
     }
 }
