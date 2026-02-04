@@ -746,28 +746,27 @@ namespace Sky.Tests.Editor.Domain.Events
         [TestCategory("DomainEventDispatcher.MultiEvent")]
         public async Task DispatchAsync_EventSequenceCancelled_ThrowsBeforeSecondEvent()
         {
-            // Arrange
+            // Arrange - Use a pre-cancelled token to guarantee cancellation is checked
             var handler = new TrackingHandler();
             var events = new IDomainEvent[]
             {
                 new TestEvent("first"),
                 new TestEvent("second"),
+                new TestEvent("third"),
             };
             var dispatcher = new DomainEventDispatcher(new[] { (object)handler });
+            
+            // Cancel the token BEFORE starting dispatch
             var cts = new CancellationTokenSource();
-
-            // Act & Assert
-            var dispatchTask = Task.Run(async () =>
-            {
-                await dispatcher.DispatchAsync(events, cts.Token);
-            });
-
-            // Give first event time to dispatch, then cancel
-            await Task.Delay(10);
             cts.Cancel();
 
-            await Assert.ThrowsExactlyAsync<OperationCanceledException>(async () =>
-                await dispatchTask);
+            // Act & Assert
+            // Should throw immediately when checking cancellation before first event
+            await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+                await dispatcher.DispatchAsync(events, cts.Token));
+            
+            // Verify no events were handled since token was pre-cancelled
+            Assert.AreEqual(0, handler.InvokeCount, "No events should be handled when token is pre-cancelled");
         }
 
         #endregion

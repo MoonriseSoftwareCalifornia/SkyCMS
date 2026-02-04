@@ -744,6 +744,12 @@ namespace Sky.Tests.Controllers
             var entry1 = await Logic.CreateArticle("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
             var entry2 = await Logic.CreateArticle("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
             
+            // Publish the blog entries to create catalog entries
+            var article1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry1.ArticleNumber);
+            var article2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry2.ArticleNumber);
+            await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
+            await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
+            
             // Update catalog entries to link them to the blog
             var catalog1 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry1.ArticleNumber);
             var catalog2 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry2.ArticleNumber);
@@ -879,8 +885,25 @@ namespace Sky.Tests.Controllers
             await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
             var entry = await Logic.CreateArticle("Entry to Delete", TestUserId, null, blogKey, ArticleType.BlogPost);
             
-            var catalog = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry.ArticleNumber);
-            catalog.BlogKey = blogKey;
+            // Create catalog entry manually since CreateArticle doesn't create it for unpublished articles
+            var catalog = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == entry.ArticleNumber);
+            if (catalog == null)
+            {
+                catalog = new CatalogEntry
+                {
+                    ArticleNumber = entry.ArticleNumber,
+                    BlogKey = blogKey,
+                    Title = entry.Title,
+                    UrlPath = entry.UrlPath,
+                    Published = entry.Published,
+                    Updated = entry.Updated
+                };
+                Db.ArticleCatalog.Add(catalog);
+            }
+            else
+            {
+                catalog.BlogKey = blogKey;
+            }
             await Db.SaveChangesAsync();
 
             // Act

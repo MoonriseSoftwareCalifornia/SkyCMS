@@ -29,8 +29,19 @@ namespace Sky.Editor.Models
         /// <param name="settings">CDN Settings List</param>
         public CdnViewModel(List<CdnSetting> settings)
         {
+            if (settings == null)
+            {
+                return;
+            }
+
             foreach (var setting in settings)
             {
+                // Skip settings with null or empty values
+                if (string.IsNullOrWhiteSpace(setting.Value))
+                {
+                    continue;
+                }
+
                 switch (setting.CdnProvider)
                 {
                     case CdnProviderEnum.AzureCDN:

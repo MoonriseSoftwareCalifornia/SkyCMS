@@ -241,21 +241,11 @@ namespace Sky.Tests
 
             EditorSettings = new EditorSettings(configuration, Db, HttpContextAccessor, Cache, null!);
 
-            PublishingService = new PublishingService(
-                Db, 
-                Storage, 
-                EditorSettings,
-                new LoggerFactory().CreateLogger<PublishingService>(),
-                HttpContextAccessor, 
-                authorInfoService,
-                Clock,
-                BlogRenderingService,
-                ViewRenderService, 
-                null!,
-                new NoOpPublishingProgressReporter()); // ✅ Add progress reporter
+            // ❌ DON'T CREATE PublishingService here - it needs Services provider which doesn't exist yet
+            // PublishingService will be created after Services is built
 
-            RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);
-            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
+            RedirectService = new RedirectService(Db, SlugService, Clock, null!); // Will set PublishingService later
+            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, null!, ReservedPaths, BlogRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
             
             // ❌ REMOVE THIS - Don't create TemplateService here, it needs Mediator which doesn't exist yet
             // TemplateService = new TemplateService(
@@ -374,6 +364,7 @@ namespace Sky.Tests
             Hub.Setup(h => h.Clients).Returns(mockHubClients.Object);
 
             // BUILD FINAL SERVICE PROVIDER WITH ALL SERVICES INCLUDING FEATURE HANDLERS
+            // Note: PublishingService is created AFTER this service provider is built
             Services = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<DiagnosticSource>(new DiagnosticListener("TestListener"))
@@ -383,6 +374,7 @@ namespace Sky.Tests
                 .AddSingleton<IMemoryCache>(Cache)
                 .AddSingleton<ApplicationDbContext>(sp => Db)
                 .AddSingleton<StorageContext>(Storage)
+                .AddScoped<IStorageContext>(sp => Storage) // Add scoped for CreateStaticPages
                 .AddSingleton<IHttpContextAccessor>(HttpContextAccessor)
                 .AddSingleton<ISlugService>(SlugService)
                 .AddSingleton<IArticleHtmlService>(ArticleHtmlService)
@@ -391,10 +383,11 @@ namespace Sky.Tests
                 .AddSingleton<IClock>(Clock)
                 .AddSingleton<IBlogRenderingService>(BlogRenderingService)
                 .AddSingleton<IAuthorInfoService>(AuthorInfoService)
-                .AddSingleton<IViewRenderService>(ViewRenderService)
+                .AddScoped<IViewRenderService>(sp => ViewRenderService) // Change to scoped for CreateStaticPages
                 .AddSingleton<IReservedPaths>(ReservedPaths)
                 .AddSingleton<IEditorSettings>(EditorSettings)
-                .AddSingleton<IPublishingService>(PublishingService)
+                // ❌ REMOVE PublishingService registration - will be added after it's created
+                // .AddSingleton<IPublishingService>(PublishingService)
                 .AddSingleton<IRedirectService>(RedirectService)
                 .AddSingleton<ITitleChangeService>(TitleChangeService)
                 // ❌ REMOVE THIS - Don't register TemplateService yet
@@ -418,6 +411,24 @@ namespace Sky.Tests
                 new LoggerFactory().CreateLogger<TemplateService>(),
                 Db,
                 DynamicConfigurationProvider);      // ✅ Pass service provider (already built)
+
+            // ✅ CREATE PublishingService WITH Services as the provider (needed for CreateStaticPages)
+            PublishingService = new PublishingService(
+                Db,
+                Storage,
+                EditorSettings,
+                new LoggerFactory().CreateLogger<PublishingService>(),
+                HttpContextAccessor,
+                authorInfoService,
+                Clock,
+                BlogRenderingService,
+                ViewRenderService,
+                Services, // ✅ Pass the service provider
+                new NoOpPublishingProgressReporter());
+
+            // ✅ NOW UPDATE RedirectService and TitleChangeService with the PublishingService
+            RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);
+            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
 
             // ✅ NOW CREATE LOGIC WITH TEMPLATE SERVICE
             Logic = new ArticleEditLogic(

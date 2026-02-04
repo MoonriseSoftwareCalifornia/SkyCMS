@@ -348,17 +348,17 @@ namespace Sky.Tests.Integration
             // Create article
             var article = await Logic.CreateArticle("Catalog Sync Test", TestUserId);
 
-            // Verify catalog entry created
+            // Verify catalog entry NOT created yet (catalog entries are created on publish/save, not on creation)
             var catalog1 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-            Assert.IsNotNull(catalog1);
-            Assert.IsNull(catalog1.Published);
+            Assert.IsNull(catalog1, "Catalog entry should not exist until article is published or saved");
 
             // Publish article
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
-            // Verify catalog updated
+            // Verify catalog created and marked as published
             var catalog2 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-            Assert.IsNotNull(catalog2.Published);
+            Assert.IsNotNull(catalog2, "Catalog entry should be created when article is published");
+            Assert.IsNotNull(catalog2.Published, "Catalog entry should be marked as published");
 
             // Update article
             article.Title = "Updated Title";

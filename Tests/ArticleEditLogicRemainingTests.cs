@@ -193,8 +193,11 @@ public class ArticleEditLogicRemainingTests : SkyCmsTestBase
         var page = await Logic.CreateArticle("Catalog Create", TestUserId);
 
         var existing = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == page.ArticleNumber);
-        Db.ArticleCatalog.Remove(existing);
-        await Db.SaveChangesAsync();
+        if (existing != null)
+        {
+            Db.ArticleCatalog.Remove(existing);
+            await Db.SaveChangesAsync();
+        }
 
         var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == page.ArticleNumber);
         var entry = await Logic.GetCatalogEntry(entity);

@@ -87,8 +87,9 @@ namespace Sky.Editor.Domain.Events
 
         /// <summary>
         /// Cache mapping event CLR types to compiled invocation delegates for each handler.
+        /// Each dispatcher instance has its own cache to prevent cross-instance contamination.
         /// </summary>
-        private static readonly ConcurrentDictionary<Type, List<Func<IDomainEvent, CancellationToken, Task>>> _delegateCache = new();
+        private readonly ConcurrentDictionary<Type, List<Func<IDomainEvent, CancellationToken, Task>>> _delegateCache = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DomainEventDispatcher"/> class
@@ -142,6 +143,8 @@ namespace Sky.Editor.Domain.Events
                 return;
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var delegates = GetOrCreateDelegates(domainEvent.GetType());
             if (delegates.Count == 0)
             {
@@ -165,10 +168,15 @@ namespace Sky.Editor.Domain.Events
                     // Collect all faults without losing any.
                     foreach (var t in tasks.Where(t => t.IsFaulted && t.Exception != null))
                     {
-                        failures.AddRange(
-                            t.Exception is AggregateException ae && ae.InnerExceptions.Count > 1
-                                ? ae.InnerExceptions
-                                : new[] { t.Exception.GetBaseException() });
+                        // Task.Exception is always an AggregateException; extract the inner exceptions
+                        if (t.Exception is AggregateException ae)
+                        {
+                            failures.AddRange(ae.InnerExceptions);
+                        }
+                        else
+                        {
+                            failures.Add(t.Exception);
+                        }
                     }
                 }
             }
@@ -259,27 +267,84 @@ namespace Sky.Editor.Domain.Events
 
             foreach (var instance in instances)
             {
-                var method = instance.GetType().GetMethod(
-                    "HandleAsync",
-                    BindingFlags.Public | BindingFlags.Instance);
+                var instanceType = instance.GetType();
+                MethodInfo? method = null;
+                bool supportsCancellation = false;
 
+                // Get all public HandleAsync methods
+                // Note: We only support PUBLIC methods, not explicit interface implementations
+                // This is by design - handlers must have public methods to be invoked
+                var allMethods = instanceType
+                    .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(m => m.Name == "HandleAsync" && typeof(Task).IsAssignableFrom(m.ReturnType))
+                    .ToList();
+
+                if (allMethods.Count == 0)
+                {
+                    continue;
+                }
+
+                // Prefer the 2-parameter version (with CancellationToken)
+                method = allMethods.FirstOrDefault(m =>
+                {
+                    var parameters = m.GetParameters();
+                    return parameters.Length == 2 &&
+                           parameters[0].ParameterType.IsAssignableFrom(eventType) &&
+                           parameters[1].ParameterType == typeof(CancellationToken);
+                });
+
+                if (method != null)
+                {
+                    supportsCancellation = true;
+                }
+                else
+                {
+                    // Fall back to 1-parameter version
+                    method = allMethods.FirstOrDefault(m =>
+                    {
+                        var parameters = m.GetParameters();
+                        return parameters.Length == 1 &&
+                               parameters[0].ParameterType.IsAssignableFrom(eventType);
+                    });
+                    
+                    if (method != null)
+                    {
+                        supportsCancellation = false;
+                    }
+                }
+
+                // If no method found, skip this handler
                 if (method == null)
                 {
                     continue;
                 }
 
-                var parameters = method.GetParameters();
-                bool supportsCancellation =
-                    parameters.Length == 2 &&
-                    parameters[1].ParameterType == typeof(CancellationToken);
+                // Capture the method and instance for the delegate
+                var capturedMethod = method;
+                var capturedInstance = instance;
+                var capturedSupportsCancellation = supportsCancellation;
 
                 Task Invoke(IDomainEvent ev, CancellationToken ct)
                 {
-                    object result = supportsCancellation
-                        ? method.Invoke(instance, new object[] { ev, ct })
-                        : method.Invoke(instance, new object[] { ev });
+                    try
+                    {
+                        object? result = capturedSupportsCancellation
+                            ? capturedMethod.Invoke(capturedInstance, new object[] { ev, ct })
+                            : capturedMethod.Invoke(capturedInstance, new object[] { ev });
 
-                    return result is Task t ? t : Task.CompletedTask;
+                        return result is Task t ? t : Task.CompletedTask;
+                    }
+                    catch (TargetInvocationException tie) when (tie.InnerException != null)
+                    {
+                        // Return a faulted task instead of throwing synchronously
+                        // This ensures parallel execution can collect all exceptions
+                        return Task.FromException(tie.InnerException);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle any other reflection exceptions
+                        return Task.FromException(ex);
+                    }
                 }
 
                 list.Add(Invoke);

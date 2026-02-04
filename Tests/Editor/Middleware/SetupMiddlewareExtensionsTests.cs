@@ -66,9 +66,10 @@ namespace Sky.Tests.Editor.Middleware
             var app = new ApplicationBuilder(_serviceProvider);
             app.UseSetupDetection(isMultiTenantEditor: false);
 
-            var context = CreateHttpContext("/___setup", _serviceProvider);
             bool nextCalled = false;
-            RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
+            app.Use(async (ctx, next) => { nextCalled = true; await next(); });
+
+            var context = CreateHttpContext("/___setup", _serviceProvider);
 
             // Act
             var middleware = app.Build();
@@ -102,9 +103,10 @@ namespace Sky.Tests.Editor.Middleware
                 var app = new ApplicationBuilder(_serviceProvider);
                 app.UseSetupDetection(isMultiTenantEditor: false);
 
-                var context = CreateHttpContext(path, _serviceProvider);
                 bool nextCalled = false;
-                RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
+                app.Use(async (ctx, next) => { nextCalled = true; await next(); });
+
+                var context = CreateHttpContext(path, _serviceProvider);
 
                 // Act
                 var middleware = app.Build();
@@ -131,9 +133,10 @@ namespace Sky.Tests.Editor.Middleware
                 var app = new ApplicationBuilder(_serviceProvider);
                 app.UseSetupDetection(isMultiTenantEditor: false);
 
-                var context = CreateHttpContext(path, _serviceProvider);
                 bool nextCalled = false;
-                RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
+                app.Use(async (ctx, next) => { nextCalled = true; await next(); });
+
+                var context = CreateHttpContext(path, _serviceProvider);
 
                 // Act
                 var middleware = app.Build();
@@ -185,9 +188,10 @@ namespace Sky.Tests.Editor.Middleware
             var app = new ApplicationBuilder(_serviceProvider);
             app.UseSetupDetection(isMultiTenantEditor: false);
 
-            var context = CreateHttpContext("/home", _serviceProvider);
             bool nextCalled = false;
-            RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
+            app.Use(async (ctx, next) => { nextCalled = true; await next(); });
+
+            var context = CreateHttpContext("/home", _serviceProvider);
 
             // Act
             var middleware = app.Build();
@@ -239,9 +243,10 @@ namespace Sky.Tests.Editor.Middleware
             var app = new ApplicationBuilder(_serviceProvider);
             app.UseSetupDetection(isMultiTenantEditor: true);
 
-            var context = CreateHttpContext("/admin/dashboard", _serviceProvider);
             bool nextCalled = false;
-            RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
+            app.Use(async (ctx, next) => { nextCalled = true; await next(); });
+
+            var context = CreateHttpContext("/admin/dashboard", _serviceProvider);
 
             // Act
             var middleware = app.Build();
@@ -358,15 +363,18 @@ namespace Sky.Tests.Editor.Middleware
         [TestCategory("SetupMiddleware.AccessControl")]
         public async Task UseSetupAccessControl_AllowsAccess_WhenSetupNeeded()
         {
-            // Arrange - Don't cache anything, so it falls through
+            // Arrange - Mock the configuration indexer (GetValue uses this internally)
+            var mockConfigSection = new Mock<IConfigurationSection>();
+            mockConfigSection.Setup(s => s.Value).Returns("true");
+            _mockConfiguration.Setup(c => c.GetSection("CosmosAllowSetup")).Returns(mockConfigSection.Object);
+
             var app = new ApplicationBuilder(_serviceProvider);
             app.UseSetupAccessControl(isMultiTenantEditor: false);
 
-            _mockConfiguration.Setup(c => c.GetValue<bool?>("CosmosAllowSetup")).Returns(true);
+            bool nextCalled = false;
+            app.Use(async (ctx, next) => { nextCalled = true; await next(); });
 
             var context = CreateHttpContext("/___setup", _serviceProvider);
-            bool nextCalled = false;
-            RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
 
             // Act
             var middleware = app.Build();
@@ -383,11 +391,16 @@ namespace Sky.Tests.Editor.Middleware
         [TestCategory("SetupMiddleware.AccessControl")]
         public async Task UseSetupAccessControl_RedirectsAway_WhenSetupDisabled_SingleTenant()
         {
-            // Arrange
-            _mockConfiguration.Setup(c => c.GetValue<bool?>("CosmosAllowSetup")).Returns(false);
+            // Arrange - Mock the configuration indexer (GetValue uses this internally)
+            var mockConfigSection = new Mock<IConfigurationSection>();
+            mockConfigSection.Setup(s => s.Value).Returns("false");
+            _mockConfiguration.Setup(c => c.GetSection("CosmosAllowSetup")).Returns(mockConfigSection.Object);
 
             var app = new ApplicationBuilder(_serviceProvider);
             app.UseSetupAccessControl(isMultiTenantEditor: false);
+
+            bool nextCalled = false;
+            app.Use(async (ctx, next) => { nextCalled = true; await next(); });
 
             var context = CreateHttpContext("/___setup", _serviceProvider);
 
@@ -398,6 +411,7 @@ namespace Sky.Tests.Editor.Middleware
             // Assert
             Assert.AreEqual(302, context.Response.StatusCode, "Should redirect when setup is disabled");
             Assert.AreEqual("/", context.Response.Headers["Location"].ToString());
+            Assert.IsFalse(nextCalled, "Next middleware should not be called when redirecting");
         }
 
         /// <summary>
@@ -411,9 +425,10 @@ namespace Sky.Tests.Editor.Middleware
             var app = new ApplicationBuilder(_serviceProvider);
             app.UseSetupAccessControl(isMultiTenantEditor: true);
 
-            var context = CreateHttpContext("/___setup", _serviceProvider);
             bool nextCalled = false;
-            RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
+            app.Use(async (ctx, next) => { nextCalled = true; await next(); });
+
+            var context = CreateHttpContext("/___setup", _serviceProvider);
 
             // Act
             var middleware = app.Build();
@@ -440,10 +455,10 @@ namespace Sky.Tests.Editor.Middleware
             var app = new ApplicationBuilder(_serviceProvider);
             app.UseSetupDetection(isMultiTenantEditor: false);
 
-            var context = CreateHttpContext("/page", _serviceProvider, originHostname: "custom.example.com");
-
             bool nextCalled = false;
-            RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
+            app.Use(async (ctx, next) => { nextCalled = true; await next(); });
+
+            var context = CreateHttpContext("/page", _serviceProvider, originHostname: "custom.example.com");
 
             // Act
             var middleware = app.Build();
@@ -466,10 +481,10 @@ namespace Sky.Tests.Editor.Middleware
             var app = new ApplicationBuilder(_serviceProvider);
             app.UseSetupDetection(isMultiTenantEditor: false);
 
-            var context = CreateHttpContext("/page", _serviceProvider, originHostname: null);
-
             bool nextCalled = false;
-            RequestDelegate next = async (ctx) => { nextCalled = true; await Task.CompletedTask; };
+            app.Use(async (ctx, next) => { nextCalled = true; await next(); });
+
+            var context = CreateHttpContext("/page", _serviceProvider, originHostname: null);
 
             // Act
             var middleware = app.Build();

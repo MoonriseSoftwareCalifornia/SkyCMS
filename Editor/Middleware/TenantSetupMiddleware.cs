@@ -37,6 +37,7 @@ namespace Sky.Editor.Middleware
             if (context.Request.Path.StartsWithSegments("/___setup") ||
                 context.Request.Path.StartsWithSegments("/___diagnostics") ||
                 context.Request.Path.StartsWithSegments("/api") || // ✅ Skip API endpoints
+                context.Request.Path.StartsWithSegments("/health") ||
                 context.Request.Path.StartsWithSegments("/healthz") ||
                 context.Request.Path.StartsWithSegments("/lib") ||
                 context.Request.Path.StartsWithSegments("/css") ||

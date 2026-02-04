@@ -159,7 +159,7 @@ public class NoOpEmailServiceTests
     public async Task SendEmailAsync_FiveParametersWithFromAddress_LogsFromAddress()
     {
         // Act
-        await service.SendEmailAsync("sender@example.com", "recipient@example.com", "Subject", "<p>HTML</p>");
+        await service.SendEmailAsync("sender@example.com", "recipient@example.com", "Subject", "<p>HTML</p>", null);
 
         // Assert
         mockLogger.Verify(
@@ -176,7 +176,7 @@ public class NoOpEmailServiceTests
     public async Task SendEmailAsync_FiveParametersWithFromAddress_LogsToAddress()
     {
         // Act
-        await service.SendEmailAsync("sender@example.com", "recipient@example.com", "Subject", "<p>HTML</p>");
+        await service.SendEmailAsync("sender@example.com", "recipient@example.com", "Subject", "<p>HTML</p>", null);
 
         // Assert
         mockLogger.Verify(
@@ -193,7 +193,7 @@ public class NoOpEmailServiceTests
     public async Task SendEmailAsync_FiveParametersWithFromAddress_LogsSubject()
     {
         // Act
-        await service.SendEmailAsync("sender@example.com", "recipient@example.com", "Email Subject", "<p>HTML</p>");
+        await service.SendEmailAsync("sender@example.com", "recipient@example.com", "Email Subject", "<p>HTML</p>", null);
 
         // Assert
         mockLogger.Verify(

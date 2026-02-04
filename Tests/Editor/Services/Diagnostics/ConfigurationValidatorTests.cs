@@ -45,21 +45,43 @@ namespace Sky.Tests.Editor.Services.Diagnostics
         /// </summary>
         private void SetupConfiguration(Dictionary<string, string?> connectionStrings, Dictionary<string, object?> values)
         {
+            // Setup default behavior for GetSection - return an empty section for unknown keys
+            var emptySection = new Mock<IConfigurationSection>();
+            emptySection.Setup(s => s.Value).Returns((string?)null);
+            emptySection.Setup(s => s.Path).Returns(string.Empty);
+            emptySection.Setup(s => s.Key).Returns(string.Empty);
+            emptySection.Setup(s => s.GetChildren()).Returns(Array.Empty<IConfigurationSection>());
+            
+            configMock
+                .Setup(c => c.GetSection(It.IsAny<string>()))
+                .Returns(emptySection.Object);
+            
+            // Mock connection strings section (GetConnectionString is an extension method that uses GetSection)
+            var connectionStringsSection = new Mock<IConfigurationSection>();
+            configMock
+                .Setup(c => c.GetSection("ConnectionStrings"))
+                .Returns(connectionStringsSection.Object);
+
             foreach (var (key, value) in connectionStrings)
             {
-                configMock
-                    .Setup(c => c.GetConnectionString(key))
+                var mockSection = new Mock<IConfigurationSection>();
+                mockSection.Setup(s => s.Value).Returns(value);
+                connectionStringsSection
+                    .Setup(c => c[key])
                     .Returns(value);
             }
 
             foreach (var (key, value) in values)
             {
+                // GetValue<T> uses GetSection internally, so we need to mock that
+                var mockSection = new Mock<IConfigurationSection>();
+                mockSection.Setup(s => s.Value).Returns(value?.ToString());
+                mockSection.Setup(s => s.Path).Returns(key);
+                mockSection.Setup(s => s.Key).Returns(key);
+                
                 configMock
-                    .Setup(c => c.GetValue<bool?>(key))
-                    .Returns(value as bool?);
-                configMock
-                    .Setup(c => c.GetValue<string>(key))
-                    .Returns(value as string);
+                    .Setup(c => c.GetSection(key))
+                    .Returns(mockSection.Object);
             }
         }
 
@@ -228,29 +250,48 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
             foreach (var email in validEmails)
             {
-                var config = CreateMockConfiguration();
-                var connectionStrings = new Dictionary<string, string?>
-                {
-                    ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-                };
-                var values = new Dictionary<string, object?>
-                {
-                    ["MultiTenantEditor"] = false,
-                    ["AdminEmail"] = email
-                };
+                // Use a fresh mock and setup for each iteration
+                var config = new Mock<IConfiguration>();
+                var logger = new Mock<ILogger<ConfigurationValidator>>();
+                
+                // Setup default behavior for GetSection - return an empty section for unknown keys
+                var emptySection = new Mock<IConfigurationSection>();
+                emptySection.Setup(s => s.Value).Returns((string?)null);
+                emptySection.Setup(s => s.Path).Returns(string.Empty);
+                emptySection.Setup(s => s.Key).Returns(string.Empty);
+                emptySection.Setup(s => s.GetChildren()).Returns(Array.Empty<IConfigurationSection>());
+                
+                config
+                    .Setup(c => c.GetSection(It.IsAny<string>()))
+                    .Returns(emptySection.Object);
+                
+                // Mock connection strings section
+                var connectionStringsSection = new Mock<IConfigurationSection>();
+                config
+                    .Setup(c => c.GetSection("ConnectionStrings"))
+                    .Returns(connectionStringsSection.Object);
+                connectionStringsSection
+                    .Setup(c => c["ApplicationDbContextConnection"])
+                    .Returns("Server=localhost;Database=test;Trusted_Connection=true;");
+                
+                // Mock configuration values
+                var multiTenantSection = new Mock<IConfigurationSection>();
+                multiTenantSection.Setup(s => s.Value).Returns("false");
+                multiTenantSection.Setup(s => s.Path).Returns("MultiTenantEditor");
+                multiTenantSection.Setup(s => s.Key).Returns("MultiTenantEditor");
+                config
+                    .Setup(c => c.GetSection("MultiTenantEditor"))
+                    .Returns(multiTenantSection.Object);
+                
+                var emailSection = new Mock<IConfigurationSection>();
+                emailSection.Setup(s => s.Value).Returns(email);
+                emailSection.Setup(s => s.Path).Returns("AdminEmail");
+                emailSection.Setup(s => s.Key).Returns("AdminEmail");
+                config
+                    .Setup(c => c.GetSection("AdminEmail"))
+                    .Returns(emailSection.Object);
 
-                foreach (var (key, value) in connectionStrings)
-                {
-                    config.Setup(c => c.GetConnectionString(key)).Returns(value);
-                }
-
-                foreach (var (key, value) in values)
-                {
-                    config.Setup(c => c.GetValue<bool?>(key)).Returns(value as bool?);
-                    config.Setup(c => c.GetValue<string>(key)).Returns(value as string);
-                }
-
-                var testValidator = new ConfigurationValidator(config.Object, loggerMock.Object);
+                var testValidator = new ConfigurationValidator(config.Object, logger.Object);
                 var result = await testValidator.ValidateAsync();
                 var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
                 Assert.AreEqual(CheckStatus.Success, adminEmailCheck.Status, $"Email {email} should be valid");

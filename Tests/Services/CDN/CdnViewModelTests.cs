@@ -503,15 +503,12 @@ namespace Sky.Tests.Services.CDN
                 }
             };
 
-            // Act & Assert
-            try
-            {
-                _ = new CdnViewModel(settings);
-            }
-            catch (NullReferenceException)
-            {
-                // This is acceptable behavior for null value
-            }
+            // Act - Should not throw any exception
+            var viewModel = new CdnViewModel(settings);
+
+            // Assert - Should create instance with default values
+            Assert.IsNotNull(viewModel);
+            Assert.IsNotNull(viewModel.AzureCdn);
         }
 
         #endregion

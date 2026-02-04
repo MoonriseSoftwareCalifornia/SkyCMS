@@ -40,6 +40,7 @@ namespace Sky.Tests.Services.Scheduling
         private Mock<IClock> _mockClock;
         private Mock<IEditorSettings> _mockSettings;
         private Mock<ICosmosEmailSender> _mockEmailSender;
+        private Mock<ITenantArticleLogicFactory> _mockTenantArticleLogicFactory;
         private IServiceProvider _serviceProvider;
         private ServiceCollection _serviceCollection;
         private DateTimeOffset _testNow;
@@ -66,13 +67,23 @@ namespace Sky.Tests.Services.Scheduling
                 .Setup(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask);
 
+            // Setup mock factory that returns the test's ArticleEditLogic (Logic property from base class)
+            _mockTenantArticleLogicFactory = new Mock<ITenantArticleLogicFactory>();
+            _mockTenantArticleLogicFactory
+                .Setup(x => x.CreateForTenantAsync(It.IsAny<string>()))
+                .ReturnsAsync(Logic);
+
             // Setup service collection
             _serviceCollection = new ServiceCollection();
-            _serviceCollection.AddScoped(_ => Db);
-            _serviceCollection.AddScoped(_ => Storage);
+            // ?? CRITICAL: Use Singleton for Db and Storage to prevent disposal by scoped services in ArticleScheduler
+            // ArticleScheduler creates scoped service providers which would dispose scoped Db instances, 
+            // breaking test assertions that need to query the Db after scheduler execution
+            _serviceCollection.AddSingleton(_ => Db);
+            _serviceCollection.AddSingleton(_ => Storage);
             _serviceCollection.AddScoped(_ => _mockSettings.Object);
             _serviceCollection.AddScoped(_ => _mockClock.Object);
             _serviceCollection.AddScoped(_ => _mockEmailSender.Object);
+            _serviceCollection.AddScoped(_ => _mockTenantArticleLogicFactory.Object);
             _serviceCollection.AddScoped(_ => new Mock<IConfiguration>().Object);
             _serviceCollection.AddScoped(_ => new Mock<UserManager<IdentityUser>>(
                 new Mock<IUserStore<IdentityUser>>().Object, null, null, null, null, null, null, null, null).Object);
@@ -160,8 +171,10 @@ namespace Sky.Tests.Services.Scheduling
             var scheduledArticle = await Logic.CreateArticle("Scheduled Article", TestUserId);
 
             // Create a past-published version (should be activated)
-            scheduledArticle.Published = _testNow.AddHours(-1);
-            scheduledArticle.VersionNumber = 1;
+            // NOTE: Must modify the actual Article entity, not the ArticleViewModel
+            var scheduledArticleEntity = await Db.Articles.FirstAsync(a => a.Id == scheduledArticle.Id);
+            scheduledArticleEntity.Published = _testNow.AddHours(-1);
+            scheduledArticleEntity.VersionNumber = 1;
             await Db.SaveChangesAsync();
 
             // Create a future-published version
@@ -181,12 +194,19 @@ namespace Sky.Tests.Services.Scheduling
             await _scheduler.ExecuteAsync();
 
             // Assert
-            var activeVersion = await Db.Articles
-                .Where(a => a.ArticleNumber == scheduledArticle.ArticleNumber && a.Published <= _testNow)
-                .OrderByDescending(a => a.Published)
-                .FirstAsync();
+            // Debug: Check all articles for this ArticleNumber
+            var allVersions = await Db.Articles
+                .Where(a => a.ArticleNumber == scheduledArticle.ArticleNumber)
+                .OrderBy(a => a.VersionNumber)
+                .ToListAsync();
             
-            Assert.IsNotNull(activeVersion, "Should have activated past-published version");
+            Assert.IsTrue(allVersions.Count >= 2, $"Should have at least 2 versions, found {allVersions.Count}");
+            
+            var activeVersion = allVersions.FirstOrDefault(a => a.Published.HasValue && a.Published <= _testNow);
+            
+            Assert.IsNotNull(activeVersion, 
+                $"Should have activated past-published version. Versions found: " +
+                $"{string.Join(", ", allVersions.Select(v => $"v{v.VersionNumber} Published={v.Published}"))}");
         }
 
         /// <summary>

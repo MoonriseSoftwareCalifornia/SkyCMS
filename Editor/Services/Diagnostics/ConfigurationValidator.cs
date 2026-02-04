@@ -330,7 +330,22 @@ namespace Sky.Editor.Services.Diagnostics
                     }
                 }
 
-                return await context.Database.CanConnectAsync();
+                var canConnect = await context.Database.CanConnectAsync();
+
+                // Explicitly close the connection to release file handles (important for SQLite)
+                if (context.Database.IsSqlite())
+                {
+                    var connection = context.Database.GetDbConnection();
+                    if (connection.State != System.Data.ConnectionState.Closed)
+                    {
+                        await connection.CloseAsync();
+                    }
+
+                    // Clear the connection pool to ensure the file handle is released
+                    Microsoft.Data.Sqlite.SqliteConnection.ClearPool((Microsoft.Data.Sqlite.SqliteConnection)connection);
+                }
+
+                return canConnect;
             }
             catch
             {

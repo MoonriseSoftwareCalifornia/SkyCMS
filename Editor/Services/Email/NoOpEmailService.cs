@@ -7,6 +7,7 @@
 
 namespace Sky.Editor.Services.Email
 {
+    using System;
     using System.Threading.Tasks;
     using Cosmos.EmailServices;
     using Microsoft.AspNetCore.Identity.UI.Services;
@@ -25,7 +26,7 @@ namespace Sky.Editor.Services.Email
         /// <param name="logger">Logger.</param>
         public NoOpEmailService(ILogger<NoOpEmailService> logger)
         {
-            this.logger = logger;
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <inheritdoc/>
