@@ -35,6 +35,7 @@ namespace Sky.Tests
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
     using Cosmos.Common.Models;
+    using Microsoft.Extensions.Caching.Memory;
 
     /// <summary>
     /// Represents a complete isolated test context for a single tenant.
@@ -56,6 +57,11 @@ namespace Sky.Tests
         /// Gets the tenant-scoped database context.
         /// </summary>
         public ApplicationDbContext DbContext { get; private set; }
+
+        /// <summary>
+        /// Gets the tenant-scoped database context (alias for DbContext).
+        /// </summary>
+        public ApplicationDbContext Db => DbContext;
 
         /// <summary>
         /// Gets the tenant-scoped ArticleEditLogic instance.
@@ -81,6 +87,21 @@ namespace Sky.Tests
         /// Gets the memory cache instance (can be shared or isolated).
         /// </summary>
         public IMemoryCache Cache { get; }
+
+        /// <summary>
+        /// Gets the test user ID for this tenant context.
+        /// </summary>
+        public Guid TestUserId { get; private set; }
+
+        /// <summary>
+        /// Gets the publishing service for this tenant.
+        /// </summary>
+        public IPublishingService PublishingService { get; private set; }
+
+        /// <summary>
+        /// Gets the storage context for this tenant.
+        /// </summary>
+        public StorageContext Storage => storage;
 
         private readonly StorageContext storage;
         private readonly bool useSharedDatabase;
@@ -205,6 +226,9 @@ namespace Sky.Tests
                 var redirectService = (IRedirectService)redirectServiceField?.GetValue(baseTestContext);
                 var templateService = (ITemplateService)templateServiceField?.GetValue(baseTestContext);
 
+                // Store publishing service for external access
+                PublishingService = publishingService;
+
                 // Create tenant-scoped catalog service
                 var catalogService = new CatalogService(DbContext, articleHtmlService, clock, new NullLogger<CatalogService>());
 
@@ -288,6 +312,9 @@ namespace Sky.Tests
         public async Task CreateTestUserAsync(Guid userId, string email = null)
         {
             email ??= $"user-{userId}@{TenantDomain}";
+            
+            // Store the test user ID
+            TestUserId = userId;
             
             var user = new Microsoft.AspNetCore.Identity.IdentityUser
             {

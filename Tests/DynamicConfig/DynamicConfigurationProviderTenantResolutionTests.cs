@@ -449,7 +449,9 @@ namespace Sky.Tests.DynamicConfig
                     {
                         DomainNames = new[] { "test.com" },
                         DbConn = "Data Source=test.db",
-                        StorageConn = "test-storage"
+                        StorageConn = "test-storage",
+                        ResourceGroup = "test-resource-group",
+                        WebsiteUrl = "https://test.com"
                     });
                     ctx.SaveChanges();
                 }

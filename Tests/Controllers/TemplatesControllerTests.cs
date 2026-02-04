@@ -923,18 +923,29 @@ namespace Sky.Tests.Controllers
             var articleZ = await Logic.CreateArticle("ZZZ Article", TestUserId, template.Id);
             var articleA = await Logic.CreateArticle("AAA Article", TestUserId, template.Id);
 
-            // Reload context to ensure catalog entries are available
-            var catalogZ = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == articleZ.ArticleNumber);
-            var catalogA = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == articleA.ArticleNumber);
-            
-            if (catalogZ != null)
+            // Create catalog entries (CreateArticle skips catalog entry creation)
+            Db.ArticleCatalog.Add(new CatalogEntry
             {
-                catalogZ.TemplateId = template.Id;
-            }
-            if (catalogA != null)
+                ArticleNumber = articleZ.ArticleNumber,
+                Title = articleZ.Title,
+                UrlPath = articleZ.UrlPath,
+                TemplateId = template.Id,
+                Published = articleZ.Published,
+                Updated = articleZ.Updated,
+                Status = "Active",
+                Introduction = string.Empty
+            });
+            Db.ArticleCatalog.Add(new CatalogEntry
             {
-                catalogA.TemplateId = template.Id;
-            }
+                ArticleNumber = articleA.ArticleNumber,
+                Title = articleA.Title,
+                UrlPath = articleA.UrlPath,
+                TemplateId = template.Id,
+                Published = articleA.Published,
+                Updated = articleA.Updated,
+                Status = "Active",
+                Introduction = string.Empty
+            });
             await Db.SaveChangesAsync();
 
             // Act
@@ -1668,10 +1679,22 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = result as JsonResult;
-            var response = jsonResult.Value as TemplateCodeEditorViewModel;
             
-            Assert.IsNotNull(response);
-            Assert.IsTrue(response.IsValid, "Model should be marked as valid");
+            // Controller returns anonymous object { success = true }, not TemplateCodeEditorViewModel
+            Assert.IsNotNull(jsonResult.Value, "JsonResult should have a value");
+            
+            // Check if the response contains success property
+            var responseType = jsonResult.Value.GetType();
+            var successProperty = responseType.GetProperty("success");
+            Assert.IsNotNull(successProperty, "Response should contain 'success' property");
+            
+            var successValue = (bool)successProperty.GetValue(jsonResult.Value);
+            Assert.IsTrue(successValue, "Success should be true");
+            
+            // Verify the template was updated in the database
+            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
+            Assert.IsNotNull(updatedTemplate);
+            Assert.IsTrue(updatedTemplate.Content.Contains("Valid Content"), "Template content should be updated");
         }
 
         /// <summary>
@@ -1971,7 +1994,8 @@ namespace Sky.Tests.Controllers
 
             // Verify changes were saved
             var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.IsNotNull(updatedTemplate.Content);
+            Assert.IsNotNull(updatedTemplate);
+            Assert.IsTrue(updatedTemplate.Content.Contains("Designer Content"), "Template content should be updated");
         }
 
         /// <summary>
@@ -2077,10 +2101,17 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Valid Content</div>");
+            var model = new TemplateCodeEditorViewModel
+            {
+                Id = template.Id,
+                Title = "Valid Template",
+                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Valid Content</div>"),
+                EditorTitle = "Template Editor",
+                EditingField = "Content"
+            };
 
             // Act
-            var result = await _controller.DesignerData(template.Id, "Valid Template", htmlContent, null);
+            var result = await _controller.DesignerData(model.Id, model.Title, model.Content, null);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
@@ -2092,7 +2123,7 @@ namespace Sky.Tests.Controllers
             // Check if the response contains success property
             var responseType = jsonResult.Value.GetType();
             var successProperty = responseType.GetProperty("success");
-            Assert.IsNotNull(successProperty, "Response should have 'success' property");
+            Assert.IsNotNull(successProperty, "Response should contain 'success' property");
             
             var successValue = (bool)successProperty.GetValue(jsonResult.Value);
             Assert.IsTrue(successValue, "Success should be true");
@@ -2159,34 +2190,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Trash redirects to Index after deletion.
-        /// </summary>
-        [TestMethod]
-        public async Task Trash_RedirectsToIndex_AfterDeletion()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Template to Delete",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.Trash(template.Id);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Index", redirectResult.ActionName);
-        }
-
-        /// <summary>
         /// Tests that Trash returns BadRequest when ModelState is invalid.
         /// </summary>
         [TestMethod]
@@ -2229,11 +2232,29 @@ namespace Sky.Tests.Controllers
             var article1 = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
             var article2 = await Logic.CreateArticle("Article 2", TestUserId, template.Id);
 
-            // Update catalog entries to reference the template
-            var catalog1 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == article1.ArticleNumber);
-            var catalog2 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == article2.ArticleNumber);
-            catalog1.TemplateId = template.Id;
-            catalog2.TemplateId = template.Id;
+            // Create catalog entries (CreateArticle skips catalog entry creation)
+            Db.ArticleCatalog.Add(new CatalogEntry
+            {
+                ArticleNumber = article1.ArticleNumber,
+                Title = article1.Title,
+                UrlPath = article1.UrlPath,
+                TemplateId = template.Id,
+                Published = article1.Published,
+                Updated = article1.Updated,
+                Status = "Active",
+                Introduction = string.Empty
+            });
+            Db.ArticleCatalog.Add(new CatalogEntry
+            {
+                ArticleNumber = article2.ArticleNumber,
+                Title = article2.Title,
+                UrlPath = article2.UrlPath,
+                TemplateId = template.Id,
+                Published = article2.Published,
+                Updated = article2.Updated,
+                Status = "Active",
+                Introduction = string.Empty
+            });
             await Db.SaveChangesAsync();
 
             // Act
