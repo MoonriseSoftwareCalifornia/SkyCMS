@@ -60,24 +60,33 @@ namespace Cosmos.EmailServices
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public Task SendEmailAsync(string emailTo, string subject, string htmlMessage, string? emailFrom = null)
         {
-            var message = new MailMessage();
-
-            if (string.IsNullOrEmpty(emailFrom))
+            try
             {
-                emailFrom = this.options.DefaultFromEmailAddress;
-            }
+                var message = new MailMessage();
 
-            message.Subject = subject;
+                if (string.IsNullOrEmpty(emailFrom))
+                {
+                    emailFrom = this.options.DefaultFromEmailAddress;
+                }
+
+                message.Subject = subject;
 #pragma warning disable CS8604 // Possible null reference argument.
-            message.From = new MailAddress(emailFrom);
+                message.From = new MailAddress(emailFrom);
 #pragma warning restore CS8604 // Possible null reference argument.
-            message.To.Add(new MailAddress(emailTo));
-            message.Body = htmlMessage;
-            message.IsBodyHtml = true;
+                message.To.Add(new MailAddress(emailTo));
+                message.Body = htmlMessage;
+                message.IsBodyHtml = true;
 
-            var task = this.Execute(message);
-            task.Wait();
-            return task;
+                var task = this.Execute(message);
+                task.Wait();
+                return task;
+            }
+            catch (FormatException ex)
+            {
+                this.SendResult.StatusCode = HttpStatusCode.BadRequest;
+                this.SendResult.Message = $"Invalid email address format: {ex.Message}";
+                return Task.CompletedTask;
+            }
         }
 
         /// <summary>

@@ -46,13 +46,13 @@ namespace Sky.Tests.Services.RateLimiting
             ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
 
             var httpContext = CreateHttpContext("192.168.1.100");
-            var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
+            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
 
             // Act - Attempt 5 requests (within limit)
             var results = new RateLimitLease[5];
             for (int i = 0; i < 5; i++)
             {
-                results[i] = await limiter.AcquireAsync(permitCount: 1);
+                results[i] = await limiter.AcquireAsync(httpContext, permitCount: 1);
             }
 
             // Assert
@@ -71,18 +71,18 @@ namespace Sky.Tests.Services.RateLimiting
             ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
 
             var httpContext = CreateHttpContext("192.168.1.101");
-            var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
+            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
 
             // Act - Attempt 5 requests (at limit)
             for (int i = 0; i < 5; i++)
             {
-                var lease = await limiter.AcquireAsync(permitCount: 1);
+                var lease = await limiter.AcquireAsync(httpContext, permitCount: 1);
                 Assert.IsTrue(lease.IsAcquired, $"Request {i + 1} should be allowed");
                 lease.Dispose();
             }
 
             // 6th request should be blocked
-            var blockedLease = await limiter.AcquireAsync(permitCount: 1);
+            var blockedLease = await limiter.AcquireAsync(httpContext, permitCount: 1);
 
             // Assert
             Assert.IsFalse(blockedLease.IsAcquired, "6th request should be blocked as it exceeds the 5 req/min limit");
@@ -97,26 +97,36 @@ namespace Sky.Tests.Services.RateLimiting
             ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
 
             var httpContext = CreateHttpContext("192.168.1.102");
-            var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
+            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
 
             // Act - Use up the limit
+            // Record when we make the first request - this starts the window
+            var windowStartTime = DateTime.UtcNow;
             for (int i = 0; i < 5; i++)
             {
-                var lease = await limiter.AcquireAsync(permitCount: 1);
-                Assert.IsTrue(lease.IsAcquired);
+                var lease = await limiter.AcquireAsync(httpContext, permitCount: 1);
+                Assert.IsTrue(lease.IsAcquired, $"Request {i + 1} should be acquired");
                 lease.Dispose();
             }
 
             // Verify limit is exhausted
-            var blockedLease = await limiter.AcquireAsync(permitCount: 1);
+            var blockedLease = await limiter.AcquireAsync(httpContext, permitCount: 1);
             Assert.IsFalse(blockedLease.IsAcquired, "Should be blocked before window reset");
             blockedLease.Dispose();
 
-            // Wait for window to reset (1 minute + buffer)
-            await Task.Delay(TimeSpan.FromSeconds(61));
+            // Wait for the window to reset
+            // The window started when we made the first request, so we need to wait
+            // for 1 minute from that point plus a small buffer
+            var elapsed = DateTime.UtcNow - windowStartTime;
+            var remainingTime = TimeSpan.FromMinutes(1) - elapsed + TimeSpan.FromMilliseconds(200);
+            
+            if (remainingTime > TimeSpan.Zero)
+            {
+                await Task.Delay(remainingTime);
+            }
 
             // Try again after window reset
-            var afterResetLease = await limiter.AcquireAsync(permitCount: 1);
+            var afterResetLease = await limiter.AcquireAsync(httpContext, permitCount: 1);
 
             // Assert
             Assert.IsTrue(afterResetLease.IsAcquired, "Request should be allowed after 1-minute window resets");
@@ -133,21 +143,21 @@ namespace Sky.Tests.Services.RateLimiting
             var httpContext1 = CreateHttpContext("192.168.1.103");
             var httpContext2 = CreateHttpContext("192.168.1.104");
 
-            var limiter1 = GetRateLimiterForPolicy(options, "contact-form", httpContext1);
-            var limiter2 = GetRateLimiterForPolicy(options, "contact-form", httpContext2);
+            // Use a single shared limiter for both contexts
+            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext1);
 
             // Act - Exhaust limit for IP1
             for (int i = 0; i < 5; i++)
             {
-                var lease = await limiter1.AcquireAsync(permitCount: 1);
+                var lease = await limiter.AcquireAsync(httpContext1, permitCount: 1);
                 Assert.IsTrue(lease.IsAcquired);
                 lease.Dispose();
             }
 
-            var ip1Blocked = await limiter1.AcquireAsync(permitCount: 1);
+            var ip1Blocked = await limiter.AcquireAsync(httpContext1, permitCount: 1);
 
             // IP2 should still be able to make requests
-            var ip2Allowed = await limiter2.AcquireAsync(permitCount: 1);
+            var ip2Allowed = await limiter.AcquireAsync(httpContext2, permitCount: 1);
 
             // Assert
             Assert.IsFalse(ip1Blocked.IsAcquired, "IP1 should be rate limited");
@@ -167,7 +177,7 @@ namespace Sky.Tests.Services.RateLimiting
             ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
 
             var httpContext = CreateHttpContext("192.168.1.105");
-            var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
+            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
 
             // Assert
             Assert.IsNotNull(limiter, "Limiter should be created");
@@ -182,18 +192,18 @@ namespace Sky.Tests.Services.RateLimiting
             ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
 
             var httpContext = CreateHttpContext("192.168.1.106");
-            var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
+            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
 
             // Act - Fill the limit
             for (int i = 0; i < 5; i++)
             {
-                var lease = await limiter.AcquireAsync(permitCount: 1);
+                var lease = await limiter.AcquireAsync(httpContext, permitCount: 1);
                 Assert.IsTrue(lease.IsAcquired);
                 lease.Dispose();
             }
 
             // Try to acquire one more (should be rejected immediately, not queued)
-            var rejectedLease = await limiter.AcquireAsync(permitCount: 1);
+            var rejectedLease = await limiter.AcquireAsync(httpContext, permitCount: 1);
 
             // Assert
             Assert.IsFalse(rejectedLease.IsAcquired, "Request should be rejected immediately when queue limit is 0");
@@ -208,10 +218,10 @@ namespace Sky.Tests.Services.RateLimiting
             ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
 
             var httpContext = CreateHttpContext(null); // No IP address
-            var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
+            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
 
             // Act
-            var lease = await limiter.AcquireAsync(permitCount: 1);
+            var lease = await limiter.AcquireAsync(httpContext, permitCount: 1);
 
             // Assert
             Assert.IsNotNull(lease, "Should handle unknown IP address gracefully");
@@ -226,13 +236,13 @@ namespace Sky.Tests.Services.RateLimiting
             ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
 
             var httpContext = CreateHttpContext("192.168.1.107");
-            var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
+            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
 
             // Act - Acquire exactly 5 permits
             var successCount = 0;
             for (int i = 0; i < 6; i++)
             {
-                var lease = await limiter.AcquireAsync(permitCount: 1);
+                var lease = await limiter.AcquireAsync(httpContext, permitCount: 1);
                 if (lease.IsAcquired)
                 {
                     successCount++;
@@ -263,21 +273,24 @@ namespace Sky.Tests.Services.RateLimiting
             return context;
         }
 
-        private static RateLimiter GetRateLimiterForPolicy(RateLimiterOptions options, string policyName, HttpContext context)
+        private static PartitionedRateLimiter<HttpContext> GetRateLimiterForPolicy(RateLimiterOptions options, string policyName, HttpContext context)
         {
-            // Use reflection or direct access to get the partition for the policy
-            // This simulates how the rate limiter would be applied in practice
-            var partition = RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                factory: _ => new FixedWindowRateLimiterOptions
+            // Create a partitioned rate limiter that properly manages window lifecycles
+            return PartitionedRateLimiter.Create<HttpContext, string>(
+                context =>
                 {
-                    PermitLimit = 5,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0
+                    var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: ipAddress,
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0,
+                            AutoReplenishment = true
+                        });
                 });
-
-            return partition.Factory(partition.PartitionKey);
         }
 
         private static bool HasPolicyRegistered(RateLimiterOptions options, string policyName)

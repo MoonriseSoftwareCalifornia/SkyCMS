@@ -7,11 +7,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
+using Cosmos.Common.Services.Email;
+using Cosmos.EmailServices;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Sky.Cms.Api.Shared.Extensions;
 using Sky.Cms.Api.Shared.Features.ContactForm.Submit;
 using Sky.Cms.Api.Shared.Features.ContactForm.ValidateCaptcha;
@@ -116,6 +122,7 @@ namespace Sky.Tests.Services.Configuration
 
             // Act
             services.AddContactApi(configuration);
+            RegisterMissingDependencies(services);
             var serviceProvider = services.BuildServiceProvider();
 
             // Assert
@@ -151,6 +158,7 @@ namespace Sky.Tests.Services.Configuration
 
             // Act
             services.AddContactApi(configuration);
+            RegisterMissingDependencies(services);
             var serviceProvider = services.BuildServiceProvider();
 
             // Assert
@@ -227,6 +235,7 @@ namespace Sky.Tests.Services.Configuration
             // Act - Call multiple times (simulating multiple registrations)
             services.AddContactApi(configuration);
             services.AddContactApi(configuration);
+            RegisterMissingDependencies(services);
 
             // Assert - Should not throw
             var serviceProvider = services.BuildServiceProvider();
@@ -243,6 +252,7 @@ namespace Sky.Tests.Services.Configuration
 
             // Act
             services.AddContactApi(emptyConfiguration);
+            RegisterMissingDependencies(services);
             var serviceProvider = services.BuildServiceProvider();
 
             // Assert - Core services should still be registered
@@ -283,6 +293,7 @@ namespace Sky.Tests.Services.Configuration
 
             // Act
             services.AddContactApi(configuration);
+            RegisterMissingDependencies(services);
             var serviceProvider = services.BuildServiceProvider();
 
             // Assert - Verify all critical dependencies can be resolved
@@ -320,6 +331,29 @@ namespace Sky.Tests.Services.Configuration
             return new ConfigurationBuilder()
                 .AddInMemoryCollection(configValues)
                 .Build();
+        }
+
+        private static void RegisterMissingDependencies(IServiceCollection services)
+        {
+            // Register ICosmosEmailSender (required by ContactService and SubmitContactFormHandler)
+            services.AddScoped<ICosmosEmailSender, CosmosNoOpEmailSender>();
+
+            // Register ApplicationDbContext with in-memory database (required by SubmitContactFormHandler)
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseInMemoryDatabase($"ContactApiTestDb_{Guid.NewGuid()}"));
+
+            // Register IEmailConfigurationService mock (required by SubmitContactFormHandler)
+            var mockEmailConfigService = new Mock<IEmailConfigurationService>();
+            mockEmailConfigService.Setup(x => x.GetEmailSettingsAsync())
+                .ReturnsAsync(new EmailSettings
+                {
+                    SenderEmail = "test@example.com",
+                    IsConfigured = true
+                });
+            services.AddScoped(_ => mockEmailConfigService.Object);
+
+            // Register logging (commonly needed)
+            services.AddLogging();
         }
 
         #endregion
