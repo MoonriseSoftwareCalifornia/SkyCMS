@@ -2077,25 +2077,30 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            var model = new TemplateCodeEditorViewModel
-            {
-                Id = template.Id,
-                Title = "Valid Template",
-                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Valid Content</div>"),
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
-            };
+            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Valid Content</div>");
 
             // Act
-            var result = await _controller.DesignerData(model.Id, model.Title, model.Content, null);
+            var result = await _controller.DesignerData(template.Id, "Valid Template", htmlContent, null);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = result as JsonResult;
-            var response = jsonResult.Value as TemplateCodeEditorViewModel;
             
-            Assert.IsNotNull(response);
-            Assert.IsTrue(response.IsValid, "Model should be marked as valid");
+            // Controller returns anonymous object { success = true }, not TemplateCodeEditorViewModel
+            Assert.IsNotNull(jsonResult.Value, "JsonResult should have a value");
+            
+            // Check if the response contains success property
+            var responseType = jsonResult.Value.GetType();
+            var successProperty = responseType.GetProperty("success");
+            Assert.IsNotNull(successProperty, "Response should have 'success' property");
+            
+            var successValue = (bool)successProperty.GetValue(jsonResult.Value);
+            Assert.IsTrue(successValue, "Success should be true");
+            
+            // Verify the template was updated in the database
+            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
+            Assert.IsNotNull(updatedTemplate);
+            Assert.IsTrue(updatedTemplate.Content.Contains("Valid Content"), "Template content should be updated");
         }
 
         /// <summary>
