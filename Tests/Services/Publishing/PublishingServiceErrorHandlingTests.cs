@@ -18,7 +18,9 @@ namespace Sky.Tests.Services.Publishing
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
+    using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
@@ -333,6 +335,225 @@ namespace Sky.Tests.Services.Publishing
             Assert.AreEqual("<div>updated</div>", updated.Content);
             Assert.AreEqual("new-banner.png", updated.BannerImage);
             Assert.AreEqual("New intro", updated.Introduction);
+        }
+
+        #endregion
+
+        #region Step 1: Exponential Backoff & Additional Retry Scenarios
+
+        [TestMethod]
+        [TestCategory("Publishing")]
+        public void IsTransientException_WithHttpRequest503_ReturnsTrue()
+        {
+            // Arrange & Act
+            var result = InvokeIsTransientException(
+                new HttpRequestException("service unavailable", null, HttpStatusCode.ServiceUnavailable));
+
+            // Assert
+            Assert.IsTrue(result, "HTTP 503 Service Unavailable should be treated as transient");
+        }
+
+        [TestMethod]
+        [TestCategory("Publishing")]
+        public void IsTransientException_WithHttpRequest502_ReturnsTrue()
+        {
+            // Arrange & Act
+            var result = InvokeIsTransientException(
+                new HttpRequestException("bad gateway", null, HttpStatusCode.BadGateway));
+
+            // Assert
+            Assert.IsTrue(result, "HTTP 502 Bad Gateway should be treated as transient");
+        }
+
+        [TestMethod]
+        [TestCategory("Publishing")]
+        public async Task CreateStaticFileWithRetrySafeAsync_ExhaustsAllRetries_LogsErrorAndContinues()
+        {
+            // Arrange
+            var storageMock = new Mock<IStorageContext>();
+            var viewRendererMock = new Mock<IViewRenderService>();
+            var loggerMock = new Mock<ILogger<PublishingService>>();
+            var settingsMock = CreateSettingsMock(staticPagesEnabled: true);
+
+            viewRendererMock
+                .Setup(r => r.RenderToStringAsync(It.IsAny<string>(), It.IsAny<object>()))
+                .ReturnsAsync("<html>ok</html>");
+
+            // Fail all 4 attempts (initial + 3 retries)
+            storageMock
+                .Setup(s => s.AppendBlob(It.IsAny<MemoryStream>(), It.IsAny<FileUploadMetaData>(), It.IsAny<string>()))
+                .ThrowsAsync(new IOException("persistent failure"));
+
+            var service = CreatePublishingService(storageMock.Object, settingsMock.Object, loggerMock.Object);
+            var page = CreatePublishedPage("exhaust-retries");
+            var layout = CreateLayout();
+
+            // Act
+            await InvokePrivateAsync(
+                service,
+                "CreateStaticFileWithRetrySafeAsync",
+                page,
+                layout,
+                storageMock.Object,
+                viewRendererMock.Object,
+                loggerMock.Object,
+                CancellationToken.None);
+
+            // Assert - Should attempt 4 times total (initial + 3 retries)
+            storageMock.Verify(
+                s => s.AppendBlob(It.IsAny<MemoryStream>(), It.IsAny<FileUploadMetaData>(), It.IsAny<string>()),
+                Times.Exactly(4));
+
+            // Should log warnings for first 3 failures and error for final failure
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Transient error")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Exactly(3));
+
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to create static file")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        [TestCategory("Publishing")]
+        public async Task CreateStaticFileWithRetrySafeAsync_SucceedsAfterRetry_LogsSuccessMessage()
+        {
+            // Arrange
+            var storageMock = new Mock<IStorageContext>();
+            var viewRendererMock = new Mock<IViewRenderService>();
+            var loggerMock = new Mock<ILogger<PublishingService>>();
+            var settingsMock = CreateSettingsMock(staticPagesEnabled: true);
+
+            viewRendererMock
+                .Setup(r => r.RenderToStringAsync(It.IsAny<string>(), It.IsAny<object>()))
+                .ReturnsAsync("<html>ok</html>");
+
+            // Fail twice, then succeed
+            storageMock
+                .SetupSequence(s => s.AppendBlob(It.IsAny<MemoryStream>(), It.IsAny<FileUploadMetaData>(), It.IsAny<string>()))
+                .ThrowsAsync(new TimeoutException("timeout-1"))
+                .ThrowsAsync(new TimeoutException("timeout-2"))
+                .Returns(Task.CompletedTask);
+
+            var service = CreatePublishingService(storageMock.Object, settingsMock.Object, loggerMock.Object);
+            var page = CreatePublishedPage("success-after-retry");
+            var layout = CreateLayout();
+
+            // Act
+            await InvokePrivateAsync(
+                service,
+                "CreateStaticFileWithRetrySafeAsync",
+                page,
+                layout,
+                storageMock.Object,
+                viewRendererMock.Object,
+                loggerMock.Object,
+                CancellationToken.None);
+
+            // Assert
+            storageMock.Verify(
+                s => s.AppendBlob(It.IsAny<MemoryStream>(), It.IsAny<FileUploadMetaData>(), It.IsAny<string>()),
+                Times.Exactly(3));
+
+            // Should log success after retry
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Successfully created static file") && v.ToString().Contains("after 3 attempt")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        [TestCategory("Publishing")]
+        public async Task CreateStaticFileSafeAsync_WhenStaticWebPagesDisabled_DoesNotCreateFile()
+        {
+            // Arrange
+            var storageMock = new Mock<IStorageContext>();
+            var viewRendererMock = new Mock<IViewRenderService>();
+            var settingsMock = CreateSettingsMock(staticPagesEnabled: false); // Disabled
+            var service = CreatePublishingService(storageMock.Object, settingsMock.Object, Mock.Of<ILogger<PublishingService>>());
+
+            var page = CreatePublishedPage("disabled-test");
+            var layout = CreateLayout();
+
+            // Act
+            await InvokePrivateAsync(
+                service,
+                "CreateStaticFileSafeAsync",
+                page,
+                layout,
+                storageMock.Object,
+                viewRendererMock.Object);
+
+            // Assert - Storage should never be called
+            storageMock.Verify(
+                s => s.AppendBlob(It.IsAny<MemoryStream>(), It.IsAny<FileUploadMetaData>(), It.IsAny<string>()),
+                Times.Never);
+
+            viewRendererMock.Verify(
+                v => v.RenderToStringAsync(It.IsAny<string>(), It.IsAny<object>()),
+                Times.Never);
+        }
+
+        [TestMethod]
+        [TestCategory("Publishing")]
+        public async Task CreateStaticFileWithRetrySafeAsync_RespectsCancellationToken()
+        {
+            // Arrange
+            var storageMock = new Mock<IStorageContext>();
+            var viewRendererMock = new Mock<IViewRenderService>();
+            var loggerMock = new Mock<ILogger<PublishingService>>();
+            var settingsMock = CreateSettingsMock(staticPagesEnabled: true);
+
+            viewRendererMock
+                .Setup(r => r.RenderToStringAsync(It.IsAny<string>(), It.IsAny<object>()))
+                .ReturnsAsync("<html>ok</html>");
+
+            // Always fail to trigger retries
+            storageMock
+                .Setup(s => s.AppendBlob(It.IsAny<MemoryStream>(), It.IsAny<FileUploadMetaData>(), It.IsAny<string>()))
+                .ThrowsAsync(new IOException("fail"));
+
+            var service = CreatePublishingService(storageMock.Object, settingsMock.Object, loggerMock.Object);
+            var page = CreatePublishedPage("cancellation-test");
+            var layout = CreateLayout();
+
+            var cts = new CancellationTokenSource();
+            cts.CancelAfter(100); // Cancel after 100ms
+
+            // Act & Assert - Should throw TaskCanceledException or OperationCanceledException
+            var exceptionThrown = false;
+            try
+            {
+                await InvokePrivateAsync(
+                    service,
+                    "CreateStaticFileWithRetrySafeAsync",
+                    page,
+                    layout,
+                    storageMock.Object,
+                    viewRendererMock.Object,
+                    loggerMock.Object,
+                    cts.Token);
+            }
+            catch (Exception ex) when (ex is TaskCanceledException or OperationCanceledException)
+            {
+                exceptionThrown = true;
+            }
+
+            Assert.IsTrue(exceptionThrown, "Expected cancellation exception to be thrown");
         }
 
         #endregion

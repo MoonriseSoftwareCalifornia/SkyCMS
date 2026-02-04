@@ -209,7 +209,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             Assert.IsNotNull(adminEmailCheck);
             Assert.IsNotNull(adminEmailCheck.Details);
             StringAssert.Contains(adminEmailCheck.Details, "***");
-            StringAssert.DoesNotContain(adminEmailCheck.Details, "admin@example.com");
+            Assert.IsFalse(adminEmailCheck.Details.Contains("admin@example.com"), 
+                "Details should not contain the actual admin email value");
         }
 
         [TestMethod]
@@ -566,7 +567,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
             Assert.IsNotNull(dbCheck.Details);
-            StringAssert.DoesNotContain(dbCheck.Details, "MySecretPassword123");
+            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword123"), 
+                "Details should not contain the actual database password");
             StringAssert.Contains(dbCheck.Details, "Password=***");
         }
 
@@ -736,7 +738,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
             Assert.IsNotNull(storageCheck);
             Assert.IsNotNull(storageCheck.Details);
-            StringAssert.DoesNotContain(storageCheck.Details, "MySecretAccountKey123");
+            Assert.IsFalse(storageCheck.Details.Contains("MySecretAccountKey123"), 
+                "Details should not contain the actual storage account key");
             StringAssert.Contains(storageCheck.Details, "AccountKey=***");
         }
 
@@ -851,7 +854,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var configDbCheck = result.Checks.Find(c => c.Name == "ConfigDbConnectionString");
             Assert.IsNotNull(configDbCheck);
             Assert.IsNotNull(configDbCheck.Details);
-            StringAssert.DoesNotContain(configDbCheck.Details, "ConfigPassword123");
+            Assert.IsFalse(configDbCheck.Details.Contains("ConfigPassword123"), 
+                "Details should not contain the actual config database password");
         }
 
         [TestMethod]
@@ -879,7 +883,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var dpCheck = result.Checks.Find(c => c.Name == "DataProtectionStorage");
             Assert.IsNotNull(dpCheck);
             Assert.IsNotNull(dpCheck.Details);
-            StringAssert.DoesNotContain(dpCheck.Details, "DataProtectionSecret123");
+            Assert.IsFalse(dpCheck.Details.Contains("DataProtectionSecret123"), 
+                "Details should not contain the actual data protection secret");
         }
 
         #endregion
@@ -1214,7 +1219,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            StringAssert.DoesNotContain(dbCheck.Details, "MySecretPassword");
+            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword"), 
+                "Details should not contain the actual database password");
             StringAssert.Contains(dbCheck.Details, "pwd=***");
         }
 
@@ -1241,7 +1247,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
             Assert.IsNotNull(storageCheck);
-            StringAssert.DoesNotContain(storageCheck.Details, "MySecretKey123456789");
+            Assert.IsFalse(storageCheck.Details.Contains("MySecretKey123456789"), 
+                "Details should not contain the actual storage account key");
             StringAssert.Contains(storageCheck.Details, "AccountKey=***");
         }
 
@@ -1267,7 +1274,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            StringAssert.DoesNotContain(dbCheck.Details, "SuperSecretValue");
+            Assert.IsFalse(dbCheck.Details.Contains("SuperSecretValue"), 
+                "Details should not contain the actual client secret");
             StringAssert.Contains(dbCheck.Details, "ClientSecret=***");
         }
 
@@ -1293,7 +1301,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            StringAssert.DoesNotContain(dbCheck.Details, "UltraSecretKeyValue");
+            Assert.IsFalse(dbCheck.Details.Contains("UltraSecretKeyValue"), 
+                "Details should not contain the actual key value");
             StringAssert.Contains(dbCheck.Details, "Key=***");
         }
 

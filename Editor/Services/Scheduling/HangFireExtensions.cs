@@ -11,7 +11,6 @@ namespace Sky.Editor.Services.Scheduling
     using System.Linq;
     using AspNetCore.Identity.FlexDb;
     using AspNetCore.Identity.FlexDb.Strategies;
-    using Cosmos.Common.Data;
     using Hangfire;
     using Hangfire.MySql;
     using Microsoft.AspNetCore.Builder;

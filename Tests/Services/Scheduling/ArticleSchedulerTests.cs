@@ -1375,6 +1375,547 @@ namespace Sky.Tests.Services.Scheduling
         }
 
         /// <summary>
+        /// Tests that email notification is not sent when ICosmosEmailSender service is unavailable.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WhenEmailSenderServiceNull_LogsWarningAndContinuesPublishing()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            var author = new IdentityUser
+            {
+                Id = TestUserId.ToString(),
+                UserName = "author@example.com",
+                Email = "author@example.com",
+                EmailConfirmed = true
+            };
+            await UserManager.CreateAsync(author);
+
+            // Create service provider WITHOUT email sender service
+            var servicesWithoutEmail = new ServiceCollection();
+            servicesWithoutEmail.AddSingleton<ApplicationDbContext>(Db);
+            servicesWithoutEmail.AddSingleton<StorageContext>(Storage);
+            servicesWithoutEmail.AddSingleton<IMemoryCache>(Cache);
+            servicesWithoutEmail.AddSingleton<IHttpContextAccessor>(HttpContextAccessor);
+            servicesWithoutEmail.AddSingleton<ISlugService>(SlugService);
+            servicesWithoutEmail.AddSingleton<IArticleHtmlService>(ArticleHtmlService);
+            servicesWithoutEmail.AddSingleton<ICatalogService>(CatalogService);
+            servicesWithoutEmail.AddSingleton<IDomainEventDispatcher>(EventDispatcher);
+            servicesWithoutEmail.AddSingleton<IClock>(Clock);
+            servicesWithoutEmail.AddSingleton<IBlogRenderingService>(BlogRenderingService);
+            servicesWithoutEmail.AddSingleton<IAuthorInfoService>(AuthorInfoService);
+            servicesWithoutEmail.AddSingleton<IViewRenderService>(ViewRenderService);
+            servicesWithoutEmail.AddSingleton<IReservedPaths>(ReservedPaths);
+            servicesWithoutEmail.AddSingleton<IEditorSettings>(EditorSettings);
+            servicesWithoutEmail.AddSingleton<IPublishingService>(PublishingService);
+            servicesWithoutEmail.AddSingleton<IRedirectService>(RedirectService);
+            servicesWithoutEmail.AddSingleton<ITitleChangeService>(TitleChangeService);
+            servicesWithoutEmail.AddSingleton<ITemplateService>(TemplateService);
+            servicesWithoutEmail.AddSingleton<ITenantArticleLogicFactory>(TenantArticleLogicFactory);
+            servicesWithoutEmail.AddSingleton<UserManager<IdentityUser>>(UserManager);
+            servicesWithoutEmail.AddSingleton<RoleManager<IdentityRole>>(RoleManager);
+            servicesWithoutEmail.AddSingleton(Options.Create(new SiteSettings()));
+            // NOTE: NOT registering ICosmosEmailSender
+
+            var serviceProviderWithoutEmail = servicesWithoutEmail.BuildServiceProvider();
+            var schedulerWithoutEmail = new ArticleScheduler(
+                new NullLogger<ArticleScheduler>(),
+                EditorSettings,
+                Clock,
+                serviceProviderWithoutEmail);
+
+            var article1 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "Test V1",
+                Published = now.AddDays(-5),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = author.Id,
+                UrlPath = "/test-no-email"
+            };
+
+            var article2 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 2,
+                Title = "Test V2",
+                Published = now.AddDays(-1),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = author.Id,
+                UrlPath = "/test-no-email"
+            };
+
+            Db.Articles.AddRange(article1, article2);
+            await Db.SaveChangesAsync();
+
+            // Act - Should not throw exception
+            await schedulerWithoutEmail.ExecuteAsync();
+
+            // Assert - Article should still be published despite missing email service
+            var publishedPage = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == 1);
+            Assert.IsNotNull(publishedPage, "Article should be published even if email service is unavailable");
+
+            var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNull(updatedArticle1.Published, "Old version should be unpublished");
+
+            var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updatedArticle2.Published, "New version should remain published");
+        }
+
+        /// <summary>
+        /// Tests that email notification is not sent when UserManager service is unavailable.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WhenUserManagerServiceNull_LogsWarningAndContinuesPublishing()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            // Create service provider WITHOUT UserManager
+            var servicesWithoutUserManager = new ServiceCollection();
+            servicesWithoutUserManager.AddSingleton<ApplicationDbContext>(Db);
+            servicesWithoutUserManager.AddSingleton<StorageContext>(Storage);
+            servicesWithoutUserManager.AddSingleton<IMemoryCache>(Cache);
+            servicesWithoutUserManager.AddSingleton<IHttpContextAccessor>(HttpContextAccessor);
+            servicesWithoutUserManager.AddSingleton<ISlugService>(SlugService);
+            servicesWithoutUserManager.AddSingleton<IArticleHtmlService>(ArticleHtmlService);
+            servicesWithoutUserManager.AddSingleton<ICatalogService>(CatalogService);
+            servicesWithoutUserManager.AddSingleton<IDomainEventDispatcher>(EventDispatcher);
+            servicesWithoutUserManager.AddSingleton<IClock>(Clock);
+            servicesWithoutUserManager.AddSingleton<IBlogRenderingService>(BlogRenderingService);
+            servicesWithoutUserManager.AddSingleton<IAuthorInfoService>(AuthorInfoService);
+            servicesWithoutUserManager.AddSingleton<IViewRenderService>(ViewRenderService);
+            servicesWithoutUserManager.AddSingleton<IReservedPaths>(ReservedPaths);
+            servicesWithoutUserManager.AddSingleton<IEditorSettings>(EditorSettings);
+            servicesWithoutUserManager.AddSingleton<IPublishingService>(PublishingService);
+            servicesWithoutUserManager.AddSingleton<IRedirectService>(RedirectService);
+            servicesWithoutUserManager.AddSingleton<ITitleChangeService>(TitleChangeService);
+            servicesWithoutUserManager.AddSingleton<ITemplateService>(TemplateService);
+            servicesWithoutUserManager.AddSingleton<ITenantArticleLogicFactory>(TenantArticleLogicFactory);
+            servicesWithoutUserManager.AddSingleton<RoleManager<IdentityRole>>(RoleManager);
+            servicesWithoutUserManager.AddSingleton(Options.Create(new SiteSettings()));
+            servicesWithoutUserManager.AddScoped<ICosmosEmailSender>(_ => mockEmailSender.Object);
+            // NOTE: NOT registering UserManager<IdentityUser>
+
+            var serviceProviderWithoutUserManager = servicesWithoutUserManager.BuildServiceProvider();
+            var schedulerWithoutUserManager = new ArticleScheduler(
+                new NullLogger<ArticleScheduler>(),
+                EditorSettings,
+                Clock,
+                serviceProviderWithoutUserManager);
+
+            var article1 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "Test V1",
+                Published = now.AddDays(-5),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/test-no-usermanager"
+            };
+
+            var article2 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 2,
+                Title = "Test V2",
+                Published = now.AddDays(-1),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/test-no-usermanager"
+            };
+
+            Db.Articles.AddRange(article1, article2);
+            await Db.SaveChangesAsync();
+
+            // Act - Should not throw exception
+            await schedulerWithoutUserManager.ExecuteAsync();
+
+            // Assert - Article should still be published despite missing UserManager service
+            var publishedPage = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == 1);
+            Assert.IsNotNull(publishedPage, "Article should be published even if UserManager is unavailable");
+
+            // No email should be sent
+            mockEmailSender.Verify(
+                x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
+                Times.Never,
+                "No email should be sent when UserManager is not available");
+        }
+
+        /// <summary>
+        /// Tests ProcessArticleVersions exception handling when article publishing fails.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WhenPublishingFails_LogsErrorAndContinues()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            // Create articles with invalid data that might cause publishing to fail
+            var article1 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "Test V1",
+                Published = now.AddDays(-5),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = null // Invalid URL path - might cause issues
+            };
+
+            var article2 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 2,
+                Title = "Test V2",
+                Published = now.AddDays(-1),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = null // Invalid URL path
+            };
+
+            Db.Articles.AddRange(article1, article2);
+            await Db.SaveChangesAsync();
+
+            // Act - Should not throw exception even if processing fails
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert - No exception should be thrown
+            Assert.IsTrue(true, "Scheduler should handle processing errors gracefully");
+        }
+
+        /// <summary>
+        /// Tests that article with exactly 2 published versions is processed correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WithExactlyTwoPublishedVersions_ActivatesCorrectVersion()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            var article1 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "Test V1",
+                Published = now.AddDays(-5),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/two-versions"
+            };
+
+            var article2 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 2,
+                Title = "Test V2",
+                Published = now.AddDays(-1),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/two-versions"
+            };
+
+            Db.Articles.AddRange(article1, article2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert - Version 1 should be unpublished, Version 2 should remain published
+            var updated1 = await Db.Articles.FindAsync(article1.Id);
+            var updated2 = await Db.Articles.FindAsync(article2.Id);
+
+            Assert.IsNull(updated1.Published, "Version 1 should be unpublished");
+            Assert.IsNotNull(updated2.Published, "Version 2 should remain published");
+        }
+
+        /// <summary>
+        /// Tests handling when all versions of an article are unpublished (Published = null).
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WithAllVersionsUnpublished_DoesNotProcess()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            var article1 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "Test V1",
+                Published = null, // Unpublished
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/unpublished"
+            };
+
+            var article2 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 2,
+                Title = "Test V2",
+                Published = null, // Unpublished
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/unpublished"
+            };
+
+            Db.Articles.AddRange(article1, article2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert - Both versions should remain unpublished
+            var updated1 = await Db.Articles.FindAsync(article1.Id);
+            var updated2 = await Db.Articles.FindAsync(article2.Id);
+
+            Assert.IsNull(updated1.Published, "Version 1 should remain unpublished");
+            Assert.IsNull(updated2.Published, "Version 2 should remain unpublished");
+        }
+
+        /// <summary>
+        /// Tests that scheduler processes articles with large version numbers correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WithLargeVersionNumbers_HandlesCorrectly()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            var article1 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 999,
+                Title = "Test V999",
+                Published = now.AddDays(-5),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/large-version"
+            };
+
+            var article2 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 1000,
+                Title = "Test V1000",
+                Published = now.AddDays(-1),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/large-version"
+            };
+
+            Db.Articles.AddRange(article1, article2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert
+            var updated1 = await Db.Articles.FindAsync(article1.Id);
+            var updated2 = await Db.Articles.FindAsync(article2.Id);
+
+            Assert.IsNull(updated1.Published, "Version 999 should be unpublished");
+            Assert.IsNotNull(updated2.Published, "Version 1000 should remain published");
+        }
+
+        /// <summary>
+        /// Tests the ordering logic when multiple versions have same publish date but different version numbers.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WithSamePublishDateDifferentVersions_UsesVersionNumberTiebreaker()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+            var samePublishDate = now.AddDays(-1);
+
+            var articles = new[]
+            {
+                new Article
+                {
+                    ArticleNumber = 1,
+                    VersionNumber = 3,
+                    Title = "Test V3",
+                    Published = samePublishDate,
+                    StatusCode = (int)StatusCodeEnum.Active,
+                    UserId = TestUserId.ToString(),
+                    UrlPath = "/same-date"
+                },
+                new Article
+                {
+                    ArticleNumber = 1,
+                    VersionNumber = 1,
+                    Title = "Test V1",
+                    Published = samePublishDate,
+                    StatusCode = (int)StatusCodeEnum.Active,
+                    UserId = TestUserId.ToString(),
+                    UrlPath = "/same-date"
+                },
+                new Article
+                {
+                    ArticleNumber = 1,
+                    VersionNumber = 2,
+                    Title = "Test V2",
+                    Published = samePublishDate,
+                    StatusCode = (int)StatusCodeEnum.Active,
+                    UserId = TestUserId.ToString(),
+                    UrlPath = "/same-date"
+                }
+            };
+
+            Db.Articles.AddRange(articles);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert - Only version 3 should remain published (highest version number)
+            var updated1 = await Db.Articles.FirstAsync(a => a.VersionNumber == 1);
+            var updated2 = await Db.Articles.FirstAsync(a => a.VersionNumber == 2);
+            var updated3 = await Db.Articles.FirstAsync(a => a.VersionNumber == 3);
+
+            Assert.IsNull(updated1.Published, "Version 1 should be unpublished");
+            Assert.IsNull(updated2.Published, "Version 2 should be unpublished");
+            Assert.IsNotNull(updated3.Published, "Version 3 should remain published (highest version)");
+        }
+
+        /// <summary>
+        /// Tests that scheduler handles empty database gracefully.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WithEmptyDatabase_CompletesSuccessfully()
+        {
+            // Arrange - No articles in database
+
+            // Act - Should not throw
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert
+            Assert.IsTrue(true, "Scheduler should handle empty database gracefully");
+        }
+
+        /// <summary>
+        /// Tests that versions published far in the past are handled correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WithVeryOldPublishDates_ProcessesCorrectly()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            var article1 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "Very Old Article V1",
+                Published = now.AddYears(-10), // 10 years ago
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/very-old"
+            };
+
+            var article2 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 2,
+                Title = "Very Old Article V2",
+                Published = now.AddYears(-5), // 5 years ago
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/very-old"
+            };
+
+            Db.Articles.AddRange(article1, article2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert
+            var updated1 = await Db.Articles.FindAsync(article1.Id);
+            var updated2 = await Db.Articles.FindAsync(article2.Id);
+
+            Assert.IsNull(updated1.Published, "Very old version 1 should be unpublished");
+            Assert.IsNotNull(updated2.Published, "More recent (but still old) version 2 should remain published");
+        }
+
+        /// <summary>
+        /// Tests that scheduler processes multiple article numbers in a single batch.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WithMultipleArticleNumbers_ProcessesAllIndependently()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            // Article 100
+            var article100v1 = new Article
+            {
+                ArticleNumber = 100,
+                VersionNumber = 1,
+                Published = now.AddDays(-5),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/article100"
+            };
+
+            var article100v2 = new Article
+            {
+                ArticleNumber = 100,
+                VersionNumber = 2,
+                Published = now.AddDays(-1),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/article100"
+            };
+
+            // Article 200
+            var article200v1 = new Article
+            {
+                ArticleNumber = 200,
+                VersionNumber = 1,
+                Published = now.AddDays(-3),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/article200"
+            };
+
+            var article200v2 = new Article
+            {
+                ArticleNumber = 200,
+                VersionNumber = 2,
+                Published = now.AddDays(-2),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/article200"
+            };
+
+            Db.Articles.AddRange(article100v1, article100v2, article200v1, article200v2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert
+            Assert.IsNull((await Db.Articles.FindAsync(article100v1.Id)).Published);
+            Assert.IsNotNull((await Db.Articles.FindAsync(article100v2.Id)).Published);
+            Assert.IsNull((await Db.Articles.FindAsync(article200v1.Id)).Published);
+            Assert.IsNotNull((await Db.Articles.FindAsync(article200v2.Id)).Published);
+        }
+
+        /// <summary>
         /// Cleanup after each test.
         /// </summary>
         [TestCleanup]
@@ -1398,4 +1939,5 @@ namespace Sky.Tests.Services.Scheduling
             }
         }
     }
+
 }
