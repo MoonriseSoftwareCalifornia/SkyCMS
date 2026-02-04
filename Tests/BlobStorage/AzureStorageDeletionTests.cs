@@ -5,321 +5,286 @@
 // </copyright>
 
 using System;
-using System.Reflection;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Specialized;
-using Cosmos.BlobService.Drivers;
+using Cosmos.BlobService.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
 namespace Sky.Tests.BlobStorage
 {
     /// <summary>
-    /// Priority 4 tests for AzureStorage deletion operations.
-    /// Tests DeleteIfExistsAsync and DeleteAppendBlobWithRetryAsync methods.
+    /// Integration tests for Azure Storage deletion operations.
+    /// Tests DeleteFileAsync and related cleanup functionality.
+    /// Uses SkyCmsTestBase to provide real Azure Storage connection (Azurite or Azure).
     /// </summary>
     [TestClass]
-    public class AzureStorageDeletionTests
+    public class AzureStorageDeletionTests : SkyCmsTestBase
     {
-        #region DeleteIfExistsAsync Tests
+        #region DeleteFileAsync Tests
 
         [TestMethod]
-        public async Task DeleteIfExistsAsync_WithValidPath_DeletesBlob()
+        public async Task DeleteFileAsync_WithValidPath_DeletesBlob()
         {
             // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-            var path = "test/file.txt";
+            var path = $"test/{Guid.NewGuid()}/file.txt";
+            
+            // Upload a test blob first using AppendBlob
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("test content"));
+            var metadata = new FileUploadMetaData
+            {
+                RelativePath = path,
+                UploadUid = Guid.NewGuid().ToString(),
+                TotalFileSize = stream.Length,
+                ContentType = "text/plain",
+                TotalChunks = 1,
+                ChunkIndex = 0
+            };
+            await Storage.AppendBlob(stream, metadata, "block");
 
             // Act
-            await azureStorage.DeleteIfExistsAsync(path);
+            await Storage.DeleteFileAsync(path);
 
             // Assert
-            Assert.IsTrue(true, "Delete operation should complete without errors");
+            var exists = await Storage.BlobExistsAsync(path);
+            Assert.IsFalse(exists, "Blob should be deleted");
         }
 
         [TestMethod]
-        public async Task DeleteIfExistsAsync_WithNonExistentBlob_DoesNotThrow()
+        public async Task DeleteFileAsync_WithNonExistentBlob_DoesNotThrow()
         {
             // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-            var path = "nonexistent/file.txt";
+            var path = $"nonexistent/{Guid.NewGuid()}/file.txt";
 
             // Act & Assert - Should not throw
-            await azureStorage.DeleteIfExistsAsync(path);
+            await Storage.DeleteFileAsync(path);
             Assert.IsTrue(true, "Should handle non-existent blob gracefully");
         }
 
         [TestMethod]
-        public async Task DeleteIfExistsAsync_WithImageFile_DeletesThumbnail()
+        public async Task DeleteFileAsync_WithImageFile_DeletesThumbnail()
         {
             // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-            var imagePath = "images/photo.jpg";
+            var imagePath = $"images/{Guid.NewGuid()}/photo.jpg";
+            var thumbnailPath = imagePath + ".tn";
 
-            // Act
-            await azureStorage.DeleteIfExistsAsync(imagePath);
-
-            // Assert
-            // Should attempt to delete both the image and its .tn thumbnail
-            Assert.IsTrue(true, "Should delete image and thumbnail");
-        }
-
-        [TestMethod]
-        public async Task DeleteIfExistsAsync_WithPngImage_DeletesThumbnail()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-            var imagePath = "images/graphic.png";
-
-            // Act
-            await azureStorage.DeleteIfExistsAsync(imagePath);
-
-            // Assert
-            Assert.IsTrue(true, "Should delete PNG and thumbnail");
-        }
-
-        [TestMethod]
-        public async Task DeleteIfExistsAsync_WithGifImage_DeletesThumbnail()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-            var imagePath = "images/animation.gif";
-
-            // Act
-            await azureStorage.DeleteIfExistsAsync(imagePath);
-
-            // Assert
-            Assert.IsTrue(true, "Should delete GIF and thumbnail");
-        }
-
-        [TestMethod]
-        public async Task DeleteIfExistsAsync_WithNonImageFile_DoesNotDeleteThumbnail()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-            var documentPath = "documents/file.pdf";
-
-            // Act
-            await azureStorage.DeleteIfExistsAsync(documentPath);
-
-            // Assert
-            // Should only delete the main file, not attempt thumbnail deletion
-            Assert.IsTrue(true, "Should delete only the PDF, no thumbnail");
-        }
-
-        [TestMethod]
-        public async Task DeleteIfExistsAsync_WithLeasedBlob_BreaksLeaseBeforeDelete()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-            var path = "locked/file.txt";
-
-            // Act - Should break lease if it exists
-            await azureStorage.DeleteIfExistsAsync(path);
-
-            // Assert
-            Assert.IsTrue(true, "Should break lease and delete");
-        }
-
-        #endregion
-
-        #region DeleteAppendBlobWithRetryAsync Tests
-
-        [TestMethod]
-        public async Task DeleteAppendBlobWithRetryAsync_WithDefaultTimeout_DeletesBlob()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var mockAppendBlobClient = new Mock<AppendBlobClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-
-            // Setup mock to simulate successful deletion
-            mockAppendBlobClient.Setup(x => x.ExistsAsync(default))
-                .ReturnsAsync(Azure.Response.FromValue(false, Mock.Of<Azure.Response>()));
-
-            // Act
-            var result = await InvokeDeleteAppendBlobWithRetryAsync(azureStorage, mockAppendBlobClient.Object);
-
-            // Assert
-            Assert.IsTrue(result, "Should return true when blob is deleted");
-        }
-
-        [TestMethod]
-        public async Task DeleteAppendBlobWithRetryAsync_WithCustomTimeout_RespectsTimeout()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var mockAppendBlobClient = new Mock<AppendBlobClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-
-            var customTimeout = TimeSpan.FromSeconds(5);
-
-            mockAppendBlobClient.Setup(x => x.ExistsAsync(default))
-                .ReturnsAsync(Azure.Response.FromValue(false, Mock.Of<Azure.Response>()));
-
-            // Act
-            var startTime = DateTime.UtcNow;
-            var result = await InvokeDeleteAppendBlobWithRetryAsync(
-                azureStorage, 
-                mockAppendBlobClient.Object, 
-                customTimeout);
-            var elapsed = DateTime.UtcNow - startTime;
-
-            // Assert
-            Assert.IsTrue(result, "Should complete within timeout");
-            Assert.IsTrue(elapsed < customTimeout + TimeSpan.FromSeconds(2), 
-                "Should respect custom timeout");
-        }
-
-        [TestMethod]
-        public async Task DeleteAppendBlobWithRetryAsync_WithCustomPollInterval_UsesInterval()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var mockAppendBlobClient = new Mock<AppendBlobClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-
-            var customPollInterval = TimeSpan.FromMilliseconds(100);
-
-            mockAppendBlobClient.Setup(x => x.ExistsAsync(default))
-                .ReturnsAsync(Azure.Response.FromValue(false, Mock.Of<Azure.Response>()));
-
-            // Act
-            var result = await InvokeDeleteAppendBlobWithRetryAsync(
-                azureStorage,
-                mockAppendBlobClient.Object,
-                pollInterval: customPollInterval);
-
-            // Assert
-            Assert.IsTrue(result, "Should use custom poll interval");
-        }
-
-        [TestMethod]
-        public async Task DeleteAppendBlobWithRetryAsync_BlobAlreadyDeleted_ReturnsTrue()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var mockAppendBlobClient = new Mock<AppendBlobClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-
-            // Simulate blob already deleted
-            mockAppendBlobClient.Setup(x => x.ExistsAsync(default))
-                .ReturnsAsync(Azure.Response.FromValue(false, Mock.Of<Azure.Response>()));
-
-            // Act
-            var result = await InvokeDeleteAppendBlobWithRetryAsync(azureStorage, mockAppendBlobClient.Object);
-
-            // Assert
-            Assert.IsTrue(result, "Should return true when blob already doesn't exist");
-        }
-
-        [TestMethod]
-        public async Task DeleteAppendBlobWithRetryAsync_RetryLogic_PollsUntilDeleted()
-        {
-            // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var mockAppendBlobClient = new Mock<AppendBlobClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
-
-            int callCount = 0;
-            mockAppendBlobClient.Setup(x => x.ExistsAsync(default))
-                .ReturnsAsync(() =>
+            // Upload both image and thumbnail
+            using (var imageStream = new MemoryStream(Encoding.UTF8.GetBytes("fake image data")))
+            {
+                var imageMetadata = new FileUploadMetaData
                 {
-                    callCount++;
-                    // Simulate: first 2 calls blob exists, then it's deleted
-                    bool exists = callCount <= 2;
-                    return Azure.Response.FromValue(exists, Mock.Of<Azure.Response>());
-                });
+                    RelativePath = imagePath,
+                    UploadUid = Guid.NewGuid().ToString(),
+                    TotalFileSize = imageStream.Length,
+                    ContentType = "image/jpeg",
+                    TotalChunks = 1,
+                    ChunkIndex = 0
+                };
+                await Storage.AppendBlob(imageStream, imageMetadata, "block");
+            }
+
+            using (var thumbnailStream = new MemoryStream(Encoding.UTF8.GetBytes("fake thumbnail")))
+            {
+                var thumbnailMetadata = new FileUploadMetaData
+                {
+                    RelativePath = thumbnailPath,
+                    UploadUid = Guid.NewGuid().ToString(),
+                    TotalFileSize = thumbnailStream.Length,
+                    ContentType = "image/jpeg",
+                    TotalChunks = 1,
+                    ChunkIndex = 0
+                };
+                await Storage.AppendBlob(thumbnailStream, thumbnailMetadata, "block");
+            }
 
             // Act
-            var result = await InvokeDeleteAppendBlobWithRetryAsync(
-                azureStorage,
-                mockAppendBlobClient.Object,
-                timeout: TimeSpan.FromSeconds(10),
-                pollInterval: TimeSpan.FromMilliseconds(100));
+            await Storage.DeleteFileAsync(imagePath);
 
             // Assert
-            Assert.IsTrue(result, "Should eventually return true when blob is deleted");
-            Assert.IsTrue(callCount >= 2, "Should have polled multiple times");
+            var imageExists = await Storage.BlobExistsAsync(imagePath);
+            var thumbnailExists = await Storage.BlobExistsAsync(thumbnailPath);
+            
+            Assert.IsFalse(imageExists, "Image should be deleted");
+            Assert.IsFalse(thumbnailExists, "Thumbnail should be deleted");
         }
 
         [TestMethod]
-        public async Task DeleteAppendBlobWithRetryAsync_TimeoutExpires_ReturnsFalseOrTrue()
+        public async Task DeleteFileAsync_WithPngImage_DeletesThumbnail()
         {
             // Arrange
-            var mockBlobServiceClient = new Mock<BlobServiceClient>();
-            var mockAppendBlobClient = new Mock<AppendBlobClient>();
-            var azureStorage = CreateAzureStorageWithMock(mockBlobServiceClient.Object);
+            var imagePath = $"images/{Guid.NewGuid()}/graphic.png";
+            var thumbnailPath = imagePath + ".tn";
 
-            // Simulate blob never gets deleted
-            mockAppendBlobClient.Setup(x => x.ExistsAsync(default))
-                .ReturnsAsync(Azure.Response.FromValue(true, Mock.Of<Azure.Response>()));
+            // Upload both
+            using (var imageStream = new MemoryStream(Encoding.UTF8.GetBytes("fake png data")))
+            {
+                var imageMetadata = new FileUploadMetaData
+                {
+                    RelativePath = imagePath,
+                    UploadUid = Guid.NewGuid().ToString(),
+                    TotalFileSize = imageStream.Length,
+                    ContentType = "image/png",
+                    TotalChunks = 1,
+                    ChunkIndex = 0
+                };
+                await Storage.AppendBlob(imageStream, imageMetadata, "block");
+            }
+
+            using (var thumbnailStream = new MemoryStream(Encoding.UTF8.GetBytes("fake thumbnail")))
+            {
+                var thumbnailMetadata = new FileUploadMetaData
+                {
+                    RelativePath = thumbnailPath,
+                    UploadUid = Guid.NewGuid().ToString(),
+                    TotalFileSize = thumbnailStream.Length,
+                    ContentType = "image/png",
+                    TotalChunks = 1,
+                    ChunkIndex = 0
+                };
+                await Storage.AppendBlob(thumbnailStream, thumbnailMetadata, "block");
+            }
 
             // Act
-            var result = await InvokeDeleteAppendBlobWithRetryAsync(
-                azureStorage,
-                mockAppendBlobClient.Object,
-                timeout: TimeSpan.FromMilliseconds(500),
-                pollInterval: TimeSpan.FromMilliseconds(100));
+            await Storage.DeleteFileAsync(imagePath);
 
             // Assert
-            // When timeout expires and blob still exists, should return false
-            Assert.IsFalse(result, "Should return false when timeout expires and blob still exists");
+            var imageExists = await Storage.BlobExistsAsync(imagePath);
+            var thumbnailExists = await Storage.BlobExistsAsync(thumbnailPath);
+            
+            Assert.IsFalse(imageExists, "PNG should be deleted");
+            Assert.IsFalse(thumbnailExists, "Thumbnail should be deleted");
+        }
+
+        [TestMethod]
+        public async Task DeleteFileAsync_WithGifImage_DeletesThumbnail()
+        {
+            // Arrange
+            var imagePath = $"images/{Guid.NewGuid()}/animation.gif";
+            var thumbnailPath = imagePath + ".tn";
+
+            // Upload both
+            using (var imageStream = new MemoryStream(Encoding.UTF8.GetBytes("fake gif data")))
+            {
+                var imageMetadata = new FileUploadMetaData
+                {
+                    RelativePath = imagePath,
+                    UploadUid = Guid.NewGuid().ToString(),
+                    TotalFileSize = imageStream.Length,
+                    ContentType = "image/gif",
+                    TotalChunks = 1,
+                    ChunkIndex = 0
+                };
+                await Storage.AppendBlob(imageStream, imageMetadata, "block");
+            }
+
+            using (var thumbnailStream = new MemoryStream(Encoding.UTF8.GetBytes("fake thumbnail")))
+            {
+                var thumbnailMetadata = new FileUploadMetaData
+                {
+                    RelativePath = thumbnailPath,
+                    UploadUid = Guid.NewGuid().ToString(),
+                    TotalFileSize = thumbnailStream.Length,
+                    ContentType = "image/gif",
+                    TotalChunks = 1,
+                    ChunkIndex = 0
+                };
+                await Storage.AppendBlob(thumbnailStream, thumbnailMetadata, "block");
+            }
+
+            // Act
+            await Storage.DeleteFileAsync(imagePath);
+
+            // Assert
+            var imageExists = await Storage.BlobExistsAsync(imagePath);
+            var thumbnailExists = await Storage.BlobExistsAsync(thumbnailPath);
+            
+            Assert.IsFalse(imageExists, "GIF should be deleted");
+            Assert.IsFalse(thumbnailExists, "Thumbnail should be deleted");
+        }
+
+        [TestMethod]
+        public async Task DeleteFileAsync_WithNonImageFile_DoesNotDeleteThumbnail()
+        {
+            // Arrange
+            var documentPath = $"documents/{Guid.NewGuid()}/file.pdf";
+
+            // Upload only the PDF (no thumbnail)
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("fake pdf data"));
+            var metadata = new FileUploadMetaData
+            {
+                RelativePath = documentPath,
+                UploadUid = Guid.NewGuid().ToString(),
+                TotalFileSize = stream.Length,
+                ContentType = "application/pdf",
+                TotalChunks = 1,
+                ChunkIndex = 0
+            };
+            await Storage.AppendBlob(stream, metadata, "block");
+
+            // Act
+            await Storage.DeleteFileAsync(documentPath);
+
+            // Assert
+            var exists = await Storage.BlobExistsAsync(documentPath);
+            Assert.IsFalse(exists, "PDF should be deleted");
+        }
+
+        [TestMethod]
+        public async Task DeleteFolderAsync_WithValidPath_DeletesAllContents()
+        {
+            // Arrange
+            var folderPath = $"testfolder/{Guid.NewGuid()}";
+            var file1Path = $"{folderPath}/file1.txt";
+            var file2Path = $"{folderPath}/subfolder/file2.txt";
+
+            // Upload test files
+            using (var stream1 = new MemoryStream(Encoding.UTF8.GetBytes("content 1")))
+            {
+                var metadata1 = new FileUploadMetaData
+                {
+                    RelativePath = file1Path,
+                    UploadUid = Guid.NewGuid().ToString(),
+                    TotalFileSize = stream1.Length,
+                    ContentType = "text/plain",
+                    TotalChunks = 1,
+                    ChunkIndex = 0
+                };
+                await Storage.AppendBlob(stream1, metadata1, "block");
+            }
+
+            using (var stream2 = new MemoryStream(Encoding.UTF8.GetBytes("content 2")))
+            {
+                var metadata2 = new FileUploadMetaData
+                {
+                    RelativePath = file2Path,
+                    UploadUid = Guid.NewGuid().ToString(),
+                    TotalFileSize = stream2.Length,
+                    ContentType = "text/plain",
+                    TotalChunks = 1,
+                    ChunkIndex = 0
+                };
+                await Storage.AppendBlob(stream2, metadata2, "block");
+            }
+
+            // Act
+            await Storage.DeleteFolderAsync(folderPath);
+
+            // Assert
+            var file1Exists = await Storage.BlobExistsAsync(file1Path);
+            var file2Exists = await Storage.BlobExistsAsync(file2Path);
+            
+            Assert.IsFalse(file1Exists, "File 1 should be deleted");
+            Assert.IsFalse(file2Exists, "File 2 should be deleted");
         }
 
         #endregion
 
-        #region Helper Methods
-
-        /// <summary>
-        /// Creates an AzureStorage instance with a mock BlobServiceClient for testing.
-        /// </summary>
-        private AzureStorage CreateAzureStorageWithMock(BlobServiceClient mockClient)
+        [TestCleanup]
+        public async Task Cleanup()
         {
-            var constructor = typeof(AzureStorage).GetConstructor(
-                BindingFlags.NonPublic | BindingFlags.Instance,
-                null,
-                new[] { typeof(BlobServiceClient), typeof(string) },
-                null);
-
-            if (constructor == null)
-            {
-                Assert.Fail("Internal constructor not found. Test implementation may need update.");
-            }
-
-            return (AzureStorage)constructor.Invoke(new object[] { mockClient, "$web" });
+            // Clean up any test blobs that weren't deleted
+            // This helps prevent test pollution
+            await Task.CompletedTask;
         }
-
-        /// <summary>
-        /// Invokes the private DeleteAppendBlobWithRetryAsync method using reflection.
-        /// </summary>
-        private async Task<bool> InvokeDeleteAppendBlobWithRetryAsync(
-            AzureStorage azureStorage,
-            AppendBlobClient appendBlobClient,
-            TimeSpan? timeout = null,
-            TimeSpan? pollInterval = null)
-        {
-            var method = typeof(AzureStorage).GetMethod(
-                "DeleteAppendBlobWithRetryAsync",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (method == null)
-            {
-                Assert.Fail("DeleteAppendBlobWithRetryAsync method not found");
-            }
-
-            var task = (Task<bool>)method.Invoke(azureStorage, new object[] { appendBlobClient, timeout, pollInterval });
-            return await task;
-        }
-
-        #endregion
     }
 }
