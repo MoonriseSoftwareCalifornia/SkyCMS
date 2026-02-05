@@ -29,6 +29,7 @@ namespace Sky.Editor.Services.Publishing
     using Newtonsoft.Json;
     using Sky.Cms.Services;
     using Sky.Editor.Infrastructure.Time;
+    using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.BlogPublishing;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
@@ -48,14 +49,15 @@ namespace Sky.Editor.Services.Publishing
         private readonly IStorageContext _storage;
         private readonly IEditorSettings _settings;
         private readonly ILogger<PublishingService> _logger;
-        private readonly IHttpContextAccessor _accessor;
-        private readonly Authors.IAuthorInfoService _authors;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IAuthorInfoService _authors;
         private readonly IClock _systemClock;
         private readonly IBlogRenderingService blogRenderingService;
         private readonly IViewRenderService viewRenderService;
         private readonly IServiceProvider _serviceProvider;
-        private readonly SemaphoreSlim _layoutLock = new SemaphoreSlim(1, 1);
         private readonly IPublishingProgressReporter _progressReporter;
+        private readonly SemaphoreSlim _writeTocSemaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _layoutLock = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PublishingService"/> class.
@@ -88,7 +90,7 @@ namespace Sky.Editor.Services.Publishing
             _storage = storage;
             _settings = settings;
             _logger = logger;
-            _accessor = accessor;
+            _httpContextAccessor = accessor;
             _authors = authors;
             _systemClock = systemClock;
             this.blogRenderingService = blogRenderingService;
@@ -99,7 +101,7 @@ namespace Sky.Editor.Services.Publishing
 
         private LayoutViewModel defaultLayout;
 
-        private Guid userId => Guid.Parse(_accessor.HttpContext.User.Claims
+        private Guid userId => Guid.Parse(_httpContextAccessor.HttpContext.User.Claims
             .FirstOrDefault(f => f.Type == "sub")?.Value ?? Guid.Empty.ToString());
 
         /// <summary>
@@ -202,6 +204,10 @@ namespace Sky.Editor.Services.Publishing
 
                 DeleteStatic(prior);
             }
+
+            // ✅ BUGFIX: Save the Article entity with its Published property
+            // This ensures the Published timestamp persists to the database
+            await _db.SaveChangesAsync();
 
             var authorInfo = await _authors.GetOrCreateAsync(userId);
 
@@ -404,7 +410,7 @@ namespace Sky.Editor.Services.Publishing
                 pageIds.Count,
                 "Purging CDN cache...");
             
-            var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _accessor.HttpContext);
+            var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _httpContextAccessor.HttpContext);
             if (cdnService != null)
             {
                 await cdnService.PurgeCdn();
@@ -647,32 +653,42 @@ namespace Sky.Editor.Services.Publishing
                 return;
             }
 
-            var toc = await new ArticleLogic(
-                _db,
-                new MemoryCache(new MemoryCacheOptions()),
-                _settings.PublisherUrl,
-                _settings.BlobPublicUrl,
-                true)
-                .GetTableOfContents("/", 0, 500, false);
-
-            if (toc == null)
+            // ✅ ADD THREAD-SAFETY: Ensure only one operation writes TOC at a time
+            // This prevents "DbContext concurrent operation" exceptions when multiple tenants publish simultaneously
+            await _writeTocSemaphore.WaitAsync();
+            try
             {
-                return;
+                var toc = await new ArticleLogic(
+                    _db,
+                    new MemoryCache(new MemoryCacheOptions()),
+                    _settings.PublisherUrl,
+                    _settings.BlobPublicUrl,
+                    true)
+                    .GetTableOfContents("/", 0, 500, false);
+
+                if (toc == null)
+                {
+                    return;
+                }
+
+                var json = JsonConvert.SerializeObject(toc);
+                var target = string.IsNullOrEmpty(prefix) ? "/toc.json" : "/" + prefix + "/toc.json";
+                using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                await _storage.AppendBlob(ms, new FileUploadMetaData
+                {
+                    ChunkIndex = 0,
+                    ContentType = "application/json",
+                    FileName = Path.GetFileName(target),
+                    RelativePath = target,
+                    TotalChunks = 1,
+                    TotalFileSize = ms.Length,
+                    UploadUid = Guid.NewGuid().ToString()
+                });
             }
-
-            var json = JsonConvert.SerializeObject(toc);
-            var target = string.IsNullOrEmpty(prefix) ? "/toc.json" : "/" + prefix + "/toc.json";
-            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
-            await _storage.AppendBlob(ms, new FileUploadMetaData
+            finally
             {
-                ChunkIndex = 0,
-                ContentType = "application/json",
-                FileName = Path.GetFileName(target),
-                RelativePath = target,
-                TotalChunks = 1,
-                TotalFileSize = ms.Length,
-                UploadUid = Guid.NewGuid().ToString()
-            });
+                _writeTocSemaphore.Release();
+            }
         }
 
         /// <summary>
@@ -901,7 +917,7 @@ namespace Sky.Editor.Services.Publishing
             var results = new List<CdnResult>();
             try
             {
-                var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _accessor.HttpContext);
+                var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _httpContextAccessor.HttpContext);
                 if (cdnService == null)
                 {
                     return results;

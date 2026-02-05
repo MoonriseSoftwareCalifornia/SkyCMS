@@ -316,6 +316,12 @@ namespace Sky.Tests.Integration
                 var article = await ctx.Logic.CreateArticle($"Concurrent Article {index}", ctx.TestUserId);
                 var articleEntity = await ctx.Db.Articles.FindAsync(article.Id);
                 await ctx.PublishingService.PublishAsync(articleEntity);
+                
+                // ? RELOAD the article from the database to get the updated Published property
+                // The articleEntity has been modified by PublishAsync, so we need to refresh it from DB
+                var publishedArticle = await ctx.Db.Articles.FindAsync(article.Id);
+                article.Published = publishedArticle.Published;
+                
                 return article;
             }).ToArray();
 

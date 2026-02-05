@@ -221,13 +221,42 @@ namespace Sky.Tests
                 var clock = (IClock)clockField?.GetValue(baseTestContext);
                 var slugService = (ISlugService)slugServiceField?.GetValue(baseTestContext);
                 var articleHtmlService = (IArticleHtmlService)articleHtmlServiceField?.GetValue(baseTestContext);
-                var publishingService = (IPublishingService)publishingServiceField?.GetValue(baseTestContext);
+                // DON'T use shared publishingService - each tenant needs its own with its own DbContext
+                // var publishingService = (IPublishingService)publishingServiceField?.GetValue(baseTestContext);
                 var titleChangeService = (ITitleChangeService)titleChangeServiceField?.GetValue(baseTestContext);
                 var redirectService = (IRedirectService)redirectServiceField?.GetValue(baseTestContext);
                 var templateService = (ITemplateService)templateServiceField?.GetValue(baseTestContext);
 
-                // Store publishing service for external access
-                PublishingService = publishingService;
+                // ? CREATE TENANT-SPECIFIC PublishingService with THIS tenant's DbContext
+                // This prevents DbContext threading issues when multiple tenants publish concurrently
+                var authorInfoServiceField = typeof(SkyCmsTestBase).GetField("AuthorInfoService", BindingFlags.NonPublic | BindingFlags.Instance);
+                var blogRenderingServiceField = typeof(SkyCmsTestBase).GetField("BlogRenderingService", BindingFlags.NonPublic | BindingFlags.Instance);
+                var viewRenderServiceField = typeof(SkyCmsTestBase).GetField("ViewRenderService", BindingFlags.NonPublic | BindingFlags.Instance);
+                var httpContextAccessorField = typeof(SkyCmsTestBase).GetField("HttpContextAccessor", BindingFlags.NonPublic | BindingFlags.Instance);
+                
+                var authorInfoService = (Sky.Editor.Services.Authors.IAuthorInfoService)authorInfoServiceField?.GetValue(baseTestContext);
+                var blogRenderingService = (Sky.Editor.Services.BlogPublishing.IBlogRenderingService)blogRenderingServiceField?.GetValue(baseTestContext);
+                var viewRenderService = (Sky.Cms.Services.IViewRenderService)viewRenderServiceField?.GetValue(baseTestContext);
+                var httpContextAccessor = (IHttpContextAccessor)httpContextAccessorField?.GetValue(baseTestContext);
+                
+                // Build a minimal service provider for this tenant's PublishingService
+                var tenantServiceCollection = new ServiceCollection();
+                tenantServiceCollection.AddSingleton(DbContext); // Use THIS tenant's DbContext
+                tenantServiceCollection.AddSingleton(storage);
+                var tenantServiceProvider = tenantServiceCollection.BuildServiceProvider();
+                
+                PublishingService = new Sky.Editor.Services.Publishing.PublishingService(
+                    DbContext, // ? CRITICAL: Use THIS tenant's DbContext, not the shared one
+                    storage,
+                    editorSettings,
+                    new NullLogger<Sky.Editor.Services.Publishing.PublishingService>(),
+                    httpContextAccessor,
+                    authorInfoService,
+                    clock,
+                    blogRenderingService,
+                    viewRenderService,
+                    tenantServiceProvider,
+                    new Sky.Editor.Services.Publishing.NoOpPublishingProgressReporter());
 
                 // Create tenant-scoped catalog service
                 var catalogService = new CatalogService(DbContext, articleHtmlService, clock, new NullLogger<CatalogService>());
@@ -242,7 +271,7 @@ namespace Sky.Tests
                     slugService,
                     articleHtmlService,
                     catalogService,
-                    publishingService,
+                    PublishingService, // Use tenant-specific PublishingService
                     titleChangeService,
                     redirectService,
                     templateService,
@@ -258,7 +287,7 @@ namespace Sky.Tests
                 // Register shared services
                 serviceCollection.AddSingleton(articleHtmlService);
                 serviceCollection.AddSingleton(catalogService);
-                serviceCollection.AddSingleton(publishingService);
+                serviceCollection.AddSingleton(PublishingService); // Use tenant-specific PublishingService
                 serviceCollection.AddSingleton(titleChangeService);
                 serviceCollection.AddSingleton(templateService);
                 serviceCollection.AddSingleton(clock);
@@ -269,7 +298,7 @@ namespace Sky.Tests
                         DbContext,
                         articleHtmlService,
                         catalogService,
-                        publishingService,
+                        PublishingService, // Use tenant-specific PublishingService
                         titleChangeService,
                         templateService,
                         clock,
@@ -280,7 +309,7 @@ namespace Sky.Tests
                         DbContext,
                         articleHtmlService,
                         catalogService,
-                        publishingService,
+                        PublishingService, // Use tenant-specific PublishingService
                         titleChangeService,
                         clock,
                         new NullLogger<SaveArticleHandler>()));
@@ -300,6 +329,10 @@ namespace Sky.Tests
                 };
                 DbContext.Settings.Add(tenantDomainSetting);
                 await DbContext.SaveChangesAsync();
+                
+                // Auto-create a test user for this tenant
+                var testUserId = Guid.NewGuid();
+                await CreateTestUserAsync(testUserId, $"testuser@{TenantDomain}");
             }
         }
 
