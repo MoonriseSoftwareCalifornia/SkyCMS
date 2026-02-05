@@ -1,4 +1,4 @@
-// <copyright file="DynamicConfigurationProviderTenantResolutionTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="DynamicConfigurationProviderTenantResolutionTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -42,17 +42,21 @@ namespace Sky.Tests.DynamicConfig
         {
             _loggerMock = new Mock<ILogger<DynamicConfigurationProvider>>();
             _memoryCache = new MemoryCache(new MemoryCacheOptions());
-            
+
+            // Use a temporary SQLite file like the working tests
+            var configDbFile = Path.Combine(Path.GetTempPath(), $"skycms-config-{Guid.NewGuid()}.db");
+
             var configBuilder = new ConfigurationBuilder();
             configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:DynamicConfigDbConnection", "Data Source=:memory:" }
-            });
+                {
+                    { "ConnectionStrings:ConfigDbConnectionString", $"Data Source={configDbFile};" },  // ✅ Correct key name
+                    { "MultiTenant", "true" }
+                });
             _configuration = configBuilder.Build();
 
-            _dbOptions = new DbContextOptionsBuilder<DynamicConfigDbContext>()
-                .UseInMemoryDatabase(databaseName: $"TestDb_{Guid.NewGuid()}")
-                .Options;
+            // Use SQLite provider like the working tests (not InMemory)
+            _dbOptions = AspNetCore.Identity.FlexDb.CosmosDbOptionsBuilder
+                .GetDbOptions<DynamicConfigDbContext>($"Data Source={configDbFile};");
         }
 
         [TestCleanup]
@@ -431,38 +435,46 @@ namespace Sky.Tests.DynamicConfig
         }
 
         private DynamicConfigurationProvider CreateProvider(
-            HttpContext httpContext, 
+            HttpContext httpContext,
             IOptions<ProxySettings> proxySettings,
             bool multiTenant)
         {
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             httpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext);
 
+            // Create a new configuration with the correct MultiTenant setting
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ConnectionStrings:ConfigDbConnectionString", _configuration.GetConnectionString("ConfigDbConnectionString") },
+                { "MultiTenant", multiTenant.ToString() }
+            });
+            var configuration = configBuilder.Build();
+
             if (multiTenant)
             {
-                // Seed database with at least one connection for multi-tenant mode
+                // Seed using the same approach as working tests
                 using var ctx = new DynamicConfigDbContext(_dbOptions);
+                ctx.Database.EnsureDeleted();
                 ctx.Database.EnsureCreated();
-                if (!ctx.Connections.Any())
+
+                ctx.Connections.Add(new Connection
                 {
-                    ctx.Connections.Add(new Connection
-                    {
-                        DomainNames = new[] { "test.com" },
-                        DbConn = "Data Source=test.db",
-                        StorageConn = "test-storage",
-                        ResourceGroup = "test-resource-group",
-                        WebsiteUrl = "https://test.com"
-                    });
-                    ctx.SaveChanges();
-                }
+                    DomainNames = new[] { "test.com" },
+                    DbConn = "Data Source=test.db",
+                    StorageConn = "test-storage",
+                    ResourceGroup = "test-resource-group",
+                    WebsiteUrl = "https://test.com"
+                });
+                ctx.SaveChanges();
             }
 
-            return new TestableConfigurationProvider(
-                _configuration,
+            // Use DynamicConfigurationProvider directly, not TestableConfigurationProvider
+            return new DynamicConfigurationProvider(
+                configuration,
                 httpContextAccessor.Object,
                 _memoryCache,
                 _loggerMock.Object,
-                _dbOptions,
                 proxySettings
             );
         }
