@@ -25,10 +25,21 @@ using Sky.Tests.TestHelpers;
 namespace Sky.Tests.DynamicConfig
 {
     /// <summary>
-    /// Tests for GetTenantDomainNameFromRequest() - Priority 1 multi-tenant core infrastructure.
-    /// Tests trusted proxy IP validation, x-origin-hostname header priority, domain normalization, and error handling.
+    /// SECURITY-FOCUSED TESTS for tenant resolution and header validation.
+    /// Tests trusted proxy IP validation (IPv4/IPv6/CIDR), x-origin-hostname security,
+    /// malformed hostname injection attacks, and domain normalization.
     /// </summary>
+    /// <remarks>
+    /// These tests focus on the security aspects of tenant resolution:
+    /// - Trusted proxy IP/CIDR range validation
+    /// - Header injection attack prevention
+    /// - Malformed hostname handling
+    /// For general provider tests, see Tests\DynamicConfig\DynamicConfigurationProviderTests.cs
+    /// </remarks>
     [TestClass]
+    [TestCategory("MultiTenantConfiguration")]
+    [TestCategory("SecurityTest")]
+    [TestCategory("IntegrationTest")]
     [DoNotParallelize]
     public class DynamicConfigurationProviderTenantResolutionTests
     {

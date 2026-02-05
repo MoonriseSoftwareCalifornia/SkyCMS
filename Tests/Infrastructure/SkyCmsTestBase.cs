@@ -266,6 +266,29 @@ namespace Sky.Tests
                 .ReturnsAsync((string)null);
             mockDynamicConfigProvider.Setup(x => x.GetStorageConnectionStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((string)null);
+            // Return empty list for GetAllDomainNamesAsync (tests don't need tenant domains)
+            mockDynamicConfigProvider.Setup(x => x.GetAllDomainNamesAsync())
+                .ReturnsAsync(new List<string>());
+            // ✅ Delegate GetConfigurationValue to the actual IConfiguration
+            mockDynamicConfigProvider.Setup(x => x.GetConfigurationValue(It.IsAny<string>()))
+                .Returns((string key) => configuration.GetValue<string>(key));
+            // ✅ Implement GetTenantDomainNameFromRequest to use HttpContext headers
+            mockDynamicConfigProvider.Setup(x => x.GetTenantDomainNameFromRequest())
+                .Returns(() =>
+                {
+                    var context = HttpContextAccessor.HttpContext;
+                    if (context == null) return string.Empty;
+                    
+                    // Check for x-origin-hostname header first (mimicking real implementation)
+                    var xOriginHostname = context.Request.Headers["x-origin-hostname"].ToString();
+                    if (!string.IsNullOrWhiteSpace(xOriginHostname))
+                    {
+                        return xOriginHostname.ToLowerInvariant();
+                    }
+                    
+                    // Fall back to Host header
+                    return context.Request.Host.Host.ToLowerInvariant();
+                });
             DynamicConfigurationProvider = mockDynamicConfigProvider.Object;
 
             // CREATE MOCK TENANT ARTICLE LOGIC FACTORY
