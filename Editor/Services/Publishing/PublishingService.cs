@@ -642,6 +642,14 @@ namespace Sky.Editor.Services.Publishing
                 await PurgeCdnAsync(page);
             }
 
+            // Update catalog entry to reflect unpublished state
+            var catalogEntry = await _db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == articleNumber);
+            if (catalogEntry != null)
+            {
+                catalogEntry.Published = null;
+                await _db.SaveChangesAsync();
+            }
+
             await WriteTocAsync("/");
         }
 

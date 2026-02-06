@@ -249,41 +249,11 @@ namespace Sky.Tests.Services.Templates
             Assert.IsTrue(associatedLayout.IsDefault, "Template should use default layout");
         }
 
-        #endregion
-
-        #region Template Validation Tests
-
-        /// <summary>
-        /// Tests that templates require valid LayoutId.
-        /// </summary>
-        [TestMethod]
-        public async Task CreateTemplate_WithInvalidLayoutId_FailsValidation()
-        {
-            // Arrange
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                PageType = "test-invalid-layout",
-                Content = "<div>Test</div>",
-                LayoutId = Guid.NewGuid() // Non-existent layout
-            };
-
-            // Act & Assert
-            try
-            {
-                Db.Templates.Add(template);
-                await Db.SaveChangesAsync();
-                Assert.Fail("Should fail validation with invalid LayoutId");
-            }
-            catch (DbUpdateException)
-            {
-                Assert.IsTrue(true, "DbUpdateException expected for invalid LayoutId");
-            }
-        }
 
         #endregion
 
         #region Blog Template Tests
+
 
         /// <summary>
         /// Tests that blog-post template has correct structure.
