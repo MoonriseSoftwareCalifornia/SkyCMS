@@ -81,6 +81,9 @@ namespace Sky.Editor.Areas.Setup.Pages
                 Response.Redirect("/");
             }
 
+            // When the welcome page is access, start with a clean initialization state.
+            await setupService.InitializeSetupAsync(true);
+
             var config = await setupService.GetCurrentSetupAsync();
 
             StorageIsPreConfigured = config.StoragePreConfigured;

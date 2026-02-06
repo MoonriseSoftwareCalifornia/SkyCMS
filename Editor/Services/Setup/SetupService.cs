@@ -138,6 +138,7 @@ namespace Sky.Editor.Services.Setup
                 {
                     return config;
                 }
+
                 return null;
             }
             catch (Exception ex)
