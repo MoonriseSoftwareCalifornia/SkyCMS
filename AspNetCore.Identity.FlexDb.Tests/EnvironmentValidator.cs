@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using System.Data.Common;
 
 namespace AspNetCore.Identity.CosmosDb.Tests.Net9
 {
@@ -18,6 +19,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         {
             var configuration = TestUtilities.GetConfig();
             var missing = new List<string>();
+
+            DeleteSqliteDatabaseIfConfigured(configuration, context);
 
             // At least one database connection must be configured
             var hasDatabase = !string.IsNullOrWhiteSpace(configuration.GetConnectionString("CosmosDB")) ||
@@ -69,6 +72,77 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
                    "   # OR MySQL\n" +
                    "   dotnet user-secrets set \"ConnectionStrings:MySQL\" \"Server=...;Port=3306;Database=...;uid=...;pwd=...\" --project AspNetCore.Identity.FlexDb.Tests\n\n" +
                    "📚 See also: AspNetCore.Identity.FlexDb/README.md for detailed configuration";
+        }
+
+        private static void DeleteSqliteDatabaseIfConfigured(IConfigurationRoot configuration, TestContext context)
+        {
+            var sqliteProvider = TestUtilities.GetAvailableProviders()
+                .FirstOrDefault(provider => provider.Provider == DatabaseProvider.Sqlite);
+
+            if (sqliteProvider == null)
+            {
+                return;
+            }
+
+            var sqlitePath = TryGetSqliteDatabasePath(sqliteProvider.ConnectionString);
+
+            if (string.IsNullOrWhiteSpace(sqlitePath))
+            {
+                context.WriteLine("SQLite configured, but database path could not be resolved.");
+                return;
+            }
+
+            if (!Path.IsPathRooted(sqlitePath))
+            {
+                sqlitePath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, sqlitePath));
+            }
+
+            if (!File.Exists(sqlitePath))
+            {
+                return;
+            }
+
+            File.Delete(sqlitePath);
+            context.WriteLine($"Deleted SQLite database: {sqlitePath}");
+        }
+
+        private static string? TryGetSqliteDatabasePath(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return null;
+            }
+
+            var builder = new DbConnectionStringBuilder
+            {
+                ConnectionString = connectionString
+            };
+
+            var keys = new[] { "Data Source", "DataSource", "Filename", "FileName" };
+
+            foreach (var key in keys)
+            {
+                if (!builder.TryGetValue(key, out var value))
+                {
+                    continue;
+                }
+
+                var pathValue = value?.ToString();
+
+                if (string.IsNullOrWhiteSpace(pathValue))
+                {
+                    continue;
+                }
+
+                if (string.Equals(pathValue, ":memory:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                return pathValue;
+            }
+
+            return null;
         }
     }
 }

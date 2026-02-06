@@ -190,7 +190,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             var user = new IdentityUser(randomEmail)
             {
                 Email = randomEmail,
-                Id = Guid.NewGuid().ToString()
+                Id = Guid.NewGuid().ToString(),
+                LockoutEnabled = true
             };
 
             user.NormalizedUserName = user.UserName.ToUpper();
