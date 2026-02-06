@@ -7,12 +7,12 @@ namespace AspNetCore.Identity.FlexDb.Extensions
 {
     public static class ModelBuilderExtensions
     {
-        public static ModelBuilder ApplyIdentityMappings<TUserEntity, TRoleEntity, TKey>(this ModelBuilder builder, PersonalDataConverter? dataConverter, int maxKeyLength)
+        public static ModelBuilder ApplyIdentityMappings<TUserEntity, TRoleEntity, TKey>(this ModelBuilder builder, PersonalDataConverter? dataConverter, int maxKeyLength, bool isCosmosDb = true)
             where TUserEntity : IdentityUser<TKey>
             where TRoleEntity : IdentityRole<TKey>
             where TKey : IEquatable<TKey>
         {
-            builder.ApplyConfiguration(new UserEntityTypeConfiguration<TUserEntity, TKey>(dataConverter) { });
+            builder.ApplyConfiguration(new UserEntityTypeConfiguration<TUserEntity, TKey>(dataConverter, "Identity", isCosmosDb) { });
             builder.ApplyConfiguration(new UserRoleEntityTypeConfiguration<TKey> { });
             builder.ApplyConfiguration(new RoleEntityTypeConfiguration<TRoleEntity, TKey> { });
             builder.ApplyConfiguration(new RoleClaimEntityTypeConfiguration<TKey> { });

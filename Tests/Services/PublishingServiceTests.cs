@@ -322,6 +322,7 @@ namespace Sky.Tests.Services
             var article = await Logic.CreateArticle("Scheduled Article", TestUserId);
             var futureDate = DateTimeOffset.UtcNow.AddDays(7);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            articleEntity.Published = futureDate; // Set the future publish date
 
             // Act
             await PublishingService.PublishAsync(articleEntity);

@@ -65,6 +65,15 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
                 providers.Add(new TestDatabaseProvider(DatabaseProvider.Sqlite, sqliteConnection, databaseName));
             }
 
+            // If no providers configured, tests will be skipped (this is intentional - tests require database setup)
+            if (providers.Count == 0)
+            {
+                Console.WriteLine("??  WARNING: No database providers configured for FlexDb tests.");
+                Console.WriteLine("   Tests will not run. Configure at least one connection string:");
+                Console.WriteLine("   - CosmosDb, SqlServer, MySql, or Sqlite");
+                Console.WriteLine("   via appsettings.json, user secrets, or environment variables.");
+            }
+
             return providers;
         }
 

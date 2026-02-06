@@ -80,6 +80,18 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
             try
             {
+                // Check for duplicate NormalizedName
+                if (!string.IsNullOrEmpty(role.NormalizedName))
+                {
+                    var existingRole = await _repo.Table<TRoleEntity>()
+                        .FirstOrDefaultAsync(_ => _.NormalizedName == role.NormalizedName, cancellationToken: cancellationToken);
+                    
+                    if (existingRole != null)
+                    {
+                        return IdentityResult.Failed(new IdentityError { Description = "Role with this name already exists." });
+                    }
+                }
+
                 _repo.Add(role);
                 await _repo.SaveChangesAsync();
             }
@@ -152,8 +164,11 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (string.IsNullOrEmpty(normalizedName) || string.IsNullOrWhiteSpace(normalizedName))
                 throw new ArgumentNullException(nameof(normalizedName));
 
+            // Normalize the input to ensure case-insensitive comparison
+            var normalizedSearchName = normalizedName.ToUpperInvariant();
+
             var role = await _repo.Table<TRoleEntity>()
-                .SingleOrDefaultAsync(_ => _.NormalizedName == normalizedName, cancellationToken: cancellationToken);
+                .SingleOrDefaultAsync(_ => _.NormalizedName == normalizedSearchName, cancellationToken: cancellationToken);
 
             return role;
         }

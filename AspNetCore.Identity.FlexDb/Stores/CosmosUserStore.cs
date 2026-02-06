@@ -91,6 +91,30 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (string.IsNullOrEmpty(user.UserName))
                 throw new ArgumentNullException(nameof(user.UserName));
 
+            // Check for duplicate normalized email
+            var existingUser = await Users
+                .FirstOrDefaultAsync(u => u.NormalizedEmail == user.NormalizedEmail, cancellationToken);
+            if (existingUser != null)
+            {
+                return IdentityResult.Failed(new IdentityError
+                {
+                    Code = "DuplicateEmail",
+                    Description = $"Email '{user.Email}' is already taken."
+                });
+            }
+
+            // Check for duplicate normalized username
+            existingUser = await Users
+                .FirstOrDefaultAsync(u => u.NormalizedUserName == user.NormalizedUserName, cancellationToken);
+            if (existingUser != null)
+            {
+                return IdentityResult.Failed(new IdentityError
+                {
+                    Code = "DuplicateUserName",
+                    Description = $"User name '{user.UserName}' is already taken."
+                });
+            }
+
             try
             {
                 _repo.Add(user);
@@ -165,10 +189,10 @@ namespace AspNetCore.Identity.FlexDb.Stores
             ThrowIfDisposed();
 
             if (string.IsNullOrEmpty(normalizedEmailName))
-                throw new ArgumentNullException(nameof(normalizedEmailName));
+                return null;
 
             var user = await _repo.Table<TUserEntity>()
-                .SingleOrDefaultAsync(_ => _.NormalizedEmail == normalizedEmailName,
+                .SingleOrDefaultAsync(_ => _.NormalizedEmail == normalizedEmailName.ToUpperInvariant(),
                     cancellationToken: cancellationToken);
 
             return user;
@@ -215,10 +239,13 @@ namespace AspNetCore.Identity.FlexDb.Stores
             ThrowIfDisposed();
 
             if (string.IsNullOrEmpty(normalizedUserName))
-                throw new ArgumentNullException(nameof(normalizedUserName));
+                return null;
+
+            // Normalize the input to ensure case-insensitive comparison
+            var normalizedSearchName = normalizedUserName.ToUpperInvariant();
 
             var user = await _repo.Table<TUserEntity>()
-                .SingleOrDefaultAsync(_ => _.NormalizedUserName == normalizedUserName || _.NormalizedEmail == normalizedUserName);
+                .SingleOrDefaultAsync(_ => _.NormalizedUserName == normalizedSearchName || _.NormalizedEmail == normalizedSearchName);
 
             return user;
         }
@@ -444,6 +471,8 @@ namespace AspNetCore.Identity.FlexDb.Stores
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+
+            ArgumentNullException.ThrowIfNull(user);
 
             try
             {

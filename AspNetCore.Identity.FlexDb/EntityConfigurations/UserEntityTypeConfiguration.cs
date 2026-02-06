@@ -13,11 +13,13 @@ namespace AspNetCore.Identity.FlexDb.EntityConfigurations
     {
         private readonly string _tableName;
         private readonly PersonalDataConverter? _dataConverter;
+        private readonly bool _isCosmosDb;
 
-        public UserEntityTypeConfiguration(PersonalDataConverter? dataConverter, string tableName = "Identity")
+        public UserEntityTypeConfiguration(PersonalDataConverter? dataConverter, string tableName = "Identity", bool isCosmosDb = false)
         {
             _tableName = tableName;
             _dataConverter = dataConverter;
+            _isCosmosDb = isCosmosDb;
         }
 
         public void Configure(EntityTypeBuilder<TUserEntity> builder)
@@ -47,14 +49,17 @@ namespace AspNetCore.Identity.FlexDb.EntityConfigurations
                 }
             }
 
-#pragma warning disable S125 // Sections of code should not be commented out
-            // dotnet/efcore#35264
-            //b.HasIndex(u => u.NormalizedUserName).HasDatabaseName("UserNameIndex").IsUnique();
-            //b.HasIndex(u => u.NormalizedEmail).HasDatabaseName("EmailIndex");
+            // Add unique indexes to enforce email and username uniqueness
+            // Note: dotnet/efcore#35264 - Cosmos DB throws an error when indexes are detected
+            // Only apply indexes for non-Cosmos providers (SQLite, SQL Server, MySQL)
+            if (!_isCosmosDb)
+            {
+                builder.HasIndex(u => u.NormalizedUserName).HasDatabaseName("UserNameIndex").IsUnique();
+                builder.HasIndex(u => u.NormalizedEmail).HasDatabaseName("EmailIndex").IsUnique();
+            }
             //b.HasMany<TUserClaim>().WithOne().HasForeignKey(uc => uc.UserId).IsRequired();
             //b.HasMany<TUserLogin>().WithOne().HasForeignKey(ul => ul.UserId).IsRequired();
             //b.HasMany<TUserToken>().WithOne().HasForeignKey(ut => ut.UserId).IsRequired();
-#pragma warning restore S125 // Sections of code should not be commented out
 
             builder.ToContainer(_tableName);
         }

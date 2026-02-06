@@ -266,12 +266,19 @@ namespace Cosmos.DynamicConfig
             // Hardened x-origin-hostname header handling to gracefully reject malformed hostnames
             if (IsMultiTenantConfigured && proxySettings.TrustXOriginHostname && IsFromTrustedProxy(httpContextAccessor.HttpContext))
             {
-                var xhostHeader = GetValidHostName(httpContextAccessor.HttpContext.Request.Headers["x-origin-hostname"].ToString());
+                var xhostHeader = httpContextAccessor.HttpContext.Request.Headers["x-origin-hostname"].ToString();
                 if (!string.IsNullOrWhiteSpace(xhostHeader))
                 {
                     // Attempt to parse as URI, fallback to basic hostname validation
                     string? safeHost = null;
-                    if (Uri.TryCreate("http://" + xhostHeader, UriKind.Absolute, out var uri))
+                    
+                    // First try to parse the header value as-is (in case it's already a full URI)
+                    if (Uri.TryCreate(xhostHeader, UriKind.Absolute, out var uri))
+                    {
+                        safeHost = uri.Host.ToLowerInvariant();
+                    }
+                    // If that fails, try prepending http:// (in case it's just a hostname)
+                    else if (Uri.TryCreate("http://" + xhostHeader, UriKind.Absolute, out uri))
                     {
                         safeHost = uri.Host.ToLowerInvariant();
                     }
@@ -291,7 +298,7 @@ namespace Cosmos.DynamicConfig
 
                     if (!string.IsNullOrWhiteSpace(safeHost))
                     {
-                        return safeHost;
+                        return GetValidHostName(safeHost);
                     }
                 }
             }

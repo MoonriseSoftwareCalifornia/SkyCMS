@@ -129,16 +129,16 @@ namespace Sky.Editor.Services.Setup
 
                 if (config == null)
                 {
-                    config = new SetupConfiguration();
+                    return null;
                 }
 
                 GetEnvironmentVariables(config);
 
-                if (config != null && !config.IsComplete)
+                if (!config.IsComplete)
                 {
                     return config;
                 }
-
+                
                 return null;
             }
             catch (Exception ex)

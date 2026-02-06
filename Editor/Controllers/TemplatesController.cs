@@ -485,32 +485,10 @@ namespace Sky.Cms.Controllers
 
                 await dbContext.SaveChangesAsync();
 
-                model = new TemplateCodeEditorViewModel
-                {
-                    Id = entity.Id,
-                    Title = entity.Title,
-                    EditorTitle = "Template Editor",
-                    EditorFields = new List<EditorField>
-                {
-                    new ()
-                    {
-                        EditorMode = EditorMode.Html,
-                        FieldName = "Html Content",
-                        FieldId = "Content",
-                        IconUrl = "~/images/seti-ui/icons/html.svg"
-                    }
-                },
-                    EditingField = "Content",
-                    Content = entity.Content,
-                    CustomButtons = new List<string>
-                {
-                    "Preview"
-                },
-                    IsValid = true
-                };
+                return Json(new { success = true });
             }
 
-            return Json(model);
+            return Json(new { success = false });
         }
 
         /// <summary>

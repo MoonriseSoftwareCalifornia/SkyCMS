@@ -1611,9 +1611,15 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = result as JsonResult;
             
-            // Model should be returned with validation errors
-            var returnedModel = jsonResult.Value as TemplateCodeEditorViewModel;
-            Assert.IsNotNull(returnedModel);
+            // Should return { success = false } for validation errors
+            Assert.IsNotNull(jsonResult.Value, "JsonResult should have a value");
+            
+            var responseType = jsonResult.Value.GetType();
+            var successProperty = responseType.GetProperty("success");
+            Assert.IsNotNull(successProperty, "Response should contain 'success' property");
+            
+            var successValue = (bool)successProperty.GetValue(jsonResult.Value);
+            Assert.IsFalse(successValue, "Success should be false when validation fails");
             Assert.IsFalse(_controller.ModelState.IsValid, "ModelState should be invalid for nested regions");
         }
 
