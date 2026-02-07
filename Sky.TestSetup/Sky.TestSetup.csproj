@@ -14,7 +14,7 @@
       For more information, visit https://learn.microsoft.com/dotnet/core/testing/unit-testing-platform-integration-dotnet-test#show-failure-per-test
       -->
 		<TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
-		<Version>9.2.4.25</Version>
+		<Version>9.3.0.1</Version>
 	</PropertyGroup>
 
 	<ItemGroup>

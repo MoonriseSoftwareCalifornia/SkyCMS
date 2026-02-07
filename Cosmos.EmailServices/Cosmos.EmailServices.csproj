@@ -7,9 +7,9 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Company>Moonrise Software LLC</Company>
-		<Version>9.2.4.25</Version>
-		<AssemblyVersion>9.2.4.25</AssemblyVersion>
-		<FileVersion>9.2.4.25</FileVersion>
+		<Version>9.3.0.1</Version>
+		<AssemblyVersion>9.3.0.1</AssemblyVersion>
+		<FileVersion>9.3.0.1</FileVersion>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<RepositoryUrl>https://github.com/MoonriseSoftwareCalifornia/Cosmos.EmailServices</RepositoryUrl>
