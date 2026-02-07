@@ -125,12 +125,6 @@ namespace Sky.Editor.Areas.Setup.Pages
             // This may happen if the setup is run again.
             var admin = await UserManager.GetUsersInRoleAsync(RequiredIdentityRoles.Administrators);
 
-            if (admin.Count > 0)
-            {
-                // Go do publisher.
-                return RedirectToPage("./Step3_Publisher");
-            }
-
             SetupId = config.Id;
             AdminEmail = config.AdminEmail;
 

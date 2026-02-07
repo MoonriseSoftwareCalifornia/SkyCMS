@@ -521,7 +521,6 @@ namespace Sky.Tests.Areas.Setup
                 testRoleManager,      // Use the SQLite-based RoleManager
                 dbContext,            // Use the SQLite database context
                 layoutImportService,
-                Logic,
                 Mediator);
         }
 

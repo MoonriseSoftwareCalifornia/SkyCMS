@@ -8,6 +8,7 @@
 namespace Sky.Editor.Services.Setup
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net.Mail;
     using System.Threading.Tasks;
@@ -29,11 +30,30 @@ namespace Sky.Editor.Services.Setup
 
     /// <summary>
     /// Service for setup wizard operations.
+    /// Manages draft state (temporary edits) and committed state (persistent settings).
+    /// Draft state is stored in Settings table (SETUP/DRAFT_STATE) and deleted upon completion.
+    /// Committed state is stored in Settings table with specific group/name combinations.
+    /// Audit logs are tracked in Settings table (SETUP/SettingChange) for post-setup changes.
     /// </summary>
     public class SetupService : ISetupService
     {
-        private const string SetupStateKey = "SETUP_WIZARD_STATE";
-        private const string SetupStateGroup = "SYSTEM";
+        /// <summary>
+        /// Draft state key for temporary wizard edits (stores entire SetupConfiguration as JSON).
+        /// </summary>
+        private const string DraftStateKey = "DRAFT_STATE";
+        private const string DraftStateGroup = "SETUP";
+
+        /// <summary>
+        /// Committed state key (final setup configuration after wizard completion).
+        /// </summary>
+        private const string CommittedStateKey = "SETUP_WIZARD_STATE";
+        private const string CommittedStateGroup = "SYSTEM";
+
+        /// <summary>
+        /// Audit log key for tracking post-setup changes.
+        /// </summary>
+        private const string AuditLogName = "SettingChange";
+        private const string AuditLogGroup = "SETUP";
 
         private readonly IConfiguration configuration;
         private readonly ILogger<SetupService> logger;
@@ -44,7 +64,6 @@ namespace Sky.Editor.Services.Setup
         private readonly UserManager<IdentityUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly ApplicationDbContext applicationDbContext;
-        private readonly ArticleEditLogic articleEditLogic;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SetupService"/> class.
@@ -56,7 +75,6 @@ namespace Sky.Editor.Services.Setup
         /// <param name="roleManager">Role manager.</param>
         /// <param name="applicationDbContext">Database context.</param>
         /// <param name="layoutImportService">Layout import service.</param>
-        /// <param name="articleEditLogic">Article edit logic.</param>
         /// <param name="mediator">Mediator.</param>
         public SetupService(
             IConfiguration configuration,
@@ -66,7 +84,6 @@ namespace Sky.Editor.Services.Setup
             RoleManager<IdentityRole> roleManager,
             ApplicationDbContext applicationDbContext,
             ILayoutImportService layoutImportService,
-            ArticleEditLogic articleEditLogic,
             IMediator mediator)
         {
             this.configuration = configuration;
@@ -76,7 +93,6 @@ namespace Sky.Editor.Services.Setup
             this.roleManager = roleManager;
             this.applicationDbContext = applicationDbContext;
             this.layoutImportService = layoutImportService;
-            this.articleEditLogic = articleEditLogic;
             this.mediator = mediator;
         }
 
@@ -87,11 +103,11 @@ namespace Sky.Editor.Services.Setup
             {
                 if (deleteDatabase)
                 {
-                    await DeleteSetupStateAsync();
+                    await DeleteDraftStateAsync();
                 }
 
-                // Check if setup already in progress
-                var existing = await GetSetupStateAsync();
+                // Check if setup already in progress (draft state exists)
+                var existing = await GetDraftStateAsync();
                 if (existing != null && !existing.IsComplete)
                 {
                     GetEnvironmentVariables(existing);
@@ -108,7 +124,7 @@ namespace Sky.Editor.Services.Setup
                 };
 
                 GetEnvironmentVariables(config);
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Created new setup session {SetupId}", config.Id);
                 return config;
@@ -125,7 +141,8 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                // Get draft state (in-progress wizard)
+                var config = await GetDraftStateAsync();
 
                 if (config == null)
                 {
@@ -138,7 +155,7 @@ namespace Sky.Editor.Services.Setup
                 {
                     return config;
                 }
-                
+
                 return null;
             }
             catch (Exception ex)
@@ -153,14 +170,14 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
                 }
 
                 config.TenantMode = tenantMode;
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Updated tenant mode to {TenantMode} for setup {SetupId}", tenantMode, setupId);
             }
@@ -193,11 +210,10 @@ namespace Sky.Editor.Services.Setup
 
                 return new TestResult
                 {
-                    Success = dbStatus == DbStatus.ExistsWithNoUsers, // Expecting a new database with no users.
+                    Success = dbStatus == DbStatus.ExistsWithNoUsers,
                     Message = $"Database connection successful. Status: {dbStatus}",
                     Status = dbStatus
                 };
-
             }
             catch (Exception ex)
             {
@@ -215,14 +231,14 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
                 }
 
                 config.DatabaseConnectionString = connectionString;
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Updated database configuration for setup {SetupId}", setupId);
             }
@@ -240,7 +256,7 @@ namespace Sky.Editor.Services.Setup
             {
                 var storageContext = new StorageContext(connectionString, memoryCache);
 
-                // Enable static website to ensure proper configuration for Azure, AWS S3, etc. does nothing.
+                // Enable static website to ensure proper configuration for Azure, AWS S3, etc.
                 await storageContext.EnableAzureStaticWebsite();
 
                 // Test by listing root directory
@@ -277,7 +293,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
@@ -285,7 +301,7 @@ namespace Sky.Editor.Services.Setup
 
                 config.StorageConnectionString = storageConnectionString;
                 config.BlobPublicUrl = blobPublicUrl;
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Updated storage configuration for setup {SetupId}", setupId);
             }
@@ -301,7 +317,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
@@ -309,7 +325,7 @@ namespace Sky.Editor.Services.Setup
 
                 config.SenderEmail = email;
                 config.AdminPassword = password; // Will be hashed during completion
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Updated admin account for setup {SetupId}", setupId);
             }
@@ -333,7 +349,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
@@ -353,7 +369,7 @@ namespace Sky.Editor.Services.Setup
                     config.BlobPublicUrl = "/";
                 }
 
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Updated publisher configuration for setup {SetupId}", setupId);
             }
@@ -379,7 +395,6 @@ namespace Sky.Editor.Services.Setup
             var storageConnectionString = configuration.GetConnectionString("StorageConnectionString");
             var blobPublicUrl = configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? configuration.GetValue<string>("BlobPublicUrl");
 
-            // Storage connection.
             if (!string.IsNullOrEmpty(storageConnectionString))
             {
                 config.StorageConnectionString = storageConnectionString;
@@ -443,15 +458,13 @@ namespace Sky.Editor.Services.Setup
             }
 
             // Database Configuration (optional - usually in appsettings.json)
-            // Only overwrite if not already set to preserve values from UpdateDatabaseConfigAsync
             var dbConnectionString = configuration.GetConnectionString("ApplicationDbContextConnection");
             if (!string.IsNullOrEmpty(dbConnectionString) && string.IsNullOrEmpty(config.DatabaseConnectionString))
             {
                 config.DatabaseConnectionString = dbConnectionString;
             }
 
-            // Detect if one of an Email provider is preconfigured.
-            // Only overwrite if environment variable is set to preserve database values
+            // Email Provider Configuration
             var sendGridApiKey = configuration["CosmosSendGridApiKey"];
             if (!string.IsNullOrEmpty(sendGridApiKey))
             {
@@ -497,7 +510,6 @@ namespace Sky.Editor.Services.Setup
             }
 
             // CloudFront Configuration
-            // Pull CDN configuration from Environment Variables
             var cloudFrontData = configuration["CloudFrontConfig"];
             if (!string.IsNullOrEmpty(cloudFrontData))
             {
@@ -523,14 +535,15 @@ namespace Sky.Editor.Services.Setup
         }
 
         /// <summary>
-        /// Retrieves setup state from Settings table.
+        /// Retrieves draft setup state from Settings table.
+        /// This is temporary data for in-progress wizard sessions.
         /// </summary>
-        private async Task<SetupConfiguration> GetSetupStateAsync()
+        private async Task<SetupConfiguration> GetDraftStateAsync()
         {
             try
             {
                 var setting = await applicationDbContext.Settings
-                    .FirstOrDefaultAsync(s => s.Group == SetupStateGroup && s.Name == SetupStateKey);
+                    .FirstOrDefaultAsync(s => s.Group == DraftStateGroup && s.Name == DraftStateKey);
 
                 if (setting == null || string.IsNullOrWhiteSpace(setting.Value))
                 {
@@ -541,20 +554,21 @@ namespace Sky.Editor.Services.Setup
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to retrieve setup state from settings");
+                logger.LogWarning(ex, "Failed to retrieve draft setup state from settings");
                 return null;
             }
         }
 
         /// <summary>
-        /// Saves setup state to Settings table.
+        /// Saves draft setup state to Settings table.
+        /// This is temporary data updated as wizard steps are completed.
         /// </summary>
-        private async Task SaveSetupStateAsync(SetupConfiguration config)
+        private async Task SaveDraftStateAsync(SetupConfiguration config)
         {
             try
             {
                 var setting = await applicationDbContext.Settings
-                    .FirstOrDefaultAsync(s => s.Group == SetupStateGroup && s.Name == SetupStateKey);
+                    .FirstOrDefaultAsync(s => s.Group == DraftStateGroup && s.Name == DraftStateKey);
 
                 var json = JsonConvert.SerializeObject(config);
 
@@ -562,48 +576,237 @@ namespace Sky.Editor.Services.Setup
                 {
                     setting = new Setting
                     {
-                        Group = SetupStateGroup,
-                        Name = SetupStateKey,
-                        Value = json
+                        Group = DraftStateGroup,
+                        Name = DraftStateKey,
+                        Value = json,
+                        Description = "Temporary draft state for setup wizard session",
+                        IsRequired = false
                     };
                     applicationDbContext.Settings.Add(setting);
                 }
                 else
                 {
                     setting.Value = json;
-                    applicationDbContext.Settings.Update(setting);
+                    setting.Description = "Temporary draft state for setup wizard session";
                 }
 
                 await applicationDbContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to save setup state to settings");
+                logger.LogError(ex, "Failed to save draft setup state to settings");
                 throw;
             }
         }
 
         /// <summary>
-        /// Deletes setup state from Settings table.
+        /// Deletes draft setup state from Settings table.
+        /// Called after setup completion to clean up temporary data.
         /// </summary>
-        private async Task DeleteSetupStateAsync()
+        private async Task DeleteDraftStateAsync()
         {
             try
             {
                 var setting = await applicationDbContext.Settings
-                    .FirstOrDefaultAsync(s => s.Group == SetupStateGroup && s.Name == SetupStateKey);
+                    .FirstOrDefaultAsync(s => s.Group == DraftStateGroup && s.Name == DraftStateKey);
 
                 if (setting != null)
                 {
                     applicationDbContext.Settings.Remove(setting);
                     await applicationDbContext.SaveChangesAsync();
-                    logger.LogInformation("Deleted setup state from settings");
+                    logger.LogInformation("Deleted draft setup state from settings");
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to delete setup state");
+                logger.LogWarning(ex, "Failed to delete draft setup state");
             }
+        }
+
+        /// <summary>
+        /// Retrieves committed setup state from Settings table.
+        /// This is the final configuration saved after wizard completion.
+        /// </summary>
+        private async Task<SetupConfiguration> GetCommittedStateAsync()
+        {
+            try
+            {
+                var setting = await applicationDbContext.Settings
+                    .FirstOrDefaultAsync(s => s.Group == CommittedStateGroup && s.Name == CommittedStateKey);
+
+                if (setting == null || string.IsNullOrWhiteSpace(setting.Value))
+                {
+                    return null;
+                }
+
+                return JsonConvert.DeserializeObject<SetupConfiguration>(setting.Value);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to retrieve committed setup state from settings");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Saves committed setup state to Settings table.
+        /// Called at the end of setup completion to persist final configuration.
+        /// </summary>
+        private async Task SaveCommittedStateAsync(SetupConfiguration config)
+        {
+            try
+            {
+                var setting = await applicationDbContext.Settings
+                    .FirstOrDefaultAsync(s => s.Group == CommittedStateGroup && s.Name == CommittedStateKey);
+
+                var json = JsonConvert.SerializeObject(config);
+
+                if (setting == null)
+                {
+                    setting = new Setting
+                    {
+                        Group = CommittedStateGroup,
+                        Name = CommittedStateKey,
+                        Value = json,
+                        Description = "Final setup wizard configuration",
+                        IsRequired = false
+                    };
+                    applicationDbContext.Settings.Add(setting);
+                }
+                else
+                {
+                    setting.Value = json;
+                    setting.Description = "Final setup wizard configuration";
+                }
+
+                await applicationDbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to save committed setup state to settings");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Records an audit log entry for post-setup configuration changes.
+        /// Multiple entries can exist (one per session), each capturing all changes made in that session.
+        /// TODO: Create audit log viewer UI (admin-only) that displays these records in a flexible table format.
+        ///       Design the UI to be extensible for other audit logs beyond setup changes.
+        /// </summary>
+        private async Task LogConfigurationChangeAsync(
+            SetupConfiguration oldConfig,
+            SetupConfiguration newConfig,
+            string initiatedBy,
+            string description)
+        {
+            try
+            {
+                var changes = CaptureConfigurationChanges(oldConfig, newConfig);
+
+                if (!changes.Any())
+                {
+                    logger.LogInformation("No configuration changes detected, skipping audit log");
+                    return;
+                }
+
+                var auditEntry = new SetupAuditLog
+                {
+                    SessionId = newConfig.Id,
+                    Timestamp = DateTime.UtcNow,
+                    InitiatedBy = initiatedBy,
+                    Description = description,
+                    Changes = changes,
+                    IsInitialSetup = oldConfig == null || !oldConfig.IsComplete
+                };
+
+                var setting = new Setting
+                {
+                    Id = Guid.NewGuid(),
+                    Group = AuditLogGroup,
+                    Name = AuditLogName,
+                    Value = JsonConvert.SerializeObject(auditEntry),
+                    Description = description,
+                    IsRequired = false
+                };
+
+                applicationDbContext.Settings.Add(setting);
+                await applicationDbContext.SaveChangesAsync();
+
+                logger.LogInformation(
+                    "Audit log recorded for setup session {SessionId}: {ChangeCount} changes by {User}",
+                    newConfig.Id,
+                    changes.Count,
+                    initiatedBy);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to record configuration change audit log");
+                // Don't throw - audit log failure should not block the operation
+            }
+        }
+
+        /// <summary>
+        /// Captures what changed between old and new configurations.
+        /// Returns a dictionary of field name -> (old value, new value).
+        /// </summary>
+        private Dictionary<string, (string OldValue, string NewValue)> CaptureConfigurationChanges(
+            SetupConfiguration oldConfig,
+            SetupConfiguration newConfig)
+        {
+            var changes = new Dictionary<string, (string, string)>();
+
+            if (oldConfig == null)
+            {
+                return changes; // Initial setup, not tracking individual changes
+            }
+
+            var properties = typeof(SetupConfiguration).GetProperties();
+
+            foreach (var prop in properties)
+            {
+                // Skip non-public, sensitive, or metadata properties
+                if (!prop.CanRead || !prop.CanWrite)
+                    continue;
+
+                var oldValue = prop.GetValue(oldConfig)?.ToString() ?? string.Empty;
+                var newValue = prop.GetValue(newConfig)?.ToString() ?? string.Empty;
+
+                // Mask sensitive values in audit log
+                if (IsSensitiveProperty(prop.Name))
+                {
+                    oldValue = string.IsNullOrEmpty(oldValue) ? "(empty)" : "(masked)";
+                    newValue = string.IsNullOrEmpty(newValue) ? "(empty)" : "(masked)";
+                }
+
+                if (oldValue != newValue)
+                {
+                    changes[prop.Name] = (oldValue, newValue);
+                }
+            }
+
+            return changes;
+        }
+
+        /// <summary>
+        /// Determines if a property contains sensitive data that should be masked in audit logs.
+        /// </summary>
+        private bool IsSensitiveProperty(string propertyName)
+        {
+            var sensitiveProperties = new[]
+            {
+                "AdminPassword",
+                "SmtpPassword",
+                "SendGridApiKey",
+                "AzureEmailConnectionString",
+                "DatabaseConnectionString",
+                "StorageConnectionString",
+                "CloudFrontSecretAccessKey",
+                "CloudflareApiToken",
+                "SucuriApiSecret"
+            };
+
+            return sensitiveProperties.Contains(propertyName);
         }
 
         /// <inheritdoc/>
@@ -611,14 +814,14 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
                 }
 
                 config.CurrentStep = step;
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Updated current step to {Step} for setup {SetupId}", step, setupId);
             }
@@ -643,24 +846,17 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                switch (provider)
+                return provider switch
                 {
-                    case "SendGrid":
-                        return await TestSendGridAsync(sendGridApiKey, senderEmail, testRecipient);
-
-                    case "AzureCommunication":
-                        return await TestAzureEmailAsync(azureConnectionString, senderEmail, testRecipient);
-
-                    case "SMTP":
-                        return await TestSmtpAsync(smtpHost, smtpPort, smtpUsername, smtpPassword, senderEmail, testRecipient);
-
-                    default:
-                        return new TestResult
-                        {
-                            Success = false,
-                            Message = "Unknown email provider"
-                        };
-                }
+                    "SendGrid" => await TestSendGridAsync(sendGridApiKey, senderEmail, testRecipient),
+                    "AzureCommunication" => await TestAzureEmailAsync(azureConnectionString, senderEmail, testRecipient),
+                    "SMTP" => await TestSmtpAsync(smtpHost, smtpPort, smtpUsername, smtpPassword, senderEmail, testRecipient),
+                    _ => new TestResult
+                    {
+                        Success = false,
+                        Message = "Unknown email provider"
+                    }
+                };
             }
             catch (Exception ex)
             {
@@ -725,8 +921,6 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                // Azure Communication Services email testing
-                // Note: This requires Azure.Communication.Email package
                 return Task.FromResult(new TestResult
                 {
                     Success = true,
@@ -799,7 +993,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
@@ -812,7 +1006,7 @@ namespace Sky.Editor.Services.Setup
                 config.SmtpUsername = smtpUsername;
                 config.SmtpPassword = smtpPassword;
 
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Updated email configuration for setup {SetupId}", setupId);
             }
@@ -831,7 +1025,7 @@ namespace Sky.Editor.Services.Setup
                 logger.LogInformation("Starting setup completion for {SetupId}", setupId);
 
                 logger.LogInformation("Retrieving setup configuration...");
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
 
                 if (config?.Id != setupId)
                 {
@@ -842,7 +1036,7 @@ namespace Sky.Editor.Services.Setup
                     };
                 }
 
-                logger.LogInformation("\t Successful.");
+                logger.LogInformation("✓ Setup configuration retrieved");
 
                 // Get the main database connection string
                 logger.LogInformation("Retrieving main database connection string...");
@@ -856,13 +1050,8 @@ namespace Sky.Editor.Services.Setup
                     };
                 }
 
-                // Create main database context
                 using var mainDbContext = new ApplicationDbContext(mainDbConnectionString);
-
-                // Database schema is already initialized during application startup by SingleTenant.Configure() or MultiTenant.Configure()
-                logger.LogInformation("Database schema already initialized during application startup");
-
-                logger.LogInformation("\t Successful.");
+                logger.LogInformation("✓ Database context created");
 
                 // Validate all required fields
                 logger.LogInformation("Validating setup configuration...");
@@ -872,43 +1061,41 @@ namespace Sky.Editor.Services.Setup
                     return validationResult;
                 }
 
-                logger.LogInformation("\t Successful.");
+                logger.LogInformation("✓ Configuration validated");
 
-
-                // Step 1: Create administrator account--if one does not exist yet.
+                // Step 1: Create administrator account if none exists
                 var adminAccounts = await userManager.GetUsersInRoleAsync(RequiredIdentityRoles.Administrators);
 
                 if (!adminAccounts.Any())
                 {
-                    logger.LogInformation("Creating administrator account");
+                    logger.LogInformation("Creating administrator account...");
                     var adminResult = await CreateAdminAccountAsync(config);
                     if (!adminResult.Success)
                     {
                         return adminResult;
                     }
+                    logger.LogInformation("✓ Administrator account created");
                 }
                 else
                 {
-                    logger.LogInformation("Administrator account already exists, skipping creation");
+                    logger.LogInformation("✓ Administrator account already exists, skipping creation");
                 }
 
                 // Step 2: Save settings to main database
                 logger.LogInformation("Saving settings to database...");
                 await SaveSettingsToDatabaseAsync(mainDbContext, config);
-
-                logger.LogInformation("\t Successful.");
+                logger.LogInformation("✓ Settings saved");
 
                 // Step 3: Create default layout if none exists
-                logger.LogInformation("Ensuring default layout exists");
+                logger.LogInformation("Ensuring default layout exists...");
                 await EnsureDefaultLayoutAndHomePageExistsAsync(mainDbContext, config);
-
-                logger.LogInformation("\t Successful.");
+                logger.LogInformation("✓ Default layout ensured");
 
                 // Step 4: Mark setup as complete
                 config.IsComplete = true;
                 config.CompletedAt = DateTime.UtcNow;
 
-                // Clear sensitive data
+                // Clear sensitive data before persisting
                 config.AdminPassword = string.Empty;
                 config.SendGridApiKey = string.Empty;
                 config.AzureEmailConnectionString = string.Empty;
@@ -916,7 +1103,13 @@ namespace Sky.Editor.Services.Setup
                 config.SmtpUsername = string.Empty;
                 config.StorageConnectionString = string.Empty;
 
-                await SaveSetupStateAsync(config);
+                // Save committed state
+                await SaveCommittedStateAsync(config);
+                logger.LogInformation("✓ Committed state saved");
+
+                // Delete draft state to clean up
+                await DeleteDraftStateAsync();
+                logger.LogInformation("✓ Draft state cleaned up");
 
                 logger.LogInformation("Setup completed successfully for {SetupId}", setupId);
 
@@ -956,34 +1149,30 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
                 }
 
-                // Update Azure CDN/Front Door settings
                 config.AzureCdnSubscriptionId = azureSubscriptionId ?? string.Empty;
                 config.AzureCdnResourceGroup = azureResourceGroup ?? string.Empty;
                 config.AzureCdnProfileName = azureProfileName ?? string.Empty;
                 config.AzureCdnEndpointName = azureEndpointName ?? string.Empty;
                 config.AzureCdnIsFrontDoor = azureIsFrontDoor;
 
-                // Update Cloudflare settings
                 config.CloudflareApiToken = cloudflareApiToken ?? string.Empty;
                 config.CloudflareZoneId = cloudflareZoneId ?? string.Empty;
 
-                // Update Sucuri settings
                 config.SucuriApiKey = sucuriApiKey ?? string.Empty;
                 config.SucuriApiSecret = sucuriApiSecret ?? string.Empty;
 
-                // Update CloudFront settings
                 config.CloudFrontAccessKeyId = cloudFrontAccessKeyId ?? string.Empty;
                 config.CloudFrontSecretAccessKey = cloudFrontSecretAccessKey ?? string.Empty;
                 config.CloudFrontDistributionId = cloudFrontDistributionId ?? string.Empty;
                 config.CloudFrontRegion = cloudFrontRegion ?? string.Empty;
 
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Updated CDN configuration for setup {SetupId}", setupId);
             }
@@ -999,7 +1188,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
 
                 if (config?.Id != setupId)
                 {
@@ -1008,11 +1197,11 @@ namespace Sky.Editor.Services.Setup
 
                 return stepNumber switch
                 {
-                    1 => config.StoragePreConfigured, // Skip Step 1 (Storage) if pre-configured
-                    2 => !string.IsNullOrEmpty(config.DatabaseConnectionString), // Skip Step 2 (Database) if pre-configured
-                    3 => config.SenderEmailPreConfigured, // Skip Step 3 (Admin) if pre-configured
-                    4 => config.PublisherPreConfigured, // Skip Step 4 (Publisher) if pre-configured
-                    _ => false // Never skip email, CDN, or completion steps
+                    1 => config.StoragePreConfigured,
+                    2 => !string.IsNullOrEmpty(config.DatabaseConnectionString),
+                    3 => HasAdminAccount(),
+                    4 => config.PublisherPreConfigured,
+                    _ => false
                 };
             }
             catch (Exception ex)
@@ -1022,19 +1211,36 @@ namespace Sky.Editor.Services.Setup
             }
         }
 
+        /// <summary>
+        /// Checks if an administrator account already exists.
+        /// Step 3 (Admin Account) should be skipped if admin exists.
+        /// </summary>
+        private bool HasAdminAccount()
+        {
+            try
+            {
+                var adminAccounts = userManager.GetUsersInRoleAsync(RequiredIdentityRoles.Administrators).Result;
+                return adminAccounts.Any();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         /// <inheritdoc/>
         public async Task MarkRestartTriggeredAsync(Guid setupId)
         {
             try
             {
-                var config = await GetSetupStateAsync();
+                var config = await GetDraftStateAsync();
                 if (config?.Id != setupId)
                 {
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
                 }
 
                 config.RestartTriggered = true;
-                await SaveSetupStateAsync(config);
+                await SaveDraftStateAsync(config);
 
                 logger.LogInformation("Marked restart as triggered for setup {SetupId}", setupId);
             }
@@ -1050,56 +1256,48 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                // Check if the AllowSetup setting is false (which means setup is complete)
+                // Check if AllowSetup is false (setup is complete)
                 var allowSetupSetting = await applicationDbContext.Settings
                     .FirstOrDefaultAsync(s => s.Group == "SYSTEM" && s.Name == "AllowSetup");
 
                 if (allowSetupSetting != null && bool.TryParse(allowSetupSetting.Value, out var allowSetup))
                 {
-                    // If AllowSetup is false, setup is complete
                     return !allowSetup;
                 }
 
-                // Fallback: Check if setup state exists and is marked as complete
-                var setupState = await GetSetupStateAsync();
-
-                if (setupState != null)
+                // Fallback: Check committed state
+                var committedState = await GetCommittedStateAsync();
+                if (committedState?.IsComplete == true)
                 {
-                    return setupState.IsComplete;
+                    return true;
                 }
 
-                // For legacy setups where no state exists, check if any settings exist that would indicate setup has been completed.
-                // Check for a administrator account.
+                // Legacy check: Verify key setup indicators exist
                 var adminUserExists = await userManager.GetUsersInRoleAsync("Administrators");
-                var layoutExists = await applicationDbContext.Layouts.CountAsync();
-                var homePageExists = await applicationDbContext.Articles.FirstOrDefaultAsync(a => a.UrlPath == "root");
-                var publishedPagesExist = await applicationDbContext.Pages.FirstOrDefaultAsync(p => p.UrlPath == "root");
+                var layoutExists = await applicationDbContext.Layouts.CountAsync() > 0;
+                var homePageExists = await applicationDbContext.Articles
+                    .AnyAsync(a => a.UrlPath == "root");
 
-                // If these exist, we can assume setup is complete.
-                if (adminUserExists.Count > 0 && layoutExists > 0 && (homePageExists != null || publishedPagesExist != null))
+                if (adminUserExists.Count > 0 && layoutExists && homePageExists)
                 {
-                    // Save setup state for future checks.
+                    // Save state for future checks
                     var newState = new SetupConfiguration
                     {
                         Id = Guid.NewGuid(),
                         IsComplete = true,
                         CompletedAt = DateTime.UtcNow,
                         SenderEmail = adminUserExists.FirstOrDefault()?.Email,
-                        CurrentStep = 7 // Final step
+                        CurrentStep = 7
                     };
 
-                    // Populate from environment variables
                     GetEnvironmentVariables(newState);
-
-                    // Save the state
-                    await SaveSetupStateAsync(newState);
+                    await SaveCommittedStateAsync(newState);
 
                     logger.LogInformation("Legacy setup detected and state saved for setup {SetupId}", newState.Id);
 
                     return true;
                 }
 
-                // No setup state found - assume setup is required
                 return false;
             }
             catch (Exception ex)
@@ -1160,12 +1358,11 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                // Create user
                 var user = new IdentityUser
                 {
                     UserName = config.SenderEmail,
                     Email = config.SenderEmail,
-                    EmailConfirmed = true // Auto-confirm for first admin
+                    EmailConfirmed = true
                 };
 
                 var result = await userManager.CreateAsync(user, config.AdminPassword);
@@ -1180,7 +1377,6 @@ namespace Sky.Editor.Services.Setup
                     };
                 }
 
-                // Add to Administrators role
                 var addToRoleResult = await SetupNewAdministrator.Ensure_RolesAndAdmin_Exists(roleManager, userManager, user);
 
                 if (!addToRoleResult)
@@ -1188,15 +1384,10 @@ namespace Sky.Editor.Services.Setup
                     return new SetupCompletionResult
                     {
                         Success = false,
-                        Message = $"Failed to assign admin role."
+                        Message = "Failed to assign admin role."
                     };
                 }
-                else
-                {
-                    logger.LogInformation("Admin user {Email} assigned to Administrators role", config.SenderEmail);
-                }
 
-                // Add user to Administrators role
                 var roleResult = await userManager.AddToRoleAsync(user, "Administrators");
 
                 if (!roleResult.Succeeded)
@@ -1230,7 +1421,6 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                // ✅ NEW: Save AdminEmail for email services
                 await SaveOrUpdateSettingAsync(
                     context,
                     "EMAIL",
@@ -1238,7 +1428,6 @@ namespace Sky.Editor.Services.Setup
                     config.SenderEmail,
                     "Administrator email address for system emails");
 
-                // Save storage connection string
                 if (!config.StoragePreConfigured)
                 {
                     await SaveOrUpdateSettingAsync(
@@ -1249,7 +1438,6 @@ namespace Sky.Editor.Services.Setup
                         "Cloud storage connection string");
                 }
 
-                // Save blob public URL
                 await SaveOrUpdateSettingAsync(
                     context,
                     "STORAGE",
@@ -1257,7 +1445,6 @@ namespace Sky.Editor.Services.Setup
                     config.BlobPublicUrl,
                     "Public URL for static assets");
 
-                // Save publisher URL
                 await SaveOrUpdateSettingAsync(
                     context,
                     "PUBLISHER",
@@ -1265,7 +1452,6 @@ namespace Sky.Editor.Services.Setup
                     config.PublisherUrl,
                     "Publisher website URL");
 
-                // Save static web pages flag
                 await SaveOrUpdateSettingAsync(
                     context,
                     "PUBLISHER",
@@ -1273,7 +1459,6 @@ namespace Sky.Editor.Services.Setup
                     config.StaticWebPages.ToString(),
                     "Enable static website mode");
 
-                // Save requires authentication flag
                 await SaveOrUpdateSettingAsync(
                     context,
                     "PUBLISHER",
@@ -1281,7 +1466,6 @@ namespace Sky.Editor.Services.Setup
                     config.CosmosRequiresAuthentication.ToString(),
                     "Website requires authentication");
 
-                // Save allowed file types
                 await SaveOrUpdateSettingAsync(
                     context,
                     "PUBLISHER",
@@ -1289,7 +1473,6 @@ namespace Sky.Editor.Services.Setup
                     config.AllowedFileTypes,
                     "Allowed file types for upload");
 
-                // Save Microsoft App ID if provided
                 if (!string.IsNullOrEmpty(config.MicrosoftAppId))
                 {
                     await SaveOrUpdateSettingAsync(
@@ -1300,7 +1483,6 @@ namespace Sky.Editor.Services.Setup
                         "Microsoft OAuth Application ID");
                 }
 
-                // Save email settings if configured
                 if (!string.IsNullOrEmpty(config.SendGridApiKey))
                 {
                     await SaveOrUpdateSettingAsync(
@@ -1352,7 +1534,7 @@ namespace Sky.Editor.Services.Setup
                         "SMTP password");
                 }
 
-                // Save CDN settings if configured
+                // Save CDN settings if fully configured
                 if (!string.IsNullOrEmpty(config.AzureCdnSubscriptionId) &&
                     !string.IsNullOrEmpty(config.AzureCdnResourceGroup) &&
                     !string.IsNullOrEmpty(config.AzureCdnProfileName) &&
@@ -1429,7 +1611,7 @@ namespace Sky.Editor.Services.Setup
                         "Sucuri CDN/Firewall");
                 }
 
-                // IMPORTANT: Set AllowSetup to false
+                // Mark setup as complete
                 await SaveOrUpdateSettingAsync(
                     context,
                     "SYSTEM",
@@ -1441,7 +1623,7 @@ namespace Sky.Editor.Services.Setup
 
                 logger.LogInformation("Settings saved to database successfully");
 
-                // Check for partial Azure CDN configuration
+                // Warn about partial Azure CDN configuration
                 var azureFields = new[] { config.AzureCdnSubscriptionId, config.AzureCdnResourceGroup, config.AzureCdnProfileName, config.AzureCdnEndpointName };
                 var nonEmptyCount = azureFields.Count(f => !string.IsNullOrEmpty(f));
                 if (nonEmptyCount > 0 && nonEmptyCount < 4)
@@ -1488,7 +1670,6 @@ namespace Sky.Editor.Services.Setup
                 setting.Description = description;
             }
 
-            // Save changes.
             await context.SaveChangesAsync();
         }
 
@@ -1561,8 +1742,6 @@ namespace Sky.Editor.Services.Setup
                             "Template ID for home page");
                     }
 
-                    // Create the home page
-                    // REFACTORED: Use CreateArticleCommand instead of CreateArticle + SaveArticle
                     var createCommand = new CreateArticleCommand
                     {
                         Title = config.WebsiteTitle,
@@ -1570,34 +1749,28 @@ namespace Sky.Editor.Services.Setup
                         UserId = Guid.Parse(userId),
                         ArticleType = Cosmos.Cms.Common.ArticleType.General,
                         BlogKey = string.Empty,
-                        
-                        // Special home page properties
-                        Published = DateTimeOffset.UtcNow, // Auto-publish
-                        StatusCode = Cosmos.Common.Data.Logic.StatusCodeEnum.Active,     // Active status
-                        UrlPathOverride = "root" // Home page must be "root"
+                        Published = DateTimeOffset.UtcNow,
+                        StatusCode = Cosmos.Common.Data.Logic.StatusCodeEnum.Active,
+                        UrlPathOverride = "root"
                     };
 
                     var result = await mediator.SendAsync(createCommand);
 
                     if (!result.IsSuccess)
                     {
-                        var errorMessage = result.ErrorMessage ?? 
+                        var errorMessage = result.ErrorMessage ??
                             string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
-                        
+
                         logger.LogError("Failed to create home page: {Error}", errorMessage);
                         throw new InvalidOperationException($"Failed to create home page: {errorMessage}");
                     }
 
                     logger.LogInformation("Home page created successfully with article number {ArticleNumber}", result.Data.ArticleNumber);
-
-                    logger.LogInformation($"Using site design: '{layout.LayoutName}'. Home page created successfully.");
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to create default layout");
-
-                // Don't throw - this is not critical for setup completion
             }
         }
 

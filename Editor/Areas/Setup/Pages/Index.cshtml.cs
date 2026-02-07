@@ -13,11 +13,14 @@ namespace Sky.Editor.Areas.Setup.Pages
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Configuration;
+    using Sky.Editor.Authorization;
     using Sky.Editor.Services.Setup;
 
     /// <summary>
     /// Setup wizard welcome page.
+    /// Allows access during initial setup or for administrators making post-setup changes.
     /// </summary>
+    [RequireSetupOrAdmin]
     public class IndexModel : PageModel
     {
         private readonly ISetupService setupService;

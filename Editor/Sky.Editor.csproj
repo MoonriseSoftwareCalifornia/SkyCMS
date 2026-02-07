@@ -47,6 +47,7 @@
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\_CosmosLayout.cshtml" />
 	  <Content Remove="stylecop.json" />
 	  <Content Remove="wwwroot\css\hangfire-dark.css" />
+	  <Content Remove="wwwroot\css\setup-sensitive-fields.css" />
 	  <Content Remove="wwwroot\images\samples\134038968578143524.jpg" />
 	  <Content Remove="wwwroot\images\samples\20250917_OHR.YoungMoose_EN-US2991221135_UHD_bing.jpg" />
 	  <Content Remove="wwwroot\images\samples\20250920_OHR.OktoberfestSwing_EN-US7916182497_UHD_bing.jpg" />
@@ -63,6 +64,7 @@
 	  <Content Remove="wwwroot\js\editors\JavaScript.js" />
 	  <Content Remove="wwwroot\js\editors\monaco-editor-core.js" />
 	  <Content Remove="wwwroot\js\editors\monaco-editor-insert-helpers.js" />
+	  <Content Remove="wwwroot\js\setup-sensitive-fields.js" />
 	  <Content Remove="wwwroot\lib\cosmos\ckeditor\ckeditor-widget.301.js" />
 	</ItemGroup>
 

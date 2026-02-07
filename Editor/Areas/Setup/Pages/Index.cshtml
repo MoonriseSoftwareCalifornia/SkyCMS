@@ -4,6 +4,15 @@
     ViewData["Title"] = "Welcome";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/setup-sensitive-fields.css" />
+}
+
+@section Scripts {
+    <script src="~/js/setup-sensitive-fields.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" crossorigin="anonymous"></script>
+}
+
 @await Html.PartialAsync("_SetupStepIndicator", 0) @* Current step number *@
 
 <div style="display:none">@Model.DbStatus.ToString()</div>
@@ -107,6 +116,3 @@ else
     </div>
 </form>
 
-@section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" crossorigin="anonymous"></script>
-}

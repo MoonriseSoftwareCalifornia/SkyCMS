@@ -14,11 +14,14 @@ namespace Sky.Editor.Areas.Setup.Pages
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
+    using Sky.Editor.Authorization;
     using Sky.Editor.Services.Setup;
 
     /// <summary>
-    /// Setup wizard step 2: Storage configuration.
+    /// Setup wizard step 1: Storage configuration.
+    /// Allows access during initial setup or for administrators making post-setup changes.
     /// </summary>
+    [RequireSetupOrAdmin]
     public class Step1_Storage : PageModel
     {
         private readonly ISetupService setupService;
@@ -109,14 +112,6 @@ namespace Sky.Editor.Areas.Setup.Pages
                 if (config == null)
                 {
                     return RedirectToPage("./Index");
-                }
-
-                // If storage is pre-configured, skip to next step
-                if (config.StoragePreConfigured)
-                {
-                    logger.LogInformation("Step1_Storage GET - Storage is pre-configured, skipping to next step");
-                    await setupService.UpdateStepAsync(config.Id, 1);
-                    return RedirectToPage("./Step2_AdminAccount");
                 }
 
                 SetupId = config.Id;
@@ -305,5 +300,77 @@ namespace Sky.Editor.Areas.Setup.Pages
 
             return string.Empty;
         }
+
+        /// <summary>
+        /// Handles POST requests to go to the next step.
+        /// </summary>
+        /// <returns>Redirect to next step.</returns>
+        public async Task<IActionResult> OnPostNextAsync()
+        {
+            if (!ModelState.IsValid || SetupId == Guid.Empty)
+            {
+                return Page();
+            }
+
+            var config = await setupService.GetCurrentSetupAsync();
+            if (config == null)
+            {
+                return RedirectToPage("./Index");
+            }
+
+            try
+            {
+                // Save storage configuration
+                var connectionStringToSave = config.StoragePreConfigured ? config.StorageConnectionString : StorageConnectionString;
+                var blobPublicUrlToSave = config.BlobPublicUrlPreConfigured ? config.BlobPublicUrl : BlobPublicUrl;
+
+                await setupService.UpdateStorageConfigAsync(SetupId, connectionStringToSave, blobPublicUrlToSave);
+                await setupService.UpdateStepAsync(SetupId, 2);
+
+                // Check if next step should be skipped
+                var shouldSkipStep2 = await setupService.ShouldSkipStepAsync(SetupId, 2);
+                var nextPageName = shouldSkipStep2 ? "./Step3_Database" : "./Step2_AdminAccount";
+
+                return RedirectToPage(nextPageName);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error proceeding to next step");
+                ErrorMessage = $"Error proceeding: {ex.Message}";
+                return Page();
+            }
+        }
+
+        /// <summary>
+        /// Handles POST requests to go to the previous step.
+        /// </summary>
+        /// <returns>Redirect to previous step (Index).</returns>
+        public async Task<IActionResult> OnPostBackAsync()
+        {
+            if (SetupId == Guid.Empty)
+            {
+                return RedirectToPage("./Index");
+            }
+
+            try
+            {
+                // Save current step before going back
+                var config = await setupService.GetCurrentSetupAsync();
+                if (config != null)
+                {
+                    var connectionStringToSave = config.StoragePreConfigured ? config.StorageConnectionString : StorageConnectionString;
+                    var blobPublicUrlToSave = config.BlobPublicUrlPreConfigured ? config.BlobPublicUrl : BlobPublicUrl;
+                    await setupService.UpdateStorageConfigAsync(SetupId, connectionStringToSave, blobPublicUrlToSave);
+                    await setupService.UpdateStepAsync(SetupId, 1);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error saving state before going back");
+            }
+
+            return RedirectToPage("./Index");
+        }
     }
 }
+

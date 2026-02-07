@@ -108,7 +108,7 @@ namespace Sky.Tests.Areas.Setup
 
             testConfiguration = configBuilder.Build();
 
-            // ✅ SetupService constructor with ALL 8 parameters
+            // ✅ SetupService constructor with 8 parameters (removed ArticleEditLogic)
             setupService = new SetupService(
                 testConfiguration,
                 new NullLogger<SetupService>(),
@@ -117,7 +117,6 @@ namespace Sky.Tests.Areas.Setup
                 RoleManager,
                 Db,
                 layoutImportService,
-                Logic,
                 Mediator);
 
             foreach (var role in RequiredIdentityRoles.Roles)

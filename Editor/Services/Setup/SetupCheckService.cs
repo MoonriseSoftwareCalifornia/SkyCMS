@@ -21,11 +21,8 @@ namespace Sky.Editor.Services.Setup
         private readonly IConfiguration configuration;
         private readonly IMemoryCache memoryCache;
 
-        /// <inheritdoc/>
-        public string Message { get; internal set; }
-
         /// <summary>
-        ///  Initalizes a new instance of the <see cref="SetupCheckService"/> class.
+        /// Initializes a new instance of the <see cref="SetupCheckService"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="configuration">Configuration instance.</param>
@@ -36,6 +33,9 @@ namespace Sky.Editor.Services.Setup
             this.configuration = configuration;
             this.memoryCache = memoryCache;
         }
+
+        /// <inheritdoc/>
+        public string Message { get; internal set; }
 
         /// <inheritdoc/>
         public async Task<bool> IsSetup()
