@@ -822,6 +822,19 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;    // No queuing
     });
 
+    // Docs import API rate limiter
+    var docsImportPermitLimit = builder.Configuration.GetValue<int?>("DocsImport:RateLimit:PermitLimit") ?? 300;
+    var docsImportWindowMinutes = builder.Configuration.GetValue<int?>("DocsImport:RateLimit:WindowMinutes") ?? 5;
+    docsImportPermitLimit = Math.Max(1, docsImportPermitLimit);
+    docsImportWindowMinutes = Math.Max(1, docsImportWindowMinutes);
+
+    options.AddFixedWindowLimiter("docs-import", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(docsImportWindowMinutes);
+        opt.PermitLimit = docsImportPermitLimit;
+        opt.QueueLimit = 0;
+    });
+
     // Contact form submission rate limiter (for Sky.Cms.Api.Shared)
     // Environment-aware: relaxed in development, strict in production
     options.AddFixedWindowLimiter("contact-form", opt =>

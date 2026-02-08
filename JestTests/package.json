@@ -28,6 +28,7 @@
       "/node_modules/"
     ],
     "collectCoverageFrom": [
+      "../.skycms/scripts/import-docs.js",
       "../Sky.Cms.Api.Shared/**/*.js",
       "../Editor/wwwroot/**/*.js",
       "!**/node_modules/**",

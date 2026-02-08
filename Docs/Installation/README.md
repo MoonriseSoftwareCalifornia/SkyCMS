@@ -86,6 +86,10 @@ chunk_hint: 340
 3. Run the Setup Wizard if applicable; otherwise set env vars and start the app.
 4. Complete post-install verification (publish test page, email, CDN, admin accounts).
 
+## Docs Publisher (separate repo)
+If you want to publish Markdown docs without cloning the full SkyCMS repository, use the SkyCMS.DocsPublisher template repo.
+See [Docs Publisher](./DocsPublisher.md) for details and the link to the template.
+
 ## Key facts {#key-facts}
 
 - Two config paths: single-tenant wizard (CosmosAllowSetup=true) vs env-var-driven (production); multi-tenant uses DynamicConfig, not the wizard.

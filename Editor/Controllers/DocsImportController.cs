@@ -5,12 +5,16 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+#nullable enable
+
 namespace Cosmos.Cms.Editor.Controllers;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Cosmos.BlobService;
@@ -19,6 +23,7 @@ using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -36,6 +41,7 @@ using Sky.Editor.Services.EditorSettings;
 /// API controller for importing documentation content from CI pipelines.
 /// </summary>
 [ApiController]
+[EnableRateLimiting("docs-import")]
 [Route("_api/import/docs")]
 public class DocsImportController : ControllerBase
 {
@@ -43,6 +49,7 @@ public class DocsImportController : ControllerBase
     private const string ApiKeyFallbackConfigPath = "DocsImportApiKey";
     private const string UserIdConfigPath = "DocsImport:UserId";
     private const string UserIdFallbackConfigPath = "DocsImportUserId";
+    private const int MaxHtmlBytes = 1_048_576;
 
     private readonly ApplicationDbContext dbContext;
     private readonly IMediator mediator;
@@ -55,6 +62,13 @@ public class DocsImportController : ControllerBase
     /// <summary>
     /// Initializes a new instance of the <see cref="DocsImportController"/> class.
     /// </summary>
+    /// <param name="dbContext">Database context for content persistence.</param>
+    /// <param name="mediator">Mediator for create/save commands.</param>
+    /// <param name="articleLogic">Article editor logic for deletes.</param>
+    /// <param name="configuration">Configuration source for import settings.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="storageContext">Storage context for asset uploads.</param>
+    /// <param name="editorSettings">Editor settings accessor.</param>
     public DocsImportController(
         ApplicationDbContext dbContext,
         IMediator mediator,
@@ -76,9 +90,16 @@ public class DocsImportController : ControllerBase
     /// <summary>
     /// Creates or updates a docs page by source key.
     /// </summary>
+    /// <param name="sourceKey">Source key for the document.</param>
+    /// <param name="request">Upsert request payload.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Upsert result payload.</returns>
     [HttpPut("items/{sourceKey}")]
+    [RequestSizeLimit(MaxHtmlBytes)]
     public async Task<IActionResult> Upsert(string sourceKey, [FromBody] DocsUpsertRequest request, CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
         if (!TryAuthorize(out var unauthorizedResult))
         {
             return unauthorizedResult;
@@ -93,6 +114,22 @@ public class DocsImportController : ControllerBase
         {
             return BadRequest("Title, UrlPath, and Html are required.");
         }
+
+        var htmlBytes = Encoding.UTF8.GetByteCount(request.Html);
+
+        if (htmlBytes > MaxHtmlBytes)
+        {
+            return StatusCode(StatusCodes.Status413PayloadTooLarge, "Html payload exceeds the 1 MB limit.");
+        }
+
+        logger.LogInformation(
+            "Docs import upsert started: sourceKey={SourceKey}, urlPath={UrlPath}, title={Title}, templateKey={TemplateKey}, articleType={ArticleType}, htmlBytes={HtmlBytes}",
+            sourceKey,
+            request.UrlPath,
+            request.Title,
+            request.TemplateKey ?? string.Empty,
+            request.ArticleType ?? string.Empty,
+            htmlBytes);
 
         var userId = GetImporterUserId();
         if (userId == Guid.Empty)
@@ -128,8 +165,16 @@ public class DocsImportController : ControllerBase
             var result = await mediator.SendAsync(createCommand, cancellationToken);
             if (!result.IsSuccess)
             {
+                logger.LogWarning("Docs import upsert failed: sourceKey={SourceKey}, errors={Errors}", sourceKey, result.Errors);
                 return BadRequest(result.Errors);
             }
+
+            stopwatch.Stop();
+            logger.LogInformation(
+                "Docs import upsert created: sourceKey={SourceKey}, articleNumber={ArticleNumber}, durationMs={DurationMs}",
+                sourceKey,
+                result.Data?.ArticleNumber,
+                stopwatch.ElapsedMilliseconds);
 
             return Ok(new { status = "created", articleNumber = result.Data?.ArticleNumber, sourceKey });
         }
@@ -150,8 +195,16 @@ public class DocsImportController : ControllerBase
         var saveResult = await mediator.SendAsync(saveCommand, cancellationToken);
         if (!saveResult.IsSuccess)
         {
+            logger.LogWarning("Docs import upsert failed: sourceKey={SourceKey}, errors={Errors}", sourceKey, saveResult.Errors);
             return BadRequest(saveResult.Errors);
         }
+
+        stopwatch.Stop();
+        logger.LogInformation(
+            "Docs import upsert updated: sourceKey={SourceKey}, articleNumber={ArticleNumber}, durationMs={DurationMs}",
+            sourceKey,
+            existing.ArticleNumber,
+            stopwatch.ElapsedMilliseconds);
 
         return Ok(new { status = "updated", articleNumber = existing.ArticleNumber, sourceKey });
     }
@@ -159,6 +212,10 @@ public class DocsImportController : ControllerBase
     /// <summary>
     /// Uploads a docs asset to blob storage under /pub/docs.
     /// </summary>
+    /// <param name="file">Uploaded file.</param>
+    /// <param name="relativePath">Relative path under the docs root.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Upload result payload.</returns>
     [HttpPost("assets")]
     [RequestSizeLimit(26_214_400)]
     public async Task<IActionResult> UploadAsset(
@@ -166,6 +223,8 @@ public class DocsImportController : ControllerBase
         [FromForm] string? relativePath,
         CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
         if (!TryAuthorize(out var unauthorizedResult))
         {
             return unauthorizedResult;
@@ -214,15 +273,27 @@ public class DocsImportController : ControllerBase
         var baseUrl = editorSettings.BlobPublicUrl.TrimEnd('/');
         var publicUrl = baseUrl + "/" + metaData.RelativePath.TrimStart('/');
 
+        stopwatch.Stop();
+        logger.LogInformation(
+            "Docs import asset uploaded: path={Path}, size={Size}, durationMs={DurationMs}",
+            metaData.RelativePath,
+            file.Length,
+            stopwatch.ElapsedMilliseconds);
+
         return Ok(new { url = publicUrl, path = metaData.RelativePath });
     }
 
     /// <summary>
     /// Deletes a docs page by source key.
     /// </summary>
+    /// <param name="sourceKey">Source key to delete.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Delete result payload.</returns>
     [HttpDelete("items/{sourceKey}")]
     public async Task<IActionResult> Delete(string sourceKey, CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
         if (!TryAuthorize(out var unauthorizedResult))
         {
             return unauthorizedResult;
@@ -238,15 +309,28 @@ public class DocsImportController : ControllerBase
         }
 
         await articleLogic.DeleteArticle(catalogEntry.ArticleNumber);
+
+        stopwatch.Stop();
+        logger.LogInformation(
+            "Docs import delete: sourceKey={SourceKey}, articleNumber={ArticleNumber}, durationMs={DurationMs}",
+            sourceKey,
+            catalogEntry.ArticleNumber,
+            stopwatch.ElapsedMilliseconds);
+
         return Ok(new { status = "deleted", articleNumber = catalogEntry.ArticleNumber, sourceKey });
     }
 
     /// <summary>
     /// Renames a docs page by source paths.
     /// </summary>
+    /// <param name="request">Rename request payload.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Rename result payload.</returns>
     [HttpPost("rename")]
     public async Task<IActionResult> Rename([FromBody] DocsRenameRequest request, CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
         if (!TryAuthorize(out var unauthorizedResult))
         {
             return unauthorizedResult;
@@ -299,8 +383,17 @@ public class DocsImportController : ControllerBase
         var saveResult = await mediator.SendAsync(saveCommand, cancellationToken);
         if (!saveResult.IsSuccess)
         {
+            logger.LogWarning("Docs import rename failed: fromPath={FromPath}, toPath={ToPath}, errors={Errors}", request.FromPath, request.ToPath, saveResult.Errors);
             return BadRequest(saveResult.Errors);
         }
+
+        stopwatch.Stop();
+        logger.LogInformation(
+            "Docs import rename: fromPath={FromPath}, toPath={ToPath}, articleNumber={ArticleNumber}, durationMs={DurationMs}",
+            request.FromPath,
+            request.ToPath,
+            existing.ArticleNumber,
+            stopwatch.ElapsedMilliseconds);
 
         return Ok(new { status = "renamed", articleNumber = existing.ArticleNumber });
     }
@@ -327,7 +420,10 @@ public class DocsImportController : ControllerBase
             ? header[7..].Trim()
             : header.Trim();
 
-        if (!string.Equals(token, configuredKey, StringComparison.Ordinal))
+        var keys = configuredKey
+            .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (!keys.Any(key => string.Equals(token, key, StringComparison.Ordinal)))
         {
             return false;
         }
@@ -342,7 +438,7 @@ public class DocsImportController : ControllerBase
         return Guid.TryParse(configuredUserId, out var parsed) ? parsed : Guid.Empty;
     }
 
-    private static ArticleType ParseArticleType(string? articleType)
+    private ArticleType ParseArticleType(string? articleType)
     {
         if (string.IsNullOrWhiteSpace(articleType))
         {
@@ -354,7 +450,7 @@ public class DocsImportController : ControllerBase
             : ArticleType.General;
     }
 
-    private static DateTimeOffset? ResolvePublishedTimestamp(DocsUpsertRequest request)
+    private DateTimeOffset? ResolvePublishedTimestamp(DocsUpsertRequest request)
     {
         if (request.PublishedAt.HasValue)
         {
@@ -372,12 +468,12 @@ public class DocsImportController : ControllerBase
         }
 
         var template = await dbContext.Templates
-            .FirstOrDefaultAsync(t => t.Title.ToLower() == templateKey.ToLower(), cancellationToken);
+            .FirstOrDefaultAsync(t => string.Equals(t.Title, templateKey, StringComparison.OrdinalIgnoreCase), cancellationToken);
 
         return template?.Id;
     }
 
-    private static string NormalizeSourceToUrlPath(string sourceKey)
+    private string NormalizeSourceToUrlPath(string sourceKey)
     {
         var normalized = sourceKey.Replace('\\', '/').ToLowerInvariant();
         var trimmed = normalized.StartsWith("docs/") ? normalized[5..] : normalized;
@@ -386,9 +482,17 @@ public class DocsImportController : ControllerBase
         {
             trimmed = trimmed[..^9];
         }
+        else if (trimmed.EndsWith("/index.markdown", StringComparison.OrdinalIgnoreCase))
+        {
+            trimmed = trimmed[..^13];
+        }
         else if (trimmed.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
         {
             trimmed = trimmed[..^3];
+        }
+        else if (trimmed.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase))
+        {
+            trimmed = trimmed[..^9];
         }
 
         return string.IsNullOrWhiteSpace(trimmed) ? "docs" : $"docs/{trimmed}";
@@ -418,7 +522,7 @@ public class DocsImportController : ControllerBase
         return doc.DocumentNode.OuterHtml;
     }
 
-    private static void RewriteAttribute(HtmlNode node, string attributeName, string pageDir, string sourceDir, string assetBase)
+    private void RewriteAttribute(HtmlNode node, string attributeName, string pageDir, string sourceDir, string assetBase)
     {
         if (!node.Attributes.Contains(attributeName))
         {
@@ -426,7 +530,12 @@ public class DocsImportController : ControllerBase
         }
 
         var attribute = node.Attributes[attributeName];
-        var value = attribute?.Value;
+        if (attribute == null)
+        {
+            return;
+        }
+
+        var value = attribute.Value;
         if (string.IsNullOrWhiteSpace(value))
         {
             return;
@@ -452,7 +561,7 @@ public class DocsImportController : ControllerBase
         attribute.Value = assetBase + "/" + assetTarget.TrimStart('/');
     }
 
-    private static bool IsExternalOrAbsolute(string value)
+    private bool IsExternalOrAbsolute(string value)
     {
         if (value.StartsWith("#", StringComparison.OrdinalIgnoreCase))
         {
@@ -473,11 +582,11 @@ public class DocsImportController : ControllerBase
         return htmlUtilities.IsAbsoluteUri(value);
     }
 
-    private static bool IsMarkdownLink(string value) =>
+    private bool IsMarkdownLink(string value) =>
         value.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
         value.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase);
 
-    private static string TrimMarkdownExtension(string value)
+    private string TrimMarkdownExtension(string value)
     {
         if (value.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase))
         {
@@ -492,7 +601,7 @@ public class DocsImportController : ControllerBase
         return value;
     }
 
-    private static string GetUrlDirectory(string urlPath)
+    private string GetUrlDirectory(string urlPath)
     {
         if (string.IsNullOrWhiteSpace(urlPath))
         {
@@ -504,7 +613,7 @@ public class DocsImportController : ControllerBase
         return lastSlash >= 0 ? normalized[..lastSlash] : normalized;
     }
 
-    private static string GetSourceDirectory(string? sourcePath)
+    private string GetSourceDirectory(string? sourcePath)
     {
         if (string.IsNullOrWhiteSpace(sourcePath))
         {
@@ -521,7 +630,7 @@ public class DocsImportController : ControllerBase
         return lastSlash >= 0 ? normalized[..lastSlash] : string.Empty;
     }
 
-    private static string CombineUrlPath(string basePath, string relativePath)
+    private string CombineUrlPath(string basePath, string relativePath)
     {
         var combined = string.IsNullOrWhiteSpace(basePath)
             ? relativePath
@@ -543,6 +652,7 @@ public class DocsImportController : ControllerBase
                 {
                     stack.RemoveAt(stack.Count - 1);
                 }
+
                 continue;
             }
 
@@ -552,7 +662,7 @@ public class DocsImportController : ControllerBase
         return string.Join('/', stack);
     }
 
-    private static string NormalizeAssetRelativePath(string? relativePath, string fallbackFileName)
+    private string NormalizeAssetRelativePath(string? relativePath, string fallbackFileName)
     {
         var normalized = (relativePath ?? string.Empty).Replace("\\", "/").Trim();
         if (string.IsNullOrWhiteSpace(normalized))
@@ -594,14 +704,14 @@ public class DocsImportController : ControllerBase
         }
     }
 
-    private static string UrlEncodePath(string path)
+    private string UrlEncodePath(string path)
     {
         var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
         var encoded = parts.Select(UrlEncodePathSegment);
         return string.Join('/', encoded);
     }
 
-    private static string UrlEncodePathSegment(string segment)
+    private string UrlEncodePathSegment(string segment)
     {
         return Uri.EscapeDataString(segment.Replace(" ", "-"));
     }
@@ -611,17 +721,64 @@ public class DocsImportController : ControllerBase
     /// </summary>
     public sealed class DocsUpsertRequest
     {
+        /// <summary>
+        /// Gets the document title.
+        /// </summary>
         public string Title { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets the URL path for the page.
+        /// </summary>
         public string UrlPath { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets the HTML payload to store.
+        /// </summary>
         public string Html { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets the template key used to resolve a template ID.
+        /// </summary>
         public string? TemplateKey { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the page should be published.
+        /// </summary>
         public bool Published { get; init; }
+
+        /// <summary>
+        /// Gets the explicit publish timestamp.
+        /// </summary>
         public DateTimeOffset? PublishedAt { get; init; }
+
+        /// <summary>
+        /// Gets the summary/intro text.
+        /// </summary>
         public string? Introduction { get; init; }
+
+        /// <summary>
+        /// Gets the banner image URL.
+        /// </summary>
         public string? BannerImage { get; init; }
+
+        /// <summary>
+        /// Gets the article type name.
+        /// </summary>
         public string? ArticleType { get; init; }
+
+        /// <summary>
+        /// Gets the source tracking metadata.
+        /// </summary>
         public DocsSourceInfo? Source { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether relative links should be rewritten.
+        /// </summary>
         public bool RewriteLinks { get; init; } = true;
+
+        /// <summary>
+        /// Gets the asset base path for rewritten links.
+        /// </summary>
         public string? AssetBasePath { get; init; }
     }
 
@@ -630,9 +787,24 @@ public class DocsImportController : ControllerBase
     /// </summary>
     public sealed class DocsRenameRequest
     {
+        /// <summary>
+        /// Gets the source path to rename from.
+        /// </summary>
         public string FromPath { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets the destination path to rename to.
+        /// </summary>
         public string ToPath { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets the original title (optional).
+        /// </summary>
         public string? FromTitle { get; init; }
+
+        /// <summary>
+        /// Gets the new title for the page.
+        /// </summary>
         public string? ToTitle { get; init; }
     }
 
@@ -641,7 +813,14 @@ public class DocsImportController : ControllerBase
     /// </summary>
     public sealed class DocsSourceInfo
     {
+        /// <summary>
+        /// Gets the source file path.
+        /// </summary>
         public string? Path { get; init; }
+
+        /// <summary>
+        /// Gets the source content hash.
+        /// </summary>
         public string? Hash { get; init; }
     }
 }

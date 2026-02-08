@@ -34,6 +34,7 @@ audience: [all]
 - [When to Use SkyCMS (includes Edge-Native Architecture)](./When-to-Use-SkyCMS.md)
 - [Developer Quick Start](./QuickStart.md)
 - [Installation Overview](./Installation/README.md)
+- [Docs Publisher (Markdown-to-SkyCMS Template)](./Installation/DocsPublisher.md)
 - [Minimum Required Settings](./Installation/MinimumRequiredSettings.md)
 - [Setup Wizard](./Installation/SetupWizard.md)
 - [Website Launch Workflow](./Developer-Guides/Website-Launch-Workflow.md)

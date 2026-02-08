@@ -84,10 +84,16 @@ namespace Sky.Editor.Areas.Setup.Pages
                 Response.Redirect("/");
             }
 
-            // When the welcome page is access, start with a clean initialization state.
-            await setupService.InitializeSetupAsync(true);
-
+            // Get existing setup or create new one
+            // IMPORTANT: Do NOT delete existing draft state on page load
+            // This preserves the SetupId when users navigate between steps
             var config = await setupService.GetCurrentSetupAsync();
+            
+            // If no setup in progress, create a new one
+            if (config == null)
+            {
+                config = await setupService.InitializeSetupAsync(deleteDatabase: false);
+            }
 
             StorageIsPreConfigured = config.StoragePreConfigured;
             PublisherIsPreConfigured = config.PublisherPreConfigured;
