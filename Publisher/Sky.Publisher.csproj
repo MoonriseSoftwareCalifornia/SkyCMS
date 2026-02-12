@@ -48,7 +48,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Cosmos.MicrosoftGraph" />
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
@@ -69,6 +68,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Common\Cosmos.Common.csproj" />
 	  <ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
+	  <ProjectReference Include="..\Cosmos.MicrosoftGraph\Cosmos.MicrosoftGraph.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
