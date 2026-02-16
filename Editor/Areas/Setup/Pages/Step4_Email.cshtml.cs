@@ -298,6 +298,18 @@ namespace Sky.Editor.Areas.Setup.Pages
                     SmtpPassword = config.SmtpPassword;
                 }
 
+                // If "none" was selected, clear all email provider values
+                if (EmailProvider == "none")
+                {
+                    logger.LogInformation("Step4_Email POST - Clearing email configuration (provider: none)");
+                    SendGridApiKey = string.Empty;
+                    AzureEmailConnectionString = string.Empty;
+                    SmtpHost = string.Empty;
+                    SmtpPort = "587";
+                    SmtpUsername = string.Empty;
+                    SmtpPassword = string.Empty;
+                }
+
                 logger.LogInformation("Step4_Email POST - Saving email configuration");
                 await setupService.UpdateEmailConfigAsync(
                     SetupId,

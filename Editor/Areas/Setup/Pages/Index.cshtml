@@ -13,106 +13,98 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" crossorigin="anonymous"></script>
 }
 
-@await Html.PartialAsync("_SetupStepIndicator", 0) @* Current step number *@
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        @await Html.PartialAsync("_SetupStepIndicator", 0) @* Current step number *@
 
-<div style="display:none">@Model.DbStatus.ToString()</div>
-<div class="text-center mb-5">
-    <h2>Welcome to SkyCMS Setup Wizard</h2>
-    <p class="lead">This wizard will guide you through the initial setup of your SkyCMS installation.</p>
-    <p class="text-light">SkyCMS is open source software. <a href="https://github.com/CWALabs/SkyCMS" target="_blank">View on GitHub</a></p>
-</div>
 
-<div class="card mb-4 bg-secondary text-light">
-    <div class="card-body">
-       
+        <div style="display:none">@Model.DbStatus.ToString()</div>
+        <div class="text-center mb-5">
+            <h2>Welcome to SkyCMS Setup Wizard</h2>
+        </div>
 
-        @*
-            If any of the services are pre-configured, show what is configured.
-        *@
-        @if (Model.CdnIsPreconfigured || Model.EmailIsPreConfigured || Model.StorageIsPreConfigured)
+        <div class="card mb-4 bg-secondary text-light">
+            <div class="card-body">
+                @*
+                    If any of the services are pre-configured, show what is configured.
+                *@
+                @if (Model.CdnIsPreconfigured || Model.EmailIsPreConfigured || Model.StorageIsPreConfigured)
+                {
+                    <p class="card-text">Please have the following ready:</p>
+                    <ul>
+                        @if (!Model.StorageIsPreConfigured)
+                        {
+                            <li><strong>Storage Connection String</strong> - For Azure Blob Storage, AWS S3 (or compatible), or Cloudflare R2</li>
+                        }
+                        <li><strong>Administrator Email & Password</strong> - For the initial admin account</li>
+                        @if (!Model.PublisherIsPreConfigured)
+                        {
+                            <li><strong>Publisher URL</strong> - The public address of the website</li>
+                        }
+                        @if (!Model.EmailIsPreConfigured)
+                        {
+                            <li><strong>Email service credentials</strong>  (Optional for dev/test installs) SendGrid, Azure Communication Services, or SMTP</li>
+                        }
+                        @if (!Model.CdnIsPreconfigured)
+                        {
+                            <li><strong>CDN service credentials</strong>  (Optional) Azure, CloudFlare or Securi</li>
+                        }
+                    </ul>
+                    <hr />
+                    <p class="card-text">The following is preconfigured:</p>
+                    <ul>
+                        @* Database is already pre-configured *@
+                        <li>Database</li>
+                        @if (Model.StorageIsPreConfigured)
+                        {
+                            <li>Storage</li>
+                        }
+                        @if (Model.PublisherIsPreConfigured)
+                        {
+                            <li>Website address (URL)</li>
+                        }
+                        @if (Model.EmailIsPreConfigured)
+                        {
+                            <li>Email service</li>
+                        }
+                        @if (Model.CdnIsPreconfigured)
+                        {
+                            <li>CDN provider</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <h5 class="card-title"><i class="fas fa-info-circle"></i> Things to setup:</h5>
+                    <p class="card-text">Please ensure you have the following information ready before continuing.</p>
+                    <ul>
+                        <li><strong>Storage Connection String</strong> - For Azure Blob Storage, AWS S3 (or compatible), or Cloudflare R2</li>
+                        <li><strong>Administrator Email & Password</strong> - For the initial admin account</li>
+                        <li><strong>Publisher URL</strong> - The public URL of your website</li>
+                        <li><strong>(Optional)</strong> Email service credentials (SendGrid, Azure Communication Services, or SMTP)</li>
+                        <li><strong>(Optional)</strong> CDN service credentials (Azure, CloudFlare or Securi)</li>
+                    </ul>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
-            <h5 class="card-title"><i class="fas fa-info-circle"></i> Things to setup:</h5>
-            <p class="card-text">Please ensure you have the following information ready before continuing.</p>
-            <ul>
-                @if (!Model.StorageIsPreConfigured)
-                {
-                    <li><strong>Storage Connection String</strong> - For Azure Blob Storage, AWS S3 (or compatible), or Cloudflare R2</li>
-                }
-                <li><strong>Administrator Email & Password</strong> - For the initial admin account</li>
-                @if (Model.PublisherIsPreConfigured)
-                {
-                    <li><strong>Publisher URL</strong> - The public URL of your website</li>
-                }
-                @if (Model.EmailIsPreConfigured)
-                {
-                    <li><strong>(Optional)</strong> Email service credentials (SendGrid, Azure Communication Services, or SMTP)</li>
-                }
-                @if (Model.CdnIsPreconfigured)
-                {
-                    <li><strong>(Optional)</strong> CDN service credentials (Azure, CloudFlare or Securi)</li>
-                }
-            </ul>
-            <hr />
-            <h5 class="card-title"><i class="fa-solid fa-circle-check"></i> Already set up:</h5>
-            <p class="card-text">The following is already setup.</p>
-            <ul>
-                @if (Model.StorageIsPreConfigured)
-                {
-                    <li>Storage is pre-configured</li>
-                }
-                @if (Model.PublisherIsPreConfigured)
-                {
-                    <li>The public URL of your website</li>
-                }
-                @if (Model.EmailIsPreConfigured)
-                {
-                    <li>Email service is pre-configured</li>
-                }
-                @if (Model.CdnIsPreconfigured)
-                {
-                    <li>CDN is pre-configured</li>
-                }
-            </ul>
+            <div class="alert alert-danger">
+                <strong>Error:</strong> @Model.ErrorMessage
+            </div>
         }
         else
         {
-            <h5 class="card-title"><i class="fas fa-info-circle"></i> Things to setup:</h5>
-            <p class="card-text">Please ensure you have the following information ready before continuing.</p>
-            <ul>
-                <li><strong>Storage Connection String</strong> - For Azure Blob Storage, AWS S3 (or compatible), or Cloudflare R2</li>
-                <li><strong>Administrator Email & Password</strong> - For the initial admin account</li>
-                <li><strong>Publisher URL</strong> - The public URL of your website</li>
-                <li><strong>(Optional)</strong> Email service credentials (SendGrid, Azure Communication Services, or SMTP)</li>
-                <li><strong>(Optional)</strong> CDN service credentials (Azure, CloudFlare or Securi)</li>
-            </ul>
+
+            <form method="post">
+                @* @Html.AntiForgeryToken() *@
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="/" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Next <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </form>
         }
     </div>
 </div>
-
-<div class="alert alert-info">
-    <strong><i class="fas fa-lock"></i> Security Note:</strong>
-    The database connection string must be configured in your environment/user secrets before running this wizard.
-    All other settings will be stored in the database and can be changed later through the admin interface.
-</div>
-
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div class="alert alert-danger">
-        <strong>Error:</strong> @Model.ErrorMessage
-    </div>
-}
-else
-{
-    <div class="alert alert-success">
-        <strong>Ready to proceed!</strong> Click "Start Setup" to continue to the next step.
-    </div>
-}
-
-<form method="post">
-    @* @Html.AntiForgeryToken() *@
-    <div class="d-flex justify-content-between mt-4">
-        <a href="/" class="btn btn-secondary">Cancel</a>
-        <button type="submit" class="btn btn-primary">Start Setup <i class="fas fa-arrow-right"></i></button>
-    </div>
-</form>
 

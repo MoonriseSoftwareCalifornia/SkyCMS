@@ -9,10 +9,12 @@ namespace Sky.Editor.Areas.Setup.Pages
 {
     using System;
     using System.Threading.Tasks;
+    using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Setup;
 
     /// <summary>
@@ -23,6 +25,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         private readonly ISetupService setupService;
         private readonly ILogger<Step6_Review> logger;
         private readonly ISetupCheckService setupCheckService;
+        private readonly ILayoutImportService layoutImportService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Step6_Review"/> class.
@@ -30,11 +33,13 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <param name="setupService">Setup service.</param>
         /// <param name="logger">Logger.</param>
         /// <param name="setupCheckService">Setup check service.</param>
-        public Step6_Review(ISetupService setupService, ILogger<Step6_Review> logger, ISetupCheckService setupCheckService)
+        /// <param name="layoutImportService">Layout import service.</param>
+        public Step6_Review(ISetupService setupService, ILogger<Step6_Review> logger, ISetupCheckService setupCheckService, ILayoutImportService layoutImportService)
         {
             this.setupService = setupService;
             this.logger = logger;
             this.setupCheckService = setupCheckService;
+            this.layoutImportService = layoutImportService;
         }
 
         /// <summary>
@@ -52,6 +57,102 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// Gets or sets the error message.
         /// </summary>
         public string ErrorMessage { get; set; }
+
+        /// <summary>
+        /// Gets the storage type.
+        /// </summary>
+        public string StorageType => InferStorageType(Config?.StorageConnectionString);
+
+        /// <summary>
+        /// Gets the database type.
+        /// </summary>
+        public string DatabaseType => Utilities.InferDatabaseProviderShortName(Config?.DatabaseConnectionString);
+
+        /// <summary>
+        /// Gets the site design name based on the selected layout in configuration. If no layout is selected, returns "None selected".
+        /// </summary>
+        public string SiteDesignName
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(Config?.SiteDesignId))
+                {
+                    return "None selected";
+                }
+
+                var layout = layoutImportService.GetCommunityLayoutAsync(Config.SiteDesignId, true).GetAwaiter().GetResult();
+                return layout.LayoutName;
+            }
+        }
+
+        /// <summary>
+        /// Gets the Email provider based on configuration. Checks for SendGrid, then Azure Communication Services, then SMTP, otherwise None.
+        /// </summary>
+        public string EmailProvider
+        {
+            get
+            {
+                if (Config?.EmailProviderPreConfigured == false)
+                {
+                    return "None";
+                }
+
+                if (string.IsNullOrEmpty(Config?.SendGridApiKey))
+                {
+                    return "SendGrid";
+                }
+                else if (!string.IsNullOrEmpty(Config?.AzureEmailConnectionString))
+                {
+                    return "Azure ACS";
+                }
+                else if (!string.IsNullOrEmpty(Config?.SmtpHost))
+                {
+                    return "SMTP";
+                }
+
+                return "None";
+            }
+        }
+
+        /// <summary>
+        /// Gets the CDN provider based on configuration. Checks for Azure Front Door, then CloudFlare, then CloudFront, then Sucuri, otherwise None.
+        /// </summary>
+        public string CdnProvider
+        {
+            get
+            {
+                var hasCdn = !string.IsNullOrEmpty(Config.AzureCdnSubscriptionId) ||
+                            !string.IsNullOrEmpty(Config.CloudflareApiToken) ||
+                            !string.IsNullOrEmpty(Config.SucuriApiKey);
+
+                if (!hasCdn)
+                {
+                    return "None";
+                }
+
+                if (!string.IsNullOrEmpty(Config?.AzureCdnSubscriptionId))
+                {
+                    return "Azure Front Door";
+                }
+
+                if (!string.IsNullOrEmpty(Config?.CloudflareApiToken))
+                {
+                    return "CloudFlare";
+                }
+
+                if (!string.IsNullOrEmpty(Config?.CloudFrontSecretAccessKey))
+                {
+                    return "Cloud Front";
+                }
+
+                if (!string.IsNullOrEmpty(Config?.SucuriApiSecret))
+                {
+                    return "Sucuri";
+                }
+
+                return "None";
+            }
+        }
 
         /// <summary>
         /// Handles GET requests.
@@ -137,6 +238,38 @@ namespace Sky.Editor.Areas.Setup.Pages
                 Config = await setupService.GetCurrentSetupAsync();
                 return Page();
             }
+        }
+
+
+        /// <summary>
+        /// Infers storage type from connection string.
+        /// </summary>
+        /// <param name="connectionString">Connection string.</param>
+        /// <returns>Storage type.</returns>
+        public string InferStorageType(string connectionString)
+        {
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                return string.Empty;
+            }
+
+            if (connectionString.Contains("DefaultEndpointsProtocol=", StringComparison.OrdinalIgnoreCase) ||
+                connectionString.Contains("AccountName=", StringComparison.OrdinalIgnoreCase))
+            {
+                return "AzureBlob";
+            }
+            else if (connectionString.Contains("Bucket=", StringComparison.OrdinalIgnoreCase) &&
+                     connectionString.Contains("Region=", StringComparison.OrdinalIgnoreCase))
+            {
+                return "AmazonS3";
+            }
+            else if (connectionString.Contains("AccountId=", StringComparison.OrdinalIgnoreCase) &&
+                     connectionString.Contains("Bucket=", StringComparison.OrdinalIgnoreCase))
+            {
+                return "CloudflareR2";
+            }
+
+            return string.Empty;
         }
     }
 }

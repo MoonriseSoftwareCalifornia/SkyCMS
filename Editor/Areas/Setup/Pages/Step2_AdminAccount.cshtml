@@ -4,87 +4,89 @@
     ViewData["Title"] = "Administrator Account";
     Layout = "_LayoutSetup";
 }
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        @await Html.PartialAsync("_SetupStepIndicator", 2)
 
-@await Html.PartialAsync("_SetupStepIndicator", 2)
+        <h2>Create Administrator Account</h2>
+        <p class="text-muted">Set up the initial administrator account for your SkyCMS installation</p>
 
-<h2>Create Administrator Account</h2>
-<p class="text-muted">Set up the initial administrator account for your SkyCMS installation</p>
-
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div class="alert alert-danger">
-        <strong>Error:</strong> @Model.ErrorMessage
-    </div>
-}
-
-<form method="post" id="adminForm">
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-    
-    @Html.AntiForgeryToken()
-    @Html.HiddenFor(m => m.SetupId)
-    <div class="card mb-4 bg-secondary text-light">
-        <div class="card-header">
-            <h5>Administrator Credentials</h5>
-        </div>
-        <div class="card-body">
-            <div class="form-group mb-3">
-                <label asp-for="AdminEmail" class="form-label">Email Address <span class="text-danger">*</span></label>
-                <input asp-for="AdminEmail" required type="email" class="form-control" placeholder="my-name@example.com" />
-                <span asp-validation-for="AdminEmail" class="text-danger"></span>
-                <small class="form-text text-light">This will be your username for logging in</small>
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">
+                <strong>Error:</strong> @Model.ErrorMessage
             </div>
+        }
 
-            <div class="form-group mb-3">
-                <label asp-for="AdminPassword" class="form-label">Password <span class="text-danger">*</span></label>
-                <input asp-for="AdminPassword" type="password" class="form-control" id="adminPassword" required />
-                <span asp-validation-for="AdminPassword" class="text-danger"></span>
-                <div class="form-text text-light">
-                    <small>
-                        Password must be at least 8 characters and contain:
-                        <ul class="mb-0">
-                            <li id="length-check">At least 8 characters</li>
-                            <li id="uppercase-check">One uppercase letter</li>
-                            <li id="lowercase-check">One lowercase letter</li>
-                            <li id="number-check">One number</li>
-                            <li id="special-check">One special character (!@@#$%^&*)</li>
-                        </ul>
-                    </small>
+        <form method="post" id="adminForm">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.SetupId)
+            <div class="card mb-4 bg-secondary text-light">
+                <div class="card-header">
+                    <h5>Administrator Credentials</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label asp-for="AdminEmail" class="form-label">Email Address <span class="text-danger">*</span></label>
+                        <input asp-for="AdminEmail" required type="email" class="form-control" placeholder="my-name@example.com" />
+                        <span asp-validation-for="AdminEmail" class="text-danger"></span>
+                        <small class="form-text text-light">This will be your username for logging in</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group mb-3">
+                                <label asp-for="AdminPassword" class="form-label">Password <span class="text-danger">*</span></label>
+                                <input asp-for="AdminPassword" type="password" class="form-control" id="adminPassword" required />
+                                <span asp-validation-for="AdminPassword" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label asp-for="ConfirmPassword" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                <input asp-for="ConfirmPassword" type="password" class="form-control" id="confirmPassword" required />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                                <small id="password-match" class="form-text"></small>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-text text-light">
+                                <small>
+                                    Password must be at least 8 characters and contain:
+                                    <ul class="mb-0">
+                                        <li id="length-check">At least 8 characters</li>
+                                        <li id="uppercase-check">One uppercase letter</li>
+                                        <li id="lowercase-check">One lowercase letter</li>
+                                        <li id="number-check">One number</li>
+                                        <li id="special-check">One special character (!@@#$%^&*)</li>
+                                    </ul>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="ConfirmPassword" class="form-label">Confirm Password <span class="text-danger">*</span></label>
-                <input asp-for="ConfirmPassword" type="password" class="form-control" id="confirmPassword" required />
-                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                <small id="password-match" class="form-text"></small>
+            <div class="d-flex justify-content-between mt-4">
+                <a href="@Url.Page("./Step1_Storage")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
 
-        </div>
+        </form>
     </div>
-
-    <div class="alert alert-info">
-        <strong><i class="fas fa-info-circle"></i> Note:</strong>
-        The administrator account will be assigned to the <strong>Administrators</strong> role with full system access.
-    </div>
-
-    <div class="d-flex justify-content-between mt-4">
-        <a href="@Url.Page("./Step1_Storage")" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
-            Next <i class="fas fa-arrow-right"></i>
-        </button>
-    </div>
-
-</form>
-
+</div>
 @section Scripts {
     <script>
 
         $(document).ready(function() {
             var form = $('#adminForm');
             var submitBtn = $('#submitBtn');
-            
+
             // Configure validation
             $.validator.setDefaults({
                 highlight: function(element) {
@@ -102,7 +104,7 @@
 
             // Add custom password validation - FIXED REGEX
             $.validator.addMethod('strongPassword', function(value, element) {
-                return this.optional(element) || 
+                return this.optional(element) ||
                     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@@#$%^&*]).{8,}$/.test(value);
             }, 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
 

@@ -323,6 +323,7 @@ namespace Sky.Editor.Services.Setup
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
                 }
 
+                config.AdminEmail = email;
                 config.SenderEmail = email;
                 config.AdminPassword = password; // Will be hashed during completion
                 await SaveDraftStateAsync(config);
@@ -999,12 +1000,25 @@ namespace Sky.Editor.Services.Setup
                     throw new InvalidOperationException($"Setup configuration {setupId} not found");
                 }
 
-                config.SendGridApiKey = sendGridApiKey;
-                config.AzureEmailConnectionString = azureConnectionString;
-                config.SmtpHost = smtpHost;
-                config.SmtpPort = smtpPort;
-                config.SmtpUsername = smtpUsername;
-                config.SmtpPassword = smtpPassword;
+                if (string.IsNullOrWhiteSpace(provider))
+                {
+                    config.SendGridApiKey = string.Empty;
+                    config.AzureEmailConnectionString = string.Empty;
+                    config.SmtpHost = string.Empty;
+                    config.SmtpPort = string.Empty;
+                    config.SmtpUsername = string.Empty;
+                    config.SmtpPassword = string.Empty;
+                }
+                else
+                {
+                    config.SendGridApiKey = sendGridApiKey;
+                    config.AzureEmailConnectionString = azureConnectionString;
+                    config.SmtpHost = smtpHost;
+                    config.SmtpPort = smtpPort;
+                    config.SmtpUsername = smtpUsername;
+                    config.SmtpPassword = smtpPassword;
+                }
+
 
                 await SaveDraftStateAsync(config);
 

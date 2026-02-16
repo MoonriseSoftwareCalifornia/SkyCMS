@@ -4,176 +4,185 @@
     ViewData["Title"] = "Storage Configuration";
 }
 
-@await Html.PartialAsync("_SetupStepIndicator", 1)
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        @await Html.PartialAsync("_SetupStepIndicator", 1)
 
-<h2>Storage Configuration</h2>
-<p class="text-muted">Configure your cloud storage for static assets</p>
+        <h2>Storage Configuration</h2>
+        <p class="text-muted">Configure your cloud storage for static assets</p>
 
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div class="alert alert-danger">
-        <strong>Error:</strong> @Model.ErrorMessage
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">
+                <strong>Error:</strong> @Model.ErrorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success">
+                <strong>Success:</strong> @Model.SuccessMessage
+            </div>
+        }
+
+        <form method="post" id="storageForm">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.SetupId)
+            @Html.HiddenFor(m => m.IsPreConfigured)
+            <div class="card mb-4 bg-secondary text-light">
+                <div class="card-header">
+                    <h5>Storage Provider</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Select Storage Type <span class="text-danger">*</span></label>
+                        <select asp-for="StorageType" class="form-select" id="storageTypeSelect" required>
+                            <option value="">-- Select Storage Provider --</option>
+                            <option value="AzureBlob">Azure Blob Storage</option>
+                            <option value="AmazonS3">Amazon S3</option>
+                            <option value="CloudflareR2">Cloudflare R2</option>
+                        </select>
+                        <span asp-validation-for="StorageType" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <div id="storageConnectionStringAlert" class="alert alert-primary" role="alert" style="display:none;">
+                            Connection string already set and cannot be changed.
+                        </div>
+                        <label asp-for="StorageConnectionString" class="form-label">Connection String <span class="text-danger">*</span></label>
+                        <input asp-for="StorageConnectionString" class="form-control font-monospace" required />
+                        <span asp-validation-for="StorageConnectionString" class="text-danger"></span>
+                    </div>
+
+                    <div id="azureBlobOptions" class="d-none">
+                        <div class="alert alert-info">
+                            <strong>Azure Blob Storage Format:</strong><br />
+                            <code>DefaultEndpointsProtocol=https;AccountName=youraccount;AccountKey=yourkey;EndpointSuffix=core.windows.net</code><br />
+                            <small>Or use Managed Identity: <code>AccountName=youraccount;AccountKey=AccessToken</code></small>
+                        </div>
+                        <div class="form-group mb-3" style="display:none;">
+                            <label asp-for="ContainerName" class="form-label">Container Name</label>
+                            <input asp-for="ContainerName" class="form-control" placeholder="$web" value="$web" />
+                            <small class="form-text text-light">Default: $web (for static websites)</small>
+                        </div>
+                    </div>
+
+                    <div id="amazonS3Options" class="d-none">
+                        <div class="alert alert-info">
+                            <strong>Amazon S3 Format:</strong><br />
+                            <code>Bucket=your-bucket;Region=us-east-1;KeyId=YOUR_ACCESS_KEY;Key=YOUR_SECRET_KEY;</code>
+                        </div>
+                    </div>
+
+                    <div id="cloudflareR2Options" class="d-none">
+                        <div class="alert alert-info">
+                            <strong>Cloudflare R2 Format:</strong><br />
+                            <code>AccountId=your-account-id;Bucket=your-bucket;KeyId=YOUR_ACCESS_KEY;Key=YOUR_SECRET_KEY;</code>
+                        </div>
+                    </div>
+
+                    <div id="fgBlobUrl" class="form-group mb-3">
+                        <div id="blobPublicUrlAlert" class="alert alert-primary" role="alert" style="display:none;">
+                            The public URL is already set and cannot be changed.
+                        </div>
+                        <label asp-for="BlobPublicUrl" class="form-label">Public URL (or CDN Endpoint) <span class="text-danger">*</span></label>
+                        <input asp-for="BlobPublicUrl" class="form-control" placeholder="https://cdn.example.com or /" value="/" required />
+                        <span asp-validation-for="BlobPublicUrl" class="text-danger"></span>
+                        <small class="form-text text-light">
+                            Enter "/" for static websites, or your CDN URL (e.g., https://cdn.example.com)
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="@Url.Page("./Step1_Mode")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+        </form>
+
+        @section Scripts {
+            <script>
+                var isPreConfigured = @Model.IsPreConfigured.ToString().ToLower();
+                var blobPublicUrlPreConfigured = @Model.BlobPublicUrlPreConfigured.ToString().ToLower();
+
+                $(document).ready(function() {
+                    // Enable jQuery validation
+                    var form = $('#storageForm');
+
+                    if (isPreConfigured) {
+                        $('#storageConnectionStringAlert').show();
+                        $('#fgBlobUrl').hide();
+
+                        // Disable storage-related inputs but keep SetupId enabled for binding
+                        $('#StorageConnectionString, #storageTypeSelect, #ContainerName').prop('disabled', true);
+
+                        // Make them visually readonly
+                        $('#StorageConnectionString').addClass('bg-secondary').attr('readonly', true);
+                    }
+                    else if (blobPublicUrlPreConfigured) {
+                        // Rare cases public URL is set while storage isn't preconfigured.
+                        $('#BlobPublicUrl').addClass('bg-secondary').attr('readonly', true);
+                        $('#blobPublicUrlAlert').prop('disabled', true);
+                        $('#blobPublicUrlAlert').show();
+                    }
+
+                    // Configure validation
+                    $.validator.setDefaults({
+                        highlight: function(element) {
+                            $(element).addClass('is-invalid').removeClass('is-valid');
+                        },
+                        unhighlight: function(element) {
+                            $(element).removeClass('is-invalid').addClass('is-valid');
+                        },
+                        errorElement: 'span',
+                        errorClass: 'text-danger',
+                        errorPlacement: function(error, element) {
+                            error.insertAfter(element);
+                        }
+                    });
+
+                    // Add custom validation for storage type
+                    $('#storageTypeSelect').rules('add', {
+                        required: true,
+                        messages: {
+                            required: "Please select a storage provider"
+                        }
+                    });
+
+                    function updateStorageHelp() {
+                        const storageType = $('#storageTypeSelect').val();
+
+                        $('#azureBlobOptions, #amazonS3Options, #cloudflareR2Options').addClass('d-none');
+
+                        if (!isPreConfigured) {
+                            switch(storageType) {
+                                case 'AzureBlob':
+                                    $('#azureBlobOptions').removeClass('d-none');
+                                    break;
+                                case 'AmazonS3':
+                                    $('#amazonS3Options').removeClass('d-none');
+                                    break;
+                                case 'CloudflareR2':
+                                    $('#cloudflareR2Options').removeClass('d-none');
+                                    break;
+                            }
+                        }
+                    }
+
+                    $('#storageTypeSelect').change(updateStorageHelp);
+                    updateStorageHelp();
+                });
+            </script>
+        }
+
     </div>
-}
-
-@if (!string.IsNullOrEmpty(Model.SuccessMessage))
-{
-    <div class="alert alert-success">
-        <strong>Success:</strong> @Model.SuccessMessage
-    </div>
-}
-
-<form method="post" id="storageForm">
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-    
-    @Html.AntiForgeryToken()
-    @Html.HiddenFor(m => m.SetupId)
-    @Html.HiddenFor(m => m.IsPreConfigured)
-    <div class="card mb-4 bg-secondary text-light">
-        <div class="card-header">
-            <h5>Storage Provider</h5>
-        </div>
-        <div class="card-body">
-            <div class="form-group mb-3">
-                <label class="form-label">Select Storage Type <span class="text-danger">*</span></label>
-                <select asp-for="StorageType" class="form-select" id="storageTypeSelect" required>
-                    <option value="">-- Select Storage Provider --</option>
-                    <option value="AzureBlob">Azure Blob Storage</option>
-                    <option value="AmazonS3">Amazon S3</option>
-                    <option value="CloudflareR2">Cloudflare R2</option>
-                </select>
-                <span asp-validation-for="StorageType" class="text-danger"></span>
-            </div>
-
-            <div class="form-group mb-3">
-                <div id="storageConnectionStringAlert" class="alert alert-primary" role="alert" style="display:none;">
-                    Connection string already set and cannot be changed.
-                </div>
-                <label asp-for="StorageConnectionString" class="form-label">Connection String <span class="text-danger">*</span></label>
-                <input asp-for="StorageConnectionString" class="form-control font-monospace" required />
-                <span asp-validation-for="StorageConnectionString" class="text-danger"></span>
-            </div>
-
-            <div id="azureBlobOptions" class="d-none">
-                <div class="alert alert-info">
-                    <strong>Azure Blob Storage Format:</strong><br />
-                    <code>DefaultEndpointsProtocol=https;AccountName=youraccount;AccountKey=yourkey;EndpointSuffix=core.windows.net</code><br />
-                    <small>Or use Managed Identity: <code>AccountName=youraccount;AccountKey=AccessToken</code></small>
-                </div>
-                <div class="form-group mb-3" style="display:none;">
-                    <label asp-for="ContainerName" class="form-label">Container Name</label>
-                    <input asp-for="ContainerName" class="form-control" placeholder="$web" value="$web" />
-                    <small class="form-text text-light">Default: $web (for static websites)</small>
-                </div>
-            </div>
-
-            <div id="amazonS3Options" class="d-none">
-                <div class="alert alert-info">
-                    <strong>Amazon S3 Format:</strong><br />
-                    <code>Bucket=your-bucket;Region=us-east-1;KeyId=YOUR_ACCESS_KEY;Key=YOUR_SECRET_KEY;</code>
-                </div>
-            </div>
-
-            <div id="cloudflareR2Options" class="d-none">
-                <div class="alert alert-info">
-                    <strong>Cloudflare R2 Format:</strong><br />
-                    <code>AccountId=your-account-id;Bucket=your-bucket;KeyId=YOUR_ACCESS_KEY;Key=YOUR_SECRET_KEY;</code>
-                </div>
-            </div>
-
-            <div class="form-group mb-3">
-                <div id="blobPublicUrlAlert" class="alert alert-primary" role="alert" style="display:none;">
-                    The public URL is already set and cannot be changed.
-                </div>
-                <label asp-for="BlobPublicUrl" class="form-label">Public URL (CDN Endpoint) <span class="text-danger">*</span></label>
-                <input asp-for="BlobPublicUrl" class="form-control" placeholder="https://cdn.example.com or /" value="/" required />
-                <span asp-validation-for="BlobPublicUrl" class="text-danger"></span>
-                <small class="form-text text-light">
-                    Enter "/" for static websites, or your CDN URL (e.g., https://cdn.example.com)
-                </small>
-            </div>
-
-        </div>
-    </div>
-
-    <div class="d-flex justify-content-between mt-4">
-        <a href="@Url.Page("./Step1_Mode")" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-        <button type="submit" class="btn btn-primary">
-            Next <i class="fas fa-arrow-right"></i>
-        </button>
-    </div>
-
-</form>
-
-@section Scripts {
-    <script>
-        var isPreConfigured = @Model.IsPreConfigured.ToString().ToLower();
-        var blobPublicUrlPreConfigured = @Model.BlobPublicUrlPreConfigured.ToString().ToLower();
-
-        $(document).ready(function() {
-            // Enable jQuery validation
-            var form = $('#storageForm');
-
-            if (isPreConfigured) {
-                $('#storageConnectionStringAlert').show();
-
-                // Disable storage-related inputs but keep SetupId enabled for binding
-                $('#StorageConnectionString, #storageTypeSelect, #ContainerName').prop('disabled', true);
-                
-                // Make them visually readonly
-                $('#StorageConnectionString').addClass('bg-secondary').attr('readonly', true);
-            }
-
-            if (blobPublicUrlPreConfigured) {
-                $('#BlobPublicUrl').addClass('bg-secondary').attr('readonly', true);
-                $('#blobPublicUrlAlert').show();
-            }
-            
-            // Configure validation
-            $.validator.setDefaults({
-                highlight: function(element) {
-                    $(element).addClass('is-invalid').removeClass('is-valid');
-                },
-                unhighlight: function(element) {
-                    $(element).removeClass('is-invalid').addClass('is-valid');
-                },
-                errorElement: 'span',
-                errorClass: 'text-danger',
-                errorPlacement: function(error, element) {
-                    error.insertAfter(element);
-                }
-            });
-
-            // Add custom validation for storage type
-            $('#storageTypeSelect').rules('add', {
-                required: true,
-                messages: {
-                    required: "Please select a storage provider"
-                }
-            });
-
-            function updateStorageHelp() {
-                const storageType = $('#storageTypeSelect').val();
-                
-                $('#azureBlobOptions, #amazonS3Options, #cloudflareR2Options').addClass('d-none');
-                
-                switch(storageType) {
-                    case 'AzureBlob':
-                        $('#azureBlobOptions').removeClass('d-none');
-                        break;
-                    case 'AmazonS3':
-                        $('#amazonS3Options').removeClass('d-none');
-                        break;
-                    case 'CloudflareR2':
-                        $('#cloudflareR2Options').removeClass('d-none');
-                        break;
-                }
-            }
-            
-            $('#storageTypeSelect').change(updateStorageHelp);
-            updateStorageHelp();
-        });
-    </script>
-}
+</div>

@@ -4,236 +4,240 @@
     ViewData["Title"] = "CDN Configuration";
     Layout = "_LayoutSetup";
 }
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <form method="post" id="cdnForm">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-@await Html.PartialAsync("_SetupStepIndicator", 5)
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="SetupId" asp-for="SetupId" />
 
-<h2>CDN Configuration</h2>
-<p class="text-muted text-light">Configure a Content Delivery Network for cache management (optional)</p>
+            @await Html.PartialAsync("_SetupStepIndicator", 5)
 
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div class="alert alert-danger">
-        <strong>Error:</strong> @Model.ErrorMessage
-    </div>
-}
+            <h2>CDN Configuration</h2>
+            <p class="text-muted text-light">Configure a Content Delivery Network for cache management (optional)</p>
 
-@if (!string.IsNullOrEmpty(Model.SuccessMessage))
-{
-    <div class="alert alert-success">
-        @Model.SuccessMessage
-    </div>
-}
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> @Model.ErrorMessage
+                </div>
+            }
 
-<div class="alert alert-info">
-    <strong><i class="fas fa-info-circle"></i> Optional Configuration:</strong>
-    CDN configuration is optional. You can skip this step and configure it later through the admin panel.
-</div>
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="alert alert-success">
+                    @Model.SuccessMessage
+                </div>
+            }
 
-<form method="post" id="cdnForm">
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            <div class="alert alert-info">
+                <strong><i class="fas fa-info-circle"></i> Optional Configuration:</strong>
+                CDN configuration is optional. You can skip this step and configure it later through the admin panel.
+            </div>
 
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="SetupId" asp-for="SetupId" />
-
-    <!-- Provider Selection -->
-    <div class="card mb-3 bg-secondary text-light">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-network-wired"></i> Select CDN Provider</h5>
-        </div>
-        <div class="card-body">
-            <div class="form-group">
-                <div class="form-group">
-                    <div id="cdnConfigAlert" class="alert alert-primary" role="alert" style="display:none;">
-                        CDN already set and cannot be changed at this time.
+            <!-- Provider Selection -->
+            <div class="card mb-3 bg-secondary text-light">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-network-wired"></i> Select CDN Provider</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-group">
+                            <div id="cdnConfigAlert" class="alert alert-primary" role="alert" style="display:none;">
+                                CDN already set and cannot be changed at this time.
+                            </div>
+                            <label asp-for="SelectedProvider">CDN Provider</label>
+                            <select asp-for="SelectedProvider" class="form-control" id="cdnProviderSelect">
+                                <option value="None">None - Skip CDN Configuration</option>
+                                <option value="Azure">Azure CDN / Front Door</option>
+                                <option value="Cloudflare">CloudFlare</option>
+                                <option value="Cloudfront">CloudFront</option>
+                                <option value="Sucuri">Sucuri WAF/CDN</option>
+                            </select>
+                            <small class="form-text text-light">
+                                Select a CDN provider or choose "None" to skip this step.
+                            </small>
+                        </div>
                     </div>
-                    <label asp-for="SelectedProvider">CDN Provider</label>
-                    <select asp-for="SelectedProvider" class="form-control" id="cdnProviderSelect">
-                        <option value="None">None - Skip CDN Configuration</option>
-                        <option value="Azure">Azure CDN / Front Door</option>
-                        <option value="Cloudflare">CloudFlare</option>
-                        <option value="Cloudfront">CloudFront</option>
-                        <option value="Sucuri">Sucuri WAF/CDN</option>
-                    </select>
-                    <small class="form-text text-light">
-                        Select a CDN provider or choose "None" to skip this step.
-                    </small>
                 </div>
             </div>
-        </div>
 
-        <!-- Azure CDN Configuration -->
-        <div class="card mb-3 bg-secondary text-light" id="azureConfig" style="display: none;">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fab fa-microsoft"></i> Azure Front Door</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <strong>Authentication:</strong> Uses Azure Managed Identity or DefaultAzureCredential.
-                    Ensure your application has access to the CDN/Front Door resource.
+            <!-- Azure CDN Configuration -->
+            <div class="card mb-3 bg-secondary text-light" id="azureConfig" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fab fa-microsoft"></i> Azure Front Door</h5>
                 </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Authentication:</strong> Uses Azure Managed Identity or DefaultAzureCredential.
+                        Ensure your application has access to the CDN/Front Door resource.
+                    </div>
 
-                <div class="form-group">
-                    <label asp-for="AzureSubscriptionId">Subscription ID <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="AzureSubscriptionId" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
-                    <span asp-validation-for="AzureSubscriptionId" class="text-danger"></span>
-                    <small class="form-text text-muted">Azure subscription containing the CDN/Front Door.</small>
-                </div>
+                    <div class="form-group">
+                        <label asp-for="AzureSubscriptionId">Subscription ID <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="AzureSubscriptionId" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                        <span asp-validation-for="AzureSubscriptionId" class="text-danger"></span>
+                        <small class="form-text text-muted">Azure subscription containing the CDN/Front Door.</small>
+                    </div>
 
-                <div class="form-group">
-                    <label asp-for="AzureResourceGroup">Resource Group <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="AzureResourceGroup" class="form-control" placeholder="my-resource-group" />
-                    <span asp-validation-for="AzureResourceGroup" class="text-danger"></span>
-                </div>
+                    <div class="form-group">
+                        <label asp-for="AzureResourceGroup">Resource Group <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="AzureResourceGroup" class="form-control" placeholder="my-resource-group" />
+                        <span asp-validation-for="AzureResourceGroup" class="text-danger"></span>
+                    </div>
 
-                <div class="form-group">
-                    <label asp-for="AzureProfileName">Profile Name <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="AzureProfileName" class="form-control" placeholder="my-cdn-profile" />
-                    <span asp-validation-for="AzureProfileName" class="text-danger"></span>
-                </div>
+                    <div class="form-group">
+                        <label asp-for="AzureProfileName">Profile Name <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="AzureProfileName" class="form-control" placeholder="my-cdn-profile" />
+                        <span asp-validation-for="AzureProfileName" class="text-danger"></span>
+                    </div>
 
-                <div class="form-group">
-                    <label asp-for="AzureEndpointName">Endpoint Name <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="AzureEndpointName" class="form-control" placeholder="my-endpoint" />
-                    <span asp-validation-for="AzureEndpointName" class="text-danger"></span>
-                </div>
+                    <div class="form-group">
+                        <label asp-for="AzureEndpointName">Endpoint Name <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="AzureEndpointName" class="form-control" placeholder="my-endpoint" />
+                        <span asp-validation-for="AzureEndpointName" class="text-danger"></span>
+                    </div>
 
-                <div class="form-check mb-3">
-                    <input asp-for="AzureIsFrontDoor" class="form-check-input" type="checkbox" />
-                    <label asp-for="AzureIsFrontDoor" class="form-check-label">
-                        Use Azure Front Door (instead of Azure CDN)
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cloudflare Configuration -->
-        <div class="card mb-3 bg-secondary text-light" id="cloudflareConfig" style="display: none;">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fab fa-cloudflare"></i> Cloudflare</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <strong>Requirements:</strong> Create an API token with Zone.Cache Purge permissions at
-                    <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" class="text-white">
-                        Cloudflare Dashboard <i class="fas fa-external-link-alt"></i>
-                    </a>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="CloudflareApiToken">API Token <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="CloudflareApiToken" class="form-control" type="password" placeholder="Your Cloudflare API token" />
-                    <span asp-validation-for="CloudflareApiToken" class="text-danger"></span>
-                    <small class="form-text text-muted">Token with Cache Purge permissions.</small>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="CloudflareZoneId">Zone ID <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="CloudflareZoneId" class="form-control" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
-                    <span asp-validation-for="CloudflareZoneId" class="text-danger"></span>
-                    <small class="form-text text-muted">
-                        Find your Zone ID on the Cloudflare dashboard under your domain.
-                    </small>
+                    <div class="form-check mb-3">
+                        <input asp-for="AzureIsFrontDoor" class="form-check-input" type="checkbox" />
+                        <label asp-for="AzureIsFrontDoor" class="form-check-label">
+                            Use Azure Front Door (instead of Azure CDN)
+                        </label>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- CloudFront Configuration -->
-        <div class="card mb-3 bg-secondary text-light" id="cloudfrontConfig" style="display: none;">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fab fa-aws"></i> AWS CloudFront</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <strong>Requirements:</strong> Create an IAM user with CloudFront cache invalidation permissions.
-                    Required permission: <code>cloudfront:CreateInvalidation</code>
+            <!-- Cloudflare Configuration -->
+            <div class="card mb-3 bg-secondary text-light" id="cloudflareConfig" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fab fa-cloudflare"></i> Cloudflare</h5>
                 </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Requirements:</strong> Create an API token with Zone.Cache Purge permissions at
+                        <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" class="text-white">
+                            Cloudflare Dashboard <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
 
-                <div class="form-group">
-                    <label asp-for="CloudFrontAccessKeyId">Access Key ID <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="CloudFrontAccessKeyId" class="form-control" placeholder="AKIAIOSFODNN7EXAMPLE" />
-                    <span asp-validation-for="CloudFrontAccessKeyId" class="text-danger"></span>
-                    <small class="form-text text-muted">AWS IAM Access Key ID with CloudFront permissions.</small>
-                </div>
+                    <div class="form-group">
+                        <label asp-for="CloudflareApiToken">API Token <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="CloudflareApiToken" class="form-control" type="password" placeholder="Your Cloudflare API token" />
+                        <span asp-validation-for="CloudflareApiToken" class="text-danger"></span>
+                        <small class="form-text text-muted">Token with Cache Purge permissions.</small>
+                    </div>
 
-                <div class="form-group">
-                    <label asp-for="CloudFrontSecretAccessKey">Secret Access Key <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="CloudFrontSecretAccessKey" class="form-control" type="password" placeholder="Your AWS Secret Access Key" />
-                    <span asp-validation-for="CloudFrontSecretAccessKey" class="text-danger"></span>
-                    <small class="form-text text-muted">AWS Secret Access Key (stored securely).</small>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="CloudFrontDistributionId">Distribution ID <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="CloudFrontDistributionId" class="form-control" placeholder="E1234567890ABC" />
-                    <span asp-validation-for="CloudFrontDistributionId" class="text-danger"></span>
-                    <small class="form-text text-muted">
-                        Find your Distribution ID in the AWS CloudFront console.
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="CloudFrontRegion">AWS Region</label>
-                    <input asp-for="CloudFrontRegion" class="form-control" placeholder="us-east-1" />
-                    <span asp-validation-for="CloudFrontRegion" class="text-danger"></span>
-                    <small class="form-text text-muted">
-                        AWS region (optional, defaults to us-east-1 for CloudFront).
-                    </small>
+                    <div class="form-group">
+                        <label asp-for="CloudflareZoneId">Zone ID <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="CloudflareZoneId" class="form-control" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+                        <span asp-validation-for="CloudflareZoneId" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            Find your Zone ID on the Cloudflare dashboard under your domain.
+                        </small>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Sucuri Configuration -->
-        <div class="card mb-3 bg-secondary text-light" id="sucuriConfig" style="display: none;">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Sucuri WAF/CDN</h5>
+            <!-- CloudFront Configuration -->
+            <div class="card mb-3 bg-secondary text-light" id="cloudfrontConfig" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fab fa-aws"></i> AWS CloudFront</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Requirements:</strong> Create an IAM user with CloudFront cache invalidation permissions.
+                        Required permission: <code>cloudfront:CreateInvalidation</code>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CloudFrontAccessKeyId">Access Key ID <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="CloudFrontAccessKeyId" class="form-control" placeholder="AKIAIOSFODNN7EXAMPLE" />
+                        <span asp-validation-for="CloudFrontAccessKeyId" class="text-danger"></span>
+                        <small class="form-text text-muted">AWS IAM Access Key ID with CloudFront permissions.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CloudFrontSecretAccessKey">Secret Access Key <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="CloudFrontSecretAccessKey" class="form-control" type="password" placeholder="Your AWS Secret Access Key" />
+                        <span asp-validation-for="CloudFrontSecretAccessKey" class="text-danger"></span>
+                        <small class="form-text text-muted">AWS Secret Access Key (stored securely).</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CloudFrontDistributionId">Distribution ID <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="CloudFrontDistributionId" class="form-control" placeholder="E1234567890ABC" />
+                        <span asp-validation-for="CloudFrontDistributionId" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            Find your Distribution ID in the AWS CloudFront console.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CloudFrontRegion">AWS Region</label>
+                        <input asp-for="CloudFrontRegion" class="form-control" placeholder="us-east-1" />
+                        <span asp-validation-for="CloudFrontRegion" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            AWS region (optional, defaults to us-east-1 for CloudFront).
+                        </small>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <strong>Requirements:</strong> Obtain API credentials from your Sucuri account dashboard.
-                </div>
 
-                <div class="form-group">
-                    <label asp-for="SucuriApiKey">API Key <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="SucuriApiKey" class="form-control" type="password" placeholder="Your Sucuri API key" />
-                    <span asp-validation-for="SucuriApiKey" class="text-danger"></span>
+            <!-- Sucuri Configuration -->
+            <div class="card mb-3 bg-secondary text-light" id="sucuriConfig" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Sucuri WAF/CDN</h5>
                 </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Requirements:</strong> Obtain API credentials from your Sucuri account dashboard.
+                    </div>
 
-                <div class="form-group">
-                    <label asp-for="SucuriApiSecret">API Secret <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="SucuriApiSecret" class="form-control" type="password" placeholder="Your Sucuri API secret" />
-                    <span asp-validation-for="SucuriApiSecret" class="text-danger"></span>
-                </div>
+                    <div class="form-group">
+                        <label asp-for="SucuriApiKey">API Key <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="SucuriApiKey" class="form-control" type="password" placeholder="Your Sucuri API key" />
+                        <span asp-validation-for="SucuriApiKey" class="text-danger"></span>
+                    </div>
 
-                <div class="alert alert-warning">
-                    <strong>Note:</strong> Sucuri supports purging up to 20 individual URLs per request.
-                    Larger requests will purge the entire cache.
+                    <div class="form-group">
+                        <label asp-for="SucuriApiSecret">API Secret <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="SucuriApiSecret" class="form-control" type="password" placeholder="Your Sucuri API secret" />
+                        <span asp-validation-for="SucuriApiSecret" class="text-danger"></span>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>Note:</strong> Sucuri supports purging up to 20 individual URLs per request.
+                        Larger requests will purge the entire cache.
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Action Buttons -->
-        <div class="d-flex justify-content-between mt-4">
-            <a href="@Url.Page("./Step4_Email")" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
-            <div>
-                <button type="submit" class="btn btn-primary" id="saveBtn">
-                    Save & Continue <i class="fas fa-arrow-right"></i>
-                </button>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+                <a href="@Url.Page("./Step4_Email")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <div>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
-        </div>
-</form>
+        </form>
+    </div>
+</div>
 
 @section Scripts {
     <script>
         const isPreconfigured = @Model.IsPreconfigured.ToString().ToLower();
         $(document).ready(function() {
             var form = $('#cdnForm');
-            var saveBtn = $('#saveBtn');
             if (isPreconfigured) {
                 $('#cdnProviderSelect').prop('disabled', true);
                 $('#cdnConfigAlert').show();
-                saveBtn.text('Continue').prepend('<i class="fas fa-arrow-right"></i> ');
+                //saveBtn.text('Continue').prepend('<i class="fas fa-arrow-right"></i> ');
                 // Disable all inputs
                 $('input, select, textarea', form).prop('readonly', true);
             }

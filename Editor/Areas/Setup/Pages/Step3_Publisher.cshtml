@@ -7,64 +7,64 @@
     var layouts = @ViewData["AvailableLayouts"] as List<SiteDesignOption>;
 }
 
-@await Html.PartialAsync("_SetupStepIndicator", 3)
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        @await Html.PartialAsync("_SetupStepIndicator", 3)
 
-<h2>Website Configuration</h2>
-<p class="text-muted">Configure your website's public-facing settings</p>
+        <h2>Website Configuration</h2>
+        <p class="text-muted">Configure your website's public-facing settings</p>
 
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div class="alert alert-danger">
-        <strong>Error:</strong> @Model.ErrorMessage
-    </div>
-}
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">
+                <strong>Error:</strong> @Model.ErrorMessage
+            </div>
+        }
 
-<form method="post" id="publisherForm">
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-    
-    @Html.AntiForgeryToken()
-    @Html.HiddenFor(m => m.SetupId)
-    
-    <div class="card mb-4 bg-secondary text-light">
-        <div class="card-header">
-            <h5>Website Settings</h5>
-        </div>
-        <div class="card-body">
-            <div class="form-group mb-3">
-                <div id="publisherUrlAlert" class="alert alert-primary" role="alert" style="display:none;">
-                    Publisher URL is already set and cannot be changed.
+        <form method="post" id="publisherForm">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.SetupId)
+
+            <div class="card mb-4 bg-secondary text-light">
+                <div class="card-header">
+                    <h5>Website Settings</h5>
                 </div>
-                <label asp-for="PublisherUrl" class="form-label">Website URL <span class="text-danger">*</span></label>
-                <input asp-for="PublisherUrl" type="url" class="form-control" placeholder="https://www.example.com" required />
-                <span asp-validation-for="PublisherUrl" class="text-danger"></span>
-                <small class="form-text text-muted text-light">
-                    The public URL where your website will be accessible (without trailing slash)
-                </small>
-            </div>
-            <div class="form-group mb-3">
-                <label asp-for="SiteDesignId" class="form-label">Choose a site design</label>
-                <select asp-for="SiteDesignId" class="form-select" required="true">
-                    <option value="">Select a design</option>
-                    @foreach (var layout in layouts)
-                    {
-                        <option value="@layout.Id">@layout.Title</option>
-                    }
-                </select>
-                <span asp-validation-for="SiteDesignId" class="text-danger"></span>
-                <small class="form-text text-light">
-                    Please choose a design now, you can change or edit it later. The current list of
-                    starter designs can be found <a target="_blank" href="https://cwalabs.github.io/Cosmos.Starter.Designs/">here</a>.
-                </small>
-            </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <div id="publisherUrlAlert" class="alert alert-primary" role="alert" style="display:none;">
+                            Publisher URL is already set and cannot be changed.
+                        </div>
+                        <label asp-for="PublisherUrl" class="form-label">Website URL <span class="text-danger">*</span></label>
+                        <input asp-for="PublisherUrl" type="url" class="form-control" placeholder="https://www.example.com" required />
+                        <span asp-validation-for="PublisherUrl" class="text-danger"></span>
+                        <small class="form-text text-muted text-light">
+                            The public URL where your website will be accessible (without trailing slash)
+                        </small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="SiteDesignId" class="form-label">Choose a site design</label>
+                        <select asp-for="SiteDesignId" class="form-select" required="true">
+                            <option value="">Select a design</option>
+                            @foreach (var layout in layouts)
+                            {
+                                <option value="@layout.Id">@layout.Title</option>
+                            }
+                        </select>
+                        <span asp-validation-for="SiteDesignId" class="text-danger"></span>
+                        <small class="form-text text-light">
+                            Please choose a design now, you can change or edit it later. The current list of
+                            starter designs can be found <a target="_blank" href="https://cwalabs.github.io/Cosmos.Starter.Designs/">here</a>.
+                        </small>
+                    </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="WebsiteTitle" class="form-label">Website Title <span class="text-danger">*</span></label>
-                <input asp-for="WebsiteTitle" type="text" class="form-control" placeholder="My Awesome Website" required />
-                <span asp-validation-for="WebsiteTitle" class="text-danger"></span>
-            </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="WebsiteTitle" class="form-label">Website Title <span class="text-danger">*</span></label>
+                        <input asp-for="WebsiteTitle" type="text" class="form-control" placeholder="My Awesome Website" required />
+                        <span asp-validation-for="WebsiteTitle" class="text-danger"></span>
+                    </div>
 
-            <div class="row justify-content-center">
-                <div class="col-md-8 mt-3">
                     <h5 class="text-light">Website name examples:</h5>
                     <div class="card-group">
                         <div class="card text-bg-secondary">
@@ -107,90 +107,89 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="form-check mb-3">
+                        <input asp-for="StaticWebPages" type="checkbox" class="form-check-input" id="staticWebPages" checked disabled />
+                        <label class="form-check-label" for="staticWebPages">
+                            <strong>Static Website Mode</strong>
+                        </label>
+                        <small class="form-text d-block text-light">
+                            Generate static HTML files for maximum performance and scalability.
+                            Recommended for most websites.
+                        </small>
+                    </div>
+
+                    <div class="form-check mb-3" style="display:none;">
+                        <div id="cosmosRequiresAuthenticationAlert" class="alert alert-primary" role="alert" style="display:none;">
+                            Authentication requirement is already set and cannot be changed.
+                        </div>
+                        <input asp-for="CosmosRequiresAuthentication" type="checkbox" class="form-check-input" id="requiresAuth" />
+                        <label class="form-check-label" for="requiresAuth">
+                            <strong>Require Authentication</strong>
+                        </label>
+                        <small class="form-text d-block text-light">
+                            Require users to log in to access the website (useful for intranets or private sites)
+                        </small>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <div id="allowedFileTypesAlert" class="alert alert-primary" role="alert" style="display:none;">
+                            Allowed file types are already set and cannot be changed.
+                        </div>
+                        <label asp-for="AllowedFileTypes" class="form-label">Allowed File Types <span class="text-danger">*</span></label>
+                        <input asp-for="AllowedFileTypes" type="text" class="form-control font-monospace" value="@Model.AllowedFileTypes" required />
+                        <span asp-validation-for="AllowedFileTypes" class="text-danger"></span>
+                        <small class="form-text text-light">
+                            Comma-separated list of file extensions allowed for upload (e.g., .jpg, .png, .pdf)
+                        </small>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-check mb-3">
-                <input asp-for="StaticWebPages" type="checkbox" class="form-check-input" id="staticWebPages" checked disabled />
-                <label class="form-check-label" for="staticWebPages">
-                    <strong>Static Website Mode</strong>
-                </label>
-                <small class="form-text d-block text-light">
-                    Generate static HTML files for maximum performance and scalability. 
-                    Recommended for most websites.
-                </small>
-            </div>
-
-            <div class="form-check mb-3" style="display:none;">
-                <div id="cosmosRequiresAuthenticationAlert" class="alert alert-primary" role="alert" style="display:none;">
-                    Authentication requirement is already set and cannot be changed.
+            <div class="card mb-4 bg-secondary text-light" style="display:none;">
+                <div class="card-header">
+                    <h5>Microsoft OAuth (Optional)</h5>
                 </div>
-                <input asp-for="CosmosRequiresAuthentication" type="checkbox" class="form-check-input" id="requiresAuth" />
-                <label class="form-check-label" for="requiresAuth">
-                    <strong>Require Authentication</strong>
-                </label>
-                <small class="form-text d-block text-light">
-                    Require users to log in to access the website (useful for intranets or private sites)
-                </small>
-            </div>
+                <div class="card-body">
+                    <p class="text-light">
+                        If you want to allow users to sign in with Microsoft accounts, enter your Azure AD app credentials.
+                        <a class=" text-light" href="https://docs.microsoft.com/azure/active-directory/develop/quickstart-register-app" target="_blank">
+                            Learn how to register an app <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </p>
 
-            <div class="form-group mb-3">
-                <div id="allowedFileTypesAlert" class="alert alert-primary" role="alert" style="display:none;">
-                    Allowed file types are already set and cannot be changed.
+                    <div class="form-group mb-3">
+                        <div id="microsoftAppIdAlert" class="alert alert-primary" role="alert" style="display:none;">
+                            Microsoft App ID is already set and cannot be changed.
+                        </div>
+                        <label asp-for="MicrosoftAppId" class="form-label">Microsoft Application (Client) ID</label>
+                        <input asp-for="MicrosoftAppId" type="text" class="form-control font-monospace" placeholder="00000000-0000-0000-0000-000000000000" />
+                        <span asp-validation-for="MicrosoftAppId" class="text-danger"></span>
+                        <small class="form-text text-light">
+                            Leave blank to disable Microsoft authentication
+                        </small>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong><i class="fas fa-exclamation-triangle"></i> Note:</strong>
+                        The Microsoft Client Secret must be configured separately in your appsettings.json or user secrets:
+                        <code>"MicrosoftOAuth:ClientSecret": "your-secret"</code>
+                    </div>
                 </div>
-                <label asp-for="AllowedFileTypes" class="form-label">Allowed File Types <span class="text-danger">*</span></label>
-                <input asp-for="AllowedFileTypes" type="text" class="form-control font-monospace" value="@Model.AllowedFileTypes" required />
-                <span asp-validation-for="AllowedFileTypes" class="text-danger"></span>
-                <small class="form-text text-light">
-                    Comma-separated list of file extensions allowed for upload (e.g., .jpg, .png, .pdf)
-                </small>
             </div>
-        </div>
-    </div>
 
-    <div class="card mb-4 bg-secondary text-light" style="display:none;">
-        <div class="card-header">
-            <h5>Microsoft OAuth (Optional)</h5>
-        </div>
-        <div class="card-body">
-            <p class="text-light">
-                If you want to allow users to sign in with Microsoft accounts, enter your Azure AD app credentials.
-                <a class=" text-light" href="https://docs.microsoft.com/azure/active-directory/develop/quickstart-register-app" target="_blank">
-                    Learn how to register an app <i class="fas fa-external-link-alt"></i>
+            <div class="d-flex justify-content-between mt-4">
+                <a href="@Url.Page("./Step2_AdminAccount")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
-            </p>
-
-            <div class="form-group mb-3">
-                <div id="microsoftAppIdAlert" class="alert alert-primary" role="alert" style="display:none;">
-                    Microsoft App ID is already set and cannot be changed.
-                </div>
-                <label asp-for="MicrosoftAppId" class="form-label">Microsoft Application (Client) ID</label>
-                <input asp-for="MicrosoftAppId" type="text" class="form-control font-monospace" placeholder="00000000-0000-0000-0000-000000000000" />
-                <span asp-validation-for="MicrosoftAppId" class="text-danger"></span>
-                <small class="form-text text-light">
-                    Leave blank to disable Microsoft authentication
-                </small>
+                <button type="submit" class="btn btn-primary">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
 
-            <div class="alert alert-warning">
-                <strong><i class="fas fa-exclamation-triangle"></i> Note:</strong> 
-                The Microsoft Client Secret must be configured separately in your appsettings.json or user secrets:
-                <code>"MicrosoftOAuth:ClientSecret": "your-secret"</code>
-            </div>
-        </div>
+        </form>
     </div>
-
-    <div class="d-flex justify-content-between mt-4">
-        <a href="@Url.Page("./Step2_AdminAccount")" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-        <button type="submit" class="btn btn-primary">
-            Next <i class="fas fa-arrow-right"></i>
-        </button>
-    </div>
-
-</form>
-
+</div>
 @section Scripts {
     <script>
 
@@ -207,26 +206,26 @@
                 $('#PublisherUrl').prop('readonly', true).addClass('bg-secondary');
                 $('#publisherUrlAlert').show();
             }
-            
+
             if (cosmosRequiresAuthenticationPreConfigured) {
                 $('#requiresAuth').prop('disabled', true);
                 $('#cosmosRequiresAuthenticationAlert').show();
             }
-            
+
             if (microsoftAppIdPreConfigured) {
                 $('#MicrosoftAppId').prop('disabled', true);
                 $('#microsoftAppIdAlert').show();
             }
-            
+
             if (staticWebPagesPreConfigured) {
                 $('#staticWebPages').prop('disabled', true);
             }
-            
+
             if (allowedFileTypesPreConfigured) {
                 $('#AllowedFileTypes').prop('disabled', true);
                 $('#allowedFileTypesAlert').show();
             }
-            
+
             // Configure validation
             $.validator.setDefaults({
                 highlight: function(element) {

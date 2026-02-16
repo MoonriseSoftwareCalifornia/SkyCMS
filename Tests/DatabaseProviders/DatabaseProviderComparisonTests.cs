@@ -101,19 +101,19 @@ namespace Sky.Tests.DatabaseProviders
             // Act & Assert
             var cosmosStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["CosmosDB"]));
             Assert.IsNotNull(cosmosStrategy, "CosmosDB strategy should be found");
-            Assert.AreEqual("Microsoft.EntityFrameworkCore.Cosmos", cosmosStrategy.ProviderName);
+            Assert.AreEqual("Cosmos", cosmosStrategy.ProviderName);
 
             var sqlServerStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["SqlServer"]));
             Assert.IsNotNull(sqlServerStrategy, "SqlServer strategy should be found");
-            Assert.AreEqual("Microsoft.EntityFrameworkCore.SqlServer", sqlServerStrategy.ProviderName);
+            Assert.AreEqual("SQL Server", sqlServerStrategy.ProviderName);
 
             var mySqlStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["MySQL"]));
             Assert.IsNotNull(mySqlStrategy, "MySQL strategy should be found");
-            Assert.AreEqual("MySql.EntityFrameworkCore", mySqlStrategy.ProviderName);
+            Assert.AreEqual("MySQL", mySqlStrategy.ProviderName);
 
             var sqliteStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["SQLite"]));
             Assert.IsNotNull(sqliteStrategy, "SQLite strategy should be found");
-            Assert.AreEqual("Microsoft.EntityFrameworkCore.Sqlite", sqliteStrategy.ProviderName);
+            Assert.AreEqual("SQLite", sqliteStrategy.ProviderName);
         }
 
         /// <summary>
@@ -129,10 +129,10 @@ namespace Sky.Tests.DatabaseProviders
             var orderedStrategies = strategies.OrderBy(s => s.Priority).ToList();
 
             // Assert
-            Assert.AreEqual("Microsoft.EntityFrameworkCore.Cosmos", orderedStrategies[0].ProviderName);
-            Assert.AreEqual("Microsoft.EntityFrameworkCore.SqlServer", orderedStrategies[1].ProviderName);
-            Assert.AreEqual("MySql.EntityFrameworkCore", orderedStrategies[2].ProviderName);
-            Assert.AreEqual("Microsoft.EntityFrameworkCore.Sqlite", orderedStrategies[3].ProviderName);
+            Assert.AreEqual("Cosmos", orderedStrategies[0].ProviderName);
+            Assert.AreEqual("SQL Server", orderedStrategies[1].ProviderName);
+            Assert.AreEqual("MySQL", orderedStrategies[2].ProviderName);
+            Assert.AreEqual("SQLite", orderedStrategies[3].ProviderName);
         }
 
         #endregion

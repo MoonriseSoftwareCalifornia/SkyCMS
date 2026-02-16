@@ -5,155 +5,159 @@
     Layout = "_LayoutSetup";
 }
 
-@await Html.PartialAsync("_SetupStepIndicator", 4)
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        @await Html.PartialAsync("_SetupStepIndicator", 4)
 
-<h2>Email Configuration</h2>
-<p class="text-muted">Configure email services for notifications and user management (optional)</p>
+        <h2>Email Configuration</h2>
+        <p class="text-muted">Configure email services for notifications and user management (optional)</p>
 
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
-{
-    <div class="alert alert-danger">
-        <strong>Error:</strong> @Model.ErrorMessage
-    </div>
-}
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">
+                <strong>Error:</strong> @Model.ErrorMessage
+            </div>
+        }
 
-@if (!string.IsNullOrEmpty(Model.SuccessMessage))
-{
-    <div class="alert alert-success">
-        <strong>Success:</strong> @Model.SuccessMessage
-    </div>
-}
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success">
+                <strong>Success:</strong> @Model.SuccessMessage
+            </div>
+        }
 
-<div class="alert alert-info mb-4">
-    <strong><i class="fas fa-info-circle"></i> Optional Step:</strong>
-    Email configuration is not required to complete setup. You can skip this step and configure email later.
-</div>
-
-<form method="post" id="emailForm">
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-
-    @Html.AntiForgeryToken()
-    @Html.HiddenFor(m => m.SetupId)
-    <div class="card mb-4 bg-secondary text-light">
-        <div class="card-header">
-            <h5>Email Provider</h5>
+        <div class="alert alert-info mb-4">
+            <strong><i class="fas fa-info-circle"></i> Optional Step:</strong>
+            Email configuration is not required to complete setup. You can skip this step and configure email later.
         </div>
-        <div class="card-body">
 
-            <div class="form-group mb-3">
-                <div id="senderEmailAlert" class="alert alert-primary" role="alert" style="display:none;">
-                    The email address used to send system emails is already set and cannot be changed.
+        <form method="post" id="emailForm">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.SetupId)
+            <div class="card mb-4 bg-secondary text-light">
+                <div class="card-header">
+                    <h5>Email Provider</h5>
                 </div>
-                <label asp-for="SenderEmail" class="form-label">Sender Email Address <span class="text-danger provider-required">*</span></label>
-                <input asp-for="SenderEmail" type="email" class="form-control" />
-                <span asp-validation-for="SenderEmail" class="text-danger"></span>
-            </div>
-            <div class="form-group mb-3">
-                <div id="emailProviderAlert" class="alert alert-primary" role="alert" style="display:none;">
-                Email provider settings already set and cannot be changed.
+                <div class="card-body">
+
+                    <div class="form-group mb-3">
+                        <div id="senderEmailAlert" class="alert alert-primary" role="alert" style="display:none;">
+                            The email address used to send system emails is already set and cannot be changed.
+                        </div>
+                        <label asp-for="SenderEmail" class="form-label">Sender Email Address <span class="text-danger provider-required">*</span></label>
+                        <input asp-for="SenderEmail" type="email" class="form-control" />
+                        <span asp-validation-for="SenderEmail" class="text-danger"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <div id="emailProviderAlert" class="alert alert-primary" role="alert" style="display:none;">
+                            Email provider settings already set and cannot be changed.
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Select Email Provider</label>
+                        <select asp-for="EmailProvider" class="form-select" id="emailProviderSelect">
+                            <option value="none">-- Skip Email Configuration (not for production) --</option>
+                            <option value="SendGrid">SendGrid</option>
+                            <option value="AzureCommunication">Azure Communication Services</option>
+                            <option value="SMTP">SMTP Server</option>
+                        </select>
+                    </div>
+
+                    <!-- SendGrid Options -->
+                    <div id="sendGridOptions" class="d-none">
+                        <div class="alert alert-info">
+                            <strong>SendGrid:</strong> Popular email service with generous free tier.
+                            <a href="https://sendgrid.com" target="_blank">Sign up <i class="fas fa-external-link-alt"></i></a>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="SendGridApiKey" class="form-label">SendGrid API Key <span class="text-danger provider-required">*</span></label>
+                            <input asp-for="SendGridApiKey" type="password" class="form-control font-monospace" />
+                            <span asp-validation-for="SendGridApiKey" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- Azure Communication Services Options -->
+                    <div id="azureCommOptions" class="d-none">
+                        <div class="alert alert-info">
+                            <strong>Azure Communication Services:</strong> Enterprise email service from Microsoft Azure.
+                            <a href="https://azure.microsoft.com/services/communication-services/" target="_blank">
+                                Learn more <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="AzureEmailConnectionString" class="form-label">Connection String <span class="text-danger provider-required">*</span></label>
+                            <textarea asp-for="AzureEmailConnectionString" class="form-control font-monospace" rows="2"></textarea>
+                            <span asp-validation-for="AzureEmailConnectionString" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- SMTP Options -->
+                    <div id="smtpOptions" class="d-none">
+                        <div class="alert alert-info">
+                            <strong>SMTP:</strong> Use any SMTP server (Gmail, Outlook, custom mail server)
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="SmtpHost" class="form-label">SMTP Host <span class="text-danger provider-required">*</span></label>
+                            <input asp-for="SmtpHost" type="text" class="form-control" placeholder="smtp.gmail.com" />
+                            <span asp-validation-for="SmtpHost" class="text-danger"></span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="SmtpPort" class="form-label">SMTP Port <span class="text-danger provider-required">*</span></label>
+                            <input asp-for="SmtpPort" type="number" class="form-control" value="587" />
+                            <span asp-validation-for="SmtpPort" class="text-danger"></span>
+                            <small class="form-text text-muted">Common ports: 587 (TLS), 465 (SSL), 25 (plain)</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="SmtpUsername" class="form-label">Username <span class="text-danger provider-required">*</span></label>
+                            <input asp-for="SmtpUsername" type="text" class="form-control" />
+                            <span asp-validation-for="SmtpUsername" class="text-danger"></span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="SmtpPassword" class="form-label">Password <span class="text-danger provider-required">*</span></label>
+                            <input asp-for="SmtpPassword" type="password" class="form-control" />
+                            <span asp-validation-for="SmtpPassword" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3" id="testEmailButton" style="display: none;">
+                        <button type="submit" asp-page-handler="TestEmail" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-envelope"></i> Send Test Email
+                        </button>
+                    </div>
+
+                    @if (Model.TestResult != null)
+                    {
+                        <div class="test-result @(Model.TestResult.Success ? "test-success" : "test-error")">
+                            @if (Model.TestResult.Success)
+                            {
+                                <i class="fas fa-check-circle"></i>
+                                @Model.TestResult.Message
+                            }
+                            else
+                            {
+                                <i class="fas fa-times-circle"></i>
+                                @Model.TestResult.Message
+                            }
+                        </div>
+                    }
                 </div>
-            </div>
-            <div class="form-group mb-3">
-                <label class="form-label">Select Email Provider</label>
-                <select asp-for="EmailProvider" class="form-select" id="emailProviderSelect">
-                    <option value="none">-- Skip Email Configuration (not for production) --</option>
-                    <option value="SendGrid">SendGrid</option>
-                    <option value="AzureCommunication">Azure Communication Services</option>
-                    <option value="SMTP">SMTP Server</option>
-                </select>
             </div>
 
-            <!-- SendGrid Options -->
-            <div id="sendGridOptions" class="d-none">
-                <div class="alert alert-info">
-                    <strong>SendGrid:</strong> Popular email service with generous free tier.
-                    <a href="https://sendgrid.com" target="_blank">Sign up <i class="fas fa-external-link-alt"></i></a>
-                </div>
-                <div class="form-group mb-3">
-                    <label asp-for="SendGridApiKey" class="form-label">SendGrid API Key <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="SendGridApiKey" type="password" class="form-control font-monospace" />
-                    <span asp-validation-for="SendGridApiKey" class="text-danger"></span>
-                </div>
-            </div>
-
-            <!-- Azure Communication Services Options -->
-            <div id="azureCommOptions" class="d-none">
-                <div class="alert alert-info">
-                    <strong>Azure Communication Services:</strong> Enterprise email service from Microsoft Azure.
-                    <a href="https://azure.microsoft.com/services/communication-services/" target="_blank">
-                        Learn more <i class="fas fa-external-link-alt"></i>
-                    </a>
-                </div>
-                <div class="form-group mb-3">
-                    <label asp-for="AzureEmailConnectionString" class="form-label">Connection String <span class="text-danger provider-required">*</span></label>
-                    <textarea asp-for="AzureEmailConnectionString" class="form-control font-monospace" rows="2"></textarea>
-                    <span asp-validation-for="AzureEmailConnectionString" class="text-danger"></span>
-                </div>
-            </div>
-
-            <!-- SMTP Options -->
-            <div id="smtpOptions" class="d-none">
-                <div class="alert alert-info">
-                    <strong>SMTP:</strong> Use any SMTP server (Gmail, Outlook, custom mail server)
-                </div>
-                <div class="form-group mb-3">
-                    <label asp-for="SmtpHost" class="form-label">SMTP Host <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="SmtpHost" type="text" class="form-control" placeholder="smtp.gmail.com" />
-                    <span asp-validation-for="SmtpHost" class="text-danger"></span>
-                </div>
-                <div class="form-group mb-3">
-                    <label asp-for="SmtpPort" class="form-label">SMTP Port <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="SmtpPort" type="number" class="form-control" value="587" />
-                    <span asp-validation-for="SmtpPort" class="text-danger"></span>
-                    <small class="form-text text-muted">Common ports: 587 (TLS), 465 (SSL), 25 (plain)</small>
-                </div>
-                <div class="form-group mb-3">
-                    <label asp-for="SmtpUsername" class="form-label">Username <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="SmtpUsername" type="text" class="form-control" />
-                    <span asp-validation-for="SmtpUsername" class="text-danger"></span>
-                </div>
-                <div class="form-group mb-3">
-                    <label asp-for="SmtpPassword" class="form-label">Password <span class="text-danger provider-required">*</span></label>
-                    <input asp-for="SmtpPassword" type="password" class="form-control" />
-                    <span asp-validation-for="SmtpPassword" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="mt-3" id="testEmailButton" style="display: none;">
-                <button type="submit" asp-page-handler="TestEmail" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-envelope"></i> Send Test Email
+            <div class="d-flex justify-content-between mt-4">
+                <a href="@Url.Page("./Step4_Publisher")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Next <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
 
-            @if (Model.TestResult != null)
-            {
-                <div class="test-result @(Model.TestResult.Success ? "test-success" : "test-error")">
-                    @if (Model.TestResult.Success)
-                    {
-                        <i class="fas fa-check-circle"></i> 
-                        @Model.TestResult.Message
-                    }
-                    else
-                    {
-                        <i class="fas fa-times-circle"></i> 
-                        @Model.TestResult.Message
-                    }
-                </div>
-            }
-        </div>
+        </form>
+
     </div>
-
-    <div class="d-flex justify-content-between mt-4">
-        <a href="@Url.Page("./Step4_Publisher")" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-        <button type="submit" class="btn btn-primary">
-            Next <i class="fas fa-arrow-right"></i>
-        </button>
-    </div>
-
-</form>
-
+</div>
 @section Scripts {
     <script>
         $(document).ready(function() {

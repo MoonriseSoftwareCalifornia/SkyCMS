@@ -70,10 +70,10 @@ namespace AspNetCore.Identity.FlexDb.Strategies
         /// </remarks>
         /// <example>
         /// <code>
-        /// public string ProviderName => "Azure Cosmos DB";
-        /// public string ProviderName => "SQL Server";
-        /// public string ProviderName => "MySQL";
-        /// public string ProviderName => "SQLite";
+        /// public string ProviderName => "Microsoft.EntityFrameworkCore.Cosmos" for Azure Cosmos DB;
+        /// public string ProviderName => "Microsoft.EntityFrameworkCore.SqlServer" for SQL Server;
+        /// public string ProviderName => "MySql.EntityFrameworkCore" for MySQL;
+        /// public string ProviderName => "Microsoft.EntityFrameworkCore.Sqlite" for SQLite;
         /// </code>
         /// </example>
         string ProviderName { get; }
