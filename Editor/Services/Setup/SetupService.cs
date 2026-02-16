@@ -1088,6 +1088,7 @@ namespace Sky.Editor.Services.Setup
                     {
                         return adminResult;
                     }
+
                     logger.LogInformation("✓ Administrator account created");
                 }
                 else
@@ -1727,6 +1728,8 @@ namespace Sky.Editor.Services.Setup
                     {
                         layout.Version = 1;
                         layout.IsDefault = true;
+                        layout.Published = DateTimeOffset.UtcNow;
+                        layout.LastModified = DateTimeOffset.UtcNow;
                     }
                     else
                     {
