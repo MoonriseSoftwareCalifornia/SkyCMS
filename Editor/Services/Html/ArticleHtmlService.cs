@@ -33,7 +33,7 @@ namespace Sky.Editor.Services.Html
             {
                 var doc = new HtmlDocument();
                 doc.LoadHtml(html);
-                var editable = doc.DocumentNode.SelectNodes("//*[@contenteditable='true' or translate(@contenteditable,'TRUE','true')='true' or @data-editor-config or @data-ccms-ceid]")
+                var editable = doc.DocumentNode.SelectNodes("//*[@contenteditable='true' or translate(@contenteditable,'TRUE','true')='true']")
                               ?? new HtmlNodeCollection(null);
 
                 // Only add markers to nodes that have contenteditable="true".
@@ -42,9 +42,18 @@ namespace Sky.Editor.Services.Html
                     int i = 0;
                     foreach (var node in editable)
                     {
-                        if (node.Attributes["data-ccms-ceid"] == null)
+                        var ceidAttr = node.Attributes["data-ccms-ceid"];
+                        if (ceidAttr == null || string.IsNullOrWhiteSpace(ceidAttr.Value))
                         {
-                            node.Attributes.Add("data-ccms-ceid", Guid.NewGuid().ToString("N"));
+                            var guidValue = Guid.NewGuid().ToString("N");
+                            if (ceidAttr == null)
+                            {
+                                node.Attributes.Add("data-ccms-ceid", guidValue);
+                            }
+                            else
+                            {
+                                ceidAttr.Value = guidValue;
+                            }
                         }
 
                         if (node.Attributes["data-ccms-index"] == null)
