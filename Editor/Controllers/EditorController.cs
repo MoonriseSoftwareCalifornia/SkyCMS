@@ -1830,14 +1830,7 @@ namespace Sky.Cms.Controllers
                                 ModelState.AddModelError("Save", result.ErrorMessage);
                             }
 
-                            jsonModel.ErrorCount = ModelState.ErrorCount;
-                            jsonModel.IsValid = false;
-                            jsonModel.Errors.AddRange(ModelState.Values
-                                .Where(w => w.ValidationState == ModelValidationState.Invalid)
-                                .ToList());
-                            jsonModel.ValidationState = ModelValidationState.Invalid;
-
-                            return Json(jsonModel);
+                            return Json(BuildSaveResultModel());
                         }
 
                         // Success - result.Data.Model contains the updated article
@@ -1853,14 +1846,7 @@ namespace Sky.Cms.Controllers
                         logger.LogError(e, "Error saving article {ArticleNumber}", model.ArticleNumber);
                     }
 
-                    jsonModel.ErrorCount = ModelState.ErrorCount;
-                    jsonModel.IsValid = ModelState.IsValid;
-                    jsonModel.Errors.AddRange(ModelState.Values
-                        .Where(w => w.ValidationState == ModelValidationState.Invalid)
-                        .ToList());
-                    jsonModel.ValidationState = ModelState.ValidationState;
-
-                    return Json(jsonModel);
+                    return Json(BuildSaveResultModel());
                 }
             }
 
@@ -2496,6 +2482,5 @@ namespace Sky.Cms.Controllers
 
             return article;
         }
-
     }
 }

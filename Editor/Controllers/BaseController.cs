@@ -7,20 +7,22 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using System.Web;
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Mvc.ModelBinding;
     using Microsoft.AspNetCore.Mvc.Rendering;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using Sky.Cms.Models;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using System.Web;
 
     /// <summary>
     /// Base controller.
@@ -212,6 +214,26 @@ namespace Sky.Cms.Controllers
             return dbContext.Templates
                 .Where(t => t.LayoutNumber == layout.LayoutNumber || 
                             (t.LayoutNumber == 0 && t.LayoutId == layout.Id)); // Handles unmigrated data
+        }
+
+
+        /// <summary>
+        /// Builds save result JSON model.
+        /// </summary>
+        /// <returns>Returns the code editor save result.</returns>
+        protected SaveCodeResultJsonModel BuildSaveResultModel()
+        {
+            var jsonModel = new SaveCodeResultJsonModel
+            {
+                ErrorCount = ModelState.ErrorCount,
+                IsValid = ModelState.IsValid
+            };
+            jsonModel.Errors.AddRange(ModelState.Values
+                .Where(w => w.ValidationState == ModelValidationState.Invalid)
+                .ToList());
+            jsonModel.ValidationState = ModelState.ValidationState;
+
+            return jsonModel;
         }
     }
 }

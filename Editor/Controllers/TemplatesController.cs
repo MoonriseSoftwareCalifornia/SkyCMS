@@ -7,6 +7,10 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
@@ -15,6 +19,7 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Mvc.ModelBinding;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Cms.Models;
@@ -26,10 +31,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Templates;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Templates controller.
@@ -484,11 +485,9 @@ namespace Sky.Cms.Controllers
                 entity.Content = htmlService.EnsureEditableMarkers(model.Content);
 
                 await dbContext.SaveChangesAsync();
-
-                return Json(new { success = true });
             }
 
-            return Json(new { success = false });
+            return Json(BuildSaveResultModel());
         }
 
         /// <summary>
@@ -808,9 +807,5 @@ namespace Sky.Cms.Controllers
             // Use the service layer's batch operation instead of looping
             await templateServices.ApplyTemplateToArticlesAsync(id, null);
         }
-
-        // ApplyTemplateChanges method removed - use TemplateService.ApplyTemplateToArticleAsync instead
-        // This method was destructive (deleted all versions) and has been replaced by the service layer
-        // which properly creates new draft versions while preserving history.
     }
 }

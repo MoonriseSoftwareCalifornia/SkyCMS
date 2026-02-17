@@ -1219,24 +1219,6 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Builds save result JSON model.
-        /// </summary>
-        private SaveCodeResultJsonModel BuildSaveResultModel()
-        {
-            var jsonModel = new SaveCodeResultJsonModel
-            {
-                ErrorCount = ModelState.ErrorCount,
-                IsValid = ModelState.IsValid
-            };
-            jsonModel.Errors.AddRange(ModelState.Values
-                .Where(w => w.ValidationState == ModelValidationState.Invalid)
-                .ToList());
-            jsonModel.ValidationState = ModelState.ValidationState;
-
-            return jsonModel;
-        }
-
-        /// <summary>
         /// Parses and validates HTML notes.
         /// </summary>
         private (string CleanedText, string ErrorMessage) ParseAndValidateNotes(string notes)

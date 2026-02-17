@@ -49,10 +49,6 @@
 
     // View-specific save function
     function saveChanges(postProcessing) {
-        if (readOnly) {
-            return;
-        }
-
         if (window.saveInProgress === true) {
             return;
         }
