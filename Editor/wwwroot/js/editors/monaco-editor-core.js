@@ -84,7 +84,7 @@ class MonacoEditorCore {
             }
             
             this.config = {
-                autoSaveDelay: 3500,
+                autoSaveDelay: 1200,
                 readOnly: false,
                 basePath: '/lib/monaco-editor/min',
                 ...config
@@ -194,6 +194,11 @@ class MonacoEditorCore {
             // Focus editor
             this.editor.focus();
 
+            // Re-attach auto-save listener for new model
+            if (!this.config.readOnly && this.config.autoSaveDelay > 0) {
+                this.setupAutoSave();
+            }
+
             console.log(`Editor created for field: ${fieldInfo.FieldName} (${language})`);
 
             return this.editor;
@@ -277,6 +282,11 @@ class MonacoEditorCore {
     }
 
     triggerAutoSave() {
+        // Actually call the save function instead of just dispatching an event
+        if (typeof saveChanges === 'function') {
+            saveChanges();
+        }
+
         // Dispatch custom event for external save handlers
         window.dispatchEvent(new CustomEvent('editor-autosave', {
             detail: {

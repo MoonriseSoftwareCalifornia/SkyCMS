@@ -3,7 +3,6 @@
 @{
     Layout = "_LayoutEditor";
     ViewData["Title"] = Model.EditorTitle;
-    var readOnly = (bool?)ViewData["ReadOnly"] ?? false;
 }
 
 <!-- Use shared partial for common editor UI -->
@@ -22,7 +21,6 @@
 <script>
     // View-specific constants
     var fieldName;
-    const readOnly = @readOnly.ToString().ToLower();
     const ccms_editor_userid = "@this.Context.User.Identity.Name";
     const hasModel = @((Model != null).ToString().ToLower());
     var hasPermissionsSet = false;
@@ -164,7 +162,7 @@
                 editFields: editFields,
                 initialField: "@Model.EditingField",
                 autoSaveDelay: 3500,
-                readOnly: readOnly,
+                readOnly: false,
                 basePath: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min'
             });
             
@@ -173,15 +171,11 @@
             
             // View-specific initialization
             $("#liInsert").show();
+            $('#btnCcmsGrapesJsEditor').show();
             $("#tbTitle").val("@Model.EditorTitle");
             $("#btnSaveAsDraft").hide();
             $("#navBar").show();
             $("#editspace").show();
-
-            // Hide the navigation bar if in read-only mode
-            if (readOnly) {
-                $("#navbarSupportedContent").hide();
-            }
 
         } catch (error) {
             console.error('Failed to initialize editor:', error);
