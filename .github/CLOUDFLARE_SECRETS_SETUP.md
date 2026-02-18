@@ -128,8 +128,64 @@ You can also trigger the workflow manually:
 
 ### Files deployed but site not accessible
 - ✅ Configure bucket for public access in CloudFlare R2 settings
-- ✅ Or set up custom domain mapping
-- ✅ Or configure CloudFlare Workers/Pages to serve the bucket
+- ✅ Or set up custom domain mapping (recommended)
+- ✅ Configure Transform Rules for directory index handling (see below)
+
+### Directory URLs return 404 errors (e.g., /docs/ not found)
+- ✅ CloudFlare R2 does not automatically serve `index.html` for directory paths
+- ✅ You must configure a **Transform Rule** to handle directory indexes
+- ✅ See the "Directory Index Handling" section below for setup instructions
+
+## Post-Deployment: URL Rewrite Rules (Required!)
+
+**CRITICAL**: CloudFlare R2 does not automatically serve HTML files. You **must configure Transform Rules** to handle URL routing properly. The rules depend on **how your documentation was generated**.
+
+### If Using MkDocs for Documentation
+
+**File structure**: `/installation/index.html`, `/guides/tutorial/index.html`
+
+**Create two URL Rewrite rules:**
+
+1. **"Serve root index (MkDocs)"**
+   - Filter: `http.request.uri.path eq "/"`
+   - Rewrite to: `/index.html`
+
+2. **"Serve directory index (MkDocs)"**
+   - Filter: `ends_with(http.request.uri.path, "/") and not (http.request.uri.path eq "/")`
+   - Rewrite to: `concat(http.request.uri.path, "index.html")`
+
+### If Using SkyCMS for Website Content
+
+**File structure**: `/about`, `/products/widget` (no extensions)
+
+**Create one URL Rewrite rule:**
+
+1. **"Serve root index (SkyCMS)"**
+   - Filter: `http.request.uri.path eq "/"`
+   - Rewrite to: `/index.html`
+
+**Why only one rule?** SkyCMS stores pages without file extensions, so they're directly accessible. R2 serves them with the correct `text/html` content-type based on file metadata. Only the root path (`/`) needs special handling to map to `/index.html`.
+
+### Applied to Multiple Domains
+
+If you have multiple Cloudflare zones (separate domains), you must configure rules **in each zone independently**:
+
+**Example**: Two zones under your account
+- **Zone A** (`docs.sky-cms.com`): Create 2 MkDocs rules (root + directory index)
+- **Zone B** (`sky-cms.com`): Create 1 SkyCMS rule (root index only)
+
+Each zone's rules only apply to that domain. Rules do not cross zone boundaries.
+
+For detailed real-world examples with your actual domains, see:
+[Cloudflare Edge Hosting - Real-World Example](../Docs/Installation/CloudflareEdgeHosting.md#real-world-example-multiple-sites-on-cloudflare)
+
+### Deploy Rules
+
+1. Navigate to **Rules** → **Transform Rules** → **URL Rewrite**
+2. Create rules in the specified order
+3. Test with [Cloudflare Trace](https://developers.cloudflare.com/rules/trace-request/)
+
+For complete setup instructions, see: [Cloudflare Edge Hosting Guide](../Docs/Installation/CloudflareEdgeHosting.md#step-4--create-custom-rules-to-handle-root-access)
 
 ## Quick Reference Table
 
@@ -146,11 +202,12 @@ You can also trigger the workflow manually:
 
 After successful deployment:
 
-1. ✅ Verify your documentation is accessible at your R2 public URL or custom domain
-2. ✅ Set up custom domain (see [CLOUDFLARE_R2_SETUP.md](../InstallScripts/CLOUDFLARE_R2_SETUP.md))
-3. ✅ Configure CloudFlare Workers for better static site hosting
-4. ✅ Monitor deployment logs for any issues
-5. ✅ Consider disabling the old GitHub Pages workflow if migrating
+1. ✅ **Configure Transform Rules** for directory index handling (see above - required for working documentation links)
+2. ✅ Verify your documentation is accessible at your R2 public URL or custom domain
+3. ✅ Set up custom domain if not already done (see [CloudflareEdgeHosting.md](../Docs/Installation/CloudflareEdgeHosting.md))
+4. ✅ Test all documentation navigation and directory paths
+5. ✅ Monitor deployment logs for any issues
+6. ✅ Consider disabling the old GitHub Pages workflow if migrating
 
 ## Support
 

@@ -411,7 +411,7 @@ aws cloudfront create-distribution \
 - **[Storage Overview](./Storage-Overview.md)** - Compare storage options and when to use each
 - **[Database Configuration](./Database-Overview.md)** - Configure your database provider
 - **[Configuration Overview](./README.md)** - Index of all configuration documentation
-- **[LEARNING_PATHS: DevOps](../LEARNING_PATHS.md#️-devops--system-administrator)** - Storage setup for DevOps professionals
+- **[LEARNING_PATHS: DevOps](../LEARNING_PATHS.md#devops--system-administrator)** - Storage setup for DevOps professionals
 - **[AWS S3 Access Keys](./AWS-S3-AccessKeys.md)** - Step-by-step S3 setup guide
 - **[Cloudflare R2 Access Keys](./Cloudflare-R2-AccessKeys.md)** - Step-by-step R2 setup guide
 - **[Cloudflare Edge Hosting](../Installation/CloudflareEdgeHosting.md)** - Origin-less hosting with R2

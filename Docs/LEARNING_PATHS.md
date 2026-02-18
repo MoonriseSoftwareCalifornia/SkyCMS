@@ -133,7 +133,7 @@ audience: [all]
 
 ---
 
-## DevOps / System Administrator
+## DevOps / System Administrator {#devops--system-administrator}
 
 **Goal:** Deploy, configure, and maintain SkyCMS in production
 
@@ -222,7 +222,7 @@ audience: [all]
 
 ---
 
-## Decision Maker / Manager
+## Decision Maker / Manager {#decision-maker--manager}
 
 **Goal:** Understand SkyCMS capabilities, costs, and competitive position
 

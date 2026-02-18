@@ -38,7 +38,7 @@
 
 ---
 
-## Dimensions & Resolution
+## Dimensions & Resolution {#dimensions--resolution}
 
 ### Recommended Capture Size
 
@@ -99,7 +99,7 @@
 
 ---
 
-## Format & Compression
+## Format & Compression {#format--compression}
 
 ### WebP (Recommended)
 
@@ -172,7 +172,7 @@ ls -lh screenshot.webp screenshot.png
 
 ---
 
-## Capture Tools & Techniques
+## Capture Tools & Techniques {#capture-tools--techniques}
 
 ### Recommended Tools
 
@@ -260,7 +260,7 @@ ls -lh screenshot.webp screenshot.png
 
 ---
 
-## Style & Consistency Guidelines
+## Style & Consistency Guidelines {#style--consistency-guidelines}
 
 ### Visual Consistency
 
@@ -365,7 +365,7 @@ ls -lh screenshot.webp screenshot.png
 
 ---
 
-## File Naming & Organization
+## File Naming & Organization {#file-naming--organization}
 
 ### Folder Structure
 

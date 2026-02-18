@@ -88,7 +88,7 @@ SkyCMS supports different publishing modes to accommodate various hosting and wo
 
 ---
 
-## Publishing Modes {#publishing-modes-detail}
+## Publishing Modes {#publishing-modes}
 
 ![Mode selector showing Direct/Staged/Static/Git](images/screenshots/publishing-mode-selector.webp)
 
@@ -437,7 +437,7 @@ SkyCMS supports different publishing modes to accommodate various hosting and wo
 
 ---
 
-## Scheduling & Automation {#scheduling-automation}
+## Scheduling & Automation {#scheduling--automation}
 
 ### Scheduled Publishing
 
@@ -512,7 +512,7 @@ If URL contains "/summer/"
 
 ---
 
-## Unpublishing & Archiving
+## Unpublishing & Archiving {#unpublishing--archiving}
 
 ### Unpublishing Content
 
@@ -606,8 +606,8 @@ When replacing or removing pages, set up redirects:
 - **[Page Scheduling](./Editors/PageScheduling.md)** - Schedule pages for automatic publication
 - **[CDN Configuration](./Configuration/CDN-Overview.md)** - Cache purging on publish
 - **[Authentication & Authorization](./Authentication-Overview.md)** - Access control and permissions
-- **[LEARNING_PATHS: Content Editor](./LEARNING_PATHS.md#-content-editor-non-technical)** - Content creation guide
-- **[LEARNING_PATHS: DevOps](./LEARNING_PATHS.md#️-devops--system-administrator)** - Publishing workflow setup
+- **[LEARNING_PATHS: Content Editor](./LEARNING_PATHS.md#content-editor-non-technical)** - Content creation guide
+- **[LEARNING_PATHS: DevOps](./LEARNING_PATHS.md#devops--system-administrator)** - Publishing workflow setup
 - **[QuickStart: Publishing Content](./QuickStart.md)** - Quick reference
 - **[Troubleshooting Guide](./Troubleshooting.md)** - Publishing issues and solutions
 - **[Main Documentation Hub](./README.md)** - Browse all documentation

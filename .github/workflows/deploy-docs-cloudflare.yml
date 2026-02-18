@@ -36,6 +36,47 @@ jobs:
         run: |
           python -m mkdocs build --config-file mkdocs.yml --site-dir ./site
       
+      - name: Validate links in documentation
+        run: |
+          python -m pip install --upgrade pip
+          pip install linkchecker
+          linkchecker ./site --check-extern --timeout=10 --retries=1 --threads=4 --quiet
+        continue-on-error: false
+      
+      - name: Check for broken anchors
+        run: |
+          python << 'EOF'
+          import os
+          import re
+          from pathlib import Path
+          
+          broken_anchors = []
+          html_files = list(Path('./site').glob('**/*.html'))
+          
+          for html_file in html_files:
+              content = html_file.read_text()
+              # Extract all id attributes
+              ids = set(re.findall(r'id=["\']([^"\']+)["\']', content))
+              # Extract all href anchors (#something)
+              hrefs = re.findall(r'href=["\']([^"\']*#[^"\']*)["\']', content)
+              
+              for href in hrefs:
+                  if '#' in href:
+                      parts = href.split('#')
+                      anchor = parts[-1]
+                      # Check if anchor exists in the same file
+                      if anchor and anchor not in ids:
+                          broken_anchors.append(f"{html_file}: Missing anchor #{anchor}")
+          
+          if broken_anchors:
+              print("❌ Broken anchors found:")
+              for item in broken_anchors:
+                  print(f"  {item}")
+              exit(1)
+          else:
+              print("✅ All anchors are valid!")
+          EOF
+      
       - name: Configure AWS CLI for CloudFlare R2
         run: |
           aws configure set aws_access_key_id ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
@@ -120,6 +161,15 @@ jobs:
             --exclude "*.svg" --exclude "*.gif" --exclude "*.webp" \
             --cache-control "public, max-age=3600"
       
+      - name: Remove stale files from R2
+        run: |
+          echo "🧹 Removing any stale files from R2 bucket..."
+          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
+            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --delete \
+            --quiet
+          echo "✅ R2 bucket synchronized (stale files removed)"
+      
       - name: Purge CloudFlare cache
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -139,17 +189,21 @@ jobs:
         run: |
           echo "### ✅ Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Documentation deployed to CloudFlare R2 bucket: \`${{ secrets.R2_BUCKET_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Validation Checks:**" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ MkDocs build completed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ External links validated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Internal anchors validated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Deployment Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- R2 Bucket cleared and repopulated: \`${{ secrets.R2_BUCKET_NAME }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Triggered by: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -n "${{ env.CLOUDFLARE_ZONE_ID }}" ]; then
-            echo "- Cache purged: ✅" >> $GITHUB_STEP_SUMMARY
+            echo "- CDN Cache: ✅ Purged" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- Cache purged: ⏭️ (skipped - no Zone ID)" >> $GITHUB_STEP_SUMMARY
+            echo "- CDN Cache: ⏭️ Skipped (no Zone ID configured)" >> $GITHUB_STEP_SUMMARY
           fi
         env:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}

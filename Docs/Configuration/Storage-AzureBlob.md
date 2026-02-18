@@ -105,6 +105,25 @@ Then assign the **Storage Blob Data Contributor** role to your app's identity on
 $env:ConnectionStrings__StorageConnectionString = "DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=your-key;EndpointSuffix=core.windows.net"
 ```
 
+## Connection String Format {#connection-string-format}
+
+The Azure Blob Storage connection string follows this format:
+
+```
+DefaultEndpointsProtocol=https;AccountName=<account-name>;AccountKey=<account-key>;EndpointSuffix=core.windows.net
+```
+
+**Components:**
+- `DefaultEndpointsProtocol`: Use `https` for encrypted connections (recommended)
+- `AccountName`: Your Azure Storage account name
+- `AccountKey`: Primary or Secondary access key from Azure Portal
+- `EndpointSuffix`: Use `core.windows.net` for global Azure, or regional endpoints for specific regions
+
+**Example:**
+```
+DefaultEndpointsProtocol=https;AccountName=mystorageacct;AccountKey=abc123...xyz==;EndpointSuffix=core.windows.net
+```
+
 ## Static Website Hosting (optional)
 
 SkyCMS can serve published content directly from Azure static website hosting:

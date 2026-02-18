@@ -476,8 +476,8 @@ dotnet user-secrets set "AzureAD:ClientSecret" "your-secret"
 
 ## See Also
 
-- **[Learning Paths: Developer](./LEARNING_PATHS.md#-developer)** - Authentication setup for developers
-- **[Learning Paths: Decision Maker](./LEARNING_PATHS.md#-decision-maker--manager)** - Authentication strategy and planning
+- **[Learning Paths: Developer](./LEARNING_PATHS.md#developer)** - Authentication setup for developers
+- **[Learning Paths: Decision Maker](./LEARNING_PATHS.md#decision-maker--manager)** - Authentication strategy and planning
 - **[Components: Identity Framework](./Components/AspNetCore.Identity.FlexDb.md)** - Detailed identity implementation
 - **[CONTRIBUTING.md: Secrets Management](./CONTRIBUTING.md)** - Managing secrets safely
 - **[Publishing Overview](./Publishing-Overview.md)** - Authorization and access control for publishing

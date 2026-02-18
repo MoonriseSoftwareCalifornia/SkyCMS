@@ -75,7 +75,7 @@ SkyCMS can purge CDN caches after publish so fresh content appears immediately. 
 - **[Database Configuration](./Database-Overview.md)** - Companion configuration guide
 - **[Storage Configuration](./Storage-Overview.md)** - Companion configuration guide
 - **[Configuration Overview](./README.md)** - Index of all configuration documentation
-- **[LEARNING_PATHS: DevOps](../LEARNING_PATHS.md#️-devops--system-administrator)** - CDN setup for DevOps professionals
+- **[LEARNING_PATHS: DevOps](../LEARNING_PATHS.md#devops--system-administrator)** - CDN setup for DevOps professionals
 - **[Publishing Overview](../Publishing-Overview.md)** - Publishing workflow with CDN cache purging
 - **[Troubleshooting Guide](../Troubleshooting.md)** - CDN troubleshooting
 - **[Main Documentation Hub](../README.md)** - Browse all documentation

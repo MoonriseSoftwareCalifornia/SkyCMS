@@ -102,6 +102,25 @@ Cloudflare R2 is an S3-compatible object storage service with no egress fees, ma
 $env:ConnectionStrings__StorageConnectionString = "AccountId=1234567890abcdef;Bucket=my-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY;"
 ```
 
+## Connection String Format {#connection-string-format}
+
+The Cloudflare R2 connection string follows this format:
+
+```
+AccountId=<account-id>;Bucket=<bucket-name>;KeyId=<r2-access-key-id>;Key=<r2-secret-access-key>;
+```
+
+**Components:**
+- `AccountId`: Your Cloudflare Account ID (32-character hex string)
+- `Bucket`: Your R2 bucket name
+- `KeyId`: R2 API Token Access Key ID
+- `Key`: R2 API Token Secret Access Key
+
+**Example:**
+```
+AccountId=abc123def456789;Bucket=my-cms-bucket;KeyId=a1b2c3d4e5f6;Key=secret123abc456xyz789;
+```
+
 ## Origin-less (Edge) Hosting with Cloudflare
 
 For maximum performance, use Cloudflare R2 with origin-less hosting (no origin server required):

@@ -113,6 +113,25 @@ Amazon S3 is a highly scalable object storage service widely available across AW
 $env:ConnectionStrings__StorageConnectionString = "Bucket=your-bucket-name;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY;"
 ```
 
+## Connection String Format {#connection-string-format}
+
+The AWS S3 connection string follows this format:
+
+```
+Bucket=<bucket-name>;Region=<aws-region>;KeyId=<access-key-id>;Key=<secret-access-key>;
+```
+
+**Components:**
+- `Bucket`: Your S3 bucket name (e.g., `my-cms-bucket`)
+- `Region`: AWS region where bucket is located (e.g., `us-east-1`, `eu-west-1`)
+- `KeyId`: IAM user Access Key ID (starts with `AKIA...`)
+- `Key`: IAM user Secret Access Key
+
+**Example:**
+```
+Bucket=my-cms-files;Region=us-west-2;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY;
+```
+
 ## Static Website Hosting (optional)
 
 1. **AWS Console** → **S3** → **Bucket** → **Properties** → **Static website hosting**.

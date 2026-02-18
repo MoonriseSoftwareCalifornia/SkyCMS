@@ -389,6 +389,8 @@ Complete email configuration documentation:
 
 ---
 
+## Troubleshooting {#troubleshooting}
+
 ### Setup Wizard Not Appearing
 
 **Symptoms:**

@@ -416,8 +416,8 @@ public class MyWidgetConfiguration
 - **[Image Widget Deep Dive](./Developers/ImageWidget.md)** - Detailed widget implementation example
 - **[Developer Overview](./Developers/README.md)** - Developer documentation hub
 - **[Content Editors: Live Editor](./Editors/LiveEditor/README.md)** - How editors use widgets
-- **[LEARNING_PATHS: Developer](./LEARNING_PATHS.md#-developer)** - Widget development learning path
-- **[LEARNING_PATHS: Content Editor](./LEARNING_PATHS.md#-content-editor-non-technical)** - Using widgets as content creator
+- **[LEARNING_PATHS: Developer](./LEARNING_PATHS.md#developer)** - Widget development learning path
+- **[LEARNING_PATHS: Content Editor](./LEARNING_PATHS.md#content-editor-non-technical)** - Using widgets as content creator
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Documentation standards for widget documentation
 - **[Main Documentation Hub](./README.md)** - Browse all documentation
 

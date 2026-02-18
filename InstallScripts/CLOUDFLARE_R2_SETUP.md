@@ -203,6 +203,53 @@ export default {
 
 Bind your R2 bucket to the worker as `DOCS_BUCKET`.
 
+### Option C: Transform Rules (Modern Approach - Recommended)
+
+**Update (2026)**: CloudFlare now offers Transform Rules which provide a simpler, free-tier friendly alternative to Workers for handling URL routing.
+
+**Advantages over Workers:**
+- Available on all CloudFlare plans (including Free)
+- No request quotas or rate limits
+- Simpler configuration (no code required)
+- Better for multiple websites (Workers share quotas)
+
+**Setup Depends on Content Type:**
+
+#### For MkDocs-Generated Sites
+
+Files are stored WITH extensions in directories (e.g., `/installation/index.html`):
+
+**Rule 1**: Match root path
+- Filter: `http.request.uri.path eq "/"`
+- Rewrite to: `/index.html`
+
+**Rule 2**: Match directory paths with trailing slash
+- Filter: `ends_with(http.request.uri.path, "/") and not (http.request.uri.path eq "/")`
+- Rewrite to: `concat(http.request.uri.path, "index.html")`
+
+#### For SkyCMS-Generated Sites
+
+Files are stored WITHOUT extensions (e.g., `/about`, `/products/widget`):
+
+**Rule 1 (only rule needed)**: Match root path
+- Filter: `http.request.uri.path eq "/"`
+- Rewrite to: `/index.html`
+
+Other paths are directly accessible without rewriting since SkyCMS stores them without extensions.
+
+#### Apply Transform Rules
+
+1. Go to CloudFlare Dashboard → Your Domain → **Rules** → **Transform Rules**
+2. Click **Create rule** → **URL Rewrite**
+3. For **MkDocs**: Create 2 rules (root + directory)
+4. For **SkyCMS**: Create 1 rule (root only)
+5. Test with [CloudFlare Trace](https://developers.cloudflare.com/rules/trace-request/)
+
+For complete setup details and examples, see:
+- [CloudFlare Edge Hosting Guide](../Docs/Installation/CloudflareEdgeHosting.md#step-4--create-custom-rules-to-handle-root-access)
+- [Real-World Example: Multiple Sites](../Docs/Installation/CloudflareEdgeHosting.md#real-world-example-multiple-sites-on-cloudflare)
+- [GitHub Secrets Setup](../.github/CLOUDFLARE_SECRETS_SETUP.md#post-deployment-url-rewrite-rules-required)
+
 ## Automation with GitHub Actions
 
 Create `.github/workflows/deploy-docs-cloudflare.yml`:

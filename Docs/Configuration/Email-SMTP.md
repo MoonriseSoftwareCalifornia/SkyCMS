@@ -94,7 +94,7 @@ SMTP (Simple Mail Transfer Protocol) is the standard protocol for sending emails
 
 ### Gmail Setup
 
-#### Generate App Password
+#### Generate App Password {#gmail-app-password}
 
 1. Go to [Google Account Security](https://myaccount.google.com/security)
 2. Enable **2-Step Verification** (if not already enabled)
@@ -134,7 +134,7 @@ $env:AdminEmail = "your-email@company.com"
 
 ### Google Workspace Setup
 
-#### Generate App Password
+#### Generate App Password {#google-workspace-app-password}
 
 1. Go to [Google Admin Console](https://admin.google.com)
 2. Navigate to **Security** → **Authentication** → **App Passwords**
@@ -254,7 +254,7 @@ Use **Port 587 with TLS** (`UsesSsl = false`) for most providers.
 ### "Authentication failed" or "Invalid credentials"
 
 - Double-check username and password
-- Gmail users: Use [app password](#generate-app-password), not regular password
+- Gmail users: Use [app password](#gmail-app-password), not regular password
 - Office 365 users: Verify SMTP authentication is enabled in admin center
 - Try logging into the email service directly to confirm credentials work
 

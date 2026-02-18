@@ -105,7 +105,7 @@ For complete connection string formats, configuration methods, security best pra
 
 ## See Also
 
-- **[LEARNING_PATHS: DevOps](../LEARNING_PATHS.md#️-devops--system-administrator)** - Storage setup as part of DevOps journey
+- **[LEARNING_PATHS: DevOps](../LEARNING_PATHS.md#devops--system-administrator)** - Storage setup as part of DevOps journey
 - **[Database Configuration](./Database-Overview.md)** - Companion guide for content storage
 - **[CDN Configuration](./CDN-Overview.md)** - Performance optimization
 - **[Installation & Deployment](../Installation/) - Full deployment guides

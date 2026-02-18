@@ -96,7 +96,7 @@ The SkyCMS Live Editor is an inline, WYSIWYG content editor built on CKEditor 5 
 
 ---
 
-## Developer & Administrator Guide
+## Developer & Administrator Guide {#developer--administrator-guide}
 
 ### Architecture
 
@@ -171,7 +171,7 @@ To add plugins or toolbar items:
 
 ---
 
-## Troubleshooting & Resources
+## Troubleshooting & Resources {#troubleshooting--resources}
 
 ### Common Issues
 
