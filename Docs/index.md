@@ -30,15 +30,40 @@ audience: [all]
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FCWALabs%2FSkyCMS%2Fmain%2FInstallScripts%2FAzure%2Fbicep%2Fmain.json)
 [![Deploy to AWS](./assets/images/deploy-to-aws.svg)](./InstallScripts/AWS/QUICK_START.html)
 
+## Choose Your Path
+
+### Creating Content
+
+**Start here:** [Content Creator Quick Start](./ContentCreation-QuickStart.md) — Learn the workflow: Layouts → Templates → Pages → Editing
+- **Design:** [Layouts Guide](./Layouts/README.md) · [Page Templates Guide](./Templates/README.md)
+- **Edit:** [Live Editor](./Editors/LiveEditor/README.md) · [Designer](./Editors/Designer/README.md) · [Code Editor](./Editors/CodeEditor/README.md) · [Image Editing](./Editors/ImageEditing/README.md)
+- **Manage:** [File Management](./FileManagement/README.md) · [Publishing & Scheduling](./Editors/PageScheduling.md) · [Blog Management](./blog/BlogPostLifecycle.md)
+
+---
+
+### Developer Information
+*Build, customize, and ship*
+
+**Start here:** [Developer Quick Start](./QuickStart.md) · [Website Launch Workflow](./Developer-Guides/Website-Launch-Workflow.md)
+- [Installation Overview](./Installation/README.md)
+- [Layouts & Templates](./Layouts/Readme.md)
+- [Widgets & Components](./Widgets/README.md)
+- [Architecture](./Architecture/Startup-Lifecycle.md)
+- [Testing Guide](./Development/Testing/README.md)
+
+---
+
 ## Quick links
 - [When to Use SkyCMS (includes Edge-Native Architecture)](./When-to-Use-SkyCMS.md)
-- [Developer Quick Start](./QuickStart.md)
+- [Content Creator Quick Start](./ContentCreation-QuickStart.md) — *For editors and content teams*
+- [Installation Quick Start](./QuickStart.md) — *For setup and deployment*
 - [Installation Overview](./Installation/README.md)
-- [Docs Publisher (Markdown-to-SkyCMS Template)](./Installation/DocsPublisher.md)
 - [Minimum Required Settings](./Installation/MinimumRequiredSettings.md)
 - [Setup Wizard](./Installation/SetupWizard.md)
 - [Website Launch Workflow](./Developer-Guides/Website-Launch-Workflow.md)
 - [FAQ](./FAQ.md)
+
+
 
 ## When to use SkyCMS
 - You need sub-second global delivery with static output but want a full CMS editing experience.
@@ -51,36 +76,6 @@ audience: [all]
 - Content teams needing an easy editor and fast preview/publish loops.
 - Developers who want a CMS without maintaining bespoke build systems.
 - Ops/DevOps who need predictable, low-cost, globally distributed sites.
-
-## Prerequisites
-- Docker-capable environment and one supported database (MySQL, MS SQL, SQLite, or Cosmos DB) plus S3-compatible or Azure storage.
-- For cloud deploys: access to Azure/AWS/Cloudflare accounts and their CLIs where applicable.
-
-## Choose Your Path
-
-### Content Creators
-*Create and publish fast*
-
-**Start here:** [Quick Start for Editors](./QuickStart.md) · [Creating Your First Page](./Editors/LiveEditor/QuickStart.md)
-- [Managing Files & Images](./FileManagement/Quick-Start.md)
-- [Publishing & Scheduling](./Editors/PageScheduling.md)
-- [Blog Management](./blog/BlogPostLifecycle.md)
-
-**Tools:** [Live Editor](./Editors/LiveEditor/README.md) · [Designer](./Editors/Designer/README.md) · [Image Editing](./Editors/ImageEditing/README.md)
-
----
-
-### Developers
-*Build, customize, and ship*
-
-**Start here:** [Developer Quick Start](./QuickStart.md) · [Website Launch Workflow](./Developer-Guides/Website-Launch-Workflow.md)
-- [Installation Overview](./Installation/README.md)
-- [Layouts & Templates](./Layouts/Readme.md)
-- [Widgets & Components](./Widgets/README.md)
-- [Architecture](./Architecture/Startup-Lifecycle.md)
-- [Testing Guide](./Development/Testing/README.md)
-
----
 
 ### Decision Makers
 *Evaluate fit and cost*
@@ -100,6 +95,12 @@ audience: [all]
 - Deploy: [Azure](./Installation/AzureInstall.md) · [AWS S3](./S3StaticWebsite.md) · [Cloudflare Edge](./Installation/CloudflareEdgeHosting.md)
 - Configure: [Setup Wizard](./Installation/SetupWizard.md) · [Database](./Configuration/Database-Overview.md) · [Storage](./Configuration/Storage-Overview.md) · [CDN](./Configuration/CDN-Overview.md) · [Multi-Tenant](./Configuration/Multi-Tenant-Configuration.md)
 - Operate: [Post-Installation](./Installation/Post-Installation.md) ⭐ · [Monthly Maintenance](./Checklists/Monthly-Maintenance.md) · [Troubleshooting](./Troubleshooting.md)
+
+---
+
+## Prerequisites
+- Docker-capable environment and one supported database (MySQL, MS SQL, SQLite, or Cosmos DB) plus S3-compatible or Azure storage.
+- For cloud deploys: access to Azure/AWS/Cloudflare accounts and their CLIs where applicable.
 
 ---
 

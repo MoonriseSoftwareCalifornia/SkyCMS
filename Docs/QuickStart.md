@@ -1,12 +1,12 @@
 ---
-title: 5-Minute Quick Start
+title: Installation Quick Start
 description: Get SkyCMS up and running quickly with the setup wizard for single-tenant installations
 keywords: quickstart, setup, wizard, installation, Docker, Azure, getting-started
 audience: [developers, administrators]
 version: 2.0
 updated: 2025-12-20
 canonical: /QuickStart.html
-aliases: []
+aliases: ["5-Minute Quick Start"]
 scope:
   platforms: [local, azure]
   tenancy: [single]
@@ -14,7 +14,7 @@ status: stable
 chunk_hint: 320
 ---
 
-# 5-Minute Quick Start
+# Installation Quick Start
 
 Use the new setup wizard for **single-tenant** installs. It walks you through storage, admin user, publisher URL, optional email, and optional CDN. Set `CosmosAllowSetup=true` and make sure `ConnectionStrings:ApplicationDbContextConnection` points to a reachable database before you begin.
 
