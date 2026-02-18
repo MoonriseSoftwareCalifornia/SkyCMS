@@ -168,7 +168,7 @@ Yes. SkyCMS includes:
 - Built-in link validation
 - Mobile-responsive templates by default
 
-### Can I migrate from WordPress to SkyCMS?
+### Can I migrate from WordPress to SkyCMS? {#wordpress-migration}
 
 Yes, but it requires custom tooling. You would:
 1. Export WordPress posts/pages
