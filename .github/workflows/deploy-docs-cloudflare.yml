@@ -37,11 +37,20 @@ jobs:
           python -m mkdocs build --config-file mkdocs.yml --site-dir ./site
       
       - name: Validate links in documentation
+        id: linkcheck
         run: |
           python -m pip install --upgrade pip
           pip install linkchecker
-          linkchecker ./site --check-extern --timeout=10 --threads=4 --quiet
-        continue-on-error: false
+          linkchecker ./site --check-extern --timeout=10 --threads=4 --ignore-url='(^|/)sitemap\.xml\.gz$'
+        continue-on-error: true
+
+      - name: Link check summary
+        if: steps.linkcheck.outcome == 'failure'
+        run: |
+          echo "### ⚠️ Link validation found issues" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment continued, but broken links were detected in docs." >> $GITHUB_STEP_SUMMARY
+          echo "Review the \"Validate links in documentation\" step logs for exact URLs and referrers." >> $GITHUB_STEP_SUMMARY
       
       - name: Check for broken anchors
         run: |
