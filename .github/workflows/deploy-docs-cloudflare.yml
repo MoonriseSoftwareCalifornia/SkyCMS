@@ -32,7 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install mkdocs mkdocs-material
 
-        - name: Pre-build validate links in Docs source
+      - name: Pre-build validate links in Docs source
         run: |
           python << 'EOF'
           import re
@@ -40,46 +40,46 @@ jobs:
           from urllib.parse import urlparse, unquote
 
           docs_root = Path('./Docs').resolve()
-            ignored_parts = {'_archive', '_site', '_templates', '_Marketing', 'images/screenshots'}
+          ignored_parts = {'_archive', '_site', '_templates', '_Marketing', 'images/screenshots'}
           link_re = re.compile(r'\[[^\]]+\]\(([^)]+)\)')
 
           broken = []
 
           for md_file in docs_root.rglob('*.md'):
-            rel_md = md_file.relative_to(docs_root).as_posix()
-            if any(part in rel_md for part in ignored_parts):
-              continue
-
-            content = md_file.read_text(encoding='utf-8', errors='ignore')
-            for raw_target in link_re.findall(content):
-              target = raw_target.strip()
-              if not target:
-                continue
-
-              parsed = urlparse(target)
-              if parsed.scheme in ('http', 'https', 'mailto', 'tel', 'javascript', 'data'):
-                continue
-
-              path_part = unquote(parsed.path or '')
-              if not path_part or path_part.startswith('#'):
-                continue
-
-                if '.md' not in path_part.lower():
+              rel_md = md_file.relative_to(docs_root).as_posix()
+              if any(part in rel_md for part in ignored_parts):
                   continue
 
-              if path_part.startswith('/'):
-                candidate = (Path('.').resolve() / path_part.lstrip('/')).resolve()
-              else:
-                candidate = (md_file.parent / path_part).resolve()
+              content = md_file.read_text(encoding='utf-8', errors='ignore')
+              for raw_target in link_re.findall(content):
+                  target = raw_target.strip()
+                  if not target:
+                      continue
 
-                if not candidate.exists():
-                broken.append(f"{rel_md} -> {target}")
+                  parsed = urlparse(target)
+                  if parsed.scheme in ('http', 'https', 'mailto', 'tel', 'javascript', 'data'):
+                      continue
+
+                  path_part = unquote(parsed.path or '')
+                  if not path_part or path_part.startswith('#'):
+                      continue
+
+                  if '.md' not in path_part.lower():
+                      continue
+
+                  if path_part.startswith('/'):
+                      candidate = (Path('.').resolve() / path_part.lstrip('/')).resolve()
+                  else:
+                      candidate = (md_file.parent / path_part).resolve()
+
+                  if not candidate.exists():
+                      broken.append(f"{rel_md} -> {target}")
 
           if broken:
-            print(f"❌ Broken source links found: {len(broken)}")
-            for item in broken[:300]:
-              print(f"  {item}")
-            raise SystemExit(1)
+              print(f"❌ Broken source links found: {len(broken)}")
+              for item in broken[:300]:
+                  print(f"  {item}")
+              raise SystemExit(1)
 
           print('✅ Source markdown links validated.')
           EOF
