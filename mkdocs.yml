@@ -74,8 +74,8 @@ nav:
     - Post-Installation: Installation/Post-Installation.md
   
   - Create Content:
-    - Site Design (Layouts): Layouts/README.md
-    - Page Templates: Templates/README.md
+    - Site Design (Layouts): Layouts/
+    - Page Templates: Templates/
     - Editors:
       - Live Editor: Editors/LiveEditor/README.md
       - Designer: Editors/Designer/README.md
