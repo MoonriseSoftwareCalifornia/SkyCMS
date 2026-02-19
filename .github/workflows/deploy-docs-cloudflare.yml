@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - 'Docs/**'
+      - 'mkdocs.yml'
       - '.github/workflows/deploy-docs-cloudflare.yml'
   workflow_dispatch:
 
@@ -227,6 +228,22 @@ jobs:
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --delete
           echo "✅ R2 bucket synchronized from ./site"
+
+      - name: Verify critical pages in R2
+        run: |
+          aws s3api head-object \
+            --bucket ${{ secrets.R2_BUCKET_NAME }} \
+            --key index.html \
+            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com > /dev/null
+          aws s3api head-object \
+            --bucket ${{ secrets.R2_BUCKET_NAME }} \
+            --key Layouts/index.html \
+            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com > /dev/null
+          aws s3api head-object \
+            --bucket ${{ secrets.R2_BUCKET_NAME }} \
+            --key Templates/index.html \
+            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com > /dev/null
+          echo "✅ Verified key pages exist in R2"
       
       - name: Purge CloudFlare cache
         env:
