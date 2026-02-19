@@ -215,92 +215,13 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
           aws configure set default.region auto
       
-      - name: Deploy HTML files to CloudFlare R2
+      - name: Deploy site to CloudFlare R2 (authoritative sync)
         run: |
+          echo "📦 Syncing full generated site to R2..."
           aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --exclude "*" \
-            --include "*.html" \
-            --content-type "text/html; charset=utf-8" \
-            --cache-control "public, max-age=3600" \
-            --metadata-directive REPLACE
-      
-      - name: Deploy CSS files to CloudFlare R2
-        run: |
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --exclude "*" \
-            --include "*.css" \
-            --content-type "text/css; charset=utf-8" \
-            --cache-control "public, max-age=31536000" \
-            --metadata-directive REPLACE \
-            --size-only
-      
-      - name: Deploy JavaScript files to CloudFlare R2
-        run: |
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --exclude "*" \
-            --include "*.js" \
-            --content-type "application/javascript; charset=utf-8" \
-            --cache-control "public, max-age=31536000" \
-            --metadata-directive REPLACE
-      
-      - name: Deploy image files to CloudFlare R2
-        run: |
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --exclude "*" \
-            --include "*.png" \
-            --content-type "image/png" \
-            --cache-control "public, max-age=31536000"
-          
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --exclude "*" \
-            --include "*.jpg" --include "*.jpeg" \
-            --content-type "image/jpeg" \
-            --cache-control "public, max-age=31536000"
-          
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --exclude "*" \
-            --include "*.svg" \
-            --content-type "image/svg+xml" \
-            --cache-control "public, max-age=31536000"
-          
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --exclude "*" \
-            --include "*.gif" \
-            --content-type "image/gif" \
-            --cache-control "public, max-age=31536000"
-          
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --exclude "*" \
-            --include "*.webp" \
-            --content-type "image/webp" \
-            --cache-control "public, max-age=31536000"
-      
-      - name: Deploy remaining files to CloudFlare R2
-        run: |
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --delete \
-            --exclude "*.html" --exclude "*.css" --exclude "*.js" \
-            --exclude "*.png" --exclude "*.jpg" --exclude "*.jpeg" \
-            --exclude "*.svg" --exclude "*.gif" --exclude "*.webp" \
-            --cache-control "public, max-age=3600"
-      
-      - name: Remove stale files from R2
-        run: |
-          echo "🧹 Removing any stale files from R2 bucket..."
-          aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --delete \
-            --quiet
-          echo "✅ R2 bucket synchronized (stale files removed)"
+            --delete
+          echo "✅ R2 bucket synchronized from ./site"
       
       - name: Purge CloudFlare cache
         env:
@@ -327,7 +248,7 @@ jobs:
           echo "- ✅ Internal anchors validated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Deployment Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- R2 Bucket cleared and repopulated: \`${{ secrets.R2_BUCKET_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- R2 Bucket authoritative sync from ./site: \`${{ secrets.R2_BUCKET_NAME }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Triggered by: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
