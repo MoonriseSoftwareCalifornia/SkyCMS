@@ -227,7 +227,7 @@ jobs:
           aws s3 sync ./site s3://${{ secrets.R2_BUCKET_NAME }} \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --delete
-          echo "✅ R2 bucket synchronized from ./site"
+          echo "✅ R2 bucket synchronized from ./site to bucket root"
 
       - name: Verify critical pages in R2
         run: |
@@ -244,6 +244,17 @@ jobs:
             --key Templates/index.html \
             --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com > /dev/null
           echo "✅ Verified key pages exist in R2"
+
+      - name: Debug R2 key listing on verification failure
+        if: failure()
+        run: |
+          echo "ℹ️ Debug listing for root and key docs folders:"
+          aws s3 ls s3://${{ secrets.R2_BUCKET_NAME }} \
+            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com | head -n 50
+          aws s3 ls s3://${{ secrets.R2_BUCKET_NAME }}/Layouts/ \
+            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com | head -n 50
+          aws s3 ls s3://${{ secrets.R2_BUCKET_NAME }}/Templates/ \
+            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com | head -n 50
       
       - name: Purge CloudFlare cache
         env:
@@ -270,7 +281,7 @@ jobs:
           echo "- ✅ Internal anchors validated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Deployment Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- R2 Bucket authoritative sync from ./site: \`${{ secrets.R2_BUCKET_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- R2 Bucket authoritative sync target: \`${{ secrets.R2_BUCKET_NAME }}\` (root)" >> $GITHUB_STEP_SUMMARY
           echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Triggered by: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
