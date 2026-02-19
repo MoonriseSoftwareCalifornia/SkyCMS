@@ -1390,7 +1390,7 @@ See: [Monthly Maintenance Tasks](../Checklists/Monthly-Maintenance.md) *(coming 
 
 - [Creating Pages](../ContentCreation-QuickStart.md)
 - [Live Editor Guide](../Editors/LiveEditor/README.md)
-- [Templates Guide](../Templates/Readme.md)
+- [Templates Guide](../Templates/)
 - [File Manager](../FileManagement/index.md)
 - [SkyCMS Official Docs](https://www.moonrise.net/cosmos/documentation/)
 

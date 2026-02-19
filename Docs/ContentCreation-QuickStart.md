@@ -77,7 +77,7 @@ A **Layout** defines the look and feel of every page on your site—headers, foo
 3. Preview and install
 4. Once installed, it becomes the default layout for all new pages
 
-📖 **Full guide:** [Layouts User Guide](./Layouts/Readme.md)
+📖 **Full guide:** [Layouts User Guide](./Layouts/)
 
 ---
 
@@ -104,7 +104,7 @@ A **Page Template** defines the structure of your pages—where the title goes, 
    ```
 5. Click **Save**
 
-📖 **Full guide:** [Page Templates Guide](./Templates/Readme.md)  
+📖 **Full guide:** [Page Templates Guide](./Templates/)  
 💡 **Tips:** Use meaningful region names (e.g., `title`, `body`, `sidebar`), keep editable regions large enough for content
 
 ---

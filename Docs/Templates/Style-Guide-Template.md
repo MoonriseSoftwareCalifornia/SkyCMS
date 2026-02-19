@@ -684,8 +684,8 @@ All web content must meet WCAG 2.1 Level AA standards:
 
 ### Related Documentation
 
-- [SkyCMS Templates Guide](../Templates/Readme.md)
-- [SkyCMS Layouts Documentation](../Layouts/Readme.md)
+- [SkyCMS Templates Guide](../Templates/)
+- [SkyCMS Layouts Documentation](../Layouts/)
 - [Phase 2: Creating Layouts](../Developer-Guides/02-Creating-Layouts.md)
 - [Phase 3: Creating Templates](../Developer-Guides/03-Creating-Templates.md)
 

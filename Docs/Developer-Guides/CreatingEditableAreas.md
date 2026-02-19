@@ -113,7 +113,7 @@ Then call `Duplicator.create(element)` on each clone container in script.
 
 ## See Also
 
-- Templates guide: [../Templates/Readme.md](../Templates/Readme.md)
+- Templates guide: [../Templates/](../Templates/)
 - Live Editor reference: [../Editors/LiveEditor/README.md](../Editors/LiveEditor/README.md)
 - Live Editor technical reference: [../Editors/LiveEditor/TechnicalReference.md](../Editors/LiveEditor/TechnicalReference.md)
 - Duplicator code: [../../Editor/wwwroot/lib/cosmos/dublicator/dublicator.js](../../Editor/wwwroot/lib/cosmos/dublicator/dublicator.js)

@@ -197,8 +197,8 @@ Before using these guides, you should have:
 - [Middleware Pipeline](../Architecture/Middleware-Pipeline.md) - Request processing
 
 ### **Core Documentation**
-- [Layouts Guide](../Layouts/Readme.md) - In-depth layout reference
-- [Templates Guide](../Templates/Readme.md) - In-depth template reference
+- [Layouts Guide](../Layouts/) - In-depth layout reference
+- [Templates Guide](../Templates/) - In-depth template reference
 - [Role-Based Access Control](../Administration/Roles-and-Permissions.md) - User roles and permissions
 
 ### **Advanced Topics**

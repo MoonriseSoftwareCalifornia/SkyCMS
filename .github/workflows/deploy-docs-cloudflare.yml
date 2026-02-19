@@ -88,7 +88,7 @@ jobs:
         run: |
           python -m mkdocs build --config-file mkdocs.yml --site-dir ./site
 
-      - name: Validate markdown link resolution in generated site
+      - name: Disallow markdown hrefs in generated site
         run: |
           python << 'EOF'
           import re
@@ -98,7 +98,7 @@ jobs:
           site = Path('./site').resolve()
           href_re = re.compile(r'href=["\']([^"\']+)["\']', re.IGNORECASE)
 
-          unresolved = []
+          markdown_hrefs = []
 
           for html_file in site.rglob('*.html'):
             content = html_file.read_text(encoding='utf-8', errors='ignore')
@@ -114,32 +114,16 @@ jobs:
               if not path_part:
                 continue
 
-              if path_part.startswith('/'):
-                md_path = (site / path_part.lstrip('/')).resolve()
-              else:
-                md_path = (html_file.parent / path_part).resolve()
+              referrer = html_file.relative_to(site)
+              markdown_hrefs.append(f"{referrer} -> {href}")
 
-              candidates = [md_path]
-
-              if md_path.suffix.lower() == '.md':
-                no_ext = md_path.with_suffix('')
-                candidates.append((no_ext / 'index.html').resolve())
-                candidates.append(no_ext.with_suffix('.html').resolve())
-
-              if md_path.name.lower() == 'readme.md':
-                candidates.append((md_path.parent / 'index.html').resolve())
-
-              if not any(candidate.exists() for candidate in candidates):
-                referrer = html_file.relative_to(site)
-                unresolved.append(f"{referrer} -> {href}")
-
-          if unresolved:
-            print(f"❌ Unresolved markdown-style links found: {len(unresolved)}")
-            for item in unresolved[:200]:
+          if markdown_hrefs:
+            print(f"❌ Markdown hrefs found in generated site: {len(markdown_hrefs)}")
+            for item in markdown_hrefs[:200]:
               print(f"  {item}")
             raise SystemExit(1)
 
-          print('✅ All markdown-style links in generated site resolve correctly.')
+          print('✅ No internal markdown hrefs found in generated site.')
           EOF
       
       - name: Validate links in documentation

@@ -545,8 +545,8 @@ Read [SkyCMS Architecture Overview](../Architecture/Startup-Lifecycle.md)
 
 - [Setup Wizard](../Installation/SetupWizard.md) - Initial installation
 - [Post-Installation](../Installation/Post-Installation.md) - After wizard completes
-- [Layouts Guide](../Layouts/Readme.md) - In-depth layout documentation
-- [Templates Guide](../Templates/Readme.md) - In-depth template documentation
+- [Layouts Guide](../Layouts/) - In-depth layout documentation
+- [Templates Guide](../Templates/) - In-depth template documentation
 - [Role-Based Access Control](../Administration/Roles-and-Permissions.md) - Setting up user roles
 - [Content Creator Training](../Templates/Training-Document-Template.md) - Training your team
 

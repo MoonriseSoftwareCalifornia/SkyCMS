@@ -66,7 +66,7 @@ python -c $sourceGate
 Write-Host "==> Building MkDocs site..." -ForegroundColor Cyan
 python -m mkdocs build --config-file mkdocs.yml --site-dir ./site | Out-Null
 
-Write-Host "==> Validating markdown-style link resolution in generated HTML..." -ForegroundColor Cyan
+Write-Host "==> Validating generated HTML has no internal markdown hrefs..." -ForegroundColor Cyan
 $generatedGate = @'
 import re
 from pathlib import Path
@@ -75,7 +75,7 @@ from urllib.parse import urlparse, unquote
 site = Path('./site').resolve()
 href_re = re.compile(r'href=["\']([^"\']+)["\']', re.IGNORECASE)
 
-unresolved = []
+markdown_hrefs = []
 for html_file in site.rglob('*.html'):
     content = html_file.read_text(encoding='utf-8', errors='ignore')
     for href in href_re.findall(content):
@@ -90,26 +90,11 @@ for html_file in site.rglob('*.html'):
         if not path_part:
             continue
 
-        if path_part.startswith('/'):
-            md_path = (site / path_part.lstrip('/')).resolve()
-        else:
-            md_path = (html_file.parent / path_part).resolve()
+        markdown_hrefs.append(f"{html_file.relative_to(site)} -> {href}")
 
-        candidates = [md_path]
-        if md_path.suffix.lower() == '.md':
-            no_ext = md_path.with_suffix('')
-            candidates.append((no_ext / 'index.html').resolve())
-            candidates.append(no_ext.with_suffix('.html').resolve())
-
-        if md_path.name.lower() == 'readme.md':
-            candidates.append((md_path.parent / 'index.html').resolve())
-
-        if not any(c.exists() for c in candidates):
-            unresolved.append(f"{html_file.relative_to(site)} -> {href}")
-
-print(f'Generated unresolved markdown-style links={len(unresolved)}')
-if unresolved:
-    for item in unresolved[:300]:
+print(f'Generated markdown_hrefs={len(markdown_hrefs)}')
+if markdown_hrefs:
+    for item in markdown_hrefs[:300]:
         print(item)
     raise SystemExit(1)
 '@

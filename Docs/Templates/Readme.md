@@ -324,7 +324,7 @@ Use block elements for predictable layout; avoid nesting editable regions.
 - [Creating Content](../index.md)
 - [Live Editor Guide](../Editors/LiveEditor/README.md)
 - [Developer Guide: Creating Editable Areas](../Developer-Guides/CreatingEditableAreas.md)
-- [Layouts Documentation](../Layouts/Readme.md)
+- [Layouts Documentation](../Layouts/)
 - [SkyCMS Documentation](https://www.moonrise.net/cosmos/documentation/)
 
 ## Support
