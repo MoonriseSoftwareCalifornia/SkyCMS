@@ -484,4 +484,4 @@ For off-color images:
 
 ---
 
-For more information about the File Manager, see the [main documentation](README.md).
+For more information about the File Manager, see the [main documentation](index.md).

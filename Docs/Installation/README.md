@@ -193,7 +193,7 @@ Deploy a static website to Cloudflare using an origin-less (edge) architecture w
 
 - [Configuration Overview](../Configuration/) - Detailed configuration options for databases, storage, and CDN
 - [Troubleshooting](./MinimumRequiredSettings.md#troubleshooting) - Common installation issues and solutions
-- [Developer Experience](../DeveloperExperience.md) - Development environment setup
+- [Developer Experience](../Developer-Experience-Comparison.md) - Development environment setup
 
 ---
 

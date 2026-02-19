@@ -303,8 +303,8 @@ Re-running setup can **overwrite existing configuration** and **reset settings**
 
 ### Troubleshooting
 
-- **[Common Issues](../Troubleshooting/Common-Issues.md)** - FAQ and solutions
-- **[Logs and Diagnostics](../Troubleshooting/Logs.md)** - Debugging guide
+- **[Common Issues](../Troubleshooting.md)** - FAQ and solutions
+- **[Logs and Diagnostics](../Troubleshooting.md)** - Debugging guide
 
 ### Community & Support
 
@@ -330,7 +330,7 @@ Re-running setup can **overwrite existing configuration** and **reset settings**
 
 ### Documentation
 
-- **[Getting Started Guide](../Getting-Started.md)** - First steps after installation
+- **[Getting Started Guide](../QuickStart.md)** - First steps after installation
 - **[Installation Overview](./README.md)** - Complete installation reference
 - **[Post-Installation Configuration](./Post-Installation.md)** - ⭐ **Start here** after wizard completes
 - **[Minimum Required Settings](./MinimumRequiredSettings.md)** - Configuration reference
@@ -340,4 +340,4 @@ Re-running setup can **overwrite existing configuration** and **reset settings**
 
 1. **Immediately**: [Post-Installation Configuration](./Post-Installation.md) - Verify setup and configure features
 2. **Creating Content**: [Editor Guides](../Editors/LiveEditor/README.md) - Learn to create and edit pages
-3. **Customization**: [Layouts Guide](../Layouts/Readme.md) - Customize your site appearance
+3. **Customization**: [Layouts Guide](../Layouts/README.md) - Customize your site appearance

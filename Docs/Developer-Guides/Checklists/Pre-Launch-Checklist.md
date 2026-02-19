@@ -569,7 +569,7 @@ Document any unresolved items:
 
 **Related Documentation:**
 - [Phase 6: Preparing for Handoff](../06-Preparing-for-Handoff.md)
-- [Website Launch Workflow](../01-Website-Launch-Workflow.md)
+- [Website Launch Workflow](../Website-Launch-Workflow.md)
 
 **Testing Tools:**
 - [Google PageSpeed Insights](https://pagespeed.web.dev/)

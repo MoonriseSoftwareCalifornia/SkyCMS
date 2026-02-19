@@ -114,13 +114,13 @@ This quick start guide will help you get up and running with the SkyCMS File Man
 
 ## Getting Help
 
-If you need more detailed information, see the [complete File Management documentation](README.md).
+If you need more detailed information, see the [complete File Management documentation](index.md).
 
-For troubleshooting, jump to the [Troubleshooting section](README.md#troubleshooting) of the main documentation.
+For troubleshooting, jump to the [Troubleshooting section](../Troubleshooting.md) of the main documentation.
 
 ---
 
 **Next Steps:**
-- Read the [complete documentation](README.md) for advanced features
+- Read the [complete documentation](index.md) for advanced features
 - Learn about [image editing capabilities](Image-Editing.md)
 - Explore [code editing features](Code-Editing.md)

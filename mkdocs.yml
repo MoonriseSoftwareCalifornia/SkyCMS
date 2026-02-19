@@ -86,7 +86,7 @@ nav:
   - Publish & Manage:
     - Publishing & Scheduling: Editors/PageScheduling.md
     - Publishing Modes: Publishing-Overview.md
-    - File Management: FileManagement/README.md
+    - File Management: FileManagement/index.md
     - Blog Lifecycle: blog/BlogPostLifecycle.md
   
   - Administer:

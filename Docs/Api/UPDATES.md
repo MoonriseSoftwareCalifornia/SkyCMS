@@ -88,12 +88,12 @@ Tests/
 
 ### New Documentation Files
 
-1. **[Integration-Guide.md](./Docs/Api/Integration-Guide.md)**
+1. **[Integration-Guide.md](./Integration-Guide.md)**
    - How to integrate the API into your website
    - Configuration options
    - Troubleshooting
 
-2. **[Tutorial.md](./Docs/Api/Tutorial.md)**
+2. **[Tutorial.md](./Tutorial.md)**
    - Step-by-step guide to adding a contact form
    - Complete working examples
    - Email setup instructions
@@ -101,11 +101,11 @@ Tests/
 
 ### Updated Documentation Files
 
-1. **[README.md](./Docs/Api/README.md)**
+1. **[README.md](./README.md)**
    - Added links to new Tutorial and Integration Guide
    - Updated "For Developers" section
 
-2. **[ContactForm.md](./Docs/Api/ContactForm.md)**
+2. **[ContactForm.md](./ContactForm.md)**
    - Complete reference documentation
    - Already comprehensive; no changes needed
 
@@ -138,10 +138,10 @@ Tests/
 
 ### For API Developers
 
-1. **Read the Integration Guide**: [Docs/Api/Integration-Guide.md](./Docs/Api/Integration-Guide.md)
-2. **Follow the Tutorial**: [Docs/Api/Tutorial.md](./Docs/Api/Tutorial.md)
-3. **Reference the API docs**: [Docs/Api/ContactForm.md](./Docs/Api/ContactForm.md)
-4. **Check the architecture**: [Docs/Api/ARCHITECTURE.md](./Docs/Api/ARCHITECTURE.md)
+1. **Read the Integration Guide**: [Docs/Api/Integration-Guide.md](./Integration-Guide.md)
+2. **Follow the Tutorial**: [Docs/Api/Tutorial.md](./Tutorial.md)
+3. **Reference the API docs**: [Docs/Api/ContactForm.md](./ContactForm.md)
+4. **Check the architecture**: [Docs/Api/ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ## Architecture Overview
 
@@ -300,9 +300,9 @@ All changes are backwards compatible:
 ## Questions?
 
 Refer to:
-- **Getting started**: [Tutorial.md](./Docs/Api/Tutorial.md)
-- **Integration details**: [Integration-Guide.md](./Docs/Api/Integration-Guide.md)
-- **API reference**: [ContactForm.md](./Docs/Api/ContactForm.md)
-- **Architecture**: [ARCHITECTURE.md](./Docs/Api/ARCHITECTURE.md)
-- **Configuration**: [Configuration.md](./Docs/Api/Configuration.md)
+- **Getting started**: [Tutorial.md](./Tutorial.md)
+- **Integration details**: [Integration-Guide.md](./Integration-Guide.md)
+- **API reference**: [ContactForm.md](./ContactForm.md)
+- **Architecture**: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- **Configuration**: [Configuration.md](./Configuration.md)
 

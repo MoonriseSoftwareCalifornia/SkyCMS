@@ -270,7 +270,7 @@ Maintain documentation of what each role can do:
 - Log all role assignments and removals
 - Audit who created which custom roles
 - Review deletion of custom roles before they occur
-- Enable application-level diagnostics (see [Monitoring & Logging](../Monitoring/Logging.md))
+- Enable application-level diagnostics (see [Troubleshooting](../Troubleshooting.md))
 
 ### 7. Protect Administrator Credentials
 
@@ -338,10 +338,10 @@ Maintain documentation of what each role can do:
 
 ## Related Documentation
 
-- [Authentication Overview](../Security/Authentication-Overview.md) - User identity management
+- [Authentication Overview](../Authentication-Overview.md) - User identity management
 - [Post-Installation Configuration](../Installation/Post-Installation.md) - Security hardening after setup
-- [Setup Wizard](../Installation/SetupWizard/SetupWizard-Complete.md) - Initial administrator creation
-- [Monitoring & Logging](../Monitoring/Logging.md) - Tracking authorization events
+- [Setup Wizard](../Installation/SetupWizard-Complete.md) - Initial administrator creation
+- [Troubleshooting](../Troubleshooting.md) - Tracking authorization events
 
 ## Code References
 

@@ -99,7 +99,7 @@ After successful deployment:
 - **[Database Config Reference](../Configuration/Database-Configuration-Reference.md)** - Connection strings and provider options
 - **[Cloudflare Edge Hosting](./CloudflareEdgeHosting.md)** - Deploy origin-less static sites with Cloudflare R2
 - **[Quick Start Guide](../QuickStart.md)** - Get started quickly
-- **[Main Documentation Hub](../README.md)** - Browse all SkyCMS documentation
+- **[Main Documentation Hub](../index.md)** - Browse all SkyCMS documentation
 
 ### Clean Up
 

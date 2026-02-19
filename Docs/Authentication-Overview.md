@@ -483,7 +483,7 @@ dotnet user-secrets set "AzureAD:ClientSecret" "your-secret"
 - **[Publishing Overview](./Publishing-Overview.md)** - Authorization and access control for publishing
 - **[Troubleshooting Guide](./Troubleshooting.md)** - General troubleshooting
 - **[Configuration: Database](./Configuration/Database-Overview.md)** - Where user data is stored
-- **[Main Documentation Hub](./README.md)** - Browse all documentation
+- **[Main Documentation Hub](./index.md)** - Browse all documentation
 
 ---
 

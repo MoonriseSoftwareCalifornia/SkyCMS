@@ -9,7 +9,7 @@ layout: default
 - `ArticleEditLogic.SaveArticle()` is now obsolete. Use `SaveArticleHandler` via `IMediator` pattern instead.
   - All production controllers have been migrated to the new pattern
   - Legacy method will remain available until v3.0 for backward compatibility
-  - See [MIGRATION-SAVE-ARTICLE.md](MIGRATION-SAVE-ARTICLE.md) for migration guide
+  - See [MIGRATION-SAVE-ARTICLE.md](https://github.com/CWALabs/SkyCMS/blob/main/Docs/_archive/Project-Documentation/MIGRATION-SAVE-ARTICLE.md) for migration guide
 
 ### Added
 - **Vertical Slice Architecture** for article saving with CQRS pattern

@@ -558,9 +558,9 @@ export CosmosAllowSetup=true
 ## Related Documentation
 
 - [Middleware Pipeline](./Middleware-Pipeline.md) - Detailed middleware documentation
-- [Configuration Overview](./Configuration/README.md) - Configuration reference
-- [Multi-Tenant Configuration](./Configuration/Multi-Tenant-Configuration.md) - Multi-tenant setup
-- [Post-Installation](./Installation/Post-Installation.md) - After startup verification
+- [Configuration Overview](../Configuration/Database-Configuration-Reference.md) - Configuration reference
+- [Multi-Tenant Configuration](../Configuration/Multi-Tenant-Configuration.md) - Multi-tenant setup
+- [Post-Installation](../Installation/Post-Installation.md) - After startup verification
 
 ## Code References
 

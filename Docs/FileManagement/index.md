@@ -15,7 +15,7 @@ Welcome to the SkyCMS File Manager documentation. Choose the guide that fits you
 **[Quick Start Guide](Quick-Start.md)** - New to the File Manager? Start here for essential features and operations.
 
 ### Complete Guide (Comprehensive)
-**[File Management Guide](README.md)** - Full reference covering all File Manager features, interface, operations, and troubleshooting.
+**[File Management Guide](index.md)** - Full reference covering all File Manager features, interface, operations, and troubleshooting.
 
 ### Code Editing
 **[Code Editing Guide](Code-Editing.md)** - Master the Monaco code editor for HTML, CSS, JavaScript, and more. Includes syntax highlighting, IntelliSense, and shortcuts.
@@ -59,7 +59,7 @@ Welcome to the SkyCMS File Manager documentation. Choose the guide that fits you
 - **Upload files** → [Quick Start Guide](Quick-Start.md)
 - **Edit code files** → [Code Editing Guide](Code-Editing.md)
 - **Edit images** → [Image Editing Guide](Image-Editing.md)
-- **All features & troubleshooting** → [Complete Guide](README.md)
+- **All features & troubleshooting** → [Complete Guide](index.md)
 
 ### Permissions
 - **Full Access:** Administrators, Editors, Authors, Team Members
@@ -70,4 +70,4 @@ All public files must be in `/pub/` directory and subdirectories.
 
 ---
 
-**For detailed information**, see the [Complete File Management Guide](README.md).
+**For detailed information**, see the [Complete File Management Guide](index.md).

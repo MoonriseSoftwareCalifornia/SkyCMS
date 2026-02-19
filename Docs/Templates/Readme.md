@@ -321,7 +321,7 @@ Use block elements for predictable layout; avoid nesting editable regions.
 
 ## Additional Resources
 
-- [Creating Content](../README.md)
+- [Creating Content](../index.md)
 - [Live Editor Guide](../Editors/LiveEditor/README.md)
 - [Developer Guide: Creating Editable Areas](../Developer-Guides/CreatingEditableAreas.md)
 - [Layouts Documentation](../Layouts/Readme.md)

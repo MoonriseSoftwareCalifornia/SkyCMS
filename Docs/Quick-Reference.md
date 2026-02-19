@@ -226,7 +226,7 @@ Hosting:         Any cloud (static, dynamic, or edge mode)
 | Add content page | 15-30 min | [Phase 5](./Developer-Guides/05-Building-Initial-Pages.md) |
 | Set up workflows | 30-60 min | [Content Workflow Template](./Templates/Content-Workflow-Template.md) |
 | Train content creator | 1-2 hours | [Training Template](./Templates/Training-Document-Template.md) |
-| Pre-launch QA | 2-4 hours | [Pre-Launch Checklist](./Checklists/Pre-Launch-Checklist.md) |
+| Pre-launch QA | 2-4 hours | [Pre-Launch Checklist](./Developer-Guides/Checklists/Pre-Launch-Checklist.md) |
 | Monthly maintenance | 2-4 hours | [Monthly Maintenance](./Checklists/Monthly-Maintenance.md) |
 
 ---

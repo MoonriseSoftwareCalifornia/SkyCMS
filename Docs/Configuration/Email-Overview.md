@@ -160,4 +160,4 @@ Each provider guide includes instructions to:
 - **[CDN Configuration](./CDN-Overview.md)** - Companion configuration guide
 - **[Configuration Overview](./README.md)** - Index of all configuration documentation
 - **[Installation Guide](../Installation/MinimumRequiredSettings.md)** - Email in setup wizard
-- **[Main Documentation Hub](../README.md)** - Browse all documentation
+- **[Main Documentation Hub](../index.md)** - Browse all documentation

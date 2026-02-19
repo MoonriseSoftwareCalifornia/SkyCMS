@@ -28,7 +28,7 @@ Welcome to the SkyCMS documentation. This guide outlines how documentation is or
 
 All documentation is in the `/Docs/` folder. The main entry points are:
 
-- **[README.md](./README.md)** - Primary documentation hub (start here)
+- **[README.md](./index.md)** - Primary documentation hub (start here)
 - **[LEARNING_PATHS.md](./LEARNING_PATHS.md)** - Role-based documentation journeys
 - **[About.md](./About.md)** - SkyCMS overview and positioning
 

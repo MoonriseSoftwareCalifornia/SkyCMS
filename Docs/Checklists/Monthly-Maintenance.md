@@ -556,7 +556,7 @@ Technical Lead: _________________ Date: _______
 
 ### Related Guides
 
-- [Pre-Launch Checklist](./Pre-Launch-Checklist.md) — Verification before public launch
+- [Pre-Launch Checklist](../Developer-Guides/Checklists/Pre-Launch-Checklist.md) — Verification before public launch
 - [06-Preparing-for-Handoff.md](../Developer-Guides/06-Preparing-for-Handoff.md) — Establishing workflows and procedures
 - [SkyCMS Official Documentation](https://www.moonrise.net/cosmos/documentation/) — SkyCMS feature documentation
 

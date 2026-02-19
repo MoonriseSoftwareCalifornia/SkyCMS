@@ -203,7 +203,7 @@ Yes. SkyCMS supports:
 
 Absolutely. SkyCMS is designed for this. We provide:
 - [Training Document Template](./Templates/Training-Document-Template.md)
-- [Content Creator Onboarding Checklist](./Checklists/Content-Creator-Onboarding.md)
+- [Content Creator Onboarding Checklist](./Developer-Guides/Checklists/Content-Creator-Onboarding.md)
 - [Phase 6: Preparing for Handoff Guide](./Developer-Guides/06-Preparing-for-Handoff.md)
 
 Content creators typically need 1-2 hours to get productive.

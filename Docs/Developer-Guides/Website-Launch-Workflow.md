@@ -48,7 +48,7 @@ This workflow is **iterative** - you may loop back to earlier phases as you disc
 - Technical leads making architecture decisions
 
 **NOT for:**
-- Content creators (see [Content Creator Training Guide](../Getting-Started-Content-Creators/Training-Document-Template.md) instead)
+- Content creators (see [Content Creator Training Guide](../Templates/Training-Document-Template.md) instead)
 - End-users managing the site post-launch
 - System administrators managing SkyCMS infrastructure
 
@@ -523,9 +523,9 @@ Each phase has a detailed guide with step-by-step instructions:
 - [Monthly Maintenance Tasks](../Checklists/Monthly-Maintenance.md) - Ongoing upkeep
 
 ### **Templates**
-- [Style Guide Template](./Templates/Style-Guide-Template.md) - For documenting brand guidelines
-- [Training Document Template](./Templates/Training-Document-Template.md) - For training content creators
-- [Content Workflow Template](./Templates/Content-Workflow-Template.md) - For mapping approval processes
+- [Style Guide Template](../Templates/Style-Guide-Template.md) - For documenting brand guidelines
+- [Training Document Template](../Templates/Training-Document-Template.md) - For training content creators
+- [Content Workflow Template](../Templates/Content-Workflow-Template.md) - For mapping approval processes
 
 ## Next Steps
 
@@ -545,10 +545,10 @@ Read [SkyCMS Architecture Overview](../Architecture/Startup-Lifecycle.md)
 
 - [Setup Wizard](../Installation/SetupWizard.md) - Initial installation
 - [Post-Installation](../Installation/Post-Installation.md) - After wizard completes
-- [Layouts Guide](../Layouts/Readme.md) - In-depth layout documentation
-- [Templates Guide](../Templates/Readme.md) - In-depth template documentation
+- [Layouts Guide](../Layouts/README.md) - In-depth layout documentation
+- [Templates Guide](../Templates/README.md) - In-depth template documentation
 - [Role-Based Access Control](../Administration/Roles-and-Permissions.md) - Setting up user roles
-- [Content Creator Training](./Templates/Training-Document-Template.md) - Training your team
+- [Content Creator Training](../Templates/Training-Document-Template.md) - Training your team
 
 ## FAQ
 

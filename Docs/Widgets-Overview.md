@@ -419,7 +419,7 @@ public class MyWidgetConfiguration
 - **[LEARNING_PATHS: Developer](./LEARNING_PATHS.md#developer)** - Widget development learning path
 - **[LEARNING_PATHS: Content Editor](./LEARNING_PATHS.md#content-editor-non-technical)** - Using widgets as content creator
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Documentation standards for widget documentation
-- **[Main Documentation Hub](./README.md)** - Browse all documentation
+- **[Main Documentation Hub](./index.md)** - Browse all documentation
 
 ---
 

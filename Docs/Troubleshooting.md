@@ -240,7 +240,7 @@ Common issues and solutions for SkyCMS setup, configuration, and operation.
 **Solutions:**
 - Verify user account exists in database
 - For first-time setup, the first user is created during the wizard
-- Reset password through database (consult [Identity Framework docs](../AspNetCore.Identity.FlexDb/README.md))
+- Reset password through database (consult [Identity Framework docs](./Components/AspNetCore.Identity.FlexDb.md))
 - Verify user has appropriate roles (Editor, Admin, etc.)
 
 ### "Cannot create new users"

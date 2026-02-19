@@ -63,7 +63,7 @@ The CloudFlare Worker is configured with:
   - Forwards all other headers to backend
 - **Error Handling**: Returns 503 if backend is unavailable
 
-For detailed worker configuration and deployment instructions, see [CloudFlare Worker README](../../Scripts/CloudFlare/Workers/ContactUsApi/README.md).
+For detailed worker configuration and deployment instructions, see [CloudFlare Worker README](https://github.com/CWALabs/SkyCMS/tree/main/Scripts/CloudFlare/Workers/ContactUsApi).
 
 ## Endpoints
 

@@ -187,7 +187,7 @@ Need to upload images, PDFs, or other assets?
 3. Organize files into folders
 4. Use the file browser in the Live Editor or Designer to insert media
 
-📖 [File Management Guide](./FileManagement/README.md) · [File Management Quick Start](./FileManagement/Quick-Start.md)
+📖 [File Management Guide](./FileManagement/index.md) · [File Management Quick Start](./FileManagement/Quick-Start.md)
 
 ---
 

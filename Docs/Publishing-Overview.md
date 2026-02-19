@@ -610,7 +610,7 @@ When replacing or removing pages, set up redirects:
 - **[LEARNING_PATHS: DevOps](./LEARNING_PATHS.md#devops--system-administrator)** - Publishing workflow setup
 - **[QuickStart: Publishing Content](./QuickStart.md)** - Quick reference
 - **[Troubleshooting Guide](./Troubleshooting.md)** - Publishing issues and solutions
-- **[Main Documentation Hub](./README.md)** - Browse all documentation
+- **[Main Documentation Hub](./index.md)** - Browse all documentation
 
 ---
 

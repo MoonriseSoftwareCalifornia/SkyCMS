@@ -561,6 +561,6 @@ When CDN is enabled:
 
 ---
 
-For more information about the File Manager, see the [main documentation](README.md).
+For more information about the File Manager, see the [main documentation](index.md).
 
 For image editing capabilities, see the [Image Editing Guide](Image-Editing.md).

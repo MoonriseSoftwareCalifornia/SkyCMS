@@ -305,6 +305,6 @@ The SkyCMS documentation contains **12-15 redundant or overlapping documents** t
 
 ## Related Documents
 
-- [DOCUMENTATION_REVIEW_AND_RECOMMENDATIONS.md](./DOCUMENTATION_REVIEW_AND_RECOMMENDATIONS.md) - High-level documentation review
-- [DOCUMENTATION_GAPS_ANALYSIS.md](./DOCUMENTATION_GAPS_ANALYSIS.md) - Gaps analysis
-- [README.md](./README.md) - Main documentation hub
+- [DOCUMENTATION_REVIEW_AND_RECOMMENDATIONS.md](https://github.com/CWALabs/SkyCMS/blob/main/Docs/_archive/Project-Documentation/DOCUMENTATION_REVIEW_AND_RECOMMENDATIONS.md) - High-level documentation review
+- [DOCUMENTATION_GAPS_ANALYSIS.md](https://github.com/CWALabs/SkyCMS/blob/main/Docs/_archive/Project-Documentation/DOCUMENTATION_GAPS_ANALYSIS.md) - Gaps analysis
+- [README.md](./index.md) - Main documentation hub

@@ -100,8 +100,8 @@ audience: [all]
 
 ### Step 4: Understand Core Architecture (45 min)
 🏗️ **Architecture Deep Dive:**
-- **[Editor Application](../Editor/README.md)** - Content management interface architecture
-- **[Publisher Application](../Publisher/README.md)** - Public site rendering and delivery
+- **[Editor Application](https://github.com/CWALabs/SkyCMS/tree/main/Editor)** - Content management interface architecture
+- **[Publisher Application](https://github.com/CWALabs/SkyCMS/tree/main/Publisher)** - Public site rendering and delivery
 - **[Common Library](./Components/Cosmos.Common.md)** - Shared functionality and data models
 - **[Blob Service](./Components/Cosmos.BlobService.md)** - Multi-cloud storage abstraction
 
@@ -118,7 +118,7 @@ audience: [all]
 📚 **Advanced Resources:**
 - **[Identity Framework](./Components/AspNetCore.Identity.FlexDb.md)** - Authentication and authorization
 - **[Image Widget Development](./Developers/ImageWidget.md)** - Deep dive into widget architecture
-- **[Dynamic Configuration](../Cosmos.ConnectionStrings/README.md)** - Multi-tenant configuration
+- **[Dynamic Configuration](https://github.com/CWALabs/SkyCMS/tree/main/Cosmos.ConnectionStrings)** - Multi-tenant configuration
 
 ### 💡 Developer Quick Tips
 - Use Docker Compose for local development
@@ -248,8 +248,8 @@ audience: [all]
 
 ### Step 4: Review Technical Approach (Optional)
 🏗️ **Architecture Overview:**
-- **[Developer Experience](./DeveloperExperience.md)** - Technical approach and benefits
-- **[Publisher Application](../Publisher/README.md)** - How content is delivered
+- **[Developer Experience](./Developer-Experience-Comparison.md)** - Technical approach and benefits
+- **[Publisher Application](https://github.com/CWALabs/SkyCMS/tree/main/Publisher)** - How content is delivered
 
 ### Step 5: Explore Capabilities (Optional)
 ✨ **Feature Deep Dives:**
@@ -294,7 +294,7 @@ audience: [all]
 
 ## 🆘 Need Help?
 
-- **Can't find what you need?** Check the [Complete Documentation Index](./README.md#-complete-documentation-index)
+- **Can't find what you need?** Check the [Complete Documentation Index](./index.md#complete-documentation-index)
 - **Stuck on a problem?** See the [Troubleshooting Guide](./Troubleshooting.md)
 - **Have questions?** [GitHub Issues](https://github.com/CWALabs/SkyCMS/issues)
 - **Want to contribute?** [GitHub Repository](https://github.com/CWALabs/SkyCMS)

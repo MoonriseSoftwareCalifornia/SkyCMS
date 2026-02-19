@@ -264,7 +264,7 @@ For production, enable Application Insights or logging:
 - Monitor application logs for errors
 - Set up alerts for critical errors
 
-See [Monitoring & Logging](../Operations/Monitoring-and-Logging.md) *(forthcoming)* for details.
+See [Monitoring & Logging](../Troubleshooting.md) *(forthcoming)* for details.
 
 ---
 
@@ -328,7 +328,7 @@ Set up automated backups:
 - S3: Enable versioning on bucket
 - Cloudflare R2: No built-in; use sync to secondary storage
 
-See [Backup & Recovery](../Operations/Backup-and-Recovery.md) *(forthcoming)* for details.
+See [Backup & Recovery](../Troubleshooting.md) *(forthcoming)* for details.
 
 ### 5. Review Security Settings
 

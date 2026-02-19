@@ -1360,7 +1360,7 @@ Before officially launching:
 4. **Analytics setup** (Google Analytics, etc.)
 5. **Final content review**
 
-See: [Pre-Launch Checklist](../Checklists/Pre-Launch-Checklist.md) *(coming soon)*
+See: [Pre-Launch Checklist](./Checklists/Pre-Launch-Checklist.md) *(coming soon)*
 
 ### Ongoing Maintenance
 
@@ -1380,18 +1380,18 @@ See: [Monthly Maintenance Tasks](../Checklists/Monthly-Maintenance.md) *(coming 
 
 ### Related Guides
 
-- [Phase 1: Design & Planning](02-Design-and-Planning.md)
-- [Phase 2: Creating Layouts](03-Creating-Layouts.md)
-- [Phase 3: Creating Templates](03b-Creating-Templates.md)
+- [Phase 1: Design & Planning](01-Design-and-Planning.md)
+- [Phase 2: Creating Layouts](02-Creating-Layouts.md)
+- [Phase 3: Creating Templates](03-Creating-Templates.md)
 - [Phase 4: Building Home Page](04-Building-Home-Page.md)
-- [Website Launch Workflow](01-Website-Launch-Workflow.md)
+- [Website Launch Workflow](Website-Launch-Workflow.md)
 
 ### SkyCMS Documentation
 
-- [Creating Pages](../Pages/README.md)
+- [Creating Pages](../ContentCreation-QuickStart.md)
 - [Live Editor Guide](../Editors/LiveEditor/README.md)
-- [Templates Guide](../Templates/Readme.md)
-- [File Manager](../FileManager/Readme.md)
+- [Templates Guide](../Templates/README.md)
+- [File Manager](../FileManagement/index.md)
 - [SkyCMS Official Docs](https://www.moonrise.net/cosmos/documentation/)
 
 ### Content Writing Resources

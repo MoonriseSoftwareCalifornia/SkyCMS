@@ -416,4 +416,4 @@ aws cloudfront create-distribution \
 - **[Cloudflare R2 Access Keys](./Cloudflare-R2-AccessKeys.md)** - Step-by-step R2 setup guide
 - **[Cloudflare Edge Hosting](../Installation/CloudflareEdgeHosting.md)** - Origin-less hosting with R2
 - **[Troubleshooting Guide](../Troubleshooting.md)** - Common storage issues and solutions
-- **[Main Documentation Hub](../README.md)** - Browse all documentation
+- **[Main Documentation Hub](../index.md)** - Browse all documentation

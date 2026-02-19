@@ -35,9 +35,9 @@ audience: [all]
 ### Creating Content
 
 **Start here:** [Content Creator Quick Start](./ContentCreation-QuickStart.md) — Learn the workflow: Layouts → Templates → Pages → Editing
-- **Design:** [Layouts Guide](./Layouts/README.md) · [Page Templates Guide](./Templates/README.md)
-- **Edit:** [Live Editor](./Editors/LiveEditor/README.md) · [Designer](./Editors/Designer/README.md) · [Code Editor](./Editors/CodeEditor/README.md) · [Image Editing](./Editors/ImageEditing/README.md)
-- **Manage:** [File Management](./FileManagement/README.md) · [Publishing & Scheduling](./Editors/PageScheduling.md) · [Blog Management](./blog/BlogPostLifecycle.md)
+- **Design:** [Layouts Guide](./Layouts/) · [Page Templates Guide](./Templates/)
+- **Edit:** [Live Editor](./Editors/LiveEditor/) · [Designer](./Editors/Designer/) · [Code Editor](./Editors/CodeEditor/) · [Image Editing](./Editors/ImageEditing/)
+- **Manage:** [File Management](./FileManagement/) · [Publishing & Scheduling](./Editors/PageScheduling.md) · [Blog Management](./blog/BlogPostLifecycle.md)
 
 ---
 
@@ -45,11 +45,11 @@ audience: [all]
 *Build, customize, and ship*
 
 **Start here:** [Developer Quick Start](./QuickStart.md) · [Website Launch Workflow](./Developer-Guides/Website-Launch-Workflow.md)
-- [Installation Overview](./Installation/README.md)
-- [Layouts & Templates](./Layouts/Readme.md)
-- [Widgets & Components](./Widgets/README.md)
+- [Installation Overview](./Installation/)
+- [Layouts & Templates](./Layouts/)
+- [Widgets & Components](./Widgets/)
 - [Architecture](./Architecture/Startup-Lifecycle.md)
-- [Testing Guide](./Development/Testing/README.md)
+- [Testing Guide](./Development/Testing/)
 
 ---
 
@@ -57,7 +57,7 @@ audience: [all]
 - [When to Use SkyCMS (includes Edge-Native Architecture)](./When-to-Use-SkyCMS.md)
 - [Content Creator Quick Start](./ContentCreation-QuickStart.md) — *For editors and content teams*
 - [Installation Quick Start](./QuickStart.md) — *For setup and deployment*
-- [Installation Overview](./Installation/README.md)
+- [Installation Overview](./Installation/)
 - [Minimum Required Settings](./Installation/MinimumRequiredSettings.md)
 - [Setup Wizard](./Installation/SetupWizard.md)
 - [Website Launch Workflow](./Developer-Guides/Website-Launch-Workflow.md)
@@ -91,7 +91,7 @@ audience: [all]
 ### DevOps / System Administrators
 *Deploy, configure, operate*
 
-**Start here:** [Installation Overview](./Installation/README.md) · [Minimum Required Settings](./Installation/MinimumRequiredSettings.md)
+**Start here:** [Installation Overview](./Installation/) · [Minimum Required Settings](./Installation/MinimumRequiredSettings.md)
 - Deploy: [Azure](./Installation/AzureInstall.md) · [AWS S3](./S3StaticWebsite.md) · [Cloudflare Edge](./Installation/CloudflareEdgeHosting.md)
 - Configure: [Setup Wizard](./Installation/SetupWizard.md) · [Database](./Configuration/Database-Overview.md) · [Storage](./Configuration/Storage-Overview.md) · [CDN](./Configuration/CDN-Overview.md) · [Multi-Tenant](./Configuration/Multi-Tenant-Configuration.md)
 - Operate: [Post-Installation](./Installation/Post-Installation.md) ⭐ · [Monthly Maintenance](./Checklists/Monthly-Maintenance.md) · [Troubleshooting](./Troubleshooting.md)
@@ -112,9 +112,9 @@ audience: [all]
 - [Identity Framework](./Components/AspNetCore.Identity.FlexDb.md)
 
 ### Content Management
-- [Page Templates](./Templates/Readme.md)
-- [Layouts](./Layouts/Readme.md)
-- [File Management](./FileManagement/README.md)
+- [Page Templates](./Templates/)
+- [Layouts](./Layouts/)
+- [File Management](./FileManagement/)
 - [Blog System](./blog/BlogPostLifecycle.md)
 
 ### Publishing
@@ -133,9 +133,9 @@ audience: [all]
 
 | Getting Started | Migration | Reference |
 |----------------|-----------|-----------|
-| [Quick Start Guide](./QuickStart.md) | [From JAMstack](./MigratingFromJAMstack.md) | [Widgets Directory](./Widgets/README.md) |
-| [Learning Paths](./LEARNING_PATHS.md) | [From WordPress](./FAQ.md#wordpress-migration) | [Configuration Reference](./Configuration/README.md) |
-| [First Website Tutorial](./Developer-Guides/Website-Launch-Workflow.md) | [Setup Wizard](./Installation/SetupWizard.md) | [API Documentation](./Developers/README.md) |
+| [Quick Start Guide](./QuickStart.md) | [From JAMstack](./MigratingFromJAMstack.md) | [Widgets Directory](./Widgets/) |
+| [Learning Paths](./LEARNING_PATHS.md) | [From WordPress](./FAQ.md#wordpress-migration) | [Configuration Reference](./Configuration/Database-Configuration-Reference.md) |
+| [First Website Tutorial](./Developer-Guides/Website-Launch-Workflow.md) | [Setup Wizard](./Installation/SetupWizard.md) | [API Documentation](./Developers/) |
 
 ---
 
@@ -153,7 +153,7 @@ audience: [all]
 <summary><strong>Click to expand all documentation</strong></summary>
 
 ### Installation & Deployment
-- [Installation Overview](./Installation/README.md)
+- [Installation Overview](./Installation/)
 - [Minimum Required Settings](./Installation/MinimumRequiredSettings.md)
 - [Setup Wizard](./Installation/SetupWizard.md)
   - [Welcome](./Installation/SetupWizard-Welcome.md)
@@ -177,19 +177,19 @@ audience: [all]
 - [Multi-Tenant](./Configuration/Multi-Tenant-Configuration.md)
 
 ### Content Editing
-- **Live Editor:** [Guide](./Editors/LiveEditor/README.md) | [Quick Start](./Editors/LiveEditor/QuickStart.md) | [Visual Guide](./Editors/LiveEditor/VisualGuide.md)
-- **Designer:** [Guide](./Editors/Designer/README.md) | [Quick Start](./Editors/Designer/QuickStart.md)
-- **Code Editor:** [Guide](./Editors/CodeEditor/README.md)
-- **Image Editing:** [Guide](./Editors/ImageEditing/README.md)
-- **File Management:** [Guide](./FileManagement/README.md) | [Quick Start](./FileManagement/Quick-Start.md)
+- **Live Editor:** [Guide](./Editors/LiveEditor/) | [Quick Start](./Editors/LiveEditor/QuickStart.md) | [Visual Guide](./Editors/LiveEditor/VisualGuide.md)
+- **Designer:** [Guide](./Editors/Designer/) | [Quick Start](./Editors/Designer/QuickStart.md)
+- **Code Editor:** [Guide](./Editors/CodeEditor/)
+- **Image Editing:** [Guide](./Editors/ImageEditing/)
+- **File Management:** [Guide](./FileManagement/) | [Quick Start](./FileManagement/Quick-Start.md)
 
 ### Developer Resources
-- [Developer Hub](./Developers/README.md)
+- [Developer Hub](./Developers/)
 - [Website Launch Workflow](./Developer-Guides/Website-Launch-Workflow.md)
 - Controllers: [HomeControllerBase](./Developers/Controllers/HomeControllerBase.md) | [PubControllerBase](./Developers/Controllers/PubControllerBase.md)
-- Widgets: [Overview](./Widgets/README.md) | [Image](./Widgets/Image-Widget.md) | [Forms](./Widgets/Forms-Widget.md) | [Search](./Widgets/Search-Widget.md) | [Navigation](./Widgets/Nav-Builder-Widget.md)
+- Widgets: [Overview](./Widgets/) | [Image](./Widgets/Image-Widget.md) | [Forms](./Widgets/Forms-Widget.md) | [Search](./Widgets/Search-Widget.md) | [Navigation](./Widgets/Nav-Builder-Widget.md)
 - Architecture: [Startup](./Architecture/Startup-Lifecycle.md) | [Middleware](./Architecture/Middleware-Pipeline.md)
-- [Testing Guide](./Development/Testing/README.md)
+- [Testing Guide](./Development/Testing/)
 
 ### Comparisons & Evaluation
 - [Comparisons Matrix](./Comparisons.md)
@@ -200,7 +200,7 @@ audience: [all]
 
 ### Support & Maintenance
 - [Troubleshooting](./Troubleshooting.md)
-- [Documentation Gaps Analysis](./DOCUMENTATION_GAPS_ANALYSIS.md)
+- [Documentation Gaps Analysis](https://github.com/CWALabs/SkyCMS/blob/main/Docs/_archive/Project-Documentation/DOCUMENTATION_GAPS_ANALYSIS.md)
 - [Changelog](./CHANGELOG.md)
 
 </details>

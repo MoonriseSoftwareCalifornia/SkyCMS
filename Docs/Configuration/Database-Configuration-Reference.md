@@ -189,4 +189,4 @@ Use what your team already knows when possible. Quick guidance:
 - **[LEARNING_PATHS: DevOps](../LEARNING_PATHS.md#devops--system-administrator)** - Database setup for DevOps professionals
 - **[Troubleshooting Guide](../Troubleshooting.md)** - Common database issues and solutions
 - **[AspNetCore.Identity.FlexDb](../Components/AspNetCore.Identity.FlexDb.md)** - Multi-database identity framework
-- **[Main Documentation Hub](../README.md)** - Browse all documentation
+- **[Main Documentation Hub](../index.md)** - Browse all documentation

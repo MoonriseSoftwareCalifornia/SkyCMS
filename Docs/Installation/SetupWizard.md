@@ -302,7 +302,7 @@ After restart:
 ### 4. Next Steps
 
 - **[Create Your First Page](../QuickStart.md)** - Get started with content
-- **[Configure Layouts](../Layouts/Readme.md)** - Customize your site structure
+- **[Configure Layouts](../Layouts/README.md)** - Customize your site structure
 - **[Configure Email](../Configuration/Email-Overview.md)** - If you skipped Step 4
 - **[Configure CDN](../Configuration/CDN-Overview.md)** - If you skipped Step 5
 

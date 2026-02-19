@@ -552,8 +552,8 @@ Continue building your home page content by following these guides in order:
 ## Additional Resources
 
 - **Previous Phase:** [Creating Templates](03-Creating-Templates.md)
-- **Parallel Reading:** [Pages Documentation](../Pages/Readme.md)
-- **Template Reference:** [Templates Guide](../Templates/Readme.md)
+- **Parallel Reading:** [Pages Documentation](../ContentCreation-QuickStart.md)
+- **Template Reference:** [Templates Guide](../Templates/README.md)
 - **Live Editor Guide:** [Using the Live Editor](../Editors/LiveEditor/README.md)
 
 ---
@@ -1286,7 +1286,7 @@ Continue building your home page by adding featured content, service highlights,
 - **Template Patterns:** [Phase 3 - Creating Templates](03-Creating-Templates.md)
 - **Responsive Design:** [Phase 2 - Creating Layouts](02-Creating-Layouts.md)
 - **Live Editor Details:** [Live Editor Guide](../Editors/LiveEditor/README.md)
-- **Image Management:** [File Manager Guide](../FileManager/README.md)
+- **Image Management:** [File Manager Guide](../FileManagement/index.md)
 
 ---
 
@@ -2571,8 +2571,8 @@ Before marking your home page complete, verify everything:
 **See Also:**
 - [Phase 5: Building Initial Pages](05-Building-Initial-Pages.md) *(coming soon)*
 - [Phase 6: Preparing for Handoff](06-Preparing-for-Handoff.md) *(coming soon)*
-- [Pre-Launch Checklist](../Checklists/Pre-Launch-Checklist.md) *(coming soon)*
+- [Pre-Launch Checklist](./Checklists/Pre-Launch-Checklist.md) *(coming soon)*
 
 ---
 
-*Need help? Check the [main Website Launch Workflow](01-Website-Launch-Workflow.md) or visit [SkyCMS Documentation](https://www.moonrise.net/cosmos/documentation/).*
+*Need help? Check the [main Website Launch Workflow](Website-Launch-Workflow.md) or visit [SkyCMS Documentation](https://www.moonrise.net/cosmos/documentation/).*

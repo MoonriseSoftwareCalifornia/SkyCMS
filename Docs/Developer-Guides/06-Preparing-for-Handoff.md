@@ -534,20 +534,11 @@ Available: Mon-Fri, 8 AM - 6 PM
 Emergency: Use contact form for urgent issues
 
 ### Response Times
-- **Technical Issues**: Within 24 hours
-- **Content Questions**: Within 48 hours
-- **Urgent**: Use phone number for critical issues
 
 ### Help Resources
-- [User Guide](./QuickStart.md)
-- [Content Guidelines](../Templates/Content-Workflow-Template.md)
-- [FAQ](./FAQ.md)
-- [SkyCMS Documentation](https://www.moonrise.net/cosmos/documentation/)
-```
-
 ---
-
-## 4. Training Content Creators
+ [Quick Start Guide](../QuickStart.md)
+ [FAQ](../FAQ.md)
 
 Effective training ensures your team feels confident using SkyCMS.
 
@@ -1298,8 +1289,8 @@ Before considering handoff complete:
 ### Additional Resources
 
 **Related Checklists:**
-- [Pre-Launch Checklist](../Checklists/Pre-Launch-Checklist.md) *(coming soon)*
-- [Content Creator Onboarding](../Checklists/Content-Creator-Onboarding.md) *(coming soon)*
+- [Pre-Launch Checklist](./Checklists/Pre-Launch-Checklist.md) *(coming soon)*
+- [Content Creator Onboarding](./Checklists/Content-Creator-Onboarding.md) *(coming soon)*
 - [Monthly Maintenance Tasks](../Checklists/Monthly-Maintenance.md) *(coming soon)*
 
 **Related Templates:**
@@ -1308,12 +1299,12 @@ Before considering handoff complete:
 - [Content Workflow Template](../Templates/Content-Workflow-Template.md) *(coming soon)*
 
 **Main Guides:**
-- [Phase 1: Design & Planning](02-Design-and-Planning.md)
-- [Phase 2: Creating Layouts](03-Creating-Layouts.md)
-- [Phase 3: Creating Templates](03b-Creating-Templates.md)
+- [Phase 1: Design & Planning](01-Design-and-Planning.md)
+- [Phase 2: Creating Layouts](02-Creating-Layouts.md)
+- [Phase 3: Creating Templates](03-Creating-Templates.md)
 - [Phase 4: Building Home Page](04-Building-Home-Page.md)
 - [Phase 5: Building Initial Pages](05-Building-Initial-Pages.md)
-- [Website Launch Workflow](01-Website-Launch-Workflow.md)
+- [Website Launch Workflow](Website-Launch-Workflow.md)
 
 ---
 
