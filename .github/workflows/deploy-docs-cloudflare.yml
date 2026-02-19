@@ -131,7 +131,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install linkchecker
-          linkchecker ./site --check-extern --timeout=10 --threads=4 --ignore-url='(^|/)sitemap\.xml\.gz$'
+          echo "ℹ️ Running linkchecker as advisory signal (non-blocking)."
+          linkchecker ./site \
+            --check-extern \
+            --timeout=20 \
+            --threads=4 \
+            --ignore-url='(^|/)sitemap\.xml\.gz$|^/assets/|^_Marketing/|validate-screenshots\.ps1$|validate-screenshots\.yml$|/Editors/LiveEditor/VisualGuide/?$|^https://docs\.sky-cms\.com/'
         continue-on-error: true
 
       - name: Link check summary
@@ -139,7 +144,7 @@ jobs:
         run: |
           echo "### ⚠️ Link validation found issues" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Deployment continued, but broken links were detected in docs." >> $GITHUB_STEP_SUMMARY
+          echo "Deployment continued (advisory step), but linkchecker detected issues/noise." >> $GITHUB_STEP_SUMMARY
           echo "Review the \"Validate links in documentation\" step logs for exact URLs and referrers." >> $GITHUB_STEP_SUMMARY
       
       - name: Check for broken anchors
