@@ -122,7 +122,7 @@ Overall documentation is **solid** with good coverage of installation, configura
 - Policy-based authorization examples
 - Best practices for permission delegation
 
-**Current Coverage**: `Templates/Readme.md` has minimal mention; `Authentication-Overview.md` doesn't detail roles.
+**Current Coverage**: `Templates/README.md` has minimal mention; `Authentication-Overview.md` doesn't detail roles.
 
 **Recommendation**: Create `Administration/Roles-and-Permissions.md` with comprehensive role documentation.
 

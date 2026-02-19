@@ -231,18 +231,29 @@ jobs:
 
       - name: Verify critical pages in R2
         run: |
-          aws s3api head-object \
-            --bucket ${{ secrets.R2_BUCKET_NAME }} \
-            --key index.html \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com > /dev/null
-          aws s3api head-object \
-            --bucket ${{ secrets.R2_BUCKET_NAME }} \
-            --key Layouts/index.html \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com > /dev/null
-          aws s3api head-object \
-            --bucket ${{ secrets.R2_BUCKET_NAME }} \
-            --key Templates/index.html \
-            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com > /dev/null
+          check_key() {
+            local key="$1"
+            local attempts=8
+            local delay=3
+            local i
+            for i in $(seq 1 $attempts); do
+              if aws s3api head-object \
+                --bucket ${{ secrets.R2_BUCKET_NAME }} \
+                --key "$key" \
+                --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com > /dev/null; then
+                echo "✅ Found $key"
+                return 0
+              fi
+              echo "⏳ Waiting for $key (attempt $i/$attempts)..."
+              sleep $delay
+            done
+            echo "❌ Missing required object: $key"
+            return 1
+          }
+
+          check_key "index.html"
+          check_key "Layouts/index.html"
+          check_key "Templates/index.html"
           echo "✅ Verified key pages exist in R2"
 
       - name: Debug R2 key listing on verification failure

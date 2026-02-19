@@ -41,8 +41,8 @@
 
 ### 4.1 Pages & Layouts
 
-- [Layouts Guide](./Layouts/Readme.md)
-- [Templates Guide](./Templates/Readme.md)
+- [Layouts Guide](./Layouts/README.md)
+- [Templates Guide](./Templates/README.md)
 - [Page Scheduling](./Editors/PageScheduling.md)
 - [Migration: Save Article Pipeline](./MIGRATION-SAVE-ARTICLE.md)
 
