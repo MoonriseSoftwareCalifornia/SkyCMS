@@ -1409,7 +1409,7 @@ Once templates are created:
 - [Phase 2: Creating Layouts Guide](./02-Creating-Layouts.md) - Site Design foundation
 - [Phase 4: Building Home Page Guide](./04-Building-Home-Page.md) - Using templates
 - [Phase 5: Building Initial Pages Guide](./05-Building-Initial-Pages.md) - Content strategy
-- [Existing Templates Documentation](../Templates/README.md) - Technical reference
+- [Existing Templates Documentation](../Templates/Readme.md) - Technical reference
 - [Website Launch Workflow](./Website-Launch-Workflow.md) - Full overview
 
 ### External Resources

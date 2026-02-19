@@ -553,7 +553,7 @@ Continue building your home page content by following these guides in order:
 
 - **Previous Phase:** [Creating Templates](03-Creating-Templates.md)
 - **Parallel Reading:** [Pages Documentation](../ContentCreation-QuickStart.md)
-- **Template Reference:** [Templates Guide](../Templates/README.md)
+- **Template Reference:** [Templates Guide](../Templates/Readme.md)
 - **Live Editor Guide:** [Using the Live Editor](../Editors/LiveEditor/README.md)
 
 ---

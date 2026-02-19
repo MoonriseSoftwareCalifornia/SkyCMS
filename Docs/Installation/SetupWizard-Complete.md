@@ -340,4 +340,4 @@ Re-running setup can **overwrite existing configuration** and **reset settings**
 
 1. **Immediately**: [Post-Installation Configuration](./Post-Installation.md) - Verify setup and configure features
 2. **Creating Content**: [Editor Guides](../Editors/LiveEditor/README.md) - Learn to create and edit pages
-3. **Customization**: [Layouts Guide](../Layouts/README.md) - Customize your site appearance
+3. **Customization**: [Layouts Guide](../Layouts/Readme.md) - Customize your site appearance
