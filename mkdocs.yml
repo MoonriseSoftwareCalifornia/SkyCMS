@@ -8,6 +8,7 @@ docs_dir: 'Docs'
 # Theme configuration
 theme:
   name: material
+  logo: assets/images/sky-logo.png
   palette:
     - scheme: light
       primary: blue
@@ -61,6 +62,9 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - assets/css/mkdocs-logo.css
 
 # Navigation structure
 nav:
