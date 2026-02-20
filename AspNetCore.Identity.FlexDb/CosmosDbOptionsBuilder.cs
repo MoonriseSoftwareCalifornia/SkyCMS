@@ -93,13 +93,13 @@ namespace AspNetCore.Identity.FlexDb
         {
             if (optionsBuilder == null)
             {
-                throw new ArgumentNullException(nameof(optionsBuilder));
+                throw new ArgumentNullException(paramName: nameof(optionsBuilder), message: "The optionsBuilder (DbContextOptionsBuilder) is null.");
             }
 
-            if (string.IsNullOrWhiteSpace(connectionString))
+            // Only validate connectionString if optionsBuilder doesn't already have a provider configured
+            if (!optionsBuilder.IsConfigured && string.IsNullOrWhiteSpace(connectionString))
             {
-                // throw new ArgumentNullException(nameof(connectionString));
-                return;
+                throw new InvalidOperationException("(CosmosDbOptionsBuilder): A connection string was not found. Please set your connection string.");
             }
 
             if (strategies == null)

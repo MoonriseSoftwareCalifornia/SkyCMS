@@ -28,7 +28,7 @@ namespace Cosmos.Publisher.Boot
     /// Configures and initializes the web application with the necessary services, middleware, and settings.
     /// </summary>
     /// <remarks>This method sets up the application by registering essential services, configuring
-    /// middleware, and applying application-specific settings. It includes support for memory caching, Azure
+    /// middleware. It includes support for memory caching, Azure
     /// credentials, Application Insights, CORS policies, Cosmos DB integration, identity management, OAuth providers,
     /// distributed caching, rate limiting, and more. The method also configures the HTTP request pipeline and maps
     /// routes for controllers and Razor Pages.  Key features include: - Integration with Cosmos DB for data storage and
@@ -52,8 +52,6 @@ namespace Cosmos.Publisher.Boot
             // Create one instance of the DefaultAzureCredential to be used throughout the application.
             var defaultAzureCredential = new DefaultAzureCredential();
             builder.Services.AddSingleton(defaultAzureCredential);
-
-            builder.Services.AddApplicationInsightsTelemetry();
 
             // Add CORS
             // See: https://learn.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-6.0

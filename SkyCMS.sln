@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmos.EmailServices", "Cos
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmos.MicrosoftGraph", "Cosmos.MicrosoftGraph\Cosmos.MicrosoftGraph.csproj", "{68D921AB-CB98-5AEB-438B-CA4B750A57F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sky.Shared.Razor", "Sky.Shared.Razor\Sky.Shared.Razor.csproj", "{87174220-4BCF-4E69-877E-60F397C336B0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -191,6 +193,18 @@ Global
 		{68D921AB-CB98-5AEB-438B-CA4B750A57F6}.Release|x64.Build.0 = Release|Any CPU
 		{68D921AB-CB98-5AEB-438B-CA4B750A57F6}.Release|x86.ActiveCfg = Release|Any CPU
 		{68D921AB-CB98-5AEB-438B-CA4B750A57F6}.Release|x86.Build.0 = Release|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Debug|x64.Build.0 = Debug|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Debug|x86.Build.0 = Debug|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Release|x64.ActiveCfg = Release|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Release|x64.Build.0 = Release|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Release|x86.ActiveCfg = Release|Any CPU
+		{87174220-4BCF-4E69-877E-60F397C336B0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

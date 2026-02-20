@@ -12,7 +12,6 @@
 		<FileVersion>9.3.0.1</FileVersion>
 		<RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
 		<Authors></Authors>
-		<ApplicationInsightsResourceId>/subscriptions/9bdb8e29-156f-4fc9-a1fe-1bb6a915a4f0/resourceGroups/CosmosCMS/providers/microsoft.insights/components/edit-cosmos-cms202107021426</ApplicationInsightsResourceId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryType>git</RepositoryType>
@@ -46,14 +45,12 @@
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\TextFile1.txt" />
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\_CosmosLayout.cshtml" />
 	  <Content Remove="stylecop.json" />
-	  <Content Remove="wwwroot\css\hangfire-dark.css" />
-	  <Content Remove="wwwroot\css\setup-sensitive-fields.css" />
 	  <Content Remove="wwwroot\images\samples\134038968578143524.jpg" />
 	  <Content Remove="wwwroot\images\samples\20250917_OHR.YoungMoose_EN-US2991221135_UHD_bing.jpg" />
 	  <Content Remove="wwwroot\images\samples\20250920_OHR.OktoberfestSwing_EN-US7916182497_UHD_bing.jpg" />
 	  <Content Remove="wwwroot\images\samples\20250921_OHR.IceOtters_EN-US7982442590_UHD_bing.jpg" />
 	  <Content Remove="wwwroot\images\samples\20250924_OHR.BearLodge_EN-US9061134971_UHD_bing.jpg" />
-	  <Content Remove="wwwroot\images\samples\20250926_OHR.AutumnChipmunk_EN-US9248365602_UHD_bing.jpg" />
+	  <Content Remove="wwwroot\images\samples\20250926_OHR.AutumnChipmunk_EN-US9248345602_UHD_bing.jpg" />
 	  <Content Remove="wwwroot\images\samples\20251015_OHR.AmethystLaccaria_EN-US0640413961_UHD_bing.jpg" />
 	  <Content Remove="wwwroot\images\skycms\SkyCMSLogoDarkBackground.jpeg" />
 	  <Content Remove="wwwroot\images\skycms\SkyCMSLogoLightBackground.jpeg" />
@@ -66,20 +63,6 @@
 	  <Content Remove="wwwroot\js\editors\monaco-editor-insert-helpers.js" />
 	  <Content Remove="wwwroot\js\setup-sensitive-fields.js" />
 	  <Content Remove="wwwroot\lib\cosmos\ckeditor\ckeditor-widget.301.js" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<EmbeddedResource Include="wwwroot\css\hangfire-dark.css" />
-	</ItemGroup>
-	
-	<ItemGroup>
-		<None Remove="appsettings.json.BAK" />
-		<None Remove="Data\DropAllTables.sql" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<_WebToolingArtifacts Remove="Properties\PublishProfiles\Linux-x64_Single.pubxml" />
-		<_WebToolingArtifacts Remove="Properties\PublishProfiles\Win-x64_Single.pubxml" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -96,12 +79,6 @@
 		<PackageReference Include="Azure.ResourceManager.Cdn" />
 		<PackageReference Include="BCrypt.Net-Next" />
 		<PackageReference Include="CsvHelper" />
-		<PackageReference Include="Hangfire.AspNetCore" />
-		<PackageReference Include="Hangfire.AzureCosmosDB" />
-		<PackageReference Include="Hangfire.InMemory" />
-		<PackageReference Include="Hangfire.MySqlStorage" />
-		<PackageReference Include="Hangfire.SqlServer" />
-		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
@@ -114,7 +91,6 @@
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
 		<PackageReference Include="PasswordGenerator" />
 		<PackageReference Include="RestSharp" />
-		<PackageReference Include="rodriGS750.Hangfire.Dashboard.Themes.Dark" />
 		<PackageReference Include="SixLabors.ImageSharp" />
 		<PackageReference Include="MimeTypeMapOfficial" />
 		<PackageReference Include="Roslynator.Analyzers">
@@ -134,6 +110,7 @@
 	  <ProjectReference Include="..\Common\Cosmos.Common.csproj" />
 	  <ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
 	  <ProjectReference Include="..\Sky.Cms.Api.Shared\Sky.Cms.Api.Shared.csproj" />
+	  <ProjectReference Include="..\Sky.Shared.Razor\Sky.Shared.Razor.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

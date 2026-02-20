@@ -568,7 +568,7 @@ namespace Sky.Editor.Services.Publishing
                 Layout = layout // Use pre-loaded layout
             };
 
-            var html = await viewRenderer.RenderToStringAsync("~/Views/Home/Static.cshtml", model);
+            var html = await viewRenderer.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
 
             using var ms = new MemoryStream(Encoding.UTF8.GetBytes(html));
             await storage.AppendBlob(ms, new FileUploadMetaData
@@ -879,7 +879,7 @@ namespace Sky.Editor.Services.Publishing
                 Layout = layout
             };
 
-            var html = await viewRenderService.RenderToStringAsync("~/Views/Home/Static.cshtml", model);
+            var html = await viewRenderService.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
 
             using var ms = new MemoryStream(Encoding.UTF8.GetBytes(html));
             await _storage.AppendBlob(ms, new FileUploadMetaData

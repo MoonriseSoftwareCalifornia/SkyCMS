@@ -39,8 +39,6 @@ namespace Cosmos.Publisher.Boot
             var defaultAzureCredential = new DefaultAzureCredential();
             builder.Services.AddSingleton(defaultAzureCredential);
 
-            builder.Services.AddApplicationInsightsTelemetry();
-
             // Add CORS
             // See: https://learn.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-6.0
             var corsOrigins = builder.Configuration.GetValue<string>("CorsAllowedOrigins");

@@ -56,7 +56,7 @@
     <!-- Azure packages -->
     <PackageVersion Include="Azure.Storage.Blobs" Version="[12.24.0,13.0)" />
     <PackageVersion Include="Azure.Storage.Files.Shares" Version="12.25.0" />
-    <PackageVersion Include="Azure.Identity" Version="1.17.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.17.0" />
     <PackageVersion Include="Azure.Monitor.Query" Version="1.7.1" />
     <PackageVersion Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="[1.5.1,2.0)" />
     <PackageVersion Include="Azure.ResourceManager" Version="[1.13.2,2.0)" />
@@ -86,8 +86,6 @@
     <PackageVersion Include="X.Web.Sitemap" Version="[2.11.3,3.0)" />
     <PackageVersion Include="Newtonsoft.Json" Version="[13.0.3,14.0)" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
-    <!-- Application Insights -->
-    <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="[2.23.0,3.0)" />
     <!-- Email Services -->
     <PackageVersion Include="Cosmos.EmailServices" Version="9.0.1" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
