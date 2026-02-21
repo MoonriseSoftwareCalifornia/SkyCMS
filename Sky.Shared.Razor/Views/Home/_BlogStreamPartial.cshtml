@@ -1,0 +1,19 @@
+﻿@model Cosmos.Common.Models.ArticleViewModel
+<section class="py-5" aria-labelledby="blog-heading">
+    <div class="sky-blog-stream-container">
+        <header class="sky-blog-stream-header">
+            <h1 id="sky-blog-stream-heading" class="display-6 fw-bold mb-2">@Model.Title</h1>
+            {{ if page.description }}<p class="text-secondary mb-0">@Model.Introduction</p>{{ end }}
+        </header>
+        <div class="row g-4" id="post-list">
+            {{ foreach posts as post }}
+            {{ include "templates/partials/post-card.html" with { post: post } }}
+            {{ else }}
+            <div class="col-12"><p class="text-secondary">No posts yet.</p></div>
+            {{ end }}
+        </div>
+        {{ if pagination }}
+        {{ include "templates/partials/pagination.html" with { pagination: pagination } }}
+        {{ end }}
+    </div>
+</section>

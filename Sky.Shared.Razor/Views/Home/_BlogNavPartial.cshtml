@@ -1,0 +1,18 @@
+﻿<nav class="mt-4" aria-label="Blog pagination">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {{ if !pagination.prev }}disabled{{ end }}">
+            {{ if pagination.prev }}
+            {{ pagination.prev.url }}<span class="page-link" aria-label="Previous">&laquo; Newer</span></a>
+            {{ else }}
+            <span class="page-link" aria-hidden="true">&laquo; Newer</span>
+            {{ end }}
+        </li>
+        <li class="page-item {{ if !pagination.next }}disabled{{ end }}">
+            {{ if pagination.next }}
+            {{ pagination.next.url }}<span class="page-link" aria-label="Next">Older &raquo;</span></a>
+            {{ else }}
+            <span class="page-link" aria-hidden="true">Older &raquo;</span>
+            {{ end }}
+        </li>
+    </ul>
+</nav>
