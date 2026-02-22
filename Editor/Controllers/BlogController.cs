@@ -24,7 +24,7 @@ namespace Sky.Editor.Controllers
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Models.Blogs;
-    using Sky.Editor.Services.BlogPublishing;
+    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
@@ -53,7 +53,7 @@ namespace Sky.Editor.Controllers
         private readonly ArticleEditLogic articleLogic;
         private readonly ISlugService slugService;
         private readonly ITemplateService templateService;
-        private readonly IBlogRenderingService blogRenderingService;
+        private readonly IBlogStreamRenderingService blogStreamRenderingService;
         private readonly ITitleChangeService titleChangeService;
         private readonly IMediator mediator;
 
@@ -65,7 +65,7 @@ namespace Sky.Editor.Controllers
         /// <param name="slugService">Slug normalization and uniqueness helper.</param>
         /// <param name="templateService">Template management service.</param>
         /// <param name="userManager">User management service.</param>
-        /// <param name="blogRenderingService">Blog rendering service.</param>
+        /// <param name="blogStreamRenderingService">Blog stream rendering service for modern client-side orchestration.</param>
         /// <param name="titleChangeService">Title change service.</param>
         /// <param name="mediator">Mediator for dispatching commands.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
@@ -76,7 +76,7 @@ namespace Sky.Editor.Controllers
             ISlugService slugService,
             ITemplateService templateService,
             UserManager<IdentityUser> userManager,
-            IBlogRenderingService blogRenderingService,
+            IBlogStreamRenderingService blogStreamRenderingService,
             ITitleChangeService titleChangeService,
             IMediator mediator,
             IMemoryCache memoryCache,
@@ -87,7 +87,7 @@ namespace Sky.Editor.Controllers
             this.articleLogic = articleLogic;
             this.slugService = slugService;
             this.templateService = templateService;
-            this.blogRenderingService = blogRenderingService;
+            this.blogStreamRenderingService = blogStreamRenderingService;
             this.titleChangeService = titleChangeService;
             this.mediator = mediator;
         }
@@ -250,7 +250,7 @@ namespace Sky.Editor.Controllers
             article.Introduction = model.Description;
             article.BannerImage = model.HeroImage;
             article.Published = model.Published;
-            article.Content = await blogRenderingService.GenerateBlogStreamHtml(article);
+            article.Content = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(article, article.BlogKey);
             await db.SaveChangesAsync();
 
             // Handle title change.
@@ -521,7 +521,7 @@ namespace Sky.Editor.Controllers
 
             // Render the blog stream article
             var blogStreamArticle = await db.Articles.FirstOrDefaultAsync(a => a.BlogKey == blogKey && a.ArticleType == blogStreamType);
-            blogStreamArticle.Content = await blogRenderingService.GenerateBlogStreamHtml(blogStreamArticle);
+            blogStreamArticle.Content = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(blogStreamArticle, blogKey);
 
             return RedirectToAction(nameof(Entries), new { blogKey });
         }
@@ -585,7 +585,7 @@ namespace Sky.Editor.Controllers
             }
 
             // update content just to be sure.
-            article.Content = await blogRenderingService.GenerateBlogStreamHtml(article);
+            article.Content = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(article, blogKey);
             await db.SaveChangesAsync();
 
             ViewData["articleId"] = article.Id;

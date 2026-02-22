@@ -43711,7 +43711,7 @@
             <range source_id="11" start_line="51" end_line="51" start_column="113" end_column="118" covered="yes" />
           </ranges>
         </function>
-        <function id="130640" token="0x6000c28" name="TitleChangeService(Cosmos.Common.Data.ApplicationDbContext, Sky.Editor.Services.Slugs.ISlugService, Sky.Editor.Services.Redirects.IRedirectService, Sky.Editor.Infrastructure.Time.IClock, Sky.Editor.Domain.Events.IDomainEventDispatcher, Sky.Editor.Services.Publishing.IPublishingService, Sky.Editor.Services.ReservedPaths.IReservedPaths, Sky.Editor.Services.BlogPublishing.IBlogRenderingService, Microsoft.Extensions.Logging.ILogger&lt;Sky.Editor.Services.Titles.TitleChangeService&gt;)" namespace="Sky.Editor.Services.Titles" type_name="TitleChangeService" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="21" lines_partially_covered="0" lines_not_covered="0">
+        <function id="130640" token="0x6000c28" name="TitleChangeService(Cosmos.Common.Data.ApplicationDbContext, Sky.Editor.Services.Slugs.ISlugService, Sky.Editor.Services.Redirects.IRedirectService, Sky.Editor.Infrastructure.Time.IClock, Sky.Editor.Domain.Events.IDomainEventDispatcher, Sky.Editor.Services.Publishing.IPublishingService, Sky.Editor.Services.ReservedPaths.IReservedPaths, Cosmos.Common.Services.BlogPublishing.IBlogRenderingService, Microsoft.Extensions.Logging.ILogger&lt;Sky.Editor.Services.Titles.TitleChangeService&gt;)" namespace="Sky.Editor.Services.Titles" type_name="TitleChangeService" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="21" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="12" start_line="77" end_line="86" start_column="9" end_column="48" covered="yes" />
             <range source_id="12" start_line="87" end_line="87" start_column="9" end_column="10" covered="yes" />
@@ -44947,7 +44947,7 @@
             <range source_id="33" start_line="36" end_line="36" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="143308" token="0x6000d55" name="PublishingService(Cosmos.Common.Data.ApplicationDbContext, Cosmos.BlobService.IStorageContext, Sky.Editor.Services.EditorSettings.IEditorSettings, Microsoft.Extensions.Logging.ILogger&lt;Sky.Editor.Services.Publishing.PublishingService&gt;, Microsoft.AspNetCore.Http.IHttpContextAccessor, Sky.Editor.Services.Authors.IAuthorInfoService, Sky.Editor.Infrastructure.Time.IClock, Sky.Editor.Services.BlogPublishing.IBlogRenderingService, Sky.Cms.Services.IViewRenderService, System.IServiceProvider, Sky.Editor.Services.Publishing.IPublishingProgressReporter)" namespace="Sky.Editor.Services.Publishing" type_name="PublishingService" block_coverage="100.00" line_coverage="100.00" blocks_covered="3" blocks_not_covered="0" lines_covered="26" lines_partially_covered="0" lines_not_covered="0">
+        <function id="143308" token="0x6000d55" name="PublishingService(Cosmos.Common.Data.ApplicationDbContext, Cosmos.BlobService.IStorageContext, Sky.Editor.Services.EditorSettings.IEditorSettings, Microsoft.Extensions.Logging.ILogger&lt;Sky.Editor.Services.Publishing.PublishingService&gt;, Microsoft.AspNetCore.Http.IHttpContextAccessor, Sky.Editor.Services.Authors.IAuthorInfoService, Sky.Editor.Infrastructure.Time.IClock, Cosmos.Common.Services.BlogPublishing.IBlogRenderingService, Sky.Cms.Services.IViewRenderService, System.IServiceProvider, Sky.Editor.Services.Publishing.IPublishingProgressReporter)" namespace="Sky.Editor.Services.Publishing" type_name="PublishingService" block_coverage="100.00" line_coverage="100.00" blocks_covered="3" blocks_not_covered="0" lines_covered="26" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="34" start_line="57" end_line="57" start_column="9" end_column="78" covered="yes" />
             <range source_id="34" start_line="74" end_line="85" start_column="9" end_column="58" covered="yes" />
@@ -46976,7 +46976,7 @@
             <range source_id="67" start_line="62" end_line="62" start_column="9" end_column="10" covered="yes" />
           </ranges>
         </function>
-        <function id="161072" token="0x6000edd" name="BlogRenderingService(Cosmos.Common.Data.ApplicationDbContext)" namespace="Sky.Editor.Services.BlogPublishing" type_name="BlogRenderingService" block_coverage="100.00" line_coverage="100.00" blocks_covered="5" blocks_not_covered="0" lines_covered="9" lines_partially_covered="0" lines_not_covered="0">
+        <function id="161072" token="0x6000edd" name="BlogRenderingService(Cosmos.Common.Data.ApplicationDbContext)" namespace="Cosmos.Common.Services.BlogPublishing" type_name="BlogRenderingService" block_coverage="100.00" line_coverage="100.00" blocks_covered="5" blocks_not_covered="0" lines_covered="9" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="68" start_line="24" end_line="24" start_column="9" end_column="74" covered="yes" />
             <range source_id="68" start_line="25" end_line="25" start_column="9" end_column="76" covered="yes" />
@@ -52298,7 +52298,7 @@
             <range source_id="148" start_line="20" end_line="20" start_column="9" end_column="71" covered="yes" />
           </ranges>
         </function>
-        <function id="471508" token="0x600114c" name="BlogController(Cosmos.Common.Data.ApplicationDbContext, Sky.Editor.Data.Logic.ArticleEditLogic, Sky.Editor.Services.Slugs.ISlugService, Sky.Editor.Services.Templates.ITemplateService, Microsoft.AspNetCore.Identity.UserManager&lt;Microsoft.AspNetCore.Identity.IdentityUser&gt;, Sky.Editor.Services.BlogPublishing.IBlogRenderingService, Sky.Editor.Services.Titles.ITitleChangeService, Sky.Editor.Features.Shared.IMediator, Microsoft.Extensions.Caching.Memory.IMemoryCache, Cosmos.DynamicConfig.IDynamicConfigurationProvider)" namespace="Sky.Editor.Controllers" type_name="BlogController" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="10" lines_partially_covered="0" lines_not_covered="0">
+        <function id="471508" token="0x600114c" name="BlogController(Cosmos.Common.Data.ApplicationDbContext, Sky.Editor.Data.Logic.ArticleEditLogic, Sky.Editor.Services.Slugs.ISlugService, Sky.Editor.Services.Templates.ITemplateService, Microsoft.AspNetCore.Identity.UserManager&lt;Microsoft.AspNetCore.Identity.IdentityUser&gt;, Cosmos.Common.Services.BlogPublishing.IBlogRenderingService, Sky.Editor.Services.Titles.ITitleChangeService, Sky.Editor.Features.Shared.IMediator, Microsoft.Extensions.Caching.Memory.IMemoryCache, Cosmos.DynamicConfig.IDynamicConfigurationProvider)" namespace="Sky.Editor.Controllers" type_name="BlogController" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="10" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="149" start_line="84" end_line="84" start_column="15" end_column="65" covered="yes" />
             <range source_id="149" start_line="85" end_line="85" start_column="9" end_column="10" covered="yes" />
@@ -66373,27 +66373,27 @@
             <range source_id="67" start_line="141" end_line="141" start_column="9" end_column="10" covered="yes" />
           </ranges>
         </function>
-        <function id="1330435" token="0x6002246" name="&lt;GenerateBlogStreamHtml&gt;b__4_0(Cosmos.Common.Data.Article)" namespace="Sky.Editor.Services.BlogPublishing" type_name="BlogRenderingService.&lt;&gt;c" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="1" lines_partially_covered="0" lines_not_covered="0">
+        <function id="1330435" token="0x6002246" name="&lt;GenerateBlogStreamHtml&gt;b__4_0(Cosmos.Common.Data.Article)" namespace="Cosmos.Common.Services.BlogPublishing" type_name="BlogRenderingService.&lt;&gt;c" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="1" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="68" start_line="92" end_line="92" start_column="31" end_column="46" covered="yes" />
           </ranges>
         </function>
-        <function id="1330443" token="0x6002247" name="&lt;GenerateBlogStreamHtml&gt;b__4_1(System.Linq.IGrouping&lt;int, Cosmos.Common.Data.Article&gt;)" namespace="Sky.Editor.Services.BlogPublishing" type_name="BlogRenderingService.&lt;&gt;c" block_coverage="100.00" line_coverage="100.00" blocks_covered="6" blocks_not_covered="0" lines_covered="1" lines_partially_covered="0" lines_not_covered="0">
+        <function id="1330443" token="0x6002247" name="&lt;GenerateBlogStreamHtml&gt;b__4_1(System.Linq.IGrouping&lt;int, Cosmos.Common.Data.Article&gt;)" namespace="Cosmos.Common.Services.BlogPublishing" type_name="BlogRenderingService.&lt;&gt;c" block_coverage="100.00" line_coverage="100.00" blocks_covered="6" blocks_not_covered="0" lines_covered="1" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="68" start_line="93" end_line="93" start_column="30" end_column="75" covered="yes" />
           </ranges>
         </function>
-        <function id="1330487" token="0x6002248" name="&lt;GenerateBlogStreamHtml&gt;b__4_5(Cosmos.Common.Data.Article)" namespace="Sky.Editor.Services.BlogPublishing" type_name="BlogRenderingService.&lt;&gt;c" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="1" lines_partially_covered="0" lines_not_covered="0">
+        <function id="1330487" token="0x6002248" name="&lt;GenerateBlogStreamHtml&gt;b__4_5(Cosmos.Common.Data.Article)" namespace="Cosmos.Common.Services.BlogPublishing" type_name="BlogRenderingService.&lt;&gt;c" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="1" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="68" start_line="93" end_line="93" start_column="55" end_column="66" covered="yes" />
           </ranges>
         </function>
-        <function id="1330495" token="0x6002249" name="&lt;GenerateBlogStreamHtml&gt;b__4_2(Cosmos.Common.Data.Article)" namespace="Sky.Editor.Services.BlogPublishing" type_name="BlogRenderingService.&lt;&gt;c" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="1" lines_partially_covered="0" lines_not_covered="0">
+        <function id="1330495" token="0x6002249" name="&lt;GenerateBlogStreamHtml&gt;b__4_2(Cosmos.Common.Data.Article)" namespace="Cosmos.Common.Services.BlogPublishing" type_name="BlogRenderingService.&lt;&gt;c" block_coverage="100.00" line_coverage="100.00" blocks_covered="2" blocks_not_covered="0" lines_covered="1" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="68" start_line="94" end_line="94" start_column="41" end_column="52" covered="yes" />
           </ranges>
         </function>
-        <function id="1330532" token="0x600224d" name="MoveNext()" namespace="Sky.Editor.Services.BlogPublishing" type_name="BlogRenderingService.&lt;GenerateBlogEntryHtml&gt;d__5" block_coverage="100.00" line_coverage="100.00" blocks_covered="40" blocks_not_covered="0" lines_covered="19" lines_partially_covered="0" lines_not_covered="0">
+        <function id="1330532" token="0x600224d" name="MoveNext()" namespace="Cosmos.Common.Services.BlogPublishing" type_name="BlogRenderingService.&lt;GenerateBlogEntryHtml&gt;d__5" block_coverage="100.00" line_coverage="100.00" blocks_covered="40" blocks_not_covered="0" lines_covered="19" lines_partially_covered="0" lines_not_covered="0">
           <ranges>
             <range source_id="68" start_line="151" end_line="151" start_column="9" end_column="10" covered="yes" />
             <range source_id="68" start_line="152" end_line="152" start_column="13" end_column="106" covered="yes" />
@@ -66416,7 +66416,7 @@
             <range source_id="68" start_line="178" end_line="178" start_column="9" end_column="10" covered="yes" />
           </ranges>
         </function>
-        <function id="1331264" token="0x6002250" name="MoveNext()" namespace="Sky.Editor.Services.BlogPublishing" type_name="BlogRenderingService.&lt;GenerateBlogStreamHtml&gt;d__4" block_coverage="98.88" line_coverage="97.30" blocks_covered="177" blocks_not_covered="2" lines_covered="72" lines_partially_covered="0" lines_not_covered="2">
+        <function id="1331264" token="0x6002250" name="MoveNext()" namespace="Cosmos.Common.Services.BlogPublishing" type_name="BlogRenderingService.&lt;GenerateBlogStreamHtml&gt;d__4" block_coverage="98.88" line_coverage="97.30" blocks_covered="177" blocks_not_covered="2" lines_covered="72" lines_partially_covered="0" lines_not_covered="2">
           <ranges>
             <range source_id="68" start_line="43" end_line="43" start_column="9" end_column="10" covered="yes" />
             <range source_id="68" start_line="44" end_line="44" start_column="13" end_column="108" covered="yes" />

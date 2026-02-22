@@ -1,19 +1,30 @@
-﻿@model Cosmos.Common.Models.ArticleViewModel
-<section class="py-5" aria-labelledby="blog-heading">
+﻿@using Cosmos.Common.Models.Blog
+@model Cosmos.Common.Models.ArticleViewModel
+@{
+    var blogPosts = (BlogIndexViewModel?)ViewData["BlogIndexViewModel"] ?? null;
+}
+<section class="sky-blog-stream-section" aria-labelledby="blog-heading">
     <div class="sky-blog-stream-container">
         <header class="sky-blog-stream-header">
-            <h1 id="sky-blog-stream-heading" class="display-6 fw-bold mb-2">@Model.Title</h1>
-            {{ if page.description }}<p class="text-secondary mb-0">@Model.Introduction</p>{{ end }}
+            <h1 class="sky-blog-stream-h1">@Model.Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+            {
+                <p class="sky-blog-stream-intro">@Model.Introduction</p>
+            }
         </header>
-        <div class="row g-4" id="post-list">
-            {{ foreach posts as post }}
-            {{ include "templates/partials/post-card.html" with { post: post } }}
-            {{ else }}
-            <div class="col-12"><p class="text-secondary">No posts yet.</p></div>
-            {{ end }}
+        <div class="sky-blog-stream-row" id="post-list">
+            @if (blogPosts == null || blogPosts.Posts == null || !blogPosts.Posts.Any())
+            {
+                <p>No blog posts available.</p>
+            }
+            else
+            {
+                @foreach (var post in blogPosts.Posts ?? Enumerable.Empty<BlogListItem>())
+                {
+                    @Html.Partial("_BlogStreamCard", post)
+                }
+            }
         </div>
-        {{ if pagination }}
-        {{ include "templates/partials/pagination.html" with { pagination: pagination } }}
-        {{ end }}
+        @Html.Partial("BlogNavPartial", blogPosts)
     </div>
 </section>

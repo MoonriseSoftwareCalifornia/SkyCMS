@@ -13,7 +13,7 @@ namespace Sky.Tests.Services.Publishing
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Services.Publishing;
-    using Sky.Editor.Services.BlogPublishing;
+    using Cosmos.Common.Services.BlogPublishing;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -875,10 +875,7 @@ namespace Sky.Tests.Services.Publishing
             Db.Articles.Add(article);
             await Db.SaveChangesAsync();
 
-            var blogRenderingMock = new Mock<IBlogRenderingService>();
-            blogRenderingMock
-                .Setup(b => b.GenerateBlogEntryHtml(It.IsAny<Article>()))
-                .ReturnsAsync("<div class='blog-post'>Blog Content</div>");
+            var blogStreamRenderingMock = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
 
             var service = new PublishingService(
                 Db,
@@ -888,7 +885,7 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
-                blogRenderingMock.Object,
+                blogStreamRenderingMock.Object,
                 _mockViewRenderService.Object,
                 _serviceProvider,
                 new NoOpPublishingProgressReporter());
@@ -899,15 +896,8 @@ namespace Sky.Tests.Services.Publishing
             // Assert
             var publishedPage = await Db.Pages.FirstOrDefaultAsync();
             Assert.IsNotNull(publishedPage, "Published page should be created");
-            Assert.AreEqual("<div class='blog-post'>Blog Content</div>", publishedPage.Content,
-                "Blog post should use blog-specific HTML generation");
             Assert.AreEqual("tech-blog", publishedPage.BlogKey,
                 "BlogKey should be preserved for blog posts");
-
-            blogRenderingMock.Verify(
-                b => b.GenerateBlogEntryHtml(It.Is<Article>(a => a.Id == article.Id)),
-                Times.Once,
-                "BlogRenderingService.GenerateBlogEntryHtml should be called for blog posts");
         }
 
         [TestMethod]
@@ -922,7 +912,7 @@ namespace Sky.Tests.Services.Publishing
             Db.Articles.Add(article);
             await Db.SaveChangesAsync();
 
-            var blogRenderingMock = new Mock<IBlogRenderingService>();
+            var blogStreamRenderingMock = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
 
             var service = new PublishingService(
                 Db,
@@ -932,7 +922,7 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
-                blogRenderingMock.Object,
+                blogStreamRenderingMock.Object,
                 _mockViewRenderService.Object,
                 _serviceProvider,
                 new NoOpPublishingProgressReporter());
@@ -948,11 +938,6 @@ namespace Sky.Tests.Services.Publishing
             // BlogKey is not set on the page for non-blog articles (remains empty or default from article)
             Assert.IsTrue(string.IsNullOrEmpty(publishedPage.BlogKey) || publishedPage.BlogKey == "default",
                 "BlogKey should be empty or default for non-blog articles");
-
-            blogRenderingMock.Verify(
-                b => b.GenerateBlogEntryHtml(It.IsAny<Article>()),
-                Times.Never,
-                "BlogRenderingService should NOT be called for normal articles");
         }
 
         #endregion
@@ -1071,7 +1056,7 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 _mockViewRenderService.Object,
                 serviceProvider,
                 progressReporter);
@@ -1102,10 +1087,35 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 _mockViewRenderService.Object,
                 serviceProvider,
                 mockProgressReporter.Object);
+        }
+
+        private PublishingService CreatePublishingService()
+        {
+            var services = new ServiceCollection();
+            services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
+            services.AddScoped<IStorageContext>(_ => Storage);
+            services.AddScoped<StorageContext>(_ => Storage);
+            services.AddScoped<ApplicationDbContext>(_ => Db);
+            services.AddLogging();
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            return new PublishingService(
+                Db,
+                Storage,
+                EditorSettings,
+                NullLogger<PublishingService>.Instance,
+                HttpContextAccessor,
+                AuthorInfoService,
+                Clock,
+                BlogStreamRenderingService,
+                _mockViewRenderService.Object,
+                serviceProvider,
+                new NoOpPublishingProgressReporter());
         }
 
         #endregion

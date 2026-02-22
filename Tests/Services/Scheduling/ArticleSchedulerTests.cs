@@ -30,7 +30,7 @@ namespace Sky.Tests.Services.Scheduling
     using Sky.Editor.Domain.Events;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
-    using Sky.Editor.Services.BlogPublishing;
+    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
@@ -82,7 +82,7 @@ namespace Sky.Tests.Services.Scheduling
             services.AddSingleton<ICatalogService>(CatalogService);
             services.AddSingleton<IDomainEventDispatcher>(EventDispatcher);
             services.AddSingleton<IClock>(Clock);
-            services.AddSingleton<IBlogRenderingService>(BlogRenderingService);
+            services.AddSingleton<IBlogStreamRenderingService>(BlogStreamRenderingService);
             services.AddSingleton<IAuthorInfoService>(AuthorInfoService);
             services.AddSingleton<IViewRenderService>(ViewRenderService);
             services.AddSingleton<IReservedPaths>(ReservedPaths);
@@ -1404,7 +1404,7 @@ namespace Sky.Tests.Services.Scheduling
             servicesWithoutEmail.AddSingleton<ICatalogService>(CatalogService);
             servicesWithoutEmail.AddSingleton<IDomainEventDispatcher>(EventDispatcher);
             servicesWithoutEmail.AddSingleton<IClock>(Clock);
-            servicesWithoutEmail.AddSingleton<IBlogRenderingService>(BlogRenderingService);
+            servicesWithoutEmail.AddSingleton<IBlogStreamRenderingService>(BlogStreamRenderingService);
             servicesWithoutEmail.AddSingleton<IAuthorInfoService>(AuthorInfoService);
             servicesWithoutEmail.AddSingleton<IViewRenderService>(ViewRenderService);
             servicesWithoutEmail.AddSingleton<IReservedPaths>(ReservedPaths);
@@ -1486,7 +1486,7 @@ namespace Sky.Tests.Services.Scheduling
             servicesWithoutUserManager.AddSingleton<ICatalogService>(CatalogService);
             servicesWithoutUserManager.AddSingleton<IDomainEventDispatcher>(EventDispatcher);
             servicesWithoutUserManager.AddSingleton<IClock>(Clock);
-            servicesWithoutUserManager.AddSingleton<IBlogRenderingService>(BlogRenderingService);
+            servicesWithoutUserManager.AddSingleton<IBlogStreamRenderingService>(BlogStreamRenderingService);
             servicesWithoutUserManager.AddSingleton<IAuthorInfoService>(AuthorInfoService);
             servicesWithoutUserManager.AddSingleton<IViewRenderService>(ViewRenderService);
             servicesWithoutUserManager.AddSingleton<IReservedPaths>(ReservedPaths);

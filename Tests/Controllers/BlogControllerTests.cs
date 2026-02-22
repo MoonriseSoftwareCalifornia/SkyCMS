@@ -22,7 +22,7 @@ namespace Sky.Tests.Controllers
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Models.Blogs;
-    using Sky.Editor.Services.BlogPublishing;
+    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.CDN;
     using System.Collections.Generic;
     using System.Linq;
@@ -39,7 +39,7 @@ namespace Sky.Tests.Controllers
         private BlogController controller = null!;
         private Mock<IMediator> mediatorMock = null!;
         private Mock<UserManager<IdentityUser>> userManagerMock = null!;
-        private Mock<IBlogRenderingService> blogRenderingServiceMock = null!;
+        private Mock<IBlogStreamRenderingService> blogRenderingServiceMock = null!;
 
         [TestInitialize]
         public new void Setup()
@@ -47,7 +47,7 @@ namespace Sky.Tests.Controllers
             InitializeTestContext(seedLayout: true);
             
             mediatorMock = new Mock<IMediator>();
-            blogRenderingServiceMock = new Mock<IBlogRenderingService>();
+            blogRenderingServiceMock = new Mock<IBlogStreamRenderingService>();
             
             // Create a proper UserManager mock
             var store = new Mock<IUserStore<IdentityUser>>();
@@ -67,13 +67,13 @@ namespace Sky.Tests.Controllers
                 .Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(testUser);
 
-            // Configure BlogRenderingService to return dummy HTML
+            // Configure BlogStreamRenderingService to return dummy HTML
             blogRenderingServiceMock
-                .Setup(x => x.GenerateBlogStreamHtml(It.IsAny<Article>()))
+                .Setup(x => x.GenerateBlogStreamWrapperAsync(It.IsAny<Article>(), It.IsAny<string>()))
                 .ReturnsAsync("<html><body>Blog Stream</body></html>");
 
             blogRenderingServiceMock
-                .Setup(x => x.GenerateBlogEntryHtml(It.IsAny<Article>()))
+                .Setup(x => x.GenerateBlogPostSnippetAsync(It.IsAny<Article>()))
                 .ReturnsAsync("<html><body>Blog Entry</body></html>");
 
             controller = new BlogController(
@@ -380,10 +380,10 @@ namespace Sky.Tests.Controllers
             mediatorMock.Verify(
                 m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default),
                 Times.Once);
-            
+
             // Verify blog stream HTML was regenerated
             blogRenderingServiceMock.Verify(
-                x => x.GenerateBlogStreamHtml(It.IsAny<Article>()),
+                x => x.GenerateBlogStreamWrapperAsync(It.IsAny<Article>(), It.IsAny<string>()),
                 Times.Once);
         }
 
@@ -492,10 +492,10 @@ namespace Sky.Tests.Controllers
             var publishedArticle = await Db.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == entry.ArticleNumber);
             Assert.IsNotNull(publishedArticle);
-            
+
             // Verify blog stream HTML was regenerated
             blogRenderingServiceMock.Verify(
-                x => x.GenerateBlogStreamHtml(It.IsAny<Article>()),
+                x => x.GenerateBlogStreamWrapperAsync(It.IsAny<Article>(), It.IsAny<string>()),
                 Times.Once);
         }
 

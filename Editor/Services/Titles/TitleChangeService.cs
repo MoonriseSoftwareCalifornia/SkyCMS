@@ -14,11 +14,12 @@ namespace Sky.Editor.Services.Titles
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Services.BlogPublishing;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Domain.Events;
     using Sky.Editor.Infrastructure.Time;
-    using Sky.Editor.Services.BlogPublishing;
+    using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.ReservedPaths;
@@ -59,7 +60,7 @@ namespace Sky.Editor.Services.Titles
         private readonly IDomainEventDispatcher dispatcher;
         private readonly IPublishingService publishingService;
         private readonly IReservedPaths reservedPaths;
-        private readonly IBlogRenderingService blogRenderingService;
+        private readonly IBlogStreamRenderingService blogStreamRenderingService;
         private readonly ILogger<TitleChangeService> logger;
 
         /// <summary>
@@ -72,7 +73,7 @@ namespace Sky.Editor.Services.Titles
         /// <param name="dispatcher">Domain event dispatcher for publishing title change events to subscribers.</param>
         /// <param name="publishingService">Publishing service for regenerating static content after title changes.</param>
         /// <param name="reservedPaths">Reserved paths service for validating that new titles don't conflict with system routes.</param>
-        /// <param name="blogRenderingService">Blog rendering service for regenerating blog stream HTML content.</param>
+        /// <param name="blogStreamRenderingService">Blog stream rendering service for regenerating blog stream HTML content with client-side orchestration.</param>
         /// <param name="logger">Logger for diagnostic and error events.</param>
         public TitleChangeService(
             ApplicationDbContext db,
@@ -82,7 +83,7 @@ namespace Sky.Editor.Services.Titles
             IDomainEventDispatcher dispatcher,
             IPublishingService publishingService,
             IReservedPaths reservedPaths,
-            IBlogRenderingService blogRenderingService,
+            IBlogStreamRenderingService blogStreamRenderingService,
             ILogger<TitleChangeService> logger)
         {
             this.db = db;
@@ -92,7 +93,7 @@ namespace Sky.Editor.Services.Titles
             this.dispatcher = dispatcher;
             this.publishingService = publishingService;
             this.reservedPaths = reservedPaths;
-            this.blogRenderingService = blogRenderingService;
+            this.blogStreamRenderingService = blogStreamRenderingService;
             this.logger = logger;
         }
 
@@ -420,8 +421,8 @@ namespace Sky.Editor.Services.Titles
             // Save all blog entry changes in a single transaction
             await db.SaveChangesAsync();
 
-            // Regenerate the blog stream's HTML content with updated links
-            var generatedHtml = await blogRenderingService.GenerateBlogStreamHtml(blogStreamArticle);
+            // Regenerate the blog stream's HTML content with updated links using modern client-side architecture
+            var generatedHtml = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(blogStreamArticle, newBlogKey);
 
             if (string.IsNullOrEmpty(generatedHtml))
             {

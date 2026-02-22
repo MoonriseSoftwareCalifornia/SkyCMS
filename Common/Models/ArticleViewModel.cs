@@ -18,7 +18,7 @@ namespace Cosmos.Common.Models
     /// <summary>
     /// View model used to render an article (page, blog post, or specialized content) within Razor Pages.
     /// This model is the aggregation point of content (HTML), metadata (Open Graph, SEO),
-    /// publishing lifecycle state (status, version, temporal boundaries), layout selection,
+    /// publishing life cycle state (status, version, temporal boundaries), layout selection,
     /// and runtime behavioral flags (authoring vs. public rendering).
     /// </summary>
     /// <remarks>

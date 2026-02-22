@@ -1,6 +1,7 @@
 using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
+using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.DynamicConfig;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -19,7 +20,6 @@ using Sky.Editor.Data.Logic;
 using Sky.Editor.Domain.Events;
 using Sky.Editor.Infrastructure.Time;
 using Sky.Editor.Services.Authors;
-using Sky.Editor.Services.BlogPublishing;
 using Sky.Editor.Services.Catalog;
 using Sky.Editor.Services.EditorSettings;
 using Sky.Editor.Services.Html;
@@ -72,7 +72,7 @@ namespace Sky.Tests
         protected UserManager<IdentityUser> UserManager = null!;
         protected RoleManager<IdentityRole> RoleManager = null!;
         protected ITemplateService TemplateService = null!;
-        protected IBlogRenderingService BlogRenderingService = null!;
+        protected IBlogStreamRenderingService BlogStreamRenderingService = null!;
         protected IViewRenderService ViewRenderService = null!;
         protected IServiceProvider Services = null!;
         protected IArticleScheduler ArticleScheduler = null!;
@@ -230,7 +230,7 @@ namespace Sky.Tests
             CatalogService = new CatalogService(Db, ArticleHtmlService, Clock, catalogLogger);
             EventDispatcher = new TestDomainEventDispatcher();
             var authorInfoService = new AuthorInfoService(Db, Cache);
-            BlogRenderingService = new BlogRenderingService(Db);
+            BlogStreamRenderingService = new Cosmos.Common.Services.BlogPublishing.BlogStreamRenderingService(Db);
             ReservedPaths = new ReservedPaths(Db);
             AuthorInfoService = new AuthorInfoService(Db, Cache);
 
@@ -245,7 +245,7 @@ namespace Sky.Tests
             // PublishingService will be created after Services is built
 
             RedirectService = new RedirectService(Db, SlugService, Clock, null!); // Will set PublishingService later
-            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, null!, ReservedPaths, BlogRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
+            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, null!, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
             
             // ❌ REMOVE THIS - Don't create TemplateService here, it needs Mediator which doesn't exist yet
             // TemplateService = new TemplateService(
@@ -388,7 +388,7 @@ namespace Sky.Tests
 
             // BUILD FINAL SERVICE PROVIDER WITH ALL SERVICES INCLUDING FEATURE HANDLERS
             // Note: PublishingService is created AFTER this service provider is built
-            Services = new ServiceCollection()
+            var serviceCollection = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<DiagnosticSource>(new DiagnosticListener("TestListener"))
                 .AddSingleton<DiagnosticListener>(new DiagnosticListener("TestListener"))
@@ -396,34 +396,22 @@ namespace Sky.Tests
                 .AddSingleton<IConfiguration>(configuration)
                 .AddSingleton<IMemoryCache>(Cache)
                 .AddSingleton<ApplicationDbContext>(sp => Db)
-                .AddSingleton<StorageContext>(Storage)
-                .AddScoped<IStorageContext>(sp => Storage) // Add scoped for CreateStaticPages
-                .AddSingleton<IHttpContextAccessor>(HttpContextAccessor)
                 .AddSingleton<ISlugService>(SlugService)
                 .AddSingleton<IArticleHtmlService>(ArticleHtmlService)
                 .AddSingleton<ICatalogService>(CatalogService)
                 .AddSingleton<IDomainEventDispatcher>(EventDispatcher)
-                .AddSingleton<IClock>(Clock)
-                .AddSingleton<IBlogRenderingService>(BlogRenderingService)
+                .AddSingleton<IClock>(Clock);
+            
+            serviceCollection
+                .AddSingleton<IBlogStreamRenderingService>(BlogStreamRenderingService)
                 .AddSingleton<IAuthorInfoService>(AuthorInfoService)
                 .AddScoped<IViewRenderService>(sp => ViewRenderService) // Change to scoped for CreateStaticPages
                 .AddSingleton<IReservedPaths>(ReservedPaths)
                 .AddSingleton<IEditorSettings>(EditorSettings)
-                // ❌ REMOVE PublishingService registration - will be added after it's created
-                // .AddSingleton<IPublishingService>(PublishingService)
-                .AddSingleton<IRedirectService>(RedirectService)
-                .AddSingleton<ITitleChangeService>(TitleChangeService)
-                // ❌ REMOVE THIS - Don't register TemplateService yet
-                // .AddSingleton<ITemplateService>(TemplateService)
-                .AddSingleton<ITenantArticleLogicFactory>(TenantArticleLogicFactory)
-                .AddSingleton(new SiteSettings())
-                .AddScoped<ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>>(sp => CreateArticleHandler)
-                .AddScoped<ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>>(sp => SaveArticleHandler)
-                .AddScoped<IMediator, Mediator>()
-                .AddHttpClient()  // ✅ ADD THIS - Registers IHttpClientFactory
-                .AddRazorPages()
-                .Services
-                .BuildServiceProvider();
+                .AddHttpClient() // Register IHttpClientFactory
+                .AddSingleton<IMediator, Sky.Editor.Features.Shared.Mediator>(); // Register Mediator
+            
+            Services = serviceCollection.BuildServiceProvider();
 
             // ✅ GET MEDIATOR FROM SERVICE PROVIDER FIRST
             Mediator = Services.GetRequiredService<IMediator>();
@@ -444,14 +432,14 @@ namespace Sky.Tests
                 HttpContextAccessor,
                 authorInfoService,
                 Clock,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 ViewRenderService,
                 Services, // ✅ Pass the service provider
                 new NoOpPublishingProgressReporter());
 
             // ✅ NOW UPDATE RedirectService and TitleChangeService with the PublishingService
             RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);
-            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
+            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
 
             // ✅ NOW CREATE LOGIC WITH TEMPLATE SERVICE
             Logic = new ArticleEditLogic(

@@ -1,58 +1,26 @@
-﻿<style>
-    .sky-blog-stream-card-col {
-        width: 100%;
-    }
-
-    @@media (min-width: 768px) {
-        .sky-blog-stream-card-col {
-            flex: 0 0 50%;
-            width: 50%;
-        }
-    }
-
-    @@media (min-width: 992px) {
-        .sky-blog-stream-card-col {
-            flex: 0 0 33.333%;
-            width: 33.333%;
-        }
-    }
-
-    .sky-blog-stream-card {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        background-color: #fff;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        height: 100% !important;
-    }
-
-    .sky-blog-stream-image {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
-
-</style>
+﻿@using Cosmos.Common.Models.Blog
+@model BlogListItem
 <div class="sky-blog-stream-card-col">
     <article class="sky-blog-stream-card">
         @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
         {
             <figure class="sky-blog-stream-figure">
-                <img src="@Model.BannerImage" alt="@Model.Title" class="sky-blog-stream-image">
+                <img src="@Model.BannerImage" alt="@Model.Title" class="sky-blog-stream-card-image">
             </figure>
         }
         <div class="sky-blog-stream-card-body">
             <p class="sky-blog-post-info">
-                <time class="sky-blog-post-info-updated" datetime="@Model.Updated.UtcDateTime.ToString("O")">@Model.Updated.UtcDateTime.ToString("O")</time>
+                <time class="sky-blog-post-info-updated" datetime="@Model.Updated?.UtcDateTime.ToString("O")">@Model.Updated?.UtcDateTime.ToString("O")</time>
                 @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
                 {
-                    <span class="sky-blog-post-header-author">Model.AuthorInfo</span>
+                    <span class="sky-blog-post-header-author">@Model.AuthorInfo</span>
                 }
             </p>
-            <h3 class="h5 fw-semibold mb-2">{{ post.url }}{{ post.title }}</a></h3>
-            {{ if post.excerpt }}<p class="text-secondary mb-0">{{ post.excerpt }}</p>{{ end }}
+            <h3 class="blog-stream-card-title"><a href="@Model.UrlPath">@Model.Title</a></h3>
+            @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+            {
+                <p class="blog-stream-card-excerpt">@Model.Introduction</p>
+            }
         </div>
     </article>
 </div>
