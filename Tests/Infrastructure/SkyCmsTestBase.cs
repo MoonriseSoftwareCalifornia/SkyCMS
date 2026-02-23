@@ -36,6 +36,15 @@ using Cosmos.Common.Models;
 using System.Diagnostics;
 using System.Reflection;
 using Sky.Editor.Features.Articles.Save;
+using Sky.Editor.Features.Blogs.GetStream;
+using Sky.Editor.Features.Blogs.UpdateStream;
+using Sky.Editor.Features.Blogs.DeleteStream;
+using Sky.Editor.Features.Templates.Create;
+using Sky.Editor.Features.Templates.Save;
+using Sky.Editor.Features.Templates.Delete;
+using Sky.Editor.Features.Templates.Get;
+using Sky.Editor.Features.Templates.GetList;
+using Sky.Editor.Features.Templates.UpdateMetadata;
 using Sky.Cms.Controllers;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Mvc;
@@ -419,6 +428,42 @@ namespace Sky.Tests
                 .AddSingleton(new SiteSettings())
                 .AddScoped<ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>>(sp => CreateArticleHandler)
                 .AddScoped<ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>>(sp => SaveArticleHandler)
+                // ✅ Register template-related command handlers for vertical slice architecture
+                .AddScoped<ICommandHandler<CreatePageDesignVersionCommand, CommandResult<PageDesignVersion>>>(sp => 
+                    new CreatePageDesignVersionHandler(
+                        Db,
+                        ArticleHtmlService,
+                        Clock,
+                        new LoggerFactory().CreateLogger<CreatePageDesignVersionHandler>()))
+                .AddScoped<ICommandHandler<SavePageDesignVersionCommand, CommandResult<PageDesignVersion>>>(sp =>
+                    new SavePageDesignVersionHandler(
+                        Db,
+                        ArticleHtmlService,
+                        Clock,
+                        new LoggerFactory().CreateLogger<SavePageDesignVersionHandler>()))
+                .AddScoped<ICommandHandler<DeleteTemplateCommand, CommandResult<bool>>>(sp =>
+                    new DeleteTemplateHandler(Db))
+                .AddScoped<ICommandHandler<UpdateTemplateMetadataCommand, CommandResult<Template>>>(sp =>
+                    new UpdateTemplateMetadataHandler(Db, new LoggerFactory().CreateLogger<UpdateTemplateMetadataHandler>()))
+                .AddScoped<IQueryHandler<GetTemplateQuery, CommandResult<GetTemplateQueryResult>>>(sp =>
+                    new GetTemplateQueryHandler(Db, new LoggerFactory().CreateLogger<GetTemplateQueryHandler>()))
+                .AddScoped<IQueryHandler<GetTemplateListQuery, CommandResult<GetTemplateListQueryResult>>>(sp =>
+                    new GetTemplateListQueryHandler(Db, new LoggerFactory().CreateLogger<GetTemplateListQueryHandler>()))
+                .AddScoped<IQueryHandler<GetBlogStreamQuery, CommandResult<GetBlogStreamQueryResult>>>(sp =>
+                    new GetBlogStreamQueryHandler(Db, new LoggerFactory().CreateLogger<GetBlogStreamQueryHandler>()))
+                .AddScoped<ICommandHandler<UpdateBlogStreamCommand, CommandResult<Article>>>(sp =>
+                    new UpdateBlogStreamHandler(
+                        Db,
+                        SlugService,
+                        TitleChangeService,
+                        BlogRenderingService,
+                        Logic,
+                        new LoggerFactory().CreateLogger<UpdateBlogStreamHandler>()))
+                .AddScoped<ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>>(sp =>
+                    new DeleteBlogStreamHandler(
+                        Db,
+                        Logic,
+                        new LoggerFactory().CreateLogger<DeleteBlogStreamHandler>()))
                 .AddScoped<IMediator, Mediator>()
                 .AddHttpClient()  // ✅ ADD THIS - Registers IHttpClientFactory
                 .AddRazorPages()

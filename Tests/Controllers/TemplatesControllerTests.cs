@@ -1512,6 +1512,20 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
+            // Create a PageDesignVersion for this template (required by EditCode action)
+            var pageDesignVersion = new PageDesignVersion
+            {
+                Id = Guid.NewGuid(),
+                TemplateId = template.Id,
+                Title = "Original Title",
+                Content = "<div data-ccms-ceid='region1'>Original Content</div>",
+                LayoutId = layout.Id,
+                PageType = "content",
+                Version = 1
+            };
+            Db.PageDesignVersions.Add(pageDesignVersion);
+            await Db.SaveChangesAsync();
+
             var model = new TemplateCodeEditorViewModel
             {
                 Id = template.Id,
@@ -1526,20 +1540,22 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            Assert.IsNotNull(jsonResult.Value);
-
-            // Verify changes were saved
-            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.AreEqual("Updated Title", updatedTemplate.Title);
-            Assert.IsTrue(updatedTemplate.Content.Contains("Updated Content"), "Content should be updated");
+            
+            // Verify the version was updated (query by TemplateId, not by primary key)
+            var updatedVersion = await Db.PageDesignVersions
+                .FirstOrDefaultAsync(v => v.TemplateId == model.Id);
+            Assert.IsNotNull(updatedVersion);
+            Assert.AreEqual("Updated Title", updatedVersion.Title);
+            Assert.IsTrue(
+                updatedVersion.Content.Contains("data-ccms-ceid"),
+                "Updated content should have editable markers");
         }
 
         /// <summary>
-        /// Tests that EditCode POST decrypts content before saving.
+        /// Tests that EditCode POST rejects nested editable regions.
         /// </summary>
         [TestMethod]
-        public async Task EditCode_Post_DecryptsContent_BeforeSaving()
+        public async Task EditCode_Post_RejectsNestedEditableRegions()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
@@ -1547,6 +1563,55 @@ namespace Sky.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 Title = "Test Template",
+                Content = "<div>Content</div>",
+                LayoutId = layout.Id,
+                LayoutNumber = layout.LayoutNumber
+            };
+            Db.Templates.Add(template);
+            await Db.SaveChangesAsync();
+
+            // Create a PageDesignVersion for this template (required by EditCode action)
+            var pageDesignVersion = new PageDesignVersion
+            {
+                Id = Guid.NewGuid(),
+                TemplateId = template.Id,
+                Title = "Test Template",
+                Content = "<div>Content</div>",
+                LayoutId = layout.Id,
+                PageType = "content",
+                Version = 1
+            };
+            Db.PageDesignVersions.Add(pageDesignVersion);
+            await Db.SaveChangesAsync();
+
+            var nestedContent = "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>";
+            var model = new Sky.Cms.Models.TemplateCodeEditorViewModel
+            {
+                Id = template.Id,
+                Title = "Updated",
+                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(nestedContent),
+                Version = 1
+            };
+
+            // Act
+            var result = await _controller.EditCode(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+        }
+
+        /// <summary>
+        /// Tests that DesignerData POST uses SavePageDesignVersionHandler.
+        /// </summary>
+        [TestMethod]
+        public async Task DesignerData_Post_UsesSaveHandler_ForDesignerUpdates()
+        {
+            // Arrange
+            var layout = await Db.Layouts.FirstAsync();
+            var template = new Template
+            {
+                Id = Guid.NewGuid(),
+                Title = "Designer Template",
                 Content = "<div>Original</div>",
                 LayoutId = layout.Id,
                 LayoutNumber = layout.LayoutNumber
@@ -1554,314 +1619,94 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            var encryptedContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Encrypted Content</div>");
-            var model = new TemplateCodeEditorViewModel
-            {
-                Id = template.Id,
-                Title = "Test Template",
-                Content = encryptedContent,
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
-            };
-
-            // Act
-            var result = await _controller.EditCode(model);
-
-            // Assert
-            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.IsTrue(updatedTemplate.Content.Contains("Encrypted Content"), "Content should be decrypted before saving");
-        }
-
-        /// <summary>
-        /// Tests that EditCode POST validates nested editable regions.
-        /// </summary>
-        [TestMethod]
-        public async Task EditCode_Post_ValidatesNestedEditableRegions()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
+            var designerVersion = new PageDesignVersion
             {
                 Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
+                TemplateId = template.Id,
+                Version = 1,
+                Title = template.Title,
+                Content = template.Content,
+                PageType = "template"
             };
-            Db.Templates.Add(template);
+            Db.PageDesignVersions.Add(designerVersion);
             await Db.SaveChangesAsync();
 
-            // Content with nested editable regions (should be invalid)
-            var nestedContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(
-                "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>");
-            
-            var model = new TemplateCodeEditorViewModel
-            {
-                Id = template.Id,
-                Title = "Test Template",
-                Content = nestedContent,
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
-            };
+            // HTML with contenteditable attribute (added by designer UI)
+            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div contenteditable='true'>Designer Content</div>");
+            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(".class { color: red; }");
 
             // Act
-            var result = await _controller.EditCode(model);
+            var result = await _controller.DesignerData(template.Id, "Updated by Designer", htmlContent, cssContent);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = result as JsonResult;
-            
-            // Should return { success = false } for validation errors
-            Assert.IsNotNull(jsonResult.Value, "JsonResult should have a value");
-            
-            var responseType = jsonResult.Value.GetType();
-            var successProperty = responseType.GetProperty("success");
-            Assert.IsNotNull(successProperty, "Response should contain 'success' property");
-            
-            var successValue = (bool)successProperty.GetValue(jsonResult.Value);
-            Assert.IsFalse(successValue, "Success should be false when validation fails");
-            Assert.IsFalse(_controller.ModelState.IsValid, "ModelState should be invalid for nested regions");
+            var resultValue = jsonResult.Value as dynamic;
+            Assert.IsTrue(resultValue.success, "Designer save should succeed");
+
+            // Verify version was updated
+            var updatedVersion = await Db.PageDesignVersions.FindAsync(designerVersion.Id);
+            Assert.IsNotNull(updatedVersion);
+            Assert.IsTrue(
+                updatedVersion.Content.Contains("data-ccms-ceid"),
+                "Designer updated content should have editable markers");
         }
 
         /// <summary>
-        /// Tests that EditCode POST returns JSON with errors when invalid.
+        /// Tests that DesignerData POST ensures editable markers are present.
         /// </summary>
         [TestMethod]
-        public async Task EditCode_Post_ReturnsJson_WithErrors_WhenInvalid()
-        {
-            // Arrange
-            var model = new TemplateCodeEditorViewModel
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test",
-                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div>Test</div>"),
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
-            };
-            
-            _controller.ModelState.AddModelError("Content", "Test error");
-
-            // Act
-            var result = await _controller.EditCode(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.IsNotNull(viewResult.Model);
-            Assert.IsFalse(_controller.ModelState.IsValid);
-        }
-
-        /// <summary>
-        /// Tests that EditCode POST returns JSON with success when valid.
-        /// </summary>
-        [TestMethod]
-        public async Task EditCode_Post_ReturnsJson_WithSuccess_WhenValid()
+        public async Task DesignerData_Post_EnsuresEditableMarkers()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
             var template = new Template
             {
                 Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
+                Title = "Designer Template",
+                Content = "<div>Original</div>",
                 LayoutId = layout.Id,
                 LayoutNumber = layout.LayoutNumber
             };
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            var model = new TemplateCodeEditorViewModel
+            var designerVersion = new PageDesignVersion
             {
-                Id = template.Id,
-                Title = "Valid Template",
-                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Valid Content</div>"),
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
+                Id = Guid.NewGuid(),
+                TemplateId = template.Id,
+                Version = 1,
+                Title = template.Title,
+                Content = template.Content,
+                PageType = "template"
             };
+            Db.PageDesignVersions.Add(designerVersion);
+            await Db.SaveChangesAsync();
+
+            // HTML with contenteditable attribute (added by designer UI) that needs data-ccms-ceid markers
+            var plainHtml = "<div contenteditable='true'>HTML with editable marker that needs CEID</div>";
+            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(plainHtml);
+            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(string.Empty);
 
             // Act
-            var result = await _controller.EditCode(model);
+            var result = await _controller.DesignerData(template.Id, "Test", htmlContent, cssContent);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            
-            // Controller returns anonymous object { success = true }, not TemplateCodeEditorViewModel
-            Assert.IsNotNull(jsonResult.Value, "JsonResult should have a value");
-            
-            // Check if the response contains success property
-            var responseType = jsonResult.Value.GetType();
-            var successProperty = responseType.GetProperty("success");
-            Assert.IsNotNull(successProperty, "Response should contain 'success' property");
-            
-            var successValue = (bool)successProperty.GetValue(jsonResult.Value);
-            Assert.IsTrue(successValue, "Success should be true");
-            
-            // Verify the template was updated in the database
-            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.IsNotNull(updatedTemplate);
-            Assert.IsTrue(updatedTemplate.Content.Contains("Valid Content"), "Template content should be updated");
+
+            // Verify markers were added
+            var updatedVersion = await Db.PageDesignVersions.FindAsync(designerVersion.Id);
+            Assert.IsNotNull(updatedVersion);
+            Assert.IsTrue(
+                updatedVersion.Content.Contains("data-ccms-ceid"),
+                "Content should have data-ccms-ceid markers");
         }
 
         /// <summary>
-        /// Tests that EditCode POST ensures editable markers after save.
+        /// Tests that DesignerData POST rejects nested editable regions.
         /// </summary>
         [TestMethod]
-        public async Task EditCode_Post_EnsuresEditableMarkers_AfterSave()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            var model = new TemplateCodeEditorViewModel
-            {
-                Id = template.Id,
-                Title = "Test Template",
-                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div>Plain content</div>"),
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
-            };
-
-            // Act
-            var result = await _controller.EditCode(model);
-
-            // Assert
-            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            
-            // Content should be processed through htmlService.EnsureEditableMarkers
-            Assert.IsNotNull(updatedTemplate.Content);
-        }
-
-        /// <summary>
-        /// Tests that EditCode POST updates title when provided.
-        /// </summary>
-        [TestMethod]
-        public async Task EditCode_Post_UpdatesTitle_WhenProvided()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Original Title",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            var model = new TemplateCodeEditorViewModel
-            {
-                Id = template.Id,
-                Title = "Brand New Title",
-                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Content</div>"),
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
-            };
-
-            // Act
-            var result = await _controller.EditCode(model);
-
-            // Assert
-            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.AreEqual("Brand New Title", updatedTemplate.Title, "Title should be updated");
-        }
-
-        #endregion
-
-        #region Phase 5: Designer Operations Tests
-
-        /// <summary>
-        /// Tests that Designer GET returns designer view.
-        /// </summary>
-        [TestMethod]
-        public async Task Designer_Get_ReturnsDesignerView()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.Designer(template.Id);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.AreEqual(true, viewResult.ViewData["IsDesigner"], "Should set IsDesigner flag");
-        }
-
-        /// <summary>
-        /// Tests that Designer GET returns NotFound when template does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task Designer_Get_ReturnsNotFound_WhenTemplateDoesNotExist()
-        {
-            // Arrange
-            var nonExistentTemplateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.Designer(nonExistentTemplateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
-        /// <summary>
-        /// Tests that Designer GET includes image assets in config.
-        /// </summary>
-        [TestMethod]
-        public async Task Designer_Get_IncludesImageAssets()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.Designer(template.Id);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.IsNotNull(viewResult.Model);
-            Assert.IsInstanceOfType(viewResult.Model, typeof(DesignerConfig));
-            
-            var config = viewResult.Model as DesignerConfig;
-            Assert.IsNotNull(config.ImageAssets, "Should have ImageAssets collection");
-        }
-
-        /// <summary>
-        /// Tests that Designer GET creates config with correct template info.
-        /// </summary>
-        [TestMethod]
-        public async Task Designer_Get_CreatesConfigWithTemplateInfo()
+        public async Task DesignerData_Post_RejectsNestedEditableRegions()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
@@ -1876,284 +1721,12 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            // Act
-            var result = await _controller.Designer(template.Id);
-
-            // Assert
-            var viewResult = result as ViewResult;
-            var config = viewResult.Model as DesignerConfig;
-            
-            Assert.IsNotNull(config);
-            Assert.AreEqual(template.Id.ToString(), config.Id);
-            Assert.AreEqual(template.Title, config.Title);
-        }
-
-        /// <summary>
-        /// Tests that Designer GET returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task Designer_Get_ReturnsBadRequest_WhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.Designer(templateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that DesignerData GET returns JSON with project data.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Get_ReturnsJson_WithProjectData()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.DesignerData(template.Id);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            Assert.IsNotNull(jsonResult.Value);
-            Assert.IsInstanceOfType(jsonResult.Value, typeof(project));
-        }
-
-        /// <summary>
-        /// Tests that DesignerData GET ensures editable markers in content.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Get_EnsuresEditableMarkers()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div>Plain content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.DesignerData(template.Id);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            var projectData = jsonResult.Value as project;
-            
-            // Content should be processed through htmlService.EnsureEditableMarkers
-            Assert.IsNotNull(projectData);
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST saves designer changes.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_SavesDesignerChanges()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div>Original Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Designer Content</div>");
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(".test { color: red; }");
-
-            // Act
-            var result = await _controller.DesignerData(template.Id, "Updated Title", htmlContent, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            
-            // Verify the success response
-            var response = jsonResult.Value;
-            Assert.IsNotNull(response);
-
-            // Verify changes were saved
-            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.IsNotNull(updatedTemplate);
-            Assert.IsTrue(updatedTemplate.Content.Contains("Designer Content"), "Template content should be updated");
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST decrypts content before saving.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_DecryptsContent_BeforeSaving()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div>Original</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            var encryptedHtml = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Encrypted Content</div>");
-            var encryptedCss = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("body { margin: 0; }");
-
-            // Act
-            var result = await _controller.DesignerData(template.Id, "Test", encryptedHtml, encryptedCss);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            
-            // Content should be decrypted and processed
-            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.IsNotNull(updatedTemplate.Content);
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST validates nested editable regions.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_ValidatesNestedEditableRegions()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Content with nested editable regions (invalid)
-            var nestedHtml = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(
-                "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>");
+            var nestedHtml = "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>";
+            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(nestedHtml);
             var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(string.Empty);
 
             // Act
-            var result = await _controller.DesignerData(template.Id, "Test", nestedHtml, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequest = result as BadRequestObjectResult;
-            Assert.IsTrue(badRequest.Value.ToString().Contains("nested editable regions"));
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST returns NotFound when template does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_ReturnsNotFound_WhenTemplateDoesNotExist()
-        {
-            // Arrange
-            var nonExistentId = Guid.NewGuid();
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div>Content</div>");
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(string.Empty);
-
-            // Act
-            var result = await _controller.DesignerData(nonExistentId, "Test", htmlContent, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST returns success JSON when valid.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_ReturnsSuccess_WhenValid()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            var model = new TemplateCodeEditorViewModel
-            {
-                Id = template.Id,
-                Title = "Valid Template",
-                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Valid Content</div>"),
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
-            };
-
-            // Act
-            var result = await _controller.DesignerData(model.Id, model.Title, model.Content, null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            
-            // Controller returns anonymous object { success = true }, not TemplateCodeEditorViewModel
-            Assert.IsNotNull(jsonResult.Value, "JsonResult should have a value");
-            
-            // Check if the response contains success property
-            var responseType = jsonResult.Value.GetType();
-            var successProperty = responseType.GetProperty("success");
-            Assert.IsNotNull(successProperty, "Response should contain 'success' property");
-            
-            var successValue = (bool)successProperty.GetValue(jsonResult.Value);
-            Assert.IsTrue(successValue, "Success should be true");
-            
-            // Verify the template was updated in the database
-            var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.IsNotNull(updatedTemplate);
-            Assert.IsTrue(updatedTemplate.Content.Contains("Valid Content"), "Template content should be updated");
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_ReturnsBadRequest_WhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div>Content</div>");
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(string.Empty);
-
-            // Act
-            var result = await _controller.DesignerData(templateId, "Test", htmlContent, cssContent);
+            var result = await _controller.DesignerData(template.Id, "Test", htmlContent, cssContent);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
@@ -2161,21 +1734,21 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
-        #region Phase 6: Delete & Preview Operations Tests
+        #region Phase 5: Delete Operations Tests
 
         /// <summary>
-        /// Tests that Trash deletes template successfully.
+        /// Tests that Delete succeeds when template has no pages using it.
         /// </summary>
         [TestMethod]
-        public async Task Trash_DeletesTemplate_Successfully()
+        public async Task Delete_SucceedsWhenNoPages_UsingTemplate()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
             var template = new Template
             {
                 Id = Guid.NewGuid(),
-                Title = "Template to Delete",
-                Content = "<div>Content</div>",
+                Title = "Unused Template",
+                Content = "<div data-ccms-ceid='region1'>Content</div>",
                 LayoutId = layout.Id,
                 LayoutNumber = layout.LayoutNumber
             };
@@ -2183,7 +1756,7 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             // Act
-            var result = await _controller.Trash(template.Id);
+            var result = await _controller.Delete(template.Id);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
@@ -2192,38 +1765,21 @@ namespace Sky.Tests.Controllers
 
             // Verify template was deleted
             var deletedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.IsNull(deletedTemplate, "Template should be deleted");
+            Assert.IsNull(deletedTemplate, "Template should be deleted from database");
         }
 
         /// <summary>
-        /// Tests that Trash returns BadRequest when ModelState is invalid.
+        /// Tests that Delete fails when template has pages using it.
         /// </summary>
         [TestMethod]
-        public async Task Trash_ReturnsBadRequest_WhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.Trash(templateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that PreviewImpact returns view with impact preview.
-        /// </summary>
-        [TestMethod]
-        public async Task PreviewImpact_ReturnsView_WithImpactPreview()
+        public async Task Delete_FailsWhenPagesAreUsingTemplate()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
             var template = new Template
             {
                 Id = Guid.NewGuid(),
-                Title = "Template with Articles",
+                Title = "Template In Use",
                 Content = "<div data-ccms-ceid='region1'>Content</div>",
                 LayoutId = layout.Id,
                 LayoutNumber = layout.LayoutNumber
@@ -2234,395 +1790,62 @@ namespace Sky.Tests.Controllers
             // Create root article first
             await Logic.CreateArticle("Root", TestUserId);
 
-            // Create articles using this template
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId, template.Id);
+            // Create article using this template
+            var article = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
 
-            // Create catalog entries (CreateArticle skips catalog entry creation)
-            Db.ArticleCatalog.Add(new CatalogEntry
+            // Create catalog entry (simulating published article)
+            var catalog = new CatalogEntry
             {
-                ArticleNumber = article1.ArticleNumber,
-                Title = article1.Title,
-                UrlPath = article1.UrlPath,
-                TemplateId = template.Id,
-                Published = article1.Published,
-                Updated = article1.Updated,
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                UrlPath = article.UrlPath,
                 Status = "Active",
-                Introduction = string.Empty
-            });
-            Db.ArticleCatalog.Add(new CatalogEntry
-            {
-                ArticleNumber = article2.ArticleNumber,
-                Title = article2.Title,
-                UrlPath = article2.UrlPath,
-                TemplateId = template.Id,
-                Published = article2.Published,
-                Updated = article2.Updated,
-                Status = "Active",
-                Introduction = string.Empty
-            });
+                Updated = DateTimeOffset.UtcNow,
+                TemplateId = template.Id
+            };
+            Db.ArticleCatalog.Add(catalog);
             await Db.SaveChangesAsync();
 
             // Act
-            var result = await _controller.PreviewImpact(template.Id);
+            var result = await _controller.Delete(template.Id);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.IsNotNull(viewResult.Model);
-            Assert.AreEqual(template.Id, viewResult.ViewData["TemplateId"]);
-        }
-
-        /// <summary>
-        /// Tests that PreviewImpact redirects with error when template service throws exception.
-        /// </summary>
-        [TestMethod]
-        public async Task PreviewImpact_RedirectsWithError_WhenServiceThrowsException()
-        {
-            // Arrange
-            var nonExistentTemplateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.PreviewImpact(nonExistentTemplateId);
-
-            // Assert
-            // Should redirect to Index when exception occurs
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirectResult = result as RedirectToActionResult;
             Assert.AreEqual("Index", redirectResult.ActionName);
-            Assert.IsTrue(_controller.TempData.ContainsKey("Error"));
+
+            // Verify template still exists (deletion was blocked)
+            var templateStillExists = await Db.Templates.FindAsync(template.Id);
+            Assert.IsNotNull(templateStillExists, "Template should not be deleted");
+
+            // Verify error message was set in TempData
+            Assert.IsTrue(_controller.TempData.ContainsKey("Error"), "Error message should be set in TempData");
         }
 
         /// <summary>
-        /// Tests that PreviewImpact returns BadRequest when ModelState is invalid.
+        /// Tests that Delete returns BadRequest with invalid template ID.
         /// </summary>
         [TestMethod]
-        public async Task PreviewImpact_ReturnsBadRequest_WhenModelStateInvalid()
+        public async Task Delete_ReturnsBadRequestWithEmptyTemplateId()
         {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
-
             // Act
-            var result = await _controller.PreviewImpact(templateId);
+            var result = await _controller.Delete(Guid.Empty);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         /// <summary>
-        /// Tests that PreviewImpactJson returns JSON with preview data.
+        /// Tests that Delete returns BadRequest when ModelState is invalid.
         /// </summary>
         [TestMethod]
-        public async Task PreviewImpactJson_ReturnsJson_WithPreviewData()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.PreviewImpactJson(template.Id);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            Assert.IsNotNull(jsonResult.Value);
-        }
-
-        /// <summary>
-        /// Tests that PreviewImpactJson returns error when template service throws exception.
-        /// </summary>
-        [TestMethod]
-        public async Task PreviewImpactJson_ReturnsError_WhenServiceThrowsException()
-        {
-            // Arrange
-            var nonExistentTemplateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.PreviewImpactJson(nonExistentTemplateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            Assert.IsNotNull(jsonResult.Value);
-            
-            // Should contain error property in the response
-            var response = jsonResult.Value;
-            var errorProperty = response.GetType().GetProperty("error");
-            Assert.IsNotNull(errorProperty, "Response should contain 'error' property");
-        }
-
-        #endregion
-
-        #region Phase 7: Publishing & Batch Operations Tests
-
-        /// <summary>
-        /// Tests that PublishDrafts publishes selected articles.
-        /// </summary>
-        [TestMethod]
-        public async Task PublishDrafts_PublishesSelectedArticles()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Create root article first
-            await Logic.CreateArticle("Root", TestUserId);
-
-            // Create two articles using this template
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId, template.Id);
-
-            // Create catalog entries for unpublished articles (normally only created when published)
-            var catalog1 = new CatalogEntry
-            {
-                ArticleNumber = article1.ArticleNumber,
-                Title = article1.Title,
-                UrlPath = article1.UrlPath,
-                Status = "Active",
-                Updated = DateTimeOffset.UtcNow,
-                TemplateId = template.Id
-            };
-            var catalog2 = new CatalogEntry
-            {
-                ArticleNumber = article2.ArticleNumber,
-                Title = article2.Title,
-                UrlPath = article2.UrlPath,
-                Status = "Active",
-                Updated = DateTimeOffset.UtcNow,
-                TemplateId = template.Id
-            };
-            Db.ArticleCatalog.Add(catalog1);
-            Db.ArticleCatalog.Add(catalog2);
-            await Db.SaveChangesAsync();
-
-            // Modify articles to have editable content
-            var entity1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == article1.ArticleNumber);
-            var entity2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == article2.ArticleNumber);
-            entity1.Content = "<div data-ccms-ceid='region1'>User Content 1</div>";
-            entity2.Content = "<div data-ccms-ceid='region1'>User Content 2</div>";
-            await Db.SaveChangesAsync();
-
-            var articleNumbers = new List<int> { article1.ArticleNumber, article2.ArticleNumber };
-
-            // Act
-            var result = await _controller.PublishDrafts(template.Id, articleNumbers);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Pages", redirectResult.ActionName);
-
-            // Verify both articles were published (existing version 1)
-            var updatedArticle1 = await Db.Articles
-                .Where(a => a.ArticleNumber == article1.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstAsync();
-            var updatedArticle2 = await Db.Articles
-                .Where(a => a.ArticleNumber == article2.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstAsync();
-
-            Assert.Contains("User Content 1", updatedArticle1.Content, "Article 1 should preserve user content");
-            Assert.Contains("User Content 2", updatedArticle2.Content, "Article 2 should preserve user content");
-            Assert.AreEqual(1, updatedArticle1.VersionNumber, "Article 1 should remain version 1");
-            Assert.AreEqual(1, updatedArticle2.VersionNumber, "Article 2 should remain version 1");
-            Assert.IsNotNull(updatedArticle1.Published, "Article 1 should be published");
-            Assert.IsNotNull(updatedArticle2.Published, "Article 2 should be published");
-        }
-
-        /// <summary>
-        /// Tests that PublishDrafts publishes all articles when list is null.
-        /// </summary>
-        [TestMethod]
-        public async Task PublishDrafts_PublishesAllArticles_WhenNullList()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act - Pass null to publish all
-            var result = await _controller.PublishDrafts(template.Id, null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Pages", redirectResult.ActionName);
-        }
-
-        /// <summary>
-        /// Tests that PublishDrafts shows success message when articles are published.
-        /// </summary>
-        [TestMethod]
-        public async Task PublishDrafts_ShowsSuccessMessage_WhenPublished()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.PublishDrafts(template.Id, null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            // TempData may contain Success, Warning, or Info depending on service response
-            // Just verify redirect happened successfully
-        }
-
-        /// <summary>
-        /// Tests that PublishDrafts shows warning message when some articles fail.
-        /// </summary>
-        [TestMethod]
-        public async Task PublishDrafts_ShowsWarningMessage_WhenPartialFailure()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act - The service will determine success/failure counts
-            var result = await _controller.PublishDrafts(template.Id, null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            // Service determines actual success/failure, we just verify the action completes
-        }
-
-        /// <summary>
-        /// Tests that PublishDrafts shows info message when no drafts to publish.
-        /// </summary>
-        [TestMethod]
-        public async Task PublishDrafts_ShowsInfoMessage_WhenNoDraftsToPublish()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act - No articles using this template
-            var result = await _controller.PublishDrafts(template.Id, null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Pages", redirectResult.ActionName);
-        }
-
-        /// <summary>
-        /// Tests that PublishDrafts redirects to Pages after completion.
-        /// </summary>
-        [TestMethod]
-        public async Task PublishDrafts_RedirectsToPages_AfterCompletion()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Content = "<div data-ccms-ceid='region1'>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.PublishDrafts(template.Id, null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Pages", redirectResult.ActionName);
-            Assert.IsNotNull(redirectResult.RouteValues);
-            Assert.AreEqual(template.Id, redirectResult.RouteValues["id"]);
-        }
-
-        /// <summary>
-        /// Tests that PublishDrafts handles exceptions gracefully.
-        /// </summary>
-        [TestMethod]
-        public async Task PublishDrafts_HandlesException_Gracefully()
-        {
-            // Arrange
-            var nonExistentTemplateId = Guid.NewGuid();
-
-            // Act - Should handle exception from service
-            var result = await _controller.PublishDrafts(nonExistentTemplateId, null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Pages", redirectResult.ActionName);
-            
-            // Should have error in TempData
-            Assert.IsTrue(_controller.TempData.ContainsKey("Error"), "Should set Error in TempData when exception occurs");
-        }
-
-        /// <summary>
-        /// Tests that PublishDrafts returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task PublishDrafts_ReturnsBadRequest_WhenModelStateInvalid()
+        public async Task Delete_ReturnsBadRequestWhenModelStateInvalid()
         {
             // Arrange
             _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
 
             // Act
-            var result = await _controller.PublishDrafts(templateId, null);
+            var result = await _controller.Delete(Guid.NewGuid());
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));

@@ -1,4 +1,4 @@
-// <copyright file="TemplatesController.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="TemplatesController.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -31,6 +31,11 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Templates;
+    using Sky.Editor.Features.Templates.Save;
+    using Sky.Editor.Features.Templates.Create;
+    using Sky.Editor.Features.Templates.Delete;
+    using Sky.Editor.Features.Templates.Get;
+    using Sky.Editor.Features.Templates.UpdateMetadata;
 
     /// <summary>
     /// Templates controller.
@@ -45,6 +50,7 @@ namespace Sky.Cms.Controllers
         private readonly IStorageContext storageContext;
         private readonly IArticleHtmlService htmlService;
         private readonly ITemplateService templateServices;
+        private readonly IMediator mediator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TemplatesController"/> class.
@@ -79,6 +85,7 @@ namespace Sky.Cms.Controllers
             this.storageContext = storageContext;
             this.htmlService = htmlService;
             this.templateServices = templateServices;
+            this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
         /// <summary>
@@ -333,8 +340,11 @@ namespace Sky.Cms.Controllers
         {
             var defaultLayout = await GetCurrentLayoutAsync();
 
+            // Create a new template entity with initial content.
+            // We use an explicit Guid.NewGuid() here for clarity - this will be the template's primary key.
             var entity = new Template
             {
+                Id = Guid.NewGuid(),  // Explicit ID assignment ensures we have it before any DB operations
                 Title = "New Template " + await dbContext.Templates.CountAsync(),
                 Description = "<p>New template, please add descriptive and helpful information here.</p>",
                 Content = "<p>" + LoremIpsum.SubSection1 + "</p>",
@@ -343,27 +353,147 @@ namespace Sky.Cms.Controllers
                 CommunityLayoutId = defaultLayout?.CommunityLayoutId
             };
 
-            entity.Content = htmlService.EnsureEditableMarkers(entity.Content);
+            // NOTE: Cosmos DB Limitation
+            // Template and PageDesignVersion use different partition keys (Template.Id vs PageDesignVersion.Id)
+            // Cosmos DB does NOT support cross-partition transactions.
+            // For relational databases (SQL Server, MySQL, SQLite), this transaction provides full ACID guarantees.
+            // For Cosmos DB, atomicity is NOT guaranteed - if version creation fails, Template remains in DB.
+            // Consider either:
+            // 1. Changing Cosmos partition keys to a common value (e.g., TenantId)
+            // 2. Removing transactions and implementing cleanup/idempotency
+            // 3. Detecting database type and using conditional logic
 
-            // Create the first version of the template.
-            var version = new PageDesignVersion()
+            if (!dbContext.Database.IsCosmos())
             {
-                TemplateId = entity.Id,
-                Version = 1,
-                Content = entity.Content,
-                Description = entity.Description,
-                Title = entity.Title,
-                CommunityLayoutId = entity.CommunityLayoutId,
-                Id = Guid.NewGuid(),
-                LayoutId = entity.LayoutId,
-                Published = null,
-                Modified = DateTimeOffset.UtcNow,
+                // Relational databases: Use transaction
+                using (var transaction = await dbContext.Database.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        dbContext.Templates.Add(entity);
+                        await dbContext.SaveChangesAsync();
+
+                        var createVersionCommand = new CreatePageDesignVersionCommand
+                        {
+                            TemplateId = entity.Id,  // Now valid because Template was saved above
+                            Title = entity.Title,
+                            Description = entity.Description,
+                            Content = entity.Content,
+                            PageType = "template",
+                            LayoutId = entity.LayoutId,
+                            CommunityLayoutId = entity.CommunityLayoutId
+                        };
+
+                        var versionResult = await mediator.SendAsync(createVersionCommand);
+
+                        // Step 3: Validate that version creation succeeded
+                        // If the handler returns failure, we rollback the transaction
+                        // This ensures we never have a Template without at least one PageDesignVersion
+                        if (!versionResult.IsSuccess)
+                        {
+                            // Rollback both the Template creation and any partial version creation
+                            await transaction.RollbackAsync();
+                            
+                            // Return user-friendly error message
+                            ModelState.AddModelError("", 
+                                $"Failed to create template version: {versionResult.ErrorMessage}");
+                            return BadRequest(ModelState);
+                        }
+
+                        // Step 4: Both operations succeeded, commit the transaction
+                        // This makes both the Template and PageDesignVersion permanent in the database
+                        await transaction.CommitAsync();
+
+                        // Success: Redirect to EditCode page to allow user to edit the template
+                        return RedirectToAction("EditCode", "Templates", new { entity.Id });
+                    }
+                    catch (Exception ex)
+                    {
+                        // If any unexpected exception occurs, rollback the transaction
+                        // This could be a database error, timeout, or any other issue
+                        await transaction.RollbackAsync();
+                        
+                        // Log the error and return to user
+                        ModelState.AddModelError("", 
+                            $"Error creating template: {ex.Message}");
+                        return BadRequest(ModelState);
+                    }
+                }
+            }
+            else
+            {
+                // Cosmos DB: No cross-partition transaction support
+                try
+                {
+                    dbContext.Templates.Add(entity);
+                    await dbContext.SaveChangesAsync();
+
+                    var createVersionCommand = new CreatePageDesignVersionCommand
+                    {
+                        TemplateId = entity.Id,  // Now valid because Template was saved above
+                        Title = entity.Title,
+                        Description = entity.Description,
+                        Content = entity.Content,
+                        PageType = "template",
+                        LayoutId = entity.LayoutId,
+                        CommunityLayoutId = entity.CommunityLayoutId
+                    };
+
+                    var versionResult = await mediator.SendAsync(createVersionCommand);
+
+                    if (!versionResult.IsSuccess)
+                    {
+                        // ⚠️ WARNING: Template exists but version creation failed
+                        // This is a known limitation of Cosmos DB's current partition key design
+                        ModelState.AddModelError("", $"Failed to create template version: {versionResult.ErrorMessage}");
+                        return BadRequest(ModelState);
+                    }
+
+                    return RedirectToAction("EditCode", "Templates", new { entity.Id });
+                }
+                catch (Exception ex)
+                {
+                    // ⚠️ WARNING: Partial data may exist in Cosmos DB
+                    ModelState.AddModelError("", $"Error creating template: {ex.Message}");
+                    return BadRequest(ModelState);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deletes a template and its associated page design versions.
+        /// </summary>
+        /// <param name="id">Template ID.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id == Guid.Empty)
+            {
+                return BadRequest("Invalid template ID");
+            }
+
+            var userId = Guid.Parse(await GetUserId());
+            var command = new DeleteTemplateCommand
+            {
+                TemplateId = id,
+                UserId = userId
             };
 
-            dbContext.Templates.Add(entity);
-            dbContext.PageDesignVersions.Add(version);
-            await dbContext.SaveChangesAsync();
-            return RedirectToAction("EditCode", "Templates", new { entity.Id });
+            var result = await mediator.SendAsync(command);
+
+            if (!result.IsSuccess)
+            {
+                TempData["Error"] = result.ErrorMessage;
+                return RedirectToAction("Index");
+            }
+
+            TempData["Success"] = "Template deleted successfully";
+            return RedirectToAction("Index");
         }
 
         /// <summary>
@@ -378,7 +508,15 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == id);
+            var query = new GetTemplateQuery { TemplateId = id };
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data?.Template == null)
+            {
+                return NotFound();
+            }
+
+            var template = result.Data.Template;
             ViewData["Title"] = template.Title;
 
             var model = new TemplateEditViewModel()
@@ -406,10 +544,20 @@ namespace Sky.Cms.Controllers
                 return View(model);
             }
 
-            var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == model.Id);
-            template.Title = model.Title;
-            template.Description = model.Description;
-            await dbContext.SaveChangesAsync();
+            var command = new UpdateTemplateMetadataCommand
+            {
+                TemplateId = model.Id,
+                Title = model.Title,
+                Description = model.Description
+            };
+
+            var result = await mediator.SendAsync(command);
+
+            if (!result.IsSuccess)
+            {
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to update template.");
+                return View(model);
+            }
 
             return RedirectToAction("Index");
         }
@@ -426,7 +574,15 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var entity = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == id);
+            var query = new GetTemplateQuery { TemplateId = id };
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data?.Template == null)
+            {
+                return NotFound();
+            }
+
+            var entity = result.Data.Template;
 
             var model = new TemplateCodeEditorViewModel
             {
@@ -474,20 +630,51 @@ namespace Sky.Cms.Controllers
             if (!NestedEditableRegionValidation.Validate(model.Content))
             {
                 ModelState.AddModelError("Content", "Cannot have nested editable regions.");
+                return Json(BuildSaveResultModel());
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                var entity = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == model.Id);
+                // Get the latest version of this template
+                var latestVersion = await dbContext.PageDesignVersions
+                    .Where(v => v.TemplateId == model.Id)
+                    .OrderByDescending(v => v.Version)
+                    .FirstOrDefaultAsync();
 
-                entity.Title = model.Title;
+                if (latestVersion == null)
+                {
+                    ModelState.AddModelError("Content", "Template version not found.");
+                    return Json(BuildSaveResultModel());
+                }
 
-                entity.Content = htmlService.EnsureEditableMarkers(model.Content);
+                // Use SavePageDesignVersionHandler to save the changes
+                // This ensures editable markers are properly added and content is validated
+                var saveCommand = new SavePageDesignVersionCommand
+                {
+                    Id = latestVersion.Id,
+                    Title = model.Title,
+                    Description = latestVersion.Description,
+                    Content = model.Content,
+                    PageType = latestVersion.PageType,
+                    LayoutId = latestVersion.LayoutId,
+                    CommunityLayoutId = latestVersion.CommunityLayoutId
+                };
 
-                await dbContext.SaveChangesAsync();
+                var result = await mediator.SendAsync(saveCommand);
+
+                if (!result.IsSuccess)
+                {
+                    ModelState.AddModelError("Content", result.ErrorMessage ?? "Failed to save template.");
+                    return Json(BuildSaveResultModel());
+                }
+
+                return Json(BuildSaveResultModel());
             }
-
-            return Json(BuildSaveResultModel());
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("Content", $"An error occurred while saving: {ex.Message}");
+                return Json(BuildSaveResultModel());
+            }
         }
 
         /// <summary>
@@ -505,11 +692,15 @@ namespace Sky.Cms.Controllers
             // Loads GrapeJS.
             ViewData["IsDesigner"] = true;
 
-            var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == id);
-            if (template == null)
+            var query = new GetTemplateQuery { TemplateId = id };
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data?.Template == null)
             {
                 return NotFound();
             }
+
+            var template = result.Data.Template;
 
             var defaultLayout = await GetCurrentLayoutAsync();
             var config = new DesignerConfig(defaultLayout, id.ToString(), template.Title);
@@ -535,7 +726,15 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var entity = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == id);
+            var query = new GetTemplateQuery { TemplateId = id };
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data?.Template == null)
+            {
+                return NotFound();
+            }
+
+            var entity = result.Data.Template;
 
             var htmlContent = htmlService.EnsureEditableMarkers(entity.Content);
 
@@ -572,49 +771,63 @@ namespace Sky.Cms.Controllers
                 return BadRequest("Cannot have nested editable regions.");
             }
 
-            var entity = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == model.Id);
-
-            if (entity == null)
+            try
             {
-                return NotFound();
+                var entity = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == model.Id);
+
+                if (entity == null)
+                {
+                    return NotFound();
+                }
+
+                // Get the latest version of this template
+                var latestVersion = await dbContext.PageDesignVersions
+                    .Where(v => v.TemplateId == model.Id)
+                    .OrderByDescending(v => v.Version)
+                    .FirstOrDefaultAsync();
+
+                if (latestVersion == null)
+                {
+                    return BadRequest("Template version not found.");
+                }
+
+                // Assemble the designer output
+                var designerUtils = new DesignerUtilities();
+                var assembledContent = designerUtils.AssembleDesignerOutput(model);
+
+                // Determine the title to use
+                var finalTitle = string.IsNullOrEmpty(model.Title)
+                    ? (string.IsNullOrEmpty(entity.Title) ? $"Template {await dbContext.Templates.CountAsync()}" : entity.Title)
+                    : model.Title;
+
+                // Use SavePageDesignVersionHandler to save the changes
+                // This ensures editable markers are properly added and content is validated
+                var saveCommand = new SavePageDesignVersionCommand
+                {
+                    Id = latestVersion.Id,
+                    Title = finalTitle,
+                    Description = latestVersion.Description,
+                    Content = assembledContent,
+                    PageType = latestVersion.PageType,
+                    LayoutId = latestVersion.LayoutId,
+                    CommunityLayoutId = latestVersion.CommunityLayoutId
+                };
+
+                var result = await mediator.SendAsync(saveCommand);
+
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(new { error = result.ErrorMessage ?? "Failed to save template." });
+                }
+
+                return Json(new { success = true });
             }
-
-            model.HtmlContent = htmlService.EnsureEditableMarkers(model.HtmlContent);
-
-            if (string.IsNullOrEmpty(model.Title))
+            catch (Exception ex)
             {
-                var c = await dbContext.Templates.CountAsync();
-                entity.Title = string.IsNullOrEmpty(entity.Title) ? $"Template {c}" : entity.Title;
+                return BadRequest(new { error = $"An error occurred while saving: {ex.Message}" });
             }
-
-            var designerUtils = new DesignerUtilities();
-            entity.Content = designerUtils.AssembleDesignerOutput(model);
-
-            await dbContext.SaveChangesAsync();
-
-            return Json(new { success = true });
         }
 
-        /// <summary>
-        /// Preview a template.
-        /// </summary>
-        /// <param name="id">Template ID.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<IActionResult> Trash(Guid id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var entity = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == id);
-
-            dbContext.Templates.Remove(entity);
-
-            await dbContext.SaveChangesAsync();
-
-            return RedirectToAction("Index");
-        }
 
         /// <summary>
         /// Updates a page using the latest template version.
