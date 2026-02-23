@@ -807,6 +807,7 @@ function ccms___replaceImage(element) {
     element.dataset.preservedTitle = titleText;
 
     // Clear and reinitialize
+    ccms___destroyPondsInElement(element);
     while (element.hasChildNodes()) {
         element.removeChild(element.firstChild);
     }
@@ -960,66 +961,72 @@ function ccms___initializePond(element) {
         console.log(`Upload complete: ${file.filename}`);
         const id = pond.editorId;
 
-        // Clean up the FilePond widget
-        ccms___removePond(pond.inputElement.id);
-
-        // Remove all children from container
-        while (element.hasChildNodes()) {
-            element.removeChild(element.firstChild);
-        }
-
-        // Create and insert the uploaded image
-        const image = document.createElement('img');
-        image.id = `img-${id}`;
-        // Server returns the path with quotes sometimes, strip them
-        image.src = file.serverId.replace(/['"]+/g, '');
-        image.classList.add('ccms-img-widget-img');
-
-        // Restore or set default alt text
-        const preservedAlt = element.dataset.preservedAlt;
-        const preservedTitle = element.dataset.preservedTitle;
-
-        image.alt = preservedAlt || file.filename.replace(/\.[^/.]+$/, ''); // Use filename without extension as default
-
-        if (preservedTitle) {
-            image.setAttribute('title', preservedTitle);
-        }
-
-        // Clean up preserved data
-        delete element.dataset.preservedAlt;
-        delete element.dataset.preservedTitle;
-
-        element.appendChild(image);
-
-        // Trigger custom event for upload
-        window.CCMSImageWidgetEvents.trigger('imageChanged', {
-            type: 'uploaded',
-            id,
-            element,
-            imageSrc: image.src
+        // Tear down FilePond first, then defer DOM replacement to the next frame
+        // so FilePond can finish restore/cleanup safely.
+        ccms___destroyPondsInElement(element, {
+            cleanupOrphanRoots: false,
+            inputs: [pond.inputElement]
         });
 
-        // Mark save as complete
-        if (typeof parent !== 'undefined') {
-            parent.saveInProgress = false;
-        }
+        requestAnimationFrame(() => {
+            // Remove all children from container
+            while (element.hasChildNodes()) {
+                element.removeChild(element.firstChild);
+            }
 
-        // Re-setup the widget for future interactions
-        ccms___setupImageWidget(element);
+            // Create and insert the uploaded image
+            const image = document.createElement('img');
+            image.id = `img-${id}`;
+            // Server returns the path with quotes sometimes, strip them
+            image.src = file.serverId.replace(/['"]+/g, '');
+            image.classList.add('ccms-img-widget-img');
 
-        // Show alt text editor for new uploads
-        if (CCMS_IMAGE_WIDGET_CONFIG.enableAltTextEditor && !preservedAlt) {
-            setTimeout(() => {
-                ccms___showAltTextEditor(image, element);
-            }, 500);
-        }
+            // Restore or set default alt text
+            const preservedAlt = element.dataset.preservedAlt;
+            const preservedTitle = element.dataset.preservedTitle;
 
-        // Save image widget inner html.
-        const editorId = element.getAttribute('data-ccms-ceid');
-        const html = element.innerHTML;
-        if (typeof parent !== 'undefined' && typeof parent.saveEditorRegion !== 'undefined') {
-            parent.saveEditorRegion(html, editorId);
-        }
+            image.alt = preservedAlt || file.filename.replace(/\.[^/.]+$/, ''); // Use filename without extension as default
+
+            if (preservedTitle) {
+                image.setAttribute('title', preservedTitle);
+            }
+
+            // Clean up preserved data
+            delete element.dataset.preservedAlt;
+            delete element.dataset.preservedTitle;
+
+            element.appendChild(image);
+
+            // Trigger custom event for upload
+            window.CCMSImageWidgetEvents.trigger('imageChanged', {
+                type: 'uploaded',
+                id,
+                element,
+                imageSrc: image.src
+            });
+
+            // Mark save as complete
+            if (typeof parent !== 'undefined') {
+                parent.saveInProgress = false;
+            }
+
+            // Re-setup the widget for future interactions
+            ccms___setupImageWidget(element);
+
+            // Show alt text editor for new uploads
+            if (CCMS_IMAGE_WIDGET_CONFIG.enableAltTextEditor && !preservedAlt) {
+                setTimeout(() => {
+                    ccms___showAltTextEditor(image, element);
+                }, 500);
+            }
+
+            // Save image widget inner html.
+            const editorId = element.getAttribute('data-ccms-ceid');
+            const html = element.innerHTML;
+            if (typeof parent !== 'undefined' && typeof parent.saveEditorRegion !== 'undefined') {
+                parent.saveEditorRegion(html, editorId);
+            }
+        });
     });
 
     // ========================================================================
@@ -1039,21 +1046,52 @@ function ccms___initializePond(element) {
 }
 
 /**
- * Destroys a FilePond instance and cleans up the input element.
- * @param {string} inputId - The ID of the file input element used by FilePond
+ * Destroys all FilePond instances found within a container before DOM mutations.
+ * @param {HTMLElement} container - Container that may include one or more FilePond inputs
+ * @param {{ cleanupOrphanRoots?: boolean, inputs?: Iterable<Element> }} options - Optional teardown behavior overrides
  */
-function ccms___removePond(inputId) {
-    const element = document.getElementById(inputId);
-    if (!element) {
-        console.warn(`Cannot remove pond: input element ${inputId} not found`);
+function ccms___destroyPondsInElement(container, options = {}) {
+    if (!container || typeof FilePond === 'undefined') {
         return;
     }
 
-    const pond = FilePond.find(element);
-    if (pond) {
-        pond.destroy();
+    const settings = {
+        cleanupOrphanRoots: true,
+        inputs: null,
+        ...options
+    };
+
+    const teardownTargets = settings.inputs
+        ? Array.from(settings.inputs)
+        : Array.from(container.querySelectorAll('input[type="file"], .filepond'));
+
+    teardownTargets.forEach(input => {
+        if (!input) {
+            return;
+        }
+
+        const pond = FilePond.find(input);
+        if (pond) {
+            try {
+                pond.destroy();
+            } catch (error) {
+                console.warn('Failed to destroy FilePond instance safely:', error);
+            }
+        }
+    });
+
+    if (settings.cleanupOrphanRoots) {
+        const orphanRoots = container.querySelectorAll('.filepond--root');
+        orphanRoots.forEach(root => {
+            if (root.parentNode) {
+                root.parentNode.removeChild(root);
+            }
+        });
     }
-    element.remove();
+}
+
+if (typeof window !== 'undefined') {
+    window.ccms___destroyPondsInElement = ccms___destroyPondsInElement;
 }
 
 // ============================================================================
@@ -1078,9 +1116,8 @@ function ccms___setupImageWidget(element) {
         placeHolder.remove();
     }
 
-    // Clean up any existing FilePond instances
-    const existingPonds = element.querySelectorAll('.filepond--root');
-    existingPonds.forEach(pond => pond.remove());
+    // Clean up any existing FilePond instances before mutating the widget DOM
+    ccms___destroyPondsInElement(element);
 
     let id = element.getAttribute('data-ccms-ceid');
 
@@ -1109,6 +1146,7 @@ function ccms___setupImageWidget(element) {
     } else {
         // No image - set up upload interface
         // Clear any existing content first
+        ccms___destroyPondsInElement(element);
         while (element.hasChildNodes()) {
             element.removeChild(element.firstChild);
         }

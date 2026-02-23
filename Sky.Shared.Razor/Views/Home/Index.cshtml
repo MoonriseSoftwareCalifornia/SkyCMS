@@ -17,7 +17,7 @@
     <meta name="cwps-meta-path-updated" content="@Model.Updated" />
     <meta name="cwps-meta-author-info" content="@Model.AuthorInfo" />
     <meta name="cwps-meta-user-is-authenticated" content="@User.Identity.IsAuthenticated.ToString().ToLower()" />
-    @if (Model.ArticleType == ArticleType.BlogStream || Model.ArticleType == ArticleType.BlogPost)
+    @if (Model.ArticleType == ArticleType.BlogStream)
     {
         <link rel="stylesheet" href="~/css/sky-blog.css" />
     }
@@ -27,9 +27,9 @@
 </head>
 <body>
     @Html.Raw(Model.Layout.HtmlHeader)
-    @if (Model.ArticleType == Cosmos.Cms.Common.ArticleType.BlogPost)
+    @if (Model.ArticleType == Cosmos.Cms.Common.ArticleType.BlogStream)
     {
-        @Html.Partial("_BlogPostPartial", Model)
+        @Html.Partial("_BlogStreamPartial", Model)
     }
     else
     {
