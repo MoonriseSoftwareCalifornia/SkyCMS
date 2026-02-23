@@ -86,6 +86,25 @@ namespace Sky.Tests.Services.Html
             Assert.Contains(existingId, result);
         }
 
+        /// <summary>
+        /// Tests that contenteditable and data-ccms-new are removed after marking.
+        /// </summary>
+        [TestMethod]
+        public void EnsureEditableMarkers_AfterMarking_RemovesTemporaryAttributes()
+        {
+            // Arrange
+            var html = "<div contenteditable='true' data-ccms-new='true'>Content</div>";
+
+            // Act
+            var result = articleHtmlService.EnsureEditableMarkers(html);
+
+            // Assert
+            Assert.IsFalse(result.Contains("contenteditable"), "contenteditable should be removed after marking");
+            Assert.IsFalse(result.Contains("data-ccms-new"), "data-ccms-new should be removed after marking");
+            Assert.Contains("data-ccms-ceid=", result, "data-ccms-ceid should be added");
+            Assert.Contains("data-ccms-index=", result, "data-ccms-index should be added");
+        }
+
         #endregion
 
         #region EnsureAngularBase Tests
@@ -281,6 +300,215 @@ namespace Sky.Tests.Services.Html
 
             // Assert
             Assert.AreEqual("This & that <tag>", result);
+        }
+
+        #endregion
+
+        #region HasUnMarkedEditableRegions Tests
+
+        /// <summary>
+        /// Tests that null HTML returns false.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_NullHtml_ReturnsFalse()
+        {
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(null);
+
+            // Assert
+            Assert.IsFalse(result);
+        }
+
+        /// <summary>
+        /// Tests that empty HTML returns false.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_EmptyHtml_ReturnsFalse()
+        {
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(string.Empty);
+
+            // Assert
+            Assert.IsFalse(result);
+        }
+
+        /// <summary>
+        /// Tests that element with contenteditable but no data-ccms-ceid returns true.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_ContentEditableWithoutCeid_ReturnsTrue()
+        {
+            // Arrange
+            var html = "<div contenteditable='true'>Content</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsTrue(result);
+        }
+
+        /// <summary>
+        /// Tests that element with contenteditable and valid data-ccms-ceid returns false.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_ContentEditableWithCeid_ReturnsFalse()
+        {
+            // Arrange
+            var html = "<div contenteditable='true' data-ccms-ceid='abc123'>Content</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsFalse(result);
+        }
+
+        /// <summary>
+        /// Tests that element with data-editor-config but no data-ccms-ceid returns true.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_DataEditorConfigWithoutCeid_ReturnsTrue()
+        {
+            // Arrange
+            var html = "<div data-editor-config='config'>Content</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsTrue(result);
+        }
+
+        /// <summary>
+        /// Tests that element with data-ccms-new but no data-ccms-ceid returns true.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_DataCcmsNewWithoutCeid_ReturnsTrue()
+        {
+            // Arrange
+            var html = "<div data-ccms-new='true'>Content</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsTrue(result);
+        }
+
+        /// <summary>
+        /// Tests that element with data-ccms-enable-alt-editor but no data-ccms-ceid returns true.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_DataCcmsEnableAltEditorWithoutCeid_ReturnsTrue()
+        {
+            // Arrange
+            var html = "<div data-ccms-enable-alt-editor='true'>Content</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsTrue(result);
+        }
+
+        /// <summary>
+        /// Tests that element with data-ccms-ceid but empty value returns true.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_DataCcmsCeidEmpty_ReturnsTrue()
+        {
+            // Arrange
+            var html = "<div data-ccms-ceid=''>Content</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsTrue(result);
+        }
+
+        /// <summary>
+        /// Tests that element with data-ccms-ceid but whitespace-only value returns true.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_DataCcmsCeidWhitespace_ReturnsTrue()
+        {
+            // Arrange
+            var html = "<div data-ccms-ceid='   '>Content</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsTrue(result);
+        }
+
+        /// <summary>
+        /// Tests that element with multiple marker attributes but valid ceid returns false.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_MultipleAttributesWithValidCeid_ReturnsFalse()
+        {
+            // Arrange
+            var html = "<div contenteditable='true' data-ccms-new='true' data-ccms-ceid='abc123'>Content</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsFalse(result);
+        }
+
+        /// <summary>
+        /// Tests that HTML with no marker attributes returns false.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_NoMarkerAttributes_ReturnsFalse()
+        {
+            // Arrange
+            var html = "<div>Regular content</div><p>More content</p>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsFalse(result);
+        }
+
+        /// <summary>
+        /// Tests that mix of marked and unmarked regions returns true.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_MixedMarkedAndUnmarked_ReturnsTrue()
+        {
+            // Arrange
+            var html = "<div contenteditable='true' data-ccms-ceid='abc123'>Marked</div><div contenteditable='true'>Unmarked</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsTrue(result);
+        }
+
+        /// <summary>
+        /// Tests that all elements properly marked returns false.
+        /// </summary>
+        [TestMethod]
+        public void HasUnMarkedEditableRegions_AllProperlyMarked_ReturnsFalse()
+        {
+            // Arrange
+            var html = @"
+                <div contenteditable='true' data-ccms-ceid='abc123'>Content 1</div>
+                <div data-editor-config='config' data-ccms-ceid='def456'>Content 2</div>
+                <div data-ccms-new='true' data-ccms-ceid='ghi789'>Content 3</div>";
+
+            // Act
+            var result = articleHtmlService.HasUnMarkedEditableRegions(html);
+
+            // Assert
+            Assert.IsFalse(result);
         }
 
         #endregion

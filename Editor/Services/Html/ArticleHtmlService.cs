@@ -16,6 +16,12 @@ namespace Sky.Editor.Services.Html
     /// </summary>
     public sealed class ArticleHtmlService : IArticleHtmlService
     {
+        /// <summary>
+        /// XPath query to select elements that have editable markers (data-editor-config, data-ccms-new, 
+        /// data-ccms-enable-alt-editor, data-ccms-ceid, or contenteditable) but lack a valid data-ccms-ceid value.
+        /// </summary>
+        private const string UnmarkedEditableRegionsXPath = "//*[(@data-editor-config or @data-ccms-new or @data-ccms-enable-alt-editor or @data-ccms-ceid or @contenteditable) and (not(@data-ccms-ceid) or normalize-space(@data-ccms-ceid)='')]";
+
         /// <inheritdoc />
         public string EnsureEditableMarkers(string html)
         {
@@ -29,14 +35,22 @@ namespace Sky.Editor.Services.Html
                 return string.Empty;
             }
 
+            // Early exit if no unmarked regions
+            if (!HasUnMarkedEditableRegions(html))
+            {
+                return html;
+            }
+
             try
             {
                 var doc = new HtmlDocument();
                 doc.LoadHtml(html);
-                var editable = doc.DocumentNode.SelectNodes("//*[@contenteditable='true' or translate(@contenteditable,'TRUE','true')='true']")
+                
+                // Use the same XPath logic as HasUnMarkedEditableRegions to ensure consistency
+                var editable = doc.DocumentNode.SelectNodes(UnmarkedEditableRegionsXPath)
                               ?? new HtmlNodeCollection(null);
 
-                // Only add markers to nodes that have contenteditable="true".
+                // Only add markers to nodes that need them.
                 if (editable.Count > 0)
                 {
                     int i = 0;
@@ -66,8 +80,9 @@ namespace Sky.Editor.Services.Html
                         }
 
                         // By now all editable areas should have Guids.
-                        // Remove this.
+                        // Remove temporary marker attributes.
                         node.Attributes.Remove("data-ccms-new");
+                        node.Attributes.Remove("contenteditable");
                     }
                 }
 
@@ -150,6 +165,26 @@ namespace Sky.Editor.Services.Html
             catch
             {
                 return string.Empty;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool HasUnMarkedEditableRegions(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return false;
+            }
+            try
+            {
+                var doc = new HtmlDocument();
+                doc.LoadHtml(html);
+                var unmarked = doc.DocumentNode.SelectNodes(UnmarkedEditableRegionsXPath);
+                return unmarked != null && unmarked.Count > 0;
+            }
+            catch
+            {
+                return false;
             }
         }
     }

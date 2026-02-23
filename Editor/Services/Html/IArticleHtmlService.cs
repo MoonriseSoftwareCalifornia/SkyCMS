@@ -42,5 +42,12 @@ namespace Sky.Editor.Services.Html
         /// <param name="html">HTML fragment containing article content.</param>
         /// <returns>Introduction text snippet or empty string.</returns>
         string ExtractIntroduction(string html);
+
+        /// <summary>
+        /// Determines if there is an unmarked editable region.
+        /// </summary>
+        /// <param name="html">HTML to check.</param>
+        /// <returns>Indicates if the editable area is missing.</returns>
+        bool HasUnMarkedEditableRegions(string html);
     }
 }
