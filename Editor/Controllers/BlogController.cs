@@ -13,6 +13,10 @@ namespace Sky.Editor.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.EditorQueries;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
+    using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
@@ -22,7 +26,9 @@ namespace Sky.Editor.Controllers
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
-    using Sky.Editor.Features.Shared;
+    using Sky.Editor.Features.Blogs.GetStream;
+    using Sky.Editor.Features.Blogs.UpdateStream;
+    using Sky.Editor.Features.Blogs.DeleteStream;
     using Sky.Editor.Models.Blogs;
     using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.Slugs;
@@ -55,7 +61,7 @@ namespace Sky.Editor.Controllers
         private readonly ITemplateService templateService;
         private readonly IBlogStreamRenderingService blogStreamRenderingService;
         private readonly ITitleChangeService titleChangeService;
-        private readonly IMediator mediator;
+        private readonly CommonMediator mediator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BlogController"/> class.
@@ -78,7 +84,7 @@ namespace Sky.Editor.Controllers
             UserManager<IdentityUser> userManager,
             IBlogStreamRenderingService blogStreamRenderingService,
             ITitleChangeService titleChangeService,
-            IMediator mediator,
+            CommonMediator mediator,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(db, userManager, memoryCache, configProvider)
@@ -195,20 +201,29 @@ namespace Sky.Editor.Controllers
         [HttpGet("{id:guid}/edit")]
         public async Task<IActionResult> Edit(Guid id)
         {
-            var article = await articleLogic.GetArticleById(id, Guid.Parse(await GetUserId()));
-            if (article == null)
+            var query = new GetBlogStreamQuery 
+            { 
+                Id = id, 
+                UserId = Guid.Parse(await GetUserId()) 
+            };
+            
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data == null)
             {
                 return NotFound();
             }
 
+            var streamData = result.Data;
+
             return View("Edit", new BlogStreamViewModel
             {
-                Id = article.Id,
-                BlogKey = article.UrlPath,
-                Title = article.Title,
-                Description = article.Introduction,
-                HeroImage = article.BannerImage,
-                Published = article.Published
+                Id = streamData.Article.Id,
+                BlogKey = streamData.UrlPath,
+                Title = streamData.Title,
+                Description = streamData.Description,
+                HeroImage = streamData.HeroImage,
+                Published = streamData.Published
             });
         }
 
@@ -232,17 +247,17 @@ namespace Sky.Editor.Controllers
                 return View("Edit", model);
             }
 
-            var article = await db.Articles.FirstOrDefaultAsync(f => f.Id == id);
-
-            if (article.Title.Equals(model.Title, StringComparison.CurrentCultureIgnoreCase) == false && !await titleChangeService.ValidateTitle(model.Title, null))
+            var command = new UpdateBlogStreamCommand
             {
-                ModelState.AddModelError(nameof(model.BlogKey), "Blog key conflicts with existing page on this website.");
-                return View(model);
-            }
+                Id = id,
+                Title = model.Title,
+                Description = model.Description,
+                HeroImage = model.HeroImage,
+                Published = model.Published,
+                UserId = Guid.Parse(await GetUserId())
+            };
 
-            // Save old title in case of change.
-            var oldTitle = article.Title;
-            var oldUrlPath = article.UrlPath;
+            var result = await mediator.SendAsync(command);
 
             // Update changes.
             article.Title = model.Title;
@@ -261,7 +276,8 @@ namespace Sky.Editor.Controllers
 
             if (article.Published.HasValue)
             {
-                await articleLogic.PublishArticle(article.Id, article.Published.Value);
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to update blog stream.");
+                return View("Edit", model);
             }
 
             return View(model);
@@ -275,17 +291,21 @@ namespace Sky.Editor.Controllers
         [HttpGet("{id:guid}/delete")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var article = await db.Articles.FirstOrDefaultAsync(b => b.Id == id);
-            if (article == null)
+            var query = new GetBlogStreamQuery { Id = id };
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data == null)
             {
                 return NotFound();
             }
 
+            var streamData = result.Data;
+
             return View("Delete", new BlogStreamViewModel
             {
-                Id = article.Id,
-                BlogKey = article.BlogKey,
-                Title = article.Title
+                Id = streamData.Article.Id,
+                BlogKey = streamData.BlogKey,
+                Title = streamData.Title
             });
         }
 
@@ -297,25 +317,27 @@ namespace Sky.Editor.Controllers
         [HttpPost("{id:guid}/confirmdelete")]
         public async Task<IActionResult> ConfirmDelete(Guid id)
         {
-            var article = await db.Articles.FirstOrDefaultAsync(b => b.Id == id);
-            if (article == null)
+            var command = new DeleteBlogStreamCommand
             {
-                return NotFound();
+                Id = id,
+                UserId = Guid.Parse(await GetUserId())
+            };
+
+            var result = await mediator.SendAsync(command);
+
+            if (!result.IsSuccess)
+            {
+                // Check if the error indicates "not found"
+                if (result.ErrorMessage != null && result.ErrorMessage.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                {
+                    return NotFound();
+                }
+
+                TempData["Error"] = result.ErrorMessage;
+                return RedirectToAction(nameof(Index));
             }
 
-            var blogKey = article.BlogKey;
-            var entries = await db.Articles
-                .Where(c => c.BlogKey == blogKey).Select(c => c.ArticleNumber).Distinct()
-                .ToListAsync();
-
-            foreach (var entryNumber in entries)
-            {
-                // Delete each article associated with this blog.
-                await articleLogic.DeleteArticle(entryNumber);
-            }
-
-            await articleLogic.DeleteArticle(article.ArticleNumber);
-
+            TempData["Success"] = "Blog stream and all entries deleted successfully";
             return RedirectToAction(nameof(Index));
         }
 
@@ -478,7 +500,15 @@ namespace Sky.Editor.Controllers
             var userId = Guid.Parse(await GetUserId());
             var blogStreamType = (int)ArticleType.BlogStream;
 
-            var articleVm = await articleLogic.GetArticleByArticleNumber(articleNumber, null);
+            var articleVm = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = articleNumber
+            });
+
+            if (articleVm == null)
+            {
+                return NotFound();
+            }
 
             // MIGRATED: Use SaveArticleHandler via mediator
             var command = new SaveArticleCommand
