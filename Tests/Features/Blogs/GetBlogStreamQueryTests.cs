@@ -260,8 +260,8 @@ namespace Sky.Tests.Features.Blogs
                 VersionNumber = 1,
                 Title = "Blog Without Extras",
                 BlogKey = "minimal-blog",
-                Introduction = null, // Null description
-                BannerImage = null, // Null hero image
+                Introduction = string.Empty, // Empty description to test handling
+                BannerImage = string.Empty, // Empty hero image to test handling
                 ArticleType = (int)ArticleType.BlogStream,
                 StatusCode = (int)StatusCodeEnum.Active,
                 Content = "<div>Content</div>"

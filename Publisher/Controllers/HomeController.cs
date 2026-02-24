@@ -15,6 +15,8 @@ using Cosmos.Cms.Publisher.Models;
 using Cosmos.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Articles.Queries;
+using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
 using Cosmos.MicrosoftGraph;
 using Microsoft.AspNetCore.Authorization;
@@ -31,7 +33,7 @@ namespace Cosmos.Cms.Publisher.Controllers
     {
         private readonly IConfiguration configuration;
         private readonly ILogger<HomeController> logger;
-        private readonly ArticleLogic articleLogic;
+        private readonly IMediator mediator;
         private readonly IOptions<SiteSettings> options;
         private readonly ApplicationDbContext dbContext;
         private readonly MsGraphService graphService;
@@ -42,7 +44,7 @@ namespace Cosmos.Cms.Publisher.Controllers
         /// <param name="services">Services provider.</param>
         /// <param name="configuration">Configuration.</param>
         /// <param name="logger">Logger.</param>
-        /// <param name="articleLogic">Article logic.</param>
+        /// <param name="mediator">Mediator.</param>
         /// <param name="options">Cosmos options.</param>
         /// <param name="dbContext">Database Context.</param>
         /// <param name="storageContext">Storage context.</param>
@@ -51,16 +53,16 @@ namespace Cosmos.Cms.Publisher.Controllers
             IServiceProvider services,
             IConfiguration configuration,
             ILogger<HomeController> logger,
-            ArticleLogic articleLogic,
+            IMediator mediator,
             IOptions<SiteSettings> options,
             ApplicationDbContext dbContext,
             StorageContext storageContext,
             IEmailSender emailSender)
-            : base(articleLogic, dbContext, storageContext, logger, emailSender)
+            : base(mediator, dbContext, storageContext, logger, emailSender)
         {
             this.configuration = configuration;
             this.logger = logger;
-            this.articleLogic = articleLogic;
+            this.mediator = mediator;
             this.options = options;
             this.dbContext = dbContext;
             try
@@ -83,7 +85,10 @@ namespace Cosmos.Cms.Publisher.Controllers
         {
             if (!options.Value.CosmosRequiresAuthentication)
             {
-                var article = await articleLogic.GetPublishedPageHeaderByUrl(HttpContext.Request.Path);
+                var article = await mediator.QueryAsync(new GetPublishedPageHeaderByUrlQuery
+                {
+                    UrlPath = HttpContext.Request.Path
+                });
 
                 if (article == null)
                 {
@@ -119,7 +124,14 @@ namespace Cosmos.Cms.Publisher.Controllers
 
             try
             {
-                var article = await articleLogic.GetPublishedPageByUrl(HttpContext.Request.Path, lang, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(20));
+                var article = await mediator.QueryAsync(new GetPublishedPageByUrlQuery
+                {
+                    UrlPath = HttpContext.Request.Path,
+                    Lang = lang,
+                    CacheSpan = TimeSpan.FromSeconds(5),
+                    LayoutCache = TimeSpan.FromSeconds(20),
+                    IncludeLayout = true
+                });
 
                 if (article == null)
                 {

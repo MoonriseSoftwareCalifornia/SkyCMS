@@ -11,6 +11,7 @@ namespace Sky.Tests.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,7 @@ namespace Sky.Tests.Controllers
         private BlogController controller = null!;
         private BlogController integrationController = null!; // Controller with real mediator for integration tests
         private Mock<IMediator> mediatorMock = null!;
+        private Mock<CommonMediator> articleQueryMediatorMock = null!;
         private Mock<UserManager<IdentityUser>> userManagerMock = null!;
         private Mock<IBlogRenderingService> blogRenderingServiceMock = null!;
 
@@ -52,6 +54,14 @@ namespace Sky.Tests.Controllers
             InitializeTestContext(seedLayout: true);
             
             mediatorMock = new Mock<IMediator>();
+            articleQueryMediatorMock = new Mock<CommonMediator>();
+            articleQueryMediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ArticleViewModel
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = 1
+                });
             blogRenderingServiceMock = new Mock<IBlogRenderingService>();
             
             // Create a proper UserManager mock
@@ -91,6 +101,7 @@ namespace Sky.Tests.Controllers
                 blogRenderingServiceMock.Object,  // Use mocked BlogRenderingService
                 TitleChangeService,
                 mediatorMock.Object,             // Use mocked Mediator for unit testing
+                articleQueryMediatorMock.Object,
                 Cache,                           // ✅ Add memory cache
                 DynamicConfigurationProvider     // ✅ Add config provider
             );
@@ -105,6 +116,7 @@ namespace Sky.Tests.Controllers
                 blogRenderingServiceMock.Object,
                 TitleChangeService,
                 Mediator,                        // Use real Mediator for integration testing
+                articleQueryMediatorMock.Object,
                 Cache,
                 DynamicConfigurationProvider
             );

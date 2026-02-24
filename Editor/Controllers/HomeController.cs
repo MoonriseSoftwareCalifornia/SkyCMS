@@ -16,6 +16,8 @@ namespace Sky.Cms.Controllers
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.EditorQueries;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
@@ -29,7 +31,6 @@ namespace Sky.Cms.Controllers
     using Microsoft.Net.Http.Headers;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
-    using Sky.Editor.Data.Logic;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Layouts;
@@ -42,7 +43,7 @@ namespace Sky.Cms.Controllers
 
     public class HomeController : Controller
     {
-        private readonly ArticleEditLogic articleLogic;
+        private readonly CommonMediator articleQueries;
         private readonly EditorSettings options;
         private readonly ApplicationDbContext dbContext;
         private readonly UserManager<IdentityUser> userManager;
@@ -53,7 +54,7 @@ namespace Sky.Cms.Controllers
         /// <param name="logger">ILogger to use.</param>
         /// <param name="options">Cosmos configuration.</param>
         /// <param name="dbContext"><see cref="ApplicationDbContext">Database context</see>.</param>
-        /// <param name="articleLogic"><see cref="ArticleEditLogic">Article edit logic.</see>.</param>
+        /// <param name="articleQueries"><see cref="CommonMediator">Article queries.</see>.</param>
         /// <param name="userManager">User manager.</param>
         /// <param name="signInManager">Sign in manager service.</param>
         /// <param name="emailSender">Email service.</param>
@@ -63,7 +64,7 @@ namespace Sky.Cms.Controllers
             ILogger<HomeController> logger,
             IEditorSettings options,
             ApplicationDbContext dbContext,
-            ArticleEditLogic articleLogic,
+            CommonMediator articleQueries,
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
             IEmailSender emailSender,
@@ -72,7 +73,7 @@ namespace Sky.Cms.Controllers
         {
             // This handles injection manually to make sure everything is setup.
             this.options = (EditorSettings)options;
-            this.articleLogic = articleLogic;
+            this.articleQueries = articleQueries;
             this.dbContext = dbContext;
             this.userManager = userManager;
         }
@@ -91,7 +92,10 @@ namespace Sky.Cms.Controllers
                 target = target.Trim().TrimStart('/').TrimEnd('/');
             }
 
-            var article = await articleLogic.GetArticleByUrl(target);
+            var article = await articleQueries.QueryAsync(new GetArticleByUrlQuery
+            {
+                UrlPath = target
+            });
 
             if (article == null)
             {
@@ -161,15 +165,24 @@ namespace Sky.Cms.Controllers
                 ViewData["IsPreview"] = false;
 
                 var path = HttpContext.Request.Path.Value?.TrimStart('/') ?? string.Empty;
-                article = await articleLogic.GetArticleByUrl(path);
+                article = await articleQueries.QueryAsync(new GetArticleByUrlQuery
+                {
+                    UrlPath = path
+                });
 
                 if (article == null)
                 {
                     // See if a page is un-published, but does exist, let us edit it.
-                    article = await articleLogic.GetArticleByUrl(HttpContext.Request.Path, publishedOnly: false);
+                    article = await articleQueries.QueryAsync(new GetArticleByUrlQuery
+                    {
+                        UrlPath = HttpContext.Request.Path
+                    });
 
                     // Create your own not found page for a graceful page for users.
-                    article = await articleLogic.GetArticleByUrl("/not_found");
+                    article = await articleQueries.QueryAsync(new GetArticleByUrlQuery
+                    {
+                        UrlPath = "/not_found"
+                    });
 
                     HttpContext.Response.StatusCode = 404;
 
@@ -190,8 +203,10 @@ namespace Sky.Cms.Controllers
             if (previewType == "editor")
             {
                 // This is an article preview
-                var userId = new Guid(user.Id);
-                await SetRenderedView(await articleLogic.GetArticleById(itemId.Value, userId));
+                await SetRenderedView(await articleQueries.QueryAsync(new GetArticleByIdQuery
+                {
+                    Id = itemId.Value
+                }));
             }
             else if (previewType == "layouts")
             {
@@ -430,7 +445,7 @@ namespace Sky.Cms.Controllers
                 VersionNumber = 1,
                 HeadJavaScript = string.Empty,
                 FooterJavaScript = string.Empty,
-                Layout = await articleLogic.GetDefaultLayout()
+                Layout = new LayoutViewModel(await LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext))
             };
 
             return model;

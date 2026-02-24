@@ -11,6 +11,7 @@ namespace Sky.Tests.Controllers
     using Cosmos.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity.UI.Services;
@@ -22,6 +23,7 @@ namespace Sky.Tests.Controllers
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -34,6 +36,7 @@ namespace Sky.Tests.Controllers
         private TestHomeController controller = null!;
         private Mock<ILogger<TestHomeController>> loggerMock = null!;
         private Mock<IEmailSender> emailSenderMock = null!;
+        private Mock<IMediator> mediatorMock = null!;
 
         [TestInitialize]
         public new void Setup()
@@ -42,9 +45,14 @@ namespace Sky.Tests.Controllers
 
             loggerMock = new Mock<ILogger<TestHomeController>>();
             emailSenderMock = new Mock<IEmailSender>();
+            mediatorMock = new Mock<IMediator>();
+            mediatorMock.Setup(m => m.QueryAsync(It.IsAny<IQuery<TableOfContents>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TableOfContents());
+            mediatorMock.Setup(m => m.QueryAsync(It.IsAny<IQuery<List<TableOfContentsItem>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<TableOfContentsItem>());
 
             controller = new TestHomeController(
-                Logic,
+                mediatorMock.Object,
                 Db,
                 Storage,
                 loggerMock.Object,
@@ -562,12 +570,12 @@ namespace Sky.Tests.Controllers
         public class TestHomeController : HomeControllerBase
         {
             public TestHomeController(
-                ArticleLogic articleLogic,
+                IMediator mediator,
                 ApplicationDbContext dbContext,
                 StorageContext storageContext,
                 ILogger logger,
                 IEmailSender emailSender)
-                : base(articleLogic, dbContext, storageContext, logger, emailSender)
+                : base(mediator, dbContext, storageContext, logger, emailSender)
             {
             }
         }

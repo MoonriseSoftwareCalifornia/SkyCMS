@@ -78,7 +78,7 @@ namespace Sky.Tests.Features.Templates
             Assert.IsTrue(result.IsSuccess);
             Assert.IsNotNull(result.Data);
             Assert.AreEqual(10, result.Data.Templates.Count, "Should return page size items");
-            Assert.AreEqual(15, result.Data.TotalCount, "Should return total count");
+            Assert.AreEqual(17, result.Data.TotalCount, "Should return total count (15 created + 2 seeded blog templates)");
         }
 
         /// <summary>
@@ -283,7 +283,9 @@ namespace Sky.Tests.Features.Templates
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-            Assert.AreEqual(string.Empty, result.Data.Templates[0].Description, "Null description should be empty string");
+            var testTemplate = result.Data.Templates.FirstOrDefault(t => t.Title == "Test Template");
+            Assert.IsNotNull(testTemplate, "Test Template should be in the result");
+            Assert.AreEqual(string.Empty, testTemplate.Description, "Null description should be empty string");
         }
 
         /// <summary>

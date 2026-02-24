@@ -527,7 +527,20 @@ namespace Cosmos.Common.Data.Logic
                 }
             }
 
-            return new ArticleViewModel(article, await GetDefaultLayout(), authorInfo: author, lang: lang);
+            var layout = includeLayout ? await GetDefaultLayout() : await GetDefaultLayout();
+            return new ArticleViewModel(article, layout, isEditor, author, lang);
+        }
+
+        /// <summary>
+        /// Build a full <see cref="ArticleViewModel"/> from a draft or persisted article entity.
+        /// </summary>
+        /// <param name="article">Source article entity.</param>
+        /// <param name="lang">Language code.</param>
+        /// <param name="includeLayout">Whether to include layout information.</param>
+        /// <returns>A <see cref="ArticleViewModel"/>.</returns>
+        public Task<ArticleViewModel> BuildArticleViewModelAsync(Article article, string lang, bool includeLayout = true)
+        {
+            return BuildArticleViewModel(article, lang, includeLayout: includeLayout);
         }
 
         /// <summary>

@@ -12,6 +12,8 @@ using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Articles.Queries;
+using Cosmos.Common.Features.Shared;
 using Cosmos.EmailServices;
 using Cosmos.MicrosoftGraph;
 using Microsoft.AspNetCore.Antiforgery;
@@ -98,6 +100,12 @@ namespace Cosmos.Publisher.Boot
             {
                 options.UseCosmos(connectionString, cosmosIdentityDbName);
             });
+
+            builder.Services.AddScoped<IMediator, Mediator>();
+            builder.Services.AddScoped<IQueryHandler<GetPublishedPageByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, GetPublishedPageByUrlQueryHandler>();
+            builder.Services.AddScoped<IQueryHandler<GetPublishedPageHeaderByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, GetPublishedPageHeaderByUrlQueryHandler>();
+            builder.Services.AddScoped<IQueryHandler<GetTableOfContentsQuery, Cosmos.Common.Models.TableOfContents>, GetTableOfContentsQueryHandler>();
+            builder.Services.AddScoped<IQueryHandler<SearchPublishedArticlesQuery, System.Collections.Generic.List<Cosmos.Common.Models.TableOfContentsItem>>, SearchPublishedArticlesQueryHandler>();
 
             // Add the BLOB and File Storage contexts for Cosmos
             builder.Services.AddCosmosStorageContext(builder.Configuration);

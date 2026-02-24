@@ -83,6 +83,7 @@ using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using System.Web;
+using Cosmos.Common.Features.Articles.EditorQueries;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
 
@@ -548,6 +549,10 @@ builder.Services.AddScoped<IMediator>(sp =>   // ← Interface registration
         sp.GetRequiredService<ApplicationDbContext>(),
         sp.GetService<IDynamicConfigurationProvider>(),
         sp.GetRequiredService<ILogger<MultiTenantMediator>>()));
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IMediator, Cosmos.Common.Features.Shared.Mediator>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByUrlQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByIdQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByArticleNumberQueryHandler>();
 builder.Services.AddScoped<ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>, CreateArticleHandler>();
 builder.Services.AddScoped<ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>, SaveArticleHandler>();
 builder.Services.AddScoped<ICommandHandler<CreatePageDesignVersionCommand, CommandResult<PageDesignVersion>>, CreatePageDesignVersionHandler>();

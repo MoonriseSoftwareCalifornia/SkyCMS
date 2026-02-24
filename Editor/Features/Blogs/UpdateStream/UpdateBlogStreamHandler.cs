@@ -126,6 +126,7 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
                 article.Introduction = command.Description ?? string.Empty;
                 article.BannerImage = command.HeroImage ?? string.Empty;
                 article.Published = command.Published;
+                article.UserId = command.UserId.ToString();
 
                 // Regenerate blog stream HTML
                 article.Content = await blogRenderingService.GenerateBlogStreamHtml(article);

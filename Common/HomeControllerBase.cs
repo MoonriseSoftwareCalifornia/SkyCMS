@@ -12,7 +12,8 @@ namespace Cosmos.Common
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.Queries;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Cors;
@@ -27,7 +28,7 @@ namespace Cosmos.Common
     /// </summary>
     public class HomeControllerBase : Controller
     {
-        private readonly ArticleLogic articleLogic;
+        private readonly IMediator mediator;
         private readonly ApplicationDbContext dbContext;
         private readonly StorageContext storageContext;
         private readonly ILogger logger;
@@ -36,19 +37,19 @@ namespace Cosmos.Common
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeControllerBase"/> class.
         /// </summary>
-        /// <param name="articleLogic">Article logic.</param>
+        /// <param name="mediator">Mediator.</param>
         /// <param name="dbContext">Database context.</param>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="logger">Logger service.</param>
         /// <param name="emailSender">Email sender service.</param>
         public HomeControllerBase(
-            ArticleLogic articleLogic,
+            IMediator mediator,
             ApplicationDbContext dbContext,
             StorageContext storageContext,
             ILogger logger,
             IEmailSender emailSender)
         {
-            this.articleLogic = articleLogic;
+            this.mediator = mediator;
             this.dbContext = dbContext;
             this.storageContext = storageContext;
             this.logger = logger;
@@ -99,7 +100,13 @@ namespace Cosmos.Common
                 return BadRequest(ModelState);
             }
 
-            var result = await articleLogic.GetTableOfContents(page, pageNo ?? 0, pageSize ?? 10, orderByPub ?? false);
+            var result = await mediator.QueryAsync(new GetTableOfContentsQuery
+            {
+                Page = page,
+                PageNo = pageNo ?? 0,
+                PageSize = pageSize ?? 10,
+                OrderByPublishedDate = orderByPub ?? false
+            });
             return Json(result);
         }
 
@@ -153,7 +160,10 @@ namespace Cosmos.Common
                 return BadRequest("Search term is required.");
             }
 
-            var result = await articleLogic.Search(searchTxt);
+            var result = await mediator.QueryAsync(new SearchPublishedArticlesQuery
+            {
+                Text = searchTxt
+            });
             return Json(result);
         }
 

@@ -14,6 +14,7 @@ namespace Sky.Tests.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Identity.UI.Services;
@@ -35,6 +36,7 @@ namespace Sky.Tests.Controllers
     public class HomeControllerTests : SkyCmsTestBase
     {
         private HomeController homeController;
+        private Mock<CommonMediator> articleQueryMediatorMock = null!;
 
         /// <summary>
         /// Initialize test - create HomeController instance.
@@ -54,6 +56,19 @@ namespace Sky.Tests.Controllers
             var emailSender = new Mock<IEmailSender>();
             var configuration = new Mock<IConfiguration>();
             var services = new Mock<IServiceProvider>();
+            articleQueryMediatorMock = new Mock<CommonMediator>();
+            articleQueryMediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new ArticleViewModel
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = 1,
+                    Title = "Home Page",
+                    UrlPath = "root",
+                    Content = "<p>Welcome</p>",
+                    StatusCode = StatusCodeEnum.Active,
+                    Updated = DateTimeOffset.UtcNow
+                });
 
             // Mock IViewRenderService for preview rendering
             var mockViewRenderService = new Mock<IViewRenderService>();
@@ -107,7 +122,7 @@ namespace Sky.Tests.Controllers
                 logger.Object,
                 EditorSettings,
                 Db,
-                Logic,
+                articleQueryMediatorMock.Object,
                 UserManager,
                 signInManager.Object,
                 emailSender.Object,

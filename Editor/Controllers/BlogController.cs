@@ -13,6 +13,8 @@ namespace Sky.Editor.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.EditorQueries;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
@@ -59,6 +61,7 @@ namespace Sky.Editor.Controllers
         private readonly IBlogRenderingService blogRenderingService;
         private readonly ITitleChangeService titleChangeService;
         private readonly IMediator mediator;
+        private readonly CommonMediator articleQueries;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BlogController"/> class.
@@ -71,6 +74,7 @@ namespace Sky.Editor.Controllers
         /// <param name="blogRenderingService">Blog rendering service.</param>
         /// <param name="titleChangeService">Title change service.</param>
         /// <param name="mediator">Mediator for dispatching commands.</param>
+        /// <param name="articleQueries">Shared article queries mediator.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public BlogController(
@@ -82,6 +86,7 @@ namespace Sky.Editor.Controllers
             IBlogRenderingService blogRenderingService,
             ITitleChangeService titleChangeService,
             IMediator mediator,
+            CommonMediator articleQueries,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(db, userManager, memoryCache, configProvider)
@@ -93,6 +98,7 @@ namespace Sky.Editor.Controllers
             this.blogRenderingService = blogRenderingService;
             this.titleChangeService = titleChangeService;
             this.mediator = mediator;
+            this.articleQueries = articleQueries;
         }
 
         /// <summary>
@@ -482,7 +488,15 @@ namespace Sky.Editor.Controllers
             var userId = Guid.Parse(await GetUserId());
             var blogStreamType = (int)ArticleType.BlogStream;
 
-            var articleVm = await articleLogic.GetArticleByArticleNumber(articleNumber, null);
+            var articleVm = await articleQueries.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = articleNumber
+            });
+
+            if (articleVm == null)
+            {
+                return NotFound();
+            }
 
             // MIGRATED: Use SaveArticleHandler via mediator
             var command = new SaveArticleCommand

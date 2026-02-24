@@ -109,6 +109,8 @@ namespace Sky.Tests
                 var template = new Template
                 {
                     Id = Guid.NewGuid(),
+                    Title = t.Name,
+                    Description = t.Description,
                     PageType = "blog-stream",
                     Content = t.Content,
                     LayoutId = defaultLayout?.Id ?? Guid.Empty
@@ -130,6 +132,8 @@ namespace Sky.Tests
                 var template = new Template
                 {
                     Id = Guid.NewGuid(),
+                    Title = t.Name,
+                    Description = t.Description,
                     PageType = "blog-post",
                     Content = t.Content,
                     LayoutId = defaultLayout?.Id ?? Guid.Empty

@@ -159,7 +159,7 @@ namespace Sky.Tests.Features.Blogs
             // Assert
             Assert.IsTrue(result.IsSuccess, "Deletion should succeed even with no entries");
 
-            var deletedStream = await Db.Articles.FindAsync(stream.ArticleNumber, 1);
+            var deletedStream = await Db.Articles.FindAsync(stream.Id);
             Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedStream.StatusCode, "Stream should be marked as deleted");
         }
 
