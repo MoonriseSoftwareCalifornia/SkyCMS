@@ -1,3 +1,4 @@
+@using Cosmos.Cms.Common
 @model Cosmos.Common.Models.ArticleViewModel
 @{
     Layout = null;
@@ -16,13 +17,24 @@
     <meta name="cwps-meta-path-updated" content="@Model.Updated" />
     <meta name="cwps-meta-author-info" content="@Model.AuthorInfo" />
     <meta name="cwps-meta-user-is-authenticated" content="@User.Identity.IsAuthenticated.ToString().ToLower()" />
+    @if (Model.ArticleType == ArticleType.BlogStream)
+    {
+        <link rel="stylesheet" href="~/css/sky-blog.css" />
+    }
     @Html.Raw(Model.Layout.Head)
     <link rel="stylesheet" href="~/lib/ckeditor/ckeditor5-content.css" />
     @Html.Raw(Model.HeadJavaScript)
 </head>
 <body>
     @Html.Raw(Model.Layout.HtmlHeader)
-    @Html.Raw(Model.Content)
+    @if (Model.ArticleType == Cosmos.Cms.Common.ArticleType.BlogStream)
+    {
+        @Html.Partial("_BlogStreamPartial", Model)
+    }
+    else
+    {
+        @Html.Raw(Model.Content)
+    }
     @Html.Raw(Model.Layout.FooterHtmlContent)
     @Html.Raw(Model.FooterJavaScript)
 </body>

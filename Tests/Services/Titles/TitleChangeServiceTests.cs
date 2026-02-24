@@ -15,7 +15,7 @@ namespace Sky.Tests.Services.Titles
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Domain.Events;
-    using Sky.Editor.Services.BlogPublishing;
+    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.ReservedPaths;
@@ -29,7 +29,7 @@ namespace Sky.Tests.Services.Titles
         private TitleChangeService _service;
         private SlugService _slugService;  // Use real SlugService
         private Mock<IReservedPaths> _mockReservedPaths;
-        private Mock<IBlogRenderingService> _mockBlogRenderingService;
+        private Mock<IBlogStreamRenderingService> _mockBlogRenderingService;
         private Mock<IRedirectService> _mockRedirectService;
         private Mock<IDomainEventDispatcher> _mockEventDispatcher;
 
@@ -43,7 +43,7 @@ namespace Sky.Tests.Services.Titles
             
             // Create local mocks
             _mockReservedPaths = new Mock<IReservedPaths>();
-            _mockBlogRenderingService = new Mock<IBlogRenderingService>();
+            _mockBlogRenderingService = new Mock<IBlogStreamRenderingService>();
             _mockRedirectService = new Mock<IRedirectService>();
             _mockEventDispatcher = new Mock<IDomainEventDispatcher>();
 

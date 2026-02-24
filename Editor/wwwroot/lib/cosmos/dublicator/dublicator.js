@@ -93,6 +93,9 @@ const Duplicator = (function () {
 
         moveUp.onclick = () => {
             if (element.previousElementSibling) {
+                if (typeof window.ccms___beforeDomMutation === 'function') {
+                    window.ccms___beforeDomMutation(element);
+                }
                 iconContainer.remove();
                 element.parentNode.insertBefore(element, element.previousElementSibling);
                 savePageBody();
@@ -108,6 +111,9 @@ const Duplicator = (function () {
         above.innerHTML = '<i class="fa-solid fa-file-arrow-up"></i>'; // You can replace this with any icon
         above.title = 'Clone and place above.';
         above.onclick = () => {
+            if (typeof window.ccms___beforeDomMutation === 'function') {
+                window.ccms___beforeDomMutation(element.parentNode || element);
+            }
             iconContainer.remove();
             const clone = createClone(element);
             element.parentNode.insertBefore(clone, element);
@@ -127,6 +133,9 @@ const Duplicator = (function () {
         del.title = 'Permanently remove this item.';
         del.onclick = () => {
             if (confirm("Are you sure you want to delete this item?")) {
+                if (typeof window.ccms___beforeDomMutation === 'function') {
+                    window.ccms___beforeDomMutation(element);
+                }
                 iconContainer.remove();
                 var children = element.parentElement.querySelectorAll(".ccms-clone");
                 if (children.length === 1) {
@@ -151,6 +160,9 @@ const Duplicator = (function () {
         below.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i>'; // You can replace this with any icon
         below.title = 'Clone and place below.';
         below.onclick = () => {
+            if (typeof window.ccms___beforeDomMutation === 'function') {
+                window.ccms___beforeDomMutation(element.parentNode || element);
+            }
             iconContainer.remove();
             const clone = createClone(element);
             element.insertAdjacentElement('afterend', clone);
@@ -168,6 +180,9 @@ const Duplicator = (function () {
         moveDown.title = 'Move this item down.';
         moveDown.onclick = () => {
             if (element.nextElementSibling) {
+                if (typeof window.ccms___beforeDomMutation === 'function') {
+                    window.ccms___beforeDomMutation(element);
+                }
                 iconContainer.remove();
                 element.parentNode.insertBefore(element.nextElementSibling, element);
                 savePageBody();
@@ -220,6 +235,7 @@ const Duplicator = (function () {
         // Destroy the editor for the specified element.
         const childDivs = item.querySelectorAll(`div[data-ccms-ceid]`);
         childDivs.forEach(function (element) {
+            const type = element.getAttribute("data-editor-config");
 
             element.removeAttribute('data-tippy-content');
             element.removeAttribute('aria-label');
@@ -227,9 +243,18 @@ const Duplicator = (function () {
             if (typeof element.ckeditorInstance !== "undefined" && element.ckeditorInstance !== null) {
                 element.ckeditorInstance.destroy();
             } else {
-                const pond = FilePond.find(element);
-                if (typeof pond !== "undefined" && pond !== null) {
-                    pond.destroy();
+                if (type && type === "image-widget") {
+                    if (typeof window.ccms___destroyPondsInElement === 'function') {
+                        window.ccms___destroyPondsInElement(element);
+                    } else {
+                        const fileInputs = element.querySelectorAll('input[type="file"], .filepond');
+                        fileInputs.forEach(input => {
+                            const pond = FilePond.find(input);
+                            if (pond) {
+                                pond.destroy();
+                            }
+                        });
+                    }
                 }
                 var trashcans = element.querySelectorAll('.ccms-img-trashcan');
                 trashcans.forEach(trashcan => {

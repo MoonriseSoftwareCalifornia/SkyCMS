@@ -31,6 +31,11 @@ namespace Cosmos.Common.Models.Blog
         public string Title { get; set; } = string.Empty;
 
         /// <summary>
+        /// Gets or sets the display author info of the blog post.
+        /// </summary>
+        public string AuthorInfo { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets the URL path (slug) used to access the blog post.
         /// </summary>
         [MaxLength(1999)]
@@ -40,6 +45,11 @@ namespace Cosmos.Common.Models.Blog
         /// Gets or sets the UTC timestamp when the blog post was published (null if draft/unpublished).
         /// </summary>
         public DateTimeOffset? Published { get; set; }
+
+        /// <summary>
+        /// Gets or sets the UTC timestamp when the blog post was last updated.
+        /// </summary>
+        public DateTimeOffset? Updated { get; set; }
 
         /// <summary>
         /// Gets or sets the banner image URL or relative path.

@@ -85,6 +85,15 @@
 
         let autosaveTimeout = null;
 
+        function ccms___beforeDomMutation(target) {
+            const mutationRoot = target || document.querySelector('div[ccms-content-id]') || document.body;
+            if (typeof window.ccms___destroyPondsInElement === 'function') {
+                window.ccms___destroyPondsInElement(mutationRoot);
+            }
+        }
+
+        window.ccms___beforeDomMutation = ccms___beforeDomMutation;
+
         // Blur editors
         window.addEventListener('blur', function() {
             blurEditors();

@@ -21,6 +21,7 @@ namespace Sky.Editor.Services.Publishing
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services.BlogPublishing;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
@@ -30,7 +31,7 @@ namespace Sky.Editor.Services.Publishing
     using Sky.Cms.Services;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
-    using Sky.Editor.Services.BlogPublishing;
+    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
 
@@ -52,7 +53,7 @@ namespace Sky.Editor.Services.Publishing
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IAuthorInfoService _authors;
         private readonly IClock _systemClock;
-        private readonly IBlogRenderingService blogRenderingService;
+        private readonly IBlogStreamRenderingService blogStreamRenderingService;
         private readonly IViewRenderService viewRenderService;
         private readonly IServiceProvider _serviceProvider;
         private readonly IPublishingProgressReporter _progressReporter;
@@ -69,7 +70,7 @@ namespace Sky.Editor.Services.Publishing
         /// <param name="accessor">The HTTP context accessor.</param>
         /// <param name="authors">The author information service.</param>
         /// <param name="systemClock">The system clock.</param>
-        /// <param name="blogRenderingService">The blog stream and post rendering service.</param>
+        /// <param name="blogStreamRenderingService">The blog stream rendering service.</param>
         /// <param name="viewRenderService">View rendering service.</param>
         /// <param name="serviceProvider">Service provider for creating scoped dependencies.</param>
         /// <param name="progressReporter">The publishing progress reporter.</param>
@@ -81,7 +82,7 @@ namespace Sky.Editor.Services.Publishing
             IHttpContextAccessor accessor,
             Authors.IAuthorInfoService authors,
             IClock systemClock,
-            IBlogRenderingService blogRenderingService,
+            IBlogStreamRenderingService blogStreamRenderingService,
             IViewRenderService viewRenderService,
             IServiceProvider serviceProvider,
             IPublishingProgressReporter progressReporter)
@@ -93,7 +94,7 @@ namespace Sky.Editor.Services.Publishing
             _httpContextAccessor = accessor;
             _authors = authors;
             _systemClock = systemClock;
-            this.blogRenderingService = blogRenderingService;
+            this.blogStreamRenderingService = blogStreamRenderingService;
             this.viewRenderService = viewRenderService;
             _serviceProvider = serviceProvider;
             _progressReporter = progressReporter;
@@ -138,7 +139,7 @@ namespace Sky.Editor.Services.Publishing
                     Published = DateTimeOffset.UtcNow,
                     Expires = null,
                     Title = blog.Title,
-                    Content = await blogRenderingService.GenerateBlogStreamHtml(blog),
+                    Content = string.Empty,
                     Updated = blog.Updated,
                     BannerImage = blog.BannerImage,
                     HeaderJavaScript = string.Empty,
@@ -158,7 +159,6 @@ namespace Sky.Editor.Services.Publishing
                 article.UrlPath = blog.BlogKey;
                 article.Published = DateTimeOffset.UtcNow;
                 article.Title = blog.Title;
-                article.Content = await blogRenderingService.GenerateBlogStreamHtml(blog);
                 article.Updated = blog.Updated;
                 article.BannerImage = blog.BannerImage;
                 article.Introduction = blog.Introduction;
@@ -167,7 +167,38 @@ namespace Sky.Editor.Services.Publishing
                 article.VersionNumber += 1;
             }
 
-            return await PublishAsync(article);
+            // Generate wrapper HTML with embedded JSON metadata
+            article.Content = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(article, blog.BlogKey);
+
+            // Publish the blog stream article
+            var cdnResults = await PublishAsync(article);
+
+            // Additionally publish the versioned wrapper as a static file for direct access
+            var wrapperPath = GetWrapperVersionedPath(blog.BlogKey);
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(article.Content));
+            await _storage.AppendBlob(ms, new FileUploadMetaData
+            {
+                ChunkIndex = 0,
+                ContentType = "text/html",
+                FileName = Path.GetFileName(wrapperPath),
+                RelativePath = wrapperPath,
+                TotalChunks = 1,
+                TotalFileSize = ms.Length,
+                UploadUid = Guid.NewGuid().ToString()
+            });
+
+            return cdnResults;
+        }
+
+        /// <summary>
+        /// Gets a versioned wrapper filename using UTC ticks for cache busting.
+        /// </summary>
+        /// <param name="blogKey">The blog stream key.</param>
+        /// <returns>Relative file path for the versioned wrapper (e.g., /blog/painting/blog-stream-wrapper-638708432156789123.html).</returns>
+        private string GetWrapperVersionedPath(string blogKey)
+        {
+            var ticks = DateTimeOffset.UtcNow.Ticks;
+            return $"/{blogKey.TrimStart('/')}/blog-stream-wrapper-{ticks}.html";
         }
 
         /// <inheritdoc/>
@@ -215,7 +246,35 @@ namespace Sky.Editor.Services.Publishing
 
             if (article.ArticleType == (int)ArticleType.BlogPost)
             {
-                var blogContent = await blogRenderingService.GenerateBlogEntryHtml(article);
+                // For blog posts, generate full page content (for direct access to individual posts)
+                // The snippet version can be generated on-demand via blogStreamRenderingService.GenerateBlogPostSnippetAsync()
+                var layout = await GetDefaultLayoutAsync();
+
+                var model = new ArticleViewModel()
+                {
+                    ArticleNumber = article.ArticleNumber,
+                    Title = article.Title,
+                    Content = article.Content,
+                    HeadJavaScript = article.HeaderJavaScript,
+                    FooterJavaScript = article.FooterJavaScript,
+                    Updated = article.Updated,
+                    Published = article.Published,
+                    Expires = article.Expires,
+                    BannerImage = article.BannerImage,
+                    UrlPath = article.UrlPath,
+                    ArticleType = (ArticleType)(article.ArticleType ?? 0),
+                    Category = article.Category,
+                    Introduction = article.Introduction,
+                    Id = article.Id,
+                    EditModeOn = false,
+                    PreviewMode = false,
+                    ReadWriteMode = false,
+                    VersionNumber = article.VersionNumber,
+                    CacheDuration = 0,
+                    Layout = layout
+                };
+
+                var blogContent = await viewRenderService.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
 
                 page = new PublishedPage
                 {

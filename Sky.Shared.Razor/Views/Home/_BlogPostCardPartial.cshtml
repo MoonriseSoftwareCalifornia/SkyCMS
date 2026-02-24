@@ -1,0 +1,15 @@
+﻿<div class="col-md-6 col-lg-4">
+    <article class="card h-100 post-card">
+        {{ if post.thumbnail }}
+        <div class="ratio ratio-16x9">{{ post.thumbnail }}</div>
+        {{ end }}
+        <div class="card-body">
+            <p class="small text-secondary mb-1">
+                <time datetime="{{ post.date.iso }}">{{ post.date.human }}</time>
+                {{ if post.primaryCategory }} · {{ post.primaryCategory.url }}{{ post.primaryCategory.name }}</a>{{ end }}
+            </p>
+            <h3 class="h5 fw-semibold mb-2">{{ post.url }}{{ post.title }}</a></h3>
+            {{ if post.excerpt }}<p class="text-secondary mb-0">{{ post.excerpt }}</p>{{ end }}
+        </div>
+    </article>
+</div>

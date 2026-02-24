@@ -18,12 +18,11 @@ namespace Sky.Editor.Services.Scheduling
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Options;
     using Sky.Cms.Services;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Domain.Events;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
-    using Sky.Editor.Services.BlogPublishing;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
@@ -33,6 +32,7 @@ namespace Sky.Editor.Services.Scheduling
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
+    using Cosmos.Common.Services.BlogPublishing;
 
     /// <summary>
     /// Tenant article logic factory.
@@ -84,7 +84,7 @@ namespace Sky.Editor.Services.Scheduling
             var storageContext = new StorageContext(connection.StorageConn, memoryCache);
 
             var authorService = new AuthorInfoService(dbContext, memoryCache);
-            var blogRenderingService = new BlogRenderingService(dbContext);
+            var blogRenderingService = new BlogStreamRenderingService(dbContext);
             var reservedPaths = new ReservedPaths.ReservedPaths(dbContext);
 
             var catalogService = new CatalogService(
@@ -104,6 +104,8 @@ namespace Sky.Editor.Services.Scheduling
             // Create no-op progress reporter for background jobs (no HTTP context)
             var progressReporter = new NoOpPublishingProgressReporter();
 
+            var blogStreamRenderingService = scopedServices.GetRequiredService<IBlogStreamRenderingService>();
+
             var publishingService = new PublishingService(
                 dbContext,
                 storageContext,
@@ -112,7 +114,7 @@ namespace Sky.Editor.Services.Scheduling
                 null,  // No HttpContextAccessor in background jobs
                 authorService,
                 scopedServices.GetRequiredService<IClock>(),
-                blogRenderingService,
+                blogStreamRenderingService,
                 scopedServices.GetRequiredService<IViewRenderService>(),
                 scopedServices,
                 progressReporter);  // ✅ Add no-op progress reporter
@@ -141,7 +143,7 @@ namespace Sky.Editor.Services.Scheduling
                 null,
                 publishingService,
                 reservedPaths,
-                blogRenderingService,
+                null,
                 scopedServices.GetRequiredService<ILogger<TitleChangeService>>());
 
             return new ArticleEditLogic(

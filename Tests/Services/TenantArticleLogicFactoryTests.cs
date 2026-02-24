@@ -30,7 +30,6 @@ namespace Sky.Tests.Services
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
-    using Sky.Editor.Services.BlogPublishing;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
@@ -42,6 +41,7 @@ namespace Sky.Tests.Services
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
     using MediatR;
+    using Cosmos.Common.Services.BlogPublishing;
 
     /// <summary>
     /// Unit tests for <see cref="TenantArticleLogicFactory"/> to ensure proper
@@ -206,7 +206,7 @@ namespace Sky.Tests.Services
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
                 var storageContext = sp.GetRequiredService<StorageContext>();
                 var mockAuthorService = new Mock<IAuthorInfoService>();
-                var mockBlogRenderingService = new Mock<IBlogRenderingService>();
+                var mockBlogStreamRenderingService = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
                 
                 return new PublishingService(
                     dbContext,
@@ -216,7 +216,7 @@ namespace Sky.Tests.Services
                     null,  // No HttpContextAccessor in tests
                     mockAuthorService.Object,
                     sp.GetRequiredService<IClock>(),
-                    mockBlogRenderingService.Object,
+                    mockBlogStreamRenderingService.Object,
                     sp.GetRequiredService<IViewRenderService>(),
                     sp,
                     sp.GetRequiredService<IPublishingProgressReporter>()); // ✅ Add progress reporter
@@ -236,7 +236,7 @@ namespace Sky.Tests.Services
             {
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
                 var mockReservedPaths = new Mock<IReservedPaths>();
-                var mockBlogRenderingService = new Mock<IBlogRenderingService>();
+                var mockBlogRenderingService = new Mock<IBlogStreamRenderingService>();
                 
                 return new TitleChangeService(
                     dbContext,

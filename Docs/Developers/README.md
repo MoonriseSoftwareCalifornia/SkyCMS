@@ -42,6 +42,9 @@ SkyCMS is a cloud-native content management system built on .NET 9.0 with a modu
 - **Editor Widgets**
   - [Image Widget](ImageWidget.md): Per‑widget attributes (including `data-ccms-enable-alt-editor`) and developer hooks
 
+- **Services**
+    - [BlogStreamRenderingService](Services/BlogStreamRenderingService.md): Blog stream wrapper, metadata JSON, and blog post snippet renderer for hybrid static/client-side blog delivery
+
 ## Key Concepts
 
 ### Multi-Database Support

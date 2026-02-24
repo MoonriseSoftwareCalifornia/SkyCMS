@@ -1,8 +1,8 @@
 using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
+using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.DynamicConfig;
-using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -20,7 +20,6 @@ using Sky.Editor.Data.Logic;
 using Sky.Editor.Domain.Events;
 using Sky.Editor.Infrastructure.Time;
 using Sky.Editor.Services.Authors;
-using Sky.Editor.Services.BlogPublishing;
 using Sky.Editor.Services.Catalog;
 using Sky.Editor.Services.EditorSettings;
 using Sky.Editor.Services.Html;
@@ -31,30 +30,18 @@ using Sky.Editor.Services.Scheduling;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
-using Cosmos.Common.Features.Shared;
+using Sky.Editor.Features.Shared;
 using Sky.Editor.Features.Articles.Create;
 using Cosmos.Common.Models;
 using System.Diagnostics;
 using System.Reflection;
 using Sky.Editor.Features.Articles.Save;
-using Sky.Editor.Features.Blogs.GetStream;
-using Sky.Editor.Features.Blogs.UpdateStream;
-using Sky.Editor.Features.Blogs.DeleteStream;
-using Sky.Editor.Features.Templates.Create;
-using Sky.Editor.Features.Templates.Save;
-using Sky.Editor.Features.Templates.Delete;
-using Sky.Editor.Features.Templates.Get;
-using Sky.Editor.Features.Templates.GetList;
-using Sky.Editor.Features.Templates.UpdateMetadata;
 using Sky.Cms.Controllers;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.AspNetCore.DataProtection;
 using Sky.Editor.Services.Layouts;
-using Cosmos.Common.Features.Articles.EditorQueries;
-using Cosmos.Common.Features.Articles.Queries;
-using Cosmos.Common.Features.Articles.Shared;
 
 namespace Sky.Tests
 {
@@ -85,7 +72,7 @@ namespace Sky.Tests
         protected UserManager<IdentityUser> UserManager = null!;
         protected RoleManager<IdentityRole> RoleManager = null!;
         protected ITemplateService TemplateService = null!;
-        protected IBlogRenderingService BlogRenderingService = null!;
+        protected IBlogStreamRenderingService BlogStreamRenderingService = null!;
         protected IViewRenderService ViewRenderService = null!;
         protected IServiceProvider Services = null!;
         protected IArticleScheduler ArticleScheduler = null!;
@@ -98,7 +85,7 @@ namespace Sky.Tests
         protected IHttpClientFactory HttpClientFactory = null!;
 
         // ADD THESE PROPERTIES FOR VERTICAL SLICE ARCHITECTURE
-        protected CommonMediator Mediator = null!;
+        protected IMediator Mediator = null!;
         protected ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>> CreateArticleHandler = null!;
         protected ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>> SaveArticleHandler = null!;
 
@@ -113,8 +100,6 @@ namespace Sky.Tests
                 var template = new Template
                 {
                     Id = Guid.NewGuid(),
-                    Title = t.Name,
-                    Description = t.Description,
                     PageType = "blog-stream",
                     Content = t.Content,
                     LayoutId = defaultLayout?.Id ?? Guid.Empty
@@ -136,8 +121,6 @@ namespace Sky.Tests
                 var template = new Template
                 {
                     Id = Guid.NewGuid(),
-                    Title = t.Name,
-                    Description = t.Description,
                     PageType = "blog-post",
                     Content = t.Content,
                     LayoutId = defaultLayout?.Id ?? Guid.Empty
@@ -247,7 +230,7 @@ namespace Sky.Tests
             CatalogService = new CatalogService(Db, ArticleHtmlService, Clock, catalogLogger);
             EventDispatcher = new TestDomainEventDispatcher();
             var authorInfoService = new AuthorInfoService(Db, Cache);
-            BlogRenderingService = new BlogRenderingService(Db);
+            BlogStreamRenderingService = new Cosmos.Common.Services.BlogPublishing.BlogStreamRenderingService(Db);
             ReservedPaths = new ReservedPaths(Db);
             AuthorInfoService = new AuthorInfoService(Db, Cache);
 
@@ -262,7 +245,7 @@ namespace Sky.Tests
             // PublishingService will be created after Services is built
 
             RedirectService = new RedirectService(Db, SlugService, Clock, null!); // Will set PublishingService later
-            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, null!, ReservedPaths, BlogRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
+            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, null!, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
             
             // ❌ REMOVE THIS - Don't create TemplateService here, it needs Mediator which doesn't exist yet
             // TemplateService = new TemplateService(
@@ -405,7 +388,7 @@ namespace Sky.Tests
 
             // BUILD FINAL SERVICE PROVIDER WITH ALL SERVICES INCLUDING FEATURE HANDLERS
             // Note: PublishingService is created AFTER this service provider is built
-            Services = new ServiceCollection()
+            var serviceCollection = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<DiagnosticSource>(new DiagnosticListener("TestListener"))
                 .AddSingleton<DiagnosticListener>(new DiagnosticListener("TestListener"))
@@ -413,94 +396,25 @@ namespace Sky.Tests
                 .AddSingleton<IConfiguration>(configuration)
                 .AddSingleton<IMemoryCache>(Cache)
                 .AddSingleton<ApplicationDbContext>(sp => Db)
-                .AddSingleton<StorageContext>(Storage)
-                .AddScoped<IStorageContext>(sp => Storage) // Add scoped for CreateStaticPages
-                .AddSingleton<IHttpContextAccessor>(HttpContextAccessor)
                 .AddSingleton<ISlugService>(SlugService)
                 .AddSingleton<IArticleHtmlService>(ArticleHtmlService)
                 .AddSingleton<ICatalogService>(CatalogService)
                 .AddSingleton<IDomainEventDispatcher>(EventDispatcher)
-                .AddSingleton<IClock>(Clock)
-                .AddSingleton<IBlogRenderingService>(BlogRenderingService)
+                .AddSingleton<IClock>(Clock);
+            
+            serviceCollection
+                .AddSingleton<IBlogStreamRenderingService>(BlogStreamRenderingService)
                 .AddSingleton<IAuthorInfoService>(AuthorInfoService)
                 .AddScoped<IViewRenderService>(sp => ViewRenderService) // Change to scoped for CreateStaticPages
                 .AddSingleton<IReservedPaths>(ReservedPaths)
                 .AddSingleton<IEditorSettings>(EditorSettings)
-                // ❌ REMOVE PublishingService registration - will be added after it's created
-                // .AddSingleton<IPublishingService>(PublishingService)
-                .AddSingleton<IRedirectService>(RedirectService)
-                .AddSingleton<ITitleChangeService>(TitleChangeService)
-                // ❌ REMOVE THIS - Don't register TemplateService yet
-                // .AddSingleton<ITemplateService>(TemplateService)
-                .AddSingleton<ITenantArticleLogicFactory>(TenantArticleLogicFactory)
-                .AddSingleton(new SiteSettings())
-                .AddScoped<ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>>(sp => CreateArticleHandler)
-                .AddScoped<ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>>(sp => SaveArticleHandler)
-                // ✅ Register template-related command handlers for vertical slice architecture
-                .AddScoped<ICommandHandler<CreatePageDesignVersionCommand, CommandResult<PageDesignVersion>>>(sp => 
-                    new CreatePageDesignVersionHandler(
-                        Db,
-                        ArticleHtmlService,
-                        Clock,
-                        new LoggerFactory().CreateLogger<CreatePageDesignVersionHandler>()))
-                .AddScoped<ICommandHandler<SavePageDesignVersionCommand, CommandResult<PageDesignVersion>>>(sp =>
-                    new SavePageDesignVersionHandler(
-                        Db,
-                        ArticleHtmlService,
-                        Clock,
-                        new LoggerFactory().CreateLogger<SavePageDesignVersionHandler>()))
-                .AddScoped<ICommandHandler<DeleteTemplateCommand, CommandResult<bool>>>(sp =>
-                    new DeleteTemplateHandler(Db))
-                .AddScoped<ICommandHandler<UpdateTemplateMetadataCommand, CommandResult<Template>>>(sp =>
-                    new UpdateTemplateMetadataHandler(Db, new LoggerFactory().CreateLogger<UpdateTemplateMetadataHandler>()))
-                .AddScoped<IQueryHandler<GetTemplateQuery, CommandResult<GetTemplateQueryResult>>>(sp =>
-                    new GetTemplateQueryHandler(Db, new LoggerFactory().CreateLogger<GetTemplateQueryHandler>()))
-                .AddScoped<IQueryHandler<GetTemplateListQuery, CommandResult<GetTemplateListQueryResult>>>(sp =>
-                    new GetTemplateListQueryHandler(Db, new LoggerFactory().CreateLogger<GetTemplateListQueryHandler>()))
-                .AddScoped<IQueryHandler<GetBlogStreamQuery, CommandResult<GetBlogStreamQueryResult>>>(sp =>
-                    new GetBlogStreamQueryHandler(Db, new LoggerFactory().CreateLogger<GetBlogStreamQueryHandler>()))
-                .AddScoped<ICommandHandler<UpdateBlogStreamCommand, CommandResult<Article>>>(sp =>
-                    new UpdateBlogStreamHandler(
-                        Db,
-                        SlugService,
-                        TitleChangeService,
-                        BlogRenderingService,
-                        Logic,
-                        new LoggerFactory().CreateLogger<UpdateBlogStreamHandler>()))
-                .AddScoped<ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>>(sp =>
-                    new DeleteBlogStreamHandler(
-                        Db,
-                        Logic,
-                        new LoggerFactory().CreateLogger<DeleteBlogStreamHandler>()))
-                .AddScoped<IQueryHandler<GetArticleByArticleNumberQuery, ArticleViewModel?>>(sp =>
-                    new GetArticleByArticleNumberQueryHandler(
-                        Db,
-                        Cache,
-                        configuration))
-                .AddScoped<IQueryHandler<GetArticleByIdQuery, ArticleViewModel?>>(sp =>
-                    new GetArticleByIdQueryHandler(
-                        Db,
-                        Cache,
-                        configuration))
-                .AddScoped<IArticleCatalogQueryService>(sp =>
-                    new ArticleCatalogQueryService(
-                        Db,
-                        configuration.GetValue<string>("CosmosPublisherUrl") ?? "",
-                        configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? ""))
-                .AddScoped<IQueryHandler<GetTableOfContentsQuery, TableOfContents>>(sp =>
-                    new GetTableOfContentsQueryHandler(
-                        sp.GetRequiredService<IArticleCatalogQueryService>()))
-                .AddScoped<IQueryHandler<SearchPublishedArticlesQuery, List<TableOfContentsItem>>>(sp =>
-                    new SearchPublishedArticlesQueryHandler(
-                        sp.GetRequiredService<IArticleCatalogQueryService>()))
-                .AddScoped<CommonMediator, Cosmos.Common.Features.Shared.Mediator>()
-                .AddHttpClient()  // ✅ ADD THIS - Registers IHttpClientFactory
-                .AddRazorPages()
-                .Services
-                .BuildServiceProvider();
+                .AddHttpClient() // Register IHttpClientFactory
+                .AddSingleton<IMediator, Sky.Editor.Features.Shared.Mediator>(); // Register Mediator
+            
+            Services = serviceCollection.BuildServiceProvider();
 
             // ✅ GET MEDIATOR FROM SERVICE PROVIDER FIRST
-            Mediator = Services.GetRequiredService<CommonMediator>();
+            Mediator = Services.GetRequiredService<IMediator>();
 
             // ✅ NOW CREATE TEMPLATE SERVICE WITH CONFIGURATION AND SERVICE PROVIDER
             TemplateService = new TemplateService(
@@ -518,14 +432,14 @@ namespace Sky.Tests
                 HttpContextAccessor,
                 authorInfoService,
                 Clock,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 ViewRenderService,
                 Services, // ✅ Pass the service provider
                 new NoOpPublishingProgressReporter());
 
             // ✅ NOW UPDATE RedirectService and TitleChangeService with the PublishingService
             RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);
-            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
+            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
 
             // ✅ NOW CREATE LOGIC WITH TEMPLATE SERVICE
             Logic = new ArticleEditLogic(
@@ -728,8 +642,8 @@ namespace Sky.Tests
                 TitleChangeService,
                 TemplateService,
                 Mediator,
-                Cache,                          // ✅ Memory cache for layout caching
-                DynamicConfigurationProvider);  // ✅ Config provider for tenant-aware caching
+                Cache,                          // ✅ Add memory cache for layout caching
+                DynamicConfigurationProvider);  // ✅ Add config provider for tenant-aware caching
 
             // Setup user context
             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]

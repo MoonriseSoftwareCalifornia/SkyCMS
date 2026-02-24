@@ -31,7 +31,6 @@ namespace Sky.Tests.Services.Publishing
     using Newtonsoft.Json;
     using Sky.Cms.Services;
     using Sky.Editor.Infrastructure.Time;
-    using Sky.Editor.Services.BlogPublishing;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
@@ -255,10 +254,10 @@ namespace Sky.Tests.Services.Publishing
             var storageMock = new Mock<IStorageContext>();
             var loggerMock = new Mock<ILogger<PublishingService>>();
             var settingsMock = CreateSettingsMock(staticPagesEnabled: false);
-            var blogRenderingMock = new Mock<IBlogRenderingService>();
-            blogRenderingMock.Setup(b => b.GenerateBlogStreamHtml(It.IsAny<Article>())).ReturnsAsync("<div>stream</div>");
+            var blogStreamRenderingMock = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
+            blogStreamRenderingMock.Setup(b => b.GenerateBlogStreamWrapperAsync(It.IsAny<Article>(), It.IsAny<string>())).ReturnsAsync("<div>stream</div>");
 
-            var service = CreatePublishingService(storageMock.Object, settingsMock.Object, loggerMock.Object, db, blogRenderingMock.Object);
+            var service = CreatePublishingService(storageMock.Object, settingsMock.Object, loggerMock.Object, db, blogStreamRenderingMock.Object);
 
             var blog = new Article
             {
@@ -291,8 +290,8 @@ namespace Sky.Tests.Services.Publishing
             var storageMock = new Mock<IStorageContext>();
             var loggerMock = new Mock<ILogger<PublishingService>>();
             var settingsMock = CreateSettingsMock(staticPagesEnabled: false);
-            var blogRenderingMock = new Mock<IBlogRenderingService>();
-            blogRenderingMock.Setup(b => b.GenerateBlogStreamHtml(It.IsAny<Article>())).ReturnsAsync("<div>updated</div>");
+            var blogRenderingMock = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
+            blogRenderingMock.Setup(b => b.GenerateBlogStreamWrapperAsync(It.IsAny<Article>(), It.IsAny<string>())).ReturnsAsync("<div>updated</div>");
 
             var existing = new Article
             {
@@ -611,7 +610,7 @@ namespace Sky.Tests.Services.Publishing
             IEditorSettings settings,
             ILogger<PublishingService> logger,
             ApplicationDbContext? db = null,
-            IBlogRenderingService? blogRenderingService = null)
+            Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService? blogStreamRenderingService = null)
         {
             db ??= CreateDbContext();
 
@@ -630,7 +629,7 @@ namespace Sky.Tests.Services.Publishing
             var viewRenderer = new Mock<IViewRenderService>();
             viewRenderer.Setup(v => v.RenderToStringAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync("<html>ok</html>");
 
-            blogRenderingService ??= new Mock<IBlogRenderingService>().Object;
+            blogStreamRenderingService ??= new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>().Object;
 
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
 
@@ -642,7 +641,7 @@ namespace Sky.Tests.Services.Publishing
                 accessor,
                 authors.Object,
                 new SystemClock(),
-                blogRenderingService,
+                blogStreamRenderingService,
                 viewRenderer.Object,
                 serviceProvider,
                 new NoOpPublishingProgressReporter());

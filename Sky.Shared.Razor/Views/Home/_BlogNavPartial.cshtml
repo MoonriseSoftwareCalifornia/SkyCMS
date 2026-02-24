@@ -1,0 +1,31 @@
+﻿@using Cosmos.Common.Models.Blog
+@model BlogIndexViewModel
+@{
+    var urlPath = this.ViewContext.HttpContext.Request.Path;
+    var nextPageUrl = urlPath + "?page=" + (Model.Page + 1);
+    var prevPageUrl = urlPath + "?page=" + (Model.Page - 1);
+}
+<nav class="sky-blog-stream-nav-container" aria-label="Blog pagination">
+    <ul class="sky-blog-stream-nav-pagination">
+        <li class="sky-blog-stream-nav-item {{ if !pagination.prev }}sky-blog-stream-nav-item-disabled{{ end }}">
+            @if (Model.Page > 1)
+            {
+                <a href="@nextPageUrl" class="sky-blog-stream-nav-link" aria-label="Previous">&laquo; Newer</a>
+            }
+            else
+            {
+                <span class="sky-blog-stream-nav-link" aria-hidden="true">&laquo; Newer</span>
+            }
+        </li>
+        <li class="sky-blog-stream-nav-item {{ if !pagination.next }}sky-blog-stream-nav-item-disabled{{ end }}">
+            @if (Model.Page < Model.TotalPages)
+            {
+                <a href="@prevPageUrl" class="sky-blog-stream-nav-link" aria-label="Next">Older &raquo;</a>
+            }
+            else
+            {
+                <span class="sky-blog-stream-nav-link" aria-hidden="true">Older &raquo;</span>
+            }
+        </li>
+    </ul>
+</nav>

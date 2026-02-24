@@ -228,18 +228,18 @@ namespace Sky.Tests
                 var redirectService = (IRedirectService)redirectServiceField?.GetValue(baseTestContext);
                 var templateService = (ITemplateService)templateServiceField?.GetValue(baseTestContext);
 
-                // ? CREATE TENANT-SPECIFIC PublishingService with THIS tenant's DbContext
+                // ✅ CREATE TENANT-SPECIFIC PublishingService with THIS tenant's DbContext
                 // This prevents DbContext threading issues when multiple tenants publish concurrently
                 var authorInfoServiceField = typeof(SkyCmsTestBase).GetField("AuthorInfoService", BindingFlags.NonPublic | BindingFlags.Instance);
-                var blogRenderingServiceField = typeof(SkyCmsTestBase).GetField("BlogRenderingService", BindingFlags.NonPublic | BindingFlags.Instance);
+                var blogStreamRenderingServiceField = typeof(SkyCmsTestBase).GetField("BlogStreamRenderingService", BindingFlags.NonPublic | BindingFlags.Instance);
                 var viewRenderServiceField = typeof(SkyCmsTestBase).GetField("ViewRenderService", BindingFlags.NonPublic | BindingFlags.Instance);
                 var httpContextAccessorField = typeof(SkyCmsTestBase).GetField("HttpContextAccessor", BindingFlags.NonPublic | BindingFlags.Instance);
-                
+
                 var authorInfoService = (Sky.Editor.Services.Authors.IAuthorInfoService)authorInfoServiceField?.GetValue(baseTestContext);
-                var blogRenderingService = (Sky.Editor.Services.BlogPublishing.IBlogRenderingService)blogRenderingServiceField?.GetValue(baseTestContext);
+                var blogStreamRenderingService = (Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService)blogStreamRenderingServiceField?.GetValue(baseTestContext);
                 var viewRenderService = (Sky.Cms.Services.IViewRenderService)viewRenderServiceField?.GetValue(baseTestContext);
                 var httpContextAccessor = (IHttpContextAccessor)httpContextAccessorField?.GetValue(baseTestContext);
-                
+
                 // Build a minimal service provider for this tenant's PublishingService
                 var tenantServiceCollection = new ServiceCollection();
                 tenantServiceCollection.AddSingleton(DbContext); // Use THIS tenant's DbContext
@@ -254,7 +254,7 @@ namespace Sky.Tests
                     httpContextAccessor,
                     authorInfoService,
                     clock,
-                    blogRenderingService,
+                    blogStreamRenderingService,
                     viewRenderService,
                     tenantServiceProvider,
                     new Sky.Editor.Services.Publishing.NoOpPublishingProgressReporter());

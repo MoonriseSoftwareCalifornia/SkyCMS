@@ -1,0 +1,26 @@
+﻿@using Cosmos.Common.Models.Blog
+@model BlogListItem
+<div class="sky-blog-stream-card-col">
+    <article class="sky-blog-stream-card">
+        @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
+        {
+            <figure class="sky-blog-stream-figure">
+                <img src="@Model.BannerImage" alt="@Model.Title" class="sky-blog-stream-card-image">
+            </figure>
+        }
+        <div class="sky-blog-stream-card-body">
+            <p class="sky-blog-post-info">
+                <time class="sky-blog-post-info-updated" datetime="@Model.Updated?.UtcDateTime.ToString("O")">@Model.Updated?.UtcDateTime.ToString("O")</time>
+                @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
+                {
+                    <span class="sky-blog-post-header-author">@Model.AuthorInfo</span>
+                }
+            </p>
+            <h3 class="blog-stream-card-title"><a href="@Model.UrlPath">@Model.Title</a></h3>
+            @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+            {
+                <p class="blog-stream-card-excerpt">@Model.Introduction</p>
+            }
+        </div>
+    </article>
+</div>

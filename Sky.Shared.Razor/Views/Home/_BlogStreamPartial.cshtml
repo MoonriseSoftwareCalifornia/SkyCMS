@@ -1,0 +1,30 @@
+﻿@using Cosmos.Common.Models.Blog
+@model Cosmos.Common.Models.ArticleViewModel
+@{
+    var blogPosts = (BlogIndexViewModel?)ViewData["BlogIndexViewModel"] ?? null;
+}
+<section class="sky-blog-stream-section" aria-labelledby="blog-heading">
+    <div class="sky-blog-stream-container">
+        <header class="sky-blog-stream-header">
+            <h1 class="sky-blog-stream-h1">@Model.Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+            {
+                <p class="sky-blog-stream-intro">@Model.Introduction</p>
+            }
+        </header>
+        <div class="sky-blog-stream-row" id="post-list">
+            @if (blogPosts == null || blogPosts.Posts == null || !blogPosts.Posts.Any())
+            {
+                <p>No blog posts available.</p>
+            }
+            else
+            {
+                @foreach (var post in blogPosts.Posts ?? Enumerable.Empty<BlogListItem>())
+                {
+                    @Html.Partial("_BlogStreamCard", post)
+                }
+            }
+        </div>
+        @Html.Partial("BlogNavPartial", blogPosts)
+    </div>
+</section>
