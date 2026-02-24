@@ -9,26 +9,27 @@ namespace Sky.Tests.Features.Articles.Clone
 {
     using System;
     using System.Threading.Tasks;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Features.Articles.Clone;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Shared;
 
     [TestClass]
     public class CloneArticleHandlerTests : ArticleTestBase
     {
         private CloneArticleHandler _handler;
-        private Mock<IMediator> _mockMediator;
+        private Mock<CommonMediator> _mockMediator;
 
         [TestInitialize]
         public new void TestInitialize()
         {
             base.TestInitialize();
 
-            _mockMediator = new Mock<IMediator>();
+            _mockMediator = new Mock<CommonMediator>();
             
             _handler = new CloneArticleHandler(
                 DbContext,

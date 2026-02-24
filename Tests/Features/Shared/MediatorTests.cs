@@ -7,10 +7,10 @@
 
 namespace Sky.Tests.Features.Shared
 {
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Shared;
     using System;
     using System.Threading.Tasks;
 

@@ -17,6 +17,9 @@ namespace Sky.Cms.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.EditorQueries;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
@@ -40,7 +43,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Models;
     using Sky.Editor.Models.GrapesJs;
     using Sky.Editor.Services.CDN;
@@ -59,7 +61,7 @@ namespace Sky.Cms.Controllers
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
     public class EditorController : BaseController
     {
-        private readonly IMediator mediator;
+        private readonly CommonMediator mediator;
         private readonly ArticleEditLogic articleLogic;
         private readonly ApplicationDbContext dbContext;
         private readonly RoleManager<IdentityRole> roleManager;
@@ -93,7 +95,7 @@ namespace Sky.Cms.Controllers
         /// <param name="reservedPaths">Reserved path service.</param>
         /// <param name="titleChangeService">Title change service.</param>
         /// <param name="templateService">Template service.</param>
-        /// <param name="mediator">Mediator instance.</param>
+        /// <param name="mediator">Mediator instance for CQRS commands and queries.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public EditorController(
@@ -111,7 +113,7 @@ namespace Sky.Cms.Controllers
             IReservedPaths reservedPaths,
             ITitleChangeService titleChangeService,
             ITemplateService templateService,
-            IMediator mediator,
+            CommonMediator mediator,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(dbContext, userManager, memoryCache, configProvider)
@@ -270,7 +272,10 @@ namespace Sky.Cms.Controllers
 
             model.HtmlContent = htmlService.EnsureEditableMarkers(model.HtmlContent);
 
-            var article = await articleLogic.GetArticleByArticleNumber(model.ArticleNumber, null);
+            var article = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByArticleNumberQuery 
+            { 
+                ArticleNumber = model.ArticleNumber 
+            });
 
             if (article == null)
             {
@@ -306,12 +311,12 @@ namespace Sky.Cms.Controllers
                     UserId = Guid.Parse(await GetUserId())
                 };
 
-                var result = await mediator.SendAsync(command);
+                var result = await mediator.SendAsync<CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>>(command);
 
                 if (!result.IsSuccess)
                 {
                     var errorMessage = result.ErrorMessage ??
-                        string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+                        string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>());
                     return Json(new DesignerResult { success = false, message = errorMessage });
                 }
 
@@ -337,7 +342,10 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var article = await articleLogic.GetArticleByArticleNumber(id, null);
+            var article = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByArticleNumberQuery 
+            { 
+                ArticleNumber = id 
+            });
             if (article == null)
             {
                 return NotFound();
@@ -452,7 +460,7 @@ namespace Sky.Cms.Controllers
         /// Gets the article trash list.
         /// </summary>
         /// <returns>Trask list.</returns>
-        [Authorize(Roles = "Administrators, Editors, Authors")]
+        [Authorize(Roles = " Administrators, Editors, Authors")]
         public async Task<IActionResult> GetTrashList()
         {
             if (dbContext.Database.IsCosmos())
@@ -507,8 +515,8 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var left = await articleLogic.GetArticleById(leftId, Guid.Parse(await GetUserId()));
-            var right = await articleLogic.GetArticleById(rightId, Guid.Parse(await GetUserId()));
+            var left = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByIdQuery { Id = leftId });
+            var right = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByIdQuery { Id = rightId });
             @ViewData["PageTitle"] = left.Title;
 
             ViewData["LeftVersion"] = left.VersionNumber;
@@ -741,38 +749,16 @@ namespace Sky.Cms.Controllers
                 Introduction = model.Introduction
             };
 
-            var result = await mediator.SendAsync(command);
+            var result = await mediator.SendAsync<CommandResult<ArticleViewModel>>(command);
 
             if (!result.IsSuccess)
             {
-                // Title validation errors will be in result.Errors["Title"]
-                var errorMessage = result.ErrorMessage ??
-                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+                // Handler validation errors (including title conflicts)
+                var errorMessage = result.ErrorMessage ?? 
+                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>());
                 ModelState.AddModelError(string.Empty, errorMessage);
-
-                // Re-populate ViewData for error display
-                var defaultLayout = await GetCurrentLayoutAsync();
-                ViewData["Layouts"] = await BaseGetLayoutListItems();
-                ViewData["sortOrder"] = "asc";
-                ViewData["currentSort"] = "title";
-                ViewData["pageNo"] = 0;
-                ViewData["pageSize"] = 20;
-
-                var query = (await GetTemplatesForCurrentLayoutAsync())
-                   .OrderBy(t => t.Title)
-                   .Select(s => new TemplateIndexViewModel
-                   {
-                       Id = s.Id,
-                       LayoutName = defaultLayout.LayoutName,
-                       Description = s.Description,
-                       Title = s.Title,
-                       UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
-                   });
-
-                ViewData["RowCount"] = await query.CountAsync();
-                ViewData["TemplateList"] = await query.Skip(0 * 20).Take(20).ToListAsync();
-
-                return View(model);
+                
+                return View(viewName: "__NewHomePage", model: model);
             }
 
             return RedirectToAction("Versions", "Editor", new { Id = result.Data.ArticleNumber });
@@ -862,7 +848,11 @@ namespace Sky.Cms.Controllers
 
             var lastVersion = await articlesQuery.MaxAsync(m => m.VersionNumber);
 
-            var articleViewModel = await articleLogic.GetArticleByArticleNumber(id, lastVersion);
+            var articleViewModel = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByArticleNumberQuery 
+            { 
+                ArticleNumber = id,
+                VersionNumber = lastVersion
+            });
 
             ViewData["Original"] = articleViewModel;
 
@@ -923,7 +913,10 @@ namespace Sky.Cms.Controllers
 
             var userId = Guid.Parse(await GetUserId());
 
-            var articleViewModel = await articleLogic.GetArticleById(model.Id, userId);
+            var articleViewModel = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByIdQuery 
+            { 
+                Id = model.Id 
+            });
 
             if (ModelState.IsValid)
             {
@@ -1063,13 +1056,13 @@ namespace Sky.Cms.Controllers
                 UrlPathOverride = "root"                     // CRITICAL: Home page must be "root"
             };
 
-            var result = await mediator.SendAsync(command);
+            var result = await mediator.SendAsync<CommandResult<ArticleViewModel>>(command);
 
             if (!result.IsSuccess)
             {
                 // Handler validation errors (including title conflicts)
                 var errorMessage = result.ErrorMessage ?? 
-                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>());
                 ModelState.AddModelError(string.Empty, errorMessage);
                 
                 return View(viewName: "__NewHomePage", model: model);
@@ -1591,7 +1584,7 @@ namespace Sky.Cms.Controllers
                 UserId = Guid.Parse(await GetUserId())
             };
 
-            var result = await mediator.SendAsync(command);
+            var result = await mediator.SendAsync<CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>>(command);
 
             if (!result.IsSuccess)
             {
@@ -1668,7 +1661,7 @@ namespace Sky.Cms.Controllers
 
         /// <summary>
         /// Edit web page code with Monaco editor.
-        /// </summary>
+        /// </param>
         /// <param name="id">Article Number (not ID).</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [Authorize(Roles = "Administrators, Editors")]
@@ -1810,10 +1803,11 @@ namespace Sky.Cms.Controllers
                             UserId = Guid.Parse(await GetUserId())
                         };
 
-                        var result = await mediator.SendAsync(command);
+                        var result = await mediator.SendAsync<CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>>(command);
 
                         if (!result.IsSuccess)
                         {
+
                             // Handle validation errors
                             if (result.Errors != null)
                             {

@@ -10,37 +10,24 @@ namespace Cosmos.Common.Features.Articles.Queries;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Cosmos.Common.Data;
-using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Articles.Shared;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 
 /// <summary>
 /// Handler for searching published articles.
 /// </summary>
 public class SearchPublishedArticlesQueryHandler : IQueryHandler<SearchPublishedArticlesQuery, List<TableOfContentsItem>>
 {
-    private readonly ArticleLogic articleLogic;
+    private readonly IArticleCatalogQueryService catalogService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SearchPublishedArticlesQueryHandler"/> class.
     /// </summary>
-    /// <param name="dbContext">Database context.</param>
-    /// <param name="memoryCache">Memory cache.</param>
-    /// <param name="configuration">Configuration for publisher settings.</param>
-    public SearchPublishedArticlesQueryHandler(
-        ApplicationDbContext dbContext,
-        IMemoryCache memoryCache,
-        IConfiguration configuration)
+    /// <param name="catalogService">Service for querying article catalog.</param>
+    public SearchPublishedArticlesQueryHandler(IArticleCatalogQueryService catalogService)
     {
-        var publisherUrl = configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty;
-        var blobPublicUrl = configuration.GetValue<string>("BlobPublicUrl")
-            ?? configuration.GetValue<string>("AzureBlobStorageEndPoint")
-            ?? string.Empty;
-
-        articleLogic = new ArticleLogic(dbContext, memoryCache, publisherUrl, blobPublicUrl);
+        this.catalogService = catalogService;
     }
 
     /// <inheritdoc />
@@ -48,6 +35,6 @@ public class SearchPublishedArticlesQueryHandler : IQueryHandler<SearchPublished
         SearchPublishedArticlesQuery query,
         CancellationToken cancellationToken = default)
     {
-        return articleLogic.Search(query.Text);
+        return catalogService.SearchAsync(query.Text);
     }
 }

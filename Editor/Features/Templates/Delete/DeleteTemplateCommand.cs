@@ -8,7 +8,7 @@
 namespace Sky.Editor.Features.Templates.Delete
 {
     using System;
-    using Sky.Editor.Features.Shared;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Command to delete a template and its associated page design versions.

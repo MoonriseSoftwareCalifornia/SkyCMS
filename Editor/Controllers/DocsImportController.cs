@@ -21,6 +21,8 @@ using Cosmos.BlobService;
 using Cosmos.BlobService.Models;
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
+using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
+using Cosmos.Common.Features.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -34,7 +36,6 @@ using Sky.Cms.Controllers;
 using Sky.Editor.Data.Logic;
 using Sky.Editor.Features.Articles.Create;
 using Sky.Editor.Features.Articles.Save;
-using Sky.Editor.Features.Shared;
 using Sky.Editor.Services.EditorSettings;
 
 /// <summary>
@@ -52,7 +53,7 @@ public class DocsImportController : ControllerBase
     private const int MaxHtmlBytes = 1_048_576;
 
     private readonly ApplicationDbContext dbContext;
-    private readonly IMediator mediator;
+    private readonly CommonMediator mediator;
     private readonly ArticleEditLogic articleLogic;
     private readonly IConfiguration configuration;
     private readonly ILogger<DocsImportController> logger;
@@ -71,7 +72,7 @@ public class DocsImportController : ControllerBase
     /// <param name="editorSettings">Editor settings accessor.</param>
     public DocsImportController(
         ApplicationDbContext dbContext,
-        IMediator mediator,
+        CommonMediator mediator,
         ArticleEditLogic articleLogic,
         IConfiguration configuration,
         ILogger<DocsImportController> logger,

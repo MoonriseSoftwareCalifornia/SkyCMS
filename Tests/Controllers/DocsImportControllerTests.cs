@@ -18,6 +18,8 @@ using Cosmos.BlobService.Models;
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Shared;
+using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 using Cosmos.Common.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +34,6 @@ using Cosmos.Cms.Editor.Controllers;
 using Sky.Editor.Data.Logic;
 using Sky.Editor.Features.Articles.Create;
 using Sky.Editor.Features.Articles.Save;
-using Sky.Editor.Features.Shared;
 using Sky.Editor.Infrastructure.Time;
 using Sky.Editor.Services.Catalog;
 using Sky.Editor.Services.EditorSettings;
@@ -52,7 +53,7 @@ public class DocsImportControllerTests
     private const string ApiKey = "test-key";
 
     private ApplicationDbContext dbContext;
-    private Mock<IMediator> mediatorMock;
+    private Mock<CommonMediator> mediatorMock;
     private Mock<IStorageContext> storageContextMock;
     private Mock<IEditorSettings> editorSettingsMock;
     private Mock<ILogger<DocsImportController>> loggerMock;
@@ -72,7 +73,7 @@ public class DocsImportControllerTests
             .Options;
 
         dbContext = new ApplicationDbContext(options);
-        mediatorMock = new Mock<IMediator>();
+        mediatorMock = new Mock<CommonMediator>();
         storageContextMock = new Mock<IStorageContext>();
         editorSettingsMock = new Mock<IEditorSettings>();
         loggerMock = new Mock<ILogger<DocsImportController>>();

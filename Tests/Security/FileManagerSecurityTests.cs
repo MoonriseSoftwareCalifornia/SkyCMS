@@ -8,6 +8,8 @@ namespace Sky.Tests.Security
     using Cosmos.BlobService;
     using Cosmos.Cms.Common;  // ← Added for ArticleType
     using Cosmos.Common;      // ← Added for ArticleViewModel
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
@@ -19,7 +21,7 @@ namespace Sky.Tests.Security
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Features.Articles.Create;  // ← Added for CreateArticleCommand
-    using Sky.Editor.Features.Shared;           // ← Added for IMediator, CommandResult
+    using Sky.Editor.Features.Shared;           // ← Added for MultiTenantMediator
     using System;
     using System.Linq;
     using System.Security.Claims;
@@ -300,7 +302,7 @@ namespace Sky.Tests.Security
         public async Task Mediator_WithNullConfigProvider_SkipsValidation()
         {
             // Arrange - Create mediator with NULL configuration provider (single-tenant)
-            var mockInnerMediator = new Mock<IMediator>();
+            var mockInnerMediator = new Mock<CommonMediator>();
             var singleTenantMediator = new MultiTenantMediator(
                 mockInnerMediator.Object,
                 Db,
@@ -315,7 +317,7 @@ namespace Sky.Tests.Security
             };
 
             mockInnerMediator.Setup(m => m.SendAsync(command, default))
-                .ReturnsAsync(new CommandResult<ArticleViewModel>
+                .ReturnsAsync(new Cosmos.Common.Features.Shared.CommandResult<ArticleViewModel>
                 {
                     IsSuccess = true,
                     Data = new ArticleViewModel { Title = "Test" }
@@ -350,7 +352,7 @@ namespace Sky.Tests.Security
             mockConfig.Setup(p => p.GetTenantDomainNameFromRequest())
                 .Returns(Tenant1Domain);
 
-            var mockInnerMediator = new Mock<IMediator>();
+            var mockInnerMediator = new Mock<CommonMediator>();
             var mediator = new MultiTenantMediator(
                 mockInnerMediator.Object,
                 Db,
@@ -387,7 +389,7 @@ namespace Sky.Tests.Security
             mockConfig.Setup(p => p.GetTenantDomainNameFromRequest())
                 .Returns(string.Empty); // ← Empty tenant domain
 
-            var mockInnerMediator = new Mock<IMediator>();
+            var mockInnerMediator = new Mock<CommonMediator>();
             var mediator = new MultiTenantMediator(
                 mockInnerMediator.Object,
                 Db,
@@ -402,7 +404,7 @@ namespace Sky.Tests.Security
             };
 
             mockInnerMediator.Setup(m => m.SendAsync(command, default))
-                .ReturnsAsync(new CommandResult<ArticleViewModel>
+                .ReturnsAsync(new Cosmos.Common.Features.Shared.CommandResult<ArticleViewModel>
                 {
                     IsSuccess = true,
                     Data = new ArticleViewModel { Title = "Test" }

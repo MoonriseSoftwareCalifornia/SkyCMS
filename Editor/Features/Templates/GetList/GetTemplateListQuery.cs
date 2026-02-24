@@ -7,7 +7,7 @@
 
 namespace Sky.Editor.Features.Templates.GetList
 {
-    using Sky.Editor.Features.Shared;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Query to retrieve a paginated, sorted list of templates.

@@ -7,16 +7,17 @@
 
 namespace Cosmos.Common.Features.Articles.EditorQueries;
 
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Articles.Shared;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Handler for retrieving articles by article number for editor usage.
@@ -24,7 +25,7 @@ using Microsoft.Extensions.Configuration;
 public class GetArticleByArticleNumberQueryHandler : IQueryHandler<GetArticleByArticleNumberQuery, ArticleViewModel?>
 {
     private readonly ApplicationDbContext dbContext;
-    private readonly ArticleLogic articleLogic;
+    private readonly ArticleViewModelBuilder articleViewModelBuilder;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetArticleByArticleNumberQueryHandler"/> class.
@@ -44,7 +45,7 @@ public class GetArticleByArticleNumberQueryHandler : IQueryHandler<GetArticleByA
             ?? configuration.GetValue<string>("AzureBlobStorageEndPoint")
             ?? string.Empty;
 
-        articleLogic = new ArticleLogic(dbContext, memoryCache, publisherUrl, blobPublicUrl, isEditor: true);
+        articleViewModelBuilder = new ArticleViewModelBuilder(dbContext, memoryCache, publisherUrl, isEditor: true);
     }
 
     /// <inheritdoc />
@@ -66,6 +67,6 @@ public class GetArticleByArticleNumberQueryHandler : IQueryHandler<GetArticleByA
             return null;
         }
 
-        return await articleLogic.BuildArticleViewModelAsync(entity, "en-US");
+        return await articleViewModelBuilder.BuildFromArticleAsync(entity, "en-US");
     }
 }

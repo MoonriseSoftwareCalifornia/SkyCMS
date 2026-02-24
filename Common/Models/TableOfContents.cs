@@ -42,6 +42,6 @@ namespace Cosmos.Common.Models
         /// <summary>
         /// Gets or sets items in the current page.
         /// </summary>
-        public List<TableOfContentsItem> Items { get; set; }
+        public List<TableOfContentsItem> Items { get; set; } = new List<TableOfContentsItem>();
     }
 }

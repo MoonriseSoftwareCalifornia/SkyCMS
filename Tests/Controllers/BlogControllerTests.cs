@@ -33,6 +33,7 @@ namespace Sky.Tests.Controllers
     using System.Security.Claims;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Integration tests for the <see cref="BlogController"/> class.
@@ -43,8 +44,7 @@ namespace Sky.Tests.Controllers
     {
         private BlogController controller = null!;
         private BlogController integrationController = null!; // Controller with real mediator for integration tests
-        private Mock<IMediator> mediatorMock = null!;
-        private Mock<CommonMediator> articleQueryMediatorMock = null!;
+        private Mock<CommonMediator> mediatorMock = null!;
         private Mock<UserManager<IdentityUser>> userManagerMock = null!;
         private Mock<IBlogRenderingService> blogRenderingServiceMock = null!;
 
@@ -53,9 +53,8 @@ namespace Sky.Tests.Controllers
         {
             InitializeTestContext(seedLayout: true);
             
-            mediatorMock = new Mock<IMediator>();
-            articleQueryMediatorMock = new Mock<CommonMediator>();
-            articleQueryMediatorMock
+            mediatorMock = new Mock<CommonMediator>();
+            mediatorMock
                 .Setup(m => m.QueryAsync(It.IsAny<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ArticleViewModel
                 {
@@ -101,7 +100,6 @@ namespace Sky.Tests.Controllers
                 blogRenderingServiceMock.Object,  // Use mocked BlogRenderingService
                 TitleChangeService,
                 mediatorMock.Object,             // Use mocked Mediator for unit testing
-                articleQueryMediatorMock.Object,
                 Cache,                           // ✅ Add memory cache
                 DynamicConfigurationProvider     // ✅ Add config provider
             );
@@ -116,7 +114,6 @@ namespace Sky.Tests.Controllers
                 blogRenderingServiceMock.Object,
                 TitleChangeService,
                 Mediator,                        // Use real Mediator for integration testing
-                articleQueryMediatorMock.Object,
                 Cache,
                 DynamicConfigurationProvider
             );

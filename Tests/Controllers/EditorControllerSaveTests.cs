@@ -455,10 +455,10 @@ redirect.Content, "Redirect content should have clickable link to new URL");
             // This will throw if handler is not registered
             try
             {
-                var handlerType = typeof(Sky.Editor.Features.Shared.ICommandHandler<,>)
+                var handlerType = typeof(Cosmos.Common.Features.Shared.ICommandHandler<,>)
                     .MakeGenericType(
                         command.GetType(),
-                        typeof(Sky.Editor.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>));
+                        typeof(Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>));
 
                 var handler = Services.GetService(handlerType);
                 Assert.IsNotNull(handler, $"Handler not registered: {handlerType.Name}");

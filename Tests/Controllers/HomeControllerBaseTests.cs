@@ -36,7 +36,6 @@ namespace Sky.Tests.Controllers
         private TestHomeController controller = null!;
         private Mock<ILogger<TestHomeController>> loggerMock = null!;
         private Mock<IEmailSender> emailSenderMock = null!;
-        private Mock<IMediator> mediatorMock = null!;
 
         [TestInitialize]
         public new void Setup()
@@ -45,14 +44,10 @@ namespace Sky.Tests.Controllers
 
             loggerMock = new Mock<ILogger<TestHomeController>>();
             emailSenderMock = new Mock<IEmailSender>();
-            mediatorMock = new Mock<IMediator>();
-            mediatorMock.Setup(m => m.QueryAsync(It.IsAny<IQuery<TableOfContents>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new TableOfContents());
-            mediatorMock.Setup(m => m.QueryAsync(It.IsAny<IQuery<List<TableOfContentsItem>>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<TableOfContentsItem>());
 
+            // Use the real mediator from the base class instead of a mock
             controller = new TestHomeController(
-                mediatorMock.Object,
+                Mediator,
                 Db,
                 Storage,
                 loggerMock.Object,

@@ -9,7 +9,7 @@ namespace Sky.Editor.Features.Templates.Publishing
 {
     using System;
     using Cosmos.Common.Data;
-    using Sky.Editor.Features.Shared;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Command to publish a page design version.

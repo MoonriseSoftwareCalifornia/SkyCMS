@@ -199,6 +199,7 @@ namespace Cosmos.Common.Data.Logic
         /// Future optimization: replace regex with hierarchical index or persisted depth metadata.
         /// </remarks>
         /// <returns>Paged table of contents.</returns>
+        [Obsolete("Use IArticleCatalogQueryService.GetTableOfContentsAsync instead", false)]
         public async Task<TableOfContents> GetTableOfContents(string prefix, int pageNo = 0, int pageSize = 10, bool orderByPublishedDate = false)
         {
             if (string.IsNullOrEmpty(prefix) || string.IsNullOrWhiteSpace(prefix) || prefix.Equals("/"))
@@ -293,6 +294,7 @@ namespace Cosmos.Common.Data.Logic
         /// SQLite nuance: DateTimeOffset comparison adjustments addressed by explicit HasValue checks.
         /// </remarks>
         /// <returns>Article view model.</returns>
+        [Obsolete("Use IPublishedPageQueryService.GetPublishedPageByUrlAsync instead", false)]
         public virtual async Task<ArticleViewModel> GetPublishedPageByUrl(string urlPath, string lang = "", TimeSpan? cacheSpan = null, TimeSpan? layoutCache = null, bool includeLayout = true)
         {
             urlPath = urlPath?.ToLower().Trim(new char[] { ' ', '/' });
@@ -346,6 +348,7 @@ namespace Cosmos.Common.Data.Logic
         /// </summary>
         /// <param name="urlPath">URL path (e.g., "blog/my-article"). Case-insensitive. Root page is "root".</param>
         /// <returns>Article view model.</returns>
+        [Obsolete("Use IPublishedPageQueryService.GetPublishedPageHeaderByUrlAsync instead", false)]
         public virtual async Task<ArticleViewModel> GetPublishedPageHeaderByUrl(string urlPath)
         {
             urlPath = urlPath?.ToLower().Trim(new char[] { ' ', '/' });
@@ -406,6 +409,7 @@ namespace Cosmos.Common.Data.Logic
         /// Expensive for large datasets. Consider external indexing (e.g., Azure Search, Elastic) for scale.
         /// Multi-term queries are AND-combined.
         /// </remarks>
+        [Obsolete("Use IArticleCatalogQueryService.SearchAsync instead", false)]
         public async Task<List<TableOfContentsItem>> Search(string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -460,6 +464,7 @@ namespace Cosmos.Common.Data.Logic
         /// </summary>
         /// <param name="published">The publish timestamp to compare against.</param>
         /// <returns>A tuple containing the previous and next blog posts.</returns>
+        [Obsolete("Use IBlogNavigationService.GetAdjacentBlogPostsAsync instead", false)]
         public async Task<(TableOfContentsItem previous, TableOfContentsItem next)> GetAdjacentBlogPosts(DateTimeOffset published)
         {
             var prev = await DbContext.ArticleCatalog
@@ -483,6 +488,7 @@ namespace Cosmos.Common.Data.Logic
         /// </summary>
         /// <param name="model">Blog post view model.</param>
         /// <returns>Task.</returns>
+        [Obsolete("Use IBlogNavigationService.EnrichBlogNavigationAsync instead", false)]
         public async Task EnrichBlogNavigation(ArticleViewModel model)
         {
             if (model == null || model.ArticleType != ArticleType.BlogPost || !model.Published.HasValue)

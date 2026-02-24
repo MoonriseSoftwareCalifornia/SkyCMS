@@ -13,6 +13,8 @@ namespace Sky.Cms.Controllers
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
@@ -25,7 +27,6 @@ namespace Sky.Cms.Controllers
     using Sky.Cms.Models;
     using Sky.Editor.Data;
     using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Models;
     using Sky.Editor.Models.GrapesJs;
     using Sky.Editor.Services.EditorSettings;
@@ -36,6 +37,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Features.Templates.Delete;
     using Sky.Editor.Features.Templates.Get;
     using Sky.Editor.Features.Templates.UpdateMetadata;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Templates controller.
@@ -50,7 +52,7 @@ namespace Sky.Cms.Controllers
         private readonly IStorageContext storageContext;
         private readonly IArticleHtmlService htmlService;
         private readonly ITemplateService templateServices;
-        private readonly IMediator mediator;
+        private readonly CommonMediator mediator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TemplatesController"/> class.
@@ -74,7 +76,7 @@ namespace Sky.Cms.Controllers
             IEditorSettings options,
             IArticleHtmlService htmlService,
             ITemplateService templateServices,
-            IMediator mediator,
+            CommonMediator mediator,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(dbContext, userManager, memoryCache, configProvider)

@@ -9,7 +9,7 @@ namespace Sky.Editor.Features.Templates.Create
 {
     using System;
     using Cosmos.Common.Data;
-    using Sky.Editor.Features.Shared;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Command to create a new page design version.

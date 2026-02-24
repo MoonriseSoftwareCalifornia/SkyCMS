@@ -57,7 +57,9 @@ namespace Sky.Tests.Features.Articles.Queries
         {
             await SeedPublishedPageAsync("blog/test", "Test Title", "Hello world");
 
-            var handler = new GetPublishedPageByUrlQueryHandler(dbContext, memoryCache, configuration);
+            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(dbContext, memoryCache, "https://publisher.test", isEditor: false);
+            var publishedPageService = new Cosmos.Common.Features.Articles.Shared.PublishedPageQueryService(dbContext, memoryCache, viewModelBuilder);
+            var handler = new GetPublishedPageByUrlQueryHandler(publishedPageService);
 
             var result = await handler.HandleAsync(new GetPublishedPageByUrlQuery
             {
@@ -79,7 +81,9 @@ namespace Sky.Tests.Features.Articles.Queries
         {
             var page = await SeedPublishedPageAsync("about", "About", "Header content");
 
-            var handler = new GetPublishedPageHeaderByUrlQueryHandler(dbContext, memoryCache, configuration);
+            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(dbContext, memoryCache, "https://publisher.test", isEditor: false);
+            var publishedPageService = new Cosmos.Common.Features.Articles.Shared.PublishedPageQueryService(dbContext, memoryCache, viewModelBuilder);
+            var handler = new GetPublishedPageHeaderByUrlQueryHandler(publishedPageService);
 
             var result = await handler.HandleAsync(new GetPublishedPageHeaderByUrlQuery
             {
@@ -96,7 +100,8 @@ namespace Sky.Tests.Features.Articles.Queries
         {
             await SeedCatalogEntryAsync("root", "Home", published: now.AddMinutes(-10));
 
-            var handler = new GetTableOfContentsQueryHandler(dbContext, memoryCache, configuration);
+            var catalogService = new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(dbContext, "https://publisher.test", "https://cdn.test");
+            var handler = new GetTableOfContentsQueryHandler(catalogService);
 
             var result = await handler.HandleAsync(new GetTableOfContentsQuery
             {
@@ -116,7 +121,8 @@ namespace Sky.Tests.Features.Articles.Queries
         {
             await SeedPublishedPageAsync("search-me", "Search Title", "Hello searchable content");
 
-            var handler = new SearchPublishedArticlesQueryHandler(dbContext, memoryCache, configuration);
+            var catalogService = new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(dbContext, "https://publisher.test", "https://cdn.test");
+            var handler = new SearchPublishedArticlesQueryHandler(catalogService);
 
             var result = await handler.HandleAsync(new SearchPublishedArticlesQuery
             {

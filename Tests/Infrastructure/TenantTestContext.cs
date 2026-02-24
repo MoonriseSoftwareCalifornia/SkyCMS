@@ -14,6 +14,7 @@ namespace Sky.Tests
     using Cosmos.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
@@ -293,7 +294,7 @@ namespace Sky.Tests
                 serviceCollection.AddSingleton(clock);
                 
                 // Register command handlers (following the pattern in Program.cs line 521-522)
-                serviceCollection.AddScoped<ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>>(sp =>
+                serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>>(sp =>
                     new CreateArticleHandler(
                         DbContext,
                         articleHtmlService,
@@ -304,7 +305,7 @@ namespace Sky.Tests
                         clock,
                         new NullLogger<CreateArticleHandler>()));
                 
-                serviceCollection.AddScoped<ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>>(sp =>
+                serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>>(sp =>
                     new SaveArticleHandler(
                         DbContext,
                         articleHtmlService,

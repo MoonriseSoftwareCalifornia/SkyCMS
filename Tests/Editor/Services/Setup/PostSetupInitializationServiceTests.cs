@@ -16,6 +16,7 @@ namespace Sky.Tests.Editor.Services.Setup
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
@@ -24,7 +25,7 @@ namespace Sky.Tests.Editor.Services.Setup
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Sky.Editor.Services.Setup;
 
     /// <summary>
@@ -305,7 +306,7 @@ namespace Sky.Tests.Editor.Services.Setup
 
         private static (ServiceProvider Provider, ApplicationDbContext DbContext, string DbPath) BuildServiceProviderWithDb(
             IConfiguration configuration,
-            IMediator mediator)
+            CommonMediator mediator)
         {
             var dbPath = Path.Combine(Path.GetTempPath(), $"skycms-postsetup-{Guid.NewGuid()}.db");
             var connectionString = $"Data Source={dbPath}";

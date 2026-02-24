@@ -14,13 +14,14 @@ namespace Sky.Editor.Services.Setup
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Shared;  // ✅ ADD THIS - Correct IMediator namespace
 
     /// <summary>
     /// Background service that runs post-setup initialization tasks after application restart.
@@ -89,7 +90,7 @@ namespace Sky.Editor.Services.Setup
 
                         if (existingHomePage == null)
                         {
-                            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                            var mediator = scope.ServiceProvider.GetRequiredService<CommonMediator>();
 
                             Guid? templateId = null;
                             if (templateIdSetting != null && Guid.TryParse(templateIdSetting.Value, out var parsedTemplateId))

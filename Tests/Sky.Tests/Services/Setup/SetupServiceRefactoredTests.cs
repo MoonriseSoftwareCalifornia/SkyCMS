@@ -12,6 +12,8 @@ namespace Sky.Tests.Services.Setup
     using System.Linq;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Data.Sqlite;
     using Microsoft.EntityFrameworkCore;
@@ -20,7 +22,6 @@ namespace Sky.Tests.Services.Setup
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Services.Setup;
 
     /// <summary>
@@ -37,7 +38,7 @@ namespace Sky.Tests.Services.Setup
         private Mock<IMemoryCache> _cacheMock;
         private Mock<UserManager<IdentityUser>> _userManagerMock;
         private Mock<RoleManager<IdentityRole>> _roleManagerMock;
-        private Mock<IMediator> _mediatorMock;
+        private Mock<CommonMediator> _mediatorMock;
         private SetupService _setupService;
 
         [TestInitialize]
@@ -58,7 +59,7 @@ namespace Sky.Tests.Services.Setup
 
             _loggerMock = new Mock<ILogger<SetupService>>();
             _cacheMock = new Mock<IMemoryCache>();
-            _mediatorMock = new Mock<IMediator>();
+            _mediatorMock = new Mock<CommonMediator>();
 
             // Use ConfigurationBuilder for more reliable configuration mocking
             var configBuilder = new ConfigurationBuilder()

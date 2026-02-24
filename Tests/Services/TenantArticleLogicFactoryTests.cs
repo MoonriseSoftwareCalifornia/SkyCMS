@@ -156,8 +156,8 @@ namespace Sky.Tests.Services
             services.AddSingleton(new SiteSettings());
 
             // Register custom IMediator implementation
-            services.AddSingleton<Sky.Editor.Features.Shared.IMediator>(sp => 
-                new Sky.Editor.Features.Shared.Mediator(sp));
+            services.AddSingleton<Cosmos.Common.Features.Shared.IMediator>(sp => 
+                new Cosmos.Common.Features.Shared.Mediator(sp));
 
             // Register MediatR with handlers from the Editor assembly
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TemplateService>());

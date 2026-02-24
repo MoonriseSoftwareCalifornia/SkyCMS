@@ -13,6 +13,8 @@ namespace Sky.Tests.Services.Setup
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Data.Sqlite;
     using Microsoft.EntityFrameworkCore;
@@ -22,7 +24,6 @@ namespace Sky.Tests.Services.Setup
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Setup;
 
@@ -75,7 +76,7 @@ namespace Sky.Tests.Services.Setup
             public Mock<ILogger<SetupService>> LoggerMock { get; }
             public IMemoryCache MemoryCache { get; }
             public Mock<ILayoutImportService> LayoutImportServiceMock { get; }
-            public Mock<IMediator> MediatorMock { get; }
+            public Mock<CommonMediator> MediatorMock { get; }
             public Mock<UserManager<IdentityUser>> UserManagerMock { get; }
             public Mock<RoleManager<IdentityRole>> RoleManagerMock { get; }
             public Mock<ArticleEditLogic> ArticleEditLogicMock { get; }
@@ -102,7 +103,7 @@ namespace Sky.Tests.Services.Setup
                 LoggerMock = new Mock<ILogger<SetupService>>();
                 MemoryCache = new MemoryCache(new MemoryCacheOptions());
                 LayoutImportServiceMock = new Mock<ILayoutImportService>();
-                MediatorMock = new Mock<IMediator>();
+                MediatorMock = new Mock<CommonMediator>();
                 UserManagerMock = CreateUserManagerMock();
                 RoleManagerMock = CreateRoleManagerMock();
                 

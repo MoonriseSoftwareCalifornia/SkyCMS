@@ -10,6 +10,8 @@ namespace Sky.Tests.Areas.Setup
     using Cosmos.BlobService;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore;
@@ -22,7 +24,6 @@ namespace Sky.Tests.Areas.Setup
     using Moq;
     using Sky.Editor.Data;
     using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.CDN;
@@ -743,7 +744,7 @@ namespace Sky.Tests.Areas.Setup
                 })
                 .Build();
 
-            var mockMediator = new Mock<IMediator>();
+            var mockMediator = new Mock<CommonMediator>();
 
             // Act
             var result = await setupService.InitializeSetupAsync();

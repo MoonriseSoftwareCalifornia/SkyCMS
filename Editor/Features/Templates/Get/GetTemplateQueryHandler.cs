@@ -13,9 +13,9 @@ namespace Sky.Editor.Features.Templates.Get
     using System.Threading;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using Sky.Editor.Features.Shared;
 
     /// <summary>
     /// Handles template retrieval queries.

@@ -15,6 +15,8 @@ namespace Sky.Editor.Services.Setup
     using Cosmos.BlobService;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
@@ -25,7 +27,6 @@ namespace Sky.Editor.Services.Setup
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Services.Layouts;
 
     /// <summary>
@@ -59,7 +60,7 @@ namespace Sky.Editor.Services.Setup
         private readonly ILogger<SetupService> logger;
         private readonly IMemoryCache memoryCache;
         private readonly ILayoutImportService layoutImportService;
-        private readonly IMediator mediator;
+        private readonly CommonMediator mediator;
 
         private readonly UserManager<IdentityUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
@@ -84,7 +85,7 @@ namespace Sky.Editor.Services.Setup
             RoleManager<IdentityRole> roleManager,
             ApplicationDbContext applicationDbContext,
             ILayoutImportService layoutImportService,
-            IMediator mediator)
+            CommonMediator mediator)
         {
             this.configuration = configuration;
             this.logger = logger;

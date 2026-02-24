@@ -10,8 +10,8 @@ namespace Sky.Editor.Features.Articles.Clone
     using System;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
-    using Sky.Editor.Features.Shared;
 
     /// <summary>
     /// Command to clone an existing article with a new title.

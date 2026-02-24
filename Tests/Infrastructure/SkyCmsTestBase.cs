@@ -2,6 +2,7 @@ using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
 using Cosmos.DynamicConfig;
+using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -30,7 +31,7 @@ using Sky.Editor.Services.Scheduling;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
-using Sky.Editor.Features.Shared;
+using Cosmos.Common.Features.Shared;
 using Sky.Editor.Features.Articles.Create;
 using Cosmos.Common.Models;
 using System.Diagnostics;
@@ -51,6 +52,9 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.AspNetCore.DataProtection;
 using Sky.Editor.Services.Layouts;
+using Cosmos.Common.Features.Articles.EditorQueries;
+using Cosmos.Common.Features.Articles.Queries;
+using Cosmos.Common.Features.Articles.Shared;
 
 namespace Sky.Tests
 {
@@ -94,7 +98,7 @@ namespace Sky.Tests
         protected IHttpClientFactory HttpClientFactory = null!;
 
         // ADD THESE PROPERTIES FOR VERTICAL SLICE ARCHITECTURE
-        protected IMediator Mediator = null!;
+        protected CommonMediator Mediator = null!;
         protected ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>> CreateArticleHandler = null!;
         protected ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>> SaveArticleHandler = null!;
 
@@ -468,14 +472,35 @@ namespace Sky.Tests
                         Db,
                         Logic,
                         new LoggerFactory().CreateLogger<DeleteBlogStreamHandler>()))
-                .AddScoped<IMediator, Mediator>()
+                .AddScoped<IQueryHandler<GetArticleByArticleNumberQuery, ArticleViewModel?>>(sp =>
+                    new GetArticleByArticleNumberQueryHandler(
+                        Db,
+                        Cache,
+                        configuration))
+                .AddScoped<IQueryHandler<GetArticleByIdQuery, ArticleViewModel?>>(sp =>
+                    new GetArticleByIdQueryHandler(
+                        Db,
+                        Cache,
+                        configuration))
+                .AddScoped<IArticleCatalogQueryService>(sp =>
+                    new ArticleCatalogQueryService(
+                        Db,
+                        configuration.GetValue<string>("CosmosPublisherUrl") ?? "",
+                        configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? ""))
+                .AddScoped<IQueryHandler<GetTableOfContentsQuery, TableOfContents>>(sp =>
+                    new GetTableOfContentsQueryHandler(
+                        sp.GetRequiredService<IArticleCatalogQueryService>()))
+                .AddScoped<IQueryHandler<SearchPublishedArticlesQuery, List<TableOfContentsItem>>>(sp =>
+                    new SearchPublishedArticlesQueryHandler(
+                        sp.GetRequiredService<IArticleCatalogQueryService>()))
+                .AddScoped<CommonMediator, Cosmos.Common.Features.Shared.Mediator>()
                 .AddHttpClient()  // ✅ ADD THIS - Registers IHttpClientFactory
                 .AddRazorPages()
                 .Services
                 .BuildServiceProvider();
 
             // ✅ GET MEDIATOR FROM SERVICE PROVIDER FIRST
-            Mediator = Services.GetRequiredService<IMediator>();
+            Mediator = Services.GetRequiredService<CommonMediator>();
 
             // ✅ NOW CREATE TEMPLATE SERVICE WITH CONFIGURATION AND SERVICE PROVIDER
             TemplateService = new TemplateService(
@@ -703,8 +728,8 @@ namespace Sky.Tests
                 TitleChangeService,
                 TemplateService,
                 Mediator,
-                Cache,                          // ✅ Add memory cache for layout caching
-                DynamicConfigurationProvider);  // ✅ Add config provider for tenant-aware caching
+                Cache,                          // ✅ Memory cache for layout caching
+                DynamicConfigurationProvider);  // ✅ Config provider for tenant-aware caching
 
             // Setup user context
             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]

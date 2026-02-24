@@ -13,6 +13,7 @@ namespace Sky.Tests.Controllers
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Models;
     using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Http;
@@ -59,15 +60,46 @@ namespace Sky.Tests.Controllers
             articleQueryMediatorMock = new Mock<CommonMediator>();
             articleQueryMediatorMock
                 .Setup(m => m.QueryAsync(It.IsAny<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(new ArticleViewModel
+                .ReturnsAsync((Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?> query, System.Threading.CancellationToken ct) =>
                 {
-                    Id = Guid.NewGuid(),
-                    ArticleNumber = 1,
-                    Title = "Home Page",
-                    UrlPath = "root",
-                    Content = "<p>Welcome</p>",
-                    StatusCode = StatusCodeEnum.Active,
-                    Updated = DateTimeOffset.UtcNow
+                    if (query is GetArticleByUrlQuery urlQuery)
+                    {
+                        // Normalize URL path (trim slashes, handle root)
+                        var urlPath = urlQuery.UrlPath;
+                        if (string.IsNullOrWhiteSpace(urlPath) || urlPath.Equals("/"))
+                        {
+                            urlPath = "root";
+                        }
+                        urlPath = urlPath.TrimStart('/');
+
+                        // Query the database for the article
+                        var deletedEnum = (int)StatusCodeEnum.Deleted;
+                        var article = Db.Articles
+                            .Where(a => a.UrlPath == urlPath && a.StatusCode != deletedEnum)
+                            .OrderByDescending(a => a.VersionNumber)
+                            .FirstOrDefault();
+
+                        if (article == null)
+                        {
+                            return null;
+                        }
+
+                        // Convert to ArticleViewModel
+                        return new ArticleViewModel
+                        {
+                            Id = article.Id,
+                            ArticleNumber = article.ArticleNumber,
+                            Title = article.Title,
+                            UrlPath = article.UrlPath,
+                            Content = article.Content,
+                            StatusCode = (StatusCodeEnum)article.StatusCode,
+                            Updated = article.Updated,
+                            VersionNumber = article.VersionNumber,
+                            Published = article.Published
+                        };
+                    }
+                    // Default fallback for other query types
+                    return null;
                 });
 
             // Mock IViewRenderService for preview rendering
@@ -228,6 +260,13 @@ namespace Sky.Tests.Controllers
             // Arrange
             string nonExistentUrl = "non-existent-page";
 
+            // Override the mock to return null for non-existent articles
+            articleQueryMediatorMock
+                .Setup(m => m.QueryAsync(It.Is<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(q => 
+                    q is GetArticleByUrlQuery && ((GetArticleByUrlQuery)q).UrlPath == nonExistentUrl), 
+                    It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync((ArticleViewModel?)null);
+
             // Act
             var result = await homeController.EditList(nonExistentUrl);
 
@@ -346,11 +385,27 @@ namespace Sky.Tests.Controllers
             var notFoundArticle = await Logic.CreateArticle("Not Found", TestUserId);
             notFoundArticle.Content = "<h1>Page Not Found</h1>";
             await Logic.SaveArticle(notFoundArticle, TestUserId);
-            
+
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == notFoundArticle.ArticleNumber);
             dbArticle.UrlPath = "not_found";
             dbArticle.Published = DateTimeOffset.UtcNow;
             await Db.SaveChangesAsync();
+
+            // Setup mock to return the not_found article when queried
+            var notFoundViewModel = new ArticleViewModel
+            {
+                Id = notFoundArticle.Id,
+                ArticleNumber = notFoundArticle.ArticleNumber,
+                Title = notFoundArticle.Title,
+                UrlPath = "not_found",
+                Content = notFoundArticle.Content,
+                StatusCode = StatusCodeEnum.Active,
+                Updated = DateTimeOffset.UtcNow
+            };
+
+            articleQueryMediatorMock
+                .Setup(m => m.QueryAsync(It.Is<GetArticleByUrlQuery>(q => q.UrlPath == "not_found" || q.UrlPath == "/not_found"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(notFoundViewModel);
 
             // Set request path to non-existent page
             homeController.ControllerContext.HttpContext.Request.Path = "/non-existent-page";

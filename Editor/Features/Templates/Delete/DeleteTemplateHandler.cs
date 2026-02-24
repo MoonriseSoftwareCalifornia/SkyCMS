@@ -12,8 +12,8 @@ namespace Sky.Editor.Features.Templates.Delete
     using System.Threading;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
-    using Sky.Editor.Features.Shared;
 
     /// <summary>
     /// Handler for deleting a template and its associated page design versions.

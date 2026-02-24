@@ -12,6 +12,7 @@ using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common;
 using Cosmos.Common.Data;
+using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
 using Cosmos.Common.Services.Configurations;
 using Cosmos.Common.Services.Email;
@@ -84,6 +85,8 @@ using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using System.Web;
 using Cosmos.Common.Features.Articles.EditorQueries;
+using Cosmos.Common.Features.Articles.Shared;
+using Cosmos.Common.Features.Articles.Queries;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
 
@@ -143,7 +146,7 @@ if (enableDiagnostics)
 }
 else
 {
-    System.Console.WriteLine($"Starting Cosmos CMS Editor in {(isMultiTenantEditor ? "Multi-Tenant" : "Single-Tenant")} Mode (v.{versionNumber}).");
+    System.Console.WriteLine($"Starting Cosmos CMS Editor in {(isMultiTenantEditor ? "Multi-Tenant" : "Single-Tenant")} Mode (v.{versionNumber})");
 }
 
 // ---------------------------------------------------------------
@@ -542,39 +545,64 @@ if (microsoftAuth != null)
 // ---------------------------------------------------------------
 // Scoped services (per-request lifecycle, can access HttpContext)
 builder.Services.AddScoped<ISetupService, SetupService>();
-builder.Services.AddScoped<Mediator>(); // ← Concrete type registration
-builder.Services.AddScoped<IMediator>(sp =>   // ← Interface registration
+
+// Register SINGLE mediator (Common namespace) with multi-tenant security decorator
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.Mediator>(); // ← Concrete type registration
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IMediator>(sp =>   // ← Interface registration with multi-tenant wrapper
     new MultiTenantMediator(
-        new Mediator(sp),
+        new Cosmos.Common.Features.Shared.Mediator(sp),
         sp.GetRequiredService<ApplicationDbContext>(),
         sp.GetService<IDynamicConfigurationProvider>(),
         sp.GetRequiredService<ILogger<MultiTenantMediator>>()));
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IMediator, Cosmos.Common.Features.Shared.Mediator>();
+
+// Register query handlers (Common namespace)
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByUrlQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByIdQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByArticleNumberQueryHandler>();
-builder.Services.AddScoped<ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>, CreateArticleHandler>();
-builder.Services.AddScoped<ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>, SaveArticleHandler>();
-builder.Services.AddScoped<ICommandHandler<CreatePageDesignVersionCommand, CommandResult<PageDesignVersion>>, CreatePageDesignVersionHandler>();
-builder.Services.AddScoped<ICommandHandler<SavePageDesignVersionCommand, CommandResult<PageDesignVersion>>, SavePageDesignVersionHandler>();
-builder.Services.AddScoped<ICommandHandler<PublishPageDesignVersionCommand, CommandResult<Template>>, PublishPageDesignVersionHandler>();
-builder.Services.AddScoped<ICommandHandler<DeleteTemplateCommand, CommandResult<bool>>, DeleteTemplateHandler>();
-builder.Services.AddScoped<ICommandHandler<UpdateTemplateMetadataCommand, CommandResult<Template>>, UpdateTemplateMetadataHandler>();
-builder.Services.AddScoped<IQueryHandler<GetTemplateQuery, CommandResult<GetTemplateQueryResult>>, GetTemplateQueryHandler>();
-builder.Services.AddScoped<IQueryHandler<GetTemplateListQuery, CommandResult<GetTemplateListQueryResult>>, GetTemplateListQueryHandler>();
-builder.Services.AddScoped<IQueryHandler<GetBlogStreamQuery, CommandResult<GetBlogStreamQueryResult>>, GetBlogStreamQueryHandler>();
-builder.Services.AddScoped<ICommandHandler<UpdateBlogStreamCommand, CommandResult<Article>>, UpdateBlogStreamHandler>();
-builder.Services.AddScoped<ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>, DeleteBlogStreamHandler>();
+
+// Register command handlers (Common namespace)
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>, CreateArticleHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>, SaveArticleHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreatePageDesignVersionCommand, CommandResult<PageDesignVersion>>, CreatePageDesignVersionHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<SavePageDesignVersionCommand, CommandResult<PageDesignVersion>>, SavePageDesignVersionHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<PublishPageDesignVersionCommand, CommandResult<Template>>, PublishPageDesignVersionHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteTemplateCommand, CommandResult<bool>>, DeleteTemplateHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateTemplateMetadataCommand, CommandResult<Template>>, UpdateTemplateMetadataHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetTemplateQuery, CommandResult<GetTemplateQueryResult>>, GetTemplateQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetTemplateListQuery, CommandResult<GetTemplateListQueryResult>>, GetTemplateListQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetBlogStreamQuery, CommandResult<GetBlogStreamQueryResult>>, GetBlogStreamQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateBlogStreamCommand, CommandResult<Article>>, UpdateBlogStreamHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>, DeleteBlogStreamHandler>();
 builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
 builder.Services.AddScoped<ILayoutMigrationService, LayoutMigrationService>();
-builder.Services.AddScoped<IStorageContext, StorageContext>();
-builder.Services.AddScoped<IEditorSettings, EditorSettings>();
-builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 
-// Register tenant-aware email sender (supports multi-tenant with database-driven configuration)
-builder.Services.AddScoped<ICosmosEmailSender, TenantAwareEmailSender>();
-builder.Services.AddScoped<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender>(sp => sp.GetRequiredService<ICosmosEmailSender>());
+// Register article query services (decoupled from ArticleLogic)
+builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
+    new ArticleViewModelBuilder(
+        sp.GetRequiredService<ApplicationDbContext>(),
+        sp.GetRequiredService<IMemoryCache>(),
+        builder.Configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty,
+        isEditor: true));
+
+builder.Services.AddScoped<IPublishedPageQueryService>(sp =>
+    new PublishedPageQueryService(
+        sp.GetRequiredService<ApplicationDbContext>(),
+        sp.GetRequiredService<IMemoryCache>(),
+        sp.GetRequiredService<IArticleViewModelBuilder>()));
+
+builder.Services.AddScoped<IArticleCatalogQueryService>(sp =>
+    new ArticleCatalogQueryService(
+        sp.GetRequiredService<ApplicationDbContext>(),
+        builder.Configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty,
+        builder.Configuration.GetValue<string>("BlobPublicUrl")
+            ?? builder.Configuration.GetValue<string>("AzureBlobStorageEndPoint")
+            ?? string.Empty));
+
+builder.Services.AddScoped<IBlogNavigationService, BlogNavigationService>();
+
+builder.Services.AddScoped<IStorageContext, StorageContext>();
+
 
 // Transient services (stateless operations, created each time)
 builder.Services.AddTransient<ICdnServiceFactory, CdnServiceFactory>();
