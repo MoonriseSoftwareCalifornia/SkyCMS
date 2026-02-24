@@ -119,7 +119,18 @@ namespace Sky.Tests.Features.Articles.Queries
         [TestMethod]
         public async Task SearchPublishedArticles_ReturnsMatches()
         {
-            await SeedPublishedPageAsync("search-me", "Search Title", "Hello searchable content");
+            dbContext.ArticleCatalog.Add(new CatalogEntry
+            {
+                ArticleNumber = 1,
+                UrlPath = "search-me",
+                Title = "Search Title",
+                Published = now.AddMinutes(-5),
+                Updated = now,
+                BannerImage = string.Empty,
+                AuthorInfo = string.Empty,
+                Introduction = "Hello searchable content"
+            });
+            await dbContext.SaveChangesAsync();
 
             var catalogService = new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(dbContext, "https://publisher.test", "https://cdn.test");
             var handler = new SearchPublishedArticlesQueryHandler(catalogService);

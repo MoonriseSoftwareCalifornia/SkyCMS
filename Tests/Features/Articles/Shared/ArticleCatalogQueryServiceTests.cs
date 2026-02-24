@@ -244,8 +244,8 @@ namespace Sky.Tests.Features.Articles.Shared
             var entries = new[]
             {
                 ("article-1", "Best Practices", now.AddMinutes(-5), "This article covers best practices"),
-                ("article-2", "Advanced Topics", now.AddMinutes(-3), "Advanced content here"),
-                ("article-3", "Basics", now.AddMinutes(-1), "Basic introduction")
+                ("article-2", "Advanced Topics", now.AddMinutes(-3), "This covers complex topics"),
+                ("article-3", "Basics", now.AddMinutes(-1), "Advanced content here")
             };
 
             var items = entries.Select((e, i) => new CatalogEntry
@@ -265,9 +265,9 @@ namespace Sky.Tests.Features.Articles.Shared
             var results = await service.SearchAsync("advanced");
 
             // Assert
-            Assert.AreEqual(2, results.Count);  // Matches "Advanced Topics" and "Advanced content"
-            Assert.IsTrue(results.Any(r => r.Title.Contains("Advanced")));
-            Assert.IsTrue(results.Any(r => r.UrlPath.Contains("article-2")));
+            Assert.AreEqual(2, results.Count);  // Matches "Advanced Topics" (title) and "Advanced content" (introduction)
+            Assert.IsTrue(results.Any(r => r.Title.Contains("Advanced")));  // article-2
+            Assert.IsTrue(results.Any(r => r.UrlPath.Contains("article-3")));  // article-3
         }
 
         /// <summary>

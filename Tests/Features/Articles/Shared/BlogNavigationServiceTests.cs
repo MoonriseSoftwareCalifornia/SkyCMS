@@ -223,8 +223,8 @@ namespace Sky.Tests.Features.Articles.Shared
             await service.EnrichBlogNavigationAsync(model);
 
             // Assert
-            Assert.AreEqual("previous-post", model.PreviousUrl);
-            Assert.AreEqual("next-post", model.NextUrl);
+            Assert.AreEqual("/previous-post", model.PreviousUrl);
+            Assert.AreEqual("/next-post", model.NextUrl);
         }
 
         /// <summary>

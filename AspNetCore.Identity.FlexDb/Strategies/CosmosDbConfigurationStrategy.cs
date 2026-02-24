@@ -19,7 +19,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
     public class CosmosDbConfigurationStrategy : IDatabaseConfigurationStrategy
     {
         /// <inheritdoc/>
-        public string ProviderName => "Microsoft.EntityFrameworkCore.Cosmos";
+        public string ProviderName => "Cosmos";
 
         /// <inheritdoc/>
         public int Priority => 10;

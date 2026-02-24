@@ -164,23 +164,14 @@ public class ArticleCatalogQueryService : IArticleCatalogQueryService
 
         var results = await query.Select(s => new TableOfContentsItem
         {
-            UrlPath = "/" + s.UrlPath,
+            UrlPath = s.UrlPath,
             Title = s.Title,
             Published = s.Published.Value,
             Updated = s.Updated,
-            BannerImage = "/" + s.BannerImage,
+            BannerImage = s.BannerImage,
             AuthorInfo = s.AuthorInfo
         }).ToListAsync();
 
-        // Normalize paths and images
-        return results.Select(s => new TableOfContentsItem
-        {
-            AuthorInfo = s.AuthorInfo,
-            BannerImage = string.IsNullOrEmpty(s.BannerImage) ? string.Empty : "/" + s.BannerImage,
-            Published = s.Published,
-            Title = s.Title,
-            Updated = s.Updated,
-            UrlPath = s.UrlPath == "/root" ? "/" : s.UrlPath
-        }).ToList();
+        return results;
     }
 }

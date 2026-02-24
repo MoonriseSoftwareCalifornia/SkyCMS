@@ -16,7 +16,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
     public class SqlServerConfigurationStrategy : IDatabaseConfigurationStrategy
     {
         /// <inheritdoc/>
-        public string ProviderName => "Microsoft.EntityFrameworkCore.SqlServer";
+        public string ProviderName => "SQL Server";
 
         /// <inheritdoc/>
         public int Priority => 20;

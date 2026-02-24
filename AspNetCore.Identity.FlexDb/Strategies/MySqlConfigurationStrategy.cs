@@ -19,7 +19,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
         private static readonly ConcurrentDictionary<string, ServerVersion> ServerVersionCache = new();
 
         /// <inheritdoc/>
-        public string ProviderName => "MySql.EntityFrameworkCore";
+        public string ProviderName => "MySQL";
 
         /// <inheritdoc/>
         public int Priority => 30;
