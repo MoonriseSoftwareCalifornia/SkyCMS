@@ -259,28 +259,13 @@ namespace Sky.Editor.Controllers
 
             var result = await mediator.SendAsync(command);
 
-            // Update changes.
-            article.Title = model.Title;
-            article.UrlPath = slugService.Normalize(model.Title);
-            article.Introduction = model.Description;
-            article.BannerImage = model.HeroImage;
-            article.Published = model.Published;
-            article.Content = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(article, article.BlogKey);
-            await db.SaveChangesAsync();
-
-            // Handle title change.
-            if (oldTitle != article.Title)
-            {
-                await titleChangeService.HandleTitleChangeAsync(article, oldTitle, oldUrlPath);
-            }
-
-            if (article.Published.HasValue)
+            if (!result.IsSuccess)
             {
                 ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to update blog stream.");
                 return View("Edit", model);
             }
 
-            return View(model);
+            return RedirectToAction(nameof(Index));
         }
 
         /// <summary>

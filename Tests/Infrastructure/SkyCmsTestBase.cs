@@ -1,6 +1,7 @@
 using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
+using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.DynamicConfig;
 using Microsoft.AspNetCore.Hosting;
@@ -409,7 +410,7 @@ namespace Sky.Tests
                 .AddSingleton<IReservedPaths>(ReservedPaths)
                 .AddSingleton<IEditorSettings>(EditorSettings)
                 .AddHttpClient() // Register IHttpClientFactory
-                .AddSingleton<IMediator, Sky.Editor.Features.Shared.Mediator>(); // Register Mediator
+                .AddSingleton<IMediator, Cosmos.Common.Features.Shared.Mediator>(); // Register Mediator
             
             Services = serviceCollection.BuildServiceProvider();
 

@@ -10,7 +10,9 @@ namespace Sky.Tests.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services.BlogPublishing;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
@@ -22,7 +24,6 @@ namespace Sky.Tests.Controllers
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Models.Blogs;
-    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.CDN;
     using System.Collections.Generic;
     using System.Linq;

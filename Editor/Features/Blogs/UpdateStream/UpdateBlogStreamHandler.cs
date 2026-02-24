@@ -14,10 +14,10 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Services.BlogPublishing;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Data.Logic;
-    using Sky.Editor.Services.BlogPublishing;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Titles;
 
@@ -30,7 +30,7 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
         private readonly ApplicationDbContext dbContext;
         private readonly ISlugService slugService;
         private readonly ITitleChangeService titleChangeService;
-        private readonly IBlogRenderingService blogRenderingService;
+        private readonly IBlogStreamRenderingService blogRenderingService;
         private readonly ArticleEditLogic articleLogic;
         private readonly ILogger<UpdateBlogStreamHandler> logger;
 
@@ -47,7 +47,7 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
             ApplicationDbContext dbContext,
             ISlugService slugService,
             ITitleChangeService titleChangeService,
-            IBlogRenderingService blogRenderingService,
+            IBlogStreamRenderingService blogRenderingService,
             ArticleEditLogic articleLogic,
             ILogger<UpdateBlogStreamHandler> logger)
         {
@@ -129,7 +129,7 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
                 article.UserId = command.UserId.ToString();
 
                 // Regenerate blog stream HTML
-                article.Content = await blogRenderingService.GenerateBlogStreamHtml(article);
+                article.Content = await blogRenderingService.GenerateBlogStreamWrapperAsync(article, article.BlogKey);
 
                 // Save changes
                 await dbContext.SaveChangesAsync(cancellationToken);

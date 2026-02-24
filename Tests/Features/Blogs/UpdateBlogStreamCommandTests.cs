@@ -78,7 +78,7 @@ namespace Sky.Tests.Features.Blogs
                 Db,
                 SlugService,
                 TitleChangeService,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 Logic,
                 new Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateBlogStreamHandler>());
 
@@ -132,7 +132,7 @@ namespace Sky.Tests.Features.Blogs
                 Db,
                 SlugService,
                 TitleChangeService,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 Logic,
                 new Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateBlogStreamHandler>());
 
@@ -162,7 +162,7 @@ namespace Sky.Tests.Features.Blogs
                 Db,
                 SlugService,
                 TitleChangeService,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 Logic,
                 new Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateBlogStreamHandler>());
 
@@ -207,7 +207,7 @@ namespace Sky.Tests.Features.Blogs
                 Db,
                 SlugService,
                 TitleChangeService,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 Logic,
                 new Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateBlogStreamHandler>());
 
@@ -237,7 +237,7 @@ namespace Sky.Tests.Features.Blogs
                 Db,
                 SlugService,
                 TitleChangeService,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 Logic,
                 new Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateBlogStreamHandler>());
 
@@ -284,7 +284,7 @@ namespace Sky.Tests.Features.Blogs
                 Db,
                 SlugService,
                 TitleChangeService,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 Logic,
                 new Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateBlogStreamHandler>());
 
@@ -308,7 +308,7 @@ namespace Sky.Tests.Features.Blogs
                 Db,
                 SlugService,
                 TitleChangeService,
-                BlogRenderingService,
+                BlogStreamRenderingService,
                 Logic,
                 new Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateBlogStreamHandler>());
 
