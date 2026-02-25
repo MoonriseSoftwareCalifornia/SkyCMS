@@ -410,7 +410,12 @@ namespace Sky.Tests
                 .AddSingleton<IReservedPaths>(ReservedPaths)
                 .AddSingleton<IEditorSettings>(EditorSettings)
                 .AddHttpClient() // Register IHttpClientFactory
-                .AddSingleton<IMediator, Cosmos.Common.Features.Shared.Mediator>(); // Register Mediator
+                .AddSingleton<IMediator, Cosmos.Common.Features.Shared.Mediator>() // Register Mediator
+                .AddScoped<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
+                    new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(
+                        Db,
+                        configuration.GetValue<string>("CosmosPublisherUrl") ?? "https://www.sky-cms.com",
+                        configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? "https://www.sky-cms.com"));
             
             // Register blog post command handlers
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandResult>>>(sp =>
@@ -428,7 +433,16 @@ namespace Sky.Tests
                 new Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler(
                     Db,
                     new NullLogger<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler>()));
-            
+
+            // Register query handlers
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQuery, Cosmos.Common.Models.TableOfContents>>(sp =>
+                new Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQueryHandler(
+                    sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
+
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQuery, System.Collections.Generic.List<Cosmos.Common.Models.TableOfContentsItem>>>(sp =>
+                new Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQueryHandler(
+                    sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
+
             Services = serviceCollection.BuildServiceProvider();
 
             // ✅ GET MEDIATOR FROM SERVICE PROVIDER FIRST
