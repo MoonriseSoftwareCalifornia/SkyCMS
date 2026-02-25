@@ -17,6 +17,8 @@ namespace Sky.Cms.Controllers
     using Cosmos.BlobService;
     using Cosmos.Cms.Data.Logic;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.EditorQueries;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
@@ -68,6 +70,7 @@ namespace Sky.Cms.Controllers
         private const string SortOrderDesc = "desc";
 
         private readonly ArticleEditLogic articleLogic;
+        private readonly CommonMediator articleQueries;
         private readonly ApplicationDbContext dbContext;
         private readonly Uri blobPublicAbsoluteUrl;
         private readonly IViewRenderService viewRenderService;
@@ -95,6 +98,7 @@ namespace Sky.Cms.Controllers
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
             ArticleEditLogic articleLogic,
+            CommonMediator articleQueries,
             IEditorSettings options,
             IStorageContext storageContext,
             IViewRenderService viewRenderService,
@@ -108,6 +112,7 @@ namespace Sky.Cms.Controllers
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.articleLogic = articleLogic ?? throw new ArgumentNullException(nameof(articleLogic));
+            this.articleQueries = articleQueries ?? throw new ArgumentNullException(nameof(articleQueries));
             this.storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext));
             this.htmlService = htmlService ?? throw new ArgumentNullException(nameof(htmlService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -728,7 +733,10 @@ namespace Sky.Cms.Controllers
                     return NotFound($"Layout with ID {id} not found");
                 }
 
-                var model = await articleLogic.GetArticleByUrl(string.Empty);
+                var model = await articleQueries.QueryAsync(new GetArticleByUrlQuery
+                {
+                    UrlPath = string.Empty
+                });
                 
                 if (model == null)
                 {
@@ -769,7 +777,10 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                var article = await articleLogic.GetArticleByUrl(string.Empty);
+                var article = await articleQueries.QueryAsync(new GetArticleByUrlQuery
+                {
+                    UrlPath = string.Empty
+                });
                 var layout = await dbContext.Layouts.FirstOrDefaultAsync(f => f.Id == id);
 
                 if (layout == null)

@@ -15,6 +15,8 @@ namespace Sky.Cms.Hubs
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.EditorQueries;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.SignalR;
     using Microsoft.EntityFrameworkCore;
@@ -31,6 +33,7 @@ namespace Sky.Cms.Hubs
         private readonly ApplicationDbContext dbContext;
         private readonly ArticleEditLogic articleLogic;
         private readonly IStorageContext storageContext;
+        private readonly CommonMediator articleQueries;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ChatHub"/> class.
@@ -39,11 +42,13 @@ namespace Sky.Cms.Hubs
         /// <param name="dbContext">Database context.</param>
         /// <param name="articleLogic">Article editing logic.</param>
         /// <param name="storageContext">Storage context.</param>
-        public ChatHub(ApplicationDbContext dbContext, ArticleEditLogic articleLogic, IStorageContext storageContext)
+        /// <param name="articleQueries">Shared article queries mediator.</param>
+        public ChatHub(ApplicationDbContext dbContext, ArticleEditLogic articleLogic, IStorageContext storageContext, CommonMediator articleQueries)
         {
             this.dbContext = dbContext;
             this.articleLogic = articleLogic;
             this.storageContext = storageContext;
+            this.articleQueries = articleQueries;
         }
 
         #region CHAT METHODS
@@ -172,7 +177,10 @@ namespace Sky.Cms.Hubs
 
                 default:
                     {
-                        var model = await articleLogic.GetArticleById(Guid.Parse(id), Guid.Empty);
+                        var model = await articleQueries.QueryAsync(new GetArticleByIdQuery
+                        {
+                            Id = Guid.Parse(id)
+                        });
                         return JsonConvert.SerializeObject(model);
                     }
             }

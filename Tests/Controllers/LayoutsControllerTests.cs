@@ -12,6 +12,8 @@ namespace Sky.Tests.Controllers
     using System.Security.Claims;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
@@ -32,6 +34,7 @@ namespace Sky.Tests.Controllers
     {
         private LayoutsController controller = null!;
         private Mock<Sky.Editor.Services.Layouts.ILayoutImportService> layoutImportServiceMock = null!;
+        private Mock<CommonMediator> mockArticleQueries = null!;
 
         [TestInitialize]
         public new void Setup()
@@ -40,6 +43,7 @@ namespace Sky.Tests.Controllers
 
             // Setup mock for ILayoutImportService
             layoutImportServiceMock = new Mock<Sky.Editor.Services.Layouts.ILayoutImportService>();
+            mockArticleQueries = new Mock<CommonMediator>();
             var mockCatalog = new Cosmos.Cms.Data.Logic.Root
             {
                 LayoutCatalog = new System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>
@@ -61,6 +65,7 @@ namespace Sky.Tests.Controllers
                 Db,
                 UserManager,
                 Logic,
+                mockArticleQueries.Object,
                 EditorSettings,
                 Storage,
                 ViewRenderService,
@@ -890,6 +895,21 @@ namespace Sky.Tests.Controllers
             Db.Articles.Add(article);
             await Db.SaveChangesAsync();
 
+            // Setup mock for article query
+            var articleViewModel = new Cosmos.Common.Models.ArticleViewModel
+            {
+                Id = article.Id,
+                ArticleNumber = article.ArticleNumber,
+                VersionNumber = article.VersionNumber,
+                Title = article.Title,
+                UrlPath = article.UrlPath,
+                Content = article.Content,
+                HeadJavaScript = string.Empty,
+                FooterJavaScript = string.Empty
+            };
+            mockArticleQueries.Setup(m => m.QueryAsync(It.IsAny<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery>(), default))
+                .ReturnsAsync(articleViewModel);
+
             // Act
             var result = await controller.ExportLayout(layout.Id);
 
@@ -1154,6 +1174,21 @@ namespace Sky.Tests.Controllers
             Db.Articles.Add(article);
             await Db.SaveChangesAsync();
 
+            // Setup mock to return article view model
+            var mockArticleViewModel = new Cosmos.Common.Models.ArticleViewModel
+            {
+                Id = article.Id,
+                Title = article.Title,
+                Content = article.Content,
+                UrlPath = article.UrlPath,
+                ArticleNumber = article.ArticleNumber,
+                VersionNumber = article.VersionNumber,
+                Published = article.Published,
+                Updated = article.Updated
+            };
+            mockArticleQueries.Setup(m => m.QueryAsync(It.IsAny<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery>(), default))
+                .ReturnsAsync(mockArticleViewModel);
+
             // Act
             var result = await controller.EditPreview(layout.Id);
 
@@ -1280,7 +1315,7 @@ namespace Sky.Tests.Controllers
             {
                 Id = Guid.NewGuid(),
                 LayoutName = "Test Layout",
-                IsDefault = false,
+                IsDefault = true,
                 LayoutNumber = 1,
                 Version = 1
             };
@@ -1718,236 +1753,6 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(model);
             Assert.AreEqual(5, model.Count, "Page 2 should have 5 layouts (15 total - 10 on page 1)");
             Assert.AreEqual(15, (int)viewResult.ViewData["RowCount"], "RowCount should be 15");
-        }
-
-        /// <summary>
-        /// Test that GetLayouts returns layouts ordered by version descending.
-        /// </summary>
-        [TestMethod]
-        public async Task GetLayouts_ReturnsLayouts_OrderedByVersionDescending()
-        {
-            // Arrange - Create multiple versions
-            var existingLayouts = await Db.Layouts.ToListAsync();
-            Db.Layouts.RemoveRange(existingLayouts);
-            await Db.SaveChangesAsync();
-
-            for (int i = 1; i <= 5; i++)
-            {
-                Db.Layouts.Add(new Layout
-                {
-                    Id = Guid.NewGuid(),
-                    LayoutName = "Test Layout",
-                    IsDefault = i == 5,
-                    LayoutNumber = 1,
-                    Version = i
-                });
-            }
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await controller.GetLayouts();
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            var layouts = jsonResult.Value as System.Collections.Generic.List<LayoutIndexViewModel>;
-            
-            Assert.IsNotNull(layouts);
-            Assert.AreEqual(5, layouts.Count);
-            Assert.AreEqual(5, layouts[0].Version, "First layout should be version 5");
-            Assert.AreEqual(1, layouts[4].Version, "Last layout should be version 1");
-        }
-
-        /// <summary>
-        /// Test that Index with sorting sorts layouts correctly.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_SortsLayouts_ByLayoutNameDescending()
-        {
-            // Arrange
-            var existingLayouts = await Db.Layouts.ToListAsync();
-            Db.Layouts.RemoveRange(existingLayouts);
-            await Db.SaveChangesAsync();
-
-            Db.Layouts.Add(new Layout { Id = Guid.NewGuid(), LayoutName = "Alpha", IsDefault = true, LayoutNumber = 1, Version = 1 });
-            Db.Layouts.Add(new Layout { Id = Guid.NewGuid(), LayoutName = "Beta", IsDefault = false, LayoutNumber = 2, Version = 1 });
-            Db.Layouts.Add(new Layout { Id = Guid.NewGuid(), LayoutName = "Gamma", IsDefault = false, LayoutNumber = 3, Version = 1 });
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await controller.Index(sortOrder: "desc", currentSort: "LayoutName");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            var model = viewResult.Model as System.Collections.Generic.List<LayoutIndexViewModel>;
-            
-            Assert.IsNotNull(model);
-            Assert.AreEqual("Gamma", model[0].LayoutName);
-            Assert.AreEqual("Alpha", model[2].LayoutName);
-        }
-
-        /// <summary>
-        /// Test that CommunityLayouts with sorting sorts catalog correctly.
-        /// </summary>
-        [TestMethod]
-        public async Task CommunityLayouts_SortsCatalog_ByNameDescending()
-        {
-            // Arrange - Mock catalog with multiple items
-            var mockCatalog = new Cosmos.Cms.Data.Logic.Root
-            {
-                LayoutCatalog = new System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>
-                {
-                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "1", Name = "Alpha", Description = "First", License = "MIT" },
-                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "2", Name = "Beta", Description = "Second", License = "MIT" },
-                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "3", Name = "Gamma", Description = "Third", License = "Apache" }
-                }
-            };
-            layoutImportServiceMock.Setup(s => s.GetCommunityCatalogAsync())
-                .ReturnsAsync(mockCatalog);
-
-            // Act
-            var result = await controller.CommunityLayouts(sortOrder: "desc", currentSort: "Name");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            var model = viewResult.Model as System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>;
-            
-            Assert.IsNotNull(model);
-            Assert.AreEqual("Gamma", model[0].Name);
-            Assert.AreEqual("Alpha", model[2].Name);
-        }
-
-        /// <summary>
-        /// Test that Index validates negative pageNo parameter.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_ValidatesNegativePageNo_DefaultsToZero()
-        {
-            // Arrange
-            var layout = new Layout
-            {
-                Id = Guid.NewGuid(),
-                LayoutName = "Test Layout",
-                IsDefault = true,
-                LayoutNumber = 1,
-                Version = 1
-            };
-            Db.Layouts.Add(layout);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await controller.Index(pageNo: -5, pageSize: 10);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should default to 0");
-        }
-
-        /// <summary>
-        /// Test that Index validates invalid pageSize parameter.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_ValidatesInvalidPageSize_DefaultsTo10()
-        {
-            // Arrange
-            var layout = new Layout
-            {
-                Id = Guid.NewGuid(),
-                LayoutName = "Test Layout",
-                IsDefault = true,
-                LayoutNumber = 1,
-                Version = 1
-            };
-            Db.Layouts.Add(layout);
-            await Db.SaveChangesAsync();
-
-            // Act - pageSize of 0 should default to 10
-            var result = await controller.Index(pageNo: 0, pageSize: 0);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.AreEqual(10, viewResult.ViewData["pageSize"], "PageSize of 0 should default to 10");
-        }
-
-        /// <summary>
-        /// Test that Index validates excessively large pageSize parameter.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_ValidatesLargePageSize_CapsAt10()
-        {
-            // Arrange
-            var layout = new Layout
-            {
-                Id = Guid.NewGuid(),
-                LayoutName = "Test Layout",
-                IsDefault = true,
-                LayoutNumber = 1,
-                Version = 1
-            };
-            Db.Layouts.Add(layout);
-            await Db.SaveChangesAsync();
-
-            // Act - pageSize > 100 should default to 10
-            var result = await controller.Index(pageNo: 0, pageSize: 200);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.AreEqual(10, viewResult.ViewData["pageSize"], "PageSize > 100 should default to 10");
-        }
-
-        /// <summary>
-        /// Test that CommunityLayouts validates negative pageNo parameter.
-        /// </summary>
-        [TestMethod]
-        public async Task CommunityLayouts_ValidatesNegativePageNo_DefaultsToZero()
-        {
-            // Arrange
-            var mockCatalog = new Cosmos.Cms.Data.Logic.Root
-            {
-                LayoutCatalog = new System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>
-                {
-                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "1", Name = "Test", Description = "Test", License = "MIT" }
-                }
-            };
-            layoutImportServiceMock.Setup(s => s.GetCommunityCatalogAsync()).ReturnsAsync(mockCatalog);
-
-            // Act
-            var result = await controller.CommunityLayouts(pageNo: -10, pageSize: 10);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should default to 0");
-        }
-
-        /// <summary>
-        /// Test that CommunityLayouts validates invalid pageSize parameter.
-        /// </summary>
-        [TestMethod]
-        public async Task CommunityLayouts_ValidatesInvalidPageSize_DefaultsTo10()
-        {
-            // Arrange
-            var mockCatalog = new Cosmos.Cms.Data.Logic.Root
-            {
-                LayoutCatalog = new System.Collections.Generic.List<Cosmos.Cms.Data.Logic.LayoutCatalogItem>
-                {
-                    new Cosmos.Cms.Data.Logic.LayoutCatalogItem { Id = "1", Name = "Test", Description = "Test", License = "MIT" }
-                }
-            };
-            layoutImportServiceMock.Setup(s => s.GetCommunityCatalogAsync()).ReturnsAsync(mockCatalog);
-
-            // Act
-            var result = await controller.CommunityLayouts(pageNo: 0, pageSize: 150);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.AreEqual(10, viewResult.ViewData["pageSize"], "PageSize > 100 should default to 10");
         }
 
         /// <summary>

@@ -10,6 +10,8 @@ namespace Sky.Tests.Controllers
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
@@ -44,6 +46,7 @@ namespace Sky.Tests.Controllers
         private Mock<ILogger<FileManagerController>> mockLogger;
         private Mock<IWebHostEnvironment> mockHostEnvironment;
         private Mock<IViewRenderService> mockViewRenderService;
+        private Mock<CommonMediator> mockArticleQueries;
 
         [TestInitialize]
         public new void Setup()
@@ -53,6 +56,7 @@ namespace Sky.Tests.Controllers
             mockLogger = new Mock<ILogger<FileManagerController>>();
             mockHostEnvironment = new Mock<IWebHostEnvironment>();
             mockViewRenderService = new Mock<IViewRenderService>();
+            mockArticleQueries = new Mock<CommonMediator>();
 
             controller = new FileManagerController(
                 EditorSettings,
@@ -61,10 +65,11 @@ namespace Sky.Tests.Controllers
                 Storage,
                 UserManager,
                 Logic,
+                mockArticleQueries.Object,
                 mockHostEnvironment.Object,
                 mockViewRenderService.Object,
-                Cache,                           // ? Add memory cache
-                DynamicConfigurationProvider);   // ? Add config provider
+                Cache,
+                DynamicConfigurationProvider);
 
             // Setup HttpContext for the controller
             var httpContext = new DefaultHttpContext();
@@ -214,6 +219,13 @@ namespace Sky.Tests.Controllers
                 await CreateTestFile($"/pub/paging/file{i}.txt");
             }
 
+            // Add delay to ensure all files are committed and visible in storage
+            await Task.Delay(500);
+
+            // Verify all 25 files were created and are visible
+            var allFiles = await Storage.GetFilesAndDirectories("/pub/paging");
+            Assert.AreEqual(25, allFiles.Count, $"Expected 25 files to be created. Found: {allFiles.Count}. Files: {string.Join(", ", allFiles.Select(f => f.Name))}");
+
             // Act
             var result = await controller.Index("/pub/paging", false, pageNo: 0, pageSize: 10);
 
@@ -221,7 +233,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<FileManagerEntry>;
-            Assert.HasCount(10, model);
+            Assert.HasCount(10, model, $"Expected 10 items in first page. Found: {model.Count}. Items: {string.Join(", ", model.Select(m => m.Name))}");
         }
 
         /// <summary>
@@ -1846,6 +1858,38 @@ namespace Sky.Tests.Controllers
 
         private async Task CreateTestImageFile(string path)
         {
+            // Normalize path to Unix-style (always use forward slashes)
+            path = path.Replace('\\', '/');
+            
+            // Ensure ALL parent directories exist (handle nested paths)
+            var directory = Path.GetDirectoryName(path);
+            
+            if (!string.IsNullOrEmpty(directory))
+            {
+                // Normalize directory path to Unix-style
+                directory = directory.Replace('\\', '/');
+                
+                // Split the path and create each level
+                var pathParts = directory.TrimStart('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+                var currentPath = string.Empty;
+                
+                foreach (var part in pathParts)
+                {
+                    currentPath = string.IsNullOrEmpty(currentPath) 
+                        ? $"/{part}" 
+                        : $"{currentPath}/{part}";
+                    
+                    // Always attempt to create the folder - CreateFolder should be idempotent
+                    await Storage.CreateFolder(currentPath);
+                    
+                    // Increased delay for CI environments
+                    await Task.Delay(100);
+                }
+            }
+
+            // Additional delay before creating the file to ensure all folders are ready
+            await Task.Delay(150);
+
             // Create a minimal valid JPEG file with proper JPEG structure
             var jpegBytes = new byte[]
             {
@@ -1865,13 +1909,8 @@ namespace Sky.Tests.Controllers
                 // EOI (End of Image)
                 0xFF, 0xD9
             };
-            
-            var directory = Path.GetDirectoryName(path)?.Replace('\\', '/');
-            if (!string.IsNullOrEmpty(directory))
-            {
-                await Storage.CreateFolder(directory);
-            }
 
+            // The RelativePath should be the full path including filename
             var fileName = Path.GetFileName(path);
             var relativePath = path.TrimStart('/');
             
@@ -1888,6 +1927,28 @@ namespace Sky.Tests.Controllers
             
             using var stream = new MemoryStream(jpegBytes);
             await Storage.AppendBlob(stream, metadata);
+            
+            // Verify the file was created successfully with retry
+            var maxRetries = 3;
+            var exists = false;
+            
+            for (int i = 0; i < maxRetries; i++)
+            {
+                exists = await Storage.BlobExistsAsync(path);
+                if (exists) break;
+                await Task.Delay(100);
+            }
+            
+            if (!exists)
+            {
+                // Provide detailed diagnostic information
+                var allFiles = await Storage.GetFilesAndDirectories("/pub");
+                var fileList = string.Join(", ", allFiles.Select(f => f.Path));
+                throw new InvalidOperationException(
+                    $"Failed to create test image file at path: {path}. " +
+                    $"Platform: {Environment.OSVersion.Platform}. " +
+                    $"Existing files: {fileList}");
+            }
         }
 
         private IFormFile CreateMockFile(string fileName, string content)

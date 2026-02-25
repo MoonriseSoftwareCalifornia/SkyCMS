@@ -669,7 +669,8 @@ namespace Cosmos.BlobService.Drivers
             var containerClient =
                 this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
-            var blobClient = containerClient.GetAppendBlobClient(path);
+            // Use GetBlobClient instead of GetAppendBlobClient to support both block and append blobs
+            var blobClient = containerClient.GetBlobClient(path);
 
             return await blobClient.OpenReadAsync(new BlobOpenReadOptions(false));
         }

@@ -17,6 +17,8 @@ namespace Sky.Cms.Controllers
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.EditorQueries;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
@@ -51,6 +53,7 @@ namespace Sky.Cms.Controllers
         private readonly ApplicationDbContext dbContext;
         private readonly UserManager<IdentityUser> userManager;
         private readonly ArticleEditLogic articleLogic;
+        private readonly CommonMediator articleQueries;
         private readonly string blobPublicAbsoluteUrl;
         private readonly IViewRenderService viewRenderService;
         private readonly ILogger<FileManagerController> logger;
@@ -67,6 +70,7 @@ namespace Sky.Cms.Controllers
         /// <param name="storageContext">Storage context.</param>
         /// <param name="userManager">User manager context.</param>
         /// <param name="articleLogic">Article logic.</param>
+        /// <param name="articleQueries">Shared article queries mediator.</param>
         /// <param name="hostEnvironment">Host environment.</param>
         /// <param name="viewRenderService">View rendering service.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
@@ -78,6 +82,7 @@ namespace Sky.Cms.Controllers
             IStorageContext storageContext,
             UserManager<IdentityUser> userManager,
             ArticleEditLogic articleLogic,
+            CommonMediator articleQueries,
             IWebHostEnvironment hostEnvironment,
             IViewRenderService viewRenderService,
             IMemoryCache memoryCache,
@@ -91,6 +96,7 @@ namespace Sky.Cms.Controllers
             this.hostEnvironment = hostEnvironment;
             this.userManager = userManager;
             this.articleLogic = articleLogic;
+            this.articleQueries = articleQueries;
             this.dbContext = dbContext;
 
             var htmlUtilities = new HtmlUtilities();
@@ -866,7 +872,10 @@ namespace Sky.Cms.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    var article = await articleLogic.GetArticleById(articleId, Guid.Parse(await GetUserId()));
+                    var article = await articleQueries.QueryAsync(new GetArticleByIdQuery
+                    {
+                        Id = articleId
+                    });
 
                     var originalHtml = await articleLogic.ExportArticle(article, viewRenderService);
                     var originalHtmlDoc = new HtmlAgilityPack.HtmlDocument();
