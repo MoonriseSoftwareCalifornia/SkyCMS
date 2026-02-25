@@ -8,6 +8,8 @@
 namespace Sky.Editor.Features.Blogs.UpdateStream
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Cosmos.Cms.Common;
@@ -119,14 +121,34 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
                 // Save old values for title change tracking
                 var oldTitle = article.Title;
                 var oldUrlPath = article.UrlPath;
+                var oldBlogKey = article.BlogKey;
 
                 // Update article properties
                 article.Title = command.Title.Trim();
-                article.UrlPath = slugService.Normalize(command.Title);
+                var newUrlPath = slugService.Normalize(command.Title);
+                article.UrlPath = newUrlPath;
+                article.BlogKey = newUrlPath;  // BlogKey changes with UrlPath
                 article.Introduction = command.Description ?? string.Empty;
                 article.BannerImage = command.HeroImage ?? string.Empty;
                 article.Published = command.Published;
                 article.UserId = command.UserId.ToString();
+
+                // If UrlPath changed, update all child blog posts
+                if (oldUrlPath != newUrlPath)
+                {
+                    await UpdateChildBlogPostsUrlPath(oldUrlPath, newUrlPath, oldBlogKey, newUrlPath, cancellationToken);
+                }
+
+                // Handle publishing/unpublishing of the stream and its posts
+                if (command.Published.HasValue)
+                {
+                    await UpdateBlogStreamPublishingState(article, command.Published.Value, cancellationToken);
+                }
+                else
+                {
+                    // Unpublish the stream and all its posts
+                    await UnpublishBlogStream(article, oldBlogKey, cancellationToken);
+                }
 
                 // Regenerate blog stream HTML
                 article.Content = await blogRenderingService.GenerateBlogStreamWrapperAsync(article, article.BlogKey);
@@ -140,25 +162,17 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
                     article.Title,
                     article.BlogKey);
 
-                // Handle title change (creates redirects, updates catalog)
-                if (oldTitle != article.Title)
+                // Handle title change (creates redirects for stream and all posts)
+                if (oldTitle != article.Title || oldUrlPath != newUrlPath)
                 {
                     await titleChangeService.HandleTitleChangeAsync(article, oldTitle, oldUrlPath);
                     logger.LogInformation(
-                        "Processed title change for blog stream {Id}: '{OldTitle}' -> '{NewTitle}'",
+                        "Processed title change for blog stream {Id}: '{OldTitle}' -> '{NewTitle}' (UrlPath: '{OldUrlPath}' -> '{NewUrlPath}')",
                         command.Id,
                         oldTitle,
-                        article.Title);
-                }
-
-                // Handle publishing
-                if (article.Published.HasValue)
-                {
-                    await articleLogic.PublishArticle(article.Id, article.Published.Value);
-                    logger.LogInformation(
-                        "Published blog stream {Id} with publish date {Published}",
-                        command.Id,
-                        article.Published.Value);
+                        article.Title,
+                        oldUrlPath,
+                        newUrlPath);
                 }
 
                 return CommandResult<Article>.Success(article);
@@ -179,6 +193,99 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
                     command.Id);
                 return CommandResult<Article>.Failure($"An unexpected error occurred: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Updates all child blog posts' UrlPath when the parent stream's UrlPath changes.
+        /// Maintains the format: stream_path/post_slug
+        /// </summary>
+        private async Task UpdateChildBlogPostsUrlPath(
+            string oldStreamUrlPath,
+            string newStreamUrlPath,
+            string oldBlogKey,
+            string newBlogKey,
+            CancellationToken cancellationToken)
+        {
+            // Get all blog posts that belong to this stream (by old BlogKey)
+            var blogPosts = await dbContext.Articles
+                .Where(a => a.BlogKey == oldBlogKey &&
+                            a.ArticleType == (int)ArticleType.BlogPost &&
+                            a.StatusCode != (int)StatusCodeEnum.Deleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var post in blogPosts)
+            {
+                // Extract the post slug (everything after the last '/')
+                var parts = post.UrlPath.Split('/');
+                var postSlug = parts.Length > 1 ? parts[^1] : post.UrlPath;
+
+                // Rebuild UrlPath with new stream prefix
+                post.UrlPath = $"{newStreamUrlPath}/{postSlug}";
+                post.BlogKey = newBlogKey;  // Update BlogKey to match new stream
+            }
+
+            logger.LogInformation(
+                "Updated UrlPath for {Count} blog posts. Stream path changed from '{OldPath}' to '{NewPath}'",
+                blogPosts.Count,
+                oldStreamUrlPath,
+                newStreamUrlPath);
+        }
+
+        /// <summary>
+        /// Publishes a blog stream and all its child blog posts.
+        /// </summary>
+        private async Task UpdateBlogStreamPublishingState(
+            Article blogStream,
+            DateTimeOffset publishDate,
+            CancellationToken cancellationToken)
+        {
+            // Publish the stream
+            await articleLogic.PublishArticle(blogStream.Id, publishDate);
+
+            // Publish all child blog posts with the same publish date
+            var blogPosts = await dbContext.Articles
+                .Where(a => a.BlogKey == blogStream.BlogKey &&
+                            a.ArticleType == (int)ArticleType.BlogPost &&
+                            a.StatusCode != (int)StatusCodeEnum.Deleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var post in blogPosts)
+            {
+                await articleLogic.PublishArticle(post.Id, publishDate);
+            }
+
+            logger.LogInformation(
+                "Published blog stream {StreamId} and {PostCount} child posts with date {PublishDate}",
+                blogStream.Id,
+                blogPosts.Count,
+                publishDate);
+        }
+
+        /// <summary>
+        /// Unpublishes a blog stream and all its child blog posts.
+        /// </summary>
+        private async Task UnpublishBlogStream(
+            Article blogStream,
+            string blogKey,
+            CancellationToken cancellationToken)
+        {
+            // Get all blog posts that belong to this stream
+            var blogPosts = await dbContext.Articles
+                .Where(a => a.BlogKey == blogKey &&
+                            a.ArticleType == (int)ArticleType.BlogPost &&
+                            a.StatusCode != (int)StatusCodeEnum.Deleted)
+                .ToListAsync(cancellationToken);
+
+            // Unpublish all posts
+            foreach (var post in blogPosts)
+            {
+                post.Published = null;
+            }
+
+            logger.LogInformation(
+                "Unpublished blog stream {StreamId} and {PostCount} child posts",
+                blogStream.Id,
+                blogPosts.Count);
         }
     }
 }

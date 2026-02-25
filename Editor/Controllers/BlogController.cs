@@ -26,6 +26,9 @@ namespace Sky.Editor.Controllers
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
+    using Sky.Editor.Features.Blogs.CreatePost;
+    using Sky.Editor.Features.Blogs.UpdatePost;
+    using Sky.Editor.Features.Blogs.DeletePost;
     using Sky.Editor.Features.Blogs.GetStream;
     using Sky.Editor.Features.Blogs.UpdateStream;
     using Sky.Editor.Features.Blogs.DeleteStream;
@@ -409,15 +412,14 @@ namespace Sky.Editor.Controllers
 
             var userId = Guid.Parse(await GetUserId());
 
-            // REFACTORED: Use CreateArticleCommand via mediator
-            var command = new CreateArticleCommand
+            // Use dedicated CreateBlogPostCommand handler
+            var command = new CreateBlogPostCommand
             {
                 Title = title,
+                Content = blogEntryTemplate.Content, // Blog posts start with template content
+                BlogKey = blogKey,
                 TemplateId = blogEntryTemplate.Id,
                 UserId = userId,
-                ArticleType = ArticleType.BlogPost,
-                BlogKey = blogKey,
-                ContentOverride = blogEntryTemplate.Content, // Blog posts start with template content
                 Published = null // Explicitly unpublished until user publishes
             };
 
@@ -425,8 +427,7 @@ namespace Sky.Editor.Controllers
 
             if (!result.IsSuccess)
             {
-                var errorMessage = result.ErrorMessage ?? 
-                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
+                var errorMessage = result.ErrorMessage ?? "Failed to create blog post.";
                 return StatusCode(500, $"Failed to create blog entry: {errorMessage}");
             }
 

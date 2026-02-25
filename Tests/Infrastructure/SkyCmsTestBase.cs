@@ -412,6 +412,23 @@ namespace Sky.Tests
                 .AddHttpClient() // Register IHttpClientFactory
                 .AddSingleton<IMediator, Cosmos.Common.Features.Shared.Mediator>(); // Register Mediator
             
+            // Register blog post command handlers
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandResult>>>(sp =>
+                new Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandHandler(
+                    Db,
+                    SlugService,
+                    new NullLogger<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandHandler>()));
+            
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommandResult>>>(sp =>
+                new Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommandHandler(
+                    Db,
+                    new NullLogger<Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommandHandler>()));
+            
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandResult>>>(sp =>
+                new Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler(
+                    Db,
+                    new NullLogger<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler>()));
+            
             Services = serviceCollection.BuildServiceProvider();
 
             // ✅ GET MEDIATOR FROM SERVICE PROVIDER FIRST
