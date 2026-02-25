@@ -429,6 +429,35 @@ namespace Sky.Tests
                     Db,
                     new NullLogger<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler>()));
             
+            // Register template command handlers
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.Create.CreatePageDesignVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Data.PageDesignVersion>>>(sp =>
+                new Sky.Editor.Features.Templates.Create.CreatePageDesignVersionHandler(
+                    Db,
+                    ArticleHtmlService,
+                    Clock,
+                    new NullLogger<Sky.Editor.Features.Templates.Create.CreatePageDesignVersionHandler>()));
+            
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.Save.SavePageDesignVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Data.PageDesignVersion>>>(sp =>
+                new Sky.Editor.Features.Templates.Save.SavePageDesignVersionHandler(
+                    Db,
+                    ArticleHtmlService,
+                    Clock,
+                    new NullLogger<Sky.Editor.Features.Templates.Save.SavePageDesignVersionHandler>()));
+            
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.Delete.DeleteTemplateCommand, Cosmos.Common.Features.Shared.CommandResult<bool>>>(sp =>
+                new Sky.Editor.Features.Templates.Delete.DeleteTemplateHandler(Db));
+            
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.UpdateMetadata.UpdateTemplateMetadataCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Data.Template>>>(sp =>
+                new Sky.Editor.Features.Templates.UpdateMetadata.UpdateTemplateMetadataHandler(
+                    Db,
+                    new NullLogger<Sky.Editor.Features.Templates.UpdateMetadata.UpdateTemplateMetadataHandler>()));
+            
+            // Register template query handlers
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Editor.Features.Templates.Get.GetTemplateQuery, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Templates.Get.GetTemplateQueryResult>>>(sp =>
+                new Sky.Editor.Features.Templates.Get.GetTemplateQueryHandler(
+                    Db,
+                    new NullLogger<Sky.Editor.Features.Templates.Get.GetTemplateQueryHandler>()));
+            
             // Register article query handlers needed by EditorController
             // ✅ Register with non-nullable ArticleViewModel to match EditorController expectations
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
