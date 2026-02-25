@@ -264,7 +264,15 @@ namespace Sky.Editor.Controllers
 
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to update blog stream.");
+                // Title validation errors will be in result.Errors
+                foreach (var error in result.Errors)
+                {
+                    foreach (var message in error.Value)
+                    {
+                        ModelState.AddModelError(error.Key, message);
+                    }
+                }
+
                 return View("Edit", model);
             }
 

@@ -10,18 +10,24 @@ namespace Sky.Tests.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services.BlogPublishing;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Mvc.ViewFeatures;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Controllers;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
+    using Sky.Editor.Features.Blogs.CreatePost;
+    using Sky.Editor.Features.Blogs.DeleteStream;
+    using Sky.Editor.Features.Blogs.GetStream;
+    using Sky.Editor.Features.Blogs.UpdateStream;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Models.Blogs;
     using Sky.Editor.Services.CDN;
@@ -97,10 +103,17 @@ namespace Sky.Tests.Controllers
                 new Claim(ClaimTypes.Name, "testuser@example.com")
             }, "TestAuthentication"));
 
+            var httpContext = new DefaultHttpContext { User = user };
+
+            // Set up TempData
+            var tempDataProvider = new Mock<ITempDataProvider>();
+            var tempDataDictionary = new TempDataDictionary(httpContext, tempDataProvider.Object);
+
             controller.ControllerContext = new ControllerContext
             {
-                HttpContext = new DefaultHttpContext { User = user }
+                HttpContext = httpContext
             };
+            controller.TempData = tempDataDictionary;
         }
 
         [TestCleanup]
@@ -259,11 +272,11 @@ namespace Sky.Tests.Controllers
             await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleViewModel>
+                .Setup(m => m.SendAsync(It.IsAny<CreateBlogPostCommand>(), default))
+                .ReturnsAsync(new CommandResult<CreateBlogPostCommandResult>
                 {
                     IsSuccess = true,
-                    Data = new ArticleViewModel { ArticleNumber = 123 }
+                    Data = new CreateBlogPostCommandResult { ArticleNumber = 123 }
                 });
 
             // Act
@@ -276,7 +289,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("Editor", redirectResult.ControllerName);
 
             mediatorMock.Verify(
-                m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default),
+                m => m.SendAsync(It.IsAny<CreateBlogPostCommand>(), default),
                 Times.Once);
         }
 
@@ -321,8 +334,8 @@ namespace Sky.Tests.Controllers
             await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleViewModel>
+                .Setup(m => m.SendAsync(It.IsAny<CreateBlogPostCommand>(), default))
+                .ReturnsAsync(new CommandResult<CreateBlogPostCommandResult>
                 {
                     IsSuccess = false,
                     ErrorMessage = "Save failed"
@@ -361,6 +374,17 @@ namespace Sky.Tests.Controllers
                 Introduction = "Updated intro",
                 PublishNow = false
             };
+
+            // Mock QueryAsync to return the article (needed for controller logic)
+            mediatorMock
+                .Setup(m => m.QueryAsync<ArticleViewModel>(It.IsAny<GetArticleByArticleNumberQuery>(), default))
+                .ReturnsAsync(new ArticleViewModel
+                {
+                    Id = entry.Id,
+                    ArticleNumber = entry.ArticleNumber,
+                    Title = entry.Title,
+                    Content = entry.Content
+                });
 
             mediatorMock
                 .Setup(m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default))
@@ -438,6 +462,17 @@ namespace Sky.Tests.Controllers
                 { "Content", new[] { "Content is required" } }
             };
 
+            // Mock QueryAsync to return the article (needed for controller logic)
+            mediatorMock
+                .Setup(m => m.QueryAsync<ArticleViewModel>(It.IsAny<GetArticleByArticleNumberQuery>(), default))
+                .ReturnsAsync(new ArticleViewModel
+                {
+                    Id = entry.Id,
+                    ArticleNumber = entry.ArticleNumber,
+                    Title = entry.Title,
+                    Content = entry.Content
+                });
+
             mediatorMock
                 .Setup(m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default))
                 .ReturnsAsync(new CommandResult<ArticleUpdateResult>
@@ -474,6 +509,17 @@ namespace Sky.Tests.Controllers
                 PublishNow = true,
                 Published = null
             };
+
+            // Mock QueryAsync to return the article (needed for controller logic)
+            mediatorMock
+                .Setup(m => m.QueryAsync<ArticleViewModel>(It.IsAny<GetArticleByArticleNumberQuery>(), default))
+                .ReturnsAsync(new ArticleViewModel
+                {
+                    Id = entry.Id,
+                    ArticleNumber = entry.ArticleNumber,
+                    Title = entry.Title,
+                    Content = entry.Content
+                });
 
             mediatorMock
                 .Setup(m => m.SendAsync(It.IsAny<SaveArticleCommand>(), default))
@@ -575,6 +621,19 @@ namespace Sky.Tests.Controllers
             var blog = await Logic.CreateArticle("Blog to Delete", TestUserId, null, "blog-delete", ArticleType.BlogStream);
             var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
 
+            mediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<GetBlogStreamQuery>(), default))
+                .ReturnsAsync(new CommandResult<GetBlogStreamQueryResult>
+                {
+                    IsSuccess = true,
+                    Data = new GetBlogStreamQueryResult
+                    {
+                        Article = blogEntity,
+                        Title = "Blog to Delete",
+                        BlogKey = "blog-delete"
+                    }
+                });
+
             // Act
             var result = await controller.Delete(blogEntity.Id);
 
@@ -595,6 +654,14 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task Delete_Get_ReturnsNotFound_WhenBlogNotExists()
         {
+            // Arrange
+            mediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<GetBlogStreamQuery>(), default))
+                .ReturnsAsync(new CommandResult<GetBlogStreamQueryResult>
+                {
+                    IsSuccess = false
+                });
+
             // Act
             var result = await controller.Delete(Guid.NewGuid());
 
@@ -619,6 +686,22 @@ namespace Sky.Tests.Controllers
             blogEntity.BannerImage = "/images/hero.jpg";
             await Db.SaveChangesAsync();
 
+            mediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<GetBlogStreamQuery>(), default))
+                .ReturnsAsync(new CommandResult<GetBlogStreamQueryResult>
+                {
+                    IsSuccess = true,
+                    Data = new GetBlogStreamQueryResult
+                    {
+                        Article = blogEntity,
+                        Title = "Edit Test Blog",
+                        Description = "Test description",
+                        HeroImage = "/images/hero.jpg",
+                        UrlPath = "edit-test",
+                        Published = blogEntity.Published
+                    }
+                });
+
             // Act
             var result = await controller.Edit(blogEntity.Id);
 
@@ -640,6 +723,14 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task Edit_Get_ReturnsNotFound_WhenBlogNotExists()
         {
+            // Arrange
+            mediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<GetBlogStreamQuery>(), default))
+                .ReturnsAsync(new CommandResult<GetBlogStreamQueryResult>
+                {
+                    IsSuccess = false
+                });
+
             // Act
             var result = await controller.Edit(Guid.NewGuid());
 
@@ -666,17 +757,21 @@ namespace Sky.Tests.Controllers
                 Published = DateTimeOffset.UtcNow
             };
 
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<UpdateBlogStreamCommand>(), default))
+                .ReturnsAsync(new CommandResult<Article>
+                {
+                    IsSuccess = true,
+                    Data = blogEntity
+                });
+
             // Act
             var result = await controller.Edit(blogEntity.Id, model);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            
-            // Verify changes were saved
-            var updatedEntity = await Db.Articles.FirstAsync(a => a.Id == blogEntity.Id);
-            Assert.AreEqual("Updated Blog Title", updatedEntity.Title);
-            Assert.AreEqual("Updated description", updatedEntity.Introduction);
-            Assert.AreEqual("/images/updated-hero.jpg", updatedEntity.BannerImage);
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            var redirectResult = (RedirectToActionResult)result;
+            Assert.AreEqual("Index", redirectResult.ActionName);
         }
 
         /// <summary>
@@ -719,6 +814,18 @@ namespace Sky.Tests.Controllers
                 Title = "Existing Blog", // Conflicts with blog1
                 Description = "Test"
             };
+
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<UpdateBlogStreamCommand>(), default))
+                .ReturnsAsync(new CommandResult<Article>
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Title conflict",
+                    Errors = new Dictionary<string, string[]>
+                    {
+                        { "BlogKey", new[] { "A blog stream with this title already exists." } }
+                    }
+                });
 
             // Act
             var result = await controller.Edit(blog2Entity.Id, model);
@@ -1001,13 +1108,18 @@ namespace Sky.Tests.Controllers
             // Arrange
             // Create a home page first to avoid the blog being marked as the home page
             await Logic.CreateArticle("Home Page", TestUserId, null, "", ArticleType.General);
-            
+
             var blogKey = "delete-test";
             var blog = await Logic.CreateArticle("Blog to Delete", TestUserId, null, blogKey, ArticleType.BlogStream);
             var entry1 = await Logic.CreateArticle("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
             var entry2 = await Logic.CreateArticle("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
-            
+
             var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
+
+            // Configure mediator to return successful result for DeleteBlogStreamCommand
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<DeleteBlogStreamCommand>()))
+                .ReturnsAsync(CommandResult<bool>.Success(true));
 
             // Act
             var result = await controller.ConfirmDelete(blogEntity.Id);
@@ -1017,14 +1129,16 @@ namespace Sky.Tests.Controllers
             var redirectResult = (RedirectToActionResult)result;
             Assert.AreEqual(nameof(BlogController.Index), redirectResult.ActionName);
 
-            // Verify blog and entries were soft deleted
-            var deletedBlog = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
-            Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedBlog.StatusCode);
-            
-            var deletedEntry1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry1.ArticleNumber);
-            var deletedEntry2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry2.ArticleNumber);
-            Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedEntry1.StatusCode);
-            Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedEntry2.StatusCode);
+            // Verify success message is set
+            Assert.IsTrue(controller.TempData.ContainsKey("Success"));
+            Assert.AreEqual("Blog stream and all entries deleted successfully", controller.TempData["Success"]);
+
+            // Verify mediator was called with correct command
+            mediatorMock.Verify(
+                m => m.SendAsync(It.Is<DeleteBlogStreamCommand>(cmd => 
+                    cmd.Id == blogEntity.Id && 
+                    cmd.UserId == TestUserId)),
+                Times.Once);
         }
 
         /// <summary>
@@ -1033,8 +1147,16 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task ConfirmDelete_ReturnsNotFound_WhenBlogNotExists()
         {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+
+            // Configure mediator to return failure result indicating blog not found
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<DeleteBlogStreamCommand>()))
+                .ReturnsAsync(CommandResult<bool>.Failure("Blog not found"));
+
             // Act
-            var result = await controller.ConfirmDelete(Guid.NewGuid());
+            var result = await controller.ConfirmDelete(nonExistentId);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
@@ -1085,8 +1207,8 @@ namespace Sky.Tests.Controllers
             await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleViewModel>
+                .Setup(m => m.SendAsync(It.IsAny<CreateBlogPostCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CommandResult<CreateBlogPostCommandResult>
                 {
                     IsSuccess = false,
                     ErrorMessage = "Failed to create entry"
@@ -1131,19 +1253,20 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual((int)ArticleType.BlogStream, blogStreamEntity.ArticleType);
             Assert.AreEqual("my-tech-blog", blogStreamEntity.BlogKey);
 
-            // Mock CreateArticleCommand for blog entry creation
-            var mockEntryArticle = new ArticleViewModel 
+            // Mock CreateBlogPostCommand for blog entry creation
+            var mockEntryResult = new CreateBlogPostCommandResult
             { 
                 ArticleNumber = 99, 
-                Title = "First Post" 
+                BlogKey = blogStreamEntity.BlogKey,
+                UrlPath = $"{blogStreamEntity.BlogKey}/first-post"
             };
-            
+
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default))
-                .ReturnsAsync(new CommandResult<ArticleViewModel>
+                .Setup(m => m.SendAsync(It.IsAny<CreateBlogPostCommand>(), default))
+                .ReturnsAsync(new CommandResult<CreateBlogPostCommandResult>
                 {
                     IsSuccess = true,
-                    Data = mockEntryArticle
+                    Data = mockEntryResult
                 });
 
             // Act - Create blog entry via controller
@@ -1154,14 +1277,13 @@ namespace Sky.Tests.Controllers
             var redirectResult = (RedirectToActionResult)entryResult;
             Assert.AreEqual("Edit", redirectResult.ActionName);
             Assert.AreEqual("Editor", redirectResult.ControllerName);
-            Assert.AreEqual(mockEntryArticle.ArticleNumber, redirectResult.RouteValues["id"]);
+            Assert.AreEqual(mockEntryResult.ArticleNumber, redirectResult.RouteValues["id"]);
 
             // Verify mediator was called with correct command
             mediatorMock.Verify(
-                m => m.SendAsync(It.Is<CreateArticleCommand>(cmd => 
+                m => m.SendAsync(It.Is<CreateBlogPostCommand>(cmd => 
                     cmd.Title == "First Post" && 
-                    cmd.BlogKey == blogStreamEntity.BlogKey &&
-                    cmd.ArticleType == ArticleType.BlogPost), 
+                    cmd.BlogKey == blogStreamEntity.BlogKey), 
                 default),
                 Times.Once);
         }

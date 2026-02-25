@@ -775,12 +775,16 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                var entity = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == model.Id);
-
-                if (entity == null)
+                // Use GetTemplateQuery to retrieve the template
+                var query = new GetTemplateQuery { TemplateId = model.Id };
+                var queryResult = await mediator.QueryAsync(query);
+                
+                if (!queryResult.IsSuccess || queryResult.Data?.Template == null)
                 {
                     return NotFound();
                 }
+
+                var entity = queryResult.Data.Template;
 
                 // Get the latest version of this template
                 var latestVersion = await dbContext.PageDesignVersions
@@ -845,11 +849,16 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == templateId);
-            if (template == null)
+            // Use GetTemplateQuery to retrieve the template
+            var query = new GetTemplateQuery { TemplateId = templateId };
+            var queryResult = await mediator.QueryAsync(query);
+            
+            if (!queryResult.IsSuccess || queryResult.Data?.Template == null)
             {
                 return NotFound($"Template with ID '{templateId}' was not found.");
             }
+
+            var template = queryResult.Data.Template;
 
             // Apply template using the service layer - creates a new draft version
             var result = await templateServices.ApplyTemplateToArticleAsync(id, templateId);

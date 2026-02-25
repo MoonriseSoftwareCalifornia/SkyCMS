@@ -45,6 +45,9 @@ using Sky.Editor.Features.Articles.Save;
 using Sky.Editor.Features.Blogs.GetStream;
 using Sky.Editor.Features.Blogs.UpdateStream;
 using Sky.Editor.Features.Blogs.DeleteStream;
+using Sky.Editor.Features.Blogs.CreatePost;
+using Sky.Editor.Features.Blogs.UpdatePost;
+using Sky.Editor.Features.Blogs.DeletePost;
 using Sky.Editor.Features.Shared;
 using Sky.Editor.Features.Templates.Create;
 using Sky.Editor.Features.Templates.Delete;
@@ -573,9 +576,10 @@ builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetTempla
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetBlogStreamQuery, CommandResult<GetBlogStreamQueryResult>>, GetBlogStreamQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateBlogStreamCommand, CommandResult<Article>>, UpdateBlogStreamHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>, DeleteBlogStreamHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateBlogPostCommand, CommandResult<CreateBlogPostCommandResult>>, CreateBlogPostCommandHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateBlogPostCommand, CommandResult<UpdateBlogPostCommandResult>>, UpdateBlogPostCommandHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteBlogPostCommand, CommandResult<DeleteBlogPostCommandResult>>, DeleteBlogPostCommandHandler>();
 builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
-builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
-builder.Services.AddScoped<ILayoutMigrationService, LayoutMigrationService>();
 
 // Register article query services (decoupled from ArticleLogic)
 builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>

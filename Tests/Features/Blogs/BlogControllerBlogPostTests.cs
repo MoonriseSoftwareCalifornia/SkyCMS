@@ -472,7 +472,10 @@ namespace Sky.Tests.Features.Blogs
             var redirect = (RedirectToActionResult)createResult;
             var articleNumber = (int)redirect.RouteValues["id"];
 
-            var createdPost = await Db.Articles.FindAsync((int)articleNumber);
+            var createdPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.IsNotNull(createdPost);
             Assert.AreEqual("Lifecycle Test", createdPost.Title);
 
@@ -490,14 +493,20 @@ namespace Sky.Tests.Features.Blogs
             var editResult = await controller.EditEntry(blogStream.BlogKey, articleNumber, updateModel);
             Assert.IsInstanceOfType(editResult, typeof(RedirectToActionResult));
 
-            var editedPost = await Db.Articles.FindAsync((int)articleNumber);
+            var editedPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.AreEqual("Updated Lifecycle Test", editedPost.Title);
 
             // Act - Delete
             var deleteResult = await controller.ConfirmDeleteEntry(blogStream.BlogKey, articleNumber);
             Assert.IsInstanceOfType(deleteResult, typeof(RedirectToActionResult));
 
-            var deletedPost = await Db.Articles.FindAsync((int)articleNumber);
+            var deletedPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedPost.StatusCode);
         }
 
