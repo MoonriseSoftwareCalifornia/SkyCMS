@@ -8,6 +8,7 @@
 namespace Sky.Editor.Controllers
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using Cosmos.Cms.Common;
@@ -588,7 +589,37 @@ namespace Sky.Editor.Controllers
         [HttpPost("{blogKey}/entries/{articleNumber:int}/confirmdeleteentry")]
         public async Task<IActionResult> ConfirmDeleteEntry(string blogKey, int articleNumber)
         {
-            await articleLogic.DeleteArticle(articleNumber);
+            try
+            {
+                // Verify the article belongs to this blog
+                var article = await db.Articles
+                    .Where(a => a.ArticleNumber == articleNumber)
+                    .FirstOrDefaultAsync();
+
+                if (article == null)
+                {
+                    TempData["Error"] = "Article not found.";
+                    return RedirectToAction(nameof(Entries), new { blogKey });
+                }
+
+                if (article.BlogKey != blogKey)
+                {
+                    TempData["Error"] = "Article does not belong to this blog.";
+                    return RedirectToAction(nameof(Entries), new { blogKey });
+                }
+
+                await articleLogic.DeleteArticle(articleNumber);
+
+                TempData["Success"] = "Blog entry deleted successfully.";
+            }
+            catch (KeyNotFoundException)
+            {
+                TempData["Error"] = "Article not found.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error deleting article: {ex.Message}";
+            }
 
             return RedirectToAction(nameof(Entries), new { blogKey });
         }

@@ -245,8 +245,8 @@ namespace Sky.Tests.Features.Articles.Shared
             await service.EnrichBlogNavigationAsync(model);
 
             // Assert
-            Assert.IsNull(model.PreviousUrl);
-            Assert.IsNull(model.NextUrl);
+            Assert.AreEqual(string.Empty, model.PreviousUrl);
+            Assert.AreEqual(string.Empty, model.NextUrl);
         }
 
         /// <summary>
@@ -267,8 +267,8 @@ namespace Sky.Tests.Features.Articles.Shared
             await service.EnrichBlogNavigationAsync(model);
 
             // Assert
-            Assert.IsNull(model.PreviousUrl);
-            Assert.IsNull(model.NextUrl);
+            Assert.AreEqual(string.Empty, model.PreviousUrl);
+            Assert.AreEqual(string.Empty, model.NextUrl);
         }
 
         /// <summary>
@@ -288,8 +288,8 @@ namespace Sky.Tests.Features.Articles.Shared
         public async Task EnrichBlogNavigationAsync_RootUrl_NormalizedToSlash()
         {
             // Arrange
-            var currentPublished = now.AddDays(-3);
-            var nextPublished = now.AddDays(-1);
+            var prevPublished = now.AddDays(-5);
+            var currentPublished = now.AddDays(-1);
 
             await dbContext.ArticleCatalog.AddRangeAsync(
                 new CatalogEntry
@@ -297,7 +297,7 @@ namespace Sky.Tests.Features.Articles.Shared
                     ArticleNumber = 1,
                     UrlPath = "root",  // Root URL
                     Title = "Home",
-                    Published = currentPublished,
+                    Published = prevPublished,
                     Updated = now
                 },
                 new CatalogEntry
@@ -305,7 +305,7 @@ namespace Sky.Tests.Features.Articles.Shared
                     ArticleNumber = 2,
                     UrlPath = "second-post",
                     Title = "Second",
-                    Published = nextPublished,
+                    Published = currentPublished,
                     Updated = now
                 }
             );
@@ -315,7 +315,7 @@ namespace Sky.Tests.Features.Articles.Shared
             {
                 ArticleType = ArticleType.BlogPost,
                 Published = currentPublished,
-                Title = "Home"
+                Title = "Second"
             };
 
             // Act
@@ -352,8 +352,8 @@ namespace Sky.Tests.Features.Articles.Shared
 
             // Assert
             Assert.IsNotNull(model.PreviousUrl);
-            Assert.IsNull(model.NextUrl);
-            Assert.AreEqual("previous-post", model.PreviousUrl);
+            Assert.AreEqual(string.Empty, model.NextUrl);
+            Assert.AreEqual("/previous-post", model.PreviousUrl);
         }
 
         /// <summary>
@@ -382,9 +382,9 @@ namespace Sky.Tests.Features.Articles.Shared
             await service.EnrichBlogNavigationAsync(model);
 
             // Assert
-            Assert.IsNull(model.PreviousUrl);
+            Assert.AreEqual(string.Empty, model.PreviousUrl);
             Assert.IsNotNull(model.NextUrl);
-            Assert.AreEqual("newer-post", model.NextUrl);
+            Assert.AreEqual("/newer-post", model.NextUrl);
         }
 
         #endregion

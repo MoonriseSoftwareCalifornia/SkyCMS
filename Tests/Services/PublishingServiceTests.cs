@@ -60,8 +60,13 @@ namespace Sky.Tests.Services
         {
             // Arrange
             var article = await Logic.CreateArticle("Timestamp Test Article", TestUserId);
-            var publishDate = DateTimeOffset.UtcNow;
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            
+            // Ensure Published is null before testing PublishAsync
+            articleEntity.Published = null;
+            await Db.SaveChangesAsync();
+            
+            var publishDate = DateTimeOffset.UtcNow;
 
             // Act
             await PublishingService.PublishAsync(articleEntity);

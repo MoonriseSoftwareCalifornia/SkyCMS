@@ -58,7 +58,7 @@ namespace Sky.Tests.Services.Publishing
 
             var services = new ServiceCollection();
             services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
-            services.AddScoped<StorageContext>(_ => Storage);
+            services.AddScoped<IStorageContext>(_ => Storage);
             services.AddLogging();
             
             _serviceProvider = services.BuildServiceProvider();

@@ -71,17 +71,17 @@ namespace Sky.Editor.Services.Migrations
             {
                 throw new ArgumentException(
                     "Unable to determine database provider from connection string. " +
-                    "Ensure the connection string is valid for Cosmos DB, SQL Server, MySQL, or SQLite.",
+                    "Ensure the connection string is valid for Cosmos, SQL Server, MySQL, or SQLite.",
                     nameof(connectionString));
             }
 
             // Map strategy ProviderName to DatabaseProvider enum
             return strategy.ProviderName switch
             {
-                "Microsoft.EntityFrameworkCore.Cosmos" => DatabaseProvider.CosmosDb,
-                "Microsoft.EntityFrameworkCore.SqlServer" => DatabaseProvider.SqlServer,
-                "MySql.EntityFrameworkCore" => DatabaseProvider.MySql,
-                "Microsoft.EntityFrameworkCore.Sqlite" => DatabaseProvider.Sqlite,
+                "Cosmos" => DatabaseProvider.CosmosDb,
+                "SQL Server" => DatabaseProvider.SqlServer,
+                "MySQL" => DatabaseProvider.MySql,
+                "SQLite" => DatabaseProvider.Sqlite,
                 _ => throw new NotSupportedException(
                     $"Provider '{strategy.ProviderName}' is recognized but not supported by migration service")
             };

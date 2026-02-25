@@ -257,7 +257,7 @@ namespace Sky.Tests.Services.Setup
             // Create setup and mark as complete
             var setup = await context.Service.InitializeSetupAsync(false);
             var setting = await context.DbContext.Settings
-                .FirstOrDefaultAsync(s => s.Group == "SYSTEM" && s.Name == "SETUP_WIZARD_STATE");
+                .FirstOrDefaultAsync(s => s.Group == "SETUP" && s.Name == "DRAFT_STATE");
             
             var config = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupConfiguration>(setting.Value);
             config.IsComplete = true;
@@ -814,7 +814,7 @@ namespace Sky.Tests.Services.Setup
             
             // Set email but not password
             var setting = await context.DbContext.Settings
-                .FirstOrDefaultAsync(s => s.Group == "SYSTEM" && s.Name == "SETUP_WIZARD_STATE");
+                .FirstOrDefaultAsync(s => s.Group == "SETUP" && s.Name == "DRAFT_STATE");
             var config = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupConfiguration>(setting.Value);
             config.StorageConnectionString = "storage-conn";
             config.SenderEmail = "admin@test.com";
@@ -954,7 +954,7 @@ namespace Sky.Tests.Services.Setup
             
             // Manually set StoragePreConfigured flag
             var setting = await context.DbContext.Settings
-                .FirstOrDefaultAsync(s => s.Group == "SYSTEM" && s.Name == "SETUP_WIZARD_STATE");
+                .FirstOrDefaultAsync(s => s.Group == "SETUP" && s.Name == "DRAFT_STATE");
             var config = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupConfiguration>(setting.Value);
             config.StoragePreConfigured = true;
             setting.Value = Newtonsoft.Json.JsonConvert.SerializeObject(config);
@@ -991,13 +991,11 @@ namespace Sky.Tests.Services.Setup
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
             
-            // Manually set SenderEmailPreConfigured flag
-            var setting = await context.DbContext.Settings
-                .FirstOrDefaultAsync(s => s.Group == "SYSTEM" && s.Name == "SETUP_WIZARD_STATE");
-            var config = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupConfiguration>(setting.Value);
-            config.SenderEmailPreConfigured = true;
-            setting.Value = Newtonsoft.Json.JsonConvert.SerializeObject(config);
-            await context.DbContext.SaveChangesAsync();
+            // Mock UserManager to return an admin user
+            var adminUser = new IdentityUser { Id = Guid.NewGuid().ToString(), Email = "admin@test.com" };
+            var adminList = new List<IdentityUser> { adminUser };
+            context.UserManagerMock.Setup(um => um.GetUsersInRoleAsync("Administrators"))
+                .ReturnsAsync(adminList);
 
             // Act
             var result = await context.Service.ShouldSkipStepAsync(setup.Id, 3);
@@ -1015,7 +1013,7 @@ namespace Sky.Tests.Services.Setup
             
             // Manually set PublisherPreConfigured flag
             var setting = await context.DbContext.Settings
-                .FirstOrDefaultAsync(s => s.Group == "SYSTEM" && s.Name == "SETUP_WIZARD_STATE");
+                .FirstOrDefaultAsync(s => s.Group == "SETUP" && s.Name == "DRAFT_STATE");
             var config = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupConfiguration>(setting.Value);
             config.PublisherPreConfigured = true;
             setting.Value = Newtonsoft.Json.JsonConvert.SerializeObject(config);
@@ -1144,13 +1142,24 @@ namespace Sky.Tests.Services.Setup
             
             var setup = await context.Service.InitializeSetupAsync(false);
             
-            // Mark as complete
-            var setting = await context.DbContext.Settings
-                .FirstOrDefaultAsync(s => s.Group == "SYSTEM" && s.Name == "SETUP_WIZARD_STATE");
-            var config = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupConfiguration>(setting.Value);
-            config.IsComplete = true;
-            config.CompletedAt = DateTime.UtcNow;
-            setting.Value = Newtonsoft.Json.JsonConvert.SerializeObject(config);
+            // Mark as complete and save to committed state (SYSTEM/SETUP_WIZARD_STATE)
+            var config = new SetupConfiguration
+            {
+                Id = setup.Id,
+                IsComplete = true,
+                CompletedAt = DateTime.UtcNow,
+                CurrentStep = 7
+            };
+            
+            var committedSetting = new Setting
+            {
+                Group = "SYSTEM",
+                Name = "SETUP_WIZARD_STATE",
+                Value = Newtonsoft.Json.JsonConvert.SerializeObject(config),
+                Description = "Final setup wizard configuration",
+                IsRequired = false
+            };
+            context.DbContext.Settings.Add(committedSetting);
             await context.DbContext.SaveChangesAsync();
 
             // Act

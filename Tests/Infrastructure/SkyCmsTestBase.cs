@@ -101,6 +101,7 @@ namespace Sky.Tests
                 var template = new Template
                 {
                     Id = Guid.NewGuid(),
+                    Title = "Blog Stream Template",
                     PageType = "blog-stream",
                     Content = t.Content,
                     LayoutId = defaultLayout?.Id ?? Guid.Empty
@@ -122,6 +123,7 @@ namespace Sky.Tests
                 var template = new Template
                 {
                     Id = Guid.NewGuid(),
+                    Title = "Blog Post Template",
                     PageType = "blog-post",
                     Content = t.Content,
                     LayoutId = defaultLayout?.Id ?? Guid.Empty
@@ -183,11 +185,13 @@ namespace Sky.Tests
                 ["AzureBlobStorageEndPoint"] = "https://www.sky-cms.com"
             };
 
-            // Lightweight configuration (all in-memory).
+            // ✅ FIX: Load user secrets and env vars first, then override with test-specific values
+            // This ensures tests have predictable configuration while still allowing
+            // secrets like StorageConnectionString to be loaded from user secrets
             var configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(initialConfig)
                 .AddUserSecrets(typeof(SkyCmsTestBase).Assembly, optional: true)
                 .AddEnvironmentVariables()
+                .AddInMemoryCollection(initialConfig) // Added last = highest priority
                 .Build();
 
             HttpContextAccessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
@@ -407,6 +411,7 @@ namespace Sky.Tests
                 .AddSingleton<IBlogStreamRenderingService>(BlogStreamRenderingService)
                 .AddSingleton<IAuthorInfoService>(AuthorInfoService)
                 .AddScoped<IViewRenderService>(sp => ViewRenderService) // Change to scoped for CreateStaticPages
+                .AddScoped<IStorageContext>(sp => Storage) // Register IStorageContext for CreateStaticPages
                 .AddSingleton<IReservedPaths>(ReservedPaths)
                 .AddSingleton<IEditorSettings>(EditorSettings)
                 .AddHttpClient() // Register IHttpClientFactory
@@ -471,6 +476,21 @@ namespace Sky.Tests
                     Db,
                     Cache,
                     configuration));
+            
+            // Register article catalog query handlers for HomeControllerBase
+            serviceCollection.AddScoped<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
+                new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(
+                    Db,
+                    EditorSettings.PublisherUrl.ToString(),
+                    configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? string.Empty));
+            
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQuery, Cosmos.Common.Models.TableOfContents>>(sp =>
+                new Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQueryHandler(
+                    sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
+            
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQuery, System.Collections.Generic.List<Cosmos.Common.Models.TableOfContentsItem>>>(sp =>
+                new Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQueryHandler(
+                    sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
 
             // ✅ LAZY FACTORY: Register SaveArticleHandler using a factory that will be populated later
             // SaveArticleHandler depends on PublishingService and TitleChangeService which are created AFTER this service provider is built

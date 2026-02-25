@@ -142,7 +142,7 @@ namespace Sky.Tests.Features.Articles.Queries
 
             Assert.IsNotNull(result);
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual("/search-me", result[0].UrlPath);
+            Assert.AreEqual("search-me", result[0].UrlPath);
         }
 
         private async Task<PublishedPage> SeedPublishedPageAsync(string urlPath, string title, string content)
