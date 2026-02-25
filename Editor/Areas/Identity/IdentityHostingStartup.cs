@@ -20,7 +20,7 @@ namespace Sky.Cms.Areas.Identity
         /// <summary>
         /// Configure method.
         /// </summary>
-        /// <param name="builder"></param>
+        /// <param name="builder">Web host builder service.</param>
         public void Configure(IWebHostBuilder builder)
         {
             builder.ConfigureServices((context, services) => { });

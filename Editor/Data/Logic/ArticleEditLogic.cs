@@ -153,12 +153,12 @@ namespace Sky.Editor.Data.Logic
         /// </summary>
         /// <param name="articleNumber">Logical article number.</param>
         /// <returns>Latest published <see cref="DateTimeOffset"/> or <c>null</c>.</returns>
-        public async Task<DateTimeOffset?> GetLastPublishedDate(int articleNumber) =>
-            await DbContext.Articles
-                .Where(a => a.ArticleNumber == articleNumber && a.Published != null)
-                .OrderByDescending(a => a.Published)
-                .Select(a => a.Published)
-                .FirstOrDefaultAsync();
+        //public async Task<DateTimeOffset?> GetLastPublishedDate(int articleNumber) =>
+        //    await DbContext.Articles
+        //        .Where(a => a.ArticleNumber == articleNumber && a.Published != null)
+        //        .OrderByDescending(a => a.Published)
+        //        .Select(a => a.Published)
+        //        .FirstOrDefaultAsync();
 
         /// <summary>
         /// Retrieves a specific version (or latest) of an article by logical article number for editing contexts.
@@ -166,94 +166,98 @@ namespace Sky.Editor.Data.Logic
         /// <param name="articleNumber">Article number.</param>
         /// <param name="versionNumber">Target version; if null the latest version is returned.</param>
         /// <returns>Article view model or null if not found.</returns>
-        public async Task<ArticleViewModel> GetArticleByArticleNumber(int articleNumber, int? versionNumber)
-        {
-            // Get current tenant domain for filtering
-            var tenantDomain = await GetCurrentTenantDomainAsync();
+        /// <remarks>
+        /// <strong>⚠️ DEPRECATED:</strong> Use <see cref="GetArticleByArticleNumberQuery"/> via the mediator pattern instead. This method will be removed in version 3.0.
+        /// </remarks>
+        //[Obsolete("Use GetArticleByArticleNumberQuery via IMediator instead. This method will be removed in version 3.0.", error: false)]
+        //public async Task<ArticleViewModel> GetArticleByArticleNumber(int articleNumber, int? versionNumber)
+        //{
+        //    // Get current tenant domain for filtering
+        //    var tenantDomain = await GetCurrentTenantDomainAsync();
 
-            // Explicitly project required fields to ensure EF loads them
-            IQueryable<Article> q = DbContext.Articles
-                .AsNoTracking() // Prevent tracking issues in concurrent contexts
-                .Where(a => a.ArticleNumber == articleNumber && a.StatusCode != (int)StatusCodeEnum.Deleted);
+        //    // Explicitly project required fields to ensure EF loads them
+        //    IQueryable<Article> q = DbContext.Articles
+        //        .AsNoTracking() // Prevent tracking issues in concurrent contexts
+        //        .Where(a => a.ArticleNumber == articleNumber && a.StatusCode != (int)StatusCodeEnum.Deleted);
 
-            var entity = versionNumber.HasValue
-                ? await q.FirstOrDefaultAsync(a => a.VersionNumber == versionNumber.Value)
-                : await q.OrderByDescending(a => a.VersionNumber).FirstOrDefaultAsync();
+        //    var entity = versionNumber.HasValue
+        //        ? await q.FirstOrDefaultAsync(a => a.VersionNumber == versionNumber.Value)
+        //        : await q.OrderByDescending(a => a.VersionNumber).FirstOrDefaultAsync();
 
-            if (entity == null)
-            {
-                logger.LogWarning(
-                    "Article {ArticleNumber} (version: {VersionNumber}) not found",
-                    articleNumber,
-                    versionNumber?.ToString() ?? "latest");
-                return null;
-            }
+        //    if (entity == null)
+        //    {
+        //        logger.LogWarning(
+        //            "Article {ArticleNumber} (version: {VersionNumber}) not found",
+        //            articleNumber,
+        //            versionNumber?.ToString() ?? "latest");
+        //        return null;
+        //    }
 
-            // **CHECK 1**: Verify Content was loaded from database
-            if (entity.Content == null)
-            {
-                logger.LogError(
-                    "Article {ArticleNumber} version {VersionNumber} has NULL content in database (Id: {Id})",
-                    entity.ArticleNumber,
-                    entity.VersionNumber,
-                    entity.Id);
+        //    // **CHECK 1**: Verify Content was loaded from database
+        //    if (entity.Content == null)
+        //    {
+        //        logger.LogError(
+        //            "Article {ArticleNumber} version {VersionNumber} has NULL content in database (Id: {Id})",
+        //            entity.ArticleNumber,
+        //            entity.VersionNumber,
+        //            entity.Id);
                 
-                // Try to reload explicitly
-                entity = await DbContext.Articles
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(a => a.Id == entity.Id);
+        //        // Try to reload explicitly
+        //        entity = await DbContext.Articles
+        //            .AsNoTracking()
+        //            .FirstOrDefaultAsync(a => a.Id == entity.Id);
                 
-                if (entity?.Content == null)
-                {
-                    logger.LogError(
-                        "Article {ArticleNumber} version {VersionNumber} still has NULL content after reload",
-                        articleNumber,
-                        versionNumber ?? entity?.VersionNumber ?? 0);
-                }
-            }
+        //        if (entity?.Content == null)
+        //        {
+        //            logger.LogError(
+        //                "Article {ArticleNumber} version {VersionNumber} still has NULL content after reload",
+        //                articleNumber,
+        //                versionNumber ?? entity?.VersionNumber ?? 0);
+        //        }
+        //    }
 
-            // **CHECK 2**: Warn if Content is empty (might be intentional, but worth logging)
-            if (string.IsNullOrWhiteSpace(entity.Content))
-            {
-                logger.LogWarning(
-                    "Article {ArticleNumber} version {VersionNumber} has empty/whitespace content (Id: {Id})",
-                    entity.ArticleNumber,
-                    entity.VersionNumber,
-                    entity.Id);
-            }
+        //    // **CHECK 2**: Warn if Content is empty (might be intentional, but worth logging)
+        //    if (string.IsNullOrWhiteSpace(entity.Content))
+        //    {
+        //        logger.LogWarning(
+        //            "Article {ArticleNumber} version {VersionNumber} has empty/whitespace content (Id: {Id})",
+        //            entity.ArticleNumber,
+        //            entity.VersionNumber,
+        //            entity.Id);
+        //    }
 
-            // **CHECK 3**: Log content retrieval for debugging
-            logger.LogDebug(
-                "Retrieved article {ArticleNumber} version {VersionNumber} with content length: {ContentLength}",
-                entity.ArticleNumber,
-                entity.VersionNumber,
-                entity.Content?.Length ?? 0);
+        //    // **CHECK 3**: Log content retrieval for debugging
+        //    logger.LogDebug(
+        //        "Retrieved article {ArticleNumber} version {VersionNumber} with content length: {ContentLength}",
+        //        entity.ArticleNumber,
+        //        entity.VersionNumber,
+        //        entity.Content?.Length ?? 0);
 
-            var viewModel = await BuildArticleViewModel(entity, "en-US");
+        //    var viewModel = await BuildArticleViewModel(entity, "en-US");
 
-            // **CHECK 4**: Verify Content survived the mapping to ViewModel
-            if (viewModel.Content == null && entity.Content != null)
-            {
-                logger.LogError(
-                    "Content was lost during BuildArticleViewModel for article {ArticleNumber} version {VersionNumber}",
-                    entity.ArticleNumber,
-                    entity.VersionNumber);
-            }
+        //    // **CHECK 4**: Verify Content survived the mapping to ViewModel
+        //    if (viewModel.Content == null && entity.Content != null)
+        //    {
+        //        logger.LogError(
+        //            "Content was lost during BuildArticleViewModel for article {ArticleNumber} version {VersionNumber}",
+        //            entity.ArticleNumber,
+        //            entity.VersionNumber);
+        //    }
 
-            // **CHECK 5**: Validate consistency between entity and view model
-            if (entity.Content != viewModel.Content)
-            {
-                logger.LogWarning(
-                    "Content mismatch between entity and view model for article {ArticleNumber} version {VersionNumber}. " +
-                    "Entity length: {EntityLength}, ViewModel length: {ViewModelLength}",
-                    entity.ArticleNumber,
-                    entity.VersionNumber,
-                    entity.Content?.Length ?? 0,
-                    viewModel.Content?.Length ?? 0);
-            }
+        //    // **CHECK 5**: Validate consistency between entity and view model
+        //    if (entity.Content != viewModel.Content)
+        //    {
+        //        logger.LogWarning(
+        //            "Content mismatch between entity and view model for article {ArticleNumber} version {VersionNumber}. " +
+        //            "Entity length: {EntityLength}, ViewModel length: {ViewModelLength}",
+        //            entity.ArticleNumber,
+        //            entity.VersionNumber,
+        //            entity.Content?.Length ?? 0,
+        //            viewModel.Content?.Length ?? 0);
+        //    }
 
-            return viewModel;
-        }
+        //    return viewModel;
+        //}
 
         /// <summary>
         /// Retrieves an article by row (GUID) identifier, excluding deleted versions.
@@ -261,17 +265,21 @@ namespace Sky.Editor.Data.Logic
         /// <param name="id">Article row ID.</param>
         /// <param name="userId">User context (unused).</param>
         /// <returns>Article view model or null.</returns>
-        public async Task<ArticleViewModel> GetArticleById(Guid id, Guid userId)
-        {
-            // Get current tenant domain for filtering
-            var tenantDomain = await GetCurrentTenantDomainAsync();
+        /// <remarks>
+        /// <strong>⚠️ DEPRECATED:</strong> Use <see cref="GetArticleByIdQuery"/> via the mediator pattern instead. This method will be removed in version 3.0.
+        /// </remarks>
+        //[Obsolete("Use GetArticleByIdQuery via IMediator instead. This method will be removed in version 3.0.", error: false)]
+        //public async Task<ArticleViewModel> GetArticleById(Guid id, Guid userId)
+        //{
+        //    // Get current tenant domain for filtering
+        //    var tenantDomain = await GetCurrentTenantDomainAsync();
             
-            IQueryable<Article> query = DbContext.Articles
-                .Where(a => a.Id == id && a.StatusCode != (int)StatusCodeEnum.Deleted);
+        //    IQueryable<Article> query = DbContext.Articles
+        //        .Where(a => a.Id == id && a.StatusCode != (int)StatusCodeEnum.Deleted);
             
-            var entity = await query.FirstOrDefaultAsync();
-            return entity == null ? null : await BuildArticleViewModel(entity, "en-US");
-        }
+        //    var entity = await query.FirstOrDefaultAsync();
+        //    return entity == null ? null : await BuildArticleViewModel(entity, "en-US");
+        //}
 
         /// <summary>
         /// Retrieves the latest non-deleted article by URL path (slug). Empty path is treated as root.
@@ -280,36 +288,44 @@ namespace Sky.Editor.Data.Logic
         /// <param name="controllerName">Legacy controller hint (unused).</param>
         /// <param name="userId">User context (unused).</param>
         /// <returns>Article view model or null.</returns>
-        public async Task<ArticleViewModel> GetArticleByUrl(string urlPath, EnumControllerName controllerName, Guid userId)
-        {
-            if (string.IsNullOrWhiteSpace(urlPath) || urlPath.Equals("/"))
-            {
-                urlPath = "root";
-            }
+        /// <remarks>
+        /// <strong>⚠️ DEPRECATED:</strong> Use <see cref="GetArticleByUrlQuery"/> via the mediator pattern instead. This method will be removed in version 3.0.
+        /// </remarks>
+        //[Obsolete("Use GetArticleByUrlQuery via IMediator instead. This method will be removed in version 3.0.", error: false)]
+        //public async Task<ArticleViewModel> GetArticleByUrl(string urlPath, EnumControllerName controllerName, Guid userId)
+        //{
+        //    if (string.IsNullOrWhiteSpace(urlPath) || urlPath.Equals("/"))
+        //    {
+        //        urlPath = "root";
+        //    }
 
-            urlPath = urlPath.TrimStart('/');
+        //    urlPath = urlPath.TrimStart('/');
 
-            // Get current tenant domain for filtering
-            var tenantDomain = await GetCurrentTenantDomainAsync();
+        //    // Get current tenant domain for filtering
+        //    var tenantDomain = await GetCurrentTenantDomainAsync();
             
-            var deletedEnum = (int)StatusCodeEnum.Deleted;
-            IQueryable<Article> query = DbContext.Articles
-                .Where(a => a.UrlPath == urlPath && a.StatusCode != deletedEnum);
+        //    var deletedEnum = (int)StatusCodeEnum.Deleted;
+        //    IQueryable<Article> query = DbContext.Articles
+        //        .Where(a => a.UrlPath == urlPath && a.StatusCode != deletedEnum);
             
-            var entity = await query
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstOrDefaultAsync();
+        //    var entity = await query
+        //        .OrderByDescending(a => a.VersionNumber)
+        //        .FirstOrDefaultAsync();
 
-            return entity == null ? null : await BuildArticleViewModel(entity, "en-US");
-        }
+        //    return entity == null ? null : await BuildArticleViewModel(entity, "en-US");
+        //}
 
         /// <summary>
         /// Convenience overload returning latest article version by slug.
         /// </summary>
         /// <param name="urlPath">Slug path.</param>
         /// <returns>Article view model or null.</returns>
-        public Task<ArticleViewModel> GetArticleByUrl(string urlPath) =>
-            GetArticleByUrl(urlPath, EnumControllerName.Edit, Guid.Empty);
+        /// <remarks>
+        /// <strong>⚠️ DEPRECATED:</strong> Use <see cref="GetArticleByUrlQuery"/> via the mediator pattern instead. This method will be removed in version 3.0.
+        /// </remarks>
+        //[Obsolete("Use GetArticleByUrlQuery via IMediator instead. This method will be removed in version 3.0.", error: false)]
+        //public Task<ArticleViewModel> GetArticleByUrl(string urlPath) =>
+        //    GetArticleByUrl(urlPath, EnumControllerName.Edit, Guid.Empty);
 
         /// <summary>
         /// Convenience overload with a (currently ignored) published-only flag for API symmetry.
@@ -317,22 +333,30 @@ namespace Sky.Editor.Data.Logic
         /// <param name="urlPath">Slug path.</param>
         /// <param name="publishedOnly">If true would filter to published; ignored in editor mode.</param>
         /// <returns>Article view model or null.</returns>
-        public Task<ArticleViewModel> GetArticleByUrl(string urlPath, bool publishedOnly) =>
-            GetArticleByUrl(urlPath, EnumControllerName.Edit, Guid.Empty);
+        /// <remarks>
+        /// <strong>⚠️ DEPRECATED:</strong> Use <see cref="GetArticleByUrlQuery"/> via the mediator pattern instead. This method will be removed in version 3.0.
+        /// </remarks>
+        //[Obsolete("Use GetArticleByUrlQuery via IMediator instead. This method will be removed in version 3.0.", error: false)]
+        //public Task<ArticleViewModel> GetArticleByUrl(string urlPath, bool publishedOnly) =>
+        //    GetArticleByUrl(urlPath, EnumControllerName.Edit, Guid.Empty);
 
         /// <summary>
         /// Returns redirect items (articles whose status represents redirect entries).
         /// </summary>
         /// <returns>Queryable redirect view models.</returns>
-        public IQueryable<RedirectItemViewModel> GetArticleRedirects() =>
-            DbContext.Articles
-                .Where(p => p.StatusCode == (int)StatusCodeEnum.Redirect)
-                .Select(p => new RedirectItemViewModel
-                {
-                    Id = p.Id,
-                    FromUrl = p.UrlPath,
-                    ToUrl = p.BannerImage,
-                });
+        /// <remarks>
+        /// <strong>⚠️ DEPRECATED:</strong> Use <see cref="GetArticleRedirectsQuery"/> via the mediator pattern instead. This method will be removed in version 3.0.
+        /// </remarks>
+        //[Obsolete("Use GetArticleRedirectsQuery via IMediator instead. This method will be removed in version 3.0.", error: false)]
+        //public IQueryable<RedirectItemViewModel> GetArticleRedirects() =>
+        //    DbContext.Articles
+        //        .Where(p => p.StatusCode == (int)StatusCodeEnum.Redirect)
+        //        .Select(p => new RedirectItemViewModel
+        //        {
+        //            Id = p.Id,
+        //            FromUrl = p.UrlPath,
+        //            ToUrl = p.BannerImage,
+        //        });
 
         /// <summary>
         /// Produces a standalone HTML document for the provided article view model (no sanitization beyond what is stored).
@@ -530,24 +554,32 @@ namespace Sky.Editor.Data.Logic
         /// </summary>
         /// <param name="model">Article view model referencing an article ID.</param>
         /// <returns>Catalog entry.</returns>
-        public async Task<CatalogEntry> GetCatalogEntry(ArticleViewModel model)
-        {
-            var article = await DbContext.Articles.FirstOrDefaultAsync(f => f.Id == model.Id);
-            return await GetCatalogEntry(article);
-        }
+        /// <remarks>
+        /// <strong>⚠️ DEPRECATED:</strong> Use <see cref="GetArticleCatalogEntryQuery"/> via the mediator pattern instead. This method will be removed in version 3.0.
+        /// </remarks>
+        //[Obsolete("Use GetArticleCatalogEntryQuery via IMediator instead. This method will be removed in version 3.0.", error: false)]
+        //public async Task<CatalogEntry> GetCatalogEntry(ArticleViewModel model)
+        //{
+        //    var article = await DbContext.Articles.FirstOrDefaultAsync(f => f.Id == model.Id);
+        //    return await GetCatalogEntry(article);
+        //}
 
         /// <summary>
         /// Gets (or creates) a catalog entry for an article entity.
         /// </summary>
         /// <param name="article">Article entity.</param>
         /// <returns>Catalog entry.</returns>
-        public async Task<CatalogEntry> GetCatalogEntry(Article article)
-        {
-            var entry = await DbContext.ArticleCatalog
-                .FirstOrDefaultAsync(f => f.ArticleNumber == article.ArticleNumber);
+        /// <remarks>
+        /// <strong>⚠️ DEPRECATED:</strong> Use <see cref="GetArticleCatalogEntryQuery"/> via the mediator pattern instead. This method will be removed in version 3.0.
+        /// </remarks>
+        //[Obsolete("Use GetArticleCatalogEntryQuery via IMediator instead. This method will be removed in version 3.0.", error: false)]
+        //public async Task<CatalogEntry> GetCatalogEntry(Article article)
+        //{
+        //    var entry = await DbContext.ArticleCatalog
+        //        .FirstOrDefaultAsync(f => f.ArticleNumber == article.ArticleNumber);
 
-            return entry ?? await UpsertCatalogEntry(article);
-        }
+        //    return entry ?? await UpsertCatalogEntry(article);
+        //}
 
         /// <summary>
         /// Reassigns the root (home) page to the specified article number and republish both old and new root pages.
@@ -640,6 +672,7 @@ namespace Sky.Editor.Data.Logic
         /// </summary>
         /// <param name="article">Exiting article.</param>
         /// <returns>New layout with an incremented version number.</returns>
+        [Obsolete("Use CreateArticleVersionCommand via IMediator instead. This method will be removed in version 3.0.", error: false)]
         public async Task<Article> NewVersion(Article article)
         {
             var nextVersion = new Article()

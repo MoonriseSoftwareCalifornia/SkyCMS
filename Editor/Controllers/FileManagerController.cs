@@ -37,6 +37,7 @@ namespace Sky.Cms.Controllers
     using Sky.Cms.Models;
     using Sky.Cms.Services;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
@@ -969,7 +970,11 @@ namespace Sky.Cms.Controllers
                     // Get the user's ID for logging.
                     var user = await userManager.GetUserAsync(User);
 
+                    // TODO: Refactor to use SaveArticleCommand via mediator when file import handler is created
+                    // For now, use deprecated SaveArticle method - this will be replaced in v3.0
+                    #pragma warning disable CS0618
                     await articleLogic.SaveArticle(article, Guid.Parse(user.Id));
+                    #pragma warning restore CS0618
                 }
                 else
                 {

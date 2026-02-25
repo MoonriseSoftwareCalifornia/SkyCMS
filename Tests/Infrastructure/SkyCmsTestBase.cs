@@ -543,7 +543,8 @@ namespace Sky.Tests
                 BlogStreamRenderingService,
                 ViewRenderService,
                 Services, // ✅ Pass the service provider
-                new NoOpPublishingProgressReporter());
+                new NoOpPublishingProgressReporter(),
+                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
 
             // ✅ NOW UPDATE RedirectService and TitleChangeService with the PublishingService
             RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);

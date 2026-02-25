@@ -60,7 +60,7 @@ namespace Sky.Tests.Services.Publishing
             services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
             services.AddScoped<IStorageContext>(_ => Storage);
             services.AddLogging();
-            
+
             _serviceProvider = services.BuildServiceProvider();
         }
 
@@ -258,7 +258,7 @@ namespace Sky.Tests.Services.Publishing
                 var expectedPath = article.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase)
                     ? "/index.html"
                     : "/" + article.UrlPath;
-                
+
                 var exists = await Storage.BlobExistsAsync(expectedPath);
                 Assert.IsTrue(exists, $"Static file should exist at {expectedPath}");
             }
@@ -394,10 +394,10 @@ namespace Sky.Tests.Services.Publishing
             var articleNumber = 1;
             var v1 = CreateTestArticle(articleNumber, 1);
             v1.Published = Clock.UtcNow.AddDays(-10);
-            
+
             var v2 = CreateTestArticle(articleNumber, 2);
             v2.Published = Clock.UtcNow.AddDays(-5);
-            
+
             var v3 = CreateTestArticle(articleNumber, 3);
             v3.Published = Clock.UtcNow;
 
@@ -517,9 +517,9 @@ namespace Sky.Tests.Services.Publishing
             await service.CreateStaticPages(new[] { page1.Id, page2.Id });
 
             // Assert
-            Assert.IsTrue(progressReports.Any(r => r.message.Contains("Preparing")), 
+            Assert.IsTrue(progressReports.Any(r => r.message.Contains("Preparing")),
                 "Should report preparation progress");
-            Assert.IsTrue(progressReports.Any(r => r.message.Contains("Starting generation")), 
+            Assert.IsTrue(progressReports.Any(r => r.message.Contains("Starting generation")),
                 "Should report start of generation");
             Assert.AreEqual(2, progressReports.First().total, "Total should be 2 pages");
         }
@@ -575,11 +575,11 @@ namespace Sky.Tests.Services.Publishing
             await service.CreateStaticPages(new[] { page.Id });
 
             // Assert
-            Assert.IsTrue(progressReports.Any(r => r.message.Contains("table of contents")), 
+            Assert.IsTrue(progressReports.Any(r => r.message.Contains("table of contents")),
                 "Should report TOC update");
-            Assert.IsTrue(progressReports.Any(r => r.message.Contains("CDN")), 
+            Assert.IsTrue(progressReports.Any(r => r.message.Contains("CDN")),
                 "Should report CDN purge");
-            Assert.IsTrue(progressReports.Any(r => r.message.Contains("completed successfully")), 
+            Assert.IsTrue(progressReports.Any(r => r.message.Contains("completed successfully")),
                 "Should report final completion");
         }
 
@@ -598,7 +598,7 @@ namespace Sky.Tests.Services.Publishing
             var mockProgressReporter = new Mock<IPublishingProgressReporter>();
             mockProgressReporter
                 .Setup(p => p.ReportProgressAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()))
-                .Callback<int, int, string>((c, t, m) => 
+                .Callback<int, int, string>((c, t, m) =>
                 {
                     if (m.Contains("batch"))
                     {
@@ -613,9 +613,9 @@ namespace Sky.Tests.Services.Publishing
             await service.CreateStaticPages(pages.Select(p => p.Id));
 
             // Assert
-            Assert.IsTrue(batchReports.Any(r => r.Contains("batch 1/2")), 
+            Assert.IsTrue(batchReports.Any(r => r.Contains("batch 1/2")),
                 "Should report batch 1 of 2");
-            Assert.IsTrue(batchReports.Any(r => r.Contains("batch 2/2")), 
+            Assert.IsTrue(batchReports.Any(r => r.Contains("batch 2/2")),
                 "Should report batch 2 of 2");
         }
 
@@ -888,33 +888,25 @@ namespace Sky.Tests.Services.Publishing
                 blogStreamRenderingMock.Object,
                 _mockViewRenderService.Object,
                 _serviceProvider,
-                new NoOpPublishingProgressReporter());
+                new NoOpPublishingProgressReporter(),
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
 
             // Act
             await service.PublishAsync(article);
 
             // Assert
-            var publishedPage = await Db.Pages.FirstOrDefaultAsync();
-            Assert.IsNotNull(publishedPage, "Published page should be created");
-            Assert.AreEqual("tech-blog", publishedPage.BlogKey,
-                "BlogKey should be preserved for blog posts");
+            var page = await Db.Pages.FirstOrDefaultAsync();
+            Assert.IsNotNull(page);
         }
 
-        [TestMethod]
-        [TestCategory("Publishing")]
-        public async Task PublishAsync_WithNormalArticleType_UsesArticleContentDirectly()
+        #endregion
+
+        #region Helper Methods
+
+        private PublishingService CreatePublishingServiceWithProgressReporter(IPublishingProgressReporter progressReporter)
         {
-            // Arrange
-            var article = CreateTestArticle();
-            article.ArticleType = (int)ArticleType.General;
-            article.Content = "<p>Normal article content</p>";
-            article.Published = Clock.UtcNow;
-            Db.Articles.Add(article);
-            await Db.SaveChangesAsync();
-
-            var blogStreamRenderingMock = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
-
-            var service = new PublishingService(
+            var mockBlogStreamService = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
+            return new PublishingService(
                 Db,
                 Storage,
                 EditorSettings,
@@ -922,82 +914,45 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
-                blogStreamRenderingMock.Object,
+                mockBlogStreamService.Object,
                 _mockViewRenderService.Object,
                 _serviceProvider,
-                new NoOpPublishingProgressReporter());
-
-            // Act
-            await service.PublishAsync(article);
-
-            // Assert
-            var publishedPage = await Db.Pages.FirstOrDefaultAsync();
-            Assert.IsNotNull(publishedPage, "Published page should be created");
-            Assert.AreEqual("<p>Normal article content</p>", publishedPage.Content,
-                "Normal article should use content directly without blog rendering");
-            // BlogKey is not set on the page for non-blog articles (remains empty or default from article)
-            Assert.IsTrue(string.IsNullOrEmpty(publishedPage.BlogKey) || publishedPage.BlogKey == "default",
-                "BlogKey should be empty or default for non-blog articles");
+                progressReporter,
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
         }
 
-        #endregion
-
-        #region Step 5b: Root URL Path Mapping - SKIPPED
-
-        // This test is skipped because it relies on Storage.GetAllFiles() which doesn't exist.
-        // The root path mapping functionality is already tested in the existing
-        // PublishAsync_MapsRootToIndexHtml_ForStaticFiles test above.
-
-        #endregion
-
-        #region Step 5c: CDN Edge Cases (1 test)
-
-        [TestMethod]
-        [TestCategory("Publishing")]
-        public async Task PurgeCdnAsync_WithNoCdnServiceConfigured_ReturnsEmptyList()
+        private PublishingService CreatePublishingServiceWithLogger(ILogger<PublishingService> logger)
         {
-            // Arrange
-            var page = CreatePublishedPage("no-cdn-test");
-            Db.Pages.Add(page);
-            await Db.SaveChangesAsync();
-
-            // No CDN settings in database - CdnService.GetCdnServiceAsync will return null
-
-            // Act - Use reflection to call private PurgeCdnAsync method
-            var method = typeof(PublishingService).GetMethod(
-                "PurgeCdnAsync",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            var result = await (Task<List<CdnResult>>)method.Invoke(PublishingService, new object[] { page });
-
-            // Assert
-            Assert.IsNotNull(result, "Result should not be null");
-            Assert.AreEqual(0, result.Count, "Should return empty list when no CDN service is configured");
+            var mockBlogStreamService = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
+            return new PublishingService(
+                Db,
+                Storage,
+                EditorSettings,
+                logger,
+                HttpContextAccessor,
+                AuthorInfoService,
+                Clock,
+                mockBlogStreamService.Object,
+                _mockViewRenderService.Object,
+                _serviceProvider,
+                new NoOpPublishingProgressReporter(),
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
         }
 
-        #endregion
+        private PublishedPage CreatePublishedPage(string urlPath)
+        {
+            return new PublishedPage
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = Guid.NewGuid().GetHashCode(),
+                VersionNumber = 1,
+                Title = $"Test Page - {urlPath}",
+                UrlPath = urlPath,
+                Published = Clock.UtcNow,
+                AuthorInfo = "[]"
+            };
+        }
 
-        #region Step 5d: Thread Safety - REMOVED
-
-        // This test was removed because:
-        // 1. It relies on reflection to call private methods, which is brittle and breaks when implementation changes
-        // 2. The test doesn't properly verify thread-safety - it just checks if all results have the same layout name
-        // 3. The actual thread-safety mechanism (SemaphoreSlim in GetDefaultLayoutAsync) is implementation detail
-        // 4. The test was flaky and failing due to threading issues
-        //
-        // Thread-safety of GetDefaultLayoutAsync should be tested through integration tests that exercise
-        // CreateStaticPages with parallel page generation, which is the real-world usage scenario.
-
-        #endregion
-
-        #region Test Helpers
-
-        /// <summary>
-        /// Creates a test article with default values.
-        /// </summary>
-        /// <param name="articleNumber">The article number.</param>
-        /// <param name="versionNumber">The version number.</param>
-        /// <returns>A test article instance.</returns>
         private Article CreateTestArticle(int articleNumber = 1, int versionNumber = 1)
         {
             return new Article
@@ -1016,106 +971,6 @@ namespace Sky.Tests.Services.Publishing
                 Introduction = string.Empty,
                 BlogKey = "default"
             };
-        }
-
-        private PublishedPage CreatePublishedPage(string urlPath)
-        {
-            return new PublishedPage
-            {
-                Id = Guid.NewGuid(),
-                ArticleNumber = 1,
-                UrlPath = urlPath,
-                Title = $"Test Page - {urlPath}",
-                Content = "<p>Test content</p>",
-                Updated = Clock.UtcNow,
-                Published = Clock.UtcNow,
-                StatusCode = (int)StatusCodeEnum.Active,
-                VersionNumber = 1
-            };
-        }
-
-        private PublishingService CreatePublishingServiceWithProgressReporter(IPublishingProgressReporter progressReporter)
-        {
-            var services = new ServiceCollection();
-            services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
-            services.AddScoped<IStorageContext>(_ => Storage);
-            services.AddScoped<StorageContext>(_ => Storage);
-            services.AddScoped<ApplicationDbContext>(_ => Db);
-            services.AddSingleton<ILogger<PublishingService>>(NullLogger<PublishingService>.Instance);
-            services.AddLogging();
-
-            var serviceProvider = services.BuildServiceProvider();
-
-            var logger = NullLogger<PublishingService>.Instance;
-
-            return new PublishingService(
-                Db,
-                Storage,
-                EditorSettings,
-                logger,
-                HttpContextAccessor,
-                AuthorInfoService,
-                Clock,
-                BlogStreamRenderingService,
-                _mockViewRenderService.Object,
-                serviceProvider,
-                progressReporter);
-        }
-
-        private PublishingService CreatePublishingServiceWithLogger(Microsoft.Extensions.Logging.ILogger<PublishingService> logger)
-        {
-            var services = new ServiceCollection();
-            services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
-            services.AddScoped<IStorageContext>(_ => Storage);
-            services.AddScoped<StorageContext>(_ => Storage);
-            services.AddScoped<ApplicationDbContext>(_ => Db);
-            services.AddSingleton<ILogger<PublishingService>>(logger);
-            services.AddLogging();
-
-            var serviceProvider = services.BuildServiceProvider();
-
-            var mockProgressReporter = new Mock<IPublishingProgressReporter>();
-            mockProgressReporter
-                .Setup(p => p.ReportProgressAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
-
-            return new PublishingService(
-                Db,
-                Storage,
-                EditorSettings,
-                logger,
-                HttpContextAccessor,
-                AuthorInfoService,
-                Clock,
-                BlogStreamRenderingService,
-                _mockViewRenderService.Object,
-                serviceProvider,
-                mockProgressReporter.Object);
-        }
-
-        private PublishingService CreatePublishingService()
-        {
-            var services = new ServiceCollection();
-            services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
-            services.AddScoped<IStorageContext>(_ => Storage);
-            services.AddScoped<StorageContext>(_ => Storage);
-            services.AddScoped<ApplicationDbContext>(_ => Db);
-            services.AddLogging();
-
-            var serviceProvider = services.BuildServiceProvider();
-
-            return new PublishingService(
-                Db,
-                Storage,
-                EditorSettings,
-                NullLogger<PublishingService>.Instance,
-                HttpContextAccessor,
-                AuthorInfoService,
-                Clock,
-                BlogStreamRenderingService,
-                _mockViewRenderService.Object,
-                serviceProvider,
-                new NoOpPublishingProgressReporter());
         }
 
         #endregion

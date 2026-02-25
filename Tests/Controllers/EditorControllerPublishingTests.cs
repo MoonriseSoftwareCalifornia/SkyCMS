@@ -13,6 +13,7 @@ namespace Sky.Tests.Controllers
     using System.Security.Claims;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.EditorQueries;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
@@ -79,7 +80,7 @@ namespace Sky.Tests.Controllers
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Verify it's published
-            var publishedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            var publishedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.IsNotNull(publishedArticle.Published, "Article should be published");
 
             // Act
@@ -89,7 +90,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(OkResult));
 
             // Verify article was unpublished
-            var unpublishedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            var unpublishedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.IsNull(unpublishedArticle.Published, "Article should be unpublished");
         }
 
@@ -110,7 +111,7 @@ namespace Sky.Tests.Controllers
             }
 
             // Verify it's not published
-            var unpublishedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            var unpublishedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.IsNull(unpublishedArticle.Published);
 
             // Act - Should not throw

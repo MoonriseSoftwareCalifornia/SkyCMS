@@ -631,7 +631,15 @@ namespace Sky.Tests.Services.Publishing
 
             blogStreamRenderingService ??= new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>().Object;
 
-            var serviceProvider = new ServiceCollection().BuildServiceProvider();
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(db);
+            serviceCollection.AddSingleton(settings);
+            serviceCollection.AddSingleton<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
+                new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(
+                    db,
+                    settings.PublisherUrl,
+                    settings.BlobPublicUrl));
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return new PublishingService(
                 db,
@@ -644,7 +652,8 @@ namespace Sky.Tests.Services.Publishing
                 blogStreamRenderingService,
                 viewRenderer.Object,
                 serviceProvider,
-                new NoOpPublishingProgressReporter());
+                new NoOpPublishingProgressReporter(),
+                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
         }
 
         private static bool InvokeIsTransientException(Exception ex)

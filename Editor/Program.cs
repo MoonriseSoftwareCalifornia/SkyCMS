@@ -581,32 +581,20 @@ builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateB
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteBlogPostCommand, CommandResult<DeleteBlogPostCommandResult>>, DeleteBlogPostCommandHandler>();
 builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
 
-// Register article query services (decoupled from ArticleLogic)
+// Register article query handlers (decoupled from ArticleEditLogic)
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQuery, System.DateTimeOffset?>, Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQuery, Cosmos.Common.Data.CatalogEntry?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQuery, System.Collections.Generic.IEnumerable<Cosmos.Common.Models.RedirectItemViewModel>>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQueryHandler>();
+
 builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
     new ArticleViewModelBuilder(
         sp.GetRequiredService<ApplicationDbContext>(),
         sp.GetRequiredService<IMemoryCache>(),
         builder.Configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty,
         isEditor: true));
-
-builder.Services.AddScoped<IPublishedPageQueryService>(sp =>
-    new PublishedPageQueryService(
-        sp.GetRequiredService<ApplicationDbContext>(),
-        sp.GetRequiredService<IMemoryCache>(),
-        sp.GetRequiredService<IArticleViewModelBuilder>()));
-
-builder.Services.AddScoped<IArticleCatalogQueryService>(sp =>
-    new ArticleCatalogQueryService(
-        sp.GetRequiredService<ApplicationDbContext>(),
-        builder.Configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty,
-        builder.Configuration.GetValue<string>("BlobPublicUrl")
-            ?? builder.Configuration.GetValue<string>("AzureBlobStorageEndPoint")
-            ?? string.Empty));
-
-builder.Services.AddScoped<IBlogNavigationService, BlogNavigationService>();
-
-builder.Services.AddScoped<IStorageContext, StorageContext>();
-
 
 // Transient services (stateless operations, created each time)
 builder.Services.AddTransient<ICdnServiceFactory, CdnServiceFactory>();
@@ -670,6 +658,7 @@ builder.Services.AddScoped<IPublishingProgressReporter, PublishingProgressReport
 // ---------------------------------------------------------------
 // Normal mode: Full controller registration with API support
 // Api route is /_api/*
+
 builder.Services.AddControllersWithViews()
     .AddApplicationPart(typeof(Sky.Cms.Api.Shared.Controllers.ContactApiController).Assembly);
 

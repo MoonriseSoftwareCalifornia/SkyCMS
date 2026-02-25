@@ -199,87 +199,87 @@ namespace Cosmos.Common.Data.Logic
         /// Future optimization: replace regex with hierarchical index or persisted depth metadata.
         /// </remarks>
         /// <returns>Paged table of contents.</returns>
-        [Obsolete("Use IArticleCatalogQueryService.GetTableOfContentsAsync instead", false)]
-        public async Task<TableOfContents> GetTableOfContents(string prefix, int pageNo = 0, int pageSize = 10, bool orderByPublishedDate = false)
-        {
-            if (string.IsNullOrEmpty(prefix) || string.IsNullOrWhiteSpace(prefix) || prefix.Equals("/"))
-            {
-                prefix = string.Empty;
-            }
-            else
-            {
-                prefix = (System.Web.HttpUtility.UrlDecode(prefix.ToLower()
-                        .Replace("%20", "_")
-                        .Replace(" ", "_")) + "/")
-                    .Trim('/');
-            }
+        //[Obsolete("Use IArticleCatalogQueryService.GetTableOfContentsAsync instead", false)]
+        //public async Task<TableOfContents> GetTableOfContents(string prefix, int pageNo = 0, int pageSize = 10, bool orderByPublishedDate = false)
+        //{
+        //    if (string.IsNullOrEmpty(prefix) || string.IsNullOrWhiteSpace(prefix) || prefix.Equals("/"))
+        //    {
+        //        prefix = string.Empty;
+        //    }
+        //    else
+        //    {
+        //        prefix = (System.Web.HttpUtility.UrlDecode(prefix.ToLower()
+        //                .Replace("%20", "_")
+        //                .Replace(" ", "_")) + "/")
+        //            .Trim('/');
+        //    }
 
-            var skip = pageNo * pageSize;
+        //    var skip = pageNo * pageSize;
 
-            IQueryable<TableOfContentsItem> query;
+        //    IQueryable<TableOfContentsItem> query;
 
-            if (string.IsNullOrEmpty(prefix))
-            {
-                query = from t in DbContext.ArticleCatalog
-                        where t.Published.HasValue
-                        select new TableOfContentsItem
-                        {
-                            UrlPath = t.UrlPath,
-                            Title = t.Title,
-                            Published = t.Published.Value,
-                            Updated = t.Updated,
-                            BannerImage = t.BannerImage,
-                            AuthorInfo = t.AuthorInfo,
-                            Introduction = t.Introduction
-                        };
-            }
-            else
-            {
-                var count = prefix.Count(c => c == '/');
-                var dcount = "{" + count + "}";
-                var epath = prefix.TrimStart('/').Replace("/", "\\/");
-                var pattern = $"(?i)(^[{epath}]*)(\\/[^\\/]*){dcount}$";
+        //    if (string.IsNullOrEmpty(prefix))
+        //    {
+        //        query = from t in DbContext.ArticleCatalog
+        //                where t.Published.HasValue
+        //                select new TableOfContentsItem
+        //                {
+        //                    UrlPath = t.UrlPath,
+        //                    Title = t.Title,
+        //                    Published = t.Published.Value,
+        //                    Updated = t.Updated,
+        //                    BannerImage = t.BannerImage,
+        //                    AuthorInfo = t.AuthorInfo,
+        //                    Introduction = t.Introduction
+        //                };
+        //    }
+        //    else
+        //    {
+        //        var count = prefix.Count(c => c == '/');
+        //        var dcount = "{" + count + "}";
+        //        var epath = prefix.TrimStart('/').Replace("/", "\\/");
+        //        var pattern = $"(?i)(^[{epath}]*)(\\/[^\\/]*){dcount}$";
 
-                query = from t in DbContext.ArticleCatalog
-                        where t.Published.HasValue
-                              && t.UrlPath != prefix
-                              && t.UrlPath.StartsWith(prefix)
-                              && Regex.IsMatch(t.UrlPath, pattern)
-                        select new TableOfContentsItem
-                        {
-                            UrlPath = t.UrlPath,
-                            Title = t.Title,
-                            Published = t.Published.Value,
-                            Updated = t.Updated,
-                            BannerImage = t.BannerImage,
-                            AuthorInfo = t.AuthorInfo,
-                            Introduction = t.Introduction
-                        };
-            }
+        //        query = from t in DbContext.ArticleCatalog
+        //                where t.Published.HasValue
+        //                      && t.UrlPath != prefix
+        //                      && t.UrlPath.StartsWith(prefix)
+        //                      && Regex.IsMatch(t.UrlPath, pattern)
+        //                select new TableOfContentsItem
+        //                {
+        //                    UrlPath = t.UrlPath,
+        //                    Title = t.Title,
+        //                    Published = t.Published.Value,
+        //                    Updated = t.Updated,
+        //                    BannerImage = t.BannerImage,
+        //                    AuthorInfo = t.AuthorInfo,
+        //                    Introduction = t.Introduction
+        //                };
+        //    }
 
-            var data = await query.ToListAsync();
-            var sort = data.AsQueryable();
-            sort = orderByPublishedDate
-                ? sort.OrderByDescending(o => o.Published)
-                : sort.OrderBy(o => o.Title);
+        //    var data = await query.ToListAsync();
+        //    var sort = data.AsQueryable();
+        //    sort = orderByPublishedDate
+        //        ? sort.OrderByDescending(o => o.Published)
+        //        : sort.OrderBy(o => o.Title);
 
-            var now = DateTimeOffset.UtcNow;
-            var items = sort
-                .Where(w => w.Published.UtcDateTime <= now)
-                .Skip(skip)
-                .Take(pageSize)
-                .ToList();
+        //    var now = DateTimeOffset.UtcNow;
+        //    var items = sort
+        //        .Where(w => w.Published.UtcDateTime <= now)
+        //        .Skip(skip)
+        //        .Take(pageSize)
+        //        .ToList();
 
-            return new TableOfContents
-            {
-                TotalCount = items.Count,
-                PageNo = pageNo,
-                PageSize = pageSize,
-                Items = items,
-                PublisherUrl = publisherUrl,
-                BlobPublicUrl = blobPublicUrl
-            };
-        }
+        //    return new TableOfContents
+        //    {
+        //        TotalCount = items.Count,
+        //        PageNo = pageNo,
+        //        PageSize = pageSize,
+        //        Items = items,
+        //        PublisherUrl = publisherUrl,
+        //        BlobPublicUrl = blobPublicUrl
+        //    };
+        //}
 
         /// <summary>
         /// Resolve the current published version of a page/article by URL path with optional caching.
@@ -294,84 +294,84 @@ namespace Cosmos.Common.Data.Logic
         /// SQLite nuance: DateTimeOffset comparison adjustments addressed by explicit HasValue checks.
         /// </remarks>
         /// <returns>Article view model.</returns>
-        [Obsolete("Use IPublishedPageQueryService.GetPublishedPageByUrlAsync instead", false)]
-        public virtual async Task<ArticleViewModel> GetPublishedPageByUrl(string urlPath, string lang = "", TimeSpan? cacheSpan = null, TimeSpan? layoutCache = null, bool includeLayout = true)
-        {
-            urlPath = urlPath?.ToLower().Trim(new char[] { ' ', '/' });
-            if (string.IsNullOrEmpty(urlPath) || urlPath.Trim() == "/")
-            {
-                urlPath = "root";
-            }
+        //[Obsolete("Use IPublishedPageQueryService.GetPublishedPageByUrlAsync instead", false)]
+        //public virtual async Task<ArticleViewModel> GetPublishedPageByUrl(string urlPath, string lang = "", TimeSpan? cacheSpan = null, TimeSpan? layoutCache = null, bool includeLayout = true)
+        //{
+        //    urlPath = urlPath?.ToLower().Trim(new char[] { ' ', '/' });
+        //    if (string.IsNullOrEmpty(urlPath) || urlPath.Trim() == "/")
+        //    {
+        //        urlPath = "root";
+        //    }
 
-            if (memoryCache == null || cacheSpan == null)
-            {
-                var dt = DateTimeOffset.UtcNow;
-                var entity = await DbContext.Pages
-                    .Where(a => a.UrlPath == urlPath && a.Published <= dt)
-                    .OrderByDescending(o => o.VersionNumber)
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync();
+        //    if (memoryCache == null || cacheSpan == null)
+        //    {
+        //        var dt = DateTimeOffset.UtcNow;
+        //        var entity = await DbContext.Pages
+        //            .Where(a => a.UrlPath == urlPath && a.Published <= dt)
+        //            .OrderByDescending(o => o.VersionNumber)
+        //            .AsNoTracking()
+        //            .FirstOrDefaultAsync();
 
-                if (entity == null)
-                {
-                    return null;
-                }
+        //        if (entity == null)
+        //        {
+        //            return null;
+        //        }
 
-                return await BuildArticleViewModel(entity, lang, includeLayout: includeLayout);
-            }
+        //        return await BuildArticleViewModel(entity, lang, includeLayout: includeLayout);
+        //    }
 
-            memoryCache.TryGetValue($"{urlPath}-{lang}-{includeLayout}", out ArticleViewModel model);
+        //    memoryCache.TryGetValue($"{urlPath}-{lang}-{includeLayout}", out ArticleViewModel model);
 
-            if (model == null)
-            {
-                var dt = DateTimeOffset.UtcNow;
-                var data = await DbContext.Pages
-                    .Where(a => a.UrlPath == urlPath && a.Published.HasValue && a.Published <= dt)
-                    .OrderByDescending(o => o.VersionNumber)
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync();
+        //    if (model == null)
+        //    {
+        //        var dt = DateTimeOffset.UtcNow;
+        //        var data = await DbContext.Pages
+        //            .Where(a => a.UrlPath == urlPath && a.Published.HasValue && a.Published <= dt)
+        //            .OrderByDescending(o => o.VersionNumber)
+        //            .AsNoTracking()
+        //            .FirstOrDefaultAsync();
 
-                if (data == null)
-                {
-                    return null;
-                }
+        //        if (data == null)
+        //        {
+        //            return null;
+        //        }
 
-                model = await BuildArticleViewModel(data, lang, layoutCache, includeLayout);
-                memoryCache.Set($"{urlPath}-{lang}-{includeLayout}", model, cacheSpan.Value);
-            }
+        //        model = await BuildArticleViewModel(data, lang, layoutCache, includeLayout);
+        //        memoryCache.Set($"{urlPath}-{lang}-{includeLayout}", model, cacheSpan.Value);
+        //    }
 
-            return model;
-        }
+        //    return model;
+        //}
 
         /// <summary>
         /// Lightweight header-only fetch (omits large text fields) for a published page used in partial render or dependency checks.
         /// </summary>
         /// <param name="urlPath">URL path (e.g., "blog/my-article"). Case-insensitive. Root page is "root".</param>
         /// <returns>Article view model.</returns>
-        [Obsolete("Use IPublishedPageQueryService.GetPublishedPageHeaderByUrlAsync instead", false)]
-        public virtual async Task<ArticleViewModel> GetPublishedPageHeaderByUrl(string urlPath)
-        {
-            urlPath = urlPath?.ToLower().Trim(new char[] { ' ', '/' });
-            if (string.IsNullOrEmpty(urlPath) || urlPath.Trim() == "/")
-            {
-                urlPath = "root";
-            }
+        //[Obsolete("Use IPublishedPageQueryService.GetPublishedPageHeaderByUrlAsync instead", false)]
+        //public virtual async Task<ArticleViewModel> GetPublishedPageHeaderByUrl(string urlPath)
+        //{
+        //    urlPath = urlPath?.ToLower().Trim(new char[] { ' ', '/' });
+        //    if (string.IsNullOrEmpty(urlPath) || urlPath.Trim() == "/")
+        //    {
+        //        urlPath = "root";
+        //    }
 
-            var dt = DateTimeOffset.UtcNow;
-            return await DbContext.Pages
-                .Where(a => a.UrlPath == urlPath && a.Published.HasValue && a.Published <= dt)
-                .Select(s => new ArticleViewModel
-                {
-                    ArticleNumber = s.ArticleNumber,
-                    Id = s.Id,
-                    Expires = s.Expires,
-                    Updated = s.Updated,
-                    VersionNumber = s.VersionNumber
-                })
-                .OrderByDescending(o => o.VersionNumber)
-                .AsNoTracking()
-                .FirstOrDefaultAsync();
-        }
+        //    var dt = DateTimeOffset.UtcNow;
+        //    return await DbContext.Pages
+        //        .Where(a => a.UrlPath == urlPath && a.Published.HasValue && a.Published <= dt)
+        //        .Select(s => new ArticleViewModel
+        //        {
+        //            ArticleNumber = s.ArticleNumber,
+        //            Id = s.Id,
+        //            Expires = s.Expires,
+        //            Updated = s.Updated,
+        //            VersionNumber = s.VersionNumber
+        //        })
+        //        .OrderByDescending(o => o.VersionNumber)
+        //        .AsNoTracking()
+        //        .FirstOrDefaultAsync();
+        //}
 
         /// <summary>
         /// Returns the default layout (optionally cached) including navigation markup placeholders.
@@ -409,78 +409,78 @@ namespace Cosmos.Common.Data.Logic
         /// Expensive for large datasets. Consider external indexing (e.g., Azure Search, Elastic) for scale.
         /// Multi-term queries are AND-combined.
         /// </remarks>
-        [Obsolete("Use IArticleCatalogQueryService.SearchAsync instead", false)]
-        public async Task<List<TableOfContentsItem>> Search(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-            {
-                return new List<TableOfContentsItem>();
-            }
+        //[Obsolete("Use IArticleCatalogQueryService.SearchAsync instead", false)]
+        //public async Task<List<TableOfContentsItem>> Search(string text)
+        //{
+        //    if (string.IsNullOrEmpty(text))
+        //    {
+        //        return new List<TableOfContentsItem>();
+        //    }
 
-            text = text.ToLower();
+        //    text = text.ToLower();
 
-            var dt = DateTimeOffset.UtcNow;
-            var query = DbContext.Pages
-                .Where(a => a.StatusCode == 0
-                            && a.Published <= dt
-                            && (a.Content.ToLower().Contains(text) || a.Title.ToLower().Contains(text)))
-                .AsQueryable();
+        //    var dt = DateTimeOffset.UtcNow;
+        //    var query = DbContext.Pages
+        //        .Where(a => a.StatusCode == 0
+        //                    && a.Published <= dt
+        //                    && (a.Content.ToLower().Contains(text) || a.Title.ToLower().Contains(text)))
+        //        .AsQueryable();
 
-            var terms = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        //    var terms = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            if (terms.Length > 1)
-            {
-                foreach (var term in terms)
-                {
-                    query = query.Where(a => a.Content.ToLower().Contains(term) || a.Title.ToLower().Contains(term));
-                }
-            }
+        //    if (terms.Length > 1)
+        //    {
+        //        foreach (var term in terms)
+        //        {
+        //            query = query.Where(a => a.Content.ToLower().Contains(term) || a.Title.ToLower().Contains(term));
+        //        }
+        //    }
 
-            query = query.OrderByDescending(o => o.Title);
+        //    query = query.OrderByDescending(o => o.Title);
 
-            var results = await query.Select(s => new TableOfContentsItem
-            {
-                UrlPath = "/" + s.UrlPath,
-                Title = s.Title,
-                Published = s.Published.Value,
-                Updated = s.Updated,
-                BannerImage = "/" + s.BannerImage,
-                AuthorInfo = s.AuthorInfo
-            }).ToListAsync();
+        //    var results = await query.Select(s => new TableOfContentsItem
+        //    {
+        //        UrlPath = "/" + s.UrlPath,
+        //        Title = s.Title,
+        //        Published = s.Published.Value,
+        //        Updated = s.Updated,
+        //        BannerImage = "/" + s.BannerImage,
+        //        AuthorInfo = s.AuthorInfo
+        //    }).ToListAsync();
 
-            return results.Select(s => new TableOfContentsItem
-            {
-                AuthorInfo = s.AuthorInfo,
-                BannerImage = string.IsNullOrEmpty(s.BannerImage) ? string.Empty : "/" + s.BannerImage,
-                Published = s.Published,
-                Title = s.Title,
-                Updated = s.Updated,
-                UrlPath = s.UrlPath == "/root" ? "/" : s.UrlPath
-            }).ToList();
-        }
+        //    return results.Select(s => new TableOfContentsItem
+        //    {
+        //        AuthorInfo = s.AuthorInfo,
+        //        BannerImage = string.IsNullOrEmpty(s.BannerImage) ? string.Empty : "/" + s.BannerImage,
+        //        Published = s.Published,
+        //        Title = s.Title,
+        //        Updated = s.Updated,
+        //        UrlPath = s.UrlPath == "/root" ? "/" : s.UrlPath
+        //    }).ToList();
+        //}
 
         /// <summary>
         /// Fetch previous and next published blog posts relative to a given publish timestamp.
         /// </summary>
         /// <param name="published">The publish timestamp to compare against.</param>
         /// <returns>A tuple containing the previous and next blog posts.</returns>
-        [Obsolete("Use IBlogNavigationService.GetAdjacentBlogPostsAsync instead", false)]
-        public async Task<(TableOfContentsItem previous, TableOfContentsItem next)> GetAdjacentBlogPosts(DateTimeOffset published)
-        {
-            var prev = await DbContext.ArticleCatalog
-                .Where(a => a.Published < published && a.Published != null)
-                .OrderByDescending(a => a.Published)
-                .Select(a => new TableOfContentsItem { Title = a.Title, UrlPath = a.UrlPath, Published = a.Published.Value })
-                .FirstOrDefaultAsync();
+        //[Obsolete("Use IBlogNavigationService.GetAdjacentBlogPostsAsync instead", false)]
+        //public async Task<(TableOfContentsItem previous, TableOfContentsItem next)> GetAdjacentBlogPosts(DateTimeOffset published)
+        //{
+        //    var prev = await DbContext.ArticleCatalog
+        //        .Where(a => a.Published < published && a.Published != null)
+        //        .OrderByDescending(a => a.Published)
+        //        .Select(a => new TableOfContentsItem { Title = a.Title, UrlPath = a.UrlPath, Published = a.Published.Value })
+        //        .FirstOrDefaultAsync();
 
-            var next = await DbContext.ArticleCatalog
-                .Where(a => a.Published > published && a.Published != null)
-                .OrderBy(a => a.Published)
-                .Select(a => new TableOfContentsItem { Title = a.Title, UrlPath = a.UrlPath, Published = a.Published.Value })
-                .FirstOrDefaultAsync();
+        //    var next = await DbContext.ArticleCatalog
+        //        .Where(a => a.Published > published && a.Published != null)
+        //        .OrderBy(a => a.Published)
+        //        .Select(a => new TableOfContentsItem { Title = a.Title, UrlPath = a.UrlPath, Published = a.Published.Value })
+        //        .FirstOrDefaultAsync();
 
-            return (prev, next);
-        }
+        //    return (prev, next);
+        //}
 
         /// <summary>
         /// Enriches a blog post view model with previous/next navigation links when applicable.
@@ -488,28 +488,28 @@ namespace Cosmos.Common.Data.Logic
         /// </summary>
         /// <param name="model">Blog post view model.</param>
         /// <returns>Task.</returns>
-        [Obsolete("Use IBlogNavigationService.EnrichBlogNavigationAsync instead", false)]
-        public async Task EnrichBlogNavigation(ArticleViewModel model)
-        {
-            if (model == null || model.ArticleType != ArticleType.BlogPost || !model.Published.HasValue)
-            {
-                return;
-            }
+        //[Obsolete("Use IBlogNavigationService.EnrichBlogNavigationAsync instead", false)]
+        //public async Task EnrichBlogNavigation(ArticleViewModel model)
+        //{
+        //    if (model == null || model.ArticleType != ArticleType.BlogPost || !model.Published.HasValue)
+        //    {
+        //        return;
+        //    }
 
-            var (previous, next) = await GetAdjacentBlogPosts(model.Published.Value);
+        //    var (previous, next) = await GetAdjacentBlogPosts(model.Published.Value);
 
-            if (previous != null)
-            {
-                model.PreviousTitle = previous.Title;
-                model.PreviousUrl = previous.UrlPath == "root" ? "/" : "/" + previous.UrlPath.TrimStart('/');
-            }
+        //    if (previous != null)
+        //    {
+        //        model.PreviousTitle = previous.Title;
+        //        model.PreviousUrl = previous.UrlPath == "root" ? "/" : "/" + previous.UrlPath.TrimStart('/');
+        //    }
 
-            if (next != null)
-            {
-                model.NextTitle = next.Title;
-                model.NextUrl = next.UrlPath == "root" ? "/" : "/" + next.UrlPath.TrimStart('/');
-            }
-        }
+        //    if (next != null)
+        //    {
+        //        model.NextTitle = next.Title;
+        //        model.NextUrl = next.UrlPath == "root" ? "/" : "/" + next.UrlPath.TrimStart('/');
+        //    }
+        //}
 
         /// <summary>
         /// Build a full <see cref="ArticleViewModel"/> from an <see cref="Article"/> draft/published entity.

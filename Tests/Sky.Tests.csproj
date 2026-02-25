@@ -49,6 +49,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Configuration\" />
+	  <Folder Include="Features\Articles\Restore\" />
 	  <Folder Include="Services\Migrations\TestMigrations\" />
 	</ItemGroup>
 

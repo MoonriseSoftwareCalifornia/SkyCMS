@@ -20,18 +20,17 @@ namespace Sky.Editor.Services.Publishing
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services.BlogPublishing;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using Sky.Cms.Services;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
-    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
 
@@ -42,7 +41,7 @@ namespace Sky.Editor.Services.Publishing
     /// This service persists published page records, generates optional static HTML files,
     /// updates the site table of contents, and coordinates CDN cache purges so new content
     /// becomes visible immediately. Blog streams and blog posts receive special rendering
-    /// via the injected <see cref="IBlogRenderingService"/>.
+    /// via the injected <see cref="IBlogStreamRenderingService"/>.
     /// </remarks>
     public class PublishingService : IPublishingService
     {
@@ -57,6 +56,7 @@ namespace Sky.Editor.Services.Publishing
         private readonly IViewRenderService viewRenderService;
         private readonly IServiceProvider _serviceProvider;
         private readonly IPublishingProgressReporter _progressReporter;
+        private readonly IArticleCatalogQueryService articleCatalogQueryService;
         private readonly SemaphoreSlim _writeTocSemaphore = new SemaphoreSlim(1, 1);
         private readonly SemaphoreSlim _layoutLock = new SemaphoreSlim(1, 1);
 
@@ -74,6 +74,7 @@ namespace Sky.Editor.Services.Publishing
         /// <param name="viewRenderService">View rendering service.</param>
         /// <param name="serviceProvider">Service provider for creating scoped dependencies.</param>
         /// <param name="progressReporter">The publishing progress reporter.</param>
+        /// <param name="articleCatalogQueryService">Article catalog service.</param>
         public PublishingService(
             ApplicationDbContext db,
             IStorageContext storage,
@@ -85,7 +86,8 @@ namespace Sky.Editor.Services.Publishing
             IBlogStreamRenderingService blogStreamRenderingService,
             IViewRenderService viewRenderService,
             IServiceProvider serviceProvider,
-            IPublishingProgressReporter progressReporter)
+            IPublishingProgressReporter progressReporter,
+            IArticleCatalogQueryService articleCatalogQueryService)
         {
             _db = db;
             _storage = storage;
@@ -98,6 +100,7 @@ namespace Sky.Editor.Services.Publishing
             this.viewRenderService = viewRenderService;
             _serviceProvider = serviceProvider;
             _progressReporter = progressReporter;
+            this.articleCatalogQueryService = articleCatalogQueryService;
         }
 
         private LayoutViewModel defaultLayout;
@@ -725,13 +728,7 @@ namespace Sky.Editor.Services.Publishing
             await _writeTocSemaphore.WaitAsync();
             try
             {
-                var toc = await new ArticleLogic(
-                    _db,
-                    new MemoryCache(new MemoryCacheOptions()),
-                    _settings.PublisherUrl,
-                    _settings.BlobPublicUrl,
-                    true)
-                    .GetTableOfContents("/", 0, 500, false);
+                var toc = articleCatalogQueryService.GetTableOfContentsAsync(prefix, 0, 500, false);
 
                 if (toc == null)
                 {

@@ -14,6 +14,7 @@ namespace Sky.Tests.Services
     using Cosmos.BlobService;
     using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.Shared;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.EntityFrameworkCore;
@@ -207,6 +208,10 @@ namespace Sky.Tests.Services
                 var storageContext = sp.GetRequiredService<StorageContext>();
                 var mockAuthorService = new Mock<IAuthorInfoService>();
                 var mockBlogStreamRenderingService = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
+                var catalogQueryService = new ArticleCatalogQueryService(
+                    dbContext,
+                    sp.GetRequiredService<IEditorSettings>().PublisherUrl,
+                    sp.GetRequiredService<IEditorSettings>().BlobPublicUrl);
                 
                 return new PublishingService(
                     dbContext,
@@ -219,7 +224,8 @@ namespace Sky.Tests.Services
                     mockBlogStreamRenderingService.Object,
                     sp.GetRequiredService<IViewRenderService>(),
                     sp,
-                    sp.GetRequiredService<IPublishingProgressReporter>()); // ✅ Add progress reporter
+                    sp.GetRequiredService<IPublishingProgressReporter>(),
+                    catalogQueryService);
             });
 
             services.AddScoped<IRedirectService>(sp =>

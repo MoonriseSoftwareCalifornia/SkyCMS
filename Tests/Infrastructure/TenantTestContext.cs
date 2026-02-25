@@ -244,6 +244,12 @@ namespace Sky.Tests
                 var tenantServiceCollection = new ServiceCollection();
                 tenantServiceCollection.AddSingleton(DbContext); // Use THIS tenant's DbContext
                 tenantServiceCollection.AddSingleton(storage);
+                tenantServiceCollection.AddSingleton(editorSettings);
+                tenantServiceCollection.AddSingleton<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
+                    new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(
+                        DbContext,
+                        editorSettings.PublisherUrl,
+                        editorSettings.BlobPublicUrl));
                 var tenantServiceProvider = tenantServiceCollection.BuildServiceProvider();
                 
                 PublishingService = new Sky.Editor.Services.Publishing.PublishingService(
@@ -257,8 +263,9 @@ namespace Sky.Tests
                     blogStreamRenderingService,
                     viewRenderService,
                     tenantServiceProvider,
-                    new Sky.Editor.Services.Publishing.NoOpPublishingProgressReporter());
-
+                    new Sky.Editor.Services.Publishing.NoOpPublishingProgressReporter(),
+                    tenantServiceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+               
                 // Create tenant-scoped catalog service
                 var catalogService = new CatalogService(DbContext, articleHtmlService, clock, new NullLogger<CatalogService>());
 

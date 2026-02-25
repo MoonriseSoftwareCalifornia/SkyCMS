@@ -7,18 +7,11 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
     using Cosmos.BlobService;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
@@ -53,6 +46,13 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.ReservedPaths;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Web;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Editor controller.
@@ -137,7 +137,6 @@ namespace Sky.Cms.Controllers
             var htmlUtilities = new HtmlUtilities();
 
             this.viewRenderService = viewRenderService;
-
         }
 
         /// <summary>
@@ -222,9 +221,15 @@ namespace Sky.Cms.Controllers
 
             ViewData["PageTitle"] = article.Title;
             ViewData["Published"] = null;
-            ViewData["LastPubDateTime"] = await articleLogic.GetLastPublishedDate(id);
+            ViewData["LastPubDateTime"] = await mediator.QueryAsync(new GetLastPublishedDateQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
 
-            var catalogEntry = await articleLogic.GetCatalogEntry(article);
+            var catalogEntry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
 
             var designerUtils = new DesignerUtilities();
             var data = designerUtils.ExtractDesignerData(article.Content);
@@ -332,7 +337,7 @@ namespace Sky.Cms.Controllers
 
         /// <summary>
         /// Visual designer based on GrapeJS.
-        /// </summary>
+        /// </param>
         /// <param name="id">Article number.</param>
         /// <returns>IActionResult.</returns>
         [HttpGet]
@@ -762,255 +767,19 @@ namespace Sky.Cms.Controllers
             if (!result.IsSuccess)
             {
                 // Handler validation errors (including title conflicts)
-                var errorMessage = result.ErrorMessage ?? 
-                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>());
+                var errors = result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>();
+                var errorMessage = result.ErrorMessage ?? string.Join(", ", errors);
                 ModelState.AddModelError(string.Empty, errorMessage);
-
+                
                 return View(viewName: "__NewHomePage", model: model);
             }
 
-            // Successfully created - redirect to versions page for the new article
-            return RedirectToAction("Versions", new { id = result.Data.ArticleNumber });
+            // Successfully created - redirect to home
+            return Redirect("/");
         }
 
         /// <summary>
-        ///     Creates a new version for an article and redirects to editor.
-        /// </summary>
-        /// <param name="id">Article ID.</param>
-        /// <param name="entityId">Entity Id to use as new version.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [Authorize(Roles = "Administrators, Editors, Authors")]
-        public async Task<IActionResult> CreateVersion(int id, Guid? entityId = null)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            // Grab the latest versions regardless
-            var latest = await dbContext.Articles.OrderByDescending(o => o.VersionNumber).FirstOrDefaultAsync(f =>
-                    f.ArticleNumber == id);
-
-            // This is the article that we will edit
-            Article article;
-
-            // Are we basing this on an existing entity?
-            if (entityId == null)
-            {
-                // Yes we are, target that version now.
-                article = latest;
-            }
-            else
-            {
-                // We are here because the new version is being based on a
-                // specific older version, not the latest version.
-                //
-                //
-                // Create a new version based on a specific version
-                article = await dbContext.Articles.FirstOrDefaultAsync(f =>
-                    f.Id == entityId.Value);
-            }
-
-            var newArticle = new Article()
-            {
-                Id = Guid.NewGuid(),
-                ArticleNumber = article.ArticleNumber,
-                BannerImage = article.BannerImage,
-                Content = article.Content,
-                Expires = article.Expires,
-                FooterJavaScript = article.FooterJavaScript,
-                HeaderJavaScript = article.HeaderJavaScript,
-                Published = article.Published,
-                StatusCode = article.StatusCode,
-                Title = article.Title,
-                Updated = article.Updated,
-                UrlPath = article.UrlPath,
-                UserId = User.Identity.Name,
-                VersionNumber = latest.VersionNumber + 1
-            };
-
-            dbContext.Articles.Add(newArticle);
-
-            await dbContext.SaveChangesAsync();
-
-            return RedirectToAction("EditCode", "Editor", new { id = newArticle.ArticleNumber });
-        }
-
-        /// <summary>
-        /// Create a duplicate page from a specified page.
-        /// </summary>
-        /// <param name="id">Page ID.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<IActionResult> Clone(int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var articlesQuery = dbContext.Articles.Where(a => a.ArticleNumber == id);
-            
-            if (!await articlesQuery.CosmosAnyAsync())
-            {
-                return NotFound();
-            }
-
-            var lastVersion = await articlesQuery.MaxAsync(m => m.VersionNumber);
-
-            var articleViewModel = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByArticleNumberQuery 
-            { 
-                ArticleNumber = id,
-                VersionNumber = lastVersion
-            });
-
-            ViewData["Original"] = articleViewModel;
-
-            if (articleViewModel == null)
-            {
-                return NotFound();
-            }
-
-            var model = new DuplicateViewModel()
-            {
-                Id = articleViewModel.Id,
-                Published = articleViewModel.Published,
-                Title = articleViewModel.Title,
-                ArticleId = articleViewModel.ArticleNumber,
-                ArticleVersion = articleViewModel.VersionNumber
-            };
-
-            return View(model);
-        }
-
-        /// <summary>
-        /// Creates a duplicate page from a specified page and version.
-        /// </summary>
-        /// <param name="model">Dublice page view model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administrators, Editors, Authors")]
-        public async Task<IActionResult> Clone(DuplicateViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            string title = string.Empty;
-
-            if (string.IsNullOrEmpty(model.ParentPageTitle))
-            {
-                title = model.Title;
-            }
-            else
-            {
-                title = $"{model.ParentPageTitle.Trim('/')}/{model.Title.Trim('/')} ";
-            }
-
-            if (await dbContext.Articles.Where(a => a.Title.ToLower() == title.ToLower() && a.StatusCode != (int)StatusCodeEnum.Deleted).CosmosAnyAsync())
-            {
-                if (string.IsNullOrEmpty(model.ParentPageTitle))
-                {
-                    ModelState.AddModelError("Title", "Page title already taken.");
-                }
-                else
-                {
-                    ModelState.AddModelError("Title", "Sub-page title already taken.");
-                }
-            }
-
-            var userId = Guid.Parse(await GetUserId());
-
-            var articleViewModel = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByIdQuery 
-            { 
-                Id = model.Id 
-            });
-
-            if (ModelState.IsValid)
-            {
-                articleViewModel.ArticleNumber = 0;
-                articleViewModel.Id = Guid.NewGuid();
-                articleViewModel.Published = model.Published;
-                articleViewModel.Title = title;
-
-                try
-                {
-                    var clone = await articleLogic.CreateArticle(articleViewModel.Title, userId);
-                    clone.StatusCode = articleViewModel.StatusCode;
-                    clone.CacheDuration = articleViewModel.CacheDuration;
-                    clone.Content = articleViewModel.Content;
-                    clone.FooterJavaScript = articleViewModel.FooterJavaScript;
-                    clone.HeadJavaScript = articleViewModel.HeadJavaScript;
-                    clone.LanguageCode = articleViewModel.LanguageCode;
-
-                    var result = await articleLogic.SaveArticle(clone, userId);
-
-                    // Otherwise, open in the Monaco code editor
-                    return RedirectToAction("Versions", "Editor", new { id = result.Model.ArticleNumber });
-                }
-                catch (Exception e)
-                {
-                    ModelState.AddModelError(string.Empty, e.Message);
-                }
-            }
-
-            ViewData["Original"] = articleViewModel;
-
-            return View(model);
-        }
-
-        /// <summary>
-        ///     Creates a <see cref="CreatePageViewModel" /> used to create a new article.
-        /// </summary>
-        /// <param name="id">Article ID.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [Authorize(Roles = "Administrators, Editors")]
-        public async Task<IActionResult> NewHome(int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var page = await dbContext.Articles.FirstOrDefaultAsync(f => f.ArticleNumber == id);
-            return View(new NewHomeViewModel
-            {
-                Id = page.Id,
-                ArticleNumber = page.ArticleNumber,
-                Title = page.Title,
-                IsNewHomePage = false,
-                UrlPath = page.UrlPath
-            });
-        }
-
-        /// <summary>
-        /// Make a web page the new home page.
-        /// </summary>
-        /// <param name="model">Now home page post model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        [Authorize(Roles = "Administrators, Editors")]
-        public async Task<IActionResult> NewHome(NewHomeViewModel model)
-        {
-            if (model == null)
-            {
-                return NotFound();
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var user = await userManager.GetUserAsync(User);
-            await articleLogic.CreateHomePage(model);
-
-            return RedirectToAction("Index");
-        }
-
-        /// <summary>
-        /// Creates a new home page.
+        /// Create initial home page
         /// </summary>
         /// <param name="model">Model used to create a the first home page.</param>
         /// <returns>Returns <see cref="IActionResult"/>.</returns>
@@ -1070,8 +839,8 @@ namespace Sky.Cms.Controllers
             if (!result.IsSuccess)
             {
                 // Handler validation errors (including title conflicts)
-                var errorMessage = result.ErrorMessage ?? 
-                    string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>());
+                var errors = result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>();
+                var errorMessage = result.ErrorMessage ?? string.Join(", ", errors);
                 ModelState.AddModelError(string.Empty, errorMessage);
                 
                 return View(viewName: "__NewHomePage", model: model);
@@ -1207,7 +976,10 @@ namespace Sky.Cms.Controllers
 
             var article = await dbContext.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == id);
 
-            var catalogEntry = await articleLogic.GetCatalogEntry(article);
+            var catalogEntry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+            {
+                ArticleNumber = id
+            });
 
             ViewData["ArticleNumber"] = catalogEntry.ArticleNumber;
             ViewData["ArticlePermissions"] = catalogEntry.ArticlePermissions;
@@ -1287,7 +1059,10 @@ namespace Sky.Cms.Controllers
             try
             {
                 var article = await dbContext.Articles.Where(w => w.ArticleNumber == id).OrderByDescending(o => o.VersionNumber).LastOrDefaultAsync();
-                var entry = await articleLogic.GetCatalogEntry(article);
+                var entry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+                {
+                    ArticleNumber = id
+                });
 
                 if (entry.ArticlePermissions == null)
                 {
@@ -1492,7 +1267,7 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var article = await articleLogic.GetArticleByArticleNumber(id, null);
+            var article = await mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = id });
 
             return View(article);
         }
@@ -1514,11 +1289,14 @@ namespace Sky.Cms.Controllers
             ViewData["BlobEndpointUrl"] = editorSettings.BlobPublicUrl;
 
             // Get an article, or a template based on the controller name.
-            var model = await articleLogic.GetArticleByArticleNumber(id, null);
+            var model = await mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = id });
 
             ViewData["PageTitle"] = model.Title;
             ViewData["Published"] = null;
-            ViewData["LastPubDateTime"] = await articleLogic.GetLastPublishedDate(id);
+            ViewData["LastPubDateTime"] = await mediator.QueryAsync(new GetLastPublishedDateQuery
+            {
+                ArticleNumber = model.ArticleNumber
+            });
 
             // Override defaults
             model.EditModeOn = true;
@@ -1532,7 +1310,10 @@ namespace Sky.Cms.Controllers
 
             var article = await GetArticleForEdit(id);
 
-            var entry = await articleLogic.GetCatalogEntry(article);
+            var entry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
 
             return View(new HtmlEditorViewModel(model, entry));
         }
@@ -1561,7 +1342,7 @@ namespace Sky.Cms.Controllers
             }
 
             // Get original article
-            var article = await articleLogic.GetArticleByArticleNumber(model.ArticleNumber, null);
+            var article = await mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = model.ArticleNumber });
             if (article == null)
             {
                 throw new NotFoundException($"Could not find article with #: {model.ArticleNumber}.");
@@ -1692,9 +1473,15 @@ namespace Sky.Cms.Controllers
 
             ViewData["PageTitle"] = article.Title;
             ViewData["Published"] = null;
-            ViewData["LastPubDateTime"] = await articleLogic.GetLastPublishedDate(id);
+            ViewData["LastPubDateTime"] = await mediator.QueryAsync(new GetLastPublishedDateQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
 
-            var catalogEntry = await articleLogic.GetCatalogEntry(article);
+            var catalogEntry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
 
             return View(new EditCodePostModel
             {
@@ -1780,8 +1567,8 @@ namespace Sky.Cms.Controllers
 
                 model.Content = htmlService.EnsureEditableMarkers(model.Content);
 
-                // CHANGED: Use articleLogic to get the full article with all properties
-                var article = await articleLogic.GetArticleByArticleNumber(model.ArticleNumber, null);
+                // Use mediator to get the article with all properties
+                var article = await mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = model.ArticleNumber });
 
                 if (article == null)
                 {
@@ -1789,7 +1576,6 @@ namespace Sky.Cms.Controllers
                 }
 
                 var jsonModel = new SaveCodeResultJsonModel();
-
                 // If still valid, continue processing.
                 if (ModelState.IsValid)
                 {
@@ -1931,12 +1717,31 @@ namespace Sky.Cms.Controllers
             var userId = Guid.Parse(await GetUserId());
             if (id.HasValue)
             {
-                article = await articleLogic.GetArticleById(id.Value, userId);
+                article = await mediator.QueryAsync(new GetArticleByIdQuery
+                {
+                    Id = id.Value
+                });
             }
             else
             {
-                // Get the user's ID for logging.
-                article = await articleLogic.CreateArticle("Blank Page", userId);
+                // Create temporary blank page for export using CQRS command
+                var command = new CreateArticleCommand
+                {
+                    Title = "Blank Page",
+                    UserId = userId,
+                    ArticleType = ArticleType.General,
+                    BlogKey = string.Empty,
+                    TemplateId = null
+                };
+
+                var result = await mediator.SendAsync<CommandResult<ArticleViewModel>>(command);
+                
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(result.ErrorMessage);
+                }
+
+                article = result.Data;
             }
 
             var html = await articleLogic.ExportArticle(article, viewRenderService);
@@ -1990,7 +1795,7 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Gets a list of articles (web pages).
+        /// Gets a list of articles (web pages) on this website.
         /// </summary>
         /// <param name="term">search text value (optional).</param>
         /// <param name="publishedOnly">Only retrieve published articles.</param>
@@ -2271,9 +2076,10 @@ namespace Sky.Cms.Controllers
             ViewData["pageNo"] = pageNo;
             ViewData["pageSize"] = pageSize;
 
-            var query = articleLogic.GetArticleRedirects();
+            var redirectsResult = await mediator.QueryAsync(new GetArticleRedirectsQuery());
+            var query = redirectsResult.AsQueryable();
 
-            ViewData["RowCount"] = await query.CountAsync();
+            ViewData["RowCount"] = query.Count();
 
             if (sortOrder == "desc")
             {
@@ -2312,7 +2118,7 @@ namespace Sky.Cms.Controllers
                 }
             }
 
-            var model = await query.Skip(pageNo * pageSize).Take(pageSize).ToListAsync();
+            var model = query.Skip(pageNo * pageSize).Take(pageSize).ToList();
 
             return View(model);
         }

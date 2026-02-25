@@ -15,6 +15,7 @@ namespace Sky.Tests.Performance
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Features.Articles.EditorQueries;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
@@ -269,7 +270,7 @@ namespace Sky.Tests.Performance
                     await semaphore.WaitAsync();
                     try
                     {
-                        var localArticle = await Logic.GetArticleById(article.Id, TestUserId);
+                        var localArticle = await Mediator.QueryAsync(new GetArticleByIdQuery { Id = article.Id });
                         localArticle.Content = $"<p>Update {updateNumber}</p>";
                         await Logic.SaveArticle(localArticle, TestUserId);
                     }

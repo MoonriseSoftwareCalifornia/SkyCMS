@@ -1,0 +1,21 @@
+// <copyright file="DeleteArticleCommand.cs" company="Moonrise Software, LLC">
+// Copyright (c) Moonrise Software, LLC. All rights reserved.
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// </copyright>
+
+namespace Sky.Editor.Features.Articles.Delete
+{
+    using Cosmos.Common.Features.Shared;
+
+    /// <summary>
+    /// Command to soft-delete (trash) an article and all its versions.
+    /// Removes catalog entries and published artifacts.
+    /// </summary>
+    public class DeleteArticleCommand : ICommand<CommandResult<Unit>>
+    {
+        /// <summary>
+        /// Gets or sets the article number to delete.
+        /// </summary>
+        public int ArticleNumber { get; set; }
+    }
+}

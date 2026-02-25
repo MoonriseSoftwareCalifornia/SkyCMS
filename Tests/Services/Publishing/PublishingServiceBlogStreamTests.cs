@@ -4,6 +4,7 @@ using Cosmos.Common.Data.Logic;
 using Cosmos.Common.Models;
 using Cosmos.Common.Services.BlogPublishing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -46,7 +47,8 @@ namespace Sky.Tests.Services.Publishing
                 mockBlogStreamService.Object,
                 ViewRenderService,
                 Services,
-                Mock.Of<IPublishingProgressReporter>());
+                Mock.Of<IPublishingProgressReporter>(),
+                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
         }
 
         [TestCleanup]

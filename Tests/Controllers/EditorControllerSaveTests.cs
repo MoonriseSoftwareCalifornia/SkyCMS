@@ -11,6 +11,7 @@ namespace Sky.Tests.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Services;
+    using Cosmos.Common.Features.Articles.EditorQueries;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
@@ -101,7 +102,7 @@ namespace Sky.Tests.Controllers
             var jsonResult = (JsonResult)result;
 
             // Verify article was updated
-            var updatedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.AreEqual("Updated via EditCode", updatedArticle.Title);
         }
 
@@ -164,7 +165,7 @@ namespace Sky.Tests.Controllers
             Console.WriteLine($"Database Article Content: '{savedArticle.Content}'");
 
             // **INVESTIGATION 2**: Verify GetArticleByArticleNumber retrieves content properly
-            var retrievedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            var retrievedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.IsNotNull(retrievedArticle?.Content, "Retrieved article should have content");
             Assert.Contains("Original content", retrievedArticle.Content, "Retrieved content should match saved content");
             Console.WriteLine($"Retrieved Article Content: '{retrievedArticle.Content}'");
@@ -219,7 +220,7 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(root.TryGetProperty("Model", out var modelProp), "Response should have Model property");
 
             // Verify article was updated in database
-            var updatedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.AreEqual("Updated via WYSIWYG", updatedArticle.Title);
             Assert.AreEqual("https://example.com/banner.jpg", updatedArticle.BannerImage);
             Assert.AreEqual(ArticleType.General, updatedArticle.ArticleType);
@@ -259,7 +260,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
 
-            var updatedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.Contains("Updated Region Content", updatedArticle.Content);
         }
 
@@ -347,7 +348,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             await Logic.PublishArticle(article.Id, pastDate);
 
             // Reload the article after publishing to get the updated Published date
-            article = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            article = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
 
             // Verify article is published
             Assert.IsNotNull(article.Published, "Article should have a Published date");
@@ -408,7 +409,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             Assert.AreEqual(originalUrlPath, redirect.UrlPath, "Redirect should be from the original URL");
 
             // Verify the article was updated with new title and new URL
-            var updatedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.AreEqual("Completely Different New Title", updatedArticle.Title);
 
             // Verify the URL changed

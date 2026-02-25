@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Services.Scheduling
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.Shared;
+    using Cosmos.Common.Services.BlogPublishing;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Caching.Memory;
@@ -32,7 +32,8 @@ namespace Sky.Editor.Services.Scheduling
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using Cosmos.Common.Services.BlogPublishing;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tenant article logic factory.
@@ -118,7 +119,8 @@ namespace Sky.Editor.Services.Scheduling
                 blogStreamRenderingService,
                 scopedServices.GetRequiredService<IViewRenderService>(),
                 scopedServices,
-                progressReporter);  // ✅ Add no-op progress reporter
+                progressReporter,
+                scopedServices.GetRequiredService<IArticleCatalogQueryService>());  // ✅ Add no-op progress reporter
 
             var redirectService = new RedirectService(
                 dbContext,
