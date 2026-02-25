@@ -43,6 +43,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
+    using Sky.Editor.Features.Templates.Get;
     using Sky.Editor.Models;
     using Sky.Editor.Models.GrapesJs;
     using Sky.Editor.Services.CDN;
@@ -575,9 +576,16 @@ namespace Sky.Cms.Controllers
                 return Json(string.Empty);
             }
 
-            var model = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == id.Value);
+            // Use GetTemplateQuery to retrieve the template
+            var query = new GetTemplateQuery { TemplateId = id.Value };
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data?.Template == null)
+            {
+                return NotFound();
+            }
 
-            return Json(model);
+            return Json(result.Data.Template);
         }
 
         /// <summary>
@@ -761,7 +769,8 @@ namespace Sky.Cms.Controllers
                 return View(viewName: "__NewHomePage", model: model);
             }
 
-            return RedirectToAction("Versions", "Editor", new { Id = result.Data.ArticleNumber });
+            // Successfully created - redirect to home
+            return Redirect("/");
         }
 
         /// <summary>
@@ -1807,8 +1816,7 @@ namespace Sky.Cms.Controllers
 
                         if (!result.IsSuccess)
                         {
-
-                            // Handle validation errors
+                            // Handler validation errors
                             if (result.Errors != null)
                             {
                                 foreach (var error in result.Errors)
