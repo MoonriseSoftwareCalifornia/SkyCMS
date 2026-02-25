@@ -145,7 +145,11 @@ namespace Sky.Tests.Features.Blogs
             Assert.AreEqual("Editor", redirect.ControllerName);
             
             // Verify the post was created in the database
-            var createdPost = await Db.Articles.FindAsync((int?)redirect.RouteValues["id"]);
+            var articleNumber = (int)redirect.RouteValues["id"];
+            var createdPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.IsNotNull(createdPost);
             Assert.AreEqual(title, createdPost.Title);
             Assert.AreEqual(blogStream.BlogKey, createdPost.BlogKey);
@@ -203,7 +207,11 @@ namespace Sky.Tests.Features.Blogs
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirect = (RedirectToActionResult)result;
             
-            var createdPost = await Db.Articles.FindAsync((int?)redirect.RouteValues["id"]);
+            var articleNumber = (int)redirect.RouteValues["id"];
+            var createdPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.IsTrue(createdPost.UrlPath.Contains(expectedSlug));
         }
 
@@ -245,7 +253,9 @@ namespace Sky.Tests.Features.Blogs
 
             // Verify the post was updated - get latest version
             var updatedPost = await Db.Articles
-                .FindAsync((int)articleNumber);
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.IsNotNull(updatedPost);
             Assert.AreEqual("Updated Title", updatedPost.Title);
             Assert.AreEqual("<p>Updated content</p>", updatedPost.Content);
@@ -264,7 +274,10 @@ namespace Sky.Tests.Features.Blogs
             var articleNumber = (int)redirect.RouteValues["id"];
 
             // Get initial version
-            var originalPost = await Db.Articles.FindAsync((int)articleNumber);
+            var originalPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             var originalVersion = originalPost.VersionNumber;
 
             var updateModel = new BlogEntryEditViewModel
@@ -284,7 +297,10 @@ namespace Sky.Tests.Features.Blogs
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             
             // Get updated post - it should be a new version
-            var newestPost = await Db.Articles.FindAsync((int)articleNumber);
+            var newestPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.IsTrue(newestPost.VersionNumber > originalVersion, "Version should be incremented");
         }
 
@@ -299,7 +315,10 @@ namespace Sky.Tests.Features.Blogs
             var redirect = (RedirectToActionResult)createResult;
             var articleNumber = (int)redirect.RouteValues["id"];
 
-            var originalPost = await Db.Articles.FindAsync((int)articleNumber);
+            var originalPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             var originalUrlPath = originalPost.UrlPath;
 
             var updateModel = new BlogEntryEditViewModel
@@ -316,7 +335,10 @@ namespace Sky.Tests.Features.Blogs
             await controller.EditEntry(blogStream.BlogKey, articleNumber, updateModel);
 
             // Assert
-            var updatedPost = await Db.Articles.FindAsync((int)articleNumber);
+            var updatedPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.AreEqual(originalUrlPath, updatedPost.UrlPath, "URL path should be preserved");
         }
 
@@ -358,7 +380,10 @@ namespace Sky.Tests.Features.Blogs
             var redirect = (RedirectToActionResult)createResult;
             var articleNumber = (int)redirect.RouteValues["id"];
 
-            var beforeDelete = await Db.Articles.FindAsync((int)articleNumber);
+            var beforeDelete = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.IsNotNull(beforeDelete);
 
             // Act
@@ -370,7 +395,10 @@ namespace Sky.Tests.Features.Blogs
             Assert.AreEqual(nameof(BlogController.Entries), redirectResult.ActionName);
 
             // Verify the post is marked as deleted
-            var deletedPost = await Db.Articles.FindAsync((int)articleNumber);
+            var deletedPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.IsNotNull(deletedPost);
             Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedPost.StatusCode);
         }
@@ -386,7 +414,10 @@ namespace Sky.Tests.Features.Blogs
             var redirect = (RedirectToActionResult)createResult;
             var articleNumber = (int)redirect.RouteValues["id"];
 
-            var originalPost = await Db.Articles.FindAsync((int)articleNumber);
+            var originalPost = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             
             // Create a second version by updating via command
             var updateCommand = new UpdateBlogPostCommand
@@ -452,7 +483,10 @@ namespace Sky.Tests.Features.Blogs
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             // The post should still exist with Active status (deletion should have failed)
-            var post = await Db.Articles.FindAsync((int)articleNumber);
+            var post = await Db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
             Assert.AreEqual((int)StatusCodeEnum.Active, post.StatusCode);
         }
 

@@ -433,6 +433,33 @@ namespace Sky.Tests
                 new Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler(
                     Db,
                     new NullLogger<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler>()));
+            
+            // Register article query handlers needed by EditorController
+            // ✅ Register with non-nullable ArticleViewModel to match EditorController expectations
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
+                new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQueryHandler(
+                    Db,
+                    Cache,
+                    configuration));
+            
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
+                new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQueryHandler(
+                    Db,
+                    Cache,
+                    configuration));
+
+            // ✅ LAZY FACTORY: Register SaveArticleHandler using a factory that will be populated later
+            // SaveArticleHandler depends on PublishingService and TitleChangeService which are created AFTER this service provider is built
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Save.SaveArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>>> saveArticleHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Save.SaveArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>>>(sp =>
+                saveArticleHandlerFactory());
+            
+            // ✅ LAZY FACTORY: Register CreateArticleHandler using a factory that will be populated later
+            // CreateArticleHandler depends on TemplateService which is created AFTER this service provider is built
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Create.CreateArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Models.ArticleViewModel>>> createArticleHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Create.CreateArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Models.ArticleViewModel>>>(sp =>
+                createArticleHandlerFactory());
+            
 
             // Register query handlers
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQuery, Cosmos.Common.Models.TableOfContents>>(sp =>
@@ -500,7 +527,7 @@ namespace Sky.Tests
                 Clock,
                 new NullLogger<CreateArticleHandler>());
 
-            SaveArticleHandler = new SaveArticleHandler(
+            var saveArticleHandlerInstance = new SaveArticleHandler(
                 Db,
                 ArticleHtmlService,
                 CatalogService,
@@ -508,6 +535,12 @@ namespace Sky.Tests
                 TitleChangeService,
                 Clock,
                 new NullLogger<SaveArticleHandler>());
+
+            SaveArticleHandler = saveArticleHandlerInstance;
+
+            // ✅ NOW POPULATE THE LAZY FACTORIES so the Mediator can resolve the handlers
+            saveArticleHandlerFactory = () => SaveArticleHandler;
+            createArticleHandlerFactory = () => CreateArticleHandler;
 
             // ✅ ADD THIS - Get the real IHttpClientFactory from DI
             HttpClientFactory = Services.GetRequiredService<IHttpClientFactory>();
