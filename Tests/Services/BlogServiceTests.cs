@@ -8,6 +8,7 @@ namespace Sky.Tests.Services
     using Cosmos.Cms.Common;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Sky.Editor.Features.Articles.Save;
     using System;
     using System.Linq;
     using System.Threading.Tasks;
@@ -82,13 +83,22 @@ namespace Sky.Tests.Services
         {
             // Arrange
             var blogPost = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
-            blogPost.Category = "Technology";
 
             // Act
-            var result = await Logic.SaveArticle(blogPost, TestUserId);
+            var command = new SaveArticleCommand
+            {
+                ArticleNumber = blogPost.ArticleNumber,
+                Title = blogPost.Title,
+                Content = blogPost.Content,
+                Category = "Technology",
+                UserId = TestUserId,
+                ArticleType = ArticleType.BlogPost
+            };
+            var result = await SaveArticleHandler.HandleAsync(command);
 
             // Assert
-            Assert.AreEqual("Technology", result.Model.Category);
+            Assert.IsTrue(result.IsSuccess);
+            Assert.AreEqual("Technology", result.Data?.Model?.Category);
         }
 
         #endregion
@@ -218,13 +228,29 @@ namespace Sky.Tests.Services
             await Logic.CreateArticle("Home", TestUserId);
             
             var post1 = await Logic.CreateArticle("Tech Post", TestUserId, null, "default", ArticleType.BlogPost);
-            post1.Category = "Technology";
-            await Logic.SaveArticle(post1, TestUserId);
+            var command1 = new SaveArticleCommand
+            {
+                ArticleNumber = post1.ArticleNumber,
+                Title = post1.Title,
+                Content = post1.Content,
+                Category = "Technology",
+                UserId = TestUserId,
+                ArticleType = ArticleType.BlogPost
+            };
+            await SaveArticleHandler.HandleAsync(command1);
             await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow);
             
             var post2 = await Logic.CreateArticle("Science Post", TestUserId, null, "default", ArticleType.BlogPost);
-            post2.Category = "Science";
-            await Logic.SaveArticle(post2, TestUserId);
+            var command2 = new SaveArticleCommand
+            {
+                ArticleNumber = post2.ArticleNumber,
+                Title = post2.Title,
+                Content = post2.Content,
+                Category = "Science",
+                UserId = TestUserId,
+                ArticleType = ArticleType.BlogPost
+            };
+            await SaveArticleHandler.HandleAsync(command2);
             await Logic.PublishArticle(post2.Id, DateTimeOffset.UtcNow);
 
             // Act
@@ -250,8 +276,16 @@ namespace Sky.Tests.Services
             foreach (var category in categories)
             {
                 var post = await Logic.CreateArticle($"{category} Post", TestUserId, null, "default", ArticleType.BlogPost);
-                post.Category = category;
-                await Logic.SaveArticle(post, TestUserId);
+                var command = new SaveArticleCommand
+                {
+                    ArticleNumber = post.ArticleNumber,
+                    Title = post.Title,
+                    Content = post.Content,
+                    Category = category,
+                    UserId = TestUserId,
+                    ArticleType = ArticleType.BlogPost
+                };
+                await SaveArticleHandler.HandleAsync(command);
             }
 
             // Act
@@ -282,13 +316,21 @@ namespace Sky.Tests.Services
             // Arrange
             await Logic.CreateArticle("Home", TestUserId);
             var post = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
-            post.Content = "<p>This is the first paragraph that should become the introduction.</p><p>This is the second paragraph.</p>";
-            post.Introduction = null; // Explicitly null
 
             // Act
-            await Logic.SaveArticle(post, TestUserId);
+            var command = new SaveArticleCommand
+            {
+                ArticleNumber = post.ArticleNumber,
+                Title = post.Title,
+                Content = "<p>This is the first paragraph that should become the introduction.</p><p>This is the second paragraph.</p>",
+                UserId = TestUserId,
+                ArticleType = ArticleType.BlogPost
+                // No Introduction specified - handler should auto-generate for blog posts
+            };
+            var result = await SaveArticleHandler.HandleAsync(command);
 
             // Assert
+            Assert.IsTrue(result.IsSuccess);
             var dbArticle = await Db.Articles.FindAsync(post.Id);
             Assert.IsNotNull(dbArticle.Introduction);
             Assert.IsTrue(dbArticle.Introduction.Contains("first paragraph"));

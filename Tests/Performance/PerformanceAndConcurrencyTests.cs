@@ -21,6 +21,7 @@ namespace Sky.Tests.Performance
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Save;
 
 
 
@@ -271,8 +272,16 @@ namespace Sky.Tests.Performance
                     try
                     {
                         var localArticle = await Mediator.QueryAsync(new GetArticleByIdQuery { Id = article.Id });
-                        localArticle.Content = $"<p>Update {updateNumber}</p>";
-                        await Logic.SaveArticle(localArticle, TestUserId);
+                        
+                        var command = new SaveArticleCommand
+                        {
+                            ArticleNumber = localArticle.ArticleNumber,
+                            Title = localArticle.Title,
+                            Content = $"<p>Update {updateNumber}</p>",
+                            UserId = TestUserId,
+                            ArticleType = localArticle.ArticleType
+                        };
+                        await SaveArticleHandler.HandleAsync(command);
                     }
                     finally
                     {

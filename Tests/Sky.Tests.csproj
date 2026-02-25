@@ -49,7 +49,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Configuration\" />
-	  <Folder Include="Features\Articles\Restore\" />
+	  <Folder Include="Features\Articles\CreateVersion\" />
 	  <Folder Include="Services\Migrations\TestMigrations\" />
 	</ItemGroup>
 

@@ -35,8 +35,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Published Article", TestUserId);
-            article.Published = Clock.UtcNow;
-            await Logic.SaveArticle(article, TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -65,7 +63,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange - Start unpublished
             var article = await Logic.CreateArticle("Draft", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -97,9 +94,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Published", TestUserId);
-            article.Published = Clock.UtcNow;
-            await Logic.SaveArticle(article, TestUserId);
-            var originalPublishedDate = article.Published;
+            var originalPublishedDate = Clock.UtcNow;
 
             var command = new SaveArticleCommand
             {
@@ -133,8 +128,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange - Start published
             var article = await Logic.CreateArticle("Published", TestUserId);
-            article.Published = Clock.UtcNow;
-            await Logic.SaveArticle(article, TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -167,7 +160,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Future Published", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
 
             var futureDate = Clock.UtcNow.AddDays(7);
             var command = new SaveArticleCommand
@@ -202,7 +194,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Draft Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
 
             var command = new SaveArticleCommand
             {

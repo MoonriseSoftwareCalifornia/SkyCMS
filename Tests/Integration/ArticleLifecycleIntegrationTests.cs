@@ -12,6 +12,7 @@ namespace Sky.Tests.Integration
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Sky.Editor.Features.Articles.Save;
 
     /// <summary>
     /// Integration tests for complete article lifecycle workflows.
@@ -139,8 +140,17 @@ namespace Sky.Tests.Integration
         {
             // Create and publish
             var article = await Logic.CreateArticle("Edit Test", TestUserId);
-            article.Content = "<p>Version 1</p>";
-            await Logic.SaveArticle(article, TestUserId);
+
+            var saveCommand = new SaveArticleCommand
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Content = "<p>Version 1</p>",
+                UserId = TestUserId,
+                ArticleType = ArticleType.General
+            };
+            await SaveArticleHandler.HandleAsync(saveCommand);
+            
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             var initialPublishedDate = (await Db.Articles.FindAsync(article.Id)).Published;
@@ -149,8 +159,15 @@ namespace Sky.Tests.Integration
             await Task.Delay(100);
 
             // Edit and republish
-            article.Content = "<p>Version 2</p>";
-            await Logic.SaveArticle(article, TestUserId);
+            var updateCommand = new SaveArticleCommand
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Content = "<p>Version 2</p>",
+                UserId = TestUserId,
+                ArticleType = ArticleType.General
+            };
+            await SaveArticleHandler.HandleAsync(updateCommand);
 
             var latestVersion = await Db.Articles
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
@@ -181,13 +198,20 @@ namespace Sky.Tests.Integration
 
             // Create blog post
             var blogPost = await Logic.CreateArticle("My Blog Post", TestUserId, null, "default", ArticleType.BlogPost);
-            blogPost.Content = "<p>Blog post content with some interesting information.</p>";
-            blogPost.Category = "Technology";
-            blogPost.Introduction = "This is a custom introduction";
 
-            // Save
-            var saveResult = await Logic.SaveArticle(blogPost, TestUserId);
-            Assert.IsTrue(saveResult.ServerSideSuccess);
+            // Save with CQRS handler
+            var saveCommand = new SaveArticleCommand
+            {
+                ArticleNumber = blogPost.ArticleNumber,
+                Title = blogPost.Title,
+                Content = "<p>Blog post content with some interesting information.</p>",
+                Category = "Technology",
+                Introduction = "This is a custom introduction",
+                UserId = TestUserId,
+                ArticleType = ArticleType.BlogPost
+            };
+            var saveResult = await SaveArticleHandler.HandleAsync(saveCommand);
+            Assert.IsTrue(saveResult.IsSuccess);
 
             // Publish
             await Logic.PublishArticle(blogPost.Id, DateTimeOffset.UtcNow);
@@ -221,8 +245,16 @@ namespace Sky.Tests.Integration
             for (int i = 1; i <= 10; i++)
             {
                 var post = await Logic.CreateArticle($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
-                post.Content = $"<p>Content for post {i}</p>";
-                await Logic.SaveArticle(post, TestUserId);
+                
+                var postCommand = new SaveArticleCommand
+                {
+                    ArticleNumber = post.ArticleNumber,
+                    Title = post.Title,
+                    Content = $"<p>Content for post {i}</p>",
+                    UserId = TestUserId,
+                    ArticleType = ArticleType.BlogPost
+                };
+                await SaveArticleHandler.HandleAsync(postCommand);
                 await Logic.PublishArticle(post.Id, DateTimeOffset.UtcNow.AddMinutes(i));
                 await Task.Delay(10); // Ensure different timestamps
             }

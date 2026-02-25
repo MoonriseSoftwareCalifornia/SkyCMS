@@ -57,7 +57,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Test", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            // Just created, no need to save with legacy method
 
             var command = new SaveArticleCommand
             {
@@ -84,7 +84,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Test", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
 
             var longTitle = new string('A', 255);
             var command = new SaveArticleCommand
@@ -112,7 +111,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Test", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
 
             var longIntro = new string('A', 513);
             var command = new SaveArticleCommand
@@ -141,7 +139,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Test", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
 
             var longCategory = new string('A', 65);
             var command = new SaveArticleCommand
@@ -194,7 +191,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Test", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -221,7 +217,6 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await Logic.CreateArticle("Test", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
 
             var command = new SaveArticleCommand
             {
