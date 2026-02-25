@@ -104,7 +104,8 @@ namespace Sky.Editor.Services.Scheduling
             // Create no-op progress reporter for background jobs (no HTTP context)
             var progressReporter = new NoOpPublishingProgressReporter();
 
-            var blogStreamRenderingService = scopedServices.GetRequiredService<IBlogStreamRenderingService>();
+            // Use the locally created instance instead of trying to get from DI
+            var blogStreamRenderingService = blogRenderingService;
 
             var publishingService = new PublishingService(
                 dbContext,

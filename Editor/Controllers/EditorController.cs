@@ -765,12 +765,12 @@ namespace Sky.Cms.Controllers
                 var errorMessage = result.ErrorMessage ?? 
                     string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>());
                 ModelState.AddModelError(string.Empty, errorMessage);
-                
+
                 return View(viewName: "__NewHomePage", model: model);
             }
 
-            // Successfully created - redirect to home
-            return Redirect("/");
+            // Successfully created - redirect to versions page for the new article
+            return RedirectToAction("Versions", new { id = result.Data.ArticleNumber });
         }
 
         /// <summary>
