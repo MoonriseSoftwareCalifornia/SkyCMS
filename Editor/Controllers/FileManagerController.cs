@@ -18,7 +18,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.BlobService.Models;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.EditorQueries;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
@@ -54,7 +54,7 @@ namespace Sky.Cms.Controllers
         private readonly ApplicationDbContext dbContext;
         private readonly UserManager<IdentityUser> userManager;
         private readonly ArticleEditLogic articleLogic;
-        private readonly CommonMediator articleQueries;
+        private readonly IMediator articleQueries;
         private readonly string blobPublicAbsoluteUrl;
         private readonly IViewRenderService viewRenderService;
         private readonly ILogger<FileManagerController> logger;
@@ -83,7 +83,7 @@ namespace Sky.Cms.Controllers
             IStorageContext storageContext,
             UserManager<IdentityUser> userManager,
             ArticleEditLogic articleLogic,
-            CommonMediator articleQueries,
+            IMediator articleQueries,
             IWebHostEnvironment hostEnvironment,
             IViewRenderService viewRenderService,
             IMemoryCache memoryCache,

@@ -5,7 +5,7 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-namespace Cosmos.Common.Features.Blogs.Queries
+namespace Cosmos.Common.Features.Blogs.EditorQueries
 {
     using System;
     using System.Collections.Generic;
@@ -65,7 +65,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
 
             // Fetch all published posts in this blog stream, ordered by publication date (newest first)
             var now = DateTimeOffset.UtcNow;
-            var allPosts = await dbContext.Pages
+            var allPosts = await dbContext.Articles
                 .AsNoTracking()
                 .Where(a => a.BlogKey == normalizedBlogKey &&
                             a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogPost &&

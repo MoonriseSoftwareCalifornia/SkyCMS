@@ -338,6 +338,13 @@ namespace Sky.Editor.Services.Publishing
 
             await CreateStaticFile(page);
             await WriteTocAsync("/");
+
+            // If this is a blog post, also update the TOC for the blog stream
+            if (article.ArticleType == (int)ArticleType.BlogPost)
+            {
+                await WriteTocAsync($"/{article.BlogKey}");
+            }
+
             return await PurgeCdnAsync(page);
         }
 
@@ -367,57 +374,57 @@ namespace Sky.Editor.Services.Publishing
         public async Task CreateStaticPages(IEnumerable<Guid> ids)
         {
             const int batchSize = 50;
-            
+
             // If no IDs provided, publish all pages
-            var pageIds = (ids == null || !ids.Any()) 
+            var pageIds = (ids == null || !ids.Any())
                 ? await _db.Pages.Select(p => p.Id).ToListAsync()
                 : ids.ToList();
-            
+
             await _progressReporter.ReportProgressAsync(0, pageIds.Count, "Preparing to generate static pages...");
-            
+
             // Pre-load layout once
             var layout = await GetDefaultLayoutAsync();
-            
+
             // Determine optimal parallelism based on storage backend
             var parallelism = StorageParallelismHelper.GetOptimalParallelism(
                 _storage,
                 _logger,
                 _settings.StaticPageParallelism);
-            
+
             _logger.LogInformation(
                 "Starting static page generation for {PageCount} page(s) with parallelism: {Parallelism}",
                 pageIds.Count,
                 parallelism);
-            
+
             await _progressReporter.ReportProgressAsync(
-                0, 
-                pageIds.Count, 
+                0,
+                pageIds.Count,
                 $"Starting generation of {pageIds.Count} page(s) with parallelism: {parallelism}");
-            
+
             var processedCount = 0;
             var progressLock = new object();
-            
+
             // Process in batches to control memory
             for (int i = 0; i < pageIds.Count; i += batchSize)
             {
                 var batchIds = pageIds.Skip(i).Take(batchSize);
                 var pages = await _db.Pages.Where(w => batchIds.Contains(w.Id)).ToListAsync();
-                
+
                 // Process this batch with adaptive parallelism
                 var options = new ParallelOptions
                 {
                     MaxDegreeOfParallelism = parallelism
                 };
-                
+
                 var batchProcessedCount = 0;
-                
+
                 await Parallel.ForEachAsync(pages, options, async (page, cancellationToken) =>
                 {
                     await using var scope = _serviceProvider.CreateAsyncScope();
                     var scopedStorage = scope.ServiceProvider.GetRequiredService<IStorageContext>();
                     var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<PublishingService>>();
                     var scopedViewRenderer = scope.ServiceProvider.GetRequiredService<IViewRenderService>();
-                    
+
                     await CreateStaticFileWithRetrySafeAsync(
                         page,
                         layout,
@@ -425,7 +432,7 @@ namespace Sky.Editor.Services.Publishing
                         scopedViewRenderer,
                         scopedLogger,
                         cancellationToken);
-                    
+
                     // Thread-safe increment and progress reporting
                     int currentCount;
                     lock (progressLock)
@@ -433,7 +440,7 @@ namespace Sky.Editor.Services.Publishing
                         batchProcessedCount++;
                         currentCount = processedCount + batchProcessedCount;
                     }
-                    
+
                     // Report progress every 5 pages to avoid flooding SignalR
                     if (currentCount % 5 == 0 || currentCount == pageIds.Count)
                     {
@@ -443,41 +450,41 @@ namespace Sky.Editor.Services.Publishing
                             $"Generated {currentCount} of {pageIds.Count} page(s)");
                     }
                 });
-                
+
                 processedCount += batchProcessedCount;
-                
+
                 _logger.LogInformation(
                     "Completed batch {BatchNumber}/{TotalBatches} ({PagesProcessed}/{TotalPages} pages)",
-                    (i / batchSize) + 1, 
+                    (i / batchSize) + 1,
                     (pageIds.Count + batchSize - 1) / batchSize,
                     Math.Min(i + batchSize, pageIds.Count),
                     pageIds.Count);
-                
+
                 await _progressReporter.ReportProgressAsync(
                     processedCount,
                     pageIds.Count,
                     $"Completed batch {(i / batchSize) + 1}/{(pageIds.Count + batchSize - 1) / batchSize}");
             }
-            
+
             await _progressReporter.ReportProgressAsync(
                 pageIds.Count,
                 pageIds.Count,
                 "Updating table of contents...");
-    
+
             // Write TOC and purge CDN after all batches
             await WriteTocAsync("/");
-            
+
             await _progressReporter.ReportProgressAsync(
                 pageIds.Count,
                 pageIds.Count,
                 "Purging CDN cache...");
-            
+
             var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _httpContextAccessor.HttpContext);
             if (cdnService != null)
             {
                 await cdnService.PurgeCdn();
             }
-            
+
             await _progressReporter.ReportProgressAsync(
                 pageIds.Count,
                 pageIds.Count,

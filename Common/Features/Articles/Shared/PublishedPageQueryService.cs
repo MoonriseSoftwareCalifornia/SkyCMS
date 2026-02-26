@@ -10,6 +10,7 @@ namespace Cosmos.Common.Features.Articles.Shared;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Models;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,11 @@ using Microsoft.Extensions.Caching.Memory;
 /// Implementation of IPublishedPageQueryService for querying published page snapshots.
 /// Handles retrieval of PublishedPage entities with view model conversion and caching.
 /// </summary>
+/// <remarks>
+/// If the requested URL corresponds to the root of a blog stream, this service will
+/// automatically fetch the latest blog stream entry instead of the root page. This
+/// allows for seamless handling of blog stream URLs while still supporting regular pages.
+/// </remarks>
 public class PublishedPageQueryService : IPublishedPageQueryService
 {
     private readonly ApplicationDbContext dbContext;
@@ -66,19 +72,38 @@ public class PublishedPageQueryService : IPublishedPageQueryService
 
             // Not in cache, fetch from database
             var dt = DateTimeOffset.UtcNow;
-            var publishedPage = await dbContext.Pages
+            var entity = await dbContext.Pages
                 .Where(p => p.UrlPath == urlPath && p.Published.HasValue && p.Published <= dt)
                 .OrderByDescending(p => p.VersionNumber)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
 
-            if (publishedPage == null)
+            if (entity == null)
             {
                 return null;
             }
 
+            // Check if we hit the root of a blog stream.
+            if (entity.ArticleType == (int)ArticleType.BlogStream)
+            {
+                var blogKey = entity.BlogKey;
+
+                // If so, we need to fetch the latest blog stream entry instead.
+                var blogStreamEntry = await dbContext.Pages
+                    .Where(p => p.BlogKey == blogKey)
+                    .OrderByDescending(p => p.Published)
+                    .ThenByDescending(p => p.VersionNumber)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+
+                if (blogStreamEntry != null)
+                {
+                    entity = blogStreamEntry;
+                }
+            }
+
             var model = await viewModelBuilder.BuildFromPublishedPageAsync(
-                publishedPage,
+                entity,
                 lang,
                 layoutCacheDuration,
                 includeLayout);

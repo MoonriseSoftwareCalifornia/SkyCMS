@@ -130,7 +130,13 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <Folder Include="Services\BlogPublishing\" />
+	  <Compile Remove="Services\BlogPublishing\**" />
+	  <Content Remove="Services\BlogPublishing\**" />
+	  <EmbeddedResource Remove="Services\BlogPublishing\**" />
+	  <None Remove="Services\BlogPublishing\**" />
+	</ItemGroup>
+	
+	<ItemGroup>
 	  <Folder Include="Services\Migrations\Testing\" />
 	</ItemGroup>
 

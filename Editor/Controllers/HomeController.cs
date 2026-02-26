@@ -17,7 +17,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
+    // using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
@@ -43,7 +43,7 @@ namespace Sky.Cms.Controllers
 
     public class HomeController : Controller
     {
-        private readonly CommonMediator articleQueries;
+        private readonly Cosmos.Common.Features.Shared.IMediator articleQueries;
         private readonly EditorSettings options;
         private readonly ApplicationDbContext dbContext;
         private readonly UserManager<IdentityUser> userManager;
@@ -54,7 +54,7 @@ namespace Sky.Cms.Controllers
         /// <param name="logger">ILogger to use.</param>
         /// <param name="options">Cosmos configuration.</param>
         /// <param name="dbContext"><see cref="ApplicationDbContext">Database context</see>.</param>
-        /// <param name="articleQueries"><see cref="CommonMediator">Article queries.</see>.</param>
+        /// <param name="articleQueries"><see cref="Cosmos.Common.Features.Shared.IMediator">Article queries.</see>.</param>
         /// <param name="userManager">User manager.</param>
         /// <param name="signInManager">Sign in manager service.</param>
         /// <param name="emailSender">Email service.</param>
@@ -64,7 +64,7 @@ namespace Sky.Cms.Controllers
             ILogger<HomeController> logger,
             IEditorSettings options,
             ApplicationDbContext dbContext,
-            CommonMediator articleQueries,
+            Cosmos.Common.Features.Shared.IMediator articleQueries,
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
             IEmailSender emailSender,

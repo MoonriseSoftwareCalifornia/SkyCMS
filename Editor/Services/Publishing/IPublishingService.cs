@@ -50,11 +50,12 @@ public interface IPublishingService
     /// </para>
     /// <list type="number">
     ///   <item><description>Sets the publish timestamp if not already specified</description></item>
-    ///   <item><description>Unpublishes earlier versions of the same article number</description></item>
+    ///   <item><description>Un-publishes earlier versions of the same article number</description></item>
     ///   <item><description>Removes prior published page records (excluding redirects)</description></item>
     ///   <item><description>Creates a new <see cref="PublishedPage"/> record with author information</description></item>
     ///   <item><description>Generates and uploads a static HTML file to blob storage (if static pages enabled)</description></item>
     ///   <item><description>Regenerates the table of contents JSON file</description></item>
+    ///   <item><description>If is a blog post, updates the table of contents JSON file for the blog stream</description></item>
     ///   <item><description>Purges the CDN cache for the specific page URL</description></item>
     /// </list>
     /// <para>

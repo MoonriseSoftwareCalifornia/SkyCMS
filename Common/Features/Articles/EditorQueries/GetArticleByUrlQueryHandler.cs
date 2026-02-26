@@ -7,6 +7,7 @@
 
 namespace Cosmos.Common.Features.Articles.EditorQueries;
 
+using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
 using Cosmos.Common.Features.Articles.Shared;
@@ -71,6 +72,23 @@ public class GetArticleByUrlQueryHandler : IQueryHandler<GetArticleByUrlQuery, A
         if (entity == null)
         {
             return null;
+        }
+
+        if (entity.ArticleType == (int)ArticleType.BlogStream)
+        {
+            var blogKey = entity.BlogKey;
+
+            // Returns the latest blog stream entry published or not
+            var blogStreamEntry = await dbContext.Articles
+                    .Where(p => p.BlogKey == blogKey)
+                    .OrderByDescending(p => p.VersionNumber)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+
+            if (blogStreamEntry != null)
+            {
+                entity = blogStreamEntry;
+            }
         }
 
         return await articleViewModelBuilder.BuildFromArticleAsync(entity, "en-US");
