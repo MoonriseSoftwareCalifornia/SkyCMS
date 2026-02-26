@@ -709,6 +709,72 @@ namespace Sky.Tests
         }
 
         /// <summary>
+        /// Helper method to delete an article using the DeleteArticleCommand via mediator.
+        /// Replaces the deprecated DeleteArticle() calls in tests.
+        /// </summary>
+        /// <param name="articleNumber">The article number to delete.</param>
+        /// <returns>Unit result.</returns>
+        protected async Task DeleteArticleAsync(int articleNumber)
+        {
+            var command = new Sky.Editor.Features.Articles.Delete.DeleteArticleCommand
+            {
+                ArticleNumber = articleNumber
+            };
+
+            var result = await Mediator.SendAsync(command);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"Failed to delete article: {result.ErrorMessage}");
+            }
+        }
+
+        /// <summary>
+        /// Helper method to restore an article using the RestoreArticleCommand via mediator.
+        /// Replaces the deprecated RestoreArticle() calls in tests.
+        /// </summary>
+        /// <param name="articleNumber">The article number to restore.</param>
+        /// <param name="userId">The user ID performing the restore.</param>
+        /// <returns>Unit result.</returns>
+        protected async Task RestoreArticleAsync(int articleNumber, string userId)
+        {
+            var command = new Sky.Editor.Features.Articles.Restore.RestoreArticleCommand
+            {
+                ArticleNumber = articleNumber,
+                UserId = userId
+            };
+
+            var result = await Mediator.SendAsync(command);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"Failed to restore article: {result.ErrorMessage}");
+            }
+        }
+
+        /// <summary>
+        /// Helper method to publish an article using the PublishArticleCommand via mediator.
+        /// Replaces the deprecated PublishArticle() calls in tests.
+        /// </summary>
+        /// <param name="articleId">The article ID (row GUID) to publish.</param>
+        /// <param name="publishTime">Optional explicit publish time (UTC); if null current time is used.</param>
+        /// <returns>List of CDN purge results.</returns>
+        protected async Task<List<Sky.Editor.Services.CDN.CdnResult>> PublishArticleAsync(Guid articleId, DateTimeOffset? publishTime = null)
+        {
+            var command = new Sky.Editor.Features.Articles.Publish.PublishArticleCommand
+            {
+                ArticleId = articleId,
+                PublishTime = publishTime
+            };
+
+            var result = await Mediator.SendAsync(command);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"Failed to publish article: {result.ErrorMessage}");
+            }
+
+            return result.Data.CdnResults;
+        }
+
+        /// <summary>
         /// Creates a new tenant test context for multi-tenant isolation testing.
         /// </summary>
         /// <param name="tenantDomain">Tenant domain name (e.g., "tenant1.example.com").</param>
