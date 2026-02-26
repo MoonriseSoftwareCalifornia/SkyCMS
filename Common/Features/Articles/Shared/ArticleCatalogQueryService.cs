@@ -88,8 +88,8 @@ public class ArticleCatalogQueryService : IArticleCatalogQueryService
             // One level deep from prefix
             var count = prefix.Count(c => c == '/');
             var dcount = "{" + count + "}";
-            var epath = prefix.TrimStart('/').Replace("/", "\\/");
-            var pattern = $"(?i)(^[{epath}]*)(\\/[^\\/]*){dcount}$";
+            var escapedPrefix = Regex.Escape(prefix.TrimStart('/'));
+            var pattern = $"(?i)(^{escapedPrefix})(\\/[^\\/]*){dcount}$";
 
             query = from t in dbContext.ArticleCatalog
                     where t.Published.HasValue

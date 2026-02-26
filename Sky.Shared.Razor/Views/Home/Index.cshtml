@@ -31,6 +31,10 @@
     {
         @Html.Partial("_BlogStreamPartial", Model)
     }
+    else if (Model.ArticleType == Cosmos.Cms.Common.ArticleType.BlogPost)
+    {
+        @Html.Partial("_BlogPostPartial", Model)
+    }
     else
     {
         @Html.Raw(Model.Content)
