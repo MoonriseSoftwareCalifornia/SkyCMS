@@ -2285,7 +2285,13 @@ namespace Sky.Cms.Controllers
 
             if (article.Published.HasValue)
             {
-                return await this.articleLogic.NewVersion(article);
+                // Use CreateArticleVersionCommand via mediator instead of deprecated NewVersion method
+                var versionCommand = new Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand
+                {
+                    ArticleNumber = article.ArticleNumber
+                };
+                var versionResult = await mediator.SendAsync(versionCommand);
+                return versionResult.IsSuccess ? (await dbContext.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync()) : null;
             }
 
             return article;

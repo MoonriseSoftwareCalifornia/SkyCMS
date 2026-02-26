@@ -340,10 +340,10 @@ namespace Sky.Tests.Features.Articles.Save
 
             // Create a new version
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
-            var newVersion = await Logic.NewVersion(article);
+            var newVersionVm = await CreateArticleVersionAsync(article.ArticleNumber);
             
             Assert.AreEqual("root", article.UrlPath);
-            Assert.AreEqual("root", newVersion.UrlPath);
+            Assert.AreEqual("root", newVersionVm.UrlPath);
 
             // Act - Update title on latest version
             var command = new SaveArticleCommand

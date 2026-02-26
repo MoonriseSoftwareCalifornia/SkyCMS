@@ -34,6 +34,7 @@ namespace Sky.Tests
     using Sky.Editor.Services.Titles;
     using Sky.Editor.Features.Shared;
     using Sky.Editor.Features.Articles.Create;
+    using Sky.Editor.Features.Articles.CreateVersion;
     using Sky.Editor.Features.Articles.Save;
     using Cosmos.Common.Models;
     using Microsoft.Extensions.Caching.Memory;
@@ -482,6 +483,30 @@ namespace Sky.Tests
             };
 
             return await mediator.SendAsync(command);
+        }
+
+        /// <summary>
+        /// Helper method to create an article version in this tenant using the CreateArticleVersionCommand via mediator.
+        /// </summary>
+        /// <param name="articleNumber">The article number to create a version for.</param>
+        /// <returns>Created article (new version).</returns>
+        public async Task<ArticleViewModel> CreateArticleVersionAsync(
+            int articleNumber)
+        {
+            var mediator = (IMediator)HttpContext.RequestServices.GetService(typeof(IMediator));
+            
+            var command = new CreateArticleVersionCommand
+            {
+                ArticleNumber = articleNumber
+            };
+
+            var result = await mediator.SendAsync(command);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"Failed to create article version: {result.ErrorMessage}");
+            }
+
+            return result.Data.Article;
         }
 
         /// <summary>

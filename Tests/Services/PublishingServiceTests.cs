@@ -90,7 +90,8 @@ namespace Sky.Tests.Services
 
             // Create new version
             var dbArticle = await Db.Articles.FindAsync(article.Id);
-            var newVersion = await Logic.NewVersion(dbArticle);
+            var newVersionVm = await CreateArticleVersionAsync(dbArticle.ArticleNumber);
+            var newVersion = await Db.Articles.Where(a => a.ArticleNumber == dbArticle.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
             newVersion.Content = "<h1>Updated Content</h1>";
             await Db.SaveChangesAsync();
 

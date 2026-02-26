@@ -33,6 +33,7 @@ using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
 using Sky.Editor.Features.Shared;
 using Sky.Editor.Features.Articles.Create;
+using Sky.Editor.Features.Articles.CreateVersion;
 using Cosmos.Common.Models;
 using System.Diagnostics;
 using System.Reflection;
@@ -682,6 +683,29 @@ namespace Sky.Tests
             }
 
             return result.Data;
+        }
+
+        /// <summary>
+        /// Helper method to create an article version using the CreateArticleVersionCommand via mediator.
+        /// Replaces the deprecated NewVersion() calls in tests.
+        /// </summary>
+        /// <param name="articleNumber">The article number to create a version for.</param>
+        /// <returns>Created article (new version).</returns>
+        protected async Task<ArticleViewModel> CreateArticleVersionAsync(
+            int articleNumber)
+        {
+            var command = new CreateArticleVersionCommand
+            {
+                ArticleNumber = articleNumber
+            };
+
+            var result = await Mediator.SendAsync(command);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"Failed to create article version: {result.ErrorMessage}");
+            }
+
+            return result.Data.Article;
         }
 
         /// <summary>

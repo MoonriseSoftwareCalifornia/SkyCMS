@@ -322,7 +322,8 @@ namespace Sky.Tests.Performance
             
             for (int i = 2; i <= versionCount; i++)
             {
-                currentArticle = await Logic.NewVersion(currentArticle);
+                var newVersionVm = await CreateArticleVersionAsync(article.ArticleNumber);
+                currentArticle = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
                 currentArticle.Content = $"<p>Version {i}</p>";
                 await Db.SaveChangesAsync();
             }
@@ -350,7 +351,8 @@ namespace Sky.Tests.Performance
             
             for (int i = 2; i <= 15; i++)
             {
-                currentArticle = await Logic.NewVersion(currentArticle);
+                var newVersionVm = await CreateArticleVersionAsync(article.ArticleNumber);
+                currentArticle = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
             }
 
             // Act - Query latest version

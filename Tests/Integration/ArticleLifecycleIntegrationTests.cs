@@ -62,7 +62,7 @@ namespace Sky.Tests.Integration
 
             // Step 4: Edit published article (creates new version)
             var dbArticle = await Db.Articles.FindAsync(article.Id);
-            var newVersion = await Logic.NewVersion(dbArticle);
+            var newVersion = await CreateArticleVersionAsync(dbArticle.ArticleNumber);
             newVersion.Content = "<p>Updated content</p>";
             await Db.SaveChangesAsync();
 
@@ -299,12 +299,14 @@ namespace Sky.Tests.Integration
 
             // Create version 2
             var v1 = await Db.Articles.FindAsync(article.Id);
-            var v2 = await Logic.NewVersion(v1);
+            var v2Vm = await CreateArticleVersionAsync(article.ArticleNumber);
+            var v2 = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
             v2.Content = "<p>Version 2</p>";
             await Db.SaveChangesAsync();
 
             // Create version 3
-            var v3 = await Logic.NewVersion(v2);
+            var v3Vm = await CreateArticleVersionAsync(article.ArticleNumber);
+            var v3 = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
             v3.Content = "<p>Version 3</p>";
             await Db.SaveChangesAsync();
 
@@ -334,8 +336,10 @@ namespace Sky.Tests.Integration
             var article = await CreateArticleAsync("Multi-Version Test", TestUserId);
 
             var v1 = await Db.Articles.FindAsync(article.Id);
-            var v2 = await Logic.NewVersion(v1);
-            var v3 = await Logic.NewVersion(v2);
+            var v2Vm = await CreateArticleVersionAsync(article.ArticleNumber);
+            var v2 = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
+            var v3Vm = await CreateArticleVersionAsync(article.ArticleNumber);
+            var v3 = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
 
             // Publish v1
             await Logic.PublishArticle(v1.Id, DateTimeOffset.UtcNow);
