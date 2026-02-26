@@ -302,21 +302,25 @@ namespace Sky.Editor.Services.Titles
             }
 
             var normalizedTitle = title.Trim();
+            
+            // Generate the URL slug that would be used for this title
+            var slug = slugs.Normalize(normalizedTitle);
 
             // Check against reserved paths (system routes that cannot be used for articles)
+            // Reserved paths are URL patterns, so we compare against the generated slug
             var paths = (await reservedPaths.GetReservedPaths()).Select(s => s.Path.ToLower()).ToArray();
             foreach (var reservedPath in paths)
             {
                 if (reservedPath.EndsWith('*'))
                 {
-                    // Wildcard reserved path - check if title starts with the prefix
+                    // Wildcard reserved path - check if slug starts with the prefix
                     var value = reservedPath.TrimEnd('*').TrimEnd('/');
-                    if (normalizedTitle.ToLower().StartsWith(value))
+                    if (slug.StartsWith(value + "/", StringComparison.OrdinalIgnoreCase))
                     {
                         return false;
                     }
                 }
-                else if (normalizedTitle.Equals(reservedPath, StringComparison.OrdinalIgnoreCase))
+                else if (slug.Equals(reservedPath, StringComparison.OrdinalIgnoreCase))
                 {
                     // Exact match reserved path
                     return false;

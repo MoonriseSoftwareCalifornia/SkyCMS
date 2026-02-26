@@ -1,0 +1,49 @@
+@model Cosmos.Common.Models.ArticleViewModel
+@{
+    var toc = $"/pub/---toc/{Model.UrlPath.Trim('/').Split('/')[0]}/toc.json";
+}
+<article class="py-5" aria-labelledby="post-title">
+  <div class="container">
+    <header class="mb-4">
+      <h1 id="post-title" class="display-5 fw-bold">@Model.Title</h1>
+      <p class="text-secondary mb-0">
+        <time datetime="@Model.Updated.ToString("u")">@Model.Updated.ToString("D")</time>
+        @if (!string.IsNullOrEmpty(Model.AuthorInfo))
+        {
+            <text> · @Model.AuthorInfo</text>
+        }
+      </p>
+    </header>
+
+    <!-- Optional: small inline header image (lightweight) -->
+    @if (Model.BannerImage != null)
+    {
+      <figure class="mb-4">
+        <img src="@Model.BannerImage" class="img-fluid" />
+      </figure>
+    }
+
+    <section class="post-content">@Html.Raw(Model.Content)</section>
+
+  </div>
+</article>
+<script src="~/js/table-of-contents-client.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async function () {
+    try {
+      if (!window.TableOfContentsClient) {
+        console.error('TableOfContentsClient is not available.');
+        return;
+      }
+
+      var tocClient = await window.TableOfContentsClient.fromUrl('@toc');
+      window.skyToc = {
+        client: tocClient,
+        meta: tocClient.getMeta(),
+        items: tocClient.getItems()
+      };
+    } catch (error) {
+      console.error('Failed to load table of contents JSON:', error);
+    }
+  });
+</script>

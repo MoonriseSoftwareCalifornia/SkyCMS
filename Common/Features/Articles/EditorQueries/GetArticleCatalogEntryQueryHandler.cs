@@ -35,7 +35,6 @@ public class GetArticleCatalogEntryQueryHandler : IQueryHandler<GetArticleCatalo
         CancellationToken cancellationToken = default)
     {
         return await dbContext.ArticleCatalog
-            .AsNoTracking()
             .FirstOrDefaultAsync(a => a.ArticleNumber == query.ArticleNumber, cancellationToken);
     }
 }

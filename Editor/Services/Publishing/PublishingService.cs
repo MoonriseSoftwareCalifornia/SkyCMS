@@ -340,7 +340,7 @@ namespace Sky.Editor.Services.Publishing
             await WriteTocAsync("/");
 
             // If this is a blog post, also update the TOC for the blog stream
-            if (article.ArticleType == (int)ArticleType.BlogPost)
+            if (article.ArticleType == (int)ArticleType.BlogPost || article.ArticleType == (int)ArticleType.BlogStream)
             {
                 await WriteTocAsync($"/{article.BlogKey}");
             }
@@ -735,7 +735,7 @@ namespace Sky.Editor.Services.Publishing
             await _writeTocSemaphore.WaitAsync();
             try
             {
-                var toc = articleCatalogQueryService.GetTableOfContentsAsync(prefix, 0, 500, false);
+                var toc = await articleCatalogQueryService.GetTableOfContentsAsync(prefix, 0, 500, false);
 
                 if (toc == null)
                 {
@@ -743,7 +743,7 @@ namespace Sky.Editor.Services.Publishing
                 }
 
                 var json = JsonConvert.SerializeObject(toc);
-                var target = string.IsNullOrEmpty(prefix) ? "/toc.json" : "/" + prefix + "/toc.json";
+                var target = string.IsNullOrEmpty(prefix) || prefix == "/" ? "/toc.json" : $"/pub/---toc/{prefix}/toc.json";
                 using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
                 await _storage.AppendBlob(ms, new FileUploadMetaData
                 {

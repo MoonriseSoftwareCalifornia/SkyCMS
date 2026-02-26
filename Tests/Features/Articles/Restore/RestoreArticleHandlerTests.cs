@@ -45,8 +45,8 @@ namespace Sky.Tests.Features.Articles.Restore
             this.mockLogger = new Mock<ILogger<RestoreArticleHandler>>();
 
             this.mockSlugService
-                .Setup(s => s.Normalize(It.IsAny<string>()))
-                .Returns<string>(s => s?.ToLower().Replace(" ", "-") ?? string.Empty);
+                .Setup(s => s.Normalize(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns<string, string>((input, blogKey) => input?.ToLower().Replace(" ", "-") ?? string.Empty);
 
             this.handler = new RestoreArticleHandler(
                 this.dbContext,

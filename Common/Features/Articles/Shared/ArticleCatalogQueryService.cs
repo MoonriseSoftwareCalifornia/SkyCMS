@@ -113,7 +113,7 @@ public class ArticleCatalogQueryService : IArticleCatalogQueryService
         var sort = data.AsQueryable();
         sort = orderByPublishedDate
             ? sort.OrderByDescending(o => o.Published)
-            : sort.OrderBy(o => o.Title);
+            : sort.OrderBy(o => o.UrlPath);
 
         var now = DateTimeOffset.UtcNow;
         var items = sort

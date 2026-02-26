@@ -774,8 +774,8 @@ namespace Sky.Cms.Controllers
                 return View(viewName: "__NewHomePage", model: model);
             }
 
-            // Successfully created - redirect to home
-            return Redirect("/");
+            // Successfully created - redirect to Versions action to view/edit the new article
+            return RedirectToAction("Versions", new { id = result.Data.Id });
         }
 
         /// <summary>

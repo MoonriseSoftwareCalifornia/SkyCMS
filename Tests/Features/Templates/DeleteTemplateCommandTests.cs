@@ -246,34 +246,12 @@ namespace Sky.Tests.Features.Templates
             await Db.SaveChangesAsync();
 
             // Create root article first
-            await CreateArticleAsync("Root", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId);
 
             // Create articles using this template
+            // Catalog entries are automatically created by CreateArticleHandler
             var article1 = await CreateArticleAsync("Article 1", TestUserId, template.Id);
             var article2 = await CreateArticleAsync("Article 2", TestUserId, template.Id);
-
-            // Create catalog entries (simulating published articles)
-            var catalog1 = new CatalogEntry
-            {
-                ArticleNumber = article1.ArticleNumber,
-                Title = article1.Title,
-                UrlPath = article1.UrlPath,
-                Status = "Active",
-                Updated = DateTimeOffset.UtcNow,
-                TemplateId = template.Id
-            };
-            var catalog2 = new CatalogEntry
-            {
-                ArticleNumber = article2.ArticleNumber,
-                Title = article2.Title,
-                UrlPath = article2.UrlPath,
-                Status = "Active",
-                Updated = DateTimeOffset.UtcNow,
-                TemplateId = template.Id
-            };
-            Db.ArticleCatalog.Add(catalog1);
-            Db.ArticleCatalog.Add(catalog2);
-            await Db.SaveChangesAsync();
 
             var command = new DeleteTemplateCommand
             {

@@ -273,9 +273,11 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home", TestUserId);
             
             var categories = new[] { "Tech", "Science", "Tech", "Sports" };
-            foreach (var category in categories)
+            for (int i = 0; i < categories.Length; i++)
             {
-                var post = await CreateArticleAsync($"{category} Post", TestUserId, null, "default", ArticleType.BlogPost);
+                var category = categories[i];
+                // Use index to ensure unique titles even when categories repeat
+                var post = await CreateArticleAsync($"{category} Post {i + 1}", TestUserId, null, "default", ArticleType.BlogPost);
                 var command = new SaveArticleCommand
                 {
                     ArticleNumber = post.ArticleNumber,

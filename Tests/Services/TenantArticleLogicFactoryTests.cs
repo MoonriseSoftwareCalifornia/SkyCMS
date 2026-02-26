@@ -259,6 +259,16 @@ namespace Sky.Tests.Services
             // Register TemplateService - MediatR will be injected automatically
             services.AddScoped<ITemplateService, TemplateService>();
 
+            // Register IArticleCatalogQueryService required by PublishingService in multi-tenant mode
+            services.AddScoped<IArticleCatalogQueryService>(sp =>
+            {
+                var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+                return new ArticleCatalogQueryService(
+                    dbContext,
+                    sp.GetRequiredService<IEditorSettings>().PublisherUrl,
+                    sp.GetRequiredService<IEditorSettings>().BlobPublicUrl);
+            });
+
             // Mock view render service
             var mockViewRenderService = new Mock<IViewRenderService>();
             mockViewRenderService.Setup(x => x.RenderToStringAsync(It.IsAny<string>(), It.IsAny<object>()))

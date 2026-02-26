@@ -60,6 +60,13 @@ namespace Sky.Tests.Services.Publishing
             services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
             services.AddScoped<IStorageContext>(_ => Storage);
             services.AddLogging();
+            
+            // Register IArticleCatalogQueryService (required by PublishingService constructor)
+            services.AddSingleton<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
+                new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(
+                    Db,
+                    EditorSettings.PublisherUrl,
+                    EditorSettings.BlobPublicUrl));
 
             _serviceProvider = services.BuildServiceProvider();
         }

@@ -301,6 +301,9 @@ namespace Sky.Tests
                 serviceCollection.AddSingleton(templateService);
                 serviceCollection.AddSingleton(clock);
                 
+                // Register mediator (following the pattern in Program.cs)
+                serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IMediator, Cosmos.Common.Features.Shared.Mediator>();
+                
                 // Register command handlers (following the pattern in Program.cs line 521-522)
                 serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>>(sp =>
                     new CreateArticleHandler(
@@ -449,7 +452,12 @@ namespace Sky.Tests
             var result = await mediator.SendAsync(command);
             if (!result.IsSuccess)
             {
-                throw new InvalidOperationException($"Failed to create article: {result.ErrorMessage}");
+                var errorMessage = result.ErrorMessage;
+                if (string.IsNullOrEmpty(errorMessage) && result.Errors != null && result.Errors.Any())
+                {
+                    errorMessage = string.Join("; ", result.Errors.SelectMany(e => e.Value.Select(v => $"{e.Key}: {v}")));
+                }
+                throw new InvalidOperationException($"Failed to create article: {errorMessage}");
             }
 
             return result.Data;

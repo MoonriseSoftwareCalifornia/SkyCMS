@@ -378,23 +378,24 @@ namespace Sky.Tests.Integration
         [TestMethod]
         public async Task CatalogSynchronization_ThroughLifecycle_StaysConsistent()
         {
-            // Create a root article first so the test article isn't auto-published
-            await CreateArticleAsync("Root", TestUserId);
+            // Create a first article so the test article isn't auto-published
+            await CreateArticleAsync("First Article", TestUserId);
             
             // Create article
             var article = await CreateArticleAsync("Catalog Sync Test", TestUserId);
 
-            // Verify catalog entry NOT created yet (catalog entries are created on publish/save, not on creation)
+            // Verify catalog entry created but not published yet
             var catalog1 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-            Assert.IsNull(catalog1, "Catalog entry should not exist until article is published or saved");
+            Assert.IsNotNull(catalog1, "Catalog entry should be created when article is created");
+            Assert.IsNull(catalog1.Published, "Catalog entry should not be marked as published yet");
 
             // Publish article
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
-            // Verify catalog created and marked as published
+            // Verify catalog marked as published
             var catalog2 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-            Assert.IsNotNull(catalog2, "Catalog entry should be created when article is published");
-            Assert.IsNotNull(catalog2.Published, "Catalog entry should be marked as published");
+            Assert.IsNotNull(catalog2, "Catalog entry should still exist");
+            Assert.IsNotNull(catalog2.Published, "Catalog entry should be marked as published after publishing");
 
             // Update article
             article.Title = "Updated Title";

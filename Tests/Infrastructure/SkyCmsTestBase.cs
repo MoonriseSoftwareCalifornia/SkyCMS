@@ -1,6 +1,8 @@
 using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
+using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Articles.EditorQueries;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.DynamicConfig;
@@ -90,6 +92,7 @@ namespace Sky.Tests
         protected IMediator Mediator = null!;
         protected ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>> CreateArticleHandler = null!;
         protected ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>> SaveArticleHandler = null!;
+        protected ArticleLogic ArticleLogic = null!;
 
         private async Task EnsureBlogStreamTemplateExistsAsync()
         {
@@ -483,6 +486,19 @@ namespace Sky.Tests
                     Cache,
                     configuration));
             
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQuery, System.Collections.Generic.IEnumerable<Cosmos.Common.Models.RedirectItemViewModel>>>(sp =>
+                new Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQueryHandler(Db));
+            
+            // ✅ Register GetArticleCatalogEntryQueryHandler for EditorController.Permissions
+            // NOTE: Use non-nullable CatalogEntry because nullable reference types are compile-time only
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQuery, Cosmos.Common.Data.CatalogEntry>>(sp =>
+                new Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQueryHandler(Db));
+            
+            // ✅ Register GetLastPublishedDateQueryHandler for EditorController.Designer
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQuery, System.DateTimeOffset?>>(sp =>
+                new Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQueryHandler(Db));
+            
+            
             // Register article catalog query handlers for HomeControllerBase
             serviceCollection.AddScoped<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
                 new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(
@@ -509,6 +525,13 @@ namespace Sky.Tests
             Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Create.CreateArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Models.ArticleViewModel>>> createArticleHandlerFactory = null!;
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Create.CreateArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Models.ArticleViewModel>>>(sp =>
                 createArticleHandlerFactory());
+            
+            // ✅ LAZY FACTORY: Register CreateArticleVersionHandler using a factory that will be populated later
+            // CreateArticleVersionHandler depends on ArticleLogic which is created AFTER this service provider is built
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommandResult>>> createArticleVersionHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommandResult>>>(sp =>
+                createArticleVersionHandlerFactory());
+            
             
 
             // Register query handlers
@@ -567,6 +590,14 @@ namespace Sky.Tests
                 RedirectService,
                 TemplateService);
 
+            // ✅ CREATE ArticleLogic for handlers that need it
+            ArticleLogic = new Cosmos.Common.Data.Logic.ArticleLogic(
+                Db,
+                Cache,
+                EditorSettings.PublisherUrl.ToString(),
+                configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? string.Empty,
+                isEditor: true);
+
             // ✅ NOW CREATE FEATURE HANDLERS WITH TEMPLATE SERVICE
             CreateArticleHandler = new CreateArticleHandler(
                 Db,
@@ -589,9 +620,16 @@ namespace Sky.Tests
 
             SaveArticleHandler = saveArticleHandlerInstance;
 
+            // ✅ CREATE CreateArticleVersionHandler
+            var createArticleVersionHandler = new Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionHandler(
+                Db,
+                ArticleLogic,
+                new NullLogger<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionHandler>());
+
             // ✅ NOW POPULATE THE LAZY FACTORIES so the Mediator can resolve the handlers
             saveArticleHandlerFactory = () => SaveArticleHandler;
             createArticleHandlerFactory = () => CreateArticleHandler;
+            createArticleVersionHandlerFactory = () => createArticleVersionHandler;
 
             // ✅ ADD THIS - Get the real IHttpClientFactory from DI
             HttpClientFactory = Services.GetRequiredService<IHttpClientFactory>();
@@ -679,7 +717,12 @@ namespace Sky.Tests
             var result = await Mediator.SendAsync(command);
             if (!result.IsSuccess)
             {
-                throw new InvalidOperationException($"Failed to create article: {result.ErrorMessage}");
+                var errorMessage = result.ErrorMessage;
+                if (string.IsNullOrEmpty(errorMessage) && result.Errors != null && result.Errors.Any())
+                {
+                    errorMessage = string.Join("; ", result.Errors.SelectMany(e => e.Value.Select(v => $"{e.Key}: {v}")));
+                }
+                throw new InvalidOperationException($"Failed to create article: {errorMessage}");
             }
 
             return result.Data;

@@ -128,7 +128,7 @@ public interface IPublishingService
     /// </para>
     /// <list type="bullet">
     ///   <item><description>Empty or null prefix → "/toc.json"</description></item>
-    ///   <item><description>Non-empty prefix → "/{prefix}/toc.json"</description></item>
+    ///   <item><description>Non-empty prefix → "/pub/---toc/{prefix}/toc.json"</description></item>"
     /// </list>
     /// <para>
     /// Only executes if static web page generation is enabled in editor settings.

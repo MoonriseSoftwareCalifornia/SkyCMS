@@ -586,7 +586,8 @@ builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Co
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQuery, System.DateTimeOffset?>, Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQuery, Cosmos.Common.Data.CatalogEntry?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQueryHandler>();
+// NOTE: Use non-nullable CatalogEntry because nullable reference types are compile-time only and don't affect runtime DI resolution
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQuery, Cosmos.Common.Data.CatalogEntry>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQuery, System.Collections.Generic.IEnumerable<Cosmos.Common.Models.RedirectItemViewModel>>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQueryHandler>();
 
 builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>

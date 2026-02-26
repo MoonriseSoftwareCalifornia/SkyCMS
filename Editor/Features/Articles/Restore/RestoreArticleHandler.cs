@@ -60,6 +60,14 @@ namespace Sky.Editor.Features.Articles.Restore
                     return new CommandResult<Unit> { IsSuccess = false, ErrorMessage = $"Article number {command.ArticleNumber} not found" };
                 }
 
+                // Check if article is deleted (only deleted articles can be restored)
+                var firstArticle = articles.First();
+                if (firstArticle.StatusCode != (int)StatusCodeEnum.Deleted)
+                {
+                    logger.LogWarning("Cannot restore article number {ArticleNumber} - not in deleted status", command.ArticleNumber);
+                    return new CommandResult<Unit> { IsSuccess = false, ErrorMessage = $"Article number {command.ArticleNumber} is not deleted and cannot be restored" };
+                }
+
                 var title = articles.First().Title.ToLower();
 
                 // Check if title conflicts with another deleted article
