@@ -167,8 +167,8 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_PublishesScheduledArticles()
         {
             // Arrange
-            var home = await Logic.CreateArticle("Home", TestUserId);
-            var scheduledArticle = await Logic.CreateArticle("Scheduled Article", TestUserId);
+            var home = await CreateArticleAsync("Home", TestUserId);
+            var scheduledArticle = await CreateArticleAsync("Scheduled Article", TestUserId);
 
             // Create a past-published version (should be activated)
             // NOTE: Must modify the actual Article entity, not the ArticleViewModel
@@ -217,8 +217,8 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_SkipsSingleVersionArticles()
         {
             // Arrange
-            var home = await Logic.CreateArticle("Home", TestUserId);
-            var singleVersionArticle = await Logic.CreateArticle("Single Version", TestUserId);
+            var home = await CreateArticleAsync("Home", TestUserId);
+            var singleVersionArticle = await CreateArticleAsync("Single Version", TestUserId);
             singleVersionArticle.Published = _testNow.AddHours(-1);
             await Db.SaveChangesAsync();
 
@@ -240,8 +240,8 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_SkipsDeletedArticles()
         {
             // Arrange
-            var home = await Logic.CreateArticle("Home", TestUserId);
-            var deletedArticle = await Logic.CreateArticle("Deleted", TestUserId);
+            var home = await CreateArticleAsync("Home", TestUserId);
+            var deletedArticle = await CreateArticleAsync("Deleted", TestUserId);
             deletedArticle.Published = _testNow.AddHours(-1);
             deletedArticle.StatusCode = StatusCodeEnum.Deleted;
             await Db.SaveChangesAsync();
@@ -272,8 +272,8 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_ActivatesMostRecentVersion()
         {
             // Arrange
-            var home = await Logic.CreateArticle("Home", TestUserId);
-            var article = await Logic.CreateArticle("Multi-Version", TestUserId);
+            var home = await CreateArticleAsync("Home", TestUserId);
+            var article = await CreateArticleAsync("Multi-Version", TestUserId);
 
             // Create v1 (oldest)
             article.Published = _testNow.AddHours(-3);
@@ -329,8 +329,8 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_UnpublishesOldVersions()
         {
             // Arrange
-            var home = await Logic.CreateArticle("Home", TestUserId);
-            var article = await Logic.CreateArticle("Multi-Version Article", TestUserId);
+            var home = await CreateArticleAsync("Home", TestUserId);
+            var article = await CreateArticleAsync("Multi-Version Article", TestUserId);
 
             // v1 - old published
             article.Published = _testNow.AddHours(-2);
@@ -372,8 +372,8 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_SkipsFuturePublications()
         {
             // Arrange
-            var home = await Logic.CreateArticle("Home", TestUserId);
-            var futureArticle = await Logic.CreateArticle("Future Article", TestUserId);
+            var home = await CreateArticleAsync("Home", TestUserId);
+            var futureArticle = await CreateArticleAsync("Future Article", TestUserId);
 
             futureArticle.Published = _testNow.AddHours(2); // Future date
             futureArticle.VersionNumber = 1;
@@ -419,8 +419,8 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_SendsEmailNotificationOnPublish()
         {
             // Arrange
-            var home = await Logic.CreateArticle("Home", TestUserId);
-            var notifyArticle = await Logic.CreateArticle("Notify Article", TestUserId);
+            var home = await CreateArticleAsync("Home", TestUserId);
+            var notifyArticle = await CreateArticleAsync("Notify Article", TestUserId);
 
             notifyArticle.Published = _testNow.AddHours(-1);
             notifyArticle.VersionNumber = 1;

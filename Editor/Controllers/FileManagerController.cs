@@ -970,11 +970,27 @@ namespace Sky.Cms.Controllers
                     // Get the user's ID for logging.
                     var user = await userManager.GetUserAsync(User);
 
-                    // TODO: Refactor to use SaveArticleCommand via mediator when file import handler is created
-                    // For now, use deprecated SaveArticle method - this will be replaced in v3.0
-                    #pragma warning disable CS0618
-                    await articleLogic.SaveArticle(article, Guid.Parse(user.Id));
-                    #pragma warning restore CS0618
+                    // Use SaveArticleCommand via mediator
+                    var command = new SaveArticleCommand
+                    {
+                        ArticleNumber = article.ArticleNumber,
+                        Title = article.Title,
+                        Content = article.Content,
+                        HeadJavaScript = article.HeadJavaScript,
+                        FooterJavaScript = article.FooterJavaScript,
+                        BannerImage = article.BannerImage,
+                        UserId = Guid.Parse(user.Id),
+                        ArticleType = (Cosmos.Cms.Common.ArticleType)article.ArticleType,
+                        Category = article.Category,
+                        Introduction = article.Introduction,
+                        Published = article.Published,
+                        UrlPath = article.UrlPath
+                    };
+                    var result = await articleQueries.SendAsync(command);
+                    if (!result.IsSuccess)
+                    {
+                        uploadResult.Errors = result.ErrorMessage;
+                    }
                 }
                 else
                 {

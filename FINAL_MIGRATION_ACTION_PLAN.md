@@ -1,17 +1,17 @@
-# ?? ArticleEditLogic Final Migration - Action Plan
+﻿# 🎯 ArticleEditLogic Final Migration - Action Plan
 
 ## **Current Status**
 
 You have **2 methods still actively being called** from `ArticleEditLogic` in the controller:
 
-1. **Line 1013:** `await articleLogic.CreateHomePage(model);` ? EditorController.NewHome()
-2. **Line 1965:** `article = await articleLogic.CreateArticle("Blank Page", userId);` ? EditorController.ExportPage()
+1. **Line 1013:** `await articleLogic.CreateHomePage(model);` → EditorController.NewHome()
+2. **Line 1965:** `article = await articleCreateArticleAsync("Blank Page", userId);` → EditorController.ExportPage()
 
 All other methods have already been migrated to commands or are ready to migrate.
 
 ---
 
-## **?? Immediate Actions Required**
+## **🚀 Immediate Actions Required**
 
 ### **1. Replace EditorController.NewHome() - Line 1013**
 
@@ -30,7 +30,7 @@ public async Task<IActionResult> NewHome(NewHomeViewModel model)
     }
 
     var user = await userManager.GetUserAsync(User);
-    await articleLogic.CreateHomePage(model);  // ? REPLACE THIS
+    await articleLogic.CreateHomePage(model);  // ← REPLACE THIS
 
     return RedirectToAction("Index");
 }
@@ -93,7 +93,7 @@ public async Task<IActionResult> ExportPage(Guid? id)
     else
     {
         // Get the user's ID for logging.
-        article = await articleLogic.CreateArticle("Blank Page", userId);  // ? REPLACE THIS
+        article = await articleCreateArticleAsync("Blank Page", userId);  // ← REPLACE THIS
     }
 
     var html = await articleLogic.ExportArticle(article, viewRenderService);
@@ -149,7 +149,7 @@ public async Task<IActionResult> ExportPage(Guid? id)
 
 ---
 
-## **?? ArticleEditLogic Methods - Complete Migration Checklist**
+## **📋 ArticleEditLogic Methods - Complete Migration Checklist**
 
 ### **Methods to Mark as `[Obsolete]`**
 
@@ -183,13 +183,13 @@ public async Task<IActionResult> ExportPage(Guid? id)
 
 ### **Methods That Can Stay (Read Operations)**
 
-- ? **ExportArticle()** - Can stay as-is (read operation, not write)
+- ✅ **ExportArticle()** - Can stay as-is (read operation, not write)
   - Consider: Move to `ExportArticleService` or create `ExportArticleQuery`
   - For now: Can keep in ArticleEditLogic
 
 ---
 
-## **?? Handler Internal Calls to Fix**
+## **🔧 Handler Internal Calls to Fix**
 
 In `CreateHomePageHandler`, check if it calls:
 - `PublishArticle()` - Should use PublishArticleCommand instead
@@ -197,7 +197,7 @@ In `CreateHomePageHandler`, check if it calls:
 
 ---
 
-## **?? Step-by-Step Instructions**
+## **📝 Step-by-Step Instructions**
 
 ### **Step 1: Update EditorController.NewHome()**
 Replace line 1013 with the CreateHomePageCommand usage above.
@@ -230,19 +230,19 @@ Verify that:
 
 ---
 
-## **?? Final State After Migration**
+## **📊 Final State After Migration**
 
 ### **ArticleEditLogic will contain:**
-? Private helpers:
+✅ Private helpers:
 - `GetAuthorInfoForUserId()` - Private
 - `DeleteStaticWebpage()` - Private
 - `UpsertCatalogEntry()` - Private
 - `DeleteCatalogEntry()` - Private
 
-? Read operations (can deprecate):
+✅ Read operations (can deprecate):
 - `ExportArticle()` - Should become Query or Service
 
-? Obsolete write operations (deprecated):
+❌ Obsolete write operations (deprecated):
 - CreateArticle()
 - SaveArticle()
 - PublishArticle()
@@ -252,7 +252,7 @@ Verify that:
 - CreateHomePage()
 
 ### **EditorController will use:**
-? Mediator for all commands:
+✅ Mediator for all commands:
 - CreateArticleCommand
 - SaveArticleCommand
 - PublishArticleCommand
@@ -261,7 +261,7 @@ Verify that:
 - CreateArticleVersionCommand
 - CreateHomePageCommand
 
-? Mediator for queries:
+✅ Mediator for queries:
 - GetArticleByIdQuery
 - GetArticleByArticleNumberQuery
 - GetArticleByUrlQuery
@@ -269,7 +269,7 @@ Verify that:
 
 ---
 
-## **?? Quick Summary**
+## **🎯 Quick Summary**
 
 | File | Change | Command | Status |
 |------|--------|---------|--------|
@@ -278,4 +278,4 @@ Verify that:
 | ArticleEditLogic | Mark methods obsolete | All 7 methods | Ready |
 | Handlers | Verify no direct calls | All handlers | Verify |
 
-**Total Impact:** 2 controller methods to update, 7 logic methods to deprecate, all handlers already implemented! ?
+**Total Impact:** 2 controller methods to update, 7 logic methods to deprecate, all handlers already implemented! ✅

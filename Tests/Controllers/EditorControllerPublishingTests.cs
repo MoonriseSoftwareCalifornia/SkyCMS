@@ -75,8 +75,8 @@ namespace Sky.Tests.Controllers
         public async Task UnpublishPage_UnpublishesArticle()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Verify it's published
@@ -101,8 +101,8 @@ namespace Sky.Tests.Controllers
         public async Task UnpublishPage_HandlesAlreadyUnpublishedArticle()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Unpublished Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Unpublished Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Ensure article is unpublished (it may be auto-published if it's the first article)
             if (article.Published.HasValue)
@@ -132,12 +132,12 @@ namespace Sky.Tests.Controllers
         public async Task PublishStaticPages_PublishesSpecifiedPages()
         {
             // Arrange
-            var article1 = await Logic.CreateArticle("Page 1", TestUserId);
-            await Logic.SaveArticle(article1, TestUserId);
+            var article1 = await CreateArticleAsync("Page 1", TestUserId);
+            await SaveArticleAsync(article1, TestUserId);
             await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
 
-            var article2 = await Logic.CreateArticle("Page 2", TestUserId);
-            await Logic.SaveArticle(article2, TestUserId);
+            var article2 = await CreateArticleAsync("Page 2", TestUserId);
+            await SaveArticleAsync(article2, TestUserId);
             await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
 
             var page1 = await Db.Pages.FirstAsync(p => p.ArticleNumber == article1.ArticleNumber);
@@ -161,8 +161,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishStaticPages_HandlesEmptyList_PublishesAll()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Act - Empty list should trigger "publish all"
@@ -181,8 +181,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishStaticPages_HandlesNullList()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Act
@@ -201,8 +201,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishStaticPages_ReturnsSuccessResponse()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             var page = await Db.Pages.FirstAsync(p => p.ArticleNumber == article.ArticleNumber);
@@ -231,8 +231,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishTOC_PublishesToc()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Act
@@ -249,8 +249,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishTOC_AcceptsCustomPath()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Act
@@ -267,8 +267,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishTOC_UsesDefaultRootPath()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Act - No path specified, should use default "/"
@@ -331,8 +331,8 @@ namespace Sky.Tests.Controllers
         public async Task UpdateTimeStamps_UpdatesPageTimestamps()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             var page = await Db.Pages.FirstAsync(p => p.ArticleNumber == article.ArticleNumber);
@@ -363,8 +363,8 @@ namespace Sky.Tests.Controllers
             // Arrange - Create multiple published pages
             for (int i = 0; i < 5; i++)
             {
-                var article = await Logic.CreateArticle($"Page {i}", TestUserId);
-                await Logic.SaveArticle(article, TestUserId);
+                var article = await CreateArticleAsync($"Page {i}", TestUserId);
+                await SaveArticleAsync(article, TestUserId);
                 await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
             }
 
@@ -389,8 +389,8 @@ namespace Sky.Tests.Controllers
             // Arrange - Create many pages to test batching (saves every 20)
             for (int i = 0; i < 25; i++)
             {
-                var article = await Logic.CreateArticle($"Batch Page {i}", TestUserId);
-                await Logic.SaveArticle(article, TestUserId);
+                var article = await CreateArticleAsync($"Batch Page {i}", TestUserId);
+                await SaveArticleAsync(article, TestUserId);
                 await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
             }
 

@@ -41,10 +41,10 @@ namespace Sky.Tests.Integration
             var tenant2 = await CreateTenantContextAsync("tenant2.example.com");
 
             // Act - Create article in tenant1
-            var article1 = await tenant1.Logic.CreateArticle("Tenant 1 Article", tenant1.TestUserId);
+            var article1 = await tenant1.CreateArticleAsync("Tenant 1 Article", tenant1.TestUserId);
             
             // Act - Create article in tenant2
-            var article2 = await tenant2.Logic.CreateArticle("Tenant 2 Article", tenant2.TestUserId);
+            var article2 = await tenant2.CreateArticleAsync("Tenant 2 Article", tenant2.TestUserId);
 
             // Assert - Each tenant only sees their own article
             var tenant1Articles = await tenant1.Db.Articles
@@ -76,12 +76,12 @@ namespace Sky.Tests.Integration
             var tenant2 = await CreateTenantContextAsync("tenant2.example.com");
 
             // Act - Create and publish article in tenant1
-            var article1 = await tenant1.Logic.CreateArticle("Tenant 1 Published", tenant1.TestUserId);
+            var article1 = await tenant1.CreateArticleAsync("Tenant 1 Published", tenant1.TestUserId);
             var article1Entity = await tenant1.Db.Articles.FindAsync(article1.Id);
             await tenant1.PublishingService.PublishAsync(article1Entity);
 
             // Act - Create draft article in tenant2
-            var article2 = await tenant2.Logic.CreateArticle("Tenant 2 Draft", tenant2.TestUserId);
+            var article2 = await tenant2.CreateArticleAsync("Tenant 2 Draft", tenant2.TestUserId);
 
             // Assert - Tenant 1 has published article
             var tenant1Published = await tenant1.Db.Articles
@@ -281,7 +281,7 @@ namespace Sky.Tests.Integration
             var tenant2 = await CreateTenantContextAsync("secure-tenant2.com");
 
             // Act - Create article in tenant1
-            var article1 = await tenant1.Logic.CreateArticle("Secure Article", tenant1.TestUserId);
+            var article1 = await tenant1.CreateArticleAsync("Secure Article", tenant1.TestUserId);
 
             // Act - Try to access tenant1's article from tenant2 context
             var attemptedAccess = await tenant2.Db.Articles.FindAsync(article1.Id);
@@ -313,7 +313,7 @@ namespace Sky.Tests.Integration
             // Act - Perform operations concurrently
             var tasks = contexts.Select(async (ctx, index) =>
             {
-                var article = await ctx.Logic.CreateArticle($"Concurrent Article {index}", ctx.TestUserId);
+                var article = await ctx.CreateArticleAsync($"Concurrent Article {index}", ctx.TestUserId);
                 var articleEntity = await ctx.Db.Articles.FindAsync(article.Id);
                 await ctx.PublishingService.PublishAsync(articleEntity);
                 

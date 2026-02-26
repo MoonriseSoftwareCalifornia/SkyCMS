@@ -115,11 +115,11 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             // Create root article first
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
             // Create two articles using this template
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId, template.Id);
+            var article1 = await CreateArticleAsync("Article 1", TestUserId, template.Id);
+            var article2 = await CreateArticleAsync("Article 2", TestUserId, template.Id);
 
             // Create catalog entries for unpublished articles (normally only created when published)
             var catalog1 = new CatalogEntry
@@ -183,9 +183,9 @@ namespace Sky.Tests.Controllers
             var nonExistentTemplateId = Guid.NewGuid();
 
             // Create root article
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             var initialVersionCount = await Db.Articles
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
                 .CountAsync();
@@ -252,8 +252,8 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
-            var article = await Logic.CreateArticle("Test Article", TestUserId, template.Id);
+            await CreateArticleAsync("Root", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId, template.Id);
 
             // Article has only region1
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
@@ -295,8 +295,8 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
-            var article = await Logic.CreateArticle("Test Article", TestUserId, template.Id);
+            await CreateArticleAsync("Root", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId, template.Id);
 
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             entity.Content = "<div data-ccms-ceid='region1'>User Content</div>";
@@ -334,8 +334,8 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
-            var article = await Logic.CreateArticle("Test Article", TestUserId, template.Id);
+            await CreateArticleAsync("Root", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId, template.Id);
 
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             entity.Content = "<div data-ccms-ceid='main'>User's Important Content</div>";
@@ -360,8 +360,8 @@ namespace Sky.Tests.Controllers
         public async Task ApplyTemplateChanges_WithNonExistentTemplate_ReturnsNotFound()
         {
             // Arrange
-            await Logic.CreateArticle("Root", TestUserId);
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
 
             // Act
             var result = await _controller.UpdatePage(article.ArticleNumber, Guid.NewGuid());
@@ -387,8 +387,8 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
-            var article = await Logic.CreateArticle("Test Article", TestUserId, template.Id);
+            await CreateArticleAsync("Root", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId, template.Id);
 
             // Act
             var result = await _controller.UpdatePage(article.ArticleNumber, template.Id);
@@ -422,8 +422,8 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
-            var article = await Logic.CreateArticle("Test Article", TestUserId, template.Id);
+            await CreateArticleAsync("Root", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId, template.Id);
 
             // Create catalog entry for unpublished article (normally only created when published)
             var catalog = new CatalogEntry
@@ -462,8 +462,8 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
-            var article = await Logic.CreateArticle("Test Article", TestUserId, template.Id);
+            await CreateArticleAsync("Root", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId, template.Id);
 
             // Act - Should not throw exception
             var result = await _controller.UpdatePage(article.ArticleNumber, template.Id);
@@ -841,11 +841,11 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             // Create root article first
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
             // Create articles using this template
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId, template.Id);
+            var article1 = await CreateArticleAsync("Article 1", TestUserId, template.Id);
+            var article2 = await CreateArticleAsync("Article 2", TestUserId, template.Id);
 
             // Create catalog entries for unpublished articles (normally only created when published)
             var catalog1 = new CatalogEntry
@@ -918,10 +918,10 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
-            var articleZ = await Logic.CreateArticle("ZZZ Article", TestUserId, template.Id);
-            var articleA = await Logic.CreateArticle("AAA Article", TestUserId, template.Id);
+            var articleZ = await CreateArticleAsync("ZZZ Article", TestUserId, template.Id);
+            var articleA = await CreateArticleAsync("AAA Article", TestUserId, template.Id);
 
             // Create catalog entries (CreateArticle skips catalog entry creation)
             Db.ArticleCatalog.Add(new CatalogEntry
@@ -986,10 +986,10 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId, template.Id);
+            var article1 = await CreateArticleAsync("Article 1", TestUserId, template.Id);
+            var article2 = await CreateArticleAsync("Article 2", TestUserId, template.Id);
 
             var catalog1 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article1.ArticleNumber);
             var catalog2 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article2.ArticleNumber);
@@ -1034,10 +1034,10 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
-            var articleMatch = await Logic.CreateArticle("Matching Article", TestUserId, template.Id);
-            var articleNoMatch = await Logic.CreateArticle("Different Page", TestUserId, template.Id);
+            var articleMatch = await CreateArticleAsync("Matching Article", TestUserId, template.Id);
+            var articleNoMatch = await CreateArticleAsync("Different Page", TestUserId, template.Id);
 
             // Manually create catalog entries since CreateArticle doesn't create them for unpublished articles
             var catalogMatch = new CatalogEntry
@@ -1098,12 +1098,12 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
             // Create 8 articles
             for (int i = 1; i <= 8; i++)
             {
-                var article = await Logic.CreateArticle($"Article {i:D2}", TestUserId, template.Id);
+                var article = await CreateArticleAsync($"Article {i:D2}", TestUserId, template.Id);
                 var catalog = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
                 if (catalog != null)
                 {
@@ -1788,10 +1788,10 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             // Create root article first
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
             // Create article using this template
-            var article = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
+            var article = await CreateArticleAsync("Article 1", TestUserId, template.Id);
 
             // Create catalog entry (simulating published article)
             var catalog = new CatalogEntry

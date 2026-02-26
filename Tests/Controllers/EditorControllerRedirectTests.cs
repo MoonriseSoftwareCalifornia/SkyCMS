@@ -280,8 +280,8 @@ namespace Sky.Tests.Controllers
         public async Task RedirectEdit_ReturnsNotFoundForNonRedirectArticle()
         {
             // Arrange - Create regular article (not a redirect)
-            var article = await Logic.CreateArticle("Regular Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Regular Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var dbArticle = await Db.Articles
                 .FirstAsync(a => a.ArticleNumber == article.ArticleNumber);

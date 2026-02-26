@@ -436,7 +436,7 @@ namespace Sky.Tests.Controllers
         public async Task SimpleUpload_ForArticle_ReturnsImageUrl()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             var imageFile = CreateMockImageFile("simple.jpg", 50, 50);
 
             controller.ControllerContext.HttpContext.Request.Form =
@@ -1659,10 +1659,10 @@ namespace Sky.Tests.Controllers
         public async Task Index_ForArticlesFolder_ListsArticles()
         {
             // Arrange
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId);
-            await Logic.SaveArticle(article1, TestUserId);
-            await Logic.SaveArticle(article2, TestUserId);
+            var article1 = await CreateArticleAsync("Article 1", TestUserId);
+            var article2 = await CreateArticleAsync("Article 2", TestUserId);
+            await SaveArticleAsync(article1, TestUserId);
+            await SaveArticleAsync(article2, TestUserId);
 
             // Act
             var result = await controller.Index("/pub/articles", false);

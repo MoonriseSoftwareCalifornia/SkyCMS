@@ -421,7 +421,7 @@ namespace Sky.Editor.Data.Logic
         /// </para>
         /// <code>
         /// // OLD (Obsolete):
-        /// var article = await articleLogic.CreateArticle(title, userId, templateId);
+        /// var article = await articleReplace: CreateArticleAsync(title, userId, templateId);
         /// article.Published = DateTimeOffset.UtcNow;
         /// await articleLogic.SaveArticle(article, userId);
         /// 
@@ -750,137 +750,6 @@ namespace Sky.Editor.Data.Logic
                 UrlPath = sample.UrlPath
             });
             await DbContext.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// Saves user edits to an existing article version, applies title change workflow and catalog update.
-        /// </summary>
-        /// <param name="model">Incoming article edit view model.</param>
-        /// <param name="userId">User performing the save.</param>
-        /// <returns>Update result including CDN purge info (if any).</returns>
-        /// <remarks>
-        /// <para>
-        /// <strong>⚠️ DEPRECATED:</strong> This method is obsolete and will be removed in a future major version.
-        /// </para>
-        /// <para>
-        /// <strong>Migration Path:</strong>
-        /// </para>
-        /// <list type="bullet">
-        ///   <item>Use <see cref="SaveArticleHandler"/> via the <see cref="IMediator"/> pattern instead.</item>
-        ///   <item>Create a <see cref="SaveArticleCommand"/> with the article data.</item>
-        ///   <item>Call <c>await mediator.SendAsync(command)</c> to execute the save operation.</item>
-        /// </list>
-        /// <para>
-        /// <strong>Example Migration:</strong>
-        /// </para>
-        /// <code>
-        /// // OLD (Obsolete):
-        /// var result = await articleLogic.SaveArticle(viewModel, userId);
-        /// 
-        /// // NEW (Recommended):
-        /// var command = new SaveArticleCommand
-        /// {
-        ///     ArticleNumber = viewModel.ArticleNumber,
-        ///     Title = viewModel.Title,
-        ///     Content = viewModel.Content,
-        ///     UserId = userId
-        /// };
-        /// var result = await mediator.SendAsync(command);
-        /// </code>
-        /// <para>
-        /// <strong>Benefits of New Approach:</strong>
-        /// </para>
-        /// <list type="bullet">
-        ///   <item>Better separation of concerns with CQRS pattern</item>
-        ///   <item>Built-in validation via <see cref="SaveArticleValidator"/></item>
-        ///   <item>Easier testing with handler mocking</item>
-        ///   <item>Consistent error handling and logging</item>
-        /// </list>
-        /// </remarks>
-        [Obsolete("Use SaveArticleHandler via IMediator instead. This method will be removed in version 3.0. See remarks for migration guide.", error: false)]
-        public async Task<ArticleUpdateResult> SaveArticle(ArticleViewModel model, Guid userId)
-        {
-            var article = await DbContext.Articles
-                .OrderByDescending(o => o.VersionNumber)
-                .FirstOrDefaultAsync(a => a.ArticleNumber == model.ArticleNumber);
-
-            if (article == null)
-            {
-                throw new NotFoundException($"Article ID: {model.Id} not found.");
-            }
-
-            var oldTitle = article.Title;
-            var oldUrlPath = article.UrlPath;
-
-            model.Content = htmlService.EnsureEditableMarkers(model.Content);
-
-            htmlService.EnsureAngularBase(model.HeadJavaScript, model.UrlPath ?? string.Empty);
-
-            article.Content = model.Content;
-            article.Title = model.Title;
-            article.Updated = clock.UtcNow;
-            model.Updated = article.Updated; // Sync the updated timestamp back to the model
-            article.HeaderJavaScript = model.HeadJavaScript;
-            article.FooterJavaScript = model.FooterJavaScript;
-            article.BannerImage = model.BannerImage ?? string.Empty;
-            article.UserId = userId.ToString();
-            article.ArticleType = (int)model.ArticleType;
-            article.Category = model.Category ?? string.Empty;
-            article.Published = model.Published;
-
-            if (!string.IsNullOrWhiteSpace(model.Introduction))
-            {
-                article.Introduction = model.Introduction;
-            }
-            else if (model.ArticleType == ArticleType.BlogPost)
-            {
-                // Auto-generate introduction from content for blog posts
-                article.Introduction = htmlService.ExtractIntroduction(model.Content);
-            }
-
-            var saved = false;
-            for (int attempt = 0; attempt < 2 && !saved; attempt++)
-            {
-                try
-                {
-                    await DbContext.SaveChangesAsync();
-                    saved = true;
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (attempt == 1)
-                    {
-                        throw;
-                    }
-
-                    DbContext.Entry(article).Reload();
-                }
-            }
-
-            if (!oldTitle.Equals(article.Title))
-            {
-                await titleChangeService.HandleTitleChangeAsync(article, oldTitle, oldUrlPath);
-            }
-
-            await catalogService.UpsertAsync(article);
-
-            if (article.Published.HasValue)
-            {
-                var cdnResults = await publishingService.PublishAsync(article);
-                return new ArticleUpdateResult
-                {
-                    ServerSideSuccess = true,
-                    Model = model,
-                    CdnResults = cdnResults
-                };
-            }
-
-            return new ArticleUpdateResult
-            {
-                ServerSideSuccess = true,
-                Model = model,
-                CdnResults = new List<CdnResult>()
-            };
         }
 
         /// <summary>

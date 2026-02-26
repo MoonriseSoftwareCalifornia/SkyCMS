@@ -54,7 +54,7 @@ namespace Sky.Tests.Performance
             // Act
             for (int i = 1; i <= articleCount; i++)
             {
-                await Logic.CreateArticle($"Article {i}", TestUserId);
+                await CreateArticleAsync($"Article {i}", TestUserId);
             }
             stopwatch.Stop();
 
@@ -76,7 +76,7 @@ namespace Sky.Tests.Performance
             // Arrange - Create 50 articles
             for (int i = 1; i <= 50; i++)
             {
-                var article = await Logic.CreateArticle($"Article {i}", TestUserId);
+                var article = await CreateArticleAsync($"Article {i}", TestUserId);
                 await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
             }
 
@@ -110,7 +110,7 @@ namespace Sky.Tests.Performance
             // Arrange - Create 30 articles and catalog entries
             for (int i = 1; i <= 30; i++)
             {
-                var article = await Logic.CreateArticle($"Catalog Test {i}", TestUserId);
+                var article = await CreateArticleAsync($"Catalog Test {i}", TestUserId);
                 
                 // Check if catalog entry already exists (first article auto-publishes)
                 var existingEntry = await Db.ArticleCatalog
@@ -177,7 +177,7 @@ namespace Sky.Tests.Performance
                     await semaphore.WaitAsync();
                     try
                     {
-                        return await Logic.CreateArticle(articleTitle, TestUserId);
+                        return await CreateArticleAsync(articleTitle, TestUserId);
                     }
                     finally
                     {
@@ -210,7 +210,7 @@ namespace Sky.Tests.Performance
             var articles = new List<ArticleViewModel>();
             for (int i = 1; i <= 5; i++)
             {
-                articles.Add(await Logic.CreateArticle($"Publish Test {i}", TestUserId));
+                articles.Add(await CreateArticleAsync($"Publish Test {i}", TestUserId));
             }
 
             var semaphore = new System.Threading.SemaphoreSlim(1, 1); // Serialize DbContext access
@@ -257,7 +257,7 @@ namespace Sky.Tests.Performance
         public async Task ConcurrentUpdates_SameArticle_LastWriteWins()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Concurrent Update Test", TestUserId);
+            var article = await CreateArticleAsync("Concurrent Update Test", TestUserId);
             const int updateCount = 5;
             var semaphore = new System.Threading.SemaphoreSlim(1, 1); // Serialize DbContext access
 
@@ -313,7 +313,7 @@ namespace Sky.Tests.Performance
         public async Task CreateManyVersions_PerformsEfficiently()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Version Test", TestUserId);
+            var article = await CreateArticleAsync("Version Test", TestUserId);
             const int versionCount = 20;
 
             // Act
@@ -345,7 +345,7 @@ namespace Sky.Tests.Performance
         public async Task QueryArticle_WithManyVersions_PerformsEfficiently()
         {
             // Arrange - Create article with 15 versions
-            var article = await Logic.CreateArticle("Multi-Version Test", TestUserId);
+            var article = await CreateArticleAsync("Multi-Version Test", TestUserId);
             var currentArticle = await Db.Articles.FindAsync(article.Id);
             
             for (int i = 2; i <= 15; i++)
@@ -378,15 +378,15 @@ namespace Sky.Tests.Performance
         public async Task BlogPostQuery_WithFilteringAndPagination_PerformsEfficiently()
         {
             // Arrange - Create home page
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
 
             // Create 30 blog posts across categories
             var categories = new[] { "Technology", "Science", "Sports" };
             for (int i = 1; i <= 30; i++)
             {
-                var post = await Logic.CreateArticle($"Blog Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
+                var post = await CreateArticleAsync($"Blog Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
                 post.Category = categories[i % 3];
-                await Logic.SaveArticle(post, TestUserId);
+                await SaveArticleAsync(post, TestUserId);
                 await Logic.PublishArticle(post.Id, DateTimeOffset.UtcNow);
             }
 
@@ -419,15 +419,15 @@ namespace Sky.Tests.Performance
         public async Task ConcurrentDatabaseOperations_AllSucceed()
         {
             // Arrange - Create and publish test data
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId);
+            var article1 = await CreateArticleAsync("Article 1", TestUserId);
+            var article2 = await CreateArticleAsync("Article 2", TestUserId);
             await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
 
             // Act - Perform various operations in rapid sequence (not parallel)
             // This tests the system's ability to handle multiple operations quickly
-            var article3 = await Logic.CreateArticle("Article 3", TestUserId);
+            var article3 = await CreateArticleAsync("Article 3", TestUserId);
             await Logic.PublishArticle(article3.Id, DateTimeOffset.UtcNow);
-            var article4 = await Logic.CreateArticle("Article 4", TestUserId);
+            var article4 = await CreateArticleAsync("Article 4", TestUserId);
             await Logic.PublishArticle(article4.Id, DateTimeOffset.UtcNow);
             var layouts = await Db.Layouts.ToListAsync();
             var templates = await Db.Templates.ToListAsync();
@@ -455,7 +455,7 @@ namespace Sky.Tests.Performance
             var stopwatch = Stopwatch.StartNew();
             for (int i = 1; i <= 20; i++)
             {
-                var article = await Logic.CreateArticle($"Catalog Sync {i}", TestUserId);
+                var article = await CreateArticleAsync($"Catalog Sync {i}", TestUserId);
                 
                 // Check if catalog entry already exists (first article auto-publishes)
                 var existingEntry = await Db.ArticleCatalog
@@ -511,7 +511,7 @@ namespace Sky.Tests.Performance
             // Act
             for (int i = 1; i <= articleCount; i++)
             {
-                await Logic.CreateArticle($"Memory Test {i}", TestUserId);
+                await CreateArticleAsync($"Memory Test {i}", TestUserId);
                 
                 // Periodically force garbage collection to prevent accumulation
                 if (i % 10 == 0)
@@ -542,7 +542,7 @@ namespace Sky.Tests.Performance
             // Arrange - Create and publish 25 articles
             for (int i = 1; i <= 25; i++)
             {
-                var article = await Logic.CreateArticle($"Index Test {i}", TestUserId);
+                var article = await CreateArticleAsync($"Index Test {i}", TestUserId);
                 await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
             }
 

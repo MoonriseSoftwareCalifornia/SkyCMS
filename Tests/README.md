@@ -209,7 +209,7 @@ public void CreateArticle_ValidData_ArticleIsCreated()
     var articleData = new Article { Title = "Test Article", Content = "Test content." };
 
     // Act
-    var result = articleLogic.CreateArticle(articleData);
+    var result = articleCreateArticleAsync(articleData);
 
     // Assert
     Assert.IsNotNull(result);

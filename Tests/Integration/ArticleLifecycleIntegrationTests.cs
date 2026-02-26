@@ -37,15 +37,15 @@ namespace Sky.Tests.Integration
         public async Task ArticleLifecycle_CompleteWorkflow_Success()
         {
             // Step 1: Create article
-            var article = await Logic.CreateArticle("Lifecycle Test Article", TestUserId);
+            var article = await CreateArticleAsync("Lifecycle Test Article", TestUserId);
             Assert.IsNotNull(article);
             Assert.AreEqual("Lifecycle Test Article", article.Title);
 
             // Step 2: Edit article
             article.Content = "<p>Initial content</p>";
             article.Category = "Technology";
-            var saveResult = await Logic.SaveArticle(article, TestUserId);
-            Assert.IsTrue(saveResult.ServerSideSuccess);
+            var saveResult = await SaveArticleAsync(article, TestUserId);
+            Assert.IsTrue(saveResult.IsSuccess);
 
             // Step 3: Publish article
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
@@ -75,7 +75,7 @@ namespace Sky.Tests.Integration
 
             // Step 5: Delete article (soft delete)
             // Create replacement home page and swap the root designation
-            var home = await Logic.CreateArticle("Home Page Temp", TestUserId);
+            var home = await CreateArticleAsync("Home Page Temp", TestUserId);
             var homeArticles = await Db.Articles.Where(a => a.ArticleNumber == home.ArticleNumber).ToListAsync();
             foreach (var homeArticle in homeArticles)
             {
@@ -110,9 +110,9 @@ namespace Sky.Tests.Integration
         public async Task MultipleArticles_PublishInDifferentOrders_AllWorkCorrectly()
         {
             // Create 3 articles
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId);
-            var article3 = await Logic.CreateArticle("Article 3", TestUserId);
+            var article1 = await CreateArticleAsync("Article 1", TestUserId);
+            var article2 = await CreateArticleAsync("Article 2", TestUserId);
+            var article3 = await CreateArticleAsync("Article 3", TestUserId);
 
             // Publish in reverse order
             await Logic.PublishArticle(article3.Id, DateTimeOffset.UtcNow);
@@ -139,7 +139,7 @@ namespace Sky.Tests.Integration
         public async Task EditAndRepublish_MaintainsCorrectState()
         {
             // Create and publish
-            var article = await Logic.CreateArticle("Edit Test", TestUserId);
+            var article = await CreateArticleAsync("Edit Test", TestUserId);
 
             var saveCommand = new SaveArticleCommand
             {
@@ -194,10 +194,10 @@ namespace Sky.Tests.Integration
         public async Task BlogPost_CompleteWorkflow_Success()
         {
             // Create home page first
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
 
             // Create blog post
-            var blogPost = await Logic.CreateArticle("My Blog Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var blogPost = await CreateArticleAsync("My Blog Post", TestUserId, null, "default", ArticleType.BlogPost);
 
             // Save with CQRS handler
             var saveCommand = new SaveArticleCommand
@@ -239,12 +239,12 @@ namespace Sky.Tests.Integration
         public async Task MultipleBlogPosts_WithPagination_ReturnsCorrectPages()
         {
             // Create home page
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
 
             // Create 10 blog posts
             for (int i = 1; i <= 10; i++)
             {
-                var post = await Logic.CreateArticle($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
+                var post = await CreateArticleAsync($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
                 
                 var postCommand = new SaveArticleCommand
                 {
@@ -295,7 +295,7 @@ namespace Sky.Tests.Integration
         public async Task MultipleVersions_PublishSpecificVersion_Success()
         {
             // Create article
-            var article = await Logic.CreateArticle("Version Test", TestUserId);
+            var article = await CreateArticleAsync("Version Test", TestUserId);
 
             // Create version 2
             var v1 = await Db.Articles.FindAsync(article.Id);
@@ -331,7 +331,7 @@ namespace Sky.Tests.Integration
         public async Task PublishDifferentVersions_OnlyOnePublishedAtTime()
         {
             // Create article with 3 versions
-            var article = await Logic.CreateArticle("Multi-Version Test", TestUserId);
+            var article = await CreateArticleAsync("Multi-Version Test", TestUserId);
 
             var v1 = await Db.Articles.FindAsync(article.Id);
             var v2 = await Logic.NewVersion(v1);
@@ -375,10 +375,10 @@ namespace Sky.Tests.Integration
         public async Task CatalogSynchronization_ThroughLifecycle_StaysConsistent()
         {
             // Create a root article first so the test article isn't auto-published
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
             
             // Create article
-            var article = await Logic.CreateArticle("Catalog Sync Test", TestUserId);
+            var article = await CreateArticleAsync("Catalog Sync Test", TestUserId);
 
             // Verify catalog entry NOT created yet (catalog entries are created on publish/save, not on creation)
             var catalog1 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
@@ -394,14 +394,14 @@ namespace Sky.Tests.Integration
 
             // Update article
             article.Title = "Updated Title";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Verify catalog title updated
             var catalog3 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
             Assert.AreEqual("Updated Title", catalog3.Title);
 
             // Delete article (create home first to avoid deleting root)
-            var home = await Logic.CreateArticle("Temp Home", TestUserId);
+            var home = await CreateArticleAsync("Temp Home", TestUserId);
             await Logic.DeleteArticle(article.ArticleNumber);
 
             // Verify catalog removed
@@ -446,12 +446,12 @@ namespace Sky.Tests.Integration
         public async Task RootPageBehavior_FirstArticleBecomesRoot_OthersDoNot()
         {
             // First article becomes root
-            var firstArticle = await Logic.CreateArticle("First Article", TestUserId);
+            var firstArticle = await CreateArticleAsync("First Article", TestUserId);
             Assert.AreEqual("root", firstArticle.UrlPath);
             Assert.IsNotNull(firstArticle.Published, "First article should auto-publish");
 
             // Second article doesn't become root
-            var secondArticle = await Logic.CreateArticle("Second Article", TestUserId);
+            var secondArticle = await CreateArticleAsync("Second Article", TestUserId);
             Assert.AreNotEqual("root", secondArticle.UrlPath);
             Assert.IsNull(secondArticle.Published, "Second article should not auto-publish");
         }
@@ -463,7 +463,7 @@ namespace Sky.Tests.Integration
         public async Task DeleteRootPage_ThrowsNotSupportedException()
         {
             // Get root article
-            var rootArticle = await Logic.CreateArticle("Root Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Root Page", TestUserId);
             Assert.AreEqual("root", rootArticle.UrlPath);
 
             try

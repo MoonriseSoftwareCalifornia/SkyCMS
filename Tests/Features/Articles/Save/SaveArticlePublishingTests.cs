@@ -34,7 +34,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_PublishedArticle_TriggersCdnPurge()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Published Article", TestUserId);
+            var article = await CreateArticleAsync("Published Article", TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -62,7 +62,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_UnpublishedThenPublished_UpdatesCatalog()
         {
             // Arrange - Start unpublished
-            var article = await Logic.CreateArticle("Draft", TestUserId);
+            var article = await CreateArticleAsync("Draft", TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -93,7 +93,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_ChangesWhilePublished_MaintainsPublishedState()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Published", TestUserId);
+            var article = await CreateArticleAsync("Published", TestUserId);
             var originalPublishedDate = Clock.UtcNow;
 
             var command = new SaveArticleCommand
@@ -127,7 +127,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_UnpublishingArticle_ClearsCatalogPublishedDate()
         {
             // Arrange - Start published
-            var article = await Logic.CreateArticle("Published", TestUserId);
+            var article = await CreateArticleAsync("Published", TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -159,7 +159,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_PublishedWithFutureDate_HandlesCorrectly()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Future Published", TestUserId);
+            var article = await CreateArticleAsync("Future Published", TestUserId);
 
             var futureDate = Clock.UtcNow.AddDays(7);
             var command = new SaveArticleCommand
@@ -193,7 +193,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_UnpublishedArticle_DoesNotTriggerCdnPurge()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Draft Article", TestUserId);
+            var article = await CreateArticleAsync("Draft Article", TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -220,7 +220,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_PublishingRootPage_UpdatesCorrectly()
         {
             // Arrange - Root page is created as first article
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             Assert.AreEqual("root", rootArticle.UrlPath);
 
             var command = new SaveArticleCommand
@@ -255,7 +255,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_RootPageMultipleTitleChanges_PreservesRootPath()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             Assert.AreEqual("root", rootArticle.UrlPath);
 
             // Act - Change title multiple times
@@ -299,7 +299,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_RootPageUnpublished_StillPreservesRootPath()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             Assert.AreEqual("root", rootArticle.UrlPath);
 
             var command = new SaveArticleCommand
@@ -334,9 +334,9 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_RootPageWithVersions_AllVersionsPreserveRoot()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             rootArticle.Published = Clock.UtcNow;
-            await Logic.SaveArticle(rootArticle, TestUserId);
+            await SaveArticleAsync(rootArticle, TestUserId);
 
             // Create a new version
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
@@ -376,10 +376,10 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_NonRootArticle_UrlPathChangesWithTitle()
         {
             // Arrange - Create root first
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
     
             // Create a non-root article
-            var nonRootArticle = await Logic.CreateArticle("About Us", TestUserId);
+            var nonRootArticle = await CreateArticleAsync("About Us", TestUserId);
             Assert.AreNotEqual("root", nonRootArticle.UrlPath);
             var originalPath = nonRootArticle.UrlPath;
 
@@ -424,9 +424,9 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task TitleChangeService_RootPageTitleChange_NoRedirectCreated()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             rootArticle.Published = Clock.UtcNow;
-            await Logic.SaveArticle(rootArticle, TestUserId);
+            await SaveArticleAsync(rootArticle, TestUserId);
     
             var initialRedirectCount = await Db.Articles
                 .CountAsync(a => a.StatusCode == (int)StatusCodeEnum.Redirect);
@@ -458,7 +458,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task TitleChangeService_RootPageTitleChange_EventStillDispatched()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             EventDispatcher.Clear();
 
             // Act
@@ -488,7 +488,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_RootPageWithSpecialCharactersInTitle_PreservesRoot()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
 
             var command = new SaveArticleCommand
             {
@@ -523,7 +523,7 @@ namespace Sky.Tests.Features.Articles.Save
         public async Task SaveArticle_RootPageCaseInsensitive_PreservesRoot()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
     
             // Manually set UrlPath to different casing (edge case)
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);

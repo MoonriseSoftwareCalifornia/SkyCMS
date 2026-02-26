@@ -72,9 +72,9 @@ namespace Sky.Tests.Controllers
         public async Task ExportPage_ExportsArticleWithSpecifiedId()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Article to Export", TestUserId);
+            var article = await CreateArticleAsync("Article to Export", TestUserId);
             article.Content = "<html><body><h1>Export Test</h1></body></html>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.ExportPage(article.Id);
@@ -110,9 +110,9 @@ namespace Sky.Tests.Controllers
         public async Task ExportPage_ReturnsHtmlContentAsBytes()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Export", TestUserId);
+            var article = await CreateArticleAsync("Test Export", TestUserId);
             article.Content = "<p>Test content for export</p>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.ExportPage(article.Id);
@@ -213,8 +213,8 @@ namespace Sky.Tests.Controllers
         public async Task CcmsContent_Get_ReturnsViewWithArticle()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.CcmsContent(article.ArticleNumber);
@@ -236,9 +236,9 @@ namespace Sky.Tests.Controllers
         public async Task SearchAndReplaceQuery_ShowsCountForSpecificArticle()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<p>This is a test. This is only a test.</p>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var model = new SearchAndReplaceViewModel
             {
@@ -265,9 +265,9 @@ namespace Sky.Tests.Controllers
         public async Task SearchAndReplaceQuery_ShowsCountForAllPublishedArticles()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Published Article", TestUserId);
+            var article = await CreateArticleAsync("Published Article", TestUserId);
             article.Content = "<p>Find me!</p>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             var model = new SearchAndReplaceViewModel

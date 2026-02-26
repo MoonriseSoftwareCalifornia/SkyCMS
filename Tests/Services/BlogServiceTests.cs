@@ -36,7 +36,7 @@ namespace Sky.Tests.Services
         public async Task CreateBlogPost_SetsArticleTypeToBlogPost()
         {
             // Act
-            var blogPost = await Logic.CreateArticle("My Blog Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var blogPost = await CreateArticleAsync("My Blog Post", TestUserId, null, "default", ArticleType.BlogPost);
 
             // Assert
             Assert.AreEqual(ArticleType.BlogPost, blogPost.ArticleType);
@@ -49,7 +49,7 @@ namespace Sky.Tests.Services
         public async Task CreateBlogPost_SetsBlogKey()
         {
             // Act
-            var blogPost = await Logic.CreateArticle("Test Post", TestUserId, null, "tech-blog", ArticleType.BlogPost);
+            var blogPost = await CreateArticleAsync("Test Post", TestUserId, null, "tech-blog", ArticleType.BlogPost);
 
             // Assert
             var dbArticle = await Db.Articles.FindAsync(blogPost.Id);
@@ -64,10 +64,10 @@ namespace Sky.Tests.Services
         {
             // Arrange
             // Create home page first
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
 
             // Act
-            var blogPost = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var blogPost = await CreateArticleAsync("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
 
             // Assert
             // URL should contain year or be formatted appropriately
@@ -82,7 +82,7 @@ namespace Sky.Tests.Services
         public async Task CreateBlogPost_WithCategory_SetsCategory()
         {
             // Arrange
-            var blogPost = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var blogPost = await CreateArticleAsync("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
 
             // Act
             var command = new SaveArticleCommand
@@ -112,10 +112,10 @@ namespace Sky.Tests.Services
         public async Task GetBlogPosts_FiltersByBlogKey()
         {
             // Arrange
-            await Logic.CreateArticle("Home", TestUserId); // Home page
-            await Logic.CreateArticle("Post 1", TestUserId, null, "blog1", ArticleType.BlogPost);
-            await Logic.CreateArticle("Post 2", TestUserId, null, "blog1", ArticleType.BlogPost);
-            await Logic.CreateArticle("Post 3", TestUserId, null, "blog2", ArticleType.BlogPost);
+            await CreateArticleAsync("Home", TestUserId); // Home page
+            await CreateArticleAsync("Post 1", TestUserId, null, "blog1", ArticleType.BlogPost);
+            await CreateArticleAsync("Post 2", TestUserId, null, "blog1", ArticleType.BlogPost);
+            await CreateArticleAsync("Post 3", TestUserId, null, "blog2", ArticleType.BlogPost);
 
             // Act
             var blog1Posts = await Db.Articles
@@ -133,12 +133,12 @@ namespace Sky.Tests.Services
         public async Task GetPublishedBlogPosts_ReturnsOnlyPublished()
         {
             // Arrange
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
             
-            var post1 = await Logic.CreateArticle("Published Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var post1 = await CreateArticleAsync("Published Post", TestUserId, null, "default", ArticleType.BlogPost);
             await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow);
             
-            var post2 = await Logic.CreateArticle("Draft Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var post2 = await CreateArticleAsync("Draft Post", TestUserId, null, "default", ArticleType.BlogPost);
             // Don't publish post2
 
             // Act
@@ -159,14 +159,14 @@ namespace Sky.Tests.Services
         public async Task GetBlogPosts_OrdersByPublishedDateDescending()
         {
             // Arrange
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
             
-            var post1 = await Logic.CreateArticle("Old Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var post1 = await CreateArticleAsync("Old Post", TestUserId, null, "default", ArticleType.BlogPost);
             await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow.AddDays(-2));
             
             await Task.Delay(100); // Ensure different timestamps
             
-            var post2 = await Logic.CreateArticle("New Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var post2 = await CreateArticleAsync("New Post", TestUserId, null, "default", ArticleType.BlogPost);
             await Logic.PublishArticle(post2.Id, DateTimeOffset.UtcNow);
 
             // Act
@@ -189,11 +189,11 @@ namespace Sky.Tests.Services
         public async Task GetBlogPosts_Pagination_ReturnsCorrectPage()
         {
             // Arrange
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
             
             for (int i = 1; i <= 15; i++)
             {
-                var post = await Logic.CreateArticle($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
+                var post = await CreateArticleAsync($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
                 await Logic.PublishArticle(post.Id, DateTimeOffset.UtcNow.AddMinutes(i));
                 await Task.Delay(10); // Ensure different timestamps
             }
@@ -225,9 +225,9 @@ namespace Sky.Tests.Services
         public async Task GetBlogPosts_FiltersByCategory()
         {
             // Arrange
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
             
-            var post1 = await Logic.CreateArticle("Tech Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var post1 = await CreateArticleAsync("Tech Post", TestUserId, null, "default", ArticleType.BlogPost);
             var command1 = new SaveArticleCommand
             {
                 ArticleNumber = post1.ArticleNumber,
@@ -240,7 +240,7 @@ namespace Sky.Tests.Services
             await SaveArticleHandler.HandleAsync(command1);
             await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow);
             
-            var post2 = await Logic.CreateArticle("Science Post", TestUserId, null, "default", ArticleType.BlogPost);
+            var post2 = await CreateArticleAsync("Science Post", TestUserId, null, "default", ArticleType.BlogPost);
             var command2 = new SaveArticleCommand
             {
                 ArticleNumber = post2.ArticleNumber,
@@ -270,12 +270,12 @@ namespace Sky.Tests.Services
         public async Task GetBlogCategories_ReturnsDistinctCategories()
         {
             // Arrange
-            await Logic.CreateArticle("Home", TestUserId);
+            await CreateArticleAsync("Home", TestUserId);
             
             var categories = new[] { "Tech", "Science", "Tech", "Sports" };
             foreach (var category in categories)
             {
-                var post = await Logic.CreateArticle($"{category} Post", TestUserId, null, "default", ArticleType.BlogPost);
+                var post = await CreateArticleAsync($"{category} Post", TestUserId, null, "default", ArticleType.BlogPost);
                 var command = new SaveArticleCommand
                 {
                     ArticleNumber = post.ArticleNumber,
@@ -314,8 +314,8 @@ namespace Sky.Tests.Services
         public async Task SaveBlogPost_AutoGeneratesIntroduction()
         {
             // Arrange
-            await Logic.CreateArticle("Home", TestUserId);
-            var post = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
+            await CreateArticleAsync("Home", TestUserId);
+            var post = await CreateArticleAsync("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
 
             // Act
             var command = new SaveArticleCommand
@@ -343,13 +343,13 @@ namespace Sky.Tests.Services
         public async Task SaveBlogPost_PreservesCustomIntroduction()
         {
             // Arrange
-            await Logic.CreateArticle("Home", TestUserId);
-            var post = await Logic.CreateArticle("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
+            await CreateArticleAsync("Home", TestUserId);
+            var post = await CreateArticleAsync("Test Post", TestUserId, null, "default", ArticleType.BlogPost);
             post.Content = "<p>Content paragraph.</p>";
             post.Introduction = "Custom introduction text";
 
             // Act
-            await Logic.SaveArticle(post, TestUserId);
+            await SaveArticleAsync(post, TestUserId);
 
             // Assert
             var dbArticle = await Db.Articles.FindAsync(post.Id);

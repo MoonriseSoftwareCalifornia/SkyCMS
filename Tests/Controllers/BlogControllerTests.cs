@@ -227,7 +227,7 @@ namespace Sky.Tests.Controllers
         public async Task Create_TitleConflict_ReturnsViewWithError()
         {
             // Arrange
-            await Logic.CreateArticle("Existing Page", TestUserId);
+            await CreateArticleAsync("Existing Page", TestUserId);
 
             var model = new BlogStreamViewModel
             {
@@ -269,7 +269,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             mediatorMock
                 .Setup(m => m.SendAsync(It.IsAny<CreateBlogPostCommand>(), default))
@@ -314,7 +314,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             // Act
             var result = await controller.CreateEntry(blogKey, "");
@@ -331,7 +331,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             mediatorMock
                 .Setup(m => m.SendAsync(It.IsAny<CreateBlogPostCommand>(), default))
@@ -362,8 +362,8 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
-            var entry = await Logic.CreateArticle("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry = await CreateArticleAsync("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
 
             var model = new BlogEntryEditViewModel
             {
@@ -420,7 +420,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
+            await CreateArticleAsync("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
 
             var model = new BlogEntryEditViewModel
             {
@@ -447,7 +447,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            var entry = await Logic.CreateArticle("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var entry = await CreateArticleAsync("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
 
             var model = new BlogEntryEditViewModel
             {
@@ -497,8 +497,8 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
-            var entry = await Logic.CreateArticle("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry = await CreateArticleAsync("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
 
             var model = new BlogEntryEditViewModel
             {
@@ -558,8 +558,8 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
-            var entry = await Logic.CreateArticle("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry = await CreateArticleAsync("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
 
             // Act
             var result = await controller.ConfirmDeleteEntry(blogKey, entry.ArticleNumber);
@@ -618,7 +618,7 @@ namespace Sky.Tests.Controllers
         public async Task Delete_Get_ReturnsDeleteConfirmationView()
         {
             // Arrange
-            var blog = await Logic.CreateArticle("Blog to Delete", TestUserId, null, "blog-delete", ArticleType.BlogStream);
+            var blog = await CreateArticleAsync("Blog to Delete", TestUserId, null, "blog-delete", ArticleType.BlogStream);
             var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
 
             mediatorMock
@@ -680,7 +680,7 @@ namespace Sky.Tests.Controllers
         public async Task Edit_Get_ReturnsEditView_WhenBlogExists()
         {
             // Arrange
-            var blog = await Logic.CreateArticle("Edit Test Blog", TestUserId, null, "edit-test", ArticleType.BlogStream);
+            var blog = await CreateArticleAsync("Edit Test Blog", TestUserId, null, "edit-test", ArticleType.BlogStream);
             var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
             blogEntity.Introduction = "Test description";
             blogEntity.BannerImage = "/images/hero.jpg";
@@ -745,7 +745,7 @@ namespace Sky.Tests.Controllers
         public async Task Edit_Post_UpdatesBlogStream_WhenValid()
         {
             // Arrange
-            var blog = await Logic.CreateArticle("Original Blog", TestUserId, null, "original", ArticleType.BlogStream);
+            var blog = await CreateArticleAsync("Original Blog", TestUserId, null, "original", ArticleType.BlogStream);
             var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
 
             var model = new BlogStreamViewModel
@@ -781,7 +781,7 @@ namespace Sky.Tests.Controllers
         public async Task Edit_Post_ReturnsBadRequest_WhenIdMismatch()
         {
             // Arrange
-            var blog = await Logic.CreateArticle("Test Blog", TestUserId, null, "test", ArticleType.BlogStream);
+            var blog = await CreateArticleAsync("Test Blog", TestUserId, null, "test", ArticleType.BlogStream);
             var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
 
             var model = new BlogStreamViewModel
@@ -804,8 +804,8 @@ namespace Sky.Tests.Controllers
         public async Task Edit_Post_ValidatesTitleConflict()
         {
             // Arrange
-            var blog1 = await Logic.CreateArticle("Existing Blog", TestUserId, null, "existing", ArticleType.BlogStream);
-            var blog2 = await Logic.CreateArticle("Test Blog", TestUserId, null, "test", ArticleType.BlogStream);
+            var blog1 = await CreateArticleAsync("Existing Blog", TestUserId, null, "existing", ArticleType.BlogStream);
+            var blog2 = await CreateArticleAsync("Test Blog", TestUserId, null, "test", ArticleType.BlogStream);
             var blog2Entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog2.ArticleNumber);
 
             var model = new BlogStreamViewModel
@@ -848,9 +848,9 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            var blog = await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
-            var entry1 = await Logic.CreateArticle("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
-            var entry2 = await Logic.CreateArticle("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var blog = await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry1 = await CreateArticleAsync("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var entry2 = await CreateArticleAsync("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
             
             // Publish the blog entries to create catalog entries
             var article1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry1.ArticleNumber);
@@ -916,8 +916,8 @@ namespace Sky.Tests.Controllers
         public async Task GetBlogs_ReturnsJsonListOfBlogs()
         {
             // Arrange
-            var blog1 = await Logic.CreateArticle("Blog A", TestUserId, null, "blog-a", ArticleType.BlogStream);
-            var blog2 = await Logic.CreateArticle("Blog B", TestUserId, null, "blog-b", ArticleType.BlogStream);
+            var blog1 = await CreateArticleAsync("Blog A", TestUserId, null, "blog-a", ArticleType.BlogStream);
+            var blog2 = await CreateArticleAsync("Blog B", TestUserId, null, "blog-b", ArticleType.BlogStream);
 
             // Act
             var result = await controller.GetBlogs();
@@ -941,9 +941,9 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            var blog = await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
-            var entry1 = await Logic.CreateArticle("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
-            var entry2 = await Logic.CreateArticle("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var blog = await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry1 = await CreateArticleAsync("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var entry2 = await CreateArticleAsync("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
 
             // Act
             var result = await controller.GetEntries(blogKey);
@@ -990,8 +990,8 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
-            var entry = await Logic.CreateArticle("Entry to Delete", TestUserId, null, blogKey, ArticleType.BlogPost);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry = await CreateArticleAsync("Entry to Delete", TestUserId, null, blogKey, ArticleType.BlogPost);
             
             // Create catalog entry manually since CreateArticle doesn't create it for unpublished articles
             var catalog = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == entry.ArticleNumber);
@@ -1047,7 +1047,7 @@ namespace Sky.Tests.Controllers
         public async Task DeleteEntry_Get_ReturnsNotFound_WhenBlogKeyMismatch()
         {
             // Arrange
-            var entry = await Logic.CreateArticle("Entry", TestUserId, null, "blog-a", ArticleType.BlogPost);
+            var entry = await CreateArticleAsync("Entry", TestUserId, null, "blog-a", ArticleType.BlogPost);
             var catalog = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry.ArticleNumber);
             catalog.BlogKey = "blog-a";
             await Db.SaveChangesAsync();
@@ -1071,7 +1071,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "preview-blog";
-            var blog = await Logic.CreateArticle("Preview Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var blog = await CreateArticleAsync("Preview Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             // Act
             var result = await controller.PreviewStream(blogKey);
@@ -1107,12 +1107,12 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             // Create a home page first to avoid the blog being marked as the home page
-            await Logic.CreateArticle("Home Page", TestUserId, null, "", ArticleType.General);
+            await CreateArticleAsync("Home Page", TestUserId, null, "", ArticleType.General);
 
             var blogKey = "delete-test";
-            var blog = await Logic.CreateArticle("Blog to Delete", TestUserId, null, blogKey, ArticleType.BlogStream);
-            var entry1 = await Logic.CreateArticle("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
-            var entry2 = await Logic.CreateArticle("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var blog = await CreateArticleAsync("Blog to Delete", TestUserId, null, blogKey, ArticleType.BlogStream);
+            var entry1 = await CreateArticleAsync("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
+            var entry2 = await CreateArticleAsync("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
 
             var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
 
@@ -1187,7 +1187,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             // Act
             var result = await controller.CreateEntry(blogKey, "");
@@ -1204,7 +1204,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var blogKey = "tech-blog";
-            await Logic.CreateArticle("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
+            await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
 
             mediatorMock
                 .Setup(m => m.SendAsync(It.IsAny<CreateBlogPostCommand>(), It.IsAny<CancellationToken>()))
@@ -1234,7 +1234,7 @@ namespace Sky.Tests.Controllers
         public async Task EndToEnd_CreateBlogStreamAndEntry_Success()
         {
             // Arrange - Create blog stream using ArticleLogic directly (like other tests)
-            var blogStream = await Logic.CreateArticle(
+            var blogStream = await CreateArticleAsync(
                 "My Tech Blog", 
                 TestUserId, 
                 null, 

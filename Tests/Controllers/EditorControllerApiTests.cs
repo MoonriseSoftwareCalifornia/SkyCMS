@@ -78,9 +78,9 @@ namespace Sky.Tests.Controllers
         public async Task GetDesignerData_ReturnsArticleContent()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div>Test content for designer</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.GetDesignerData(article.ArticleNumber);
@@ -112,9 +112,9 @@ namespace Sky.Tests.Controllers
         public async Task GetDesignerData_EnsuresEditableMarkers()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div contenteditable='true'>Editable content</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.GetDesignerData(article.ArticleNumber);
@@ -189,12 +189,12 @@ namespace Sky.Tests.Controllers
         public async Task GetArticleList_ReturnsPublishedArticles()
         {
             // Arrange
-            var article1 = await Logic.CreateArticle("Published Article", TestUserId);
-            await Logic.SaveArticle(article1, TestUserId);
+            var article1 = await CreateArticleAsync("Published Article", TestUserId);
+            await SaveArticleAsync(article1, TestUserId);
             await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
 
-            var article2 = await Logic.CreateArticle("Unpublished Article", TestUserId);
-            await Logic.SaveArticle(article2, TestUserId);
+            var article2 = await CreateArticleAsync("Unpublished Article", TestUserId);
+            await SaveArticleAsync(article2, TestUserId);
 
             // Act
             var result = await controller.GetArticleList(publishedOnly: true);
@@ -212,12 +212,12 @@ namespace Sky.Tests.Controllers
         public async Task GetArticleList_FiltersBySearchTerm()
         {
             // Arrange
-            var article1 = await Logic.CreateArticle("Test Article About Dogs", TestUserId);
-            await Logic.SaveArticle(article1, TestUserId);
+            var article1 = await CreateArticleAsync("Test Article About Dogs", TestUserId);
+            await SaveArticleAsync(article1, TestUserId);
             await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
 
-            var article2 = await Logic.CreateArticle("Test Article About Cats", TestUserId);
-            await Logic.SaveArticle(article2, TestUserId);
+            var article2 = await CreateArticleAsync("Test Article About Cats", TestUserId);
+            await SaveArticleAsync(article2, TestUserId);
             await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
 
             // Act
@@ -235,12 +235,12 @@ namespace Sky.Tests.Controllers
         public async Task GetArticleList_ReturnsAllArticles_WhenPublishedOnlyIsFalse()
         {
             // Arrange
-            var publishedArticle = await Logic.CreateArticle("Published", TestUserId);
-            await Logic.SaveArticle(publishedArticle, TestUserId);
+            var publishedArticle = await CreateArticleAsync("Published", TestUserId);
+            await SaveArticleAsync(publishedArticle, TestUserId);
             await Logic.PublishArticle(publishedArticle.Id, DateTimeOffset.UtcNow);
 
-            var unpublishedArticle = await Logic.CreateArticle("Unpublished", TestUserId);
-            await Logic.SaveArticle(unpublishedArticle, TestUserId);
+            var unpublishedArticle = await CreateArticleAsync("Unpublished", TestUserId);
+            await SaveArticleAsync(unpublishedArticle, TestUserId);
 
             // Act
             var result = await controller.GetArticleList(publishedOnly: false);
@@ -315,8 +315,8 @@ namespace Sky.Tests.Controllers
         public async Task GetPublishedPageList_ReturnsPublishedPages()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Act
@@ -335,12 +335,12 @@ namespace Sky.Tests.Controllers
         public async Task GetPublishedPageList_ExcludesUnpublishedPages()
         {
             // Arrange
-            var publishedArticle = await Logic.CreateArticle("Published Page", TestUserId);
-            await Logic.SaveArticle(publishedArticle, TestUserId);
+            var publishedArticle = await CreateArticleAsync("Published Page", TestUserId);
+            await SaveArticleAsync(publishedArticle, TestUserId);
             await Logic.PublishArticle(publishedArticle.Id, DateTimeOffset.UtcNow);
 
-            var unpublishedArticle = await Logic.CreateArticle("Unpublished Page", TestUserId);
-            await Logic.SaveArticle(unpublishedArticle, TestUserId);
+            var unpublishedArticle = await CreateArticleAsync("Unpublished Page", TestUserId);
+            await SaveArticleAsync(unpublishedArticle, TestUserId);
 
             // Act
             var result = await controller.GetPublishedPageList();
@@ -406,8 +406,8 @@ namespace Sky.Tests.Controllers
         public async Task List_Articles_ReturnsActiveArticles()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Active Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Active Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.List_Articles(string.Empty);
@@ -425,11 +425,11 @@ namespace Sky.Tests.Controllers
         public async Task List_Articles_FiltersBySearchText()
         {
             // Arrange
-            var article1 = await Logic.CreateArticle("Article About Technology", TestUserId);
-            await Logic.SaveArticle(article1, TestUserId);
+            var article1 = await CreateArticleAsync("Article About Technology", TestUserId);
+            await SaveArticleAsync(article1, TestUserId);
 
-            var article2 = await Logic.CreateArticle("Article About Science", TestUserId);
-            await Logic.SaveArticle(article2, TestUserId);
+            var article2 = await CreateArticleAsync("Article About Science", TestUserId);
+            await SaveArticleAsync(article2, TestUserId);
 
             // Act
             var result = await controller.List_Articles("technology");
@@ -449,8 +449,8 @@ namespace Sky.Tests.Controllers
             // Arrange - Create more than 10 articles
             for (int i = 0; i < 15; i++)
             {
-                var article = await Logic.CreateArticle($"Article {i}", TestUserId);
-                await Logic.SaveArticle(article, TestUserId);
+                var article = await CreateArticleAsync($"Article {i}", TestUserId);
+                await SaveArticleAsync(article, TestUserId);
             }
 
             // Act

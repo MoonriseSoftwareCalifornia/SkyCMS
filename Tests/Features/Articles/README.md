@@ -96,7 +96,7 @@ Tests verify:
 These tests replace the legacy `ArticleEditLogicTests` which tested the monolithic `ArticleEditLogic` class.
 
 **Migration Pattern:**
-- **Old:** Direct calls to `Logic.CreateArticle()`, `Logic.SaveArticle()`, etc.
+- **Old:** Direct calls to `CreateArticleAsync()`, `Logic.SaveArticle()`, etc.
 - **New:** CQRS commands via mediator: `Mediator.SendAsync<CommandResult<T>>(command)`
 
 ## Related Documentation

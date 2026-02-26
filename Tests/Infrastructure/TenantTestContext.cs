@@ -420,6 +420,71 @@ namespace Sky.Tests
         }
 
         /// <summary>
+        /// Helper method to create an article in this tenant using the CreateArticleCommand via mediator.
+        /// </summary>
+        /// <param name="title">Title of the article to create.</param>
+        /// <param name="userId">The user ID creating the article.</param>
+        /// <param name="templateId">Optional template ID to use for the article.</param>
+        /// <param name="blogKey">Optional blog key (default: empty).</param>
+        /// <param name="articleType">Optional article type (default: General).</param>
+        /// <returns>Created article view model.</returns>
+        public async Task<ArticleViewModel> CreateArticleAsync(
+            string title,
+            Guid userId,
+            Guid? templateId = null,
+            string blogKey = "",
+            Cosmos.Cms.Common.ArticleType articleType = Cosmos.Cms.Common.ArticleType.General)
+        {
+            var mediator = (IMediator)HttpContext.RequestServices.GetService(typeof(IMediator));
+            var command = new CreateArticleCommand
+            {
+                Title = title,
+                UserId = userId,
+                TemplateId = templateId,
+                BlogKey = blogKey,
+                ArticleType = articleType
+            };
+
+            var result = await mediator.SendAsync(command);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"Failed to create article: {result.ErrorMessage}");
+            }
+
+            return result.Data;
+        }
+
+        /// <summary>
+        /// Helper method to save an article in this tenant using the SaveArticleCommand via mediator.
+        /// </summary>
+        /// <param name="article">The article view model to save.</param>
+        /// <param name="userId">The user ID performing the save.</param>
+        /// <returns>Article update result.</returns>
+        public async Task<CommandResult<ArticleUpdateResult>> SaveArticleAsync(
+            ArticleViewModel article,
+            Guid userId)
+        {
+            var mediator = (IMediator)HttpContext.RequestServices.GetService(typeof(IMediator));
+            var command = new SaveArticleCommand
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Content = article.Content,
+                HeadJavaScript = article.HeadJavaScript,
+                FooterJavaScript = article.FooterJavaScript,
+                BannerImage = article.BannerImage,
+                UserId = userId,
+                ArticleType = article.ArticleType,
+                Category = article.Category,
+                Introduction = article.Introduction,
+                Published = article.Published,
+                UrlPath = article.UrlPath
+            };
+
+            return await mediator.SendAsync(command);
+        }
+
+        /// <summary>
         /// Disposes the tenant context and its resources.
         /// </summary>
         public async ValueTask DisposeAsync()

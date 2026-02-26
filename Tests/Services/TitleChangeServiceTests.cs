@@ -21,7 +21,7 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_RootPage_PreservesRootUrlPath()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
             
             Assert.AreEqual("root", article.UrlPath);
@@ -49,8 +49,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_NonRootPage_ChangesUrlPath()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var nonRootArticle = await Logic.CreateArticle("About Us", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var nonRootArticle = await CreateArticleAsync("About Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == nonRootArticle.ArticleNumber);
             
             var originalPath = article.UrlPath;
@@ -79,8 +79,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_RootPageWithChildren_ChildrenUnaffected()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
-            var childArticle = await Logic.CreateArticle("root/child", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
+            var childArticle = await CreateArticleAsync("root/child", TestUserId);
             
             var root = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
             var child = await Db.Articles.FirstAsync(a => a.ArticleNumber == childArticle.ArticleNumber);
@@ -111,7 +111,7 @@ namespace Sky.Tests.Services
         public async Task BuildArticleUrl_RootPage_ReturnsNormalizedSlug()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
 
             // Act
@@ -134,8 +134,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_WithVersions_CascadesTitleToAllVersions()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Original Title", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Original Title", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             // Create multiple versions of the same article
@@ -193,8 +193,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_WithVersions_CascadesUrlPathAndSlugToAllVersions()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Original Title", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Original Title", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             var expectedOldUrlPath = "original-title";
@@ -257,7 +257,7 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_RootPageWithVersions_PreservesRootUrlPathInAllVersions()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
             
             Assert.AreEqual("root", article.UrlPath);
@@ -320,17 +320,17 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_BlogPostWithVersions_CascadesBlogKeyToAllVersions()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
             
             // Create a blog stream
-            var blogStreamResult = await Logic.CreateArticle("My Blog", TestUserId);
+            var blogStreamResult = await CreateArticleAsync("My Blog", TestUserId);
             var blogStream = await Db.Articles.FirstAsync(a => a.ArticleNumber == blogStreamResult.ArticleNumber);
             blogStream.ArticleType = (int)ArticleType.BlogStream;
             blogStream.BlogKey = "my-blog";
             await Db.SaveChangesAsync();
             
             // Create a blog post
-            var blogPostResult = await Logic.CreateArticle("Blog Post Title", TestUserId);
+            var blogPostResult = await CreateArticleAsync("Blog Post Title", TestUserId);
             var blogPost = await Db.Articles.FirstAsync(a => a.ArticleNumber == blogPostResult.ArticleNumber);
             blogPost.ArticleType = (int)ArticleType.BlogPost;
             blogPost.BlogKey = "my-blog";
@@ -391,8 +391,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_PublishedNonRootPage_CreatesRedirectFromOldToNewUrl()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("About Us", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("About Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             // Publish the article
@@ -433,8 +433,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_UnpublishedNonRootPage_DoesNotCreateRedirect()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("About Us", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("About Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             // Leave article unpublished (Published is null)
@@ -469,7 +469,7 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_PublishedRootPage_DoesNotCreateRedirect()
         {
             // Arrange
-            var rootArticle = await Logic.CreateArticle("Home Page", TestUserId);
+            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
             
             // Publish the root article
@@ -507,8 +507,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_PublishedPageWithVersions_CreatesRedirectAndUpdatesAllVersions()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Services", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Services", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             // Publish the article
@@ -571,8 +571,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_CaseOnlyChange_UpdatesTitleButPreservesUrlPath()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("About Us", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("About Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             var oldTitle = article.Title; // "About Us"
@@ -598,8 +598,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_CaseOnlyChangeWithVersions_UpdatesAllVersionTitlesButNotUrls()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Contact Us", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Contact Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             // Create additional versions
@@ -647,8 +647,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_CaseOnlyChangePublished_DoesNotCreateRedirect()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Privacy Policy", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Privacy Policy", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             // Publish the article
@@ -685,8 +685,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_MixedCaseTitle_UrlNormalizedToLowercase()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("products", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("products", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
             
             Assert.AreEqual("products", article.UrlPath, "Initial URL should be lowercase");
@@ -718,9 +718,9 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_SlugConflict_ThrowsInvalidOperationException()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var article1 = await Logic.CreateArticle("Original Article", TestUserId);
-            var article2 = await Logic.CreateArticle("Another Article", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var article1 = await CreateArticleAsync("Original Article", TestUserId);
+            var article2 = await CreateArticleAsync("Another Article", TestUserId);
 
             var articleToChange = await Db.Articles.FirstAsync(a => a.ArticleNumber == article2.ArticleNumber);
 
@@ -745,8 +745,8 @@ namespace Sky.Tests.Services
         public async Task CreateRedirectsAsync_InvalidUserId_ThrowsArgumentException()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Test Article", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Test Article", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
 
             // Set invalid user ID
@@ -777,29 +777,29 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_BlogStreamWithMultipleEntries_UpdatesAllEntries()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
 
             // Create a blog stream
-            var blogStreamResult = await Logic.CreateArticle("My Blog", TestUserId);
+            var blogStreamResult = await CreateArticleAsync("My Blog", TestUserId);
             var blogStream = await Db.Articles.FirstAsync(a => a.ArticleNumber == blogStreamResult.ArticleNumber);
             blogStream.ArticleType = (int)ArticleType.BlogStream;
             blogStream.BlogKey = "my-blog";
             await Db.SaveChangesAsync();
 
             // Create multiple blog posts
-            var post1Result = await Logic.CreateArticle("First Post", TestUserId);
+            var post1Result = await CreateArticleAsync("First Post", TestUserId);
             var post1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == post1Result.ArticleNumber);
             post1.ArticleType = (int)ArticleType.BlogPost;
             post1.BlogKey = "my-blog";
             post1.UrlPath = "my-blog/first-post";
 
-            var post2Result = await Logic.CreateArticle("Second Post", TestUserId);
+            var post2Result = await CreateArticleAsync("Second Post", TestUserId);
             var post2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == post2Result.ArticleNumber);
             post2.ArticleType = (int)ArticleType.BlogPost;
             post2.BlogKey = "my-blog";
             post2.UrlPath = "my-blog/second-post";
 
-            var post3Result = await Logic.CreateArticle("Third Post", TestUserId);
+            var post3Result = await CreateArticleAsync("Third Post", TestUserId);
             var post3 = await Db.Articles.FirstAsync(a => a.ArticleNumber == post3Result.ArticleNumber);
             post3.ArticleType = (int)ArticleType.BlogPost;
             post3.BlogKey = "my-blog";
@@ -842,17 +842,17 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_BlogStreamWithVersions_CascadesToAllPostVersions()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
 
             // Create a blog stream
-            var blogStreamResult = await Logic.CreateArticle("My Blog", TestUserId);
+            var blogStreamResult = await CreateArticleAsync("My Blog", TestUserId);
             var blogStream = await Db.Articles.FirstAsync(a => a.ArticleNumber == blogStreamResult.ArticleNumber);
             blogStream.ArticleType = (int)ArticleType.BlogStream;
             blogStream.BlogKey = "my-blog";
             await Db.SaveChangesAsync();
 
             // Create a blog post with multiple versions
-            var postResult = await Logic.CreateArticle("Blog Post", TestUserId);
+            var postResult = await CreateArticleAsync("Blog Post", TestUserId);
             var post = await Db.Articles.FirstAsync(a => a.ArticleNumber == postResult.ArticleNumber);
             post.ArticleType = (int)ArticleType.BlogPost;
             post.BlogKey = "my-blog";
@@ -908,19 +908,19 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_DeepNestedChildren_CascadesCorrectly()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
 
             // Create a hierarchy: parent/child/grandchild
-            var parentResult = await Logic.CreateArticle("Parent", TestUserId);
+            var parentResult = await CreateArticleAsync("Parent", TestUserId);
             var parent = await Db.Articles.FirstAsync(a => a.ArticleNumber == parentResult.ArticleNumber);
 
-            var childResult = await Logic.CreateArticle("parent/child", TestUserId);
+            var childResult = await CreateArticleAsync("parent/child", TestUserId);
             var child = await Db.Articles.FirstAsync(a => a.ArticleNumber == childResult.ArticleNumber);
 
-            var grandchildResult = await Logic.CreateArticle("parent/child/grandchild", TestUserId);
+            var grandchildResult = await CreateArticleAsync("parent/child/grandchild", TestUserId);
             var grandchild = await Db.Articles.FirstAsync(a => a.ArticleNumber == grandchildResult.ArticleNumber);
 
-            var greatGrandchildResult = await Logic.CreateArticle("parent/child/grandchild/great", TestUserId);
+            var greatGrandchildResult = await CreateArticleAsync("parent/child/grandchild/great", TestUserId);
             var greatGrandchild = await Db.Articles.FirstAsync(a => a.ArticleNumber == greatGrandchildResult.ArticleNumber);
 
             // Capture old values
@@ -957,8 +957,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_SameTitle_NoUnnecessaryChanges()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Test Article", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Test Article", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
 
             // Publish the article
@@ -991,8 +991,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_SpecialCharactersInTitle_NormalizesCorrectly()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Normal Title", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Normal Title", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
 
             var oldTitle = article.Title;
@@ -1025,8 +1025,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_Exactly20Versions_BatchSavesCorrectly()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Test Article", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Test Article", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
 
             // Create exactly 20 additional versions (21 total including original)
@@ -1075,8 +1075,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_MoreThan40Versions_AllUpdatedCorrectly()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Test Article", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Test Article", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
 
             // Create 42 additional versions (43 total) to test multiple batches
@@ -1127,8 +1127,8 @@ namespace Sky.Tests.Services
         public async Task HandleTitleChangeAsync_FuturePublishedDate_DoesNotRepublish()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            var articleResult = await Logic.CreateArticle("Test Article", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var articleResult = await CreateArticleAsync("Test Article", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
 
             // Set a future publish date
@@ -1196,8 +1196,8 @@ namespace Sky.Tests.Services
         public async Task ValidateTitle_DuplicateTitle_ReturnsFalse()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
-            await Logic.CreateArticle("Existing Article", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            await CreateArticleAsync("Existing Article", TestUserId);
 
             // Act
             var isValid = await TitleChangeService.ValidateTitle("Existing Article", null);
@@ -1213,7 +1213,7 @@ namespace Sky.Tests.Services
         public async Task ValidateTitle_ValidTitle_ReturnsTrue()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId); // Create root first
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
 
             // Act
             var isValid = await TitleChangeService.ValidateTitle("New Unique Article", null);

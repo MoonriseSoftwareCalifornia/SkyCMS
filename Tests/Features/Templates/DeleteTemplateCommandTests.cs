@@ -246,11 +246,11 @@ namespace Sky.Tests.Features.Templates
             await Db.SaveChangesAsync();
 
             // Create root article first
-            await Logic.CreateArticle("Root", TestUserId);
+            await CreateArticleAsync("Root", TestUserId);
 
             // Create articles using this template
-            var article1 = await Logic.CreateArticle("Article 1", TestUserId, template.Id);
-            var article2 = await Logic.CreateArticle("Article 2", TestUserId, template.Id);
+            var article1 = await CreateArticleAsync("Article 1", TestUserId, template.Id);
+            var article2 = await CreateArticleAsync("Article 2", TestUserId, template.Id);
 
             // Create catalog entries (simulating published articles)
             var catalog1 = new CatalogEntry

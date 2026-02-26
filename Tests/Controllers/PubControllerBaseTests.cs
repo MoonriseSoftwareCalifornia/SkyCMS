@@ -208,7 +208,7 @@ namespace Sky.Tests.Controllers
         public async Task Index_RequiresAuth_ArticlePath_ValidArticleNumber_UnauthorizedUser()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             await Logic.PublishArticle(
                 (await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber)).Id,
                 DateTimeOffset.UtcNow);
@@ -250,7 +250,7 @@ namespace Sky.Tests.Controllers
         public async Task Index_RequiresAuth_ArticlePath_AuthorizedUser_ReturnsNotFoundForMissingFile()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             var articleEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             await Logic.PublishArticle(articleEntity.Id, DateTimeOffset.UtcNow);
 

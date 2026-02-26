@@ -77,7 +77,7 @@ namespace Sky.Tests.Controllers
         public async Task GetArticleFolderContents_ValidArticle_ReturnsJsonResult()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
 
             // Setup request headers with referer containing article number
             controller.ControllerContext.HttpContext.Request.Headers["referer"] =
@@ -130,7 +130,7 @@ namespace Sky.Tests.Controllers
         public async Task GetArticleFolderContents_WithPath_ReturnsSubfolderContents()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
 
@@ -156,9 +156,9 @@ namespace Sky.Tests.Controllers
         public async Task GetTOC_RootPage_ReturnsTopLevelPages()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId);
-            var page1 = await Logic.CreateArticle("Page 1", TestUserId);
-            var page2 = await Logic.CreateArticle("Page 2", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId);
+            var page1 = await CreateArticleAsync("Page 1", TestUserId);
+            var page2 = await CreateArticleAsync("Page 2", TestUserId);
 
             var entity1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page1.ArticleNumber);
             var entity2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page2.ArticleNumber);
@@ -186,8 +186,8 @@ namespace Sky.Tests.Controllers
         public async Task GetTOC_WithParentPath_ReturnsChildPages()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId);
-            var parent = await Logic.CreateArticle("Parent Page", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId);
+            var parent = await CreateArticleAsync("Parent Page", TestUserId);
             var parentEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == parent.ArticleNumber);
             await Logic.PublishArticle(parentEntity.Id, DateTimeOffset.UtcNow);
 
@@ -205,9 +205,9 @@ namespace Sky.Tests.Controllers
         public async Task GetTOC_OrderByPublishDate_ReturnsChronologicalOrder()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId);
-            var page1 = await Logic.CreateArticle("Older Page", TestUserId);
-            var page2 = await Logic.CreateArticle("Newer Page", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId);
+            var page1 = await CreateArticleAsync("Older Page", TestUserId);
+            var page2 = await CreateArticleAsync("Newer Page", TestUserId);
 
             var entity1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page1.ArticleNumber);
             var entity2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page2.ArticleNumber);
@@ -251,11 +251,11 @@ namespace Sky.Tests.Controllers
         public async Task GetTOC_Pagination_ReturnsCorrectPage()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId);
 
             for (int i = 1; i <= 15; i++)
             {
-                var page = await Logic.CreateArticle($"Page {i}", TestUserId);
+                var page = await CreateArticleAsync($"Page {i}", TestUserId);
                 var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == page.ArticleNumber);
                 await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow.AddMinutes(-i));
             }
@@ -385,8 +385,8 @@ namespace Sky.Tests.Controllers
         public async Task Search_ValidQuery_ReturnsResults()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId);
-            var article = await Logic.CreateArticle("Searchable Content", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId);
+            var article = await CreateArticleAsync("Searchable Content", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             entity.Content = "<p>This is searchable content with unique terms.</p>";
             await Db.SaveChangesAsync();
@@ -438,8 +438,8 @@ namespace Sky.Tests.Controllers
         public async Task Search_MultipleTerms_ReturnsMatchingResults()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId);
-            var article = await Logic.CreateArticle("Multi Term Search", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId);
+            var article = await CreateArticleAsync("Multi Term Search", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             entity.Content = "<p>Content with multiple searchable unique terms here.</p>";
             await Db.SaveChangesAsync();
@@ -459,7 +459,7 @@ namespace Sky.Tests.Controllers
         public async Task Search_NoMatches_ReturnsEmptyList()
         {
             // Arrange
-            await Logic.CreateArticle("Home Page", TestUserId);
+            await CreateArticleAsync("Home Page", TestUserId);
 
             // Act
             var result = await controller.CCMS___SEARCH("nonexistentterm12345");
@@ -501,7 +501,7 @@ namespace Sky.Tests.Controllers
         public async Task GetArticleNumber_FromQueryString_ReturnsCorrectNumber()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
 
@@ -522,7 +522,7 @@ namespace Sky.Tests.Controllers
         public async Task GetArticleNumber_FromEditorPath_ReturnsCorrectNumber()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
 
@@ -543,7 +543,7 @@ namespace Sky.Tests.Controllers
         public async Task GetArticleNumber_FromPublishedPage_ReturnsCorrectNumber()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
 

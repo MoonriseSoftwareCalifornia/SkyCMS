@@ -354,9 +354,9 @@ namespace Sky.Tests.Controllers
         public async Task Index_ReturnsArticle_WhenValidUrlPath()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Page", TestUserId);
+            var article = await CreateArticleAsync("Test Page", TestUserId);
             article.Content = "<p>Test content</p>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             dbArticle.Published = DateTimeOffset.UtcNow;
@@ -382,9 +382,9 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             // Create a not_found article
-            var notFoundArticle = await Logic.CreateArticle("Not Found", TestUserId);
+            var notFoundArticle = await CreateArticleAsync("Not Found", TestUserId);
             notFoundArticle.Content = "<h1>Page Not Found</h1>";
-            await Logic.SaveArticle(notFoundArticle, TestUserId);
+            await SaveArticleAsync(notFoundArticle, TestUserId);
 
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == notFoundArticle.ArticleNumber);
             dbArticle.UrlPath = "not_found";
@@ -429,9 +429,9 @@ namespace Sky.Tests.Controllers
         public async Task Index_PreviewsArticle_WhenPreviewTypeIsEditor()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Preview Article", TestUserId);
+            var article = await CreateArticleAsync("Preview Article", TestUserId);
             article.Content = "<p>Preview content</p>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
             
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 

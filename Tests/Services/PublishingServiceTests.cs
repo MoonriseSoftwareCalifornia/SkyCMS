@@ -35,7 +35,7 @@ namespace Sky.Tests.Services
         public async Task PublishArticle_CreatesPageEntry()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Publish Test Article", TestUserId);
+            var article = await CreateArticleAsync("Publish Test Article", TestUserId);
             article.Content = "<h1>Test Content</h1>";
             await Db.SaveChangesAsync();
 
@@ -59,7 +59,7 @@ namespace Sky.Tests.Services
         public async Task PublishArticle_SetsPublishedTimestamp()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Timestamp Test Article", TestUserId);
+            var article = await CreateArticleAsync("Timestamp Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
             
             // Ensure Published is null before testing PublishAsync
@@ -84,7 +84,7 @@ namespace Sky.Tests.Services
         public async Task PublishArticle_UnpublishesPreviousVersions()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Version Test Article", TestUserId);
+            var article = await CreateArticleAsync("Version Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
             await PublishingService.PublishAsync(articleEntity);
 
@@ -117,7 +117,7 @@ namespace Sky.Tests.Services
         public async Task UnpublishArticle_RemovesPublishedTimestamp()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Unpublish Test Article", TestUserId);
+            var article = await CreateArticleAsync("Unpublish Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
             await PublishingService.PublishAsync(articleEntity);
 
@@ -140,7 +140,7 @@ namespace Sky.Tests.Services
         public async Task UnpublishArticle_RemovesPageEntry()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Page Removal Test Article", TestUserId);
+            var article = await CreateArticleAsync("Page Removal Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
             await PublishingService.PublishAsync(articleEntity);
 
@@ -168,7 +168,7 @@ namespace Sky.Tests.Services
         public async Task PublishArticle_UpdatesArticleCatalog()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Catalog Update Test", TestUserId);
+            var article = await CreateArticleAsync("Catalog Update Test", TestUserId);
             article.Content = "<h1>Test Content</h1>";
             await Db.SaveChangesAsync();
 
@@ -189,7 +189,7 @@ namespace Sky.Tests.Services
         public async Task UnpublishArticle_UpdatesArticleCatalog()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Catalog Unpublish Test", TestUserId);
+            var article = await CreateArticleAsync("Catalog Unpublish Test", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
             await PublishingService.PublishAsync(articleEntity);
 
@@ -214,9 +214,9 @@ namespace Sky.Tests.Services
         public async Task PublishMultipleArticles_AllPublishedSuccessfully()
         {
             // Arrange
-            var article1 = await Logic.CreateArticle("Bulk Test Article 1", TestUserId);
-            var article2 = await Logic.CreateArticle("Bulk Test Article 2", TestUserId);
-            var article3 = await Logic.CreateArticle("Bulk Test Article 3", TestUserId);
+            var article1 = await CreateArticleAsync("Bulk Test Article 1", TestUserId);
+            var article2 = await CreateArticleAsync("Bulk Test Article 2", TestUserId);
+            var article3 = await CreateArticleAsync("Bulk Test Article 3", TestUserId);
 
             // Act
             var entity1 = await Db.Articles.FindAsync(article1.Id);
@@ -269,7 +269,7 @@ namespace Sky.Tests.Services
         public async Task UnpublishArticle_AlreadyUnpublished_IsIdempotent()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Idempotent Test Article", TestUserId);
+            var article = await CreateArticleAsync("Idempotent Test Article", TestUserId);
 
             // Act - Unpublish twice
             var articleEntity = await Db.Articles.FindAsync(article.Id);
@@ -324,7 +324,7 @@ namespace Sky.Tests.Services
         public async Task PublishArticle_FutureDate_SchedulesPublishing()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Scheduled Article", TestUserId);
+            var article = await CreateArticleAsync("Scheduled Article", TestUserId);
             var futureDate = DateTimeOffset.UtcNow.AddDays(7);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
             articleEntity.Published = futureDate; // Set the future publish date
@@ -349,7 +349,7 @@ namespace Sky.Tests.Services
         public async Task PublishArticle_StaticPagesDisabled_DoesNotGenerateStaticFiles()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Static Page Test", TestUserId);
+            var article = await CreateArticleAsync("Static Page Test", TestUserId);
             article.Content = "<h1>Test Content</h1>";
             await Db.SaveChangesAsync();
 

@@ -1,4 +1,4 @@
-# ?? SPRINT 1 KICKOFF - CreateArticle Migration (Weeks 5-6)
+﻿# 🚀 SPRINT 1 KICKOFF - CreateArticle Migration (Weeks 5-6)
 
 **Status**: Ready to begin
 **Method**: CreateArticle
@@ -10,7 +10,7 @@
 ## SPRINT 1 OVERVIEW
 
 ### Goal
-Migrate `ArticleEditLogic.CreateArticle()` from legacy method to CQRS `CreateArticleCommand` + `CreateArticleHandler` pattern.
+Migrate `ArticleEditCreateArticleAsync()` from legacy method to CQRS `CreateArticleCommand` + `CreateArticleHandler` pattern.
 
 ### Timeline
 - Week 5: Create command, handler, tests
@@ -334,7 +334,7 @@ namespace Sky.Editor.Features.Articles.Create
 **Pattern**:
 ```csharp
 // OLD
-var article = await Logic.CreateArticle(title, userId, templateId);
+var article = await CreateArticleAsync(title, userId, templateId);
 
 // NEW
 var command = new CreateArticleCommand
@@ -363,7 +363,7 @@ Logic.CreateArticle
 **Pattern**:
 ```csharp
 // OLD
-var article = await Logic.CreateArticle(title, userId, templateId);
+var article = await CreateArticleAsync(title, userId, templateId);
 
 // NEW
 var command = new CreateArticleCommand
@@ -423,7 +423,7 @@ dotnet test
 
 ---
 
-## ?? SPRINT 1 CHECKLIST
+## 📋 SPRINT 1 CHECKLIST
 
 ### Code Changes
 - [ ] CreateArticleCommand created
@@ -456,18 +456,18 @@ dotnet test
 
 ---
 
-## ?? SUCCESS CRITERIA
+## 🎯 SUCCESS CRITERIA
 
 By end of Sprint 1:
-? CreateArticle fully migrated to CQRS
-? All tests passing
-? Controllers/Pages updated
-? No legacy CreateArticle calls in production code
-? Ready for Sprint 2 (PublishArticle)
+✅ CreateArticle fully migrated to CQRS
+✅ All tests passing
+✅ Controllers/Pages updated
+✅ No legacy CreateArticle calls in production code
+✅ Ready for Sprint 2 (PublishArticle)
 
 ---
 
-## ?? REFERENCE IMPLEMENTATION
+## 📚 REFERENCE IMPLEMENTATION
 
 **Use SaveArticle as template**:
 - `Editor\Features\Articles\Save\SaveArticleCommand.cs`
@@ -509,4 +509,4 @@ Copy structure, adapt logic.
 
 ---
 
-**Ready to begin Sprint 1? Let's create the CreateArticleCommand!** ??
+**Ready to begin Sprint 1? Let's create the CreateArticleCommand!** 🚀

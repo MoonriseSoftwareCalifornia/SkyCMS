@@ -81,8 +81,8 @@ namespace Sky.Tests.Controllers
         public async Task EditCode_Post_UsesSaveArticleCommand()
         {
             // Arrange - Create an article first
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var model = new EditCodePostModel
             {
@@ -113,8 +113,8 @@ namespace Sky.Tests.Controllers
         public async Task EditCode_Post_WithValidationErrors_ReturnsErrors()
         {
             // Arrange - Create an article
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var model = new EditCodePostModel
             {
@@ -151,9 +151,9 @@ namespace Sky.Tests.Controllers
         public async Task Edit_Post_UsesSaveArticleCommand()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Original Title", TestUserId);
+            var article = await CreateArticleAsync("Original Title", TestUserId);
             article.Content = "<div contenteditable='true'><p>Original content</p></div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // **INVESTIGATION 1**: Verify content was saved to database
             var savedArticle = await Db.Articles
@@ -238,9 +238,9 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
         public async Task Edit_Post_WithEditorRegion_UpdatesContentCorrectly()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div data-ccms-ceid=\"region1\">Original Content</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var model = new HtmlEditorPostViewModel
             {
@@ -275,8 +275,8 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
         public async Task Designer_Post_UsesSaveArticleCommand()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Designer Test", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Designer Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var model = new ArticleDesignerDataViewModel
             {
@@ -305,8 +305,8 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
         public async Task Designer_Post_WithNestedEditableRegions_ReturnsBadRequest()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var model = new ArticleDesignerDataViewModel
             {
@@ -336,12 +336,12 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
         {
             // Arrange
             // **FIX**: Create a root article first, so the next article is NOT the root
-            await Logic.CreateArticle("Home Page", TestUserId); // This becomes the root page
+            await CreateArticleAsync("Home Page", TestUserId); // This becomes the root page
 
             // Now create the article we want to test - this will NOT be root
-            var article = await Logic.CreateArticle("Original Title", TestUserId);
+            var article = await CreateArticleAsync("Original Title", TestUserId);
             article.Content = "<p>Content</p>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Publish the article with a past date to enable redirect creation
             var pastDate = DateTimeOffset.UtcNow.AddMinutes(-5);

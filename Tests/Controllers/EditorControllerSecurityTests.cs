@@ -78,8 +78,8 @@ namespace Sky.Tests.Controllers
         public async Task Permissions_Get_ReturnsViewWithPermissions()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.Permissions(article.ArticleNumber);
@@ -97,8 +97,8 @@ namespace Sky.Tests.Controllers
         public async Task Permissions_Get_WithForRoles_ReturnsRolesList()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Ensure we have at least one role
             var roleName = "TestRole_" + Guid.NewGuid().ToString().Substring(0, 8);
@@ -120,8 +120,8 @@ namespace Sky.Tests.Controllers
         public async Task Permissions_Get_WithForUsers_ReturnsUsersList()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.Permissions(article.ArticleNumber, forRoles: false);
@@ -139,8 +139,8 @@ namespace Sky.Tests.Controllers
         public async Task Permissions_Get_HandlesSortingAndPaging()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Act
             var result = await controller.Permissions(
@@ -170,8 +170,8 @@ namespace Sky.Tests.Controllers
         public async Task Permissions_Post_UpdatesPermissionsWithRoles()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Create test roles
             var role1Name = "TestRole1_" + Guid.NewGuid().ToString().Substring(0, 8);
@@ -206,8 +206,8 @@ namespace Sky.Tests.Controllers
         public async Task Permissions_Post_UpdatesPermissionsWithUsers()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Create test user
             var testUser = new IdentityUser
@@ -242,8 +242,8 @@ namespace Sky.Tests.Controllers
         public async Task Permissions_Post_ClearsExistingPermissions()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Create and set initial permissions
             var role1Name = "TestRole1_" + Guid.NewGuid().ToString().Substring(0, 8);
@@ -276,8 +276,8 @@ namespace Sky.Tests.Controllers
         public async Task Permissions_Post_HandlesEmptyPermissionList()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var identityObjectIds = Array.Empty<string>();
 
@@ -304,8 +304,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishPage_AcceptsValidEditorUrl()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 
@@ -328,8 +328,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishPage_AcceptsValidVersionsUrl()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 
@@ -352,8 +352,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishPage_RejectsUnauthorizedUrl()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 
@@ -377,8 +377,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishPage_RejectsExternalUrl()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 
@@ -401,8 +401,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishPage_RejectsInvalidUrlFormat()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 
@@ -425,8 +425,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishPage_AcceptsNullEditorUrl()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 
@@ -447,8 +447,8 @@ namespace Sky.Tests.Controllers
         public async Task PublishPage_AcceptsTemplatesControllerUrl()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
-            await Logic.SaveArticle(article, TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 

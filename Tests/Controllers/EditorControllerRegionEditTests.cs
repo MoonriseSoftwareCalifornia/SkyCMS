@@ -77,9 +77,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveRegion_UpdatesSpecificRegion()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div data-ccms-ceid=\"region1\">Original Content</div><div data-ccms-ceid=\"region2\">Other Content</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var model = new EditorRegionViewModel
             {
@@ -112,9 +112,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveRegion_DoesNotUpdateIfContentUnchanged()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div data-ccms-ceid=\"region1\">Original Content</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var originalUpdated = (await Db.Articles
                 .FirstAsync(a => a.ArticleNumber == article.ArticleNumber)).Updated;
@@ -150,9 +150,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveRegion_UpdatesTimestampWhenContentChanges()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div data-ccms-ceid=\"region1\">Original Content</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var originalUpdated = (await Db.Articles
                 .FirstAsync(a => a.ArticleNumber == article.ArticleNumber)).Updated;
@@ -187,9 +187,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveRegion_DecryptsDataCorrectly()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div data-ccms-ceid=\"test-region\">Original</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var newContent = "<strong>Encrypted Content</strong>";
             var encrypted = CryptoJsDecryption.Encrypt(newContent);
@@ -220,9 +220,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveRegion_HandlesNonExistentRegion()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div data-ccms-ceid=\"existing-region\">Content</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var model = new EditorRegionViewModel
             {
@@ -256,9 +256,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveBody_ReplacesEntireBodyContent()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div>Original Body Content</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var newBodyContent = "<div><h1>Completely New Body</h1><p>New paragraph</p></div>";
 
@@ -288,10 +288,10 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveBody_DoesNotUpdateIfContentUnchanged()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             var originalContent = "<div>Unchanged Content</div>";
             article.Content = originalContent;
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var originalUpdated = (await Db.Articles
                 .FirstAsync(a => a.ArticleNumber == article.ArticleNumber)).Updated;
@@ -323,9 +323,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveBody_UpdatesTimestampWhenContentChanges()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div>Original</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var originalUpdated = (await Db.Articles
                 .FirstAsync(a => a.ArticleNumber == article.ArticleNumber)).Updated;
@@ -357,9 +357,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveBody_HandlesLargeContent()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div>Small content</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             // Create large content
             var largeContent = string.Concat(Enumerable.Repeat("<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>", 100));
@@ -389,9 +389,9 @@ namespace Sky.Tests.Controllers
         public async Task EditSaveBody_HandlesSpecialCharacters()
         {
             // Arrange
-            var article = await Logic.CreateArticle("Test Article", TestUserId);
+            var article = await CreateArticleAsync("Test Article", TestUserId);
             article.Content = "<div>Original</div>";
-            await Logic.SaveArticle(article, TestUserId);
+            await SaveArticleAsync(article, TestUserId);
 
             var contentWithSpecialChars = "<div>Content with &lt;special&gt; &amp; \"quoted\" 'chars'</div>";
 

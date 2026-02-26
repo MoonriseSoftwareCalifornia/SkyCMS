@@ -34,7 +34,7 @@ namespace Sky.Tests.Integration
         public async Task FullWorkflow_CreateThenSave_UnpublishedArticle_NoRedirectCreated()
         {
             // **FIX**: Create root article first so test article doesn't become root
-            await Logic.CreateArticle("Root Page", TestUserId);
+            await CreateArticleAsync("Root Page", TestUserId);
             
             // Create test article (won't be root now)
             var created = await Mediator.SendAsync(new CreateArticleCommand
@@ -73,7 +73,7 @@ namespace Sky.Tests.Integration
         public async Task FullWorkflow_CreatePublishThenSave_CreatesRedirect()
         {
             // **FIX**: Create root article first
-            await Logic.CreateArticle("Root Page", TestUserId);
+            await CreateArticleAsync("Root Page", TestUserId);
             
             // Create test article
             var created = await Mediator.SendAsync(new CreateArticleCommand

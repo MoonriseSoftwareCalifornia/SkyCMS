@@ -622,6 +622,69 @@ namespace Sky.Tests
         protected Task<int> ArticleCountAsync() => Db.Articles.CountAsync();
 
         /// <summary>
+        /// Helper method to save an article using the SaveArticleCommand via mediator.
+        /// Replaces the deprecated Logic.SaveArticle() calls in tests.
+        /// </summary>
+        /// <param name="article">The article view model to save.</param>
+        /// <param name="userId">The user ID performing the save.</param>
+        /// <returns>Article update result.</returns>
+        protected async Task<CommandResult<ArticleUpdateResult>> SaveArticleAsync(ArticleViewModel article, Guid userId)
+        {
+            var command = new SaveArticleCommand
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Content = article.Content,
+                HeadJavaScript = article.HeadJavaScript,
+                FooterJavaScript = article.FooterJavaScript,
+                BannerImage = article.BannerImage,
+                UserId = userId,
+                ArticleType = article.ArticleType,
+                Category = article.Category,
+                Introduction = article.Introduction,
+                Published = article.Published,
+                UrlPath = article.UrlPath
+            };
+
+            return await Mediator.SendAsync(command);
+        }
+
+        /// <summary>
+        /// Helper method to create an article using the CreateArticleCommand via mediator.
+        /// Replaces the deprecated CreateArticleAsync() calls in tests.
+        /// </summary>
+        /// <param name="title">Title of the article to create.</param>
+        /// <param name="userId">The user ID creating the article.</param>
+        /// <param name="templateId">Optional template ID to use for the article.</param>
+        /// <param name="blogKey">Optional blog key (default: empty).</param>
+        /// <param name="articleType">Optional article type (default: General).</param>
+        /// <returns>Created article view model.</returns>
+        protected async Task<ArticleViewModel> CreateArticleAsync(
+            string title,
+            Guid userId,
+            Guid? templateId = null,
+            string blogKey = "",
+            Cosmos.Cms.Common.ArticleType articleType = Cosmos.Cms.Common.ArticleType.General)
+        {
+            var command = new CreateArticleCommand
+            {
+                Title = title,
+                UserId = userId,
+                TemplateId = templateId,
+                BlogKey = blogKey,
+                ArticleType = articleType
+            };
+
+            var result = await Mediator.SendAsync(command);
+            if (!result.IsSuccess)
+            {
+                throw new InvalidOperationException($"Failed to create article: {result.ErrorMessage}");
+            }
+
+            return result.Data;
+        }
+
+        /// <summary>
         /// Creates a new tenant test context for multi-tenant isolation testing.
         /// </summary>
         /// <param name="tenantDomain">Tenant domain name (e.g., "tenant1.example.com").</param>
