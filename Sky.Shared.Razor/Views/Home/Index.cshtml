@@ -19,7 +19,7 @@
     <meta name="cwps-meta-user-is-authenticated" content="@User.Identity.IsAuthenticated.ToString().ToLower()" />
     @if (Model.ArticleType == ArticleType.BlogStream || Model.ArticleType == ArticleType.BlogPost)
     {
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.conditional.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@picocss/pico@2/css/pico.conditional.min.css">
     }
     @Html.Raw(Model.Layout.Head)
     <link rel="stylesheet" href="~/lib/ckeditor/ckeditor5-content.css" />
