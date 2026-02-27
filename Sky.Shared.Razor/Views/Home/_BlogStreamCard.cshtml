@@ -1,26 +1,43 @@
 ﻿@using Cosmos.Common.Models.Blog
 @model BlogListItem
-<div class="sky-blog-stream-card-col">
-    <article class="sky-blog-stream-card">
-        @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
-        {
-            <figure class="sky-blog-stream-figure">
-                <img src="@Model.BannerImage" alt="@Model.Title" class="sky-blog-stream-card-image">
-            </figure>
-        }
-        <div class="sky-blog-stream-card-body">
-            <p class="sky-blog-post-info">
-                <time class="sky-blog-post-info-updated" datetime="@Model.Updated?.UtcDateTime.ToString("O")">@Model.Updated?.UtcDateTime.ToString("O")</time>
+@{
+    var displayDate = Model.Published ?? Model.Updated;
+}
+
+<article class="pico">
+    <header>
+        <h2>
+            <a href="@Model.UrlPath">@Model.Title</a>
+        </h2>
+        <p>
+            <small>
+                @if (displayDate.HasValue)
+                {
+                    <time datetime="@displayDate.Value.UtcDateTime.ToString("o")">@displayDate.Value.ToString("D")</time>
+                }
                 @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
                 {
-                    <span class="sky-blog-post-header-author">@Model.AuthorInfo</span>
+                    <text> · @Model.AuthorInfo</text>
                 }
-            </p>
-            <h3 class="blog-stream-card-title"><a href="@Model.UrlPath">@Model.Title</a></h3>
-            @if (!string.IsNullOrWhiteSpace(Model.Introduction))
-            {
-                <p class="blog-stream-card-excerpt">@Model.Introduction</p>
-            }
-        </div>
-    </article>
-</div>
+            </small>
+        </p>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
+    {
+        <figure>
+            <a href="@Model.UrlPath" aria-label="Read @Model.Title">
+                <img src="@Model.BannerImage" alt="@Model.Title" loading="lazy" decoding="async" />
+            </a>
+        </figure>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+    {
+        <p>@Model.Introduction</p>
+    }
+
+    <footer>
+        <a href="@Model.UrlPath">Read more</a>
+    </footer>
+</article>

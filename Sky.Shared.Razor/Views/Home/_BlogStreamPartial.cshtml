@@ -3,28 +3,35 @@
 @{
     var blogPosts = (BlogIndexViewModel?)ViewData["BlogIndexViewModel"] ?? null;
 }
-<section class="sky-blog-stream-section" aria-labelledby="blog-heading">
-    <div class="sky-blog-stream-container">
-        <header class="sky-blog-stream-header">
-            <h1 class="sky-blog-stream-h1">@Model.Title</h1>
-            @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+<section class="pico" aria-labelledby="blog-heading">
+    <header>
+        <h1 id="blog-heading">@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+        {
+            <p>@Model.Introduction</p>
+        }
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
+    {
+        <figure>
+            <img src="@Model.BannerImage" alt="@Model.Title" loading="lazy" decoding="async" />
+        </figure>
+    }
+
+    <section id="post-list" aria-label="Blog posts">
+        @if (blogPosts == null || blogPosts.Posts == null || !blogPosts.Posts.Any())
+        {
+            <p><em>No blog posts available.</em></p>
+        }
+        else
+        {
+            @foreach (var post in blogPosts.Posts ?? Enumerable.Empty<BlogListItem>())
             {
-                <p class="sky-blog-stream-intro">@Model.Introduction</p>
+                @Html.Partial("_BlogStreamCard", post)
             }
-        </header>
-        <div class="sky-blog-stream-row" id="post-list">
-            @if (blogPosts == null || blogPosts.Posts == null || !blogPosts.Posts.Any())
-            {
-                <p>No blog posts available.</p>
-            }
-            else
-            {
-                @foreach (var post in blogPosts.Posts ?? Enumerable.Empty<BlogListItem>())
-                {
-                    @Html.Partial("_BlogStreamCard", post)
-                }
-            }
-        </div>
-        @Html.Partial("BlogNavPartial", blogPosts)
-    </div>
+        }
+    </section>
+
+    @Html.Partial("BlogNavPartial", blogPosts)
 </section>
