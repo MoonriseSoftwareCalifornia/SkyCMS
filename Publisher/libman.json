@@ -23,6 +23,10 @@
       "destination": "wwwroot/lib/fotorama"
     },
     {
+      "library": "picocss@2.1.1",
+      "destination": "wwwroot/lib/picocss/"
+    },
+    {
       "library": "powerbi-client@2.23.7",
       "destination": "wwwroot/lib/powerbi-client"
     }

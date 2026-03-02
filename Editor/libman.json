@@ -122,6 +122,10 @@
       "destination": "wwwroot/lib/grapick/"
     },
     {
+      "library": "picocss@2.1.1",
+      "destination": "wwwroot/lib/picocss/"
+    },
+    {
       "library": "popper.js@2.11.8",
       "destination": "wwwroot/lib/popper"
     },
