@@ -20,7 +20,7 @@ namespace Sky.Tests.Services
     using Moq;
 
     /// <summary>
-    /// Unit tests for <see cref="ContactManagementService"/>.
+    /// Unit tests for <see cref="IContactManagementService"/>.
     /// Tests contact CRUD, MailChimp integration, and admin email alerts.
     /// </summary>
     [TestClass]
@@ -28,9 +28,9 @@ namespace Sky.Tests.Services
     {
         private ApplicationDbContext dbContext;
         private Mock<IEmailSender> emailSenderMock;
-        private Mock<ILogger> loggerMock;
-        private Mock<HttpContext> httpContextMock;
-        private ContactManagementService service;
+        private Mock<ILogger<IContactManagementService>> loggerMock;
+        private Mock<IHttpContextAccessor> httpContextAccessorMock;
+        private IContactManagementService service;
 
         private const string TestEmail = "test@example.com";
         private const string TestFirstName = "John";
@@ -49,20 +49,23 @@ namespace Sky.Tests.Services
 
             // Setup mocks
             emailSenderMock = new Mock<IEmailSender>();
-            loggerMock = new Mock<ILogger>();
-            httpContextMock = new Mock<HttpContext>();
+            loggerMock = new Mock<ILogger<IContactManagementService>>();
 
-            // Setup HttpContext request
+            // Setup HttpContext and HttpContextAccessor
+            var httpContextMock = new Mock<HttpContext>();
             var requestMock = new Mock<HttpRequest>();
             requestMock.Setup(r => r.Host).Returns(new HostString(TestHostName));
             httpContextMock.Setup(c => c.Request).Returns(requestMock.Object);
+
+            httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+            httpContextAccessorMock.Setup(a => a.HttpContext).Returns(httpContextMock.Object);
 
             // Create service
             service = new ContactManagementService(
                 dbContext,
                 emailSenderMock.Object,
                 loggerMock.Object,
-                httpContextMock.Object);
+                httpContextAccessorMock.Object);
         }
 
         [TestCleanup]

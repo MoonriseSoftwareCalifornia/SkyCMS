@@ -4,11 +4,6 @@
 // See https://github.com/CWALabs/SkyCMS
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
-using System.Diagnostics;
-using System.Net;
-using System.Security.Claims;
-using System.Text;
-using System.Web;
 using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Cms.Publisher.Models;
@@ -18,11 +13,17 @@ using Cosmos.Common.Data.Logic;
 using Cosmos.Common.Features.Articles.Queries;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using Cosmos.Common.Services;
 using Cosmos.MicrosoftGraph;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Diagnostics;
+using System.Net;
+using System.Security.Claims;
+using System.Text;
+using System.Web;
 
 namespace Cosmos.Cms.Publisher.Controllers
 {
@@ -49,6 +50,7 @@ namespace Cosmos.Cms.Publisher.Controllers
         /// <param name="dbContext">Database Context.</param>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="emailSender">Email services.</param>
+        /// <param name="contactManagementService">Contact management service.</param>
         public HomeController(
             IServiceProvider services,
             IConfiguration configuration,
@@ -57,8 +59,9 @@ namespace Cosmos.Cms.Publisher.Controllers
             IOptions<SiteSettings> options,
             ApplicationDbContext dbContext,
             StorageContext storageContext,
-            IEmailSender emailSender)
-            : base(mediator, dbContext, storageContext, logger, emailSender)
+            IEmailSender emailSender,
+            IContactManagementService contactManagementService)
+            : base(mediator, dbContext, storageContext, logger, emailSender, contactManagementService)
         {
             this.configuration = configuration;
             this.logger = logger;

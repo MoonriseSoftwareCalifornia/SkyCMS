@@ -319,13 +319,13 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
 
         // <inheritdoc />
-        public Task<string?> GetUserIdAsync(TUserEntity user, CancellationToken cancellationToken = default)
+        public Task<string> GetUserIdAsync(TUserEntity user, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
             return Task.FromResult(
-                GetUserProperty(user, user => user.Id.ToString(), cancellationToken));
+                GetUserProperty(user, user => user.Id.ToString(), cancellationToken)!);
         }
 
         /// <summary>

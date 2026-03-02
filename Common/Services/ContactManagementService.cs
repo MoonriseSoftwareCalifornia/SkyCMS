@@ -13,7 +13,6 @@ namespace Cosmos.Common.Services
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
     using MailChimp.Net;
-    using MailChimp.Net.Interfaces;
     using MailChimp.Net.Models;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity.UI.Services;
@@ -23,26 +22,30 @@ namespace Cosmos.Common.Services
     /// <summary>
     /// Service for managing contacts, including adding and updating contact information, and integrating with MailChimp for email marketing.
     /// </summary>
-    public class ContactManagementService
+    public class ContactManagementService : IContactManagementService
     {
         private readonly ApplicationDbContext dbContext;
         private readonly IEmailSender emailSender;
-        private readonly ILogger logger;
-        private readonly HttpContext httpContext;
+        private readonly ILogger<IContactManagementService> logger;
+        private readonly IHttpContextAccessor httpContextAccessor;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ContactManagementService"/> class.
+        /// Initializes a new instance of the <see cref="IContactManagementService"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="emailSender">Email sender.</param>
         /// <param name="logger">Log service.</param>
-        /// <param name="httpContext">HttpContext.</param>
-        public ContactManagementService(ApplicationDbContext dbContext, IEmailSender emailSender, ILogger logger, HttpContext httpContext)
+        /// <param name="httpContextAccessor">HttpContext accessor.</param>
+        public ContactManagementService(
+            ApplicationDbContext dbContext,
+            IEmailSender emailSender,
+            ILogger<IContactManagementService> logger,
+            IHttpContextAccessor httpContextAccessor)
         {
             this.dbContext = dbContext;
             this.emailSender = emailSender;
             this.logger = logger;
-            this.httpContext = httpContext;
+            this.httpContextAccessor = httpContextAccessor;
         }
 
         /// <summary>
@@ -103,6 +106,7 @@ namespace Cosmos.Common.Services
                 logger.LogInformation($"Add or updated {updated.FullName} {updated.EmailAddress} with MailChimp on {updated.LastChanged}.");
             }
 
+            var httpContext = httpContextAccessor.HttpContext;
             var alertsSetting = await dbContext.Settings.FirstOrDefaultAsync(w => w.Group == "ContactsConfig" && w.Name == "EnableAlerts");
 
             if (alertsSetting != null && bool.Parse(alertsSetting.Value) == true)

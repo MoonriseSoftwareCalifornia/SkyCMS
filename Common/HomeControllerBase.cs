@@ -15,7 +15,7 @@ namespace Cosmos.Common
     using Cosmos.Common.Features.Articles.Queries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
-    using Microsoft.AspNetCore.Authorization;
+    using Cosmos.Common.Services;
     using Microsoft.AspNetCore.Cors;
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.AspNetCore.Mvc;
@@ -31,8 +31,9 @@ namespace Cosmos.Common
         private readonly IMediator mediator;
         private readonly ApplicationDbContext dbContext;
         private readonly StorageContext storageContext;
-        private readonly ILogger logger;
+        private readonly ILogger<HomeControllerBase> logger;
         private readonly IEmailSender emailSender;
+        private readonly IContactManagementService contactManagementService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeControllerBase"/> class.
@@ -42,18 +43,21 @@ namespace Cosmos.Common
         /// <param name="storageContext">Storage context.</param>
         /// <param name="logger">Logger service.</param>
         /// <param name="emailSender">Email sender service.</param>
+        /// <param name="contactManagementService">Contact management service.</param>
         public HomeControllerBase(
             IMediator mediator,
             ApplicationDbContext dbContext,
             StorageContext storageContext,
-            ILogger logger,
-            IEmailSender emailSender)
+            ILogger<HomeControllerBase> logger,
+            IEmailSender emailSender,
+            IContactManagementService contactManagementService)
         {
             this.mediator = mediator;
             this.dbContext = dbContext;
             this.storageContext = storageContext;
             this.logger = logger;
             this.emailSender = emailSender;
+            this.contactManagementService = contactManagementService;
         }
 
         /// <summary>
@@ -131,9 +135,7 @@ namespace Cosmos.Common
 
             if (ModelState.IsValid)
             {
-                var contactService = new Services.ContactManagementService(dbContext, emailSender, logger, this.HttpContext);
-
-                var result = await contactService.AddContactAsync(model);
+                var result = await contactManagementService.AddContactAsync(model);
 
                 return Json(result);
             }

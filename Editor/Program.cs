@@ -5,6 +5,13 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading.RateLimiting;
+using System.Threading.Tasks;
+using System.Web;
 using AspNetCore.Identity.FlexDb;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
@@ -12,10 +19,15 @@ using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common;
 using Cosmos.Common.Data;
+using Cosmos.Common.Features.Articles.EditorQueries;
+using Cosmos.Common.Features.Articles.Shared;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using Cosmos.Common.Services;
+using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.Common.Services.Configurations;
 using Cosmos.Common.Services.Email;
+using Cosmos.Common.Services.PublishedBlog;
 using Cosmos.DynamicConfig;
 using Cosmos.DynamicConfig.Configurations;
 using Cosmos.EmailServices;
@@ -25,6 +37,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -42,12 +55,11 @@ using Sky.Editor.Data.Logic;
 using Sky.Editor.Domain.Events;
 using Sky.Editor.Features.Articles.Create;
 using Sky.Editor.Features.Articles.Save;
-using Sky.Editor.Features.Blogs.GetStream;
-using Sky.Editor.Features.Blogs.UpdateStream;
-using Sky.Editor.Features.Blogs.DeleteStream;
 using Sky.Editor.Features.Blogs.CreatePost;
-using Sky.Editor.Features.Blogs.UpdatePost;
 using Sky.Editor.Features.Blogs.DeletePost;
+using Sky.Editor.Features.Blogs.DeleteStream;
+using Sky.Editor.Features.Blogs.UpdatePost;
+using Sky.Editor.Features.Blogs.UpdateStream;
 using Sky.Editor.Features.Shared;
 using Sky.Editor.Features.Templates.Create;
 using Sky.Editor.Features.Templates.Delete;
@@ -61,7 +73,6 @@ using Sky.Editor.Infrastructure.SignalR;
 using Sky.Editor.Infrastructure.Time;
 using Sky.Editor.Middleware;
 using Sky.Editor.Services.Authors;
-using Cosmos.Common.Services.BlogPublishing;
 using Sky.Editor.Services.Catalog;
 using Sky.Editor.Services.CDN;
 using Sky.Editor.Services.Diagnostics;
@@ -80,16 +91,6 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
-using System;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.RateLimiting;
-using System.Threading.Tasks;
-using System.Web;
-using Cosmos.Common.Features.Articles.EditorQueries;
-using Cosmos.Common.Features.Articles.Shared;
-using Cosmos.Common.Features.Articles.Queries;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
 
@@ -544,10 +545,32 @@ if (microsoftAuth != null)
 }
 
 // ---------------------------------------------------------------
-// STEP 6: Register Application Services
+// STEP 6: Register Email Services
+// ---------------------------------------------------------------
+// Register Cosmos Email Services (SMTP, Azure Communication, SendGrid, or NoOp fallback)
+// This automatically selects the appropriate provider based on configuration
+builder.Services.AddCosmosEmailServices(builder.Configuration);
+
+// ---------------------------------------------------------------
+// STEP 7: Register Application Services
 // ---------------------------------------------------------------
 // Scoped services (per-request lifecycle, can access HttpContext)
 builder.Services.AddScoped<ISetupService, SetupService>();
+builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
+builder.Services.AddScoped<IStorageContext, StorageContext>();
+builder.Services.AddScoped<IEditorSettings, EditorSettings>();
+builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
+
+// Register shared query services (Common namespace - used by both Editor and Publisher)
+builder.Services.AddScoped<IArticleCatalogQueryService>(sp =>
+    new ArticleCatalogQueryService(
+        sp.GetRequiredService<ApplicationDbContext>(),
+        builder.Configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty,
+        builder.Configuration.GetValue<string>("SiteSettings:BlobPublicUrl") ?? string.Empty));
+builder.Services.AddScoped<IPublishedPageQueryService, PublishedPageQueryService>();
+builder.Services.AddScoped<IBlogNavigationService, BlogNavigationService>();
+builder.Services.AddScoped<IPublishedBlogService, PublishedBlogService>();
+builder.Services.AddScoped<IContactManagementService, ContactManagementService>();
 
 // Register SINGLE mediator (Common namespace) with multi-tenant security decorator
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.Mediator>(); // ← Concrete type registration
@@ -573,7 +596,7 @@ builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteT
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateTemplateMetadataCommand, CommandResult<Template>>, UpdateTemplateMetadataHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetTemplateQuery, CommandResult<GetTemplateQueryResult>>, GetTemplateQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetTemplateListQuery, CommandResult<GetTemplateListQueryResult>>, GetTemplateListQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetBlogStreamQuery, CommandResult<GetBlogStreamQueryResult>>, GetBlogStreamQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Editor.Features.Blogs.GetStream.GetBlogStreamQuery, CommandResult<Sky.Editor.Features.Blogs.GetStream.GetBlogStreamQueryResult>>, Sky.Editor.Features.Blogs.GetStream.GetBlogStreamQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateBlogStreamCommand, CommandResult<Article>>, UpdateBlogStreamHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>, DeleteBlogStreamHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateBlogPostCommand, CommandResult<CreateBlogPostCommandResult>>, CreateBlogPostCommandHandler>();
@@ -581,14 +604,27 @@ builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateB
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteBlogPostCommand, CommandResult<DeleteBlogPostCommandResult>>, DeleteBlogPostCommandHandler>();
 builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
 
-// Register article query handlers (decoupled from ArticleEditLogic)
+// Register article query handlers - Editor-facing (decoupled from ArticleEditLogic)
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQuery, System.DateTimeOffset?>, Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQueryHandler>();
-// NOTE: Use non-nullable CatalogEntry because nullable reference types are compile-time only and don't affect runtime DI resolution
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQuery, Cosmos.Common.Data.CatalogEntry>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQueryHandler>();
 builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQuery, System.Collections.Generic.IEnumerable<Cosmos.Common.Models.RedirectItemViewModel>>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQueryHandler>();
+
+// Register article query handlers - Publisher-facing (for public website rendering)
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQuery, TableOfContents>, Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetPublishedPageByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.Queries.GetPublishedPageByUrlQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetPublishedPageHeaderByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.Queries.GetPublishedPageHeaderByUrlQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQuery, System.Collections.Generic.List<TableOfContentsItem>>, Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQueryHandler>();
+
+// Register blog query handlers - Publisher-facing (for public blog rendering)
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Blogs.Queries.GetBlogStreamQuery, Cosmos.Common.Features.Blogs.Queries.GetBlogStreamQueryResult>, Cosmos.Common.Features.Blogs.Queries.GetBlogStreamQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Blogs.Queries.GetBlogPostQuery, Cosmos.Common.Features.Blogs.Queries.GetBlogPostQueryResult>, Cosmos.Common.Features.Blogs.Queries.GetBlogPostQueryHandler>();
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Blogs.Queries.GetBlogPostNavigationQuery, Cosmos.Common.Features.Blogs.Queries.GetBlogPostNavigationQueryResult>, Cosmos.Common.Features.Blogs.Queries.GetBlogPostNavigationQueryHandler>();
+
+// Register blog query handlers - Editor-facing (for editor navigation)
+builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Blogs.EditorQueries.GetBlogPostNavigationQuery, Cosmos.Common.Features.Blogs.EditorQueries.GetBlogPostNavigationQueryResult>, Cosmos.Common.Features.Blogs.EditorQueries.GetBlogPostNavigationQueryHandler>();
 
 builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
     new ArticleViewModelBuilder(
@@ -615,7 +651,6 @@ builder.Services.AddTransient<IEmailConfigurationService, EmailConfigurationServ
 builder.Services.AddTransient<ArticleScheduler>();
 builder.Services.AddTransient<ArticleEditLogic>();
 builder.Services.AddTransient<ISetupCheckService, SetupCheckService>();
-builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 
 // Register Contact API services (required for /_api/contact endpoints)
 builder.Services.AddContactApi(builder.Configuration);
@@ -630,12 +665,12 @@ if (allowSetup)
 builder.Services.AddAuthorization();
 
 // ---------------------------------------------------------------
-// STEP 7: Register Background Services
+// STEP 8: Register Background Services
 // ---------------------------------------------------------------
 builder.Services.AddHostedService<ArticleSchedulerBackgroundService>();
 
 // ---------------------------------------------------------------
-// STEP 8: Register Data Protection & SignalR
+// STEP 9: Register Data Protection & SignalR
 // ---------------------------------------------------------------
 builder.Services.AddFlexDbDataProtection(builder.Configuration);
 
@@ -655,7 +690,7 @@ builder.Services.AddScoped<IPublishingProgressReporter, PublishingProgressReport
 
 
 // ---------------------------------------------------------------
-// STEP 9: Register MVC & Razor Pages
+// STEP 10: Register MVC & Razor Pages
 // ---------------------------------------------------------------
 // Normal mode: Full controller registration with API support
 // Api route is /_api/*
@@ -669,7 +704,7 @@ builder.Services.AddCosmosIdentity<ApplicationDbContext, IdentityUser, IdentityR
     .AddDefaultTokenProviders();
 
 // ---------------------------------------------------------------
-// STEP 10: Configure OAuth Providers
+// STEP 11: Configure OAuth Providers
 // ---------------------------------------------------------------
 var googleOAuth = builder.Configuration.GetSection("GoogleOAuth").Get<OAuth>();
 if (googleOAuth != null && googleOAuth.IsConfigured())
@@ -708,7 +743,7 @@ if (entraIdOAuth != null && entraIdOAuth.IsConfigured())
 }
 
 // ---------------------------------------------------------------
-// STEP 11: Configure Session & Razor Pages Routes
+// STEP 12: Configure Session & Razor Pages Routes
 // ---------------------------------------------------------------
 builder.Services.AddSession(options =>
 {
@@ -752,7 +787,7 @@ builder.Services.AddMvc()
     });
 
 // ---------------------------------------------------------------
-// STEP 12: Configure CORS & Security
+// STEP 13: Configure CORS & Security
 // ---------------------------------------------------------------
 builder.Services.AddCors(options =>
 {
@@ -849,7 +884,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // ---------------------------------------------------------------
-// STEP 13: Configure Rate Limiting
+// STEP 14: Configure Rate Limiting
 // ---------------------------------------------------------------
 builder.Services.AddRateLimiter(options =>
 {

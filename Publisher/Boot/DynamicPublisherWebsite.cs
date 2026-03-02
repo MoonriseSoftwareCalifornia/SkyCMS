@@ -4,8 +4,6 @@
 // See https://github.com/CWALabs/SkyCMS
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
-using System.Text.RegularExpressions;
-using System.Threading.RateLimiting;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
 using Cosmos.BlobService;
@@ -14,6 +12,7 @@ using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
 using Cosmos.Common.Features.Articles.Queries;
 using Cosmos.Common.Features.Shared;
+using Cosmos.Common.Services;
 using Cosmos.EmailServices;
 using Cosmos.MicrosoftGraph;
 using Microsoft.AspNetCore.Antiforgery;
@@ -23,6 +22,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Serialization;
+using System.Text.RegularExpressions;
+using System.Threading.RateLimiting;
 
 namespace Cosmos.Publisher.Boot
 {
@@ -106,6 +107,8 @@ namespace Cosmos.Publisher.Boot
             builder.Services.AddScoped<IQueryHandler<GetPublishedPageHeaderByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, GetPublishedPageHeaderByUrlQueryHandler>();
             builder.Services.AddScoped<IQueryHandler<GetTableOfContentsQuery, Cosmos.Common.Models.TableOfContents>, GetTableOfContentsQueryHandler>();
             builder.Services.AddScoped<IQueryHandler<SearchPublishedArticlesQuery, System.Collections.Generic.List<Cosmos.Common.Models.TableOfContentsItem>>, SearchPublishedArticlesQueryHandler>();
+
+            builder.Services.AddScoped<IContactManagementService>();
 
             // Add the BLOB and File Storage contexts for Cosmos
             builder.Services.AddCosmosStorageContext(builder.Configuration);

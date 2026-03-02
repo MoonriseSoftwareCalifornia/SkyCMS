@@ -560,30 +560,6 @@ namespace Sky.Tests
         }
 
         /// <summary>
-        /// Helper method to publish an article in this tenant using the PublishArticleCommand via mediator.
-        /// </summary>
-        /// <param name="articleId">The article ID (row GUID) to publish.</param>
-        /// <param name="publishTime">Optional explicit publish time (UTC); if null current time is used.</param>
-        /// <returns>List of CDN purge results.</returns>
-        public async Task<List<Sky.Editor.Services.CDN.CdnResult>> PublishArticleAsync(Guid articleId, DateTimeOffset? publishTime = null)
-        {
-            var mediator = (IMediator)HttpContext.RequestServices.GetService(typeof(IMediator));
-            var command = new Sky.Editor.Features.Articles.Publish.PublishArticleCommand
-            {
-                ArticleId = articleId,
-                PublishTime = publishTime
-            };
-
-            var result = await mediator.SendAsync(command);
-            if (!result.IsSuccess)
-            {
-                throw new InvalidOperationException($"Failed to publish article: {result.ErrorMessage}");
-            }
-
-            return result.Data.CdnResults;
-        }
-
-        /// <summary>
         /// Disposes the tenant context and its resources.
         /// </summary>
         public async ValueTask DisposeAsync()

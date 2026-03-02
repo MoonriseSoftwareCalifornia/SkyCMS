@@ -360,8 +360,11 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 .FirstOrDefaultAsync(c => c.RoleId.Equals(role.Id) &&
                                           c.ClaimValue == claim.Value && c.ClaimType == c.ClaimType, cancellationToken);
 
-            _repo.Delete(doomed);
-            await _repo.SaveChangesAsync().WaitAsync(cancellationToken);
+            if (doomed != null)
+            {
+                _repo.Delete(doomed);
+                await _repo.SaveChangesAsync().WaitAsync(cancellationToken);
+            }
         }
 
         #endregion

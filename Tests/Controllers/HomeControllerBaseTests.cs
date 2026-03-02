@@ -13,6 +13,7 @@ namespace Sky.Tests.Controllers
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.AspNetCore.Mvc;
@@ -36,6 +37,7 @@ namespace Sky.Tests.Controllers
         private TestHomeController controller = null!;
         private Mock<ILogger<TestHomeController>> loggerMock = null!;
         private Mock<IEmailSender> emailSenderMock = null!;
+        private Mock<IContactManagementService> contactManagementServiceMock = null!;
 
         [TestInitialize]
         public new void Setup()
@@ -44,6 +46,7 @@ namespace Sky.Tests.Controllers
 
             loggerMock = new Mock<ILogger<TestHomeController>>();
             emailSenderMock = new Mock<IEmailSender>();
+            contactManagementServiceMock = new Mock<IContactManagementService>();
 
             // Use the real mediator from the base class instead of a mock
             controller = new TestHomeController(
@@ -51,7 +54,8 @@ namespace Sky.Tests.Controllers
                 Db,
                 Storage,
                 loggerMock.Object,
-                emailSenderMock.Object);
+                emailSenderMock.Object,
+                contactManagementServiceMock.Object);
 
             // Setup HttpContext
             var httpContext = new DefaultHttpContext();
@@ -568,9 +572,10 @@ namespace Sky.Tests.Controllers
                 IMediator mediator,
                 ApplicationDbContext dbContext,
                 StorageContext storageContext,
-                ILogger logger,
-                IEmailSender emailSender)
-                : base(mediator, dbContext, storageContext, logger, emailSender)
+                ILogger<HomeControllerBase> logger,
+                IEmailSender emailSender,
+                IContactManagementService contactManagementService)
+                : base(mediator, dbContext, storageContext, logger, emailSender, contactManagementService)
             {
             }
         }

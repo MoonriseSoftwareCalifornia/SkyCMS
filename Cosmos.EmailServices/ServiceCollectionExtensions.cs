@@ -19,61 +19,23 @@ namespace Cosmos.EmailServices
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds the Cosmos Email Services to the services collection.
+        /// Adds the Cosmos Email Services to the services collection as a SCOPED service.
+        /// Automatically resolves email provider at runtime for both single-tenant and multi-tenant scenarios.
         /// </summary>
         /// <param name="services">Startup services collection.</param>
         /// <param name="configuration">System configuration.</param>
         /// <remarks>
-        /// Tries to add an email service in this order:  SMTP, Azure Communication, SendGrid.
+        /// Resolution order:
+        /// - Multi-tenant: Load from tenant's database Settings table
+        /// - Single-tenant with env vars: Load from IConfiguration (environment variables)
+        /// - Single-tenant without env vars: Load from database Settings table
+        /// - Fallback: NoOp sender (logs warning)
         /// </remarks>
         public static void AddCosmosEmailServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var adminEmail = configuration.GetValue<string>("AdminEmail") ?? throw new ArgumentException("No AdminEmail configuration found.");
-
-            // Attempt to add SMTP Email Provider.
-            try
-            {
-                var smtpConfig = configuration.GetSection("SmtpEmailProviderOptions").Get<SmtpEmailProviderOptions>();
-                if (smtpConfig != null
-                    && string.IsNullOrEmpty(smtpConfig.Host) == false
-                    && string.IsNullOrEmpty(smtpConfig.UserName) == false
-                    && string.IsNullOrEmpty(smtpConfig.Password) == false
-                    && smtpConfig.Port > 0)
-                {
-                    smtpConfig.DefaultFromEmailAddress = adminEmail;
-                    services.AddSmtpEmailProvider(smtpConfig);
-                    return;
-                }
-            }
-            catch
-            {
-                // Ignore and try the next provider.
-            }
-
-            // Attempt to add Azure Communication Email Provider.
-            var azureCommunicationConnection = configuration.GetConnectionString("AzureCommunicationConnection");
-            if (!string.IsNullOrEmpty(azureCommunicationConnection))
-            {
-                services.AddAzureCommunicationEmailSenderProvider(new AzureCommunicationEmailProviderOptions()
-                {
-                    ConnectionString = azureCommunicationConnection,
-                    DefaultFromEmailAddress = adminEmail
-                });
-
-                return;
-            }
-
-            // Attempt to add SendGrid Email Provider.
-            var sendGridApiKey = configuration.GetValue<string>("CosmosSendGridApiKey");
-            if (!string.IsNullOrEmpty(sendGridApiKey))
-            {
-                var sendGridOptions = new SendGridEmailProviderOptions(sendGridApiKey, adminEmail);
-                services.AddSendGridEmailProvider(sendGridOptions);
-                return;
-            }
-
-            // Add a NoOp Email Sender.
-            services.AddNoOpEmailSender();
+            // Register DynamicEmailSender as SCOPED (supports per-request tenant resolution)
+            services.AddScoped<IEmailSender, DynamicEmailSender>();
+            services.AddScoped<ICosmosEmailSender>(sp => (ICosmosEmailSender)sp.GetRequiredService<IEmailSender>());
         }
 
         /// <summary>

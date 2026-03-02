@@ -1439,8 +1439,10 @@
       "cosmos.emailservices": {
         "type": "Project",
         "dependencies": {
+          "AspNetCore.Identity.FlexDb": "[9.3.0.1, )",
           "Azure.Communication.Email": "[1.1.0, )",
           "Azure.Identity": "[1.17.0, )",
+          "Cosmos.Common": "[9.3.0.1, )",
           "HtmlAgilityPack": "[1.12.4, )",
           "Microsoft.AspNetCore.Identity.UI": "[9.0.0, 10.0.0)",
           "Microsoft.Extensions.Logging": "[9.0.11, )",

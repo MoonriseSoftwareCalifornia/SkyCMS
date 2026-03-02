@@ -54,6 +54,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\AspNetCore.Identity.FlexDb\AspNetCore.Identity.FlexDb.csproj" />
+	  <ProjectReference Include="..\Common\Cosmos.Common.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Update="Templates\EmailTemplates.Designer.cs">
 			<DesignTime>True</DesignTime>
 			<AutoGen>True</AutoGen>

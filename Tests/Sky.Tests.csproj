@@ -22,6 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Include="Sky.Tests\EmailServices\DynamicEmailSenderTests.cs" />
 	  <Compile Include="Sky.Tests\Services\Setup\SetupServiceRefactoredTests.cs" />
 	</ItemGroup>
 
@@ -40,6 +41,7 @@
 		<ProjectReference Include="..\Common\Cosmos.Common.csproj" />
 		<ProjectReference Include="..\Cosmos.BlobService\Cosmos.BlobService.csproj" />
 		<ProjectReference Include="..\Cosmos.ConnectionStrings\Cosmos.DynamicConfig.csproj" />
+		<ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
 		<ProjectReference Include="..\Editor\Sky.Editor.csproj" />
 	</ItemGroup>
 

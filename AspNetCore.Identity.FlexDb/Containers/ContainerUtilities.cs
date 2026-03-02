@@ -20,10 +20,9 @@ namespace AspNetCore.Identity.FlexDb.Containers
         /// <summary>
         /// Constructor that creates the database if it does not already exist.
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <param name="databaseName"></param>
-        /// <param name="limitThroughput"></param>
-        /// <param name="clientOptions"></param>
+        /// <param name="connectionString">Connection string.</param>
+        /// <param name="databaseName">Database name.</param>
+        /// <param name="clientOptions">Cosmos DB client options.</param>
         public ContainerUtilities(string connectionString,
                                   string databaseName,
                                   CosmosClientOptions? clientOptions = null)
@@ -219,8 +218,8 @@ namespace AspNetCore.Identity.FlexDb.Containers
     /// </summary>
     public class ContainerDefinition
     {
-        public string ContainerName { get; set; }
+        public required string ContainerName { get; set; }
 
-        public string PartitionKey { get; set; }
+        public required string PartitionKey { get; set; }
     }
 }

@@ -53,7 +53,7 @@ namespace Sky.Editor.Boot
                 try
                 {
                     logger.LogInformation("Checking config database schema for multi-tenant mode...");
-                    EnsureConfigDatabaseSchemaExists(configConnectionString, logger);
+                    EnsureConfigDatabaseSchemaExists(configConnectionString, logger).Wait();
                     logger.LogInformation("Config database schema is ready");
                 }
                 catch (Exception ex)
@@ -134,7 +134,8 @@ namespace Sky.Editor.Boot
                 try
                 {
                     logger.LogInformation("Checking tenant database schemas...");
-                    EnsureTenantSchemasExist(configConnectionString, logger);
+                    var task = EnsureTenantSchemasExist(configConnectionString, logger);
+                    task.Wait(); // Wait for the task to complete
                     logger.LogInformation("All tenant database schemas are ready");
                 }
                 catch (Exception ex)

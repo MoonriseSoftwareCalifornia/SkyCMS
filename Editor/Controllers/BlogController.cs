@@ -15,9 +15,9 @@ namespace Sky.Editor.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services.BlogPublishing;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
@@ -28,13 +28,10 @@ namespace Sky.Editor.Controllers
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Blogs.CreatePost;
-    using Sky.Editor.Features.Blogs.UpdatePost;
-    using Sky.Editor.Features.Blogs.DeletePost;
+    using Sky.Editor.Features.Blogs.DeleteStream;
     using Sky.Editor.Features.Blogs.GetStream;
     using Sky.Editor.Features.Blogs.UpdateStream;
-    using Sky.Editor.Features.Blogs.DeleteStream;
     using Sky.Editor.Models.Blogs;
-    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
@@ -65,7 +62,7 @@ namespace Sky.Editor.Controllers
         private readonly ITemplateService templateService;
         private readonly IBlogStreamRenderingService blogStreamRenderingService;
         private readonly ITitleChangeService titleChangeService;
-        private readonly CommonMediator mediator;
+        private readonly IMediator mediator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BlogController"/> class.
@@ -88,7 +85,7 @@ namespace Sky.Editor.Controllers
             UserManager<IdentityUser> userManager,
             IBlogStreamRenderingService blogStreamRenderingService,
             ITitleChangeService titleChangeService,
-            CommonMediator mediator,
+            IMediator mediator,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(db, userManager, memoryCache, configProvider)
