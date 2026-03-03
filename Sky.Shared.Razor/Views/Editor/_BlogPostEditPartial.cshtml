@@ -1,0 +1,54 @@
+@model Cosmos.Common.Models.ArticleViewModel
+@{
+    var displayDate = Model.Published ?? Model.Updated;
+}
+
+<article class="pico" aria-labelledby="post-title">
+    <header>
+        <h1 id="post-title" contenteditable>@Model.Title</h1>
+        <p>
+            <small>
+                <time datetime="@displayDate.UtcDateTime.ToString("o")">@displayDate.ToString("D")</time>
+                @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
+                {
+                    <text> · @Model.AuthorInfo</text>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Category))
+                {
+                    <text> · @Model.Category</text>
+                }
+            </small>
+        </p>
+    </header>
+    <figure class="ccms-img-widget-container"
+            data-editor-config="image-widget"
+            data-ccms-ceid="skycms-blog-post-bi">
+        @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
+        {
+            <img src="@Model.BannerImage" alt="Banner image for @Model.Title" />
+        }
+    </figure>
+    <div ccms-content-id="@Model.Id">
+        <section data-ccms-ceid="skycms-blog-post-content" class="ck-content">
+            @Html.Raw(Model.Content)
+        </section>
+    </div>
+</article>
+<script>
+    // Handles the image widget events.
+    document.addEventListener('DOMContentLoaded', () => {
+        // Handle the image changed event.
+        if (window.CCMSImageWidgetEvents && typeof window.CCMSImageWidgetEvents.on === 'function') {
+            window.CCMSImageWidgetEvents.on('imageChanged', function(info) {
+                // Update a hidden input to track the current image URL
+                const hiddenField = document.getElementById('BannerImage');
+                if (hiddenField) {
+                    hiddenField.value = info.imageSrc;
+                    saveChanges(); // Call the save function to persist changes
+                } else {
+                    console.warn('Hidden field for BannerImage not found.');
+                }
+            });
+        }
+    });
+</script>

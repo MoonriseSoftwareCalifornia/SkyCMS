@@ -66,13 +66,13 @@
  *         - type: 'uploaded' or 'deleted'
  *         - id: widget id (data-ccms-ceid)
  *         - element: widget container HTMLElement
- *         - imageSrc: image src (for uploaded), undefined for deleted
+ *         - imageSrc: image src (for uploaded), '' for deleted
  *   - Example usage:
  *       window.CCMSImageWidgetEvents.on('imageChanged', function(info) {
  *           // info.type: 'uploaded' or 'deleted'
  *           // info.id: widget id
  *           // info.element: widget container
- *           // info.imageSrc: image src (for uploaded), undefined for deleted
+ *           // info.imageSrc: image src (for uploaded), '' for deleted
  *           // Your custom logic here
  *       });
  */
@@ -610,6 +610,9 @@ async function ccms___showImageLibrary(widgetContainer, onSelect) {
 // ============================================================================
 window.CCMSImageWidgetEvents = (function () {
     const listeners = {};
+
+    const noop = function () { };
+
     return {
         on: function (event, callback) {
             if (!listeners[event]) listeners[event] = [];
@@ -622,9 +625,27 @@ window.CCMSImageWidgetEvents = (function () {
         trigger: function (event, data) {
             if (!listeners[event]) return;
             listeners[event].forEach(cb => cb(data));
+        },
+        onImageChanged: function (callback) {
+            if (typeof callback !== 'function') {
+                return noop;
+            }
+
+            this.on('imageChanged', callback);
+            return () => this.off('imageChanged', callback);
         }
     };
 })();
+
+if (typeof window !== 'undefined') {
+    window.ccmsOnImageChanged = function (callback) {
+        if (!window.CCMSImageWidgetEvents || typeof window.CCMSImageWidgetEvents.onImageChanged !== 'function') {
+            return function () { };
+        }
+
+        return window.CCMSImageWidgetEvents.onImageChanged(callback);
+    };
+}
 
 // ============================================================================
 // TRASH CAN AND ACTION BUTTONS
@@ -648,7 +669,7 @@ function ccms___onClickTrashCan(id, element) {
         type: 'deleted',
         id,
         element,
-        imageSrc: undefined
+        imageSrc: ''
     });
 
     // Reinitialize the upload widget

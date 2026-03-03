@@ -4,8 +4,6 @@
 @{
     Layout = null;
     ViewData["Title"] = Model.Title;
-    var isBlogPost = Model.ArticleType == ArticleType.BlogPost;
-
     var data = new ImportMapDefinition(
         new Dictionary<string, string>()
                                 {
@@ -37,6 +35,10 @@
     <meta name="cwps-meta-path-title" content="@Model.Title" />
     <meta name="cwps-meta-path-url" content="@Model.UrlPath" />
     <meta name="cwps-meta-path-updated" content="@Model.Updated" />
+    @if (Model.ArticleType == ArticleType.BlogStream || Model.ArticleType == ArticleType.BlogPost)
+    {
+        <link rel="stylesheet" href="~/wwwroot/lib/picocss/pico.conditional.min.css">
+    }
     <style>
         figure.media {
             width: 640px;
@@ -63,9 +65,16 @@
 </head>
 <body>
     @Html.Raw(Model.Layout.HtmlHeader)
-    <div ccms-content-id="@Model.Id">
-        @Html.Raw(Model.Content)
-    </div>
+    @if (Model.ArticleType == Cosmos.Cms.Common.ArticleType.BlogPost)
+    {
+        <partial name="_BlogPostEditPartial" model="Model" />
+    }
+    else
+    {
+        <div ccms-content-id="@Model.Id">
+            @Html.Raw(Model.Content)
+        </div>
+    }
     @Html.Raw(Model.Layout.FooterHtmlContent)
     @Html.Raw(Model.FooterJavaScript)
     @Html.AntiForgeryToken()

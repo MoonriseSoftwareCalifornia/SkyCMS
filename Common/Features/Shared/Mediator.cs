@@ -8,6 +8,7 @@
 namespace Cosmos.Common.Features.Shared;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,15 +24,18 @@ using System.Threading.Tasks;
 public class Mediator : IMediator
 {
     private readonly IServiceProvider serviceProvider;
+    private readonly ILogger<Mediator> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Mediator"/> class.
     /// </summary>
     /// <param name="serviceProvider">The service provider used to resolve command and query handlers.</param>
-    public Mediator(IServiceProvider serviceProvider)
+    /// <param name="logger">Optional logger for diagnostics and error tracking.</param>
+    public Mediator(IServiceProvider serviceProvider, ILogger<Mediator>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
         this.serviceProvider = serviceProvider;
+        this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Mediator>.Instance;
     }
 
     /// <inheritdoc/>
@@ -44,22 +48,72 @@ public class Mediator : IMediator
         var commandType = command.GetType();
         var handlerType = typeof(ICommandHandler<,>).MakeGenericType(commandType, typeof(TResult));
 
-        var handler = serviceProvider.GetRequiredService(handlerType);
+        logger.LogDebug(
+            "Attempting to resolve command handler: {CommandType} -> {HandlerType}",
+            commandType.Name,
+            handlerType.Name);
+
+        object handler;
+        try
+        {
+            handler = serviceProvider.GetRequiredService(handlerType);
+            logger.LogDebug("Successfully resolved handler for command: {CommandType}", commandType.Name);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var errorMessage = $"No command handler registered for '{commandType.FullName}'. " +
+                             $"Expected handler type: '{handlerType.FullName}'. " +
+                             $"Ensure the handler is registered in the DI container using " +
+                             $"'services.AddScoped<{handlerType.Name}, YourHandlerImplementation>()' or use " +
+                             $"'services.AddMediatorHandlers()' for automatic registration.";
+
+            logger.LogError(ex, "Command handler resolution failed: {ErrorMessage}", errorMessage);
+            throw new InvalidOperationException(errorMessage, ex);
+        }
+
         var method = handlerType.GetMethod(nameof(ICommandHandler<ICommand<TResult>, TResult>.HandleAsync));
 
         if (method == null)
         {
-            throw new InvalidOperationException($"Handler method not found for {commandType.Name}");
+            var errorMessage = $"Handler method 'HandleAsync' not found on handler type '{handlerType.FullName}' " +
+                             $"for command '{commandType.Name}'. This indicates a framework error or interface mismatch.";
+
+            logger.LogError("Command handler method not found: {ErrorMessage}", errorMessage);
+            throw new InvalidOperationException(errorMessage);
         }
 
-        var result = method.Invoke(handler, [command, cancellationToken]);
-
-        if (result is Task<TResult> task)
+        try
         {
-            return await task;
-        }
+            logger.LogDebug("Invoking handler for command: {CommandType}", commandType.Name);
 
-        throw new InvalidOperationException($"Handler did not return expected type for {commandType.Name}");
+            var result = method.Invoke(handler, [command, cancellationToken]);
+
+            if (result is Task<TResult> task)
+            {
+                var commandResult = await task;
+                logger.LogDebug("Command completed successfully: {CommandType}", commandType.Name);
+                return commandResult;
+            }
+
+            var returnTypeError = $"Handler for command '{commandType.Name}' did not return expected type 'Task<{typeof(TResult).Name}>'. " +
+                                $"Actual return type: {result?.GetType().FullName ?? "null"}";
+
+            logger.LogError("Command handler return type mismatch: {ErrorMessage}", returnTypeError);
+            throw new InvalidOperationException(returnTypeError);
+        }
+        catch (Exception ex) when (ex is not InvalidOperationException)
+        {
+            // Unwrap TargetInvocationException if present (from reflection)
+            var actualException = ex.InnerException ?? ex;
+
+            logger.LogError(
+                actualException,
+                "Command handler threw an exception: {CommandType}, Handler: {HandlerType}",
+                commandType.Name,
+                handlerType.Name);
+
+            throw actualException;
+        }
     }
 
     /// <inheritdoc/>
@@ -72,21 +126,71 @@ public class Mediator : IMediator
         var queryType = query.GetType();
         var handlerType = typeof(IQueryHandler<,>).MakeGenericType(queryType, typeof(TResult));
 
-        var handler = serviceProvider.GetRequiredService(handlerType);
+        logger.LogDebug(
+            "Attempting to resolve query handler: {QueryType} -> {HandlerType}",
+            queryType.Name,
+            handlerType.Name);
+
+        object handler;
+        try
+        {
+            handler = serviceProvider.GetRequiredService(handlerType);
+            logger.LogDebug("Successfully resolved handler for query: {QueryType}", queryType.Name);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var errorMessage = $"No query handler registered for '{queryType.FullName}'. " +
+                             $"Expected handler type: '{handlerType.FullName}'. " +
+                             $"Ensure the handler is registered in the DI container using " +
+                             $"'services.AddScoped<{handlerType.Name}, YourHandlerImplementation>()' or use " +
+                             $"'services.AddMediatorHandlers()' for automatic registration.";
+
+            logger.LogError(ex, "Query handler resolution failed: {ErrorMessage}", errorMessage);
+            throw new InvalidOperationException(errorMessage, ex);
+        }
+
         var method = handlerType.GetMethod(nameof(IQueryHandler<IQuery<TResult>, TResult>.HandleAsync));
 
         if (method == null)
         {
-            throw new InvalidOperationException($"Handler method not found for {queryType.Name}");
+            var errorMessage = $"Handler method 'HandleAsync' not found on handler type '{handlerType.FullName}' " +
+                             $"for query '{queryType.Name}'. This indicates a framework error or interface mismatch.";
+
+            logger.LogError("Query handler method not found: {ErrorMessage}", errorMessage);
+            throw new InvalidOperationException(errorMessage);
         }
 
-        var result = method.Invoke(handler, [query, cancellationToken]);
-
-        if (result is Task<TResult> task)
+        try
         {
-            return await task;
-        }
+            logger.LogDebug("Invoking handler for query: {QueryType}", queryType.Name);
 
-        throw new InvalidOperationException($"Handler did not return expected type for {queryType.Name}");
+            var result = method.Invoke(handler, [query, cancellationToken]);
+
+            if (result is Task<TResult> task)
+            {
+                var queryResult = await task;
+                logger.LogDebug("Query completed successfully: {QueryType}", queryType.Name);
+                return queryResult;
+            }
+
+            var returnTypeError = $"Handler for query '{queryType.Name}' did not return expected type 'Task<{typeof(TResult).Name}>'. " +
+                                $"Actual return type: {result?.GetType().FullName ?? "null"}";
+
+            logger.LogError("Query handler return type mismatch: {ErrorMessage}", returnTypeError);
+            throw new InvalidOperationException(returnTypeError);
+        }
+        catch (Exception ex) when (ex is not InvalidOperationException)
+        {
+            // Unwrap TargetInvocationException if present (from reflection)
+            var actualException = ex.InnerException ?? ex;
+
+            logger.LogError(
+                actualException,
+                "Query handler threw an exception: {QueryType}, Handler: {HandlerType}",
+                queryType.Name,
+                handlerType.Name);
+
+            throw actualException;
+        }
     }
 }

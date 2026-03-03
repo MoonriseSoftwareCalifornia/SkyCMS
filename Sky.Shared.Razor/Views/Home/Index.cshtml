@@ -16,7 +16,7 @@
     <meta name="cwps-meta-path-url" content="@Model.UrlPath" />
     <meta name="cwps-meta-path-updated" content="@Model.Updated" />
     <meta name="cwps-meta-author-info" content="@Model.AuthorInfo" />
-    <meta name="cwps-meta-user-is-authenticated" content="@User.Identity.IsAuthenticated.ToString().ToLower()" />
+    <meta name="cwps-meta-user-is-authenticated" content="@User?.Identity?.IsAuthenticated.ToString().ToLower()" />
     @if (Model.ArticleType == ArticleType.BlogStream || Model.ArticleType == ArticleType.BlogPost)
     {
         <link rel="stylesheet" href="~/wwwroot/lib/picocss/pico.conditional.min.css">
@@ -29,11 +29,11 @@
     @Html.Raw(Model.Layout.HtmlHeader)
     @if (Model.ArticleType == Cosmos.Cms.Common.ArticleType.BlogStream)
     {
-        @Html.Partial("_BlogStreamPartial", Model)
+        <partial name="_BlogStreamPartial" model="Model" />
     }
     else if (Model.ArticleType == Cosmos.Cms.Common.ArticleType.BlogPost)
     {
-        @Html.Partial("_BlogPostPartial", Model)
+        <partial name="_BlogPostPartial" model="Model" />
     }
     else
     {
