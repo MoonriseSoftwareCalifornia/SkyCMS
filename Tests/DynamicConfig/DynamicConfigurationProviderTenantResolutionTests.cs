@@ -58,7 +58,7 @@ namespace Sky.Tests.DynamicConfig
             var configDbFile = Path.Combine(Path.GetTempPath(), $"skycms-config-{Guid.NewGuid()}.db");
 
             var configBuilder = new ConfigurationBuilder();
-            configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+            configBuilder.AddInMemoryCollection(new Dictionary<string, string>
                 {
                     { "ConnectionStrings:ConfigDbConnectionString", $"Data Source={configDbFile};" },  // ✅ Correct key name
                     { "MultiTenant", "true" }
@@ -232,7 +232,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
-            httpContextAccessor.Setup(x => x.HttpContext).Returns((HttpContext?)null);
+            httpContextAccessor.Setup(x => x.HttpContext).Returns((HttpContext)null);
 
             var proxySettings = CreateProxySettings(
                 trustXOriginHostname: false,
@@ -259,7 +259,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var httpContext = new Mock<HttpContext>();
-            httpContext.Setup(x => x.Request).Returns((HttpRequest?)null);
+            httpContext.Setup(x => x.Request).Returns((HttpRequest)null);
 
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             httpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext.Object);
@@ -314,7 +314,7 @@ namespace Sky.Tests.DynamicConfig
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Rejected malformed x-origin-hostname header")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
                 Times.Once);
         }
 
@@ -455,7 +455,7 @@ namespace Sky.Tests.DynamicConfig
 
             // Create a new configuration with the correct MultiTenant setting
             var configBuilder = new ConfigurationBuilder();
-            configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+            configBuilder.AddInMemoryCollection(new Dictionary<string, string>
             {
                 { "ConnectionStrings:ConfigDbConnectionString", _configuration.GetConnectionString("ConfigDbConnectionString") },
                 { "MultiTenant", multiTenant.ToString() }

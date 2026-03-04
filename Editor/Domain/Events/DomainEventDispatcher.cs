@@ -78,18 +78,18 @@ namespace Sky.Editor.Domain.Events
         /// <summary>
         /// Resolves handler instances for a requested closed generic handler interface type.
         /// </summary>
-        private readonly Func<Type, IEnumerable<object>> _handlerResolver;
+        private readonly Func<Type, IEnumerable<object>> handlerResolver;
 
         /// <summary>
         /// Indicates whether handlers for a single event should be invoked in parallel.
         /// </summary>
-        private readonly bool _parallel;
+        private readonly bool parallel;
 
         /// <summary>
         /// Cache mapping event CLR types to compiled invocation delegates for each handler.
         /// Each dispatcher instance has its own cache to prevent cross-instance contamination.
         /// </summary>
-        private readonly ConcurrentDictionary<Type, List<Func<IDomainEvent, CancellationToken, Task>>> _delegateCache = new();
+        private readonly ConcurrentDictionary<Type, List<Func<IDomainEvent, CancellationToken, Task>>> delegateCache = new ();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DomainEventDispatcher"/> class
@@ -105,8 +105,8 @@ namespace Sky.Editor.Domain.Events
                 throw new ArgumentNullException(nameof(handlers));
             }
 
-            _handlerResolver = _ => handlers;
-            _parallel = parallel;
+            handlerResolver = _ => handlers;
+            this.parallel = parallel;
         }
 
         /// <summary>
@@ -123,8 +123,8 @@ namespace Sky.Editor.Domain.Events
             Func<Type, IEnumerable<object>> handlerResolver,
             bool parallel = false)
         {
-            _handlerResolver = handlerResolver ?? throw new ArgumentNullException(nameof(handlerResolver));
-            _parallel = parallel;
+            this.handlerResolver = handlerResolver ?? throw new ArgumentNullException(nameof(handlerResolver));
+            this.parallel = parallel;
         }
 
         /// <summary>
@@ -153,7 +153,7 @@ namespace Sky.Editor.Domain.Events
 
             var failures = new List<Exception>();
 
-            if (_parallel && delegates.Count > 1)
+            if (parallel && delegates.Count > 1)
             {
                 var tasks = delegates
                     .Select(d => d(domainEvent, cancellationToken))
@@ -241,7 +241,7 @@ namespace Sky.Editor.Domain.Events
         /// </summary>
         /// <param name="eventType">Concrete CLR type of the domain event.</param>
         private List<Func<IDomainEvent, CancellationToken, Task>> GetOrCreateDelegates(Type eventType) =>
-            _delegateCache.GetOrAdd(eventType, BuildDelegatesForType);
+            delegateCache.GetOrAdd(eventType, BuildDelegatesForType);
 
         /// <summary>
         /// Uses reflection to discover and wrap matching handler method invocations for a specific event type.
@@ -259,7 +259,7 @@ namespace Sky.Editor.Domain.Events
         {
             var handlerInterface = typeof(IDomainEventHandler<>).MakeGenericType(eventType);
 
-            var instances = _handlerResolver(handlerInterface)
+            var instances = handlerResolver(handlerInterface)
                 ?.Distinct()
                 ?.ToList() ?? new List<object>();
 

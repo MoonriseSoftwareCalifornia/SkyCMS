@@ -59,8 +59,8 @@ namespace Sky.Tests.Controllers
             var services = new Mock<IServiceProvider>();
             articleQueryMediatorMock = new Mock<CommonMediator>();
             articleQueryMediatorMock
-                .Setup(m => m.QueryAsync(It.IsAny<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync((Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?> query, System.Threading.CancellationToken ct) =>
+                .Setup(m => m.QueryAsync(It.IsAny<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel>>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync((Cosmos.Common.Features.Shared.IQuery<ArticleViewModel> query, System.Threading.CancellationToken ct) =>
                 {
                     if (query is GetArticleByUrlQuery urlQuery)
                     {

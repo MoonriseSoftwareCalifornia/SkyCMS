@@ -27,8 +27,8 @@ namespace Sky.Editor.Services.Layout
     /// </remarks>
     public class LayoutMigrationService : ILayoutMigrationService
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly ILogger<LayoutMigrationService> _logger;
+        private readonly ApplicationDbContext dbContext;
+        private readonly ILogger<LayoutMigrationService> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LayoutMigrationService"/> class.
@@ -39,8 +39,8 @@ namespace Sky.Editor.Services.Layout
             ApplicationDbContext dbContext,
             ILogger<LayoutMigrationService> logger)
         {
-            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
 
@@ -56,24 +56,24 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                var needsMigration = await _dbContext.Layouts
+                var needsMigration = await dbContext.Layouts
                     .AnyAsync(l => l.LayoutNumber == 0);
 
                 if (needsMigration)
                 {
-                    _logger.LogInformation(
+                    logger.LogInformation(
                         "Layout migration required: Found layouts with LayoutNumber = 0");
                 }
                 else
                 {
-                    _logger.LogDebug("Layout migration not needed: All layouts have assigned LayoutNumbers");
+                    logger.LogDebug("Layout migration not needed: All layouts have assigned LayoutNumbers");
                 }
 
                 return needsMigration;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking if layout migration is needed");
+                logger.LogError(ex, "Error checking if layout migration is needed");
                 throw;
             }
         }
@@ -92,27 +92,27 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                _logger.LogInformation("Starting layout number migration");
+                logger.LogInformation("Starting layout number migration");
 
                 // Load all layouts that need migration
-                var layouts = await _dbContext.Layouts
+                var layouts = await dbContext.Layouts
                     .Where(l => l.LayoutNumber == 0)
                     .ToListAsync();
 
                 if (layouts.Count == 0)
                 {
-                    _logger.LogInformation("No layouts require migration");
+                    logger.LogInformation("No layouts require migration");
                     return 0;
                 }
 
-                _logger.LogInformation("Found {Count} layouts to migrate", layouts.Count);
+                logger.LogInformation("Found {Count} layouts to migrate", layouts.Count);
 
                 // Use execution strategy to handle retries and transactions
-                var strategy = _dbContext.Database.CreateExecutionStrategy();
+                var strategy = dbContext.Database.CreateExecutionStrategy();
                 
                 var updatedCount = await strategy.ExecuteAsync(async () =>
                 {
-                    using var transaction = await _dbContext.Database.BeginTransactionAsync();
+                    using var transaction = await dbContext.Database.BeginTransactionAsync();
                     
                     try
                     {
@@ -123,7 +123,7 @@ namespace Sky.Editor.Services.Layout
                             .OrderBy(g => g.Min(l => l.LastModified ?? DateTimeOffset.MinValue))
                             .ToList();
 
-                        _logger.LogInformation("Identified {FamilyCount} layout families", families.Count);
+                        logger.LogInformation("Identified {FamilyCount} layout families", families.Count);
 
                         int layoutNumber = 1;
                         int count = 0;
@@ -133,7 +133,7 @@ namespace Sky.Editor.Services.Layout
                             // Determine if this family is currently active (has any IsDefault = true)
                             var isActiveFamily = family.Any(l => l.IsDefault);
 
-                            _logger.LogDebug(
+                            logger.LogDebug(
                                 "Processing layout family '{FamilyId}' with {VersionCount} versions (Active: {IsActive})",
                                 family.Key,
                                 family.Count(),
@@ -150,7 +150,7 @@ namespace Sky.Editor.Services.Layout
 
                                 count++;
 
-                                _logger.LogTrace(
+                                logger.LogTrace(
                                     "Updated Layout Id={LayoutId}, Version={Version} -> LayoutNumber={LayoutNumber}, IsDefault={IsDefault}",
                                     layout.Id,
                                     layout.Version,
@@ -162,10 +162,10 @@ namespace Sky.Editor.Services.Layout
                         }
 
                         // Save all changes within transaction
-                        await _dbContext.SaveChangesAsync();
+                        await dbContext.SaveChangesAsync();
                         await transaction.CommitAsync();
 
-                        _logger.LogInformation(
+                        logger.LogInformation(
                             "Layout migration completed successfully: {UpdatedCount} layouts migrated into {FamilyCount} families",
                             count,
                             families.Count);
@@ -175,7 +175,7 @@ namespace Sky.Editor.Services.Layout
                     catch
                     {
                         await transaction.RollbackAsync();
-                        _logger.LogWarning("Layout migration transaction rolled back");
+                        logger.LogWarning("Layout migration transaction rolled back");
                         throw;
                     }
                 });
@@ -184,7 +184,7 @@ namespace Sky.Editor.Services.Layout
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during layout number migration");
+                logger.LogError(ex, "Error during layout number migration");
                 throw;
             }
         }
@@ -202,20 +202,20 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                _logger.LogInformation("Starting template LayoutNumber migration");
+                logger.LogInformation("Starting template LayoutNumber migration");
 
                 // Load templates that need migration
-                var templates = await _dbContext.Templates
+                var templates = await dbContext.Templates
                     .Where(t => t.LayoutNumber == 0)
                     .ToListAsync();
 
                 if (templates.Count == 0)
                 {
-                    _logger.LogInformation("No templates require LayoutNumber migration");
+                    logger.LogInformation("No templates require LayoutNumber migration");
                     return;
                 }
 
-                _logger.LogInformation("Found {Count} templates to migrate", templates.Count);
+                logger.LogInformation("Found {Count} templates to migrate", templates.Count);
 
                 int updatedCount = 0;
                 int skippedCount = 0;
@@ -224,7 +224,7 @@ namespace Sky.Editor.Services.Layout
                 {
                     if (!template.LayoutId.HasValue)
                     {
-                        _logger.LogWarning(
+                        logger.LogWarning(
                             "Template Id={TemplateId} ('{Title}') has no LayoutId, cannot migrate LayoutNumber",
                             template.Id,
                             template.Title);
@@ -233,12 +233,12 @@ namespace Sky.Editor.Services.Layout
                     }
 
                     // Look up the Layout to get its LayoutNumber
-                    var layout = await _dbContext.Layouts
+                    var layout = await dbContext.Layouts
                         .FirstOrDefaultAsync(l => l.Id == template.LayoutId.Value);
 
                     if (layout == null)
                     {
-                        _logger.LogWarning(
+                        logger.LogWarning(
                             "Template Id={TemplateId} ('{Title}') references non-existent Layout Id={LayoutId}",
                             template.Id,
                             template.Title,
@@ -249,7 +249,7 @@ namespace Sky.Editor.Services.Layout
 
                     if (layout.LayoutNumber == 0)
                     {
-                        _logger.LogWarning(
+                        logger.LogWarning(
                             "Template Id={TemplateId} references Layout Id={LayoutId} which has LayoutNumber=0. Run layout migration first.",
                             template.Id,
                             layout.Id);
@@ -261,7 +261,7 @@ namespace Sky.Editor.Services.Layout
                     template.LayoutNumber = layout.LayoutNumber;
                     updatedCount++;
 
-                    _logger.LogTrace(
+                    logger.LogTrace(
                         "Updated Template Id={TemplateId} ('{Title}') -> LayoutNumber={LayoutNumber} from Layout Id={LayoutId}",
                         template.Id,
                         template.Title,
@@ -272,22 +272,22 @@ namespace Sky.Editor.Services.Layout
                 // Save changes if any templates were updated
                 if (updatedCount > 0)
                 {
-                    await _dbContext.SaveChangesAsync();
-                    _logger.LogInformation(
+                    await dbContext.SaveChangesAsync();
+                    logger.LogInformation(
                         "Template migration completed: {UpdatedCount} templates updated, {SkippedCount} skipped",
                         updatedCount,
                         skippedCount);
                 }
                 else
                 {
-                    _logger.LogWarning(
+                    logger.LogWarning(
                         "No templates could be migrated. {SkippedCount} templates skipped due to missing or invalid Layout references",
                         skippedCount);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during template LayoutNumber migration");
+                logger.LogError(ex, "Error during template LayoutNumber migration");
                 throw;
             }
         }

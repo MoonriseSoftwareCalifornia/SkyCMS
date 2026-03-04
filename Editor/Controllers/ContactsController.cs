@@ -335,7 +335,7 @@ namespace Sky.Editor.Controllers
         /// </summary>
         private class ContactsListResponse
         {
-            public List<Contact> data { get; set; } = new();
+            public List<Contact> data { get; set; } = new ();
         }
     }
 }

@@ -21,29 +21,29 @@ namespace Sky.Editor.Services.Layout
     /// </summary>
     public class LayoutFamilyService : ILayoutFamilyService
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly ILogger<LayoutFamilyService> _logger;
+        private readonly ApplicationDbContext dbContext;
+        private readonly ILogger<LayoutFamilyService> logger;
 
         public LayoutFamilyService(
             ApplicationDbContext dbContext,
             ILogger<LayoutFamilyService> logger)
         {
-            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<List<Cosmos.Common.Data.Layout>> GetLayoutFamilyAsync(int layoutNumber)
         {
             try
             {
-                return await _dbContext.Layouts
+                return await dbContext.Layouts
                     .ByLayoutNumber(layoutNumber)
                     .OrderByDescending(l => l.Version)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving layout family {LayoutNumber}", layoutNumber);
+                logger.LogError(ex, "Error retrieving layout family {LayoutNumber}", layoutNumber);
                 throw;
             }
         }
@@ -52,14 +52,14 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                return await _dbContext.Layouts
+                return await dbContext.Layouts
                     .ByLayoutNumber(layoutNumber)
                     .OrderByDescending(l => l.Version)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving latest version for layout family {LayoutNumber}", layoutNumber);
+                logger.LogError(ex, "Error retrieving latest version for layout family {LayoutNumber}", layoutNumber);
                 throw;
             }
         }
@@ -68,14 +68,14 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                return await _dbContext.Layouts
+                return await dbContext.Layouts
                     .ByLayoutNumber(layoutNumber)
                     .Published()
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving published version for layout family {LayoutNumber}", layoutNumber);
+                logger.LogError(ex, "Error retrieving published version for layout family {LayoutNumber}", layoutNumber);
                 throw;
             }
         }
@@ -84,7 +84,7 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                return await _dbContext.Layouts
+                return await dbContext.Layouts
                     .WithLayoutNumber()
                     .Select(l => l.LayoutNumber)
                     .Distinct()
@@ -93,7 +93,7 @@ namespace Sky.Editor.Services.Layout
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving all layout numbers");
+                logger.LogError(ex, "Error retrieving all layout numbers");
                 throw;
             }
         }
@@ -120,7 +120,7 @@ namespace Sky.Editor.Services.Layout
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving family info for layout {LayoutNumber}", layoutNumber);
+                logger.LogError(ex, "Error retrieving family info for layout {LayoutNumber}", layoutNumber);
                 throw;
             }
         }
@@ -152,10 +152,10 @@ namespace Sky.Editor.Services.Layout
                     Published = null
                 };
 
-                _dbContext.Layouts.Add(newVersion);
-                await _dbContext.SaveChangesAsync();
+                dbContext.Layouts.Add(newVersion);
+                await dbContext.SaveChangesAsync();
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Created new version {Version} for layout family {LayoutNumber} (ID: {LayoutId})",
                     newVersion.Version, layoutNumber, newVersion.Id);
 
@@ -163,7 +163,7 @@ namespace Sky.Editor.Services.Layout
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating new version for layout family {LayoutNumber}", layoutNumber);
+                logger.LogError(ex, "Error creating new version for layout family {LayoutNumber}", layoutNumber);
                 throw;
             }
         }
@@ -172,10 +172,10 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                var layout = await _dbContext.Layouts.FindAsync(layoutId);
+                var layout = await dbContext.Layouts.FindAsync(layoutId);
                 if (layout == null)
                 {
-                    _logger.LogWarning("Layout {LayoutId} not found for publishing", layoutId);
+                    logger.LogWarning("Layout {LayoutId} not found for publishing", layoutId);
                     return false;
                 }
 
@@ -191,9 +191,9 @@ namespace Sky.Editor.Services.Layout
                 layout.IsDefault = true;
                 layout.Published = DateTimeOffset.UtcNow;
 
-                await _dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Published layout {LayoutId} (LayoutNumber: {LayoutNumber}, Version: {Version})",
                     layoutId, layout.LayoutNumber, layout.Version);
 
@@ -201,7 +201,7 @@ namespace Sky.Editor.Services.Layout
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error publishing layout {LayoutId}", layoutId);
+                logger.LogError(ex, "Error publishing layout {LayoutId}", layoutId);
                 throw;
             }
         }
@@ -210,31 +210,31 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                var layout = await _dbContext.Layouts.FindAsync(layoutId);
+                var layout = await dbContext.Layouts.FindAsync(layoutId);
                 if (layout == null)
                 {
-                    _logger.LogWarning("Layout {LayoutId} not found for deletion", layoutId);
+                    logger.LogWarning("Layout {LayoutId} not found for deletion", layoutId);
                     return false;
                 }
 
                 if (layout.IsDefault)
                 {
-                    _logger.LogWarning(
+                    logger.LogWarning(
                         "Cannot delete published layout {LayoutId} (LayoutNumber: {LayoutNumber})",
                         layoutId, layout.LayoutNumber);
                     return false;
                 }
 
-                var templates = await _dbContext.Templates
+                var templates = await dbContext.Templates
                     .Where(t => t.LayoutId == layoutId)
                     .ToListAsync();
 
-                _dbContext.Templates.RemoveRange(templates);
-                _dbContext.Layouts.Remove(layout);
+                dbContext.Templates.RemoveRange(templates);
+                dbContext.Layouts.Remove(layout);
 
-                await _dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Deleted layout {LayoutId} (LayoutNumber: {LayoutNumber}, Version: {Version}) and {TemplateCount} templates",
                     layoutId, layout.LayoutNumber, layout.Version, templates.Count);
 
@@ -242,7 +242,7 @@ namespace Sky.Editor.Services.Layout
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting layout {LayoutId}", layoutId);
+                logger.LogError(ex, "Error deleting layout {LayoutId}", layoutId);
                 throw;
             }
         }
@@ -251,7 +251,7 @@ namespace Sky.Editor.Services.Layout
         {
             try
             {
-                var layouts = await _dbContext.Layouts
+                var layouts = await dbContext.Layouts
                     .WithLayoutNumber()
                     .OrderByFamilyAndVersion()
                     .ToListAsync();
@@ -276,7 +276,7 @@ namespace Sky.Editor.Services.Layout
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving grouped layouts");
+                logger.LogError(ex, "Error retrieving grouped layouts");
                 throw;
             }
         }

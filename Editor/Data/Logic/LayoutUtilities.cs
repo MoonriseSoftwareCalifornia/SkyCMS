@@ -30,7 +30,7 @@ namespace Cosmos.Cms.Data.Logic
         /// Default online catalog location.
         /// </summary>
         private const string COSMOSLAYOUTSREPO = "https://cwalabs.github.io/Cosmos.Starter.Designs";
-        private Root _communityCatalog = null;
+        private Root communityCatalog = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LayoutUtilities"/> class.
@@ -106,12 +106,12 @@ namespace Cosmos.Cms.Data.Logic
         {
             get
             {
-                if (_communityCatalog == null)
+                if (communityCatalog == null)
                 {
-                    _communityCatalog = LoadCatalog().GetAwaiter().GetResult();
+                    communityCatalog = LoadCatalog().GetAwaiter().GetResult();
                 }
 
-                return _communityCatalog;
+                return communityCatalog;
             }
         }
 

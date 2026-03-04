@@ -18,7 +18,7 @@ namespace Sky.Editor.Services.Setup
         /// <summary>
         /// List of properties that contain sensitive data requiring masking/reveal functionality.
         /// </summary>
-        private static readonly HashSet<string> SensitiveProperties = new()
+        private static readonly HashSet<string> SensitiveProperties = new ()
         {
             "AdminPassword",
             "SmtpPassword",

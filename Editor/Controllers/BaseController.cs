@@ -7,6 +7,11 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using System.Web;
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
@@ -18,11 +23,6 @@ namespace Sky.Cms.Controllers
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Cms.Models;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using System.Web;
 
     /// <summary>
     /// Base controller.

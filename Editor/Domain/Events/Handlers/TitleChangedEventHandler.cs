@@ -19,14 +19,14 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// <summary>
         /// Logger instance for diagnostic output.
         /// </summary>
-        private readonly ILogger<TitleChangedEventHandler> _logger;
+        private readonly ILogger<TitleChangedEventHandler> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TitleChangedEventHandler"/> class.
         /// </summary>
         /// <param name="logger">The logger used to record title change events.</param>
         public TitleChangedEventHandler(ILogger<TitleChangedEventHandler> logger) =>
-            _logger = logger;
+            this.logger = logger;
 
         /// <summary>
         /// Handles a <see cref="TitleChangedEvent"/> (non-cancellable overload).
@@ -55,7 +55,7 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// </remarks>
         public Task HandleAsync(TitleChangedEvent @event, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Title changed: ArticleNumber={ArticleNumber} '{Old}' -> '{New}'",
+            logger.LogInformation("Title changed: ArticleNumber={ArticleNumber} '{Old}' -> '{New}'",
                 @event.ArticleNumber, @event.OldTitle, @event.NewTitle);
             return Task.CompletedTask;
         }

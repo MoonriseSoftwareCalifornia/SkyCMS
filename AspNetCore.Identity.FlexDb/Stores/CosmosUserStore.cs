@@ -396,7 +396,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         }
 
         // <inheritdoc />
-        public Task SetNormalizedEmailAsync(TUserEntity user, string normalizedEmail,
+        public Task SetNormalizedEmailAsync(TUserEntity user, string? normalizedEmail,
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(normalizedEmail))
@@ -410,7 +410,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         }
 
         // <inheritdoc />
-        public Task SetNormalizedUserNameAsync(TUserEntity user, string normalizedName,
+        public Task SetNormalizedUserNameAsync(TUserEntity user, string? normalizedName,
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(normalizedName))

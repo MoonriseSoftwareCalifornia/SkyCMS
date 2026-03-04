@@ -4,11 +4,6 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Threading.Tasks;
 using Cosmos.DynamicConfig;
 using Cosmos.DynamicConfig.Configurations;
 using Microsoft.AspNetCore.Http;
@@ -16,8 +11,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Net;
 
 namespace Sky.Tests.DynamicConfig
 {
@@ -64,7 +59,7 @@ namespace Sky.Tests.DynamicConfig
             var connB = new Connection { DomainNames = new[] { hostB }, DbConn = SqliteConnectionString(tenantB), StorageConn = "s2", WebsiteUrl = $"https://{hostB}", ResourceGroup = "rg" };
             await SeedConfigDatabaseAsync(configDb, new[] { connA, connB });
 
-            var inMemorySettings = new Dictionary<string, string?> {
+            var inMemorySettings = new Dictionary<string, string> {
                 { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) },
                 { "MultiTenant", "false" }
             };

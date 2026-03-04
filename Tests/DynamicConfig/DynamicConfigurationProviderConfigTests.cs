@@ -548,7 +548,7 @@ namespace Sky.Tests.DynamicConfig
 
             await SeedConfigDatabaseAsync(configDb, new[] { connA });
 
-            var inMemorySettings = new Dictionary<string, string?>
+            var inMemorySettings = new Dictionary<string, string>
             {
                 { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) }
             };

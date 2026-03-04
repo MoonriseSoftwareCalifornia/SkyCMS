@@ -26,7 +26,7 @@ namespace Cosmos.Editor.Services
     {
         private readonly string connectionString;
         private readonly bool isMultiTenant;
-        private readonly ILogger<MultiDatabaseManagementUtilities> _logger;
+        private readonly ILogger<MultiDatabaseManagementUtilities> logger;
 
         /// <summary>
         /// Gets a value indicating whether the application is configured for multi-tenancy.
@@ -42,7 +42,7 @@ namespace Cosmos.Editor.Services
         {
             this.connectionString = configuration.GetConnectionString("ConfigDbConnectionString");
             this.isMultiTenant = configuration.GetValue<bool?>("MultiTenantEditor") ?? false;
-            this._logger = logger;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -104,12 +104,12 @@ namespace Cosmos.Editor.Services
                 throw new ArgumentNullException(nameof(identityUser), "Identity user cannot be null.");
             }
 
-            _logger.LogWarning("Cross-tenant user update initiated for email: {Email}, UserId: {UserId}", 
+            logger.LogWarning("Cross-tenant user update initiated for email: {Email}, UserId: {UserId}", 
                 identityUser.Email, identityUser.Id);
 
             var connections = await GetConnectionsForEmailAddress(identityUser.Email);
             
-            _logger.LogInformation("User {Email} found in {Count} tenant(s)", identityUser.Email, connections.Count);
+            logger.LogInformation("User {Email} found in {Count} tenant(s)", identityUser.Email, connections.Count);
 
             foreach (var connection in connections)
             {
@@ -120,7 +120,7 @@ namespace Cosmos.Editor.Services
 
                 if (identity != null && identity.Id != identityUser.Id)
                 {
-                    _logger.LogWarning("Updating user {Email} in tenant {Domain}, OriginalUserId: {OriginalId}, TargetUserId: {TargetId}", 
+                    logger.LogWarning("Updating user {Email} in tenant {Domain}, OriginalUserId: {OriginalId}, TargetUserId: {TargetId}", 
                         identityUser.Email, connection.WebsiteUrl, identityUser.Id, identity.Id);
                     
                     identity.UserName = identityUser.UserName;
@@ -140,12 +140,12 @@ namespace Cosmos.Editor.Services
 
                     await applicationDbContext.SaveChangesAsync();
                     
-                    _logger.LogInformation("Successfully updated user {Email} in tenant {Domain}", 
+                    logger.LogInformation("Successfully updated user {Email} in tenant {Domain}", 
                         identityUser.Email, connection.WebsiteUrl);
                 }
             }
             
-            _logger.LogInformation("Completed cross-tenant user update for email: {Email}", identityUser.Email);
+            logger.LogInformation("Completed cross-tenant user update for email: {Email}", identityUser.Email);
         }
 
         /// <summary>

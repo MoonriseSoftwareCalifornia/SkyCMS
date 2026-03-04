@@ -37,12 +37,12 @@ namespace Sky.Editor.Services.Authors
         /// <summary>
         /// Database context used to query and persist author and identity records.
         /// </summary>
-        private readonly ApplicationDbContext _db;
+        private readonly ApplicationDbContext db;
 
         /// <summary>
         /// In-memory cache used to store recently accessed <see cref="AuthorInfo"/> instances.
         /// </summary>
-        private readonly IMemoryCache _cache;
+        private readonly IMemoryCache cache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthorInfoService"/> class.
@@ -51,8 +51,8 @@ namespace Sky.Editor.Services.Authors
         /// <param name="cache">The <see cref="IMemoryCache"/> used to cache results.</param>
         public AuthorInfoService(ApplicationDbContext db, IMemoryCache cache)
         {
-            _db = db;
-            _cache = cache;
+            this.db = db;
+            this.cache = cache;
         }
 
         /// <summary>
@@ -82,15 +82,15 @@ namespace Sky.Editor.Services.Authors
         public async Task<AuthorInfo> GetOrCreateAsync(Guid userId)
         {
             var key = userId.ToString();
-            if (_cache.TryGetValue(key, out AuthorInfo cached))
+            if (cache.TryGetValue(key, out AuthorInfo cached))
             {
                 return cached;
             }
 
-            var existing = await _db.AuthorInfos.FirstOrDefaultAsync(a => a.Id == key);
+            var existing = await db.AuthorInfos.FirstOrDefaultAsync(a => a.Id == key);
             if (existing == null)
             {
-                var identity = await _db.Users.FirstOrDefaultAsync(u => u.Id == key);
+                var identity = await db.Users.FirstOrDefaultAsync(u => u.Id == key);
                 if (identity == null)
                 {
                     return null;
@@ -107,11 +107,11 @@ namespace Sky.Editor.Services.Authors
                     Website = string.Empty
                 };
 
-                _db.AuthorInfos.Add(existing);
-                await _db.SaveChangesAsync();
+                db.AuthorInfos.Add(existing);
+                await db.SaveChangesAsync();
             }
 
-            _cache.Set(key, existing, TimeSpan.FromMinutes(10));
+            cache.Set(key, existing, TimeSpan.FromMinutes(10));
             return existing;
         }
     }

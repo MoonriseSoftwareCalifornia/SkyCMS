@@ -5,11 +5,11 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Sky.Editor.Services.Setup;
-using System.Threading.Tasks;
 
 namespace Sky.Editor.Middleware
 {
@@ -18,14 +18,14 @@ namespace Sky.Editor.Middleware
     /// </summary>
     public class TenantSetupMiddleware
     {
-        private readonly RequestDelegate _next;
+        private readonly RequestDelegate next;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TenantSetupMiddleware"/> class.
         /// </summary>
         public TenantSetupMiddleware(RequestDelegate next)
         {
-            _next = next;
+            this.next = next;
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Sky.Editor.Middleware
                 context.Request.Path.StartsWithSegments("/Identity") ||
                 context.Request.Path.Value?.Contains(".") == true)
             {
-                await _next(context);
+                await next(context);
                 return;
             }
 
@@ -61,7 +61,7 @@ namespace Sky.Editor.Middleware
                 }
             }
 
-            await _next(context);
+            await next(context);
         }
     }
 

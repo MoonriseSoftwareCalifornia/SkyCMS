@@ -110,7 +110,7 @@ namespace Sky.Tests.DynamicConfig
             const string initialDomain = "initial-domain.com";
             const string executionDomain = "execution-domain.com";
             TenantContext.CurrentDomain = initialDomain;
-            string? capturedDomain = null;
+            string capturedDomain = null;
 
             // Act
             TenantContext.Execute(executionDomain, () =>
@@ -128,7 +128,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             const string executionDomain = "execution-domain.com";
-            string? capturedDomain = null;
+            string capturedDomain = null;
 
             // Act
             TenantContext.Execute(executionDomain, () =>
@@ -173,8 +173,8 @@ namespace Sky.Tests.DynamicConfig
             // Arrange
             const string outerDomain = "outer-domain.com";
             const string innerDomain = "inner-domain.com";
-            string? outerCaptured = null;
-            string? innerCaptured = null;
+            string outerCaptured = null;
+            string innerCaptured = null;
 
             // Act
             TenantContext.Execute(outerDomain, () =>
@@ -203,7 +203,7 @@ namespace Sky.Tests.DynamicConfig
             const string initialDomain = "initial-async-domain.com";
             const string executionDomain = "execution-async-domain.com";
             TenantContext.CurrentDomain = initialDomain;
-            string? capturedDomain = null;
+            string capturedDomain = null;
 
             // Act
             await TenantContext.ExecuteAsync(executionDomain, async () =>
@@ -289,8 +289,8 @@ namespace Sky.Tests.DynamicConfig
             // Arrange
             const string domain1 = "concurrent-domain-1.com";
             const string domain2 = "concurrent-domain-2.com";
-            string? captured1 = null;
-            string? captured2 = null;
+            string captured1 = null;
+            string captured2 = null;
 
             // Act
             var task1 = TenantContext.ExecuteAsync(domain1, async () =>
@@ -318,8 +318,8 @@ namespace Sky.Tests.DynamicConfig
             // Arrange
             const string outerDomain = "outer-async-domain.com";
             const string innerDomain = "inner-async-domain.com";
-            string? outerCaptured = null;
-            string? innerCaptured = null;
+            string outerCaptured = null;
+            string innerCaptured = null;
 
             // Act
             await TenantContext.ExecuteAsync(outerDomain, async () =>

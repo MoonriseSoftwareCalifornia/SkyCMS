@@ -5,10 +5,10 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Sky.Editor.Services.Setup;
-using System.Threading.Tasks;
 
 namespace Sky.Editor.Areas.Setup.Pages.Tenant
 {

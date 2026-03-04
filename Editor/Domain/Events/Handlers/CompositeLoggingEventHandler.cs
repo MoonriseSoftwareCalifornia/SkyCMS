@@ -28,14 +28,14 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// <summary>
         /// Logger used to emit trace information for received domain events.
         /// </summary>
-        private readonly ILogger<CompositeLoggingEventHandler<TEvent>> _logger;
+        private readonly ILogger<CompositeLoggingEventHandler<TEvent>> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CompositeLoggingEventHandler{TEvent}"/> class.
         /// </summary>
         /// <param name="logger">The logger instance injected from DI.</param>
         public CompositeLoggingEventHandler(ILogger<CompositeLoggingEventHandler<TEvent>> logger) =>
-            _logger = logger;
+            this.logger = logger;
 
         /// <summary>
         /// Handles the specified event by delegating to the cancellation-aware overload
@@ -58,7 +58,7 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// </remarks>
         public Task HandleAsync(TEvent @event, CancellationToken cancellationToken)
         {
-            _logger.LogTrace("Domain event received: {EventType} at {Time}", typeof(TEvent).Name, @event.OccurredOn);
+            logger.LogTrace("Domain event received: {EventType} at {Time}", typeof(TEvent).Name, @event.OccurredOn);
             return Task.CompletedTask;
         }
     }

@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Services.Layouts
 {
-    using Cosmos.Cms.Data.Logic;
-    using Cosmos.Common.Data;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Cosmos.Cms.Data.Logic;
+    using Cosmos.Common.Data;
 
     /// <summary>
     /// Service for importing layouts and templates from external sources.

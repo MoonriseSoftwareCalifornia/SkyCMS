@@ -95,7 +95,7 @@ public class StaticProxyController : Controller
     /// </summary>
     /// <param name="path">The file path to retrieve.</param>
     /// <returns>An IActionResult if the file exists, null otherwise.</returns>
-    private async Task<IActionResult?> TryServeFileAsync(string path)
+    private async Task<IActionResult> TryServeFileAsync(string path)
     {
         // Check cache first
         if (memoryCache.TryGetValue(path, out FileCacheObject fileCacheObject))
@@ -168,7 +168,7 @@ public class StaticProxyController : Controller
     /// </summary>
     /// <param name="requestedPath">The requested path.</param>
     /// <returns>The path to index.html if this is a SPA route, null otherwise.</returns>
-    private async Task<string?> GetSpaFallbackPathAsync(string requestedPath)
+    private async Task<string> GetSpaFallbackPathAsync(string requestedPath)
     {
         // Normalize the path
         requestedPath = requestedPath.TrimStart('/');

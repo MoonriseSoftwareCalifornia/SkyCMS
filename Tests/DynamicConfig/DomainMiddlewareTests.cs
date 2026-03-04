@@ -172,7 +172,7 @@ namespace Sky.Tests.DynamicConfig
             context.Connection.RemoteIpAddress = IPAddress.Parse("192.168.1.100");
             _configProviderMock
                 .Setup(x => x.GetDatabaseConnectionStringAsync("unauthorized-domain.com", It.IsAny<CancellationToken>()))
-                .ReturnsAsync((string?)null);
+                .ReturnsAsync((string)null);
 
             // Act
             await _middleware.InvokeAsync(context);
@@ -184,7 +184,7 @@ namespace Sky.Tests.DynamicConfig
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Unauthorized domain access attempt")),
                     It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
                 Times.Once);
         }
 

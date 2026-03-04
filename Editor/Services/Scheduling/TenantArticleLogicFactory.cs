@@ -7,6 +7,8 @@
 
 namespace Sky.Editor.Services.Scheduling
 {
+    using System;
+    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Data;
@@ -32,8 +34,6 @@ namespace Sky.Editor.Services.Scheduling
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using System;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Tenant article logic factory.
