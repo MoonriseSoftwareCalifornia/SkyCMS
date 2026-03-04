@@ -1,0 +1,149 @@
+site_name: SkyCMS Documentation
+site_description: Fast, edge-native CMS for developers and content teams
+site_url: https://docs.sky-cms.com
+
+# Documentation source directory
+docs_dir: 'Docs'
+
+# Theme configuration
+theme:
+  name: material
+  logo: assets/images/sky-logo.png
+  palette:
+    - scheme: light
+      primary: blue
+      accent: blue
+    - scheme: dark
+      primary: blue
+      accent: blue
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.select
+  highlightjs: true
+  hljs_languages:
+    - yaml
+    - rust
+    - csharp
+    - javascript
+    - typescript
+    - json
+    - bash
+    - powershell
+
+# Plugins
+plugins:
+  - search
+
+# Markdown extensions
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - attr_list
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - def_list
+  - footnotes
+  - meta
+  - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - assets/css/mkdocs-logo.css
+
+# Navigation structure
+nav:
+  - Home: index.md
+  
+  - Getting Started:
+    - Installation Overview: Installation/README.md
+    - Installation Quick Start: QuickStart.md
+    - Content Creator Quick Start: ContentCreation-QuickStart.md
+    - Setup Wizard: Installation/SetupWizard.md
+    - Post-Installation: Installation/Post-Installation.md
+  
+  - Create Content:
+    - Site Design (Layouts): Layouts/README.md
+    - Page Templates: Templates/README.md
+    - Editors:
+      - Live Editor: Editors/LiveEditor/README.md
+      - Designer: Editors/Designer/README.md
+      - Code Editor: Editors/CodeEditor/README.md
+      - Image Editing: Editors/ImageEditing/README.md
+    - Blog Management: blog/BlogPostLifecycle.md
+  
+  - Publish & Manage:
+    - Publishing & Scheduling: Editors/PageScheduling.md
+    - Publishing Modes: Publishing-Overview.md
+    - File Management: FileManagement/index.md
+    - Blog Lifecycle: blog/BlogPostLifecycle.md
+  
+  - Administer:
+    - User & Access Control: Administration/Roles-and-Permissions.md
+    - Configuration:
+      - Database: Configuration/Database-Overview.md
+      - Storage: Configuration/Storage-Overview.md
+      - CDN: Configuration/CDN-Overview.md
+      - Email: Configuration/Email-Overview.md
+    - Platform Deployment:
+      - Azure: Installation/AzureInstall.md
+      - AWS S3: S3StaticWebsite.md
+      - Cloudflare Edge: Installation/CloudflareEdgeHosting.md
+    - Troubleshooting: Troubleshooting.md
+  
+  - Developers:
+    - Developer Hub: Developers/README.md
+    - Architecture: Architecture/Startup-Lifecycle.md
+    - Widgets: Widgets/README.md
+    - Website Launch Workflow: Developer-Guides/Website-Launch-Workflow.md
+    - Testing Guide: Development/Testing/README.md
+  
+  - Reference:
+    - FAQ: FAQ.md
+    - API Documentation: ContactFormAPI-Usage.md
+    - Troubleshooting: Troubleshooting.md
+
+# Site configuration
+site_author: CWALabs
+copyright: Copyright &copy; 2026 Moonrise Software
+
+# Extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/CWALabs/SkyCMS
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/CWALabs
+  analytics:
+    provider: google
+    # property: G-XXXXXXXXXX  # Add your Google Analytics ID if needed
+
+# Files to exclude
+exclude_docs: |
+  .github/
+  .gitignore
+  Gemfile*
+  _*
+  vendor/
+  bin/
+  obj/
+  .vscode/
+  .vs/
+  node_modules/
+  Redirect_Improvements_Complete_Summary.md
+  Editors/LiveEditor/VisualGuide.md

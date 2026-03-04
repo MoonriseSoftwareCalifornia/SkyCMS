@@ -11,7 +11,16 @@
                 <time datetime="@displayDate.UtcDateTime.ToString("o")">@displayDate.ToString("D")</time>
                 @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
                 {
-                    <text> · @Model.AuthorInfo</text>
+                    <text> · </text>
+                    <span class="ccms-author-widget-container"
+                          data-editor-config="author-widget"
+                          data-ccms-ceid="skycms-blog-post-author"
+                          data-author-json="@Model.AuthorInfo"
+                          data-display-mode="inline"
+                          data-show-email="false"
+                          data-show-social="false"
+                          data-show-description="false"
+                          data-show-website="true"></span>
                 }
                 @if (!string.IsNullOrWhiteSpace(Model.Category))
                 {
