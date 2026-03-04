@@ -100,8 +100,13 @@ namespace Sky.Editor.Services.Authors
                 {
                     Id = key,
                     AuthorName = identity.UserName ?? identity.Email ?? key,
-                    AuthorDescription = string.Empty
+                    AuthorDescription = string.Empty,
+                    EmailAddress = identity.Email,
+                    InstagramUrl = string.Empty,
+                    TwitterHandle = string.Empty,
+                    Website = string.Empty
                 };
+
                 _db.AuthorInfos.Add(existing);
                 await _db.SaveChangesAsync();
             }

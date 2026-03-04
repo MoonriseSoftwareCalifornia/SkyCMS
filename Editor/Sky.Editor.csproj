@@ -45,6 +45,7 @@
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\TextFile1.txt" />
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\_CosmosLayout.cshtml" />
 	  <Content Remove="stylecop.json" />
+	  <Content Remove="wwwroot\css\ccms-author-widget.css" />
 	  <Content Remove="wwwroot\css\sky-blog.css" />
 	  <Content Remove="wwwroot\images\samples\134038968578143524.jpg" />
 	  <Content Remove="wwwroot\images\samples\20250917_OHR.YoungMoose_EN-US2991221135_UHD_bing.jpg" />
@@ -56,6 +57,7 @@
 	  <Content Remove="wwwroot\images\skycms\SkyCMSLogoDarkBackground.jpeg" />
 	  <Content Remove="wwwroot\images\skycms\SkyCMSLogoLightBackground.jpeg" />
 	  <Content Remove="wwwroot\js\blog-stream-loader.js" />
+	  <Content Remove="wwwroot\js\ccms-author-widget.js" />
 	  <Content Remove="wwwroot\js\editors\editorCore.js" />
 	  <Content Remove="wwwroot\js\editors\JavaScript - Copy (2).js" />
 	  <Content Remove="wwwroot\js\editors\JavaScript - Copy (3).js" />

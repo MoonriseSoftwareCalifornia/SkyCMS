@@ -1,0 +1,217 @@
+/* 
+ * CCMS Author Widget Styles
+ * 
+ * Styling for the author information widget
+ */
+
+/* Base container */
+.ccms-author-widget-container {
+    margin: 1rem 0;
+}
+
+/* Compact mode - minimal inline display */
+.ccms-author-compact {
+    display: inline;
+    font-weight: 500;
+}
+
+.ccms-author-compact a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted currentColor;
+}
+
+.ccms-author-compact a:hover {
+    border-bottom-style: solid;
+}
+
+/* Inline mode - name with optional links */
+.ccms-author-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.ccms-author-inline a {
+    color: var(--primary-color, #007bff);
+    text-decoration: none;
+}
+
+.ccms-author-inline a:hover {
+    text-decoration: underline;
+}
+
+/* Card mode - standard card layout */
+.ccms-author-card {
+    background: var(--author-card-bg, #f8f9fa);
+    border: 1px solid var(--author-card-border, #dee2e6);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.ccms-author-card .ccms-author-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--author-name-color, #212529);
+}
+
+.ccms-author-card .ccms-author-description {
+    color: var(--author-description-color, #6c757d);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.ccms-author-card .ccms-author-links {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.ccms-author-card .ccms-author-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: var(--author-link-bg, #ffffff);
+    border: 1px solid var(--author-link-border, #dee2e6);
+    border-radius: 0.25rem;
+    color: var(--author-link-color, #495057);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.ccms-author-card .ccms-author-link:hover {
+    background: var(--author-link-hover-bg, #e9ecef);
+    border-color: var(--author-link-hover-border, #adb5bd);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ccms-author-card .ccms-author-link svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Detailed mode - extended layout with microdata */
+.ccms-author-detailed {
+    background: var(--author-detailed-bg, #ffffff);
+    border: 1px solid var(--author-detailed-border, #dee2e6);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ccms-author-detailed .ccms-author-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--author-name-color, #212529);
+    border-bottom: 2px solid var(--author-border-accent, #007bff);
+    padding-bottom: 0.5rem;
+}
+
+.ccms-author-detailed .ccms-author-description {
+    color: var(--author-description-color, #495057);
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+    font-size: 1rem;
+}
+
+.ccms-author-detailed .ccms-author-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ccms-author-detailed .ccms-author-contact-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--author-contact-bg, #f8f9fa);
+    border-radius: 0.25rem;
+}
+
+.ccms-author-detailed .ccms-author-contact-item strong {
+    min-width: 100px;
+    color: var(--author-label-color, #6c757d);
+    font-weight: 600;
+}
+
+.ccms-author-detailed .ccms-author-contact-item a {
+    color: var(--primary-color, #007bff);
+    text-decoration: none;
+}
+
+.ccms-author-detailed .ccms-author-contact-item a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .ccms-author-card {
+        padding: 1rem;
+    }
+
+    .ccms-author-card .ccms-author-links {
+        flex-direction: column;
+    }
+
+    .ccms-author-card .ccms-author-link {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ccms-author-detailed {
+        padding: 1.25rem;
+    }
+
+    .ccms-author-detailed .ccms-author-contact-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ccms-author-detailed .ccms-author-contact-item strong {
+        min-width: auto;
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .ccms-author-card {
+        --author-card-bg: #2d3748;
+        --author-card-border: #4a5568;
+        --author-name-color: #f7fafc;
+        --author-description-color: #cbd5e0;
+        --author-link-bg: #1a202c;
+        --author-link-border: #4a5568;
+        --author-link-color: #e2e8f0;
+        --author-link-hover-bg: #4a5568;
+        --author-link-hover-border: #718096;
+    }
+
+    .ccms-author-detailed {
+        --author-detailed-bg: #2d3748;
+        --author-detailed-border: #4a5568;
+        --author-name-color: #f7fafc;
+        --author-description-color: #e2e8f0;
+        --author-border-accent: #4299e1;
+        --author-contact-bg: #1a202c;
+        --author-label-color: #cbd5e0;
+    }
+}
+
+/* Integration with Pico CSS (if present) */
+.pico .ccms-author-card,
+.pico .ccms-author-detailed {
+    font-family: inherit;
+}
+
+.pico .ccms-author-card .ccms-author-link {
+    font-family: inherit;
+}

@@ -5,24 +5,13 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-using System;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.RateLimiting;
-using System.Threading.Tasks;
-using System.Web;
-using AspNetCore.Identity.FlexDb;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
 using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common;
 using Cosmos.Common.Data;
-using Cosmos.Common.Features.Articles.EditorQueries;
 using Cosmos.Common.Features.Articles.Shared;
-using Cosmos.Common.Features.Shared;
-using Cosmos.Common.Models;
 using Cosmos.Common.Services;
 using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.Common.Services.Configurations;
@@ -37,7 +26,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -68,7 +56,6 @@ using Sky.Editor.Services.Html;
 using Sky.Editor.Services.Layout;
 using Sky.Editor.Services.Layouts;
 using Sky.Editor.Services.Migrations;
-using Sky.Editor.Services.Migrations.Core;
 using Sky.Editor.Services.Publishing;
 using Sky.Editor.Services.Redirects;
 using Sky.Editor.Services.ReservedPaths;
@@ -77,6 +64,13 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading.RateLimiting;
+using System.Threading.Tasks;
+using System.Web;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
 

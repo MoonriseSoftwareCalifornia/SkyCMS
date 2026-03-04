@@ -31,7 +31,7 @@ namespace Sky.Editor.Features.Blogs.CreatePost
 
         /// <summary>
         /// Gets or sets the blog post content (HTML).
-        /// Required. Contains the full body of the blog post.
+        /// Optional. Contains the full body of the blog post. Can be empty for drafts.
         /// </summary>
         public string Content { get; set; } = string.Empty;
 
@@ -51,7 +51,7 @@ namespace Sky.Editor.Features.Blogs.CreatePost
         /// Gets or sets the template ID to use for this blog post.
         /// Determines the layout and styling of the published post.
         /// </summary>
-        public Guid TemplateId { get; set; }
+        public Guid TemplateId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the user ID creating this blog post.
