@@ -2,7 +2,12 @@
 @{
     var displayDate = Model.Published ?? Model.Updated;
 }
-
+<style>
+    /* This is required only for CKEditor */
+    section[data-ccms-ceid="skycms-blog-post-content"] {
+        display: block !important;
+    }
+</style>
 <article class="pico" aria-labelledby="post-title">
     <header>
         <h1 id="post-title" contenteditable>@Model.Title</h1>
@@ -12,7 +17,7 @@
                 @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
                 {
                     <text> · </text>
-                    <span class="ccms-author-widget-container"
+                    @* <span class="ccms-author-widget-container"
                           data-editor-config="author-widget"
                           data-ccms-ceid="skycms-blog-post-author"
                           data-author-json="@Model.AuthorInfo"
@@ -20,7 +25,7 @@
                           data-show-email="false"
                           data-show-social="false"
                           data-show-description="false"
-                          data-show-website="true"></span>
+                          data-show-website="true"></span> *@
                 }
                 @if (!string.IsNullOrWhiteSpace(Model.Category))
                 {
@@ -31,17 +36,18 @@
     </header>
     <figure class="ccms-img-widget-container"
             data-editor-config="image-widget"
-            data-ccms-ceid="skycms-blog-post-bi">
+            data-ccms-ceid="skycms-blog-post-bi"
+            data-ccms-disable-save="true">
         @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
         {
             <img src="@Model.BannerImage" alt="Banner image for @Model.Title" />
         }
     </figure>
-    <div ccms-content-id="@Model.Id">
-        <section data-ccms-ceid="skycms-blog-post-content" class="ck-content">
+    <section ccms-content-id="@Model.Id" class="ck-content">
+        <div data-ccms-ceid="skycms-blog-post-content">
             @Html.Raw(Model.Content)
-        </section>
-    </div>
+        </div>
+    </section>
 </article>
 <script>
     // Handles the image widget events.
@@ -50,12 +56,45 @@
         if (window.CCMSImageWidgetEvents && typeof window.CCMSImageWidgetEvents.on === 'function') {
             window.CCMSImageWidgetEvents.on('imageChanged', function(info) {
                 // Update a hidden input to track the current image URL
-                const hiddenField = document.getElementById('BannerImage');
+                const hiddenField = parent.document.getElementById('BannerImage');
                 if (hiddenField) {
                     hiddenField.value = info.imageSrc;
                     saveChanges(); // Call the save function to persist changes
                 } else {
                     console.warn('Hidden field for BannerImage not found.');
+                }
+            });
+        }
+
+        const postTitle = document.getElementById('post-title');
+        let debounceTimer;
+
+        if (postTitle) {
+            // Track changes in real-time but debounce the save
+            postTitle.addEventListener('input', function(event) {
+                const newTitle = event.target.textContent.trim();
+
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const hiddenField = parent.document.getElementById('Title');
+                    if (hiddenField) {
+                        hiddenField.value = newTitle;
+                        parent.saveChanges();
+                    }
+                }, 1000); // Wait 1 second after user stops typing
+            });
+
+            // Also save on blur to catch any pending changes
+            postTitle.addEventListener('blur', function(event) {
+                clearTimeout(debounceTimer);
+                const newTitle = event.target.textContent.trim();
+                const hiddenField = parent.document.getElementById('Title');
+                const divTitle = parent.document.getElementById('divTitle');
+
+                if (hiddenField) {
+                    hiddenField.value = newTitle;
+                    divTitle.innerText = newTitle;
+                    parent.saveChanges();
                 }
             });
         }

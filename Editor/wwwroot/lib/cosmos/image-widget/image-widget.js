@@ -30,6 +30,14 @@
  *         data-ccms-ceid="img-123"
  *         data-ccms-enable-alt-editor="true"></div>
  * 
+ * 5. Disable the default save function.
+ *    Do prevent the widget from automatically triggering the default save after upload,
+ *    add data-ccms-disable-save="true" to the widget container.
+ *    Example:
+ *    <div data-editor-config="image-widget"
+ *         data-ccms-ceid="img-123"
+ *         data-ccms-disable-save="true"></div>
+ * 
  * CONFIGURATION:
  * - Upload endpoint: /FileManager/UploadImage
  * - Image library endpoint: /FileManager/GetImageAssets
@@ -1043,8 +1051,9 @@ function ccms___initializePond(element) {
 
             // Save image widget inner html.
             const disableDefaultSave = element.getAttribute('data-ccms-disable-save') === 'true';
+            const editorId = element.getAttribute('data-ccms-ceid');
             const html = element.innerHTML;
-            if (typeof parent !== 'undefined' && typeof parent.saveEditorRegion !== 'undefined') {
+            if (!disableDefaultSave && typeof parent !== 'undefined' && typeof parent.saveEditorRegion !== 'undefined') {
                 parent.saveEditorRegion(html, editorId);
             }
         });
@@ -1200,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // FilePond.registerPlugin(FilePondPluginFileMetadata);
 
     // Find and initialize all image widgets on the page
-    const imageContainers = document.querySelectorAll('div[data-editor-config="image-widget"]');
+    const imageContainers = document.querySelectorAll('[data-editor-config="image-widget"]');
     console.log(`Found ${imageContainers.length} image widget(s) to initialize`);
 
     imageContainers.forEach(ccms___setupImageWidget);

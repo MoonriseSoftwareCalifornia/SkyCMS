@@ -1414,7 +1414,8 @@ namespace Sky.Cms.Controllers
 
             var decryptedData = CryptoJsDecryption.Decrypt(model.Data);
 
-            // Now carry over what's being UPDATED to the original.
+            // Now update a region if EditorId is specified.
+            // This allows for multiple regions to be updated independently without overwriting each other.
             var content = UpdateRegionInDocument(model.EditorId, article.Content, decryptedData);
 
             if (article.Content != content)
