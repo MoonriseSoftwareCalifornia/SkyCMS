@@ -1042,7 +1042,7 @@ function ccms___initializePond(element) {
             }
 
             // Save image widget inner html.
-            const editorId = element.getAttribute('data-ccms-ceid');
+            const disableDefaultSave = element.getAttribute('data-ccms-disable-save') === 'true';
             const html = element.innerHTML;
             if (typeof parent !== 'undefined' && typeof parent.saveEditorRegion !== 'undefined') {
                 parent.saveEditorRegion(html, editorId);
