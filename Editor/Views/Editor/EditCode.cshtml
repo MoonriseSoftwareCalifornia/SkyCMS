@@ -5,6 +5,11 @@
     ViewData["Title"] = $"Editing '{Model.Title}' with the Code Editor.";
     var fields = Model.EditorFields.ToArray();
     var hasPermissionsSet = Model.ArticlePermissions.Any();
+    
+    // Pass content to the save form partial via ViewData
+    ViewData["Content"] = Model.Content;
+    ViewData["HeadJavaScript"] = Model.HeadJavaScript;
+    ViewData["FooterJavaScript"] = Model.FooterJavaScript;
 }
 
 <partial name="_CodeEditorShared" model="Model" />

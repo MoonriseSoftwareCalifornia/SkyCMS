@@ -1236,15 +1236,18 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Saves article properties.
         /// </summary>
-        /// <param name="model">Live editor post model.</param>
+        /// <param name="model">Live editor post model from JSON body.</param>
+        /// <param name="queryModel">Optional query string overrides.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpPost]
-        public async Task<IActionResult> Edit(EditPostViewModel model)
+        public async Task<IActionResult> Edit([FromBody] EditPostViewModel model, [FromQuery] EditPostViewModel? queryModel = null)
         {
             if (model == null)
             {
                 return BadRequest("No data sent.");
             }
+
+            ApplyQueryOverrides(model, queryModel);
 
             if (!ModelState.IsValid)
             {
@@ -2150,6 +2153,124 @@ namespace Sky.Cms.Controllers
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+        }
+
+        private static void ApplyQueryOverrides(EditPostViewModel model, EditPostViewModel? queryModel)
+        {
+            if (queryModel == null)
+            {
+                return;
+            }
+
+            if (model.Id == Guid.Empty && queryModel.Id != Guid.Empty)
+            {
+                model.Id = queryModel.Id;
+            }
+
+            if (model.ArticleNumber == 0 && queryModel.ArticleNumber > 0)
+            {
+                model.ArticleNumber = queryModel.ArticleNumber;
+            }
+
+            if (model.VersionNumber == 0 && queryModel.VersionNumber > 0)
+            {
+                model.VersionNumber = queryModel.VersionNumber;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditorId) && !string.IsNullOrWhiteSpace(queryModel.EditorId))
+            {
+                model.EditorId = queryModel.EditorId;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Command) && !string.IsNullOrWhiteSpace(queryModel.Command))
+            {
+                model.Command = queryModel.Command;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Data) && !string.IsNullOrWhiteSpace(queryModel.Data))
+            {
+                model.Data = queryModel.Data;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Content) && !string.IsNullOrWhiteSpace(queryModel.Content))
+            {
+                model.Content = queryModel.Content;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.HeadJavaScript) && !string.IsNullOrWhiteSpace(queryModel.HeadJavaScript))
+            {
+                model.HeadJavaScript = queryModel.HeadJavaScript;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.FooterJavaScript) && !string.IsNullOrWhiteSpace(queryModel.FooterJavaScript))
+            {
+                model.FooterJavaScript = queryModel.FooterJavaScript;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.HtmlContent) && !string.IsNullOrWhiteSpace(queryModel.HtmlContent))
+            {
+                model.HtmlContent = queryModel.HtmlContent;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CssContent) && !string.IsNullOrWhiteSpace(queryModel.CssContent))
+            {
+                model.CssContent = queryModel.CssContent;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditingField) && !string.IsNullOrWhiteSpace(queryModel.EditingField))
+            {
+                model.EditingField = queryModel.EditingField;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditorType) && !string.IsNullOrWhiteSpace(queryModel.EditorType))
+            {
+                model.EditorType = queryModel.EditorType;
+            }
+
+            if (!model.Published.HasValue && queryModel.Published.HasValue)
+            {
+                model.Published = queryModel.Published;
+            }
+
+            if (!model.Updated.HasValue && queryModel.Updated.HasValue)
+            {
+                model.Updated = queryModel.Updated;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CryptoContextToken) && !string.IsNullOrWhiteSpace(queryModel.CryptoContextToken))
+            {
+                model.CryptoContextToken = queryModel.CryptoContextToken;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title) && !string.IsNullOrWhiteSpace(queryModel.Title))
+            {
+                model.Title = queryModel.Title;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.UrlPath) && !string.IsNullOrWhiteSpace(queryModel.UrlPath))
+            {
+                model.UrlPath = queryModel.UrlPath;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.BannerImage) && !string.IsNullOrWhiteSpace(queryModel.BannerImage))
+            {
+                model.BannerImage = queryModel.BannerImage;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.RoleList) && !string.IsNullOrWhiteSpace(queryModel.RoleList))
+            {
+                model.RoleList = queryModel.RoleList;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Category) && !string.IsNullOrWhiteSpace(queryModel.Category))
+            {
+                model.Category = queryModel.Category;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Introduction) && !string.IsNullOrWhiteSpace(queryModel.Introduction))
+            {
+                model.Introduction = queryModel.Introduction;
+            }
         }
 
         /// <summary>
