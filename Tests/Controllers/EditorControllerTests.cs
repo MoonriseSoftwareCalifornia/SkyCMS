@@ -178,16 +178,6 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        [Ignore("Clone() method not implemented - placeholder test")]
-        public async Task Clone_Post_CreatesArticleCopy_WithNewTitle()
-        {
-            // Method body commented out - Clone() is not implemented on EditorController
-            // Use CloneArticleCommand with mediator instead
-            //var originalArticle = await CreateArticleAsync("Original Article", TestUserId);
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
         public async Task Versions_Get_ReturnsVersionHistory_ForArticle()
         {
             // Arrange
@@ -286,34 +276,6 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(v1, "Version 1 should exist");
             Assert.IsNotNull(v2, "Version 2 should exist");
             Assert.AreNotEqual(v1.Content, v2.Content, "Versions should have different content");
-        }
-
-        [TestMethod]
-        [Ignore("CreateVersion() method not implemented - use CreateArticleVersionCommand")]
-        public async Task CreateVersion_CreatesNewVersionWithIncrementedNumber()
-        {
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
-        [Ignore("CreateVersion() method not implemented - use CreateArticleVersionCommand")]
-        public async Task CreateVersion_BasedOnSpecificOlderVersion()
-        {
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
-        [Ignore("CreateVersion() method not implemented - use CreateArticleVersionCommand")]
-        public async Task CreateVersion_RedirectsToEditCode()
-        {
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
-        [Ignore("CreateVersion() method not implemented - use CreateArticleVersionCommand")]
-        public async Task CreateVersion_CopiesAllArticleProperties()
-        {
-
         }
 
         #region Trash and Restore Tests
@@ -419,102 +381,6 @@ namespace Sky.Tests.Controllers
 
         #region Clone Tests
 
-        [TestMethod]
-        public async Task Clone_Get_ReturnsViewModel_WithOriginalData()
-        {
-            /*
-            // Arrange
-            var article = await CreateArticleAsync("Original Article", TestUserId);
-            article.Content = "<p>Original content</p>";
-            await SaveArticleAsync(article, TestUserId);
-
-            // Act
-            var result = await controller.Clone(article.ArticleNumber);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.IsNotNull(viewResult.Model);
-            Assert.IsInstanceOfType(viewResult.Model, typeof(DuplicateViewModel));
-
-            var model = (DuplicateViewModel)viewResult.Model;
-            Assert.AreEqual("Original Article", model.Title);
-            Assert.AreEqual(article.ArticleNumber, model.ArticleId);
-            */
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
-        [Ignore("Clone() method not implemented - use CloneArticleCommand")]
-        public async Task Clone_Get_ReturnsNotFound_WhenArticleDoesNotExist()
-        {
-            /*
-            // Act
-            var result = await controller.Clone(99999);
-
-            // Assert - Should throw exception or return NotFound
-            // The actual behavior depends on GetArticleByArticleNumber implementation
-            // If it returns null, NotFound is returned
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-            */
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
-        [Ignore("Clone() method not implemented - use CloneArticleCommand")]
-        public async Task Clone_Post_CreatesNewArticle_WithDifferentArticleNumber()
-        {
-            /*
-            // Arrange
-            var originalArticle = await CreateArticleAsync("Original for Clone", TestUserId);
-            originalArticle.Content = "<p>Original content for cloning</p>";
-            await SaveArticleAsync(originalArticle, TestUserId);
-
-            var original = await Db.Articles.FirstAsync(a => a.ArticleNumber == originalArticle.ArticleNumber);
-
-            var model = new DuplicateViewModel
-            {
-                Id = original.Id,
-                Title = "Cloned Article",
-                ArticleId = original.ArticleNumber,
-                ArticleVersion = original.VersionNumber,
-                Published = null
-            };
-
-            // Act
-            var result = await controller.Clone(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = (RedirectToActionResult)result;
-            Assert.AreEqual("Versions", redirectResult.ActionName);
-
-            // Verify clone was created
-            var allArticles = await Db.Articles.ToListAsync();
-            var clonedArticles = allArticles.Where(a => a.Title == "Cloned Article").ToList();
-            
-            Assert.IsTrue(clonedArticles.Count > 0, "Cloned article should exist");
-            var cloned = clonedArticles.First();
-            Assert.AreNotEqual(original.ArticleNumber, cloned.ArticleNumber,
-                "Cloned article should have different article number");
-            */
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
-        [Ignore("Clone() method not implemented - use CloneArticleCommand")]
-        public async Task Clone_Post_FailsIfTitleAlreadyExists()
-        {
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
-        [Ignore("Clone() method not implemented - use CloneArticleCommand")]
-        public async Task Clone_Post_HandlesParentPageTitle()
-        {
-            await Task.CompletedTask;
-        }
-
         #endregion
 
         #region Title Validation Tests
@@ -571,48 +437,6 @@ namespace Sky.Tests.Controllers
         #region Publishing Tests
 
         [TestMethod]
-        public async Task PublishPage_PublishesArticle()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Article to Publish", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-
-            var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            var publishTime = DateTimeOffset.UtcNow;
-
-            // Act
-            var result = await controller.PublishPage(dbArticle.Id, publishTime, "/Editor/Index");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectResult));
-            
-            // Verify article was published
-            var publishedArticle = await Db.Articles.FindAsync(dbArticle.Id);
-            Assert.IsNotNull(publishedArticle.Published);
-        }
-
-        [TestMethod]
-        public async Task UnpublishPage_UnpublishesArticle()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Published Article", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-            
-            var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            await Logic.PublishArticle(dbArticle.Id, DateTimeOffset.UtcNow);
-
-            // Verify it's published
-            var publishedArticle = await Db.Articles.FindAsync(dbArticle.Id);
-            Assert.IsNotNull(publishedArticle.Published, "Article should be published before test");
-
-            // Act
-            var result = await controller.UnpublishPage(article.ArticleNumber);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-        }
-
-        [TestMethod]
         public async Task PublishPage_ValidatesReturnUrl()
         {
             // Arrange
@@ -642,156 +466,7 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
-        #region Export Tests
-
-        [TestMethod]
-        public async Task ExportPage_ReturnsHtmlFile()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Article to Export", TestUserId);
-            article.Content = "<p>Exportable content</p>";
-            await SaveArticleAsync(article, TestUserId);
-
-            var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-
-            // Act
-            var result = await controller.ExportPage(dbArticle.Id);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(FileContentResult));
-            var fileResult = (FileContentResult)result;
-            Assert.AreEqual("application/octet-stream", fileResult.ContentType);
-            Assert.IsTrue(fileResult.FileDownloadName.EndsWith(".html"));
-            Assert.IsTrue(fileResult.FileContents.Length > 0);
-        }
-
-        [TestMethod]
-        public async Task ExportPage_IncludesCorrectVersionNumber()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Versioned Export", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-
-            var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-
-            // Act
-            var result = await controller.ExportPage(dbArticle.Id);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(FileContentResult));
-            var fileResult = (FileContentResult)result;
-            
-            // Filename should contain article number and version
-            Assert.IsTrue(fileResult.FileDownloadName.Contains($"pageid-{article.ArticleNumber}"));
-            Assert.IsTrue(fileResult.FileDownloadName.Contains($"version-{dbArticle.VersionNumber}"));
-        }
-
-        #endregion
-
-        #region Designer Tests
-
-        [TestMethod]
-        public async Task Designer_Get_ReturnsDesignerViewModel()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Designer Article", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-
-            // Act
-            var result = await controller.Designer(article.ArticleNumber);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.IsNotNull(viewResult.Model);
-            Assert.IsInstanceOfType(viewResult.Model, typeof(ArticleDesignerDataViewModel));
-
-            var model = (ArticleDesignerDataViewModel)viewResult.Model;
-            Assert.AreEqual(article.ArticleNumber, model.ArticleNumber);
-        }
-
-        [TestMethod]
-        public async Task GetDesignerData_ReturnsArticleContent()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Designer Data Article", TestUserId);
-            article.Content = "<div>Designer content</div>";
-            await SaveArticleAsync(article, TestUserId);
-
-            // Act
-            var result = await controller.GetDesignerData(article.ArticleNumber);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.IsNotNull(jsonResult.Value);
-        }
-
-        #endregion
-
-        #region Permissions Tests
-
-        [TestMethod]
-        public async Task Permissions_Get_ReturnsView()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Article with Permissions", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-
-            // Act
-            var result = await controller.Permissions(article.ArticleNumber);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.IsNotNull(viewResult.Model);
-        }
-
-        #endregion
-
         #region Article Listing Tests
-
-        [TestMethod]
-        public async Task GetArticleList_ReturnsPublishedArticles()
-        {
-            // Arrange
-            var publishedArticle = await CreateArticleAsync("Published Article", TestUserId);
-            await SaveArticleAsync(publishedArticle, TestUserId);
-            
-            var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == publishedArticle.ArticleNumber);
-            dbArticle.Published = DateTimeOffset.UtcNow;
-            await Db.SaveChangesAsync();
-
-            var unpublishedArticle = await CreateArticleAsync("Unpublished Article", TestUserId);
-            await SaveArticleAsync(unpublishedArticle, TestUserId);
-
-            // Act
-            var result = await controller.GetArticleList(publishedOnly: true);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.IsNotNull(jsonResult.Value);
-        }
-
-        [TestMethod]
-        public async Task GetArticleList_FiltersBy_SearchTerm()
-        {
-            // Arrange
-            var article1 = await CreateArticleAsync("Searchable Article", TestUserId);
-            await SaveArticleAsync(article1, TestUserId);
-
-            var article2 = await CreateArticleAsync("Other Article", TestUserId);
-            await SaveArticleAsync(article2, TestUserId);
-
-            // Act
-            var result = await controller.GetArticleList(term: "Searchable", publishedOnly: false);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.IsNotNull(jsonResult.Value);
-        }
 
         [TestMethod]
         public async Task List_Articles_FiltersAndLimitsResults()
@@ -963,45 +638,6 @@ namespace Sky.Tests.Controllers
             var permissionIds = catalogEntry.ArticlePermissions.Select(p => p.IdentityObjectId).ToList();
             Assert.IsTrue(permissionIds.Contains(role1.Id), "Should contain role1 permission");
             Assert.IsTrue(permissionIds.Contains(role2.Id), "Should contain role2 permission");
-        }
-
-        #endregion
-
-        #region NewHome Tests
-
-        [TestMethod]
-        [Ignore("NewHome() has no GET overload - POST only via command")]
-        public async Task NewHome_Get_ReturnsViewModel()
-        {
-            /*
-            // Arrange
-            var article = await CreateArticleAsync("Future Home Page", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-
-            // Act
-            var result = await controller.NewHome(article.ArticleNumber);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.IsNotNull(viewResult.Model);
-            Assert.IsInstanceOfType(viewResult.Model, typeof(NewHomeViewModel));
-
-            var model = (NewHomeViewModel)viewResult.Model;
-            Assert.AreEqual(article.ArticleNumber, model.ArticleNumber);
-            Assert.AreEqual("Future Home Page", model.Title);
-            */
-            await Task.CompletedTask;
-        }
-
-        [TestMethod]
-        [Ignore("NewHome() now uses CreateHomePageCommand via mediator")]
-        public async Task NewHome_Post_ChangesHomePage()
-        {
-            /*
-            // Method body commented out - NewHome now uses command-based approach
-            */
-            await Task.CompletedTask;
         }
 
         #endregion

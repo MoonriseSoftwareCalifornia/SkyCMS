@@ -10,18 +10,22 @@ namespace Sky.Tests.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Services;
     using Cosmos.Common.Features.Articles.EditorQueries;
+    using Cosmos.Common.Services;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using SendGrid.Helpers.Errors.Model;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
     using Sky.Editor.Models;
     using System;
     using System.Linq;
     using System.Security.Claims;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -84,18 +88,19 @@ namespace Sky.Tests.Controllers
             var article = await CreateArticleAsync("Test Article", TestUserId);
             await SaveArticleAsync(article, TestUserId);
 
-            var model = new EditCodePostModel
+            var model = new EditPostViewModel
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = "Updated via EditCode",
                 Content = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
                 HeadJavaScript = CryptoJsDecryption.Encrypt("<script>console.log('head');</script>"),
                 FooterJavaScript = CryptoJsDecryption.Encrypt("<script>console.log('footer');</script>"),
-                Updated = DateTimeOffset.UtcNow
+                Updated = DateTimeOffset.UtcNow,
+                Command = "SaveCode"
             };
 
-            // Act
-            var result = await controller.EditCode(model);
+            // Act - Call unified Edit endpoint with SaveCode command
+            var result = await controller.Edit(model);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
@@ -116,28 +121,39 @@ namespace Sky.Tests.Controllers
             var article = await CreateArticleAsync("Test Article", TestUserId);
             await SaveArticleAsync(article, TestUserId);
 
-            var model = new EditCodePostModel
+            var model = new EditPostViewModel
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = string.Empty, // Invalid - empty title
                 Content = CryptoJsDecryption.Encrypt("<p>Content</p>"),
                 HeadJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
                 FooterJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
-                Updated = DateTimeOffset.UtcNow
+                Updated = DateTimeOffset.UtcNow,
+                Command = "SaveCode"
             };
 
-            // Act
-            var result = await controller.EditCode(model);
+            // Act - Call unified Edit endpoint with SaveCode command
+            var result = await controller.Edit(model);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
+            Assert.IsNotNull(jsonResult.Value);
 
-            // Verify error structure (SaveCodeResultJsonModel)
-            dynamic value = jsonResult.Value;
-            Assert.IsNotNull(value);
-            Assert.IsFalse(value!.IsValid);
-            Assert.IsTrue(value.ErrorCount > 0);
+            // Verify error structure from unified endpoint
+            var json = System.Text.Json.JsonSerializer.Serialize(jsonResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            // Should have ServerSideSuccess = false for error case
+            Assert.IsTrue(root.TryGetProperty("ServerSideSuccess", out var successProp),
+                "Response should include ServerSideSuccess");
+            Assert.IsFalse(successProp.GetBoolean(), "ServerSideSuccess should be false for validation errors");
+
+            // Should have errors property
+            Assert.IsTrue(root.TryGetProperty("errors", out var errorsProp),
+                "Response should include errors property");
+            Assert.IsNotNull(errorsProp, "Errors should not be null");
         }
 
         #endregion
@@ -170,7 +186,7 @@ namespace Sky.Tests.Controllers
             Assert.Contains("Original content", retrievedArticle.Content, "Retrieved content should match saved content");
             Console.WriteLine($"Retrieved Article Content: '{retrievedArticle.Content}'");
 
-            var model = new HtmlEditorPostViewModel
+            var model = new EditPostViewModel
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = "Updated via WYSIWYG",
@@ -242,7 +258,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             article.Content = "<div data-ccms-ceid=\"region1\">Original Content</div>";
             await SaveArticleAsync(article, TestUserId);
 
-            var model = new HtmlEditorPostViewModel
+            var model = new EditPostViewModel
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = article.Title,
@@ -251,7 +267,8 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 BannerImage = string.Empty,
                 ArticleType = ArticleType.General,
                 Category = string.Empty,
-                Introduction = string.Empty
+                Introduction = string.Empty,
+                Command = "SaveRegion"
             };
 
             // Act
@@ -264,64 +281,612 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             Assert.Contains("Updated Region Content", updatedArticle.Content);
         }
 
+        /// <summary>
+        /// Tests unified Edit POST SaveBody command updates full content and preserves title when omitted.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_SaveBodyCommand_UpdatesBodyAndPreservesTitle()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Original Title", TestUserId);
+            article.Content = "<div>Old body</div>";
+            await SaveArticleAsync(article, TestUserId);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title, // Preserve original title when not changing it
+                Command = "SaveBody",
+                Data = CryptoJsDecryption.Encrypt("<section><h1>New Body</h1></section>")
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            var root = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
+
+            Assert.AreEqual("Original Title", updatedArticle.Title);
+            Assert.AreEqual("<section><h1>New Body</h1></section>", updatedArticle.Content);
+            Assert.IsTrue(root.TryGetProperty("CdnResults", out _), "Response should include CdnResults.");
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST SaveRegion command updates only target region.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_SaveRegionCommand_UpdatesOnlyTargetRegion()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Region Test", TestUserId);
+            article.Content = "<div data-ccms-ceid=\"r1\">One</div><div data-ccms-ceid=\"r2\">Two</div>";
+            await SaveArticleAsync(article, TestUserId);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                EditorId = "r1",
+                Command = "SaveRegion",
+                Data = CryptoJsDecryption.Encrypt("<p>Updated One</p>")
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
+
+            Assert.Contains("Updated One", updatedArticle.Content);
+            Assert.Contains("data-ccms-ceid=\"r2\"", updatedArticle.Content);
+            Assert.Contains(">Two<", updatedArticle.Content);
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST can decrypt the v2 JSON envelope payload produced by the browser script.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_SaveBodyCommand_DecryptsV2EnvelopePayload()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Envelope Test", TestUserId);
+            article.Content = "<div>Old</div>";
+            await SaveArticleAsync(article, TestUserId);
+
+            const string body = "<article><p>Envelope body</p></article>";
+            var envelopePayload = EncryptV2Envelope(body);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Command = "SaveBody",
+                Data = envelopePayload
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
+
+            Assert.AreEqual(body, updatedArticle.Content);
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST returns bad request when model is null.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_WithNullModel_ReturnsBadRequest()
+        {
+            // Act
+            var result = await controller.Edit(model: null!);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            Assert.AreEqual("No data sent.", badRequest.Value);
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST returns bad request when ModelState is invalid.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_WithInvalidModelState_ReturnsBadRequest()
+        {
+            // Arrange
+            controller.ModelState.AddModelError("ArticleNumber", "ArticleNumber is required.");
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = 0,
+                Command = "SaveBody",
+                Data = CryptoJsDecryption.Encrypt("<p>Ignored</p>")
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            var badRequest = (BadRequestObjectResult)result;
+            Assert.IsNotNull(badRequest.Value);
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST throws not found when article does not exist.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_WithUnknownArticle_ThrowsNotFoundException()
+        {
+            // Arrange
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = 999999,
+                Title = "Test Title",
+                Command = "SaveBody",
+                Data = CryptoJsDecryption.Encrypt("<p>Missing article</p>")
+            };
+
+            // Act + Assert
+            try
+            {
+                _ = await controller.Edit(model);
+                Assert.Fail("Expected NotFoundException was not thrown.");
+            }
+            catch (NotFoundException)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST throws format exception for malformed encrypted payload.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_WithMalformedEncryptedData_ThrowsFormatException()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Malformed Payload Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Command = "SaveBody",
+                Data = "not-base64-and-not-json",
+                Title = "Valid Title" // Provide valid title so execution reaches decryption
+            };
+
+            // Act + Assert
+            try
+            {
+                _ = await controller.Edit(model);
+                Assert.Fail("Expected FormatException was not thrown.");
+            }
+            catch (FormatException)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST SaveRegion with missing editor id keeps content unchanged but still returns success payload.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_SaveRegionWithoutEditorId_KeepsContentUnchangedAndReturnsSuccess()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Missing Region Id", TestUserId);
+            article.Content = "<div data-ccms-ceid=\"region-a\">Original</div>";
+            await SaveArticleAsync(article, TestUserId);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Command = "SaveRegion",
+                EditorId = string.Empty,
+                Data = CryptoJsDecryption.Encrypt("<p>Ignored update</p>")
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
+
+            Assert.AreEqual("<div data-ccms-ceid=\"region-a\">Original</div>", updatedArticle.Content);
+        }
+
         #endregion
 
         #region Designer Method Tests
 
         /// <summary>
-        /// Tests that Designer_Post_UsesSaveArticleCommand.
+        /// Tests that SaveDesigner uses SaveArticleCommand.
         /// </summary>
         [TestMethod]
-        public async Task Designer_Post_UsesSaveArticleCommand()
+        public async Task Edit_SaveDesigner_UsesSaveArticleCommand()
         {
             // Arrange
             var article = await CreateArticleAsync("Designer Test", TestUserId);
             await SaveArticleAsync(article, TestUserId);
 
-            var model = new ArticleDesignerDataViewModel
+            var model = new EditPostViewModel
             {
                 ArticleNumber = article.ArticleNumber,
+                Command = "SaveDesigner",
                 Title = "Updated via Designer",
                 HtmlContent = CryptoJsDecryption.Encrypt("<div>New HTML</div>"),
                 CssContent = CryptoJsDecryption.Encrypt(".test { color: red; }")
             };
 
             // Act
-            var result = await controller.Designer(model);
+            var result = await controller.Edit(model);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             Assert.IsNotNull(jsonResult.Value);
-            Assert.IsInstanceOfType(jsonResult.Value, typeof(DesignerResult));
-            var designerResult = (DesignerResult)jsonResult.Value;
-            Assert.IsTrue(designerResult.success);
         }
 
         /// <summary>
-        /// Tests that Designer_Post_WithNestedEditableRegions_ReturnsBadRequest.
+        /// Tests that SaveDesigner with valid HTML and CSS succeeds and updates content.
         /// </summary>
         [TestMethod]
-        public async Task Designer_Post_WithNestedEditableRegions_ReturnsBadRequest()
+        public async Task Edit_SaveDesigner_WithValidHtmlAndCss_UpdatesContent()
         {
             // Arrange
-            var article = await CreateArticleAsync("Test", TestUserId);
+            var article = await CreateArticleAsync("Designer HTML+CSS Test", TestUserId);
             await SaveArticleAsync(article, TestUserId);
 
-            var model = new ArticleDesignerDataViewModel
+            var htmlContent = "<div class='container'><h1>Welcome</h1><p>Content</p></div>";
+            var cssContent = "h1 { color: blue; font-size: 32px; } p { margin: 10px; }";
+
+            var model = new EditPostViewModel
             {
                 ArticleNumber = article.ArticleNumber,
-                Title = "Test",
-                HtmlContent = CryptoJsDecryption.Encrypt(
-                    "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>"),
+                Id = article.Id,
+                Title = "Designer HTML+CSS Update",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                CssContent = CryptoJsDecryption.Encrypt(cssContent)
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            // Verify content was saved
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
+            Assert.IsNotNull(updatedArticle.Content);
+            StringAssert.Contains(updatedArticle.Content, "Welcome", "HTML content should be present");
+        }
+
+        /// <summary>
+        /// Tests that SaveDesigner with HTML only (no CSS) succeeds.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_SaveDesigner_WithHtmlOnly_Succeeds()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Designer HTML Only Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            var htmlContent = "<section><h2>Section Title</h2></section>";
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Id = article.Id,
+                Title = "HTML Only Test",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                CssContent = CryptoJsDecryption.Encrypt(string.Empty) // Empty CSS
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+        }
+
+        /// <summary>
+        /// Tests that SaveDesigner validates nested editable regions and rejects them.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_SaveDesigner_WithNestedEditableRegions_ReturnsFalse()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Nested Regions Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            // HTML with nested data-ccms-ceid attributes (invalid)
+            var htmlContent = @"
+                <div data-ccms-ceid='region-1'>
+                    <p>Outer region</p>
+                    <div data-ccms-ceid='region-2'>
+                        <p>Inner nested region - NOT ALLOWED</p>
+                    </div>
+                </div>";
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Id = article.Id,
+                Title = "Nested Regions Test",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
                 CssContent = CryptoJsDecryption.Encrypt(string.Empty)
             };
 
             // Act
-            var result = await controller.Designer(model);
+            var result = await controller.Edit(model);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            dynamic value = jsonResult.Value;
+            Assert.IsNotNull(value);
+            Assert.IsFalse(value!.ServerSideSuccess, "Should reject nested regions");
+            Assert.IsNotNull(value.errors);
+        }
+
+        /// <summary>
+        /// Tests that SaveDesigner handles GrapesJS typical output structure.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_SaveDesigner_WithGrapesJsStructure_HandlesCorrectly()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("GrapesJS Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            // Typical GrapesJS output
+            var htmlContent = @"
+                <div class='gjs-row'>
+                    <div class='gjs-cell'>
+                        <div data-gjs-type='text'>
+                            <h1>GrapesJS Page</h1>
+                        </div>
+                    </div>
+                </div>";
+
+            var cssContent = @"
+                .gjs-row { display: flex; margin: 10px; }
+                .gjs-cell { flex: 1; padding: 10px; }
+                h1 { font-size: 28px; }";
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Id = article.Id,
+                Title = "GrapesJS Update",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                CssContent = CryptoJsDecryption.Encrypt(cssContent)
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+        }
+
+        /// <summary>
+        /// Tests that SaveDesigner preserves complex CSS including media queries.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_SaveDesigner_WithComplexCss_PreservesStructure()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Complex CSS Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            var htmlContent = "<div class='container'><p>Responsive design</p></div>";
+            var cssContent = @"
+                @media (max-width: 768px) {
+                    body { font-size: 14px; }
+                    .container { padding: 0; }
+                }
+                .container {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 20px;
+                }
+                p { margin: 0; }";
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Id = article.Id,
+                Title = "Complex CSS Test",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                CssContent = CryptoJsDecryption.Encrypt(cssContent)
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+        }
+
+        /// <summary>
+        /// Tests that SaveDesigner handles special characters and Unicode.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_SaveDesigner_WithSpecialCharacters_Preserved()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Special Chars Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            var htmlContent = @"
+                <div>
+                    <p>Special: © ® ™ € £ ¥</p>
+                    <p>Emoji: 🎨 ✨ 🚀 💻 📱</p>
+                    <p>Quotes: 'single' &quot;double&quot;</p>
+                </div>";
+
+            var cssContent = @"body::before { content: '✓ Styled'; }";
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Id = article.Id,
+                Title = "Special Characters",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                CssContent = CryptoJsDecryption.Encrypt(cssContent)
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            // Verify special characters preserved
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
+            Assert.IsNotNull(updatedArticle.Content);
+            StringAssert.Contains(updatedArticle.Content, "©", "Copyright symbol should be preserved");
+        }
+
+        /// <summary>
+        /// Tests that SaveDesigner with large HTML content handles stress test.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_SaveDesigner_WithLargeContent_Succeeds()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Large Content Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            // Generate large HTML (~250KB)
+            var largeHtmlBuilder = new StringBuilder();
+            largeHtmlBuilder.Append("<div>");
+            for (int i = 0; i < 2500; i++)
+            {
+                largeHtmlBuilder.Append($"<p>Paragraph {i}: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>");
+            }
+            largeHtmlBuilder.Append("</div>");
+            var htmlContent = largeHtmlBuilder.ToString();
+
+            var cssContent = "p { margin: 10px; line-height: 1.6; }";
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Id = article.Id,
+                Title = "Large Content",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                CssContent = CryptoJsDecryption.Encrypt(cssContent)
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+        }
+
+        /// <summary>
+        /// Tests that SaveDesigner updates metadata (title, category, etc.) correctly.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_SaveDesigner_UpdatesMetadata()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Metadata Test", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Id = article.Id,
+                Title = "New Designer Title",
+                BannerImage = "https://example.com/designer-banner.jpg",
+                ArticleType = ArticleType.General,
+                Category = "DesignGallery",
+                Introduction = "Created with designer",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt("<div>Designed</div>"),
+                CssContent = CryptoJsDecryption.Encrypt("div { padding: 20px; }")
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            // Verify metadata
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
+            Assert.AreEqual("New Designer Title", updatedArticle.Title);
+            Assert.AreEqual("DesignGallery", updatedArticle.Category);
+        }
+
+        /// <summary>
+        /// Tests that SaveDesigner does not modify head/footer JavaScript.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_SaveDesigner_DoesNotModifyScripts()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Scripts Test", TestUserId);
+            article.HeadJavaScript = "<script>// Head script</script>";
+            article.FooterJavaScript = "<script>// Footer script</script>";
+            await SaveArticleAsync(article, TestUserId);
+
+            var headScriptBefore = article.HeadJavaScript;
+            var footerScriptBefore = article.FooterJavaScript;
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Id = article.Id,
+                Title = "Scripts Regression Test",
+                Command = "SaveDesigner",
+                HtmlContent = CryptoJsDecryption.Encrypt("<div>New Design</div>"),
+                CssContent = CryptoJsDecryption.Encrypt("div { color: green; }")
+                // Note: HeadJavaScript and FooterJavaScript NOT provided
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            // Verify scripts not modified
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
+            Assert.AreEqual(headScriptBefore, updatedArticle.HeadJavaScript, "Head script should not change");
+            Assert.AreEqual(footerScriptBefore, updatedArticle.FooterJavaScript, "Footer script should not change");
         }
 
         #endregion
@@ -361,18 +926,19 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             // Verify this is NOT the root page
             Assert.AreNotEqual("root", originalUrlPath, "Test article should not be the root page");
 
-            var model = new EditCodePostModel
+            var model = new EditPostViewModel
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = "Completely Different New Title", // Make sure this creates a different slug
                 Content = CryptoJsDecryption.Encrypt("<p>Content</p>"),
                 HeadJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
                 FooterJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
-                Updated = article.Updated
+                Updated = article.Updated,
+                Command = "SaveCode"
             };
 
-            // Act
-            var result = await controller.EditCode(model);
+            // Act - Call unified Edit endpoint with SaveCode command
+            var result = await controller.Edit(model);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
@@ -471,6 +1037,67 @@ redirect.Content, "Redirect content should have clickable link to new URL");
         }
 
         #endregion
+
+        private static JsonElement AssertUnifiedEditSuccessResponse(IActionResult result, int expectedArticleNumber)
+        {
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            Assert.IsNotNull(jsonResult.Value);
+
+            var json = JsonSerializer.Serialize(jsonResult.Value);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("success", out var successProp))
+            {
+                var errors = root.TryGetProperty("errors", out var errorsProp)
+                    ? JsonSerializer.Serialize(errorsProp)
+                    : "No errors property";
+                Assert.Fail($"Unified edit returned failure payload. success={successProp.GetBoolean()}, errors={errors}");
+            }
+
+            Assert.IsTrue(root.TryGetProperty("ServerSideSuccess", out var serverSideSuccess),
+                "Response should include ServerSideSuccess.");
+            Assert.IsTrue(serverSideSuccess.GetBoolean(), "ServerSideSuccess should be true.");
+
+            Assert.IsTrue(root.TryGetProperty("Model", out var modelProp), "Response should include Model.");
+            Assert.IsTrue(modelProp.TryGetProperty("ArticleNumber", out var articleNumberProp),
+                "Response Model should include ArticleNumber.");
+            Assert.AreEqual(expectedArticleNumber, articleNumberProp.GetInt32(),
+                "Response Model.ArticleNumber should match saved article.");
+
+            return root.Clone();
+        }
+
+        private static string EncryptV2Envelope(string plainText, string keyText = "1234567890123456")
+        {
+            var key = Encoding.UTF8.GetBytes(keyText);
+            var iv = new byte[16];
+            RandomNumberGenerator.Fill(iv);
+
+            using var aes = Aes.Create();
+            aes.Key = key;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+            using var ms = new System.IO.MemoryStream();
+            using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+            using (var sw = new System.IO.StreamWriter(cs))
+            {
+                sw.Write(plainText);
+            }
+
+            var payload = new
+            {
+                v = 2,
+                iv = Convert.ToBase64String(iv),
+                ct = Convert.ToBase64String(ms.ToArray())
+            };
+
+            return JsonSerializer.Serialize(payload);
+        }
     }
 }
 

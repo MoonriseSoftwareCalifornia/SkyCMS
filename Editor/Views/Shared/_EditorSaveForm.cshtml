@@ -1,0 +1,22 @@
+@model Sky.Cms.Models.EditPostViewModel
+@{
+    // Shared hidden form fields for all editor types
+}
+
+<!-- Common article metadata -->
+<input type="hidden" id="Id" name="Id" value="@Model.Id" />
+<input type="hidden" id="ArticleNumber" name="ArticleNumber" value="@Model.ArticleNumber" />
+<input type="hidden" id="VersionNumber" name="VersionNumber" value="@Model.VersionNumber" />
+<input type="hidden" id="Title" name="Title" value="@Model.Title" />
+<input type="hidden" id="Published" name="Published" value="@(Model.Published?.ToString("O") ?? "")" />
+<input type="hidden" id="Updated" name="Updated" value="@(Model.Updated?.ToString("O") ?? "")" />
+<input type="hidden" id="UrlPath" name="UrlPath" value="@Model.UrlPath" />
+<input type="hidden" id="BannerImage" name="BannerImage" value="@Model.BannerImage" />
+<input type="hidden" id="RoleList" name="RoleList" value="@Model.RoleList" />
+<input type="hidden" id="SaveAsNewVersion" name="SaveAsNewVersion" value="@Model.SaveAsNewVersion" />
+
+<!-- Editor-specific fields (will be populated by client) -->
+<input type="hidden" id="Content" name="Content" value="" />
+<input type="hidden" id="HeadJavaScript" name="HeadJavaScript" value="" />
+<input type="hidden" id="FooterJavaScript" name="FooterJavaScript" value="" />
+<input type="hidden" id="Data" name="Data" value="" />

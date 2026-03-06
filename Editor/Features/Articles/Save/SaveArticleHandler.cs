@@ -130,7 +130,8 @@ namespace Sky.Editor.Features.Articles.Save
                 currentArticle.Category = command.Category ?? string.Empty;
                 currentArticle.Published = command.Published;
                 currentArticle.UrlPath = command.UrlPath ?? currentArticle.UrlPath;
-                
+                currentArticle.VersionNumber++; // Increment version on each save
+
                 // Handle introduction: use provided value, or auto-generate for blog posts
                 if (!string.IsNullOrWhiteSpace(command.Introduction))
                 {

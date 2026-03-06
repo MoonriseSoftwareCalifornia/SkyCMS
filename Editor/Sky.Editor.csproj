@@ -65,6 +65,7 @@
 	  <Content Remove="wwwroot\js\editors\JavaScript.js" />
 	  <Content Remove="wwwroot\js\editors\monaco-editor-core.js" />
 	  <Content Remove="wwwroot\js\editors\monaco-editor-insert-helpers.js" />
+	  <Content Remove="wwwroot\js\editor\editor-save-service.js" />
 	  <Content Remove="wwwroot\js\setup-sensitive-fields.js" />
 	  <Content Remove="wwwroot\lib\cosmos\ckeditor\ckeditor-widget.301.js" />
 	</ItemGroup>

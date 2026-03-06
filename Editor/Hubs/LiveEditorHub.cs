@@ -52,7 +52,7 @@ namespace Sky.Cms.Hubs
         {
             try
             {
-                var model = JsonConvert.DeserializeObject<HtmlEditorPostViewModel>(data);
+                var model = JsonConvert.DeserializeObject<EditPostViewModel>(data);
                 model.Data = CryptoJsDecryption.Decrypt(model.Data);
 
                 switch (model.Command)
