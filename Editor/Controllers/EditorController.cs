@@ -1446,58 +1446,6 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Updates a single region in an editable document.
-        /// </summary>
-        /// <param name="model">Editor view model.</param>
-        /// <returns>Returns OK on success.</returns>
-        public async Task<IActionResult> EditSaveRegion(EditorRegionViewModel model)
-        {
-            var article = await dbContext.Articles.Where(w => w.ArticleNumber == model.ArticleNumber).OrderBy(o => o.VersionNumber).LastOrDefaultAsync();
-
-            var decryptedData = CryptoJsDecryption.Decrypt(model.Data);
-
-            // Now update a region if EditorId is specified.
-            // This allows for multiple regions to be updated independently without overwriting each other.
-            var content = UpdateRegionInDocument(model.EditorId, article.Content, decryptedData);
-
-            if (article.Content != content)
-            {
-                article.Content = content;
-                article.Updated = DateTimeOffset.UtcNow;
-                await dbContext.SaveChangesAsync();
-                await hub.Clients.All.SendCoreAsync("UpdateEditors", [model.EditorId, model.Data]);
-            }
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Updates the entire body of a web page.
-        /// </summary>
-        /// <param name="model">Editor view model.</param>
-        /// <returns>Returns OK on success.</returns>
-        /// <remarks>
-        /// LEGACY METHOD: Use Edit(EditPostViewModel) with Command="SaveBody" instead.
-        /// This method is maintained for backward compatibility only.
-        /// </remarks>
-        [Obsolete("Use Edit(EditPostViewModel) with Command='SaveBody' and Data property instead. This method will be removed in a future version.")]
-        public async Task<IActionResult> EditSaveBody(EditorRegionViewModel model)
-        {
-            var article = await dbContext.Articles.Where(w => w.ArticleNumber == model.ArticleNumber).OrderBy(o => o.VersionNumber).LastOrDefaultAsync();
-
-            var decryptedData = CryptoJsDecryption.Decrypt(model.Data);
-
-            if (article.Content != decryptedData)
-            {
-                article.Content = decryptedData;
-                article.Updated = DateTimeOffset.UtcNow;
-                await dbContext.SaveChangesAsync();
-            }
-
-            return Ok();
-        }
-
-        /// <summary>
         /// Edit web page code with Monaco editor.
         /// </param>
         /// <param name="id">Article Number (not ID).</param>
@@ -1576,35 +1524,6 @@ namespace Sky.Cms.Controllers
                 EditingField = "HeadJavaScript",
                 CustomButtons = new[] { "Preview", "Html", "Export", "Import" }
             });
-        }
-
-        /// <summary>
-        /// Performs a query to see what pages will have changes.
-        /// </summary>
-        /// <param name="model">Post view model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        public async Task<IActionResult> SearchAndReplaceQuery(SearchAndReplaceViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            if (model.ArticleNumber.HasValue)
-            {
-                var articleCount = await dbContext.Articles.Where(c => c.ArticleNumber == model.ArticleNumber && c.Content.Contains(model.FindValue)).CountAsync();
-
-                ViewData["SearchAndReplacePrequery"] = $"{articleCount} versions will be modified.";
-            }
-            else
-            {
-                var articleCount = await dbContext.Articles.Where(c => c.Published != null && c.Content.Contains(model.FindValue)).CountAsync();
-
-                ViewData["SearchAndReplacePrequery"] = $"{articleCount} published articles will be modified.";
-            }
-
-            return View(model);
         }
 
         /// <summary>
@@ -1835,25 +1754,6 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Gets a list of published pages.
-        /// </summary>
-        /// <returns>List of published pages.</returns>
-        [HttpGet]
-        public async Task<IActionResult> GetPublishedPageList()
-        {
-            var activeCode = (int)StatusCodeEnum.Active;
-            var redirectCode = (int)StatusCodeEnum.Redirect;
-            var pages = await dbContext.Pages.Where(w => w.Published.HasValue && (w.StatusCode == activeCode || w.StatusCode == redirectCode)).Select(s =>
-            new
-            {
-                s.Id,
-                s.ArticleNumber
-            }).ToListAsync();
-
-            return Json(pages);
-        }
-
-        /// <summary>
         /// Publish list of web pages to static website.
         /// </summary>
         /// <param name="guids">List of page IDs.</param>
@@ -1888,50 +1788,6 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Publishes a table of contents and new site map file.
-        /// </summary>
-        /// <param name="path">TOC root path.</param>
-        /// <returns>IActionResult.</returns>
-        [HttpGet]
-        [Authorize(Roles = "Editors,Administrators")]
-        public async Task<IActionResult> PublishTOC(string path = "/")
-        {
-            await publishingService.WriteTocAsync(path);
-            return Ok();
-        }
-
-        /// <summary>
-        /// Gets a list of articles (pages) on this website.
-        /// </summary>
-        /// <param name="text">Search text.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <remarks>Returns published and non-published links.</remarks>
-        public async Task<IActionResult> List_Articles(string text)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            IQueryable<Article> query = dbContext.Articles
-            .OrderBy(o => o.Title)
-            .Where(w => w.StatusCode == (int)StatusCodeEnum.Active || w.StatusCode == (int)StatusCodeEnum.Inactive);
-
-            if (!string.IsNullOrEmpty(text))
-            {
-                query = query.Where(x => x.Title.ToLower().Contains(text.ToLower()));
-            }
-
-            var model = await query.Select(s => new
-            {
-                s.Title,
-                s.UrlPath
-            }).Distinct().Take(10).ToListAsync();
-
-            return Json(model);
-        }
-
-        /// <summary>
         /// Sends an article (or page) to trash bin.
         /// </summary>
         /// <param name="id">Article number.</param>
@@ -1946,34 +1802,6 @@ namespace Sky.Cms.Controllers
 
             await articleLogic.DeleteArticle(id);
             return Ok();
-        }
-
-        /// <summary>
-        ///     Gets a role list, and allows for filtering.
-        /// </summary>
-        /// <param name="text">Filter string.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpGet]
-        public async Task<IActionResult> Get_RoleList(string text)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var query = dbContext.Roles.Select(s => new RoleItemViewModel
-            {
-                Id = s.Id,
-                RoleName = s.Name,
-                RoleNormalizedName = s.NormalizedName
-            });
-
-            if (!string.IsNullOrEmpty(text))
-            {
-                query = query.Where(w => w.RoleName.StartsWith(text));
-            }
-
-            return Json(await query.OrderBy(r => r.RoleName).ToListAsync());
         }
 
         /// <summary>
@@ -2091,33 +1919,6 @@ namespace Sky.Cms.Controllers
             await dbContext.SaveChangesAsync();
 
             return RedirectToAction("Redirects");
-        }
-
-        /// <summary>
-        /// Updates the time stamps for all published pages.
-        /// </summary>
-        /// <returns>IActionResult.</returns>
-        [HttpGet]
-        [Authorize(Roles = "Administrators, Editors")]
-        public async Task<IActionResult> UpdateTimeStamps()
-        {
-            var pages = await dbContext.Pages.ToListAsync();
-            var c = 0;
-            foreach (var page in pages)
-            {
-                c++;
-                page.Updated = DateTime.UtcNow;
-
-                if (c >= 20)
-                {
-                    await dbContext.SaveChangesAsync();
-                    c = 0;
-                }
-            }
-
-            await dbContext.SaveChangesAsync();
-
-            return Json("Ok");
         }
 
         /// <summary>

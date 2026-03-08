@@ -466,35 +466,6 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
-        #region Article Listing Tests
-
-        [TestMethod]
-        public async Task List_Articles_FiltersAndLimitsResults()
-        {
-            // Arrange
-            for (int i = 0; i < 15; i++)
-            {
-                var article = await CreateArticleAsync($"Test Article {i}", TestUserId);
-                await SaveArticleAsync(article, TestUserId);
-            }
-
-            // Act
-            var result = await controller.List_Articles("Test");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.IsNotNull(jsonResult.Value);
-            
-            // Should limit to 10 results as per controller logic
-            var resultList = jsonResult.Value as System.Collections.IEnumerable;
-            Assert.IsNotNull(resultList);
-            var count = resultList.Cast<object>().Count();
-            Assert.IsTrue(count <= 10, "Should limit results to 10");
-        }
-
-        #endregion
-
         #region Reserved Paths Tests
 
         [TestMethod]
@@ -560,26 +531,6 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(jsonResult.Value);
             Assert.IsInstanceOfType(jsonResult.Value, typeof(string));
             Assert.IsTrue(((string)jsonResult.Value).Length > 0);
-        }
-
-        [TestMethod]
-        public async Task GetPublishedPageList_ReturnsPages()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Published Page", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-            
-            var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            dbArticle.Published = DateTimeOffset.UtcNow;
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await controller.GetPublishedPageList();
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.IsNotNull(jsonResult.Value);
         }
 
         [TestMethod]
@@ -675,23 +626,6 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(json.Contains("success"), "Response should contain success property");
         }
 
-        [TestMethod]
-        public async Task PublishTOC_GeneratesTocAndSitemap()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("TOC Test Article", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-            var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            dbArticle.Published = DateTimeOffset.UtcNow;
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await controller.PublishTOC("/");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-        }
-
         #endregion
 
         #region Redirect Management Tests
@@ -772,33 +706,6 @@ namespace Sky.Tests.Controllers
         #region Utility and View Tests
 
         [TestMethod]
-        public async Task Get_RoleList_ReturnsFilteredRoles()
-        {
-            // Arrange
-            var role1 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "AdminRole", NormalizedName = "ADMINROLE" };
-            var role2 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "EditorRole", NormalizedName = "EDITORROLE" };
-            var role3 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "ReviewerRole", NormalizedName = "REVIEWERROLE" };
-            
-            await RoleManager.CreateAsync(role1);
-            await RoleManager.CreateAsync(role2);
-            await RoleManager.CreateAsync(role3);
-
-            // Act - filter for roles starting with "Admin"
-            var result = await controller.Get_RoleList("Admin");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.IsNotNull(jsonResult.Value);
-            
-            // Verify filtered results
-            var roles = jsonResult.Value as System.Collections.IEnumerable;
-            Assert.IsNotNull(roles);
-            var roleList = roles.Cast<object>().ToList();
-            Assert.IsTrue(roleList.Count > 0, "Should return at least one role");
-        }
-
-        [TestMethod]
         public async Task Logs_ReturnsActivityLogs()
         {
             // Arrange
@@ -866,121 +773,6 @@ namespace Sky.Tests.Controllers
             // Assert - Since the path doesn't exist, should return NotFound
             // In a real scenario with actual reserved paths, this would return a ViewResult
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
-        #endregion
-
-        #region Live Editing Tests
-
-        [TestMethod]
-        public async Task EditSaveRegion_UpdatesSingleRegion()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Live Edit Test", TestUserId);
-            article.Content = "<div data-ccms-ceid=\"header\">Original Header</div><div data-ccms-ceid=\"content\">Original Content</div>";
-            await SaveArticleAsync(article, TestUserId);
-
-            var model = new EditorRegionViewModel
-            {
-                ArticleNumber = article.ArticleNumber,
-                EditorId = "header",
-                Data = CryptoJsDecryption.Encrypt("<h1>Updated Header</h1>")
-            };
-
-            // Act
-            var result = await controller.EditSaveRegion(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-
-            // Verify only the header region was updated
-            var updatedArticle = await Db.Articles
-                .Where(a => a.ArticleNumber == article.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstAsync();
-
-            Assert.Contains("Updated Header", updatedArticle.Content, "Header region should be updated");
-            Assert.Contains("Original Content", updatedArticle.Content, "Content region should remain unchanged");
-        }
-
-        [TestMethod]
-        public async Task EditSaveBody_UpdatesEntireBody()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Body Edit Test", TestUserId);
-            article.Content = "<div>Original body content</div>";
-            await SaveArticleAsync(article, TestUserId);
-
-            var newContent = "<div><h1>Completely New Content</h1><p>New paragraph</p></div>";
-            var model = new EditorRegionViewModel
-            {
-                ArticleNumber = article.ArticleNumber,
-                EditorId = "body",
-                Data = CryptoJsDecryption.Encrypt(newContent)
-            };
-
-            // Act
-            var result = await controller.EditSaveBody(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-
-            // Verify entire body was replaced
-            var updatedArticle = await Db.Articles
-                .Where(a => a.ArticleNumber == article.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstAsync();
-
-            Assert.AreEqual(newContent, updatedArticle.Content, "Entire body should be replaced");
-            Assert.DoesNotContain("Original body content", updatedArticle.Content);
-        }
-
-        #endregion
-
-        #region Search and Replace Tests
-
-        [TestMethod]
-        public async Task SearchAndReplaceQuery_ShowsImpactPreview()
-        {
-            // Arrange
-            var article1 = await CreateArticleAsync("Search Test 1", TestUserId);
-            article1.Content = "<p>This contains the findme keyword</p>";
-            await SaveArticleAsync(article1, TestUserId);
-            
-            var dbArticle1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == article1.ArticleNumber);
-            dbArticle1.Published = DateTimeOffset.UtcNow;
-            await Db.SaveChangesAsync();
-
-            var article2 = await CreateArticleAsync("Search Test 2", TestUserId);
-            article2.Content = "<p>This also has findme in it</p>";
-            await SaveArticleAsync(article2, TestUserId);
-            
-            var dbArticle2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == article2.ArticleNumber);
-            dbArticle2.Published = DateTimeOffset.UtcNow;
-            await Db.SaveChangesAsync();
-
-            var model = new SearchAndReplaceViewModel
-            {
-                FindValue = "findme",
-                ReplaceValue = "replacewith",
-                ArticleNumber = null // Search all published articles
-            };
-
-            // Act
-            var result = await controller.SearchAndReplaceQuery(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.IsNotNull(viewResult.Model);
-            
-            // Verify ViewData contains the impact preview
-            Assert.IsTrue(viewResult.ViewData.ContainsKey("SearchAndReplacePrequery"));
-            var prequery = viewResult.ViewData["SearchAndReplacePrequery"] as string;
-            Assert.IsNotNull(prequery);
-            Assert.IsTrue(prequery.Contains("published articles will be modified") || 
-                         prequery.Contains("versions will be modified"),
-                         "Preview should indicate how many items will be modified");
         }
 
         #endregion
