@@ -19,6 +19,9 @@
     <input type="hidden" asp-for="BannerImage" />
 </form>
 
+<!-- Include shared editor infrastructure -->
+<partial name="_EditorCommonScripts" />
+
 <script>
     /*
       Cosmos Configuration.
@@ -37,12 +40,11 @@
 
     // Activated from _LayoutEditor.cshtml in multiple locations;
     async function saveChanges() {
-        await editor.store();
-
-        if (next !== null && typeof next  === 'function') {
-            next();
-            next = null;
+        if (EditorSaveService.state.saveInProgress === true) {
+            return;
         }
+
+        await editor.store();
     }
 
     $("#frmSave").submit(function(event) {
@@ -96,7 +98,6 @@
     const cosmos__designerAssetsEndPoint = "/pub/articles/" + cosmos__id;
     const cosmos__designerAssetsExclude = "";
     const cosmos__designerDataEndpoint = "/Editor/GetDesignerData";
-    const cosmos__designerPostEndpoint = "/Editor/Designer";
     const cosmos__designerUploadEndpoint = "/FileManager/SimpleUpload?id=" + cosmos__id + "&entityType=articles&editorType=grapesjs";
 
     let grapesjs__canvas__styles = @Html.Raw(JsonConvert.SerializeObject(designerConfig.Styles));

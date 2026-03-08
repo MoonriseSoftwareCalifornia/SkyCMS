@@ -190,18 +190,47 @@
         });
     }
 
-    function cosmos__designerPostData() {
-        $.post(cosmos__designerPostEndpoint,
-            $("#frmSave").serialize(),
-            function(response) {
-                saveInProgress = false;
-                doneSaving();
-                if (next !== null && typeof next  === 'function') {
-                    next();
-                    next = null;
-                }
+    async function cosmos__designerPostData(htmlContent, cssContent) {
+        const model = {
+            Id: $("#Id").val(),
+            Title: $("#Title").val(),
+            Payload: htmlContent || "",
+            CssContent: cssContent || "",
+            VersionNumber: $("#VersionNumber").val(),
+            ArticleNumber: $("#ArticleNumber").val(),
+            UrlPath: $("#UrlPath").val(),
+            BannerImage: $("#BannerImage").val(),
+            Command: "SaveDesigner"
+        };
+
+        try {
+            const response = await EditorSaveService.saveArticle(model, "SaveDesigner", {
+                encryptFields: ['Payload', 'CssContent']
+            });
+
+            // Save was intentionally skipped by in-progress dedupe logic.
+            if (response === null) {
+                return;
             }
-        );
+
+            EditorSaveService.handleSaveResponse(response, {
+                updateUI: true,
+                onSuccess: () => {
+                    doneSaving();
+                    if (next !== null && typeof next === 'function') {
+                        next();
+                        next = null;
+                    }
+                },
+                onError: (msg) => {
+                    EditorUI.showError(msg);
+                    doneSaving();
+                }
+            });
+        } catch (error) {
+            EditorUI.showError(error.message);
+            doneSaving();
+        }
     }
 
     async function cosmos__designerLoadAssets(editor) {
@@ -224,12 +253,23 @@
             },
             async store(data, options = {}) {
                 showSaving(); // Show saving message.
-                const pagesHtml = editor.Pages.getAll().map((page) => {
-                    const component = page.getMainComponent();
-                    $("#Payload").val(encryptData(editor.getHtml({ component })));
-                    $("#CssContent").val(encryptData(editor.getCss({ component })));
-                    cosmos__designerPostData();
-                });
+
+                const pages = editor.Pages.getAll();
+                if (!pages || pages.length === 0) {
+                    await cosmos__designerPostData('', '');
+                    return;
+                }
+
+                const selectedPage = editor.Pages.getSelected() || pages.at(0);
+                const component = selectedPage.getMainComponent();
+                const html = editor.getHtml({ component });
+                const css = editor.getCss({ component });
+
+                // Keep hidden fields in sync for existing UI behaviors.
+                $("#Payload").val(html);
+                $("#CssContent").val(css);
+
+                await cosmos__designerPostData(html, css);
             }
         });
     };
