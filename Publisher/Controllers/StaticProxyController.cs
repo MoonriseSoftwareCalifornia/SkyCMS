@@ -29,7 +29,7 @@ using Microsoft.Extensions.Caching.Memory;
 /// </remarks>
 public class StaticProxyController : Controller
 {
-    private readonly StorageContext storageContext;
+    private readonly IStorageContext storageContext;
     private readonly IMemoryCache memoryCache;
     private readonly ApplicationDbContext dbContext;
 
@@ -40,7 +40,7 @@ public class StaticProxyController : Controller
     /// <param name="memoryCache">Memory cache.</param>
     /// <param name="dbContext">Database context for querying published pages.</param>
     public StaticProxyController(
-        StorageContext storageContext,
+        IStorageContext storageContext,
         IMemoryCache memoryCache,
         ApplicationDbContext dbContext)
     {

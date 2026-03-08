@@ -7,7 +7,9 @@ const EditorSaveService = {
   state: {
     saveInProgress: false,
     encryptionContextReady: false,
-    lastSaveTime: null
+    lastSaveTime: null,
+    inFlightFingerprint: null,
+    lastCompletedFingerprint: null
   },
 
   // ============================================================================
@@ -79,7 +81,7 @@ const EditorSaveService = {
    * @param {string[]} fieldsToEncrypt
    * @returns {object}
    */
-  encryptModel(model, fieldsToEncrypt = ['Data', 'Content', 'HeadJavaScript', 'FooterJavaScript']) {
+  encryptModel(model, fieldsToEncrypt = ['Payload', 'HeadJavaScript', 'FooterJavaScript']) {
     const encrypted = { ...model };
     fieldsToEncrypt.forEach(field => {
       if (encrypted[field]) {
@@ -150,6 +152,74 @@ const EditorSaveService = {
   // ============================================================================
 
   /**
+   * Create a deterministic fingerprint for deduping saves.
+   * @param {object} model
+   * @param {string} command
+   * @returns {string}
+   */
+  createSaveFingerprint(model, command) {
+    const fingerprintPayload = {
+      command: command || '',
+      model: {
+        Id: model?.Id ?? null,
+        ArticleNumber: model?.ArticleNumber ?? null,
+        EditorId: model?.EditorId ?? null,
+        Payload: model?.Payload ?? '',
+        HeadJavaScript: model?.HeadJavaScript ?? '',
+        FooterJavaScript: model?.FooterJavaScript ?? '',
+        CssContent: model?.CssContent ?? '',
+        Title: model?.Title ?? '',
+        UrlPath: model?.UrlPath ?? '',
+        BannerImage: model?.BannerImage ?? '',
+        Published: model?.Published ?? '',
+        Updated: model?.Updated ?? '',
+        VersionNumber: model?.VersionNumber ?? '',
+        EditingField: model?.EditingField ?? '',
+        ArticleType: model?.ArticleType ?? '',
+        Category: model?.Category ?? '',
+        Introduction: model?.Introduction ?? ''
+      }
+    };
+
+    return this.stableStringify(fingerprintPayload);
+  },
+
+  /**
+   * Stable JSON stringify with sorted keys.
+   * @param {any} value
+   * @returns {string}
+   */
+  stableStringify(value) {
+    if (value === null || typeof value !== 'object') {
+      return JSON.stringify(value);
+    }
+
+    if (Array.isArray(value)) {
+      return `[${value.map(v => this.stableStringify(v)).join(',')}]`;
+    }
+
+    const keys = Object.keys(value).sort();
+    const content = keys
+      .map(k => `${JSON.stringify(k)}:${this.stableStringify(value[k])}`)
+      .join(',');
+    return `{${content}}`;
+  },
+
+  /**
+   * Wait for current save to complete.
+   * @param {number} timeoutMs
+   * @param {number} pollMs
+   * @returns {Promise<boolean>}
+   */
+  async waitForSaveSlot(timeoutMs = 3000, pollMs = 100) {
+    const start = Date.now();
+    while (this.state.saveInProgress && (Date.now() - start) < timeoutMs) {
+      await this.sleep(pollMs);
+    }
+    return !this.state.saveInProgress;
+  },
+
+  /**
    * Unified save for all editor types.
    * @param {object} model - EditPostViewModel
    * @param {string} command - SaveBody, SaveRegion, SaveCode, SavePageProperties
@@ -158,19 +228,32 @@ const EditorSaveService = {
    */
   async saveArticle(model, command, options = {}) {
     const {
-      encryptFields = ['Data', 'Content', 'HeadJavaScript', 'FooterJavaScript'],
+      encryptFields = ['Payload', 'HeadJavaScript', 'FooterJavaScript'],
       endpoint = "/Editor/Edit"
     } = options;
 
-    // Prevent concurrent saves
+    const fingerprint = this.createSaveFingerprint(model, command);
+
+    // Prevent concurrent saves and skip redundant requests.
     if (this.state.saveInProgress) {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      if (this.state.saveInProgress) {
+      // Exact same content is already being saved.
+      if (fingerprint === this.state.inFlightFingerprint) {
+        return null;
+      }
+
+      const acquiredSlot = await this.waitForSaveSlot(3000, 100);
+      if (!acquiredSlot) {
+        return null;
+      }
+
+      // If the just-finished save already persisted this exact content, skip.
+      if (fingerprint === this.state.lastCompletedFingerprint) {
         return null;
       }
     }
 
     this.state.saveInProgress = true;
+    this.state.inFlightFingerprint = fingerprint;
     this.state.lastSaveTime = new Date();
 
     try {
@@ -207,6 +290,9 @@ const EditorSaveService = {
       }
 
       const result = await response.json();
+      if (result?.ServerSideSuccess) {
+        this.state.lastCompletedFingerprint = fingerprint;
+      }
       return result;
 
     } catch (error) {
@@ -214,6 +300,7 @@ const EditorSaveService = {
       throw error;
     } finally {
       this.state.saveInProgress = false;
+      this.state.inFlightFingerprint = null;
     }
   },
 
@@ -270,17 +357,17 @@ const EditorSaveService = {
    * @param {object} model
    */
   updatePageProperties(model) {
-    if (model.UrlPath) this.setFormValue("UrlPath", model.UrlPath);
-    if (model.RoleList) this.setFormValue("RoleList", model.RoleList);
-    if (model.Title) {
+    if (model.UrlPath !== undefined && model.UrlPath !== null) this.setFormValue("UrlPath", model.UrlPath);
+    if (model.RoleList !== undefined && model.RoleList !== null) this.setFormValue("RoleList", model.RoleList);
+    if (model.Title !== undefined && model.Title !== null) {
       this.setFormValue("Title", model.Title);
       const titleDiv = document.getElementById("divTitle");
       if (titleDiv) titleDiv.innerText = model.Title;
     }
-    if (model.Published) this.setFormValue("Published", model.Published);
-    if (model.Updated) this.setFormValue("Updated", model.Updated);
-    if (model.BannerImage) this.setFormValue("BannerImage", model.BannerImage);
-    if (model.VersionNumber) {
+    if (model.Published !== undefined && model.Published !== null) this.setFormValue("Published", model.Published);
+    if (model.Updated !== undefined && model.Updated !== null) this.setFormValue("Updated", model.Updated);
+    if (model.BannerImage !== undefined && model.BannerImage !== null) this.setFormValue("BannerImage", model.BannerImage);
+    if (model.VersionNumber !== undefined && model.VersionNumber !== null) {
       this.setFormValue("VersionNumber", model.VersionNumber);
       const versionSpan = document.getElementById("spanWorkingVersionNo");
       if (versionSpan) versionSpan.innerText = `Working Version: ${model.VersionNumber}`;

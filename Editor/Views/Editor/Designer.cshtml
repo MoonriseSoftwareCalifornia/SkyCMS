@@ -11,7 +11,7 @@
     <input type="hidden" name="Command" value="SaveDesigner" />
     <input type="hidden" asp-for="Id" value="@Model.Id" />
     <input type="hidden" asp-for="Title" value="@Model.Title" />
-    <input type="hidden" asp-for="HtmlContent" />
+    <input type="hidden" id="Payload" name="Payload" value="" />
     <input type="hidden" asp-for="CssContent" />
     <input type="hidden" asp-for="VersionNumber" />
     <input type="hidden" asp-for="ArticleNumber" />
@@ -76,7 +76,7 @@
             $(".perm").show();
         }
 
-        checkDisplayLiveEditorButton("HtmlContent");
+        checkDisplayLiveEditorButton("Payload");
     });
 
     $(document).on("unload", function () {

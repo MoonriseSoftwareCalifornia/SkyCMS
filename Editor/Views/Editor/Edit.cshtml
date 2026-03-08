@@ -100,7 +100,13 @@
 
     // CK Editor
     let ckeditor = null;
-    var enableAutoSave = true;
+    // Explicitly set on window object for iframe accessibility
+    window.enableAutoSave = true;
+    var enableAutoSave = window.enableAutoSave;
+
+    // Local backup recovery settings
+    const backupMaxAgeMs = 72 * 60 * 60 * 1000; // 72 hours
+    let pendingBackupModel = null;
 
     // Modals
     const linksToast = new bootstrap.Toast(document.getElementById('linksToast'));
@@ -150,32 +156,172 @@
     }
 
     function restoreBackup() {
-        var storageItem = localStorage.getItem("ccms_article_" + $("#ArticleNumber").val());
-        if (typeof storageItem !== "undefined" && storageItem !== null) {
-            var model = JSON.parse(storageItem);
-            if ($("#Id").val() == model.Id && typeof model.EditorId !== "undefined" && model.EditorId !== null && model.EditorId !== "") {
-                const ckeditor = findEditor(model.EditorId);
-                const data = decryptData(model.Data);
+        const model = pendingBackupModel || getRecoverableBackupModel();
+        if (model === null) {
+            deleteBackup();
+            return;
+        }
+
+        if ($("#Id").val() == model.Id && typeof model.EditorId !== "undefined" && model.EditorId !== null && model.EditorId !== "") {
+            const ckeditor = findEditor(model.EditorId);
+            if (ckeditor) {
+                const data = isEncryptedPayload(model.Payload) ? decryptData(model.Payload) : (model.Payload || "");
                 ckeditor.setData(data);
             }
-            deleteBackup();
+        }
+
+        deleteBackup();
+    }
+
+    function isEncryptedPayload(value) {
+        if (typeof value !== "string" || value.trim() === "") {
+            return false;
+        }
+
+        try {
+            const parsed = JSON.parse(value);
+            return parsed && typeof parsed === "object" && parsed.v !== undefined && parsed.iv !== undefined && parsed.ct !== undefined;
+        } catch {
+            return false;
         }
     }
 
+    function getBackupStorageKey() {
+        return "ccms_article_" + $("#ArticleNumber").val();
+    }
+
+    function getBackupAgeMs(model) {
+        if (!model || !model.BackupSavedUtc) {
+            return null;
+        }
+
+        const savedAt = new Date(model.BackupSavedUtc);
+        if (Number.isNaN(savedAt.getTime())) {
+            return null;
+        }
+
+        return Date.now() - savedAt.getTime();
+    }
+
+    function isBackupExpired(model) {
+        const ageMs = getBackupAgeMs(model);
+        if (ageMs === null) {
+            // Legacy backup without timestamp: keep recoverable.
+            return false;
+        }
+
+        return ageMs > backupMaxAgeMs;
+    }
+
+    function isBackupForCurrentEditor(model) {
+        if (!model) {
+            return false;
+        }
+
+        if ($("#Id").val() != model.Id) {
+            return false;
+        }
+
+        if ($("#ArticleNumber").val() != model.ArticleNumber) {
+            return false;
+        }
+
+        if (typeof model.EditorId === "undefined" || model.EditorId === null || model.EditorId === "") {
+            return false;
+        }
+
+        if (model.UserId && model.UserId !== ccms_editor_userid) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function getRecoverableBackupModel() {
+        const storageItem = localStorage.getItem(getBackupStorageKey());
+        if (typeof storageItem === "undefined" || storageItem === null) {
+            return null;
+        }
+
+        let model;
+        try {
+            model = JSON.parse(storageItem);
+        } catch {
+            deleteBackup();
+            return null;
+        }
+
+        if (!isBackupForCurrentEditor(model)) {
+            return null;
+        }
+
+        if (isBackupExpired(model)) {
+            deleteBackup();
+            return null;
+        }
+
+        return model;
+    }
+
+    function formatDurationText(ms) {
+        if (ms === null || ms < 0) {
+            return "recently";
+        }
+
+        const minutes = Math.floor(ms / 60000);
+        if (minutes < 1) {
+            return "just now";
+        }
+
+        if (minutes < 60) {
+            return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+        }
+
+        const hours = Math.floor(minutes / 60);
+        return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+    }
+
+    function configureRecoverModal(model) {
+        const modalBody = document.querySelector("#modalRecoverData .modal-body");
+        if (!modalBody) {
+            return;
+        }
+
+        const details = [];
+        const ageMs = getBackupAgeMs(model);
+        details.push(`Local backup was saved ${formatDurationText(ageMs)}.`);
+
+        const currentVersion = $("#VersionNumber").val();
+        if (model.VersionNumber && currentVersion && model.VersionNumber !== currentVersion) {
+            details.push(`Backup version (${model.VersionNumber}) differs from current version (${currentVersion}).`);
+        }
+
+        const currentUpdated = $("#Updated").val();
+        if (model.Updated && currentUpdated && model.Updated !== currentUpdated) {
+            details.push("Current page has a different last-updated timestamp.");
+        }
+
+        modalBody.innerHTML = `
+            <p>A recent save for this page did not succeed, but the changes were saved locally.</p>
+            <p>Do you want to recover saved changes?</p>
+            <p class="small text-warning mb-0">${details.join(" ")}</p>
+        `;
+    }
+
     function deleteBackup() {
-        localStorage.removeItem("ccms_article_" + $("#ArticleNumber").val());
+        localStorage.removeItem(getBackupStorageKey());
+        pendingBackupModel = null;
     }
 
     $(document).ready(function (e) {
         EditorSaveService.ensureEncryptionContext();
 
         // Check for unsaved data
-        var storageItem = localStorage.getItem("ccms_article_" + $("#ArticleNumber").val());
-        if (typeof storageItem !== "undefined" && storageItem !== null) {
-            var model = JSON.parse(storageItem);
-            if ($("#Id").val() == model.Id && typeof model.EditorId !== "undefined" && model.EditorId !== null && model.EditorId !== "") {
-                modalRecoverData.show();
-            }
+        const backupModel = getRecoverableBackupModel();
+        if (backupModel !== null) {
+            pendingBackupModel = backupModel;
+            configureRecoverModal(backupModel);
+            modalRecoverData.show();
         }
 
         $("#btnOtherPages").show();
@@ -429,7 +575,7 @@
             ArticleNumber: $("#ArticleNumber").val(),
             EditorId: "body",
             Command: "SaveBody",
-            Data: encryptData(html)
+            Payload: html
         };
 
         try {
@@ -458,7 +604,7 @@
             ArticleNumber: $("#ArticleNumber").val(),
             EditorId: editorId,
             Command: "SaveRegion",
-            Data: encryptData(html)
+            Payload: html
         };
 
         try {
@@ -473,6 +619,7 @@
         }
     }
 
+    // Wrapper function for backwards compatibility (legacy code may call PascalCase version)
     function SaveEditorRegion(html, editorId) {
         return saveEditorRegion(html, editorId);
     }
@@ -498,11 +645,12 @@
             Updated: $("#Updated").val(),
             Title: $("#Title").val(),
             VersionNumber: $("#VersionNumber").val(),
+            BackupSavedUtc: new Date().toISOString(),
             Command: "SavePageProperties",
-            Data: encryptData(html || "")
+            Payload: html || ""
         };
 
-        localStorage.setItem("ccms_article_" + model.ArticleNumber, JSON.stringify(model));
+        localStorage.setItem(getBackupStorageKey(), JSON.stringify(model));
 
         try {
             const response = await EditorSaveService.saveArticle(model, "SavePageProperties");
@@ -536,23 +684,23 @@
         $(editors).each(function (index, editor) {
             const editorId = editor.sourceElement.getAttribute("data-ccms-ceid");
             if (editorId === data.EditorId) {
-                editor.setData(data.Data);
+                editor.setData(data.Payload);
             }
         });
     }
 
     function savePageProperties(model) {
-        if (model.UrlPath) $("#UrlPath").val(model.UrlPath);
-        if (model.RoleList) $("#RoleList").val(model.RoleList);
-        if (model.Title) {
+        if (model.UrlPath !== undefined && model.UrlPath !== null) $("#UrlPath").val(model.UrlPath);
+        if (model.RoleList !== undefined && model.RoleList !== null) $("#RoleList").val(model.RoleList);
+        if (model.Title !== undefined && model.Title !== null) {
             $("#Title").val(model.Title);
             const titleDiv = document.getElementById("divTitle");
             if (titleDiv) titleDiv.innerText = model.Title;
         }
-        if (model.Published) $("#Published").val(model.Published);
-        if (model.Updated) $("#Updated").val(model.Updated);
-        if (model.BannerImage) $("#BannerImage").val(model.BannerImage);
-        if (model.VersionNumber) {
+        if (model.Published !== undefined && model.Published !== null) $("#Published").val(model.Published);
+        if (model.Updated !== undefined && model.Updated !== null) $("#Updated").val(model.Updated);
+        if (model.BannerImage !== undefined && model.BannerImage !== null) $("#BannerImage").val(model.BannerImage);
+        if (model.VersionNumber !== undefined && model.VersionNumber !== null) {
             $("#VersionNumber").val(model.VersionNumber);
             const versionSpan = document.getElementById("spanWorkingVersionNo");
             if (versionSpan) versionSpan.innerText = `Working Version: ${model.VersionNumber}`;

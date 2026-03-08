@@ -3,15 +3,18 @@
 SkyCMS incorporates or depends on the following third-party software:
 
 ## CKEditor 5
-- **Copyright**: Copyright (c) 2003-2024, CKSource Holding sp. z o.o. All rights reserved.
-- **License**: GNU General Public License Version 2 or later (GPL-2.0-or-later)
+
+- **Copyright**: Copyright (c) 2003-2026, CKSource Holding sp. z o.o.
+- **License model**: Dual-license
+  - GNU General Public License Version 2 or later (GPL-2.0-or-later), or
+  - Commercial license terms from CKSource
 - **Website**: https://ckeditor.com/
 - **Source**: https://github.com/ckeditor/ckeditor5
-- **License Text**: See LICENSE-CKEDITOR-GPL or visit https://www.gnu.org/licenses/gpl-2.0.html
+- **Licensing details**: https://ckeditor.com/legal/ckeditor-licensing-options/
+- **Commercial licensing**: https://ckeditor.com/pricing/
 
-CKEditor is a WYSIWYG HTML editor. This project uses CKEditor under the GPL 2.0-or-later license.
-
-Commercial licenses are available from CKSource: https://ckeditor.com/pricing/
+SkyCMS open-source distribution paths use CKEditor 5 under GPL-2.0-or-later.
+For proprietary/commercial distribution including CKEditor 5, obtain commercial rights from CKSource.
 
 ---
 

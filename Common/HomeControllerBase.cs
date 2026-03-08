@@ -30,7 +30,7 @@ namespace Cosmos.Common
     {
         private readonly IMediator mediator;
         private readonly ApplicationDbContext dbContext;
-        private readonly StorageContext storageContext;
+        private readonly IStorageContext storageContext;
         private readonly ILogger<HomeControllerBase> logger;
         private readonly IEmailSender emailSender;
         private readonly IContactManagementService contactManagementService;
@@ -47,7 +47,7 @@ namespace Cosmos.Common
         public HomeControllerBase(
             IMediator mediator,
             ApplicationDbContext dbContext,
-            StorageContext storageContext,
+            IStorageContext storageContext,
             ILogger<HomeControllerBase> logger,
             IEmailSender emailSender,
             IContactManagementService contactManagementService)

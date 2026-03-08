@@ -94,7 +94,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>New body content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>New body content</p>"),
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
             };
@@ -132,7 +132,7 @@ namespace Sky.Tests.Controllers
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveRegion",
                 EditorId = "region-1",
-                Data = CryptoJsDecryption.Encrypt("<p>Updated region</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Updated region</p>"),
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
             };
@@ -166,7 +166,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveCode",
-                Content = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
                 HeadJavaScript = CryptoJsDecryption.Encrypt("<script>console.log('head');</script>"),
                 FooterJavaScript = CryptoJsDecryption.Encrypt("<script>console.log('footer');</script>"),
                 Title = article.Title,
@@ -231,7 +231,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>Content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
                 CryptoContextToken = "invalid-token-12345",
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
@@ -282,7 +282,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveCode",
-                Content = CryptoJsDecryption.Encrypt(nestedContent),
+                Payload = CryptoJsDecryption.Encrypt(nestedContent),
                 HeadJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
                 FooterJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
                 Title = article.Title,
@@ -328,7 +328,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = 999999, // Non-existent
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>Content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
                 Title = "Test"
             };
 
@@ -362,7 +362,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
             };
@@ -402,7 +402,7 @@ namespace Sky.Tests.Controllers
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveRegion",
                 // No EditorId specified
-                Data = CryptoJsDecryption.Encrypt("<p>Should not be used</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Should not be used</p>"),
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
             };
@@ -435,7 +435,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>First save</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>First save</p>"),
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
             };
@@ -456,7 +456,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>Second save</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Second save</p>"),
                 Title = article.Title,
                 VersionNumber = updated1.VersionNumber
             };
@@ -496,7 +496,7 @@ namespace Sky.Tests.Controllers
                 Title = "Updated Title",
                 BannerImage = "https://example.com/banner.jpg",
                 // Data is null/not set
-                Data = null,
+                Payload = null,
                 VersionNumber = article.VersionNumber
             };
 
@@ -533,7 +533,7 @@ namespace Sky.Tests.Controllers
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveRegion",
                 EditorId = "region-999", // Non-existent
-                Data = CryptoJsDecryption.Encrypt("<p>This should not be applied</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>This should not be applied</p>"),
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
             };
@@ -565,7 +565,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = string.Empty, // Empty command
-                Data = CryptoJsDecryption.Encrypt("<p>Content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
             };
@@ -599,7 +599,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
                 Title = article.Title,
                 VersionNumber = article.VersionNumber
             };
@@ -680,7 +680,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveCode",
-                Content = CryptoJsDecryption.Encrypt(string.Empty), // Empty content
+                Payload = CryptoJsDecryption.Encrypt(string.Empty), // Empty content
                 HeadJavaScript = CryptoJsDecryption.Encrypt("<script>head</script>"),
                 FooterJavaScript = CryptoJsDecryption.Encrypt("<script>footer</script>"),
                 Title = article.Title,
@@ -699,3 +699,4 @@ namespace Sky.Tests.Controllers
         }
     }
 }
+

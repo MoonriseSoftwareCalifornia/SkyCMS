@@ -21,6 +21,7 @@ import {
     ImageTextAlternative,
     ImageToolbar,
     ImageUpload,
+    ImageUploadEditing,
     Indent,
     IndentBlock,
     Italic,
@@ -76,11 +77,33 @@ function getDistanceFromTop() {
     return distance;
 }
 
+async function ccms___destroyAllEditors() {
+    // Destroy all active CKEditor instances
+    for (let i = ccms_editors.length - 1; i >= 0; i--) {
+        try {
+            const editor = ccms_editors[i];
+            if (editor && typeof editor.destroy === 'function') {
+                await editor.destroy();
+            }
+        } catch (error) {
+            console.warn('Error destroying CKEditor instance:', error);
+        }
+    }
+    ccms_editors = [];
+    ccms_editorIds = [];
+    focusedEditor = null;
+}
+
 /**
  * Create a free account with a trial: https://portal.ckeditor.com/checkout?plan=free
  */
 const LICENSE_KEY = 'GPL'; // or <YOUR_LICENSE_KEY>.
 
+/**
+ * EditorConfig - Full-featured editor configuration
+ * Used for main content areas with rich editing capabilities.
+ * Autosave calls parent.saveChanges() -> Command: "SavePageProperties"
+ */
 const EditorConfig = {
     plugins: [
         Autoformat,
@@ -103,6 +126,7 @@ const EditorConfig = {
         ImageTextAlternative,
         ImageToolbar,
         ImageUpload,
+        ImageUploadEditing,
         Indent,
         IndentBlock,
         Italic,
@@ -152,12 +176,22 @@ const EditorConfig = {
         ],
         shouldNotGroupWhenFull: false
     },
+    // Autosave configuration for full content editors
+    // Triggers after 3 seconds of inactivity, calls parent.saveChanges()
+    // which sends Command: "SavePageProperties" to the unified endpoint
     autosave: {
-        waitingTime: 1000, // in ms
+        waitingTime: 3000, // in ms
         save(editor) {
-            if (parent.enableAutoSave === true) {
-                return parent.saveEditorRegion(editor.getData(), editor.sourceElement.getAttribute("data-ccms-ceid"));
+            // Safety checks: ensure parent context and autosave are enabled
+            if (parent && parent.enableAutoSave === true && typeof parent.saveChanges === 'function') {
+                try {
+                    return parent.saveChanges(editor.getData(), editor.sourceElement.getAttribute("data-ccms-ceid"));
+                } catch (error) {
+                    console.error('EditorConfig autosave failed:', error);
+                    return Promise.reject(error);
+                }
             }
+            return Promise.resolve(); // Return resolved promise when autosave is disabled
         }
     },
     simpleUpload: {
@@ -277,7 +311,11 @@ const EditorConfig = {
     }
 };
 
-// Minimal configuration for title/heading elements
+/**
+ * TitleEditorConfig - Minimal editor configuration
+ * Used for title and heading elements with limited formatting options.
+ * Autosave calls parent.saveEditorRegion() -> Command: "SaveRegion"
+ */
 const TitleEditorConfig = {
     plugins: [
         Autosave,
@@ -295,12 +333,22 @@ const TitleEditorConfig = {
         items: [],
         shouldNotGroupWhenFull: false
     },
+    // Autosave configuration for title/heading editors (minimal toolbar)
+    // Triggers after 3 seconds of inactivity, calls parent.saveEditorRegion()
+    // which sends Command: "SaveRegion" to the unified endpoint
     autosave: {
-        waitingTime: 1000, // in ms
+        waitingTime: 3000, // in ms
         save(editor) {
-            if (parent.enableAutoSave === true) {
-                return parent.saveEditorRegion(editor.getData(), editor.sourceElement.getAttribute("data-ccms-ceid"));
+            // Safety checks: ensure parent context and autosave are enabled
+            if (parent && parent.enableAutoSave === true && typeof parent.saveEditorRegion === 'function') {
+                try {
+                    return parent.saveEditorRegion(editor.getData(), editor.sourceElement.getAttribute("data-ccms-ceid"));
+                } catch (error) {
+                    console.error('TitleEditorConfig autosave failed:', error);
+                    return Promise.reject(error);
+                }
             }
+            return Promise.resolve(); // Return resolved promise when autosave is disabled
         }
     },
     menuBar: {
@@ -345,10 +393,17 @@ function ccms___createEditor(editorElement) {
         .create(editorElement, config)
         .then(editor => {
             window.editor = editor;
-            const imageUploadEditing = editor.plugins.get('ImageUploadEditing');
-            imageUploadEditing.on('uploadComplete', (evt, { data, imageElement }) => {
-                parent.ccms_setBannerImage(data.url);
-            });
+            editorElement.ckeditorInstance = editor;
+            
+            if (editor.plugins.has('ImageUploadEditing')) {
+                const imageUploadEditing = editor.plugins.get('ImageUploadEditing');
+                imageUploadEditing.on('uploadComplete', (evt, { data, imageElement }) => {
+                    if (parent && parent.ccms_setBannerImage) {
+                        parent.ccms_setBannerImage(data.url);
+                    }
+                });
+            }
+            
             editor.editing.view.document.on('change:isFocused', (evt, data, isFocused) => {
                 console.log(`View document is focused: ${isFocused}.`);
                 if (isFocused) {
@@ -358,6 +413,9 @@ function ccms___createEditor(editorElement) {
                 }
             });
             ccms_editors.push(editor);
+        })
+        .catch(error => {
+            console.error('Failed to create CKEditor instance:', error);
         });
 }
 
@@ -379,6 +437,7 @@ function ccms___createEditors() {
 }
 
 window.createCkEditor = ccms___createEditor;
+window.ccms___destroyAllEditors = ccms___destroyAllEditors;
 
 document.addEventListener("DOMContentLoaded", function (event) {
     ccms___createEditors();

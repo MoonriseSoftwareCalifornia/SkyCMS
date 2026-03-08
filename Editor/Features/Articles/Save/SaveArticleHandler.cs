@@ -114,38 +114,31 @@ namespace Sky.Editor.Features.Articles.Save
                 var oldTitle = currentArticle.Title;
                 var oldUrlPath = currentArticle.UrlPath;
 
+                var normalizedContent = command.Content ?? string.Empty;
+                var normalizedHeadJavaScript = command.HeadJavaScript ?? string.Empty;
+                var normalizedFooterJavaScript = command.FooterJavaScript ?? string.Empty;
+                var normalizedBannerImage = command.BannerImage ?? string.Empty;
+                var normalizedCategory = command.Category ?? string.Empty;
+                var normalizedIntroduction = command.Introduction ?? string.Empty;
+
                 // Process HTML content
-                var processedContent = htmlService.EnsureEditableMarkers(command.Content);
-                htmlService.EnsureAngularBase(command.HeadJavaScript ?? string.Empty, command.UrlPath ?? currentArticle.UrlPath);
+                var processedContent = htmlService.EnsureEditableMarkers(normalizedContent);
+                htmlService.EnsureAngularBase(normalizedHeadJavaScript, command.UrlPath ?? currentArticle.UrlPath);
 
                 // Update the existing article in-place
                 currentArticle.Content = processedContent;
                 currentArticle.Title = command.Title.Trim();
                 currentArticle.Updated = clock.UtcNow;
-                currentArticle.HeaderJavaScript = command.HeadJavaScript ?? string.Empty;
-                currentArticle.FooterJavaScript = command.FooterJavaScript ?? string.Empty;
-                currentArticle.BannerImage = command.BannerImage ?? string.Empty;
+                currentArticle.HeaderJavaScript = normalizedHeadJavaScript;
+                currentArticle.FooterJavaScript = normalizedFooterJavaScript;
+                currentArticle.BannerImage = normalizedBannerImage;
                 currentArticle.UserId = command.UserId.ToString();
                 currentArticle.ArticleType = (int)command.ArticleType;
-                currentArticle.Category = command.Category ?? string.Empty;
+                currentArticle.Category = normalizedCategory;
+                currentArticle.Introduction = normalizedIntroduction;
                 currentArticle.Published = command.Published;
                 currentArticle.UrlPath = command.UrlPath ?? currentArticle.UrlPath;
                 currentArticle.VersionNumber++; // Increment version on each save
-
-                // Handle introduction: use provided value, or auto-generate for blog posts
-                if (!string.IsNullOrWhiteSpace(command.Introduction))
-                {
-                    currentArticle.Introduction = command.Introduction;
-                }
-                else if (command.ArticleType == Cosmos.Cms.Common.ArticleType.BlogPost)
-                {
-                    // Auto-generate introduction from content for blog posts
-                    currentArticle.Introduction = htmlService.ExtractIntroduction(processedContent);
-                }
-                else
-                {
-                    currentArticle.Introduction = currentArticle.Introduction;
-                }
 
                 // Check if title is changing
                 var isTitleChanging = !oldTitle.Equals(currentArticle.Title);

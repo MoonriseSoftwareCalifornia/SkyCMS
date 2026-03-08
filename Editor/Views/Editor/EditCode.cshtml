@@ -102,6 +102,9 @@
             $("#" + fieldId).val(editor.getValue());
         }
 
+        // Copy content buffer into canonical payload
+        $("#Payload").val($("#Content").val());
+
         await EditorSaveService.ensureEncryptionContext();
 
         let model = {
@@ -110,7 +113,7 @@
             Title: $("#Title").val(),
             Published: "",
             Updated: $("#Updated").val(),
-            Content: $("#Content").val(),
+            Payload: $("#Payload").val(),
             HeadJavaScript: $("#HeadJavaScript").val(),
             FooterJavaScript: $("#FooterJavaScript").val(),
             EditingField: $("#EditingField").val(),
@@ -121,7 +124,7 @@
 
         try {
             const response = await EditorSaveService.saveArticle(model, "SaveCode", {
-                encryptFields: ['Content', 'HeadJavaScript', 'FooterJavaScript']
+                encryptFields: ['Payload', 'HeadJavaScript', 'FooterJavaScript']
             });
 
             if (EditorSaveService.handleSaveResponse(response, {

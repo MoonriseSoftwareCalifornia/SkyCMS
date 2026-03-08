@@ -92,7 +92,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = "Updated via EditCode",
-                Content = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Updated content</p>"),
                 HeadJavaScript = CryptoJsDecryption.Encrypt("<script>console.log('head');</script>"),
                 FooterJavaScript = CryptoJsDecryption.Encrypt("<script>console.log('footer');</script>"),
                 Updated = DateTimeOffset.UtcNow,
@@ -125,7 +125,7 @@ namespace Sky.Tests.Controllers
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = string.Empty, // Invalid - empty title
-                Content = CryptoJsDecryption.Encrypt("<p>Content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
                 HeadJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
                 FooterJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
                 Updated = DateTimeOffset.UtcNow,
@@ -263,7 +263,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 ArticleNumber = article.ArticleNumber,
                 Title = article.Title,
                 EditorId = "region1",
-                Data = CryptoJsDecryption.Encrypt("<p>Updated Region Content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Updated Region Content</p>"),
                 BannerImage = string.Empty,
                 ArticleType = ArticleType.General,
                 Category = string.Empty,
@@ -297,7 +297,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 ArticleNumber = article.ArticleNumber,
                 Title = article.Title, // Preserve original title when not changing it
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<section><h1>New Body</h1></section>")
+                Payload = CryptoJsDecryption.Encrypt("<section><h1>New Body</h1></section>")
             };
 
             // Act
@@ -333,7 +333,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Title = article.Title,
                 EditorId = "r1",
                 Command = "SaveRegion",
-                Data = CryptoJsDecryption.Encrypt("<p>Updated One</p>")
+                Payload = CryptoJsDecryption.Encrypt("<p>Updated One</p>")
             };
 
             // Act
@@ -371,7 +371,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 ArticleNumber = article.ArticleNumber,
                 Title = article.Title,
                 Command = "SaveBody",
-                Data = envelopePayload
+                Payload = envelopePayload
             };
 
             // Act
@@ -415,7 +415,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             {
                 ArticleNumber = 0,
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>Ignored</p>")
+                Payload = CryptoJsDecryption.Encrypt("<p>Ignored</p>")
             };
 
             // Act
@@ -439,7 +439,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 ArticleNumber = 999999,
                 Title = "Test Title",
                 Command = "SaveBody",
-                Data = CryptoJsDecryption.Encrypt("<p>Missing article</p>")
+                Payload = CryptoJsDecryption.Encrypt("<p>Missing article</p>")
             };
 
             // Act + Assert
@@ -467,7 +467,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             {
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveBody",
-                Data = "not-base64-and-not-json",
+                Payload = "not-base64-and-not-json",
                 Title = "Valid Title" // Provide valid title so execution reaches decryption
             };
 
@@ -499,7 +499,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Title = article.Title,
                 Command = "SaveRegion",
                 EditorId = string.Empty,
-                Data = CryptoJsDecryption.Encrypt("<p>Ignored update</p>")
+                Payload = CryptoJsDecryption.Encrypt("<p>Ignored update</p>")
             };
 
             // Act
@@ -535,7 +535,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 ArticleNumber = article.ArticleNumber,
                 Command = "SaveDesigner",
                 Title = "Updated via Designer",
-                HtmlContent = CryptoJsDecryption.Encrypt("<div>New HTML</div>"),
+                Payload = CryptoJsDecryption.Encrypt("<div>New HTML</div>"),
                 CssContent = CryptoJsDecryption.Encrypt(".test { color: red; }")
             };
 
@@ -567,7 +567,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Id = article.Id,
                 Title = "Designer HTML+CSS Update",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                Payload = CryptoJsDecryption.Encrypt(htmlContent),
                 CssContent = CryptoJsDecryption.Encrypt(cssContent)
             };
 
@@ -601,7 +601,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Id = article.Id,
                 Title = "HTML Only Test",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                Payload = CryptoJsDecryption.Encrypt(htmlContent),
                 CssContent = CryptoJsDecryption.Encrypt(string.Empty) // Empty CSS
             };
 
@@ -637,7 +637,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Id = article.Id,
                 Title = "Nested Regions Test",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                Payload = CryptoJsDecryption.Encrypt(htmlContent),
                 CssContent = CryptoJsDecryption.Encrypt(string.Empty)
             };
 
@@ -684,7 +684,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Id = article.Id,
                 Title = "GrapesJS Update",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                Payload = CryptoJsDecryption.Encrypt(htmlContent),
                 CssContent = CryptoJsDecryption.Encrypt(cssContent)
             };
 
@@ -724,7 +724,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Id = article.Id,
                 Title = "Complex CSS Test",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                Payload = CryptoJsDecryption.Encrypt(htmlContent),
                 CssContent = CryptoJsDecryption.Encrypt(cssContent)
             };
 
@@ -760,7 +760,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Id = article.Id,
                 Title = "Special Characters",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                Payload = CryptoJsDecryption.Encrypt(htmlContent),
                 CssContent = CryptoJsDecryption.Encrypt(cssContent)
             };
 
@@ -804,7 +804,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Id = article.Id,
                 Title = "Large Content",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt(htmlContent),
+                Payload = CryptoJsDecryption.Encrypt(htmlContent),
                 CssContent = CryptoJsDecryption.Encrypt(cssContent)
             };
 
@@ -835,7 +835,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Category = "DesignGallery",
                 Introduction = "Created with designer",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt("<div>Designed</div>"),
+                Payload = CryptoJsDecryption.Encrypt("<div>Designed</div>"),
                 CssContent = CryptoJsDecryption.Encrypt("div { padding: 20px; }")
             };
 
@@ -872,7 +872,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
                 Id = article.Id,
                 Title = "Scripts Regression Test",
                 Command = "SaveDesigner",
-                HtmlContent = CryptoJsDecryption.Encrypt("<div>New Design</div>"),
+                Payload = CryptoJsDecryption.Encrypt("<div>New Design</div>"),
                 CssContent = CryptoJsDecryption.Encrypt("div { color: green; }")
                 // Note: HeadJavaScript and FooterJavaScript NOT provided
             };
@@ -930,7 +930,7 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = "Completely Different New Title", // Make sure this creates a different slug
-                Content = CryptoJsDecryption.Encrypt("<p>Content</p>"),
+                Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
                 HeadJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
                 FooterJavaScript = CryptoJsDecryption.Encrypt(string.Empty),
                 Updated = article.Updated,
@@ -1098,6 +1098,114 @@ redirect.Content, "Redirect content should have clickable link to new URL");
 
             return JsonSerializer.Serialize(payload);
         }
+
+        /// <summary>
+        /// Tests unified Edit POST SaveBody command clears content when payload is null.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_SaveBodyCommand_WithNullPayload_ClearsBody()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Null Payload Test", TestUserId);
+            article.Content = "<div>Existing body</div>";
+            await SaveArticleAsync(article, TestUserId);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Command = "SaveBody",
+                Payload = null!
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
+
+            Assert.AreEqual(string.Empty, updatedArticle.Content);
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST SaveCode command clears scripts when null values are sent.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_SaveCodeCommand_WithNullScripts_ClearsScripts()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Null Scripts Test", TestUserId);
+            article.Content = "<div>Code body</div>";
+            article.HeadJavaScript = "<script>head</script>";
+            article.FooterJavaScript = "<script>footer</script>";
+            await SaveArticleAsync(article, TestUserId);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Command = "SaveCode",
+                Payload = null!,
+                HeadJavaScript = null!,
+                FooterJavaScript = null!
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
+
+            Assert.AreEqual(string.Empty, updatedArticle.Content);
+            Assert.AreEqual(string.Empty, updatedArticle.HeadJavaScript);
+            Assert.AreEqual(string.Empty, updatedArticle.FooterJavaScript);
+        }
+
+        /// <summary>
+        /// Tests unified Edit POST metadata save allows clearing introduction.
+        /// </summary>
+        [TestMethod]
+        public async Task Edit_Post_MetadataOnly_WithEmptyIntroduction_ClearsIntroduction()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Introduction Clear Test", TestUserId);
+            article.Introduction = "Old intro";
+            await SaveArticleAsync(article, TestUserId);
+
+            var model = new EditPostViewModel
+            {
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Command = string.Empty,
+                Introduction = string.Empty,
+                Category = string.Empty,
+                BannerImage = string.Empty
+            };
+
+            // Act
+            var result = await controller.Edit(model);
+
+            // Assert
+            _ = AssertUnifiedEditSuccessResponse(result, article.ArticleNumber);
+
+            var updatedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = article.ArticleNumber
+            });
+
+            Assert.AreEqual(string.Empty, updatedArticle.Introduction);
+        }
     }
 }
+
 

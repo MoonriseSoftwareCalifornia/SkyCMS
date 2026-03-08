@@ -1,0 +1,82 @@
+name: Software improvement
+description: Track technical improvements, refactors, and architecture hardening work.
+title: "[Improvement]: "
+labels:
+  - enhancement
+  - refactor
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for maintainability, reliability, security-hardening, and architecture improvements.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Improvement summary
+      description: One-sentence description of the desired improvement.
+      placeholder: Narrow visibility of non-API classes across solution libraries.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Current problem
+      description: What pain or risk does the current state create?
+      placeholder: Too many public types increase accidental coupling and API surface area.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed scope
+      description: List projects or folders in scope for this effort.
+      placeholder: |
+        - Cosmos.MicrosoftGraph
+        - Cosmos.EmailServices
+        - Cosmos.BlobService
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Proposed implementation approach
+      description: High-level plan and sequencing.
+      placeholder: |
+        1. Tackle one library per PR.
+        2. Convert unused public types to internal.
+        3. Build and run tests after each batch.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: risk_areas
+    attributes:
+      label: Risk areas to validate
+      options:
+        - label: DI activation and service registration
+        - label: Reflection-based discovery/activation
+        - label: Serialization/deserialization assumptions
+        - label: Source generators/analyzers
+        - label: External package/public API compatibility
+
+  - type: textarea
+    id: success
+    attributes:
+      label: Success criteria
+      description: Measurable checks to consider this complete.
+      placeholder: |
+        - Solution builds successfully.
+        - Existing tests pass.
+        - No runtime regressions in editor/api/publisher flows.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Include links, screenshots, and related issues.

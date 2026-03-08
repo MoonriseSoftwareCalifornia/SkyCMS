@@ -19,10 +19,11 @@
 <input type="hidden" id="RoleList" name="RoleList" value="@Model.RoleList" />
 <input type="hidden" id="SaveAsNewVersion" name="SaveAsNewVersion" value="@Model.SaveAsNewVersion" />
 
-<!-- Editor-specific fields (initialized from ViewData for code editor, or populated by client for WYSIWYG) -->
-<!-- Use normal Razor encoding (not Html.Raw) so HTML/JS/CSS appears as text, not rendered markup -->
-<input type="hidden" id="Content" name="Content" value="@content" />
+<!-- Canonical payload + editor fields -->
+<input type="hidden" id="Payload" name="Payload" value="@content" />
 <input type="hidden" id="HeadJavaScript" name="HeadJavaScript" value="@headJavaScript" />
 <input type="hidden" id="FooterJavaScript" name="FooterJavaScript" value="@footerJavaScript" />
 <input type="hidden" id="EditingField" name="EditingField" value="" />
-<input type="hidden" id="Data" name="Data" value="" />
+
+<!-- Monaco content buffer (client only) -->
+<input type="hidden" id="Content" value="@content" />

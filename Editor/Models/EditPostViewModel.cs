@@ -9,7 +9,6 @@ namespace Sky.Cms.Models
 {
     using System;
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
 
     /// <summary>
     /// Unified editor post view model for all editor types (Live, Code, Designer).
@@ -42,7 +41,7 @@ namespace Sky.Cms.Models
         public int Offset { get; set; }
 
         /// <summary>
-        /// Gets or sets command (SaveBody, SaveRegion, SavePageProperties, SaveCode).
+        /// Gets or sets command (SaveBody, SaveRegion, SavePageProperties, SaveCode, SaveDesigner).
         /// </summary>
         public string Command { get; set; }
 
@@ -57,33 +56,27 @@ namespace Sky.Cms.Models
         public int VersionNumber { get; set; }
 
         /// <summary>
-        /// Gets or sets encrypted HTML data being sent back (Live Editor).
+        /// Gets or sets encrypted primary content payload for Live, Code, and Designer editors.
         /// </summary>
-        public string Data { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets encrypted content (Code Editor).
-        /// </summary>
-        public string Content { get; set; } = string.Empty;
+        /// <remarks>Empty content is valid. The developer may want to wipe content from a page and start over.</remarks>
+        public string Payload { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets encrypted HEAD JavaScript (Code Editor).
         /// </summary>
+        /// <remarks>Empty content is valid. The developer may want to wipe content from a page and start over.</remarks>
         public string HeadJavaScript { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets encrypted footer JavaScript (Code Editor).
         /// </summary>
+        /// <remarks>Empty content is valid. The developer may want to wipe content from a page and start over.</remarks>
         public string FooterJavaScript { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets encrypted HTML content (Designer).
-        /// </summary>
-        public string HtmlContent { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets encrypted CSS content (Designer).
         /// </summary>
+        /// <remarks>Empty content is valid. The developer may want to wipe content from a page and start over.</remarks>
         public string CssContent { get; set; } = string.Empty;
 
         /// <summary>
@@ -134,6 +127,7 @@ namespace Sky.Cms.Models
         /// <summary>
         /// Gets or sets banner image URL.
         /// </summary>
+        /// <remarks>Empty content is valid. The developer may want to wipe content from a page and start over.</remarks>
         public string BannerImage { get; set; } = string.Empty;
 
         /// <summary>

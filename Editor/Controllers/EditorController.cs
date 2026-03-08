@@ -1286,63 +1286,53 @@ namespace Sky.Cms.Controllers
             // Update content if editor region specified
             if (!string.IsNullOrWhiteSpace(model.EditorId))
             {
+                var decryptedPayload = CryptoJsDecryption.Decrypt(model.Payload);
                 article.Content = UpdateRegionInDocument(
                     model.EditorId,
                     article.Content,
-                    CryptoJsDecryption.Decrypt(model.Data));
+                    decryptedPayload);
             }
-            else if (model.Command == "SaveBody" && !string.IsNullOrWhiteSpace(model.Data))
+            else if (model.Command == "SaveBody")
             {
-                // SaveBody command: replace entire content
-                article.Content = CryptoJsDecryption.Decrypt(model.Data);
+                // SaveBody command: replace entire content (empty or null payload is valid)
+                article.Content = CryptoJsDecryption.Decrypt(model.Payload);
             }
             else if (model.Command == "SaveCode")
             {
                 // SaveCode command: update content and scripts from Code Editor
-                if (!string.IsNullOrWhiteSpace(model.Content))
-                {
-                    var decryptedContent = CryptoJsDecryption.Decrypt(model.Content);
+                var decryptedContent = CryptoJsDecryption.Decrypt(model.Payload);
 
-                    // Validate no nested editable regions
-                    var nestedRegionError = ValidateNoNestedEditableRegions(decryptedContent);
-                    if (nestedRegionError != null)
+                // Validate no nested editable regions
+                var nestedRegionError = ValidateNoNestedEditableRegions(decryptedContent);
+                if (nestedRegionError != null)
+                {
+                    return Json(new
                     {
-                        return Json(new
+                        ServerSideSuccess = false,
+                        errors = new Dictionary<string, string[]>
                         {
-                            ServerSideSuccess = false,
-                            errors = new Dictionary<string, string[]>
-                            {
-                                ["Content"] = new[] { nestedRegionError }
-                            }
-                        });
-                    }
-
-                    article.Content = decryptedContent;
+                            ["Payload"] = new[] { nestedRegionError }
+                        }
+                    });
                 }
 
-                if (!string.IsNullOrWhiteSpace(model.HeadJavaScript))
-                {
-                    article.HeadJavaScript = CryptoJsDecryption.Decrypt(model.HeadJavaScript);
-                }
-
-                if (!string.IsNullOrWhiteSpace(model.FooterJavaScript))
-                {
-                    article.FooterJavaScript = CryptoJsDecryption.Decrypt(model.FooterJavaScript);
-                }
+                article.Content = decryptedContent;
+                article.HeadJavaScript = CryptoJsDecryption.Decrypt(model.HeadJavaScript);
+                article.FooterJavaScript = CryptoJsDecryption.Decrypt(model.FooterJavaScript);
             }
             else if (model.Command == "SaveDesigner")
             {
                 // SaveDesigner command: GrapesJS designer output
-                // HtmlContent and CssContent are encrypted in the model
+                // Payload (HTML) and CssContent are encrypted in the model
                 var htmlContent = string.Empty;
                 var cssContent = string.Empty;
 
-                if (!string.IsNullOrWhiteSpace(model.HtmlContent))
+                if (model.Payload != null)
                 {
-                    htmlContent = CryptoJsDecryption.Decrypt(model.HtmlContent);
+                    htmlContent = CryptoJsDecryption.Decrypt(model.Payload);
                 }
 
-                if (!string.IsNullOrWhiteSpace(model.CssContent))
+                if (model.CssContent != null)
                 {
                     cssContent = CryptoJsDecryption.Decrypt(model.CssContent);
                 }
@@ -1356,7 +1346,7 @@ namespace Sky.Cms.Controllers
                         ServerSideSuccess = false,
                         errors = new Dictionary<string, string[]>
                         {
-                            ["HtmlContent"] = new[] { nestedRegionError }
+                            ["Payload"] = new[] { nestedRegionError }
                         }
                     });
                 }
@@ -1377,11 +1367,36 @@ namespace Sky.Cms.Controllers
 
                 article.Content = assembledHtml;
             }
-            else if (string.IsNullOrWhiteSpace(model.Command))
+            else if (model.Command == "SavePageProperties")
             {
-                // No command specified: metadata-only update (preserve existing content)
+                // SavePageProperties command: metadata-only update (preserve existing content)
                 // This allows updates to Title, BannerImage, ArticleType, Category, Introduction
                 // without changing content, scripts, etc.
+                // Content remains unchanged - will be preserved in SaveArticleCommand below
+            }
+            else if (string.IsNullOrWhiteSpace(model.Command))
+            {
+                // Invalid/empty command
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    errors = new Dictionary<string, string[]>
+                    {
+                        ["Command"] = new[] { "Command cannot be null or empty." }
+                    }
+                });
+            }
+            else
+            {
+                // Unrecognized command
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    errors = new Dictionary<string, string[]>
+                    {
+                        ["Command"] = new[] { $"Unrecognized command: '{model.Command}'. Valid commands are: SaveBody, SaveCode, SaveDesigner, SavePageProperties." }
+                    }
+                });
             }
 
             // NEW: Use SaveArticle command
@@ -1418,7 +1433,7 @@ namespace Sky.Cms.Controllers
             // Notify SignalR clients of changes
             if (!string.IsNullOrWhiteSpace(model.EditorId))
             {
-                await hub.Clients.All.SendCoreAsync("UpdateEditors", [model.Id, model.Data]);
+                await hub.Clients.All.SendCoreAsync("UpdateEditors", [model.Id, model.Payload]);
             }
 
             // Return ArticleUpdateResult wrapped in compatible format
@@ -2187,14 +2202,9 @@ namespace Sky.Cms.Controllers
                 model.Command = queryModel.Command;
             }
 
-            if (string.IsNullOrWhiteSpace(model.Data) && !string.IsNullOrWhiteSpace(queryModel.Data))
+            if (string.IsNullOrWhiteSpace(model.Payload) && !string.IsNullOrWhiteSpace(queryModel.Payload))
             {
-                model.Data = queryModel.Data;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Content) && !string.IsNullOrWhiteSpace(queryModel.Content))
-            {
-                model.Content = queryModel.Content;
+                model.Payload = queryModel.Payload;
             }
 
             if (string.IsNullOrWhiteSpace(model.HeadJavaScript) && !string.IsNullOrWhiteSpace(queryModel.HeadJavaScript))
@@ -2205,11 +2215,6 @@ namespace Sky.Cms.Controllers
             if (string.IsNullOrWhiteSpace(model.FooterJavaScript) && !string.IsNullOrWhiteSpace(queryModel.FooterJavaScript))
             {
                 model.FooterJavaScript = queryModel.FooterJavaScript;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.HtmlContent) && !string.IsNullOrWhiteSpace(queryModel.HtmlContent))
-            {
-                model.HtmlContent = queryModel.HtmlContent;
             }
 
             if (string.IsNullOrWhiteSpace(model.CssContent) && !string.IsNullOrWhiteSpace(queryModel.CssContent))

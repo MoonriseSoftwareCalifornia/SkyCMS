@@ -94,10 +94,44 @@
 
         let autosaveTimeout = null;
 
+        // Autosave control flag (accessible from iframe CKEditor)
+        window.enableAutoSave = true;
+
+        // Save functions for CKEditor autosave support
+        // Note: These are stubs that delegate to parent window when in Edit.cshtml iframe context
+        window.saveChanges = async function(html, editorId) {
+            // If we're in an iframe and parent has saveChanges, delegate to it
+            if (window.parent && window.parent !== window && typeof window.parent.saveChanges === 'function') {
+                return window.parent.saveChanges(html, editorId);
+            }
+            // Otherwise, this is standalone CcmsContent view - just resolve
+            console.log('CcmsContent saveChanges called (standalone mode):', editorId);
+            return Promise.resolve();
+        };
+
+        window.saveEditorRegion = async function(html, editorId) {
+            // If we're in an iframe and parent has saveEditorRegion, delegate to it
+            if (window.parent && window.parent !== window && typeof window.parent.saveEditorRegion === 'function') {
+                return window.parent.saveEditorRegion(html, editorId);
+            }
+            // Otherwise, this is standalone CcmsContent view - just resolve
+            console.log('CcmsContent saveEditorRegion called (standalone mode):', editorId);
+            return Promise.resolve();
+        };
+
         function ccms___beforeDomMutation(target) {
             const mutationRoot = target || document.querySelector('div[ccms-content-id]') || document.body;
+            
+            // Destroy FilePond instances
             if (typeof window.ccms___destroyPondsInElement === 'function') {
                 window.ccms___destroyPondsInElement(mutationRoot);
+            }
+            
+            // Destroy CKEditor instances before DOM mutation to prevent stale references
+            if (typeof window.ccms___destroyAllEditors === 'function') {
+                window.ccms___destroyAllEditors().catch(error => {
+                    console.warn('Error during editor destruction before DOM mutation:', error);
+                });
             }
         }
 
