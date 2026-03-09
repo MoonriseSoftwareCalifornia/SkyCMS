@@ -7,12 +7,8 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using System.Web;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
@@ -23,6 +19,12 @@ namespace Sky.Cms.Controllers
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Cms.Models;
+    using Sky.Editor.Features.Templates.Get;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using System.Web;
 
     /// <summary>
     /// Base controller.
@@ -32,25 +34,29 @@ namespace Sky.Cms.Controllers
         private readonly UserManager<IdentityUser> baseUserManager;
         private readonly ApplicationDbContext dbContext;
         private readonly IMemoryCache? memoryCache;
-        private readonly IDynamicConfigurationProvider? configProvider;
+        private readonly IDynamicConfigurationProvider configProvider;
+        private readonly IMediator mediator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseController"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="userManager">User manager.</param>
+        /// <param name="mediator">Mediator service.</param>
         /// <param name="memoryCache">Memory cache (optional, for layout caching).</param>
         /// <param name="configProvider">Dynamic configuration provider (optional, for tenant-aware caching).</param>
         public BaseController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
-            IMemoryCache? memoryCache = null,
-            IDynamicConfigurationProvider? configProvider = null)
+            IMediator mediator,
+            IMemoryCache memoryCache = null,
+            IDynamicConfigurationProvider configProvider = null)
         {
             this.dbContext = dbContext;
             baseUserManager = userManager;
             this.memoryCache = memoryCache;
             this.configProvider = configProvider;
+            this.mediator = mediator;
         }
 
         /// <summary>
@@ -234,6 +240,38 @@ namespace Sky.Cms.Controllers
             jsonModel.ValidationState = ModelState.ValidationState;
 
             return jsonModel;
+        }
+
+        /// <summary>
+        /// Edit template title and description.
+        /// </summary>
+        /// <param name="id">Template ID.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task<IActionResult> Edit(Guid id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var query = new GetTemplateQuery { TemplateId = id };
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data?.Template == null)
+            {
+                return NotFound();
+            }
+
+            var template = result.Data.Template;
+            ViewData["Title"] = template.Title;
+
+            var model = new TemplateEditViewModel()
+            {
+                Title = template.Title,
+                Description = template.Description,
+                Id = id
+            };
+            return View(model);
         }
     }
 }

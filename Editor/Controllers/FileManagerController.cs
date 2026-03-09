@@ -71,7 +71,7 @@ namespace Sky.Cms.Controllers
         /// <param name="storageContext">Storage context.</param>
         /// <param name="userManager">User manager context.</param>
         /// <param name="articleLogic">Article logic.</param>
-        /// <param name="articleQueries">Shared article queries mediator.</param>
+        /// <param name="mediator">Shared article queries mediator.</param>
         /// <param name="hostEnvironment">Host environment.</param>
         /// <param name="viewRenderService">View rendering service.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
@@ -83,12 +83,12 @@ namespace Sky.Cms.Controllers
             IStorageContext storageContext,
             UserManager<IdentityUser> userManager,
             ArticleEditLogic articleLogic,
-            IMediator articleQueries,
+            IMediator mediator,
             IWebHostEnvironment hostEnvironment,
             IViewRenderService viewRenderService,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
-            : base(dbContext, userManager, memoryCache, configProvider)
+            : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
             this.options = options;
             this.logger = logger;
@@ -97,7 +97,7 @@ namespace Sky.Cms.Controllers
             this.hostEnvironment = hostEnvironment;
             this.userManager = userManager;
             this.articleLogic = articleLogic;
-            this.articleQueries = articleQueries;
+            this.articleQueries = mediator;
             this.dbContext = dbContext;
 
             var htmlUtilities = new HtmlUtilities();

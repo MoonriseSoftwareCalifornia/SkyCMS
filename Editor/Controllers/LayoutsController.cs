@@ -85,6 +85,7 @@ namespace Sky.Cms.Controllers
         /// <param name="dbContext">Database context.</param>
         /// <param name="userManager">User manager.</param>
         /// <param name="articleLogic"><see cref="ArticleEditLogic">Article edit logic</see>.</param>
+        /// <param name="mediator">Mediator service.</param>
         /// <param name="options"><see cref="IEditorSettings">Editor configuration</see> options.</param>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="viewRenderService">View rendering service.</param>
@@ -98,7 +99,7 @@ namespace Sky.Cms.Controllers
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
             ArticleEditLogic articleLogic,
-            CommonMediator articleQueries,
+            CommonMediator mediator,
             IEditorSettings options,
             IStorageContext storageContext,
             IViewRenderService viewRenderService,
@@ -108,11 +109,11 @@ namespace Sky.Cms.Controllers
             ILayoutImportService layoutImportService,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
-            : base(dbContext, userManager, memoryCache, configProvider)
+            : base(dbContext, userManager, mediator,memoryCache, configProvider)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.articleLogic = articleLogic ?? throw new ArgumentNullException(nameof(articleLogic));
-            this.articleQueries = articleQueries ?? throw new ArgumentNullException(nameof(articleQueries));
+            this.articleQueries = mediator ?? throw new ArgumentNullException(nameof(mediator));
             this.storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext));
             this.htmlService = htmlService ?? throw new ArgumentNullException(nameof(htmlService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -25,10 +25,8 @@ namespace Sky.Cms.Controllers
     using Cosmos.Editor.Services;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.AspNetCore.Mvc.ModelBinding;
     using Microsoft.AspNetCore.SignalR;
     using Microsoft.Azure.Cosmos.Serialization.HybridRow;
     using Microsoft.EntityFrameworkCore;
@@ -52,7 +50,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.ReservedPaths;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Editor controller.
@@ -62,7 +59,7 @@ namespace Sky.Cms.Controllers
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
     public class EditorController : BaseController
     {
-        private readonly CommonMediator mediator;
+        private readonly IMediator mediator;
         private readonly ArticleEditLogic articleLogic;
         private readonly ApplicationDbContext dbContext;
         private readonly RoleManager<IdentityRole> roleManager;
@@ -114,10 +111,10 @@ namespace Sky.Cms.Controllers
             IReservedPaths reservedPaths,
             ITitleChangeService titleChangeService,
             ITemplateService templateService,
-            CommonMediator mediator,
+            IMediator mediator,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
-            : base(dbContext, userManager, memoryCache, configProvider)
+            : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
             this.logger = logger;
             this.dbContext = dbContext;

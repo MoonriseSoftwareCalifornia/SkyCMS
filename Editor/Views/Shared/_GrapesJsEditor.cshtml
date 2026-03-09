@@ -203,9 +203,14 @@
             Command: "SaveDesigner"
         };
 
+        const endpoint = typeof cosmos__saveEndpoint !== 'undefined' && cosmos__saveEndpoint
+            ? cosmos__saveEndpoint
+            : "/Editor/Edit";
+
         try {
             const response = await EditorSaveService.saveArticle(model, "SaveDesigner", {
-                encryptFields: ['Payload', 'CssContent']
+                encryptFields: ['Payload', 'CssContent'],
+                endpoint
             });
 
             // Save was intentionally skipped by in-progress dedupe logic.

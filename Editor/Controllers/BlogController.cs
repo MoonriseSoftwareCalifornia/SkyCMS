@@ -83,7 +83,7 @@ namespace Sky.Editor.Controllers
             IMediator mediator,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
-            : base(db, userManager, memoryCache, configProvider)
+            : base(db, userManager, mediator, memoryCache, configProvider)
         {
             this.db = db;
             this.articleLogic = articleLogic;

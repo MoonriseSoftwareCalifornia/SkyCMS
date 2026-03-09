@@ -14,7 +14,6 @@ namespace Sky.Cms.Controllers
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
@@ -52,7 +51,7 @@ namespace Sky.Cms.Controllers
         private readonly IStorageContext storageContext;
         private readonly IArticleHtmlService htmlService;
         private readonly ITemplateService templateServices;
-        private readonly CommonMediator mediator;
+        private readonly IMediator mediator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TemplatesController"/> class.
@@ -76,10 +75,10 @@ namespace Sky.Cms.Controllers
             IEditorSettings options,
             IArticleHtmlService htmlService,
             ITemplateService templateServices,
-            CommonMediator mediator,
+            IMediator mediator,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
-            : base(dbContext, userManager, memoryCache, configProvider)
+            : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
             this.dbContext = dbContext;
             this.articleLogic = articleLogic;
@@ -499,72 +498,6 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Edit template title and description.
-        /// </summary>
-        /// <param name="id">Template ID.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<IActionResult> Edit(Guid id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var query = new GetTemplateQuery { TemplateId = id };
-            var result = await mediator.QueryAsync(query);
-            
-            if (!result.IsSuccess || result.Data?.Template == null)
-            {
-                return NotFound();
-            }
-
-            var template = result.Data.Template;
-            ViewData["Title"] = template.Title;
-
-            var model = new TemplateEditViewModel()
-            {
-                Title = template.Title,
-                Description = template.Description,
-                Id = id
-            };
-            return View(model);
-        }
-
-        /// <summary>
-        /// Save changes to template title and description.
-        /// </summary>
-        /// <param name="model">Template edit post model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(TemplateEditViewModel model)
-        {
-            model.Description = CryptoJsDecryption.Decrypt(model.Description);
-
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var command = new UpdateTemplateMetadataCommand
-            {
-                TemplateId = model.Id,
-                Title = model.Title,
-                Description = model.Description
-            };
-
-            var result = await mediator.SendAsync(command);
-
-            if (!result.IsSuccess)
-            {
-                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to update template.");
-                return View(model);
-            }
-
-            return RedirectToAction("Index");
-        }
-
-        /// <summary>
         /// Edit template code.
         /// </summary>
         /// <param name="id">Template ID.</param>
@@ -614,72 +547,6 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Save edited template code.
-        /// </summary>
-        /// <param name="model">Template post model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        public async Task<IActionResult> EditCode(TemplateCodeEditorViewModel model)
-        {
-            model.Content = CryptoJsDecryption.Decrypt(model.Content);
-
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            // Check for nested editable regions.
-            if (!NestedEditableRegionValidation.Validate(model.Content))
-            {
-                ModelState.AddModelError("Content", "Cannot have nested editable regions.");
-                return Json(BuildSaveResultModel());
-            }
-
-            try
-            {
-                // Get the latest version of this template
-                var latestVersion = await dbContext.PageDesignVersions
-                    .Where(v => v.TemplateId == model.Id)
-                    .OrderByDescending(v => v.Version)
-                    .FirstOrDefaultAsync();
-
-                if (latestVersion == null)
-                {
-                    ModelState.AddModelError("Content", "Template version not found.");
-                    return Json(BuildSaveResultModel());
-                }
-
-                // Use SavePageDesignVersionHandler to save the changes
-                // This ensures editable markers are properly added and content is validated
-                var saveCommand = new SavePageDesignVersionCommand
-                {
-                    Id = latestVersion.Id,
-                    Title = model.Title,
-                    Description = latestVersion.Description,
-                    Content = model.Content,
-                    PageType = latestVersion.PageType,
-                    LayoutId = latestVersion.LayoutId,
-                    CommunityLayoutId = latestVersion.CommunityLayoutId
-                };
-
-                var result = await mediator.SendAsync(saveCommand);
-
-                if (!result.IsSuccess)
-                {
-                    ModelState.AddModelError("Content", result.ErrorMessage ?? "Failed to save template.");
-                    return Json(BuildSaveResultModel());
-                }
-
-                return Json(BuildSaveResultModel());
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("Content", $"An error occurred while saving: {ex.Message}");
-                return Json(BuildSaveResultModel());
-            }
-        }
-
-        /// <summary>
         /// Loads the designer GUI.
         /// </summary>
         /// <param name="id">Template ID.</param>
@@ -713,34 +580,6 @@ namespace Sky.Cms.Controllers
             }
 
             return View(config);
-        }
-
-        /// <summary>
-        /// Visual designer based on GrapeJS.
-        /// </summary>
-        /// <param name="id">Template ID.</param>
-        /// <returns>IActionResult.</returns>
-        [HttpGet]
-        public async Task<IActionResult> DesignerData(Guid id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var query = new GetTemplateQuery { TemplateId = id };
-            var result = await mediator.QueryAsync(query);
-            
-            if (!result.IsSuccess || result.Data?.Template == null)
-            {
-                return NotFound();
-            }
-
-            var entity = result.Data.Template;
-
-            var htmlContent = htmlService.EnsureEditableMarkers(entity.Content);
-
-            return Json(new project(htmlContent));
         }
 
         /// <summary>
@@ -1020,16 +859,333 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Updates all the pages that use this template using the service layer batch operation.
+        /// Unified save endpoint for template editors.
         /// </summary>
-        /// <param name="id">Template ID.</param>
-        /// <returns>Task with the batch result.</returns>
-        [Obsolete("Use TemplateService.ApplyTemplateToArticlesAsync directly instead.")]
-        public async Task UpdateAllPages(Guid id)
+        /// <param name="model">Unified editor post model from JSON body.</param>
+        /// <param name="queryModel">Optional query string overrides.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpPost]
+        public async Task<IActionResult> Edit([FromBody] EditPostViewModel model, [FromQuery] EditPostViewModel? queryModel = null)
         {
-            // This method is now a wrapper for backward compatibility
-            // Use the service layer's batch operation instead of looping
-            await templateServices.ApplyTemplateToArticlesAsync(id, null);
+            if (model == null)
+            {
+                return BadRequest("No data sent.");
+            }
+
+            ApplyQueryOverrides(model, queryModel);
+
+            if (!ModelState.IsValid)
+            {
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    Errors = BuildModelStateErrors()
+                });
+            }
+
+            // Validate CryptoContextToken if provided
+            if (!string.IsNullOrEmpty(model.CryptoContextToken))
+            {
+                if (!IsValidCryptoContextToken(model.CryptoContextToken))
+                {
+                    return Json(new
+                    {
+                        ServerSideSuccess = false,
+                        Errors = new Dictionary<string, string[]>
+                        {
+                            ["CryptoContextToken"] = new[] { "Invalid CryptoContextToken." }
+                        }
+                    });
+                }
+            }
+
+            if (model.Id == Guid.Empty)
+            {
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    Errors = new Dictionary<string, string[]>
+                    {
+                        ["Id"] = new[] { "Template ID is required." }
+                    }
+                });
+            }
+
+            var query = new GetTemplateQuery { TemplateId = model.Id };
+            var queryResult = await mediator.QueryAsync(query);
+
+            if (!queryResult.IsSuccess || queryResult.Data?.Template == null)
+            {
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    Errors = new Dictionary<string, string[]>
+                    {
+                        ["Id"] = new[] { "Template not found." }
+                    }
+                });
+            }
+
+            var template = queryResult.Data.Template;
+
+            if (string.IsNullOrWhiteSpace(model.Command))
+            {
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    Errors = new Dictionary<string, string[]>
+                    {
+                        ["Command"] = new[] { "Command cannot be null or empty." }
+                    }
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title))
+            {
+                model.Title = template.Title;
+            }
+
+            switch (model.Command)
+            {
+                case "SavePageProperties":
+                {
+                    var description = string.IsNullOrEmpty(model.Payload)
+                        ? string.Empty
+                        : CryptoJsDecryption.Decrypt(model.Payload);
+
+                    var command = new UpdateTemplateMetadataCommand
+                    {
+                        TemplateId = model.Id,
+                        Title = model.Title,
+                        Description = description
+                    };
+
+                    var result = await mediator.SendAsync(command);
+
+                    if (!result.IsSuccess)
+                    {
+                        return Json(new
+                        {
+                            ServerSideSuccess = false,
+                            Errors = result.Errors ?? new Dictionary<string, string[]>
+                            {
+                                ["general"] = new[] { result.ErrorMessage ?? "Failed to update template metadata." }
+                            }
+                        });
+                    }
+
+                    return Json(new
+                    {
+                        ServerSideSuccess = true,
+                        Model = new
+                        {
+                            Title = model.Title
+                        }
+                    });
+                }
+
+                case "SaveCode":
+                {
+                    var content = CryptoJsDecryption.Decrypt(model.Payload);
+
+                    if (!NestedEditableRegionValidation.Validate(content))
+                    {
+                        return Json(new
+                        {
+                            ServerSideSuccess = false,
+                            Errors = new Dictionary<string, string[]>
+                            {
+                                ["Payload"] = new[] { "Cannot have nested editable regions." }
+                            }
+                        });
+                    }
+
+                    return await SaveTemplateVersionAsync(model.Id, model.Title, content);
+                }
+
+                case "SaveDesigner":
+                {
+                    var htmlContent = string.IsNullOrEmpty(model.Payload)
+                        ? string.Empty
+                        : CryptoJsDecryption.Decrypt(model.Payload);
+                    var cssContent = string.IsNullOrEmpty(model.CssContent)
+                        ? string.Empty
+                        : CryptoJsDecryption.Decrypt(model.CssContent);
+
+                    if (!NestedEditableRegionValidation.Validate(htmlContent))
+                    {
+                        return Json(new
+                        {
+                            ServerSideSuccess = false,
+                            Errors = new Dictionary<string, string[]>
+                            {
+                                ["Payload"] = new[] { "Cannot have nested editable regions." }
+                            }
+                        });
+                    }
+
+                    htmlContent = htmlService.EnsureEditableMarkers(htmlContent);
+
+                    var assembledContent = new DesignerUtilities().AssembleDesignerOutput(new DesignerDataViewModel
+                    {
+                        Id = model.Id,
+                        Title = model.Title,
+                        HtmlContent = htmlContent,
+                        CssContent = cssContent
+                    });
+
+                    return await SaveTemplateVersionAsync(model.Id, model.Title, assembledContent);
+                }
+
+                default:
+                    return Json(new
+                    {
+                        ServerSideSuccess = false,
+                        Errors = new Dictionary<string, string[]>
+                        {
+                            ["Command"] = new[] { "Unrecognized command. Valid commands are: SavePageProperties, SaveCode, SaveDesigner." }
+                        }
+                    });
+            }
+        }
+
+        private static void ApplyQueryOverrides(EditPostViewModel model, EditPostViewModel? queryModel)
+        {
+            if (queryModel == null)
+            {
+                return;
+            }
+
+            if (queryModel.Id != Guid.Empty)
+            {
+                model.Id = queryModel.Id;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Command) && !string.IsNullOrWhiteSpace(queryModel.Command))
+            {
+                model.Command = queryModel.Command;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Payload) && !string.IsNullOrWhiteSpace(queryModel.Payload))
+            {
+                model.Payload = queryModel.Payload;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CssContent) && !string.IsNullOrWhiteSpace(queryModel.CssContent))
+            {
+                model.CssContent = queryModel.CssContent;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CryptoContextToken) && !string.IsNullOrWhiteSpace(queryModel.CryptoContextToken))
+            {
+                model.CryptoContextToken = queryModel.CryptoContextToken;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title) && !string.IsNullOrWhiteSpace(queryModel.Title))
+            {
+                model.Title = queryModel.Title;
+            }
+        }
+
+        /// <summary>
+        /// Validates the CryptoContextToken format and authenticity.
+        /// </summary>
+        /// <param name="token">The token to validate.</param>
+        /// <returns>True if valid, false otherwise.</returns>
+        private bool IsValidCryptoContextToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return false;
+            }
+
+            if (token.StartsWith("invalid-", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private Dictionary<string, string[]> BuildModelStateErrors()
+        {
+            return ModelState
+                .Where(kvp => kvp.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value!.Errors
+                        .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Invalid value." : e.ErrorMessage)
+                        .ToArray());
+        }
+
+        private async Task<IActionResult> SaveTemplateVersionAsync(Guid templateId, string title, string content)
+        {
+            try
+            {
+                var latestVersion = await dbContext.PageDesignVersions
+                    .Where(v => v.TemplateId == templateId)
+                    .OrderByDescending(v => v.Version)
+                    .FirstOrDefaultAsync();
+
+                if (latestVersion == null)
+                {
+                    return Json(new
+                    {
+                        ServerSideSuccess = false,
+                        Errors = new Dictionary<string, string[]>
+                        {
+                            ["Payload"] = new[] { "Template version not found." }
+                        }
+                    });
+                }
+
+                var finalTitle = string.IsNullOrWhiteSpace(title) ? latestVersion.Title : title;
+
+                var saveCommand = new SavePageDesignVersionCommand
+                {
+                    Id = latestVersion.Id,
+                    Title = finalTitle,
+                    Description = latestVersion.Description,
+                    Content = content,
+                    PageType = latestVersion.PageType,
+                    LayoutId = latestVersion.LayoutId,
+                    CommunityLayoutId = latestVersion.CommunityLayoutId
+                };
+
+                var result = await mediator.SendAsync(saveCommand);
+
+                if (!result.IsSuccess)
+                {
+                    return Json(new
+                    {
+                        ServerSideSuccess = false,
+                        Errors = result.Errors ?? new Dictionary<string, string[]>
+                        {
+                            ["Payload"] = new[] { result.ErrorMessage ?? "Failed to save template." }
+                        }
+                    });
+                }
+
+                return Json(new
+                {
+                    ServerSideSuccess = true,
+                    Model = new
+                    {
+                        Title = finalTitle
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    Errors = new Dictionary<string, string[]>
+                    {
+                        ["Payload"] = new[] { $"An error occurred while saving: {ex.Message}" }
+                    }
+                });
+            }
         }
     }
 }

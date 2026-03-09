@@ -1,16 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Cosmos.Common.Data;
-using Cosmos.Common.Models;
+using Cosmos.Common.Features.Shared;
 using Cosmos.DynamicConfig;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Sky.Cms.Controllers;
 using System.Security.Claims;
 
@@ -29,7 +22,7 @@ namespace Sky.Tests.Controllers
             var testUser = new IdentityUser { Id = TestUserId.ToString(), UserName = "testuser" };
             Db.Users.Add(testUser);
             Db.SaveChanges();
-            _controller = new TestableBaseController(Db, UserManager, Cache, DynamicConfigurationProvider);
+            _controller = new TestableBaseController(Db, UserManager, Mediator, Cache, DynamicConfigurationProvider);
             // Set up a valid ClaimsPrincipal for the controller
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()) };
             var identity = new ClaimsIdentity(claims, "TestAuthType");
@@ -119,9 +112,10 @@ namespace Sky.Tests.Controllers
             public TestableBaseController(
                 ApplicationDbContext dbContext,
                 UserManager<IdentityUser> userManager,
+                IMediator mediator,
                 IMemoryCache memoryCache = null,
                 IDynamicConfigurationProvider configProvider = null)
-                : base(dbContext, userManager, memoryCache, configProvider)
+                : base(dbContext, userManager, mediator, memoryCache, configProvider)
             {
             }
 

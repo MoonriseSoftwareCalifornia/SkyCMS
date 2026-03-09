@@ -8,11 +8,15 @@
 <!-- Use shared partial for common editor UI -->
 <partial name="_CodeEditorShared" model="Model" />
 
-<form id="frmSave" asp-action="EditCode" asp-controller="Templates">
+<form id="frmSave" autocomplete="off">
+    @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="Title" />
     <input type="hidden" asp-for="Content" />
 </form>
+
+<partial name="_EditorErrorModal" />
+<partial name="_EditorCommonScripts" />
 
 <script>
     // View-specific constants
@@ -44,17 +48,13 @@
     }
 
     // View-specific save function
-    function saveChanges(postProcessing) {
-        if (window.saveInProgress === true) {
+    async function saveChanges(postProcessing) {
+        if (EditorSaveService.state.saveInProgress === true) {
             return;
         }
 
-        window.saveInProgress = true;
-        
-        if (typeof showSaving === 'function') {
-            showSaving();
-        }
-        
+        EditorUI.saving();
+
         if (typeof savePublishDateTime === 'function') {
             savePublishDateTime();
         }
@@ -66,66 +66,49 @@
             $("#" + window.fieldId).val(window.editor.getValue());
         }
 
-        let model = {
+        const model = {
             Id: $("#Id").val(),
             Title: $("#Title").val(),
-            Content: encryptData($("#Content").val())
+            Payload: $("#Content").val(),
+            EditingField: $("#EditingField").val(),
+            Command: "SaveCode"
         };
 
-        $.post("/Templates/EditCode", model, function (response) {
-            window.saveInProgress = false;
-            
-            if (typeof doneSaving === 'function') {
-                doneSaving();
-            }
+        try {
+            const response = await EditorSaveService.saveArticle(model, "SaveCode", {
+                encryptFields: ['Payload'],
+                endpoint: '/Templates/Edit'
+            });
 
-            if (response.IsValid) {
-                // Mark document as clean after successful save
-                if (window.activeDocumentTracker) {
-                    window.activeDocumentTracker.markClean();
-                }
-                
-                if (typeof postProcessing !== 'undefined' && postProcessing !== null && typeof postProcessing === 'function') {
-                    postProcessing();
-                }
-                
-                toastMsg("Template saved successfully.");
+            EditorSaveService.handleSaveResponse(response, {
+                updateUI: false,
+                onSuccess: () => {
+                    if (window.activeDocumentTracker) {
+                        window.activeDocumentTracker.markClean();
+                    }
 
-                if (typeof next !== 'undefined' && next !== null && typeof next === 'function') {
-                    next();
-                    next = null;
-                }
+                    if (typeof postProcessing !== 'undefined' && postProcessing !== null && typeof postProcessing === 'function') {
+                        postProcessing();
+                    }
 
-            } else {
-                var errorMsg = "<h5>Error(s) detected while saving:</h5>";
-                $.each(response.Errors, function (index, error) {
-                    errorMsg += "<p>" + error.Key + "</p><ul>";
-                    $.each(error.Errors, function (index, innerError) {
-                        errorMsg += "<li>" + (innerError.Exception ? innerError.Exception.Message : innerError.ErrorMessage) + "</li>";
-                    });
-                    errorMsg += "</ul>";
-                });
-                $("#divErrorLog").html(errorMsg);
-                
-                if (typeof bootstrap !== 'undefined' && document.getElementById('modalSavingError')) {
-                    var errorModal = new bootstrap.Modal(document.getElementById('modalSavingError'));
-                    errorModal.show();
+                    toastMsg("Template saved successfully.");
+
+                    if (typeof next !== 'undefined' && next !== null && typeof next === 'function') {
+                        next();
+                        next = null;
+                    }
+
+                    EditorUI.doneSaving();
+                },
+                onError: (msg) => {
+                    EditorUI.showError(msg);
+                    EditorUI.doneSaving();
                 }
-            }
-        }).fail(function (xhr, status, error) {
-            window.saveInProgress = false;
-            
-            if (typeof doneSaving === 'function') {
-                doneSaving();
-            }
-            
-            $("#divErrorLog").html(xhr.responseText);
-            
-            if (typeof bootstrap !== 'undefined' && document.getElementById('modalSavingError')) {
-                var errorModal = new bootstrap.Modal(document.getElementById('modalSavingError'));
-                errorModal.show();
-            }
-        });
+            });
+        } catch (error) {
+            EditorUI.showError(error.message);
+            EditorUI.doneSaving();
+        }
     }
 
     // Add listener for active document changes
