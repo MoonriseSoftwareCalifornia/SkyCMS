@@ -26,17 +26,18 @@ namespace Sky.Cms.Controllers
     using Sky.Cms.Models;
     using Sky.Editor.Data;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Templates.Create;
+    using Sky.Editor.Features.Templates.Delete;
+    using Sky.Editor.Features.Templates.Get;
+    using Sky.Editor.Features.Templates.GetEditable;
+    using Sky.Editor.Features.Templates.Publishing;
+    using Sky.Editor.Features.Templates.Save;
+    using Sky.Editor.Features.Templates.UpdateMetadata;
     using Sky.Editor.Models;
     using Sky.Editor.Models.GrapesJs;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Templates;
-    using Sky.Editor.Features.Templates.Save;
-    using Sky.Editor.Features.Templates.Create;
-    using Sky.Editor.Features.Templates.Delete;
-    using Sky.Editor.Features.Templates.Get;
-    using Sky.Editor.Features.Templates.UpdateMetadata;
-    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Templates controller.
@@ -509,19 +510,19 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            var query = new GetTemplateQuery { TemplateId = id };
-            var result = await mediator.QueryAsync(query);
-            
-            if (!result.IsSuccess || result.Data?.Template == null)
+            var editableCommand = new GetEditablePageDesignVersionCommand { TemplateId = id };
+            var editableResult = await mediator.SendAsync(editableCommand);
+
+            if (!editableResult.IsSuccess || editableResult.Data?.EditableVersion == null)
             {
                 return NotFound();
             }
 
-            var entity = result.Data.Template;
+            var editableVersion = editableResult.Data.EditableVersion;
 
             var model = new TemplateCodeEditorViewModel
             {
-                Id = entity.Id,
+                Id = id,
                 EditorTitle = "Template Editor",
                 EditorFields = new List<EditorField>
                 {
@@ -539,9 +540,9 @@ namespace Sky.Cms.Controllers
                     "Preview"
                 },
                 EditingField = "Content",
-                Content = htmlService.EnsureEditableMarkers(entity.Content),
-                Version = 0,
-                Title = entity.Title
+                Content = htmlService.EnsureEditableMarkers(editableVersion.Content),
+                Version = editableVersion.Version,
+                Title = editableVersion.Title
             };
             return View(model);
         }
@@ -561,18 +562,18 @@ namespace Sky.Cms.Controllers
             // Loads GrapeJS.
             ViewData["IsDesigner"] = true;
 
-            var query = new GetTemplateQuery { TemplateId = id };
-            var result = await mediator.QueryAsync(query);
-            
-            if (!result.IsSuccess || result.Data?.Template == null)
+            var editableCommand = new GetEditablePageDesignVersionCommand { TemplateId = id };
+            var editableResult = await mediator.SendAsync(editableCommand);
+
+            if (!editableResult.IsSuccess || editableResult.Data?.EditableVersion == null)
             {
                 return NotFound();
             }
 
-            var template = result.Data.Template;
+            var editableVersion = editableResult.Data.EditableVersion;
 
             var defaultLayout = await GetCurrentLayoutAsync();
-            var config = new DesignerConfig(defaultLayout, id.ToString(), template.Title);
+            var config = new DesignerConfig(defaultLayout, id.ToString(), editableVersion.Title);
             var assets = await FileManagerController.GetImageAssetArray(storageContext, "/pub", "/pub/articles");
             if (assets != null)
             {
@@ -598,81 +599,60 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            DesignerDataViewModel model = new DesignerDataViewModel()
+            if (id == Guid.Empty)
             {
-                Id = id,
-                HtmlContent = CryptoJsDecryption.Decrypt(htmlContent),
-                CssContent = CryptoJsDecryption.Decrypt(cssContent),
-                Title = title
-            };
+                return BadRequest("Invalid template ID");
+            }
 
-            // Check for nested editable regions.
-            if (!NestedEditableRegionValidation.Validate(model.HtmlContent))
+            var decryptedHtml = string.IsNullOrEmpty(htmlContent)
+                ? string.Empty
+                : CryptoJsDecryption.Decrypt(htmlContent);
+            var decryptedCss = string.IsNullOrEmpty(cssContent)
+                ? string.Empty
+                : CryptoJsDecryption.Decrypt(cssContent);
+
+            if (!NestedEditableRegionValidation.Validate(decryptedHtml))
             {
                 return BadRequest("Cannot have nested editable regions.");
             }
 
-            try
+            var assembledContent = new DesignerUtilities().AssembleDesignerOutput(new DesignerDataViewModel
             {
-                // Use GetTemplateQuery to retrieve the template
-                var query = new GetTemplateQuery { TemplateId = model.Id };
-                var queryResult = await mediator.QueryAsync(query);
-                
-                if (!queryResult.IsSuccess || queryResult.Data?.Template == null)
-                {
-                    return NotFound();
-                }
+                Id = id,
+                Title = title,
+                HtmlContent = decryptedHtml,
+                CssContent = decryptedCss
+            });
 
-                var entity = queryResult.Data.Template;
-
-                // Get the latest version of this template
-                var latestVersion = await dbContext.PageDesignVersions
-                    .Where(v => v.TemplateId == model.Id)
-                    .OrderByDescending(v => v.Version)
-                    .FirstOrDefaultAsync();
-
-                if (latestVersion == null)
-                {
-                    return BadRequest("Template version not found.");
-                }
-
-                // Assemble the designer output
-                var designerUtils = new DesignerUtilities();
-                var assembledContent = designerUtils.AssembleDesignerOutput(model);
-
-                // Determine the title to use
-                var finalTitle = string.IsNullOrEmpty(model.Title)
-                    ? (string.IsNullOrEmpty(entity.Title) ? $"Template {await dbContext.Templates.CountAsync()}" : entity.Title)
-                    : model.Title;
-
-                // Use SavePageDesignVersionHandler to save the changes
-                // This ensures editable markers are properly added and content is validated
-                var saveCommand = new SavePageDesignVersionCommand
-                {
-                    Id = latestVersion.Id,
-                    Title = finalTitle,
-                    Description = latestVersion.Description,
-                    Content = assembledContent,
-                    PageType = latestVersion.PageType,
-                    LayoutId = latestVersion.LayoutId,
-                    CommunityLayoutId = latestVersion.CommunityLayoutId
-                };
-
-                var result = await mediator.SendAsync(saveCommand);
-
-                if (!result.IsSuccess)
-                {
-                    return BadRequest(new { error = result.ErrorMessage ?? "Failed to save template." });
-                }
-
-                return Json(new { success = true });
-            }
-            catch (Exception ex)
+            var editableResult = await mediator.SendAsync(new GetEditablePageDesignVersionCommand { TemplateId = id });
+            if (!editableResult.IsSuccess || editableResult.Data?.EditableVersion == null)
             {
-                return BadRequest(new { error = $"An error occurred while saving: {ex.Message}" });
+                return BadRequest(new { error = editableResult.ErrorMessage ?? "Template version not found." });
             }
+
+            var editableVersion = editableResult.Data.EditableVersion;
+            var finalTitle = string.IsNullOrWhiteSpace(title) ? editableVersion.Title : title;
+
+            var saveCommand = new SavePageDesignVersionCommand
+            {
+                Id = editableVersion.Id,
+                Title = finalTitle,
+                Description = editableVersion.Description,
+                Content = assembledContent,
+                PageType = editableVersion.PageType,
+                LayoutId = editableVersion.LayoutId,
+                CommunityLayoutId = editableVersion.CommunityLayoutId
+            };
+
+            var result = await mediator.SendAsync(saveCommand);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new { error = result.ErrorMessage ?? "Failed to save template." });
+            }
+
+            return Json(new { success = true });
         }
-
 
         /// <summary>
         /// Updates a page using the latest template version.
@@ -785,6 +765,25 @@ namespace Sky.Cms.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            var editableResult = await mediator.SendAsync(new GetEditablePageDesignVersionCommand { TemplateId = id });
+            if (!editableResult.IsSuccess || editableResult.Data?.EditableVersion == null)
+            {
+                TempData["Error"] = editableResult.ErrorMessage ?? "Unable to resolve editable template version.";
+                return RedirectToAction("Pages", routeValues: new { id });
+            }
+
+            var publishVersionResult = await mediator.SendAsync(new PublishPageDesignVersionCommand
+            {
+                Id = editableResult.Data.EditableVersion.Id,
+                UserId = Guid.Parse(await GetUserId())
+            });
+
+            if (!publishVersionResult.IsSuccess)
+            {
+                TempData["Error"] = publishVersionResult.ErrorMessage ?? "Failed to publish template version.";
+                return RedirectToAction("Pages", routeValues: new { id });
             }
 
             // Apply template to all articles using this template - creates drafts
@@ -1122,34 +1121,31 @@ namespace Sky.Cms.Controllers
         {
             try
             {
-                var latestVersion = await dbContext.PageDesignVersions
-                    .Where(v => v.TemplateId == templateId)
-                    .OrderByDescending(v => v.Version)
-                    .FirstOrDefaultAsync();
-
-                if (latestVersion == null)
+                var editableResult = await mediator.SendAsync(new GetEditablePageDesignVersionCommand { TemplateId = templateId });
+                if (!editableResult.IsSuccess || editableResult.Data?.EditableVersion == null)
                 {
                     return Json(new
                     {
                         ServerSideSuccess = false,
                         Errors = new Dictionary<string, string[]>
                         {
-                            ["Payload"] = new[] { "Template version not found." }
+                            ["Payload"] = new[] { editableResult.ErrorMessage ?? "Template version not found." }
                         }
                     });
                 }
 
-                var finalTitle = string.IsNullOrWhiteSpace(title) ? latestVersion.Title : title;
+                var editableVersion = editableResult.Data.EditableVersion;
+                var finalTitle = string.IsNullOrWhiteSpace(title) ? editableVersion.Title : title;
 
                 var saveCommand = new SavePageDesignVersionCommand
                 {
-                    Id = latestVersion.Id,
+                    Id = editableVersion.Id,
                     Title = finalTitle,
-                    Description = latestVersion.Description,
+                    Description = editableVersion.Description,
                     Content = content,
-                    PageType = latestVersion.PageType,
-                    LayoutId = latestVersion.LayoutId,
-                    CommunityLayoutId = latestVersion.CommunityLayoutId
+                    PageType = editableVersion.PageType,
+                    LayoutId = editableVersion.LayoutId,
+                    CommunityLayoutId = editableVersion.CommunityLayoutId
                 };
 
                 var result = await mediator.SendAsync(saveCommand);
