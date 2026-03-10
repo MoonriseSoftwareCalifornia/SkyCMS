@@ -159,7 +159,8 @@ namespace Sky.Tests.Controllers
                 signInManager.Object,
                 emailSender.Object,
                 configuration.Object,
-                services.Object);
+                services.Object,
+                mockArticleHtmlService.Object);
 
             // Setup user context
             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]

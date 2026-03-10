@@ -517,7 +517,6 @@ namespace Sky.Tests.Security
                 Db,
                 UserManager,
                 Storage,
-                Logic,
                 EditorSettings,
                 ArticleHtmlService,
                 TemplateService,

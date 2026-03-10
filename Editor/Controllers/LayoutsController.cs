@@ -18,7 +18,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Cms.Data.Logic;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.EditorQueries;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
@@ -26,7 +26,6 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.AspNetCore.Mvc.ModelBinding;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
@@ -70,7 +69,7 @@ namespace Sky.Cms.Controllers
         private const string SortOrderDesc = "desc";
 
         private readonly ArticleEditLogic articleLogic;
-        private readonly CommonMediator articleQueries;
+        private readonly IMediator articleQueries;
         private readonly ApplicationDbContext dbContext;
         private readonly Uri blobPublicAbsoluteUrl;
         private readonly IViewRenderService viewRenderService;
@@ -99,7 +98,7 @@ namespace Sky.Cms.Controllers
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
             ArticleEditLogic articleLogic,
-            CommonMediator mediator,
+            IMediator mediator,
             IEditorSettings options,
             IStorageContext storageContext,
             IViewRenderService viewRenderService,

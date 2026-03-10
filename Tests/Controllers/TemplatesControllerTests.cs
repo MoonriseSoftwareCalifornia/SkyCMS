@@ -60,7 +60,6 @@ namespace Sky.Tests.Controllers
                 Db,
                 _mockUserManager.Object,
                 Storage,
-                Logic,
                 EditorSettings,
                 ArticleHtmlService,
                 TemplateService,

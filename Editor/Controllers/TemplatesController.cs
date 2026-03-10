@@ -20,7 +20,6 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.AspNetCore.Mvc.ModelBinding;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Cms.Models;
@@ -46,7 +45,6 @@ namespace Sky.Cms.Controllers
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
     public class TemplatesController : BaseController
     {
-        private readonly ArticleEditLogic articleLogic;
         private readonly ApplicationDbContext dbContext;
         private readonly IEditorSettings options;
         private readonly IStorageContext storageContext;
@@ -61,7 +59,6 @@ namespace Sky.Cms.Controllers
         /// <param name="dbContext">Database context.</param>
         /// <param name="userManager">User manager.</param>
         /// <param name="storageContext">Storage context service.</param>
-        /// <param name="articleLogic">Article edit logic.</param>
         /// <param name="options">Cosmos Options.</param>
         /// <param name="htmlService">HTML service.</param>
         /// <param name="templateServices">Template services.</param>
@@ -72,7 +69,6 @@ namespace Sky.Cms.Controllers
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
             IStorageContext storageContext,
-            ArticleEditLogic articleLogic,
             IEditorSettings options,
             IArticleHtmlService htmlService,
             ITemplateService templateServices,
@@ -82,7 +78,6 @@ namespace Sky.Cms.Controllers
             : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
             this.dbContext = dbContext;
-            this.articleLogic = articleLogic;
             this.options = options;
             this.storageContext = storageContext;
             this.htmlService = htmlService;
@@ -574,13 +569,55 @@ namespace Sky.Cms.Controllers
 
             var defaultLayout = await GetCurrentLayoutAsync();
             var config = new DesignerConfig(defaultLayout, id.ToString(), editableVersion.Title);
+
+            var assets = await FileManagerController.GetImageAssetArray(storageContext, "/pub", "/pub/articles");
+
+            if (assets != null)
+            {
+                config.ImageAssets.AddRange(assets);
+            }
+
+            var htmlContent = htmlService.EnsureEditableMarkers(editableVersion.Content);
+            return View(config);
+        }
+
+        /// <summary>
+        /// Gets designer for GrapeJS.
+        /// </summary>
+        /// <param name="id">Article number.</param>
+        /// <returns>IActionResult.</returns>
+        [HttpGet]
+        public async Task<IActionResult> GetDesignerData(Guid id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Loads GrapeJS.
+            ViewData["IsDesigner"] = true;
+
+            var editableCommand = new GetEditablePageDesignVersionCommand { TemplateId = id };
+            var editableResult = await mediator.SendAsync(editableCommand);
+
+            if (!editableResult.IsSuccess || editableResult.Data?.EditableVersion == null)
+            {
+                return NotFound();
+            }
+
+            var editableVersion = editableResult.Data.EditableVersion;
+
+            var defaultLayout = await GetCurrentLayoutAsync();
+            var config = new DesignerConfig(defaultLayout, id.ToString(), editableVersion.Title);
             var assets = await FileManagerController.GetImageAssetArray(storageContext, "/pub", "/pub/articles");
             if (assets != null)
             {
                 config.ImageAssets.AddRange(assets);
             }
 
-            return View(config);
+            var htmlContent = htmlService.EnsureEditableMarkers(editableVersion.Content);
+
+            return Json(new project(htmlContent));
         }
 
         /// <summary>

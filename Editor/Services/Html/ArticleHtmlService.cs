@@ -22,6 +22,11 @@ namespace Sky.Editor.Services.Html
         /// </summary>
         private const string UnmarkedEditableRegionsXPath = "//*[(@data-editor-config or @data-ccms-new or @data-ccms-enable-alt-editor or @data-ccms-ceid or @contenteditable) and (not(@data-ccms-ceid) or normalize-space(@data-ccms-ceid)='')]";
 
+        /// <summary>
+        /// XPath query to select all elements that are considered editable regions, defined as having either contenteditable='true' or a data-ccms-ceid attribute (regardless of its value).
+        /// </summary>
+        private const string EditableRegionsXPath = "//*[@contenteditable='true' or @data-ccms-ceid]";
+
         /// <inheritdoc />
         public string EnsureEditableMarkers(string html)
         {
@@ -45,7 +50,7 @@ namespace Sky.Editor.Services.Html
             {
                 var doc = new HtmlDocument();
                 doc.LoadHtml(html);
-                
+
                 // Use the same XPath logic as HasUnMarkedEditableRegions to ensure consistency
                 var editable = doc.DocumentNode.SelectNodes(UnmarkedEditableRegionsXPath)
                               ?? new HtmlNodeCollection(null);
@@ -181,6 +186,27 @@ namespace Sky.Editor.Services.Html
                 doc.LoadHtml(html);
                 var unmarked = doc.DocumentNode.SelectNodes(UnmarkedEditableRegionsXPath);
                 return unmarked != null && unmarked.Count > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool HasEditableRegions(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return false;
+            }
+
+            try
+            {
+                var doc = new HtmlDocument();
+                doc.LoadHtml(html);
+                var editable = doc.DocumentNode.SelectNodes("//*[@contenteditable='true' or @data-ccms-ceid]");
+                return editable != null && editable.Count > 0;
             }
             catch
             {

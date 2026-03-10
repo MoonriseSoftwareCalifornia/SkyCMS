@@ -9,7 +9,6 @@ namespace Sky.Cms.Controllers
 {
     using System;
     using System.Diagnostics;
-    using System.IO;
     using System.Linq;
     using System.Net;
     using System.Text;
@@ -17,7 +16,6 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
-    // using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
@@ -47,6 +45,7 @@ namespace Sky.Cms.Controllers
         private readonly EditorSettings options;
         private readonly ApplicationDbContext dbContext;
         private readonly UserManager<IdentityUser> userManager;
+        private readonly IArticleHtmlService articleHtmlService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeController"/> class.
@@ -60,6 +59,7 @@ namespace Sky.Cms.Controllers
         /// <param name="emailSender">Email service.</param>
         /// <param name="configuration">Website configuration.</param>
         /// <param name="services">Services provider.</param>
+        /// <param name="articleHtmlService">Article HTML service.</param>
         public HomeController(
             ILogger<HomeController> logger,
             IEditorSettings options,
@@ -69,13 +69,15 @@ namespace Sky.Cms.Controllers
             SignInManager<IdentityUser> signInManager,
             IEmailSender emailSender,
             IConfiguration configuration,
-            IServiceProvider services)
+            IServiceProvider services,
+            IArticleHtmlService articleHtmlService)
         {
             // This handles injection manually to make sure everything is setup.
             this.options = (EditorSettings)options;
             this.articleQueries = articleQueries;
             this.dbContext = dbContext;
             this.userManager = userManager;
+            this.articleHtmlService = articleHtmlService;
         }
 
         /// <summary>
@@ -109,7 +111,7 @@ namespace Sky.Cms.Controllers
                     ArticleNumber = s.ArticleNumber,
                     Published = s.Published,
                     VersionNumber = s.VersionNumber,
-                    UsesHtmlEditor = s.Content != null && (s.Content.ToLower().Contains(" editable=") || s.Content.ToLower().Contains(" data-ccms-ceid="))
+                    UsesHtmlEditor = articleHtmlService.HasEditableRegions(s.Content)
                 }).OrderByDescending(o => o.VersionNumber).Take(1).ToListAsync();
 
             return Json(data);

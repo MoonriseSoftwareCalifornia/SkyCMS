@@ -16,6 +16,7 @@
     var lastPublishedDateTimeOffset = (DateTimeOffset?)ViewData["LastPubDateTime"];
     var lastPublishedString = lastPublishedDateTimeOffset.HasValue ? "'" + lastPublishedDateTimeOffset.Value.ToString("u") + "'" : string.Empty;
     var editorPath = Context.Request.Path;
+    var enableHtmlEditor = (bool?)ViewData["EnableHtmlEditorMenuPick"] ?? false; // Only valid in Editor/Designer, not Editor/Edit, but putting here since menu is in _LayoutEditor
 }
 <!DOCTYPE HTML>
 <html>
@@ -103,15 +104,15 @@
                             <li id="btnSourceCode" style="display:none">
                                 <a class="dropdown-item" href="/Code/Index" title="Internal (non-public) file storage." target="_blank">Internal files</a>
                             </li>
-                            @if (isAuthor == false)
+                            <li id="btnCcmsCodeEditor" style="display:none">
+                                <a class="dropdown-item" onclick="bgEditClick('Code')">Code editor</a>
+                            </li>
+                            @if (enableHtmlEditor)
                             {
-                                <li id="btnCcmsCodeEditor" style="display:none">
-                                    <a class="dropdown-item" onclick="bgEditClick('Code')">Code editor</a>
+                                <li id="btnCcmsHtmlEditor" style="display:none">
+                                    <a class="dropdown-item" onclick="bgEditClick('Html')">HTML editor</a>
                                 </li>
                             }
-                            <li id="btnCcmsHtmlEditor" style="display:none">
-                                <a class="dropdown-item" onclick="bgEditClick('Html')">HTML editor</a>
-                            </li>
                             <li id="btnCcmsGrapesJsEditor" style="display:none">
                                 <a class="dropdown-item" onclick="bgEditClick('Designer')">Design editor</a>
                             </li>

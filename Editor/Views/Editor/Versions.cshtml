@@ -39,7 +39,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-6">
+            <div class="col">
                 <div class="btn-group" role="group" aria-label="Page Actions">
                     @if (!isReviewer)
                     {
@@ -48,16 +48,16 @@
                         <button id="btnClear" data-toggle="tooltip" data-placement="top" class="btn btn-sm btn-secondary" title="Clear selection." type="button" disabled>Clear</button>
                         @if (isAuthor == false)
                         {
-                            <a class='btn btn-sm btn-secondary' role="button" data-toggle="tooltip" data-placement="top" title='The designer lets you create web pages with a drag-and-drop interface, no coding needed.' href='/Editor/Designer/@articleNumber'><i class="fa-solid fa-wand-magic-sparkles"></i> Designer</a>
-                            <a class='btn btn-sm btn-secondary' role="button" data-toggle="tooltip" data-placement="top" title='The code editor is a browser-based code editor that powers Visual Studio Code.' href='/Editor/EditCode/@articleNumber'><i class="fa-solid fa-code"></i> Code</a>
+                            <a class='btn btn-sm btn-secondary' role="button" data-toggle="tooltip" data-placement="top" title='The designer lets you create web pages with a drag-and-drop interface, no coding needed.' href='/Editor/Designer/@articleNumber'><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a>
+                            <a class='btn btn-sm btn-secondary' role="button" data-toggle="tooltip" data-placement="top" title='The code editor is a browser-based code editor that powers Visual Studio Code.' href='/Editor/EditCode/@articleNumber'><i class='fa-solid fa-code me-2'></i> Code Editor</a>
                         }
                         @if (latestRow.UsesHtmlEditor)
                         {
-                            <a class='btn btn-sm btn-secondary' role="button" data-toggle="tooltip" data-placement="top" title="Create and edit web pages using a word processor like view, ensuring the final output matches the editing view." href='/Editor/Edit/@articleNumber'>HTML</a>
+                            <a class='btn btn-sm btn-secondary' role="button" data-toggle="tooltip" data-placement="top" title="Create and edit web pages using a word processor like view, ensuring the final output matches the editing view." href='/Editor/Edit/@articleNumber'><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a>
                         }
                         else
                         {
-                            <a class='btn btn-sm btn-secondary disabled' role="button" data-toggle="tooltip" data-placement="top" title="HTML editor not enabled for this page (see <a href='https://cosmos.moonrise.net/page_templates'>documentation</a> on how to enable)." aria-disabled="true">HTML</a>
+                            <a class='btn btn-sm btn-secondary disabled' role="button" data-toggle="tooltip" data-placement="top" title="HTML editor not enabled for this page (see <a href='https://cosmos.moonrise.net/page_templates'>documentation</a> on how to enable)." aria-disabled="true"><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a>
                         }
                         <a title="Return to page list" class="btn btn-sm btn-secondary" href="@Url.Action("Index")">Page list <i class="fa-solid fa-circle-arrow-right"></i></a>
                     }

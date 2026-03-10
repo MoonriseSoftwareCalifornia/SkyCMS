@@ -222,6 +222,8 @@ namespace Sky.Cms.Controllers
             {
                 ArticleNumber = article.ArticleNumber
             });
+            var htmlContent = htmlService.EnsureEditableMarkers(article.Content);
+            ViewData["EnableHtmlEditorMenuPick"] = htmlService.HasEditableRegions(htmlContent);
 
             var catalogEntry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
             {
@@ -248,8 +250,8 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Visual designer based on GrapeJS.
-        /// </param>
+        /// Gets designer for GrapeJS.
+        /// </summary>
         /// <param name="id">Article number.</param>
         /// <returns>IActionResult.</returns>
         [HttpGet]
@@ -264,6 +266,7 @@ namespace Sky.Cms.Controllers
             { 
                 ArticleNumber = id 
             });
+
             if (article == null)
             {
                 return NotFound();
@@ -1209,6 +1212,8 @@ namespace Sky.Cms.Controllers
             {
                 ArticleNumber = model.ArticleNumber
             });
+            var htmlContent = htmlService.EnsureEditableMarkers(model.Content);
+            ViewData["EnableHtmlEditorMenuPick"] = false; // Not needed because already in HTML editor.
 
             // Override defaults
             model.EditModeOn = true;
@@ -1470,6 +1475,8 @@ namespace Sky.Cms.Controllers
             {
                 ArticleNumber = article.ArticleNumber
             });
+            var htmlContent = htmlService.EnsureEditableMarkers(article.Content);
+            ViewData["EnableHtmlEditorMenuPick"] = htmlService.HasEditableRegions(htmlContent);
 
             var catalogEntry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
             {

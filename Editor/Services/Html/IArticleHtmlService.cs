@@ -49,5 +49,12 @@ namespace Sky.Editor.Services.Html
         /// <param name="html">HTML to check.</param>
         /// <returns>Indicates if the editable area is missing.</returns>
         bool HasUnMarkedEditableRegions(string html);
+
+        /// <summary>
+        /// Determines if there is an editable region with the required markers (contenteditable='true' and data-ccms-editable-id).
+        /// </summary>
+        /// <param name="html">HTML to check.</param>
+        /// <returns>Indicates if an editable region is present.</returns>
+        bool HasEditableRegions(string html);
     }
 }
