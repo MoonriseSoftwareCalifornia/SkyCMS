@@ -4,6 +4,8 @@
 // See https://github.com/CWALabs/SkyCMS
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
+using System.Text.RegularExpressions;
+using System.Threading.RateLimiting;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
 using Cosmos.BlobService;
@@ -22,8 +24,6 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Serialization;
-using System.Text.RegularExpressions;
-using System.Threading.RateLimiting;
 
 namespace Cosmos.Publisher.Boot
 {
@@ -103,8 +103,8 @@ namespace Cosmos.Publisher.Boot
             });
 
             builder.Services.AddScoped<IMediator, Mediator>();
-            builder.Services.AddScoped<IQueryHandler<GetPublishedPageByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, GetPublishedPageByUrlQueryHandler>();
-            builder.Services.AddScoped<IQueryHandler<GetPublishedPageHeaderByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, GetPublishedPageHeaderByUrlQueryHandler>();
+            builder.Services.AddScoped<IQueryHandler<GetPublishedPageByUrlQuery, Cosmos.Common.Models.ArticleViewModel>, GetPublishedPageByUrlQueryHandler>();
+            builder.Services.AddScoped<IQueryHandler<GetPublishedPageHeaderByUrlQuery, Cosmos.Common.Models.ArticleViewModel>, GetPublishedPageHeaderByUrlQueryHandler>();
             builder.Services.AddScoped<IQueryHandler<GetTableOfContentsQuery, Cosmos.Common.Models.TableOfContents>, GetTableOfContentsQueryHandler>();
             builder.Services.AddScoped<IQueryHandler<SearchPublishedArticlesQuery, System.Collections.Generic.List<Cosmos.Common.Models.TableOfContentsItem>>, SearchPublishedArticlesQueryHandler>();
 

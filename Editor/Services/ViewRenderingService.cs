@@ -47,8 +47,8 @@ namespace Sky.Cms.Services
     public class ViewRenderService : IViewRenderService
     {
         private readonly IRazorViewEngine razorViewEngine;
-        private readonly ITempDataProvider _tempDataProvider;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly ITempDataProvider tempDataProvider;
+        private readonly IServiceProvider serviceProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ViewRenderService"/> class.
@@ -62,8 +62,8 @@ namespace Sky.Cms.Services
             IServiceProvider serviceProvider)
         {
             this.razorViewEngine = razorViewEngine;
-            _tempDataProvider = tempDataProvider;
-            _serviceProvider = serviceProvider;
+            this.tempDataProvider = tempDataProvider;
+            this.serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Sky.Cms.Services
         /// <exception cref="ArgumentNullException">Null argument exception.</exception>
         public async Task<string> RenderToStringAsync(string viewPath, object model)
         {
-            var httpContext = new DefaultHttpContext { RequestServices = _serviceProvider };
+            var httpContext = new DefaultHttpContext { RequestServices = serviceProvider };
             var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
 
             using (var sw = new StringWriter())
@@ -96,7 +96,7 @@ namespace Sky.Cms.Services
                     actionContext,
                     viewResult.View,
                     viewDictionary,
-                    new TempDataDictionary(actionContext.HttpContext, _tempDataProvider),
+                    new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
                     sw,
                     new HtmlHelperOptions()
                 );

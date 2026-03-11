@@ -103,6 +103,7 @@ namespace Sky.Editor.Features.Templates.Publishing
 
                 // Mark the version as published
                 pageDesignVersion.Published = now;
+                pageDesignVersion.Modified = now;
 
                 // Update the Template entity with the published content
                 template.LayoutId = pageDesignVersion.LayoutId;
@@ -112,12 +113,36 @@ namespace Sky.Editor.Features.Templates.Publishing
                 template.Content = pageDesignVersion.Content;
                 template.PageType = pageDesignVersion.PageType;
 
+                var latestVersionNumber = await dbContext.PageDesignVersions
+                    .Where(v => v.TemplateId == pageDesignVersion.TemplateId)
+                    .OrderByDescending(v => v.Version)
+                    .Select(v => v.Version)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                var nextEditableVersion = new PageDesignVersion
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = template.Id,
+                    LayoutId = template.LayoutId,
+                    CommunityLayoutId = template.CommunityLayoutId,
+                    Version = latestVersionNumber + 1,
+                    Title = template.Title,
+                    Description = template.Description,
+                    Content = template.Content,
+                    PageType = template.PageType,
+                    Published = null,
+                    Modified = now
+                };
+
+                dbContext.PageDesignVersions.Add(nextEditableVersion);
+
                 await dbContext.SaveChangesAsync(cancellationToken);
 
                 logger.LogInformation(
-                    "Published page design version {Version} for template {TemplateId}",
+                    "Published page design version {Version} for template {TemplateId} and created editable version {NextVersion}",
                     pageDesignVersion.Version,
-                    template.Id);
+                    template.Id,
+                    nextEditableVersion.Version);
 
                 // Update all articles that use this template
                 await UpdateAllArticlesWithTemplate(template.Id, template.Content, command.UserId, cancellationToken);

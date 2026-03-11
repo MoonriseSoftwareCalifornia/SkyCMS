@@ -16,6 +16,7 @@ namespace Sky.Editor.Tests.Features.Templates
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Templates.Create;
+    using Sky.Editor.Features.Templates.GetEditable;
     using Sky.Editor.Features.Templates.Publishing;
     using Sky.Editor.Features.Templates.Save;
     using Sky.Tests;
@@ -30,6 +31,7 @@ namespace Sky.Editor.Tests.Features.Templates
         private CreatePageDesignVersionHandler createHandler = null!;
         private SavePageDesignVersionHandler saveHandler = null!;
         private PublishPageDesignVersionHandler publishHandler = null!;
+        private GetEditablePageDesignVersionHandler getEditableHandler = null!;
         private Template testTemplate = null!;
 
         protected override void AfterInitialize()
@@ -53,6 +55,12 @@ namespace Sky.Editor.Tests.Features.Templates
                 Clock,
                 new NullLogger<PublishPageDesignVersionHandler>(),
                 Mediator);
+
+            getEditableHandler = new GetEditablePageDesignVersionHandler(
+                Db,
+                ArticleHtmlService,
+                Clock,
+                new NullLogger<GetEditablePageDesignVersionHandler>());
 
             // Seed a test template
             testTemplate = new Template
@@ -429,6 +437,141 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.IsTrue(result.IsSuccess);
             Assert.IsTrue(result.Data.Content.Contains("data-ccms-ceid"), 
                 "Should add editable markers");
+        }
+
+        /// <summary>
+        /// Tests that GetEditablePageDesignVersion returns the latest unpublished version.
+        /// </summary>
+        [TestMethod]
+        public async Task GetEditablePageDesignVersion_Should_ReturnLatestEditableVersion()
+        {
+            // Arrange
+            Db.PageDesignVersions.AddRange(
+                new PageDesignVersion
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = testTemplate.Id,
+                    Version = 1,
+                    Title = "Published",
+                    Content = "<div>Published</div>",
+                    PageType = "test-page",
+                    Published = DateTimeOffset.UtcNow.AddHours(-2)
+                },
+                new PageDesignVersion
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = testTemplate.Id,
+                    Version = 2,
+                    Title = "Draft v2",
+                    Content = "<div>Draft 2</div>",
+                    PageType = "test-page",
+                    Published = null
+                },
+                new PageDesignVersion
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = testTemplate.Id,
+                    Version = 3,
+                    Title = "Draft v3",
+                    Content = "<div>Draft 3</div>",
+                    PageType = "test-page",
+                    Published = null
+                });
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await getEditableHandler.HandleAsync(new GetEditablePageDesignVersionCommand
+            {
+                TemplateId = testTemplate.Id
+            });
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess);
+            Assert.IsNotNull(result.Data);
+            Assert.AreEqual(3, result.Data.EditableVersion.Version);
+            Assert.AreEqual("Draft v3", result.Data.EditableVersion.Title);
+            Assert.IsNull(result.Data.EditableVersion.Published);
+        }
+
+        /// <summary>
+        /// Tests that GetEditablePageDesignVersion creates a new editable version from template when none exists.
+        /// </summary>
+        [TestMethod]
+        public async Task GetEditablePageDesignVersion_Should_CreateEditableVersion_WhenNoneExists()
+        {
+            // Arrange
+            Db.PageDesignVersions.Add(new PageDesignVersion
+            {
+                Id = Guid.NewGuid(),
+                TemplateId = testTemplate.Id,
+                Version = 1,
+                Title = "Published v1",
+                Description = "Published",
+                Content = "<div data-ccms-ceid=\"test-region\">Published Content</div>",
+                PageType = "test-page",
+                Published = DateTimeOffset.UtcNow.AddDays(-1)
+            });
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await getEditableHandler.HandleAsync(new GetEditablePageDesignVersionCommand
+            {
+                TemplateId = testTemplate.Id
+            });
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess);
+            Assert.IsNotNull(result.Data?.EditableVersion);
+            Assert.AreEqual(2, result.Data.EditableVersion.Version);
+            Assert.IsNull(result.Data.EditableVersion.Published);
+            Assert.AreEqual(testTemplate.Title, result.Data.EditableVersion.Title);
+            Assert.AreEqual(testTemplate.Description, result.Data.EditableVersion.Description);
+            Assert.AreEqual(testTemplate.Content, result.Data.EditableVersion.Content);
+        }
+
+        /// <summary>
+        /// Tests that PublishPageDesignVersion creates a new editable version after publish.
+        /// </summary>
+        [TestMethod]
+        public async Task PublishPageDesignVersion_Should_CreateNewEditableVersion_AfterPublish()
+        {
+            // Arrange
+            var editableVersion = new PageDesignVersion
+            {
+                Id = Guid.NewGuid(),
+                TemplateId = testTemplate.Id,
+                Version = 1,
+                Title = "Editable v1",
+                Description = "Editable",
+                Content = "<div data-ccms-ceid=\"test-region\">Editable Content</div>",
+                PageType = "test-page",
+                LayoutId = testTemplate.LayoutId,
+                Published = null
+            };
+            Db.PageDesignVersions.Add(editableVersion);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await publishHandler.HandleAsync(new PublishPageDesignVersionCommand
+            {
+                Id = editableVersion.Id,
+                UserId = TestUserId
+            });
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess);
+
+            var versions = await Db.PageDesignVersions
+                .Where(v => v.TemplateId == testTemplate.Id)
+                .OrderBy(v => v.Version)
+                .ToListAsync();
+
+            Assert.AreEqual(2, versions.Count, "Should have original published version plus new editable version");
+            Assert.IsNotNull(versions[0].Published, "Published version should have Published timestamp");
+            Assert.IsNull(versions[1].Published, "New editable version should be unpublished");
+            Assert.AreEqual(2, versions[1].Version);
+            Assert.AreEqual(versions[0].Content, versions[1].Content);
+            Assert.AreEqual(versions[0].Title, versions[1].Title);
         }
     }
 }

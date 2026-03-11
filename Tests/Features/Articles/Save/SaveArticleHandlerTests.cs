@@ -358,6 +358,67 @@ namespace Sky.Tests.Features.Articles.Save
             StringAssert.Contains(finalArticle.Content, "Second content",
                 "Content should match last update");
         }
+
+        /// <summary>
+        /// Tests that HandleAsync_WithEmptyIntroduction_ClearsExistingIntroduction.
+        /// </summary>
+        [TestMethod]
+        public async Task HandleAsync_WithEmptyIntroduction_ClearsExistingIntroduction()
+        {
+            // Arrange
+            var article = await SeedArticleAsync("Intro Test", 1, published: false);
+            article.Introduction = "Existing introduction";
+            await DbContext.SaveChangesAsync();
+
+            var command = new SaveArticleCommand
+            {
+                ArticleNumber = 1,
+                Title = "Intro Test",
+                Content = article.Content,
+                Introduction = string.Empty,
+                UserId = Guid.NewGuid(),
+                ArticleType = ArticleType.General
+            };
+
+            // Act
+            var result = await _handler.HandleAsync(command);
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess, "Save should succeed");
+
+            var updatedArticle = await DbContext.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == 1);
+            Assert.IsNotNull(updatedArticle);
+            Assert.AreEqual(string.Empty, updatedArticle.Introduction);
+        }
+
+        /// <summary>
+        /// Tests that HandleAsync_WithNullContent_DoesNotFailValidation.
+        /// </summary>
+        [TestMethod]
+        public async Task HandleAsync_WithNullContent_DoesNotFailValidation()
+        {
+            // Arrange
+            var article = await SeedArticleAsync("Null Content Test", 1, published: false);
+
+            var command = new SaveArticleCommand
+            {
+                ArticleNumber = 1,
+                Title = "Null Content Test",
+                Content = null!,
+                UserId = Guid.NewGuid(),
+                ArticleType = ArticleType.General
+            };
+
+            // Act
+            var result = await _handler.HandleAsync(command);
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess, "Save should succeed when Content is null");
+
+            var updatedArticle = await DbContext.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == 1);
+            Assert.IsNotNull(updatedArticle);
+            Assert.IsNotNull(updatedArticle.Content);
+        }
     }
 }
 

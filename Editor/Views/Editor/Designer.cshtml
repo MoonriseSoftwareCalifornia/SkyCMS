@@ -6,23 +6,21 @@
     var designerConfig = (Sky.Editor.Models.GrapesJs.DesignerConfig)ViewData["DesignerConfig"];
 }
 
-<form id="frmSave" asp-action="DesignerData" asp-controller="Editor" method="post">
+<form id="frmSave" asp-action="Edit" asp-controller="Editor" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Command" value="SaveDesigner" />
     <input type="hidden" asp-for="Id" value="@Model.Id" />
     <input type="hidden" asp-for="Title" value="@Model.Title" />
-    <input type="hidden" asp-for="HtmlContent" />
+    <input type="hidden" id="Payload" name="Payload" value="" />
     <input type="hidden" asp-for="CssContent" />
-    <input type="hidden" asp-for="SaveAsNewVersion" />
     <input type="hidden" asp-for="VersionNumber" />
     <input type="hidden" asp-for="ArticleNumber" />
-    <input type="hidden" asp-for="Published" />
-    <input type="hidden" asp-for="Updated" />
-    <input type="hidden" asp-for="RoleList" />
     <input type="hidden" asp-for="UrlPath" />
-    <input type="hidden" asp-for="IsValid" />
-    <input type="hidden" asp-for="EditorType" />
-    <input type="hidden" asp-for="UpdateExisting" />
     <input type="hidden" asp-for="BannerImage" />
 </form>
+
+<!-- Include shared editor infrastructure -->
+<partial name="_EditorCommonScripts" />
 
 <script>
     /*
@@ -42,12 +40,11 @@
 
     // Activated from _LayoutEditor.cshtml in multiple locations;
     async function saveChanges() {
-        await editor.store();
-
-        if (next !== null && typeof next  === 'function') {
-            next();
-            next = null;
+        if (EditorSaveService.state.saveInProgress === true) {
+            return;
         }
+
+        await editor.store();
     }
 
     $("#frmSave").submit(function(event) {
@@ -81,7 +78,7 @@
             $(".perm").show();
         }
 
-        checkDisplayLiveEditorButton("HtmlContent");
+        checkDisplayLiveEditorButton("Payload");
     });
 
     $(document).on("unload", function () {
@@ -101,7 +98,6 @@
     const cosmos__designerAssetsEndPoint = "/pub/articles/" + cosmos__id;
     const cosmos__designerAssetsExclude = "";
     const cosmos__designerDataEndpoint = "/Editor/GetDesignerData";
-    const cosmos__designerPostEndpoint = "/Editor/Designer";
     const cosmos__designerUploadEndpoint = "/FileManager/SimpleUpload?id=" + cosmos__id + "&entityType=articles&editorType=grapesjs";
 
     let grapesjs__canvas__styles = @Html.Raw(JsonConvert.SerializeObject(designerConfig.Styles));

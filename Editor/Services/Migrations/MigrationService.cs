@@ -28,8 +28,8 @@ namespace Sky.Editor.Services.Migrations
     /// </remarks>
     public class MigrationService
     {
-        private readonly ILogger<MigrationService> _logger;
-        private readonly List<IMigration> _migrations;
+        private readonly ILogger<MigrationService> logger;
+        private readonly List<IMigration> migrations;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MigrationService"/> class.
@@ -37,8 +37,8 @@ namespace Sky.Editor.Services.Migrations
         /// <param name="logger">Logger for diagnostic output.</param>
         public MigrationService(ILogger<MigrationService> logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _migrations = DiscoverMigrations();
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            migrations = DiscoverMigrations();
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Sky.Editor.Services.Migrations
         /// <returns>Task representing the asynchronous operation.</returns>
         public async Task RunMigrationsAsync(MigrationContext context)
         {
-            _logger.LogInformation("🔄 Starting custom migration discovery and execution");
+            logger.LogInformation("🔄 Starting custom migration discovery and execution");
 
             try
             {
@@ -103,31 +103,31 @@ namespace Sky.Editor.Services.Migrations
                 
                 if (isBrandNewDatabase)
                 {
-                    _logger.LogInformation("📦 Brand new database detected - bootstrapping with EnsureCreated");
+                    logger.LogInformation("📦 Brand new database detected - bootstrapping with EnsureCreated");
                     
                     // Create complete schema from current DbContext model
                     await context.DbContext.Database.EnsureCreatedAsync();
-                    _logger.LogInformation("✅ Database schema created");
+                    logger.LogInformation("✅ Database schema created");
                     
                     // Record virtual "000" migration as the bootstrap marker
                     await RecordVirtualInitialMigrationAsync(context);
                     
                     // Mark ALL currently discovered migrations as applied
                     // (their changes are included in the EnsureCreated schema)
-                    _logger.LogInformation("📝 Marking {Count} existing migration(s) as pre-applied", _migrations.Count);
+                    logger.LogInformation("📝 Marking {Count} existing migration(s) as pre-applied", migrations.Count);
                     
-                    foreach (var migration in _migrations.OrderBy(m => m.MigrationId))
+                    foreach (var migration in migrations.OrderBy(m => m.MigrationId))
                     {
                         await RecordMigrationAsync(context, migration);
-                        _logger.LogInformation("   ✓ Pre-recorded migration {Id}", migration.MigrationId);
+                        logger.LogInformation("   ✓ Pre-recorded migration {Id}", migration.MigrationId);
                     }
                     
-                    _logger.LogInformation("✅ Initial schema setup complete");
+                    logger.LogInformation("✅ Initial schema setup complete");
                     return;
                 }
                 
                 // Existing database - run normal migration flow
-                _logger.LogInformation("🔍 Existing database detected - checking for pending migrations");
+                logger.LogInformation("🔍 Existing database detected - checking for pending migrations");
                 
                 // Ensure migration history table exists
                 await EnsureMigrationHistoryTableAsync(context);
@@ -136,29 +136,29 @@ namespace Sky.Editor.Services.Migrations
                 var appliedMigrations = await GetAppliedMigrationsAsync(context);
                 
                 // Get pending migrations
-                var pendingMigrations = _migrations
+                var pendingMigrations = migrations
                     .Where(m => !appliedMigrations.Contains(m.MigrationId))
                     .OrderBy(m => m.MigrationId)
                     .ToList();
 
                 if (!pendingMigrations.Any())
                 {
-                    _logger.LogInformation("✅ All custom migrations are up to date");
+                    logger.LogInformation("✅ All custom migrations are up to date");
                     return;
                 }
 
-                _logger.LogInformation("📋 Found {Count} pending migration(s) to apply", pendingMigrations.Count);
+                logger.LogInformation("📋 Found {Count} pending migration(s) to apply", pendingMigrations.Count);
 
                 foreach (var migration in pendingMigrations)
                 {
                     await ApplyMigrationAsync(context, migration);
                 }
 
-                _logger.LogInformation("✅ All custom migrations completed successfully");
+                logger.LogInformation("✅ All custom migrations completed successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Custom migration execution failed");
+                logger.LogError(ex, "❌ Custom migration execution failed");
                 throw;
             }
         }
@@ -168,7 +168,7 @@ namespace Sky.Editor.Services.Migrations
         /// </summary>
         private async Task ApplyMigrationAsync(MigrationContext context, IMigration migration)
         {
-            _logger.LogInformation("Applying migration {Id}: {Description}", 
+            logger.LogInformation("Applying migration {Id}: {Description}", 
                 migration.MigrationId, migration.Description);
 
             try
@@ -177,7 +177,7 @@ namespace Sky.Editor.Services.Migrations
                 bool isAlreadyApplied = await migration.IsAppliedAsync(context);
                 if (isAlreadyApplied)
                 {
-                    _logger.LogInformation(
+                    logger.LogInformation(
                         "⚠️ Migration {Id} appears to be already applied at schema level - skipping execution but recording it",
                         migration.MigrationId);
                     await RecordMigrationAsync(context, migration);
@@ -187,12 +187,12 @@ namespace Sky.Editor.Services.Migrations
                 await migration.ApplyAsync(context);
                 await RecordMigrationAsync(context, migration);
 
-                _logger.LogInformation("✅ Migration {Id} completed successfully", 
+                logger.LogInformation("✅ Migration {Id} completed successfully", 
                     migration.MigrationId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, 
+                logger.LogError(ex, 
                     "❌ Migration {Id} failed: {Message}", 
                     migration.MigrationId, ex.Message);
                 throw new InvalidOperationException(
@@ -233,12 +233,12 @@ namespace Sky.Editor.Services.Migrations
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to instantiate migration type: {TypeName}", type.Name);
+                    logger.LogWarning(ex, "Failed to instantiate migration type: {TypeName}", type.Name);
                     throw; // Re-throw to ensure validation failures are not silently ignored
                 }
             }
 
-            _logger.LogDebug("Discovered {Count} migration(s)", migrations.Count);
+            logger.LogDebug("Discovered {Count} migration(s)", migrations.Count);
             return migrations.OrderBy(m => m.MigrationId).ToList();
         }
 
@@ -340,7 +340,7 @@ namespace Sky.Editor.Services.Migrations
                 catch (Exception ex)
                 {
                     // Container might not exist yet - that's okay
-                    _logger.LogDebug(ex, "MigrationHistory container not found or query failed - assuming no migrations applied");
+                    logger.LogDebug(ex, "MigrationHistory container not found or query failed - assuming no migrations applied");
                     return new HashSet<string>();
                 }
             }
@@ -378,14 +378,14 @@ namespace Sky.Editor.Services.Migrations
                         }
                         else
                         {
-                            _logger.LogWarning("Found migration record with NULL MigrationId - skipping");
+                            logger.LogWarning("Found migration record with NULL MigrationId - skipping");
                         }
                     }
                 }
                 catch (DbException)
                 {
                     // Table might not exist yet - that's okay
-                    _logger.LogDebug("MigrationHistory table not found or query failed - assuming no migrations applied");
+                    logger.LogDebug("MigrationHistory table not found or query failed - assuming no migrations applied");
                 }
 
                 return applied;
@@ -570,13 +570,13 @@ namespace Sky.Editor.Services.Migrations
                 var result = await command.ExecuteScalarAsync();
                 var tableCount = Convert.ToInt32(result);
                 
-                _logger.LogDebug("Layouts table existence check: {Count} table(s) found", tableCount);
+                logger.LogDebug("Layouts table existence check: {Count} table(s) found", tableCount);
                 
                 return tableCount == 0; // Brand new if Layouts table doesn't exist
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Error checking for Layouts table - assuming brand new database");
+                logger.LogDebug(ex, "Error checking for Layouts table - assuming brand new database");
                 return true; // If we can't check, assume it's new
             }
             finally

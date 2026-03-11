@@ -25,14 +25,14 @@ namespace Sky.Editor.Domain.Events.Handlers
     /// </remarks>
     public sealed class RedirectCreatedEventHandler : IDomainEventHandler<RedirectCreatedEvent>
     {
-        private readonly ILogger<RedirectCreatedEventHandler> _logger;
+        private readonly ILogger<RedirectCreatedEventHandler> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RedirectCreatedEventHandler"/> class.
         /// </summary>
         /// <param name="logger">Typed logger used to emit structured diagnostics for redirect creation events.</param>
         public RedirectCreatedEventHandler(ILogger<RedirectCreatedEventHandler> logger) =>
-            _logger = logger;
+            this.logger = logger;
 
         /// <summary>
         /// Handles the redirect creation event (no cancellation token overload).
@@ -59,7 +59,7 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// </remarks>
         public Task HandleAsync(RedirectCreatedEvent @event, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Redirect created: {From} -> {To}", @event.FromSlug, @event.ToSlug);
+            logger.LogInformation("Redirect created: {From} -> {To}", @event.FromSlug, @event.ToSlug);
             return Task.CompletedTask;
         }
     }

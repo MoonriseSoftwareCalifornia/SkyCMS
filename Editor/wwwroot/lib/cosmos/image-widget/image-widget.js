@@ -30,6 +30,14 @@
  *         data-ccms-ceid="img-123"
  *         data-ccms-enable-alt-editor="true"></div>
  * 
+ * 5. Disable the default save function.
+ *    Do prevent the widget from automatically triggering the default save after upload,
+ *    add data-ccms-disable-save="true" to the widget container.
+ *    Example:
+ *    <div data-editor-config="image-widget"
+ *         data-ccms-ceid="img-123"
+ *         data-ccms-disable-save="true"></div>
+ * 
  * CONFIGURATION:
  * - Upload endpoint: /FileManager/UploadImage
  * - Image library endpoint: /FileManager/GetImageAssets
@@ -66,13 +74,13 @@
  *         - type: 'uploaded' or 'deleted'
  *         - id: widget id (data-ccms-ceid)
  *         - element: widget container HTMLElement
- *         - imageSrc: image src (for uploaded), undefined for deleted
+ *         - imageSrc: image src (for uploaded), '' for deleted
  *   - Example usage:
  *       window.CCMSImageWidgetEvents.on('imageChanged', function(info) {
  *           // info.type: 'uploaded' or 'deleted'
  *           // info.id: widget id
  *           // info.element: widget container
- *           // info.imageSrc: image src (for uploaded), undefined for deleted
+ *           // info.imageSrc: image src (for uploaded), '' for deleted
  *           // Your custom logic here
  *       });
  */
@@ -610,6 +618,9 @@ async function ccms___showImageLibrary(widgetContainer, onSelect) {
 // ============================================================================
 window.CCMSImageWidgetEvents = (function () {
     const listeners = {};
+
+    const noop = function () { };
+
     return {
         on: function (event, callback) {
             if (!listeners[event]) listeners[event] = [];
@@ -622,9 +633,27 @@ window.CCMSImageWidgetEvents = (function () {
         trigger: function (event, data) {
             if (!listeners[event]) return;
             listeners[event].forEach(cb => cb(data));
+        },
+        onImageChanged: function (callback) {
+            if (typeof callback !== 'function') {
+                return noop;
+            }
+
+            this.on('imageChanged', callback);
+            return () => this.off('imageChanged', callback);
         }
     };
 })();
+
+if (typeof window !== 'undefined') {
+    window.ccmsOnImageChanged = function (callback) {
+        if (!window.CCMSImageWidgetEvents || typeof window.CCMSImageWidgetEvents.onImageChanged !== 'function') {
+            return function () { };
+        }
+
+        return window.CCMSImageWidgetEvents.onImageChanged(callback);
+    };
+}
 
 // ============================================================================
 // TRASH CAN AND ACTION BUTTONS
@@ -648,7 +677,7 @@ function ccms___onClickTrashCan(id, element) {
         type: 'deleted',
         id,
         element,
-        imageSrc: undefined
+        imageSrc: ''
     });
 
     // Reinitialize the upload widget
@@ -1021,9 +1050,10 @@ function ccms___initializePond(element) {
             }
 
             // Save image widget inner html.
+            const disableDefaultSave = element.getAttribute('data-ccms-disable-save') === 'true';
             const editorId = element.getAttribute('data-ccms-ceid');
             const html = element.innerHTML;
-            if (typeof parent !== 'undefined' && typeof parent.saveEditorRegion !== 'undefined') {
+            if (!disableDefaultSave && typeof parent !== 'undefined' && typeof parent.saveEditorRegion !== 'undefined') {
                 parent.saveEditorRegion(html, editorId);
             }
         });
@@ -1179,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // FilePond.registerPlugin(FilePondPluginFileMetadata);
 
     // Find and initialize all image widgets on the page
-    const imageContainers = document.querySelectorAll('div[data-editor-config="image-widget"]');
+    const imageContainers = document.querySelectorAll('[data-editor-config="image-widget"]');
     console.log(`Found ${imageContainers.length} image widget(s) to initialize`);
 
     imageContainers.forEach(ccms___setupImageWidget);

@@ -78,18 +78,6 @@ namespace Sky.Editor.Features.Blogs.CreatePost
                 return CommandResult<CreateBlogPostCommandResult>.Failure("Blog post title is required.");
             }
 
-            if (string.IsNullOrWhiteSpace(command.Content))
-            {
-                logger.LogWarning("CreateBlogPost called with empty Content");
-                return CommandResult<CreateBlogPostCommandResult>.Failure("Blog post content is required.");
-            }
-
-            if (command.TemplateId == Guid.Empty)
-            {
-                logger.LogWarning("CreateBlogPost called with empty TemplateId");
-                return CommandResult<CreateBlogPostCommandResult>.Failure("Template ID is required.");
-            }
-
             try
             {
                 // Verify the parent blog stream exists

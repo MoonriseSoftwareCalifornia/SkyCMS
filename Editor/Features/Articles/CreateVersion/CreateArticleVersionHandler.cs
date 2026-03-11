@@ -25,7 +25,6 @@ namespace Sky.Editor.Features.Articles.CreateVersion
     public class CreateArticleVersionHandler : ICommandHandler<CreateArticleVersionCommand, CommandResult<CreateArticleVersionCommandResult>>
     {
         private readonly ApplicationDbContext dbContext;
-        private readonly ArticleLogic articleLogic;
         private readonly ILogger<CreateArticleVersionHandler> logger;
 
         /// <summary>
@@ -33,11 +32,9 @@ namespace Sky.Editor.Features.Articles.CreateVersion
         /// </summary>
         public CreateArticleVersionHandler(
             ApplicationDbContext dbContext,
-            ArticleLogic articleLogic,
             ILogger<CreateArticleVersionHandler> logger)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            this.articleLogic = articleLogic ?? throw new ArgumentNullException(nameof(articleLogic));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 

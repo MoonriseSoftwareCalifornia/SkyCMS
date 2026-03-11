@@ -74,7 +74,7 @@ namespace Cosmos.Common.Features.Blogs.EditorQueries
         /// Gets or sets all posts in the stream (if requested).
         /// Useful for breadcrumbs or complete navigation menus.
         /// </summary>
-        public List<BlogPostNavigationItem> AllPosts { get; set; } = new();
+        public List<BlogPostNavigationItem> AllPosts { get; set; } = new ();
 
         /// <summary>
         /// Gets or sets the current post position in the stream (1-based index).

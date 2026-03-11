@@ -111,7 +111,7 @@ namespace Sky.Editor.Models.Blogs
         /// <summary>
         /// Gets or sets the list of entries belonging to the stream.
         /// </summary>
-        public List<BlogEntryListItem> Entries { get; set; } = new();
+        public List<BlogEntryListItem> Entries { get; set; } = new ();
     }
 
     /// <summary>

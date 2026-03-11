@@ -9,10 +9,10 @@ namespace Sky.Editor.Features.Articles.Delete
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
-    using Cosmos.BlobService;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.EditorSettings;

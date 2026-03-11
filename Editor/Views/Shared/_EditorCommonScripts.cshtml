@@ -1,0 +1,27 @@
+<!-- Shared scripts and utilities for all editors -->
+<script asp-append-version="true" src="~/js/editor/editor-save-service.js"></script>
+
+<script>
+    // Global UI callbacks - can be overridden per editor
+    const EditorUI = {
+        saving() {
+            if (typeof showSaving === 'function') {
+                showSaving();
+            }
+        },
+
+        doneSaving() {
+            if (typeof doneSaving === 'function') {
+                doneSaving();
+            }
+        },
+
+        showError(message) {
+            EditorSaveService.handleSaveError(message, { modalId: "modalSavingError" });
+        },
+
+        handleResponse(response, callbacks) {
+            return EditorSaveService.handleSaveResponse(response, callbacks);
+        }
+    };
+</script>

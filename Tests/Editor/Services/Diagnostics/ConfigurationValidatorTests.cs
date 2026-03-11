@@ -10,6 +10,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
     using System.IO;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
@@ -30,7 +31,8 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         private Mock<IConfiguration>? configMock;
         private Mock<ILogger<ConfigurationValidator>>? loggerMock;
-        private ConfigurationValidator? validator;
+
+        private ConfigurationValidator validator;
 
         [TestInitialize]
         public void Setup()

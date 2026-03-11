@@ -12,17 +12,13 @@ using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using System.Web;
-using AspNetCore.Identity.FlexDb;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
 using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common;
 using Cosmos.Common.Data;
-using Cosmos.Common.Features.Articles.EditorQueries;
 using Cosmos.Common.Features.Articles.Shared;
-using Cosmos.Common.Features.Shared;
-using Cosmos.Common.Models;
 using Cosmos.Common.Services;
 using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.Common.Services.Configurations;
@@ -37,7 +33,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -53,21 +48,7 @@ using Sky.Cms.Services;
 using Sky.Editor.Boot;
 using Sky.Editor.Data.Logic;
 using Sky.Editor.Domain.Events;
-using Sky.Editor.Features.Articles.Create;
-using Sky.Editor.Features.Articles.Save;
-using Sky.Editor.Features.Blogs.CreatePost;
-using Sky.Editor.Features.Blogs.DeletePost;
-using Sky.Editor.Features.Blogs.DeleteStream;
-using Sky.Editor.Features.Blogs.UpdatePost;
-using Sky.Editor.Features.Blogs.UpdateStream;
-using Sky.Editor.Features.Shared;
-using Sky.Editor.Features.Templates.Create;
-using Sky.Editor.Features.Templates.Delete;
-using Sky.Editor.Features.Templates.Get;
-using Sky.Editor.Features.Templates.GetList;
-using Sky.Editor.Features.Templates.Publishing;
-using Sky.Editor.Features.Templates.Save;
-using Sky.Editor.Features.Templates.UpdateMetadata;
+using Sky.Editor.Extensions;
 using Sky.Editor.Hubs;
 using Sky.Editor.Infrastructure.SignalR;
 using Sky.Editor.Infrastructure.Time;
@@ -82,7 +63,6 @@ using Sky.Editor.Services.Html;
 using Sky.Editor.Services.Layout;
 using Sky.Editor.Services.Layouts;
 using Sky.Editor.Services.Migrations;
-using Sky.Editor.Services.Migrations.Core;
 using Sky.Editor.Services.Publishing;
 using Sky.Editor.Services.Redirects;
 using Sky.Editor.Services.ReservedPaths;
@@ -248,247 +228,16 @@ if (enableDiagnostics)
 builder.Services.Configure<ProxySettings>(builder.Configuration.GetSection("ProxySettings"));
 if (allowSetup)
 {
-    if (!isMultiTenantEditor)
+    var migrationSummary = await StartupMigrationService.RunMigrationsAsync(
+        builder.Configuration,
+        isMultiTenantEditor);
+
+    migrationSummary.LogResults();
+
+    // Halt startup if single-tenant migration failed (multi-tenant continues)
+    if (!migrationSummary.IsSuccess && !isMultiTenantEditor)
     {
-        // ============================================================
-        // SINGLE-TENANT MODE: Migrate single database
-        // ============================================================
-        System.Console.WriteLine("🔄 Running custom migration service (single-tenant mode)...");
-
-        var connectionString = builder.Configuration.GetConnectionString(CONNECTIONSTRING_APP_DB);
-
-        if (!string.IsNullOrWhiteSpace(connectionString))
-        {
-            try
-            {
-                // Create logger for migration service
-                var loggerFactory = LoggerFactory.Create(config => config.AddConsole());
-                var migrationLogger = loggerFactory.CreateLogger<MigrationService>();
-
-                // Determine database provider using existing CosmosDbOptionsBuilder strategies
-                // This reuses the same provider detection logic used for DbContext configuration
-                var provider = MigrationService.DetermineProvider(connectionString);
-                System.Console.WriteLine($"   Detected provider: {provider}");
-
-                // Create temporary service scope for migration
-                var tempServices = new ServiceCollection();
-                tempServices.AddLogging(config => config.AddConsole());
-
-                // Configure DbContext using existing infrastructure
-                tempServices.AddDbContext<ApplicationDbContext>(options =>
-                {
-                    CosmosDbOptionsBuilder.ConfigureDbOptions(options, connectionString);
-                });
-
-                var tempServiceProvider = tempServices.BuildServiceProvider();
-
-                // Phase 1: Run schema migrations (M001_AddLayoutNumber, etc.)
-                using (var scope = tempServiceProvider.CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-                    // Create migration context
-                    var migrationContext = new MigrationContext
-                    {
-                        DbContext = dbContext,
-                        Provider = provider,
-                        ConnectionString = connectionString,
-                        Logger = migrationLogger,
-                        ServiceProvider = scope.ServiceProvider
-                    };
-
-                    // Run custom schema migrations
-                    var migrationService = new MigrationService(migrationLogger);
-                    await migrationService.RunMigrationsAsync(migrationContext);
-
-                    System.Console.WriteLine("✅ Custom schema migrations completed successfully");
-                }
-
-                // Phase 2: Run data migrations (LayoutMigrationService)
-                System.Console.WriteLine("🔄 Checking for layout versioning data migration...");
-
-                using (var scope = tempServiceProvider.CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                    var layoutMigrationLogger = loggerFactory.CreateLogger<LayoutMigrationService>();
-
-                    var layoutMigrationService = new LayoutMigrationService(
-                        dbContext,
-                        layoutMigrationLogger);
-
-                    if (await layoutMigrationService.NeedsMigrationAsync())
-                    {
-                        System.Console.WriteLine("📦 Layout data migration required - starting migration...");
-
-                        var layoutCount = await layoutMigrationService.MigrateLayoutNumbersAsync();
-                        System.Console.WriteLine($"✅ Migrated {layoutCount} layouts to versioned families");
-
-                        await layoutMigrationService.MigrateTemplateLayoutNumbersAsync();
-                        System.Console.WriteLine("✅ Template LayoutNumbers updated");
-
-                        System.Console.WriteLine("✅ Layout data migration completed successfully");
-                    }
-                    else
-                    {
-                        System.Console.WriteLine("✓ Layout versioning already configured - no data migration needed");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"❌ FATAL ERROR: Migration failed: {ex.Message}");
-                System.Console.WriteLine($"   {ex.StackTrace}");
-                System.Console.WriteLine("Application startup halted. Please fix the database configuration and restart.");
-                throw; // Halt startup
-            }
-        }
-        else
-        {
-            System.Console.WriteLine("⚠️ No connection string found. Skipping migration check.");
-            System.Console.WriteLine("   This is normal during initial setup.");
-        }
-    }
-    else
-    {
-        // ============================================================
-        // MULTI-TENANT MODE: Migrate all tenant databases
-        // ============================================================
-        // This section discovers all configured tenants from the DynamicConfigurationProvider
-        // and applies schema and data migrations to each tenant's database independently.
-        // Failed migrations for individual tenants do not halt the application startup.
-        // ============================================================
-        System.Console.WriteLine("🔄 Running custom migration service (multi-tenant mode)...");
-
-        try
-        {
-            var configDbConnectionString = builder.Configuration.GetConnectionString(CONNECTIONSTRING_CONFIG_DB);
-
-            // Create temporary services for multi-tenant migration
-            var tempServices = new ServiceCollection();
-            var loggerFactory = LoggerFactory.Create(config => config.AddConsole());
-            tempServices.AddSingleton<ILoggerFactory>(loggerFactory);
-            tempServices.AddLogging(config => config.AddConsole());
-
-            // Register DynamicConfigurationProvider for tenant discovery
-            tempServices.AddSingleton<IConfiguration>(builder.Configuration);
-            tempServices.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            tempServices.AddMemoryCache();
-            tempServices.AddSingleton<IDynamicConfigurationProvider, DynamicConfigurationProvider>();
-
-            var tempServiceProvider = tempServices.BuildServiceProvider();
-
-            using (var scope = tempServiceProvider.CreateScope())
-            {
-                var configProvider = scope.ServiceProvider.GetRequiredService<IDynamicConfigurationProvider>();
-
-                // Discover all tenant domain names from configuration database
-                var domainNames = await configProvider.GetAllDomainNamesAsync();
-
-                if (domainNames.Count == 0)
-                {
-                    System.Console.WriteLine("⚠️ No tenant configurations found - skipping multi-tenant migration");
-                }
-                else
-                {
-                    System.Console.WriteLine($"   Found {domainNames.Count} tenant(s) to migrate");
-
-                    int successCount = 0;
-                    int failureCount = 0;
-                    int skippedCount = 0;
-
-                    // Process each tenant independently
-                    foreach (var domainName in domainNames)
-                    {
-                        try
-                        {
-                            System.Console.WriteLine($"   Processing tenant: {domainName}");
-
-                            // Get connection string for this tenant
-                            var tenantConnectionString = await configProvider.GetDatabaseConnectionStringAsync(domainName);
-
-                            if (string.IsNullOrWhiteSpace(tenantConnectionString))
-                            {
-                                System.Console.WriteLine($"      ⚠️ No connection string found for {domainName} - skipping");
-                                skippedCount++;
-                                continue;
-                            }
-
-                            // Determine provider for this tenant
-                            var provider = MigrationService.DetermineProvider(tenantConnectionString);
-
-                            // Create tenant-specific services
-                            var tenantServices = new ServiceCollection();
-                            tenantServices.AddLogging(config =>
-                            {
-                                config.AddConsole();
-                                config.SetMinimumLevel(LogLevel.Warning); // Reduce noise
-                            });
-
-                            tenantServices.AddDbContext<ApplicationDbContext>(options =>
-                            {
-                                CosmosDbOptionsBuilder.ConfigureDbOptions(options, tenantConnectionString);
-                            });
-
-                            var tenantServiceProvider = tenantServices.BuildServiceProvider();
-
-                            using (var tenantScope = tenantServiceProvider.CreateScope())
-                            {
-                                var tenantDbContext = tenantScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                                var tenantLogger = loggerFactory.CreateLogger<MigrationService>();
-
-                                // Create migration context for this tenant
-                                var migrationContext = new MigrationContext
-                                {
-                                    DbContext = tenantDbContext,
-                                    Provider = provider,
-                                    ConnectionString = tenantConnectionString,
-                                    Logger = tenantLogger,
-                                    ServiceProvider = tenantScope.ServiceProvider
-                                };
-
-                                // Run custom schema migrations
-                                var migrationService = new MigrationService(tenantLogger);
-                                await migrationService.RunMigrationsAsync(migrationContext);
-
-                                // Run data migrations (LayoutMigrationService)
-                                var layoutMigrationLogger = loggerFactory.CreateLogger<LayoutMigrationService>();
-                                var layoutMigrationService = new LayoutMigrationService(
-                                    tenantDbContext,
-                                    layoutMigrationLogger);
-
-                                if (await layoutMigrationService.NeedsMigrationAsync())
-                                {
-                                    var layoutCount = await layoutMigrationService.MigrateLayoutNumbersAsync();
-                                    await layoutMigrationService.MigrateTemplateLayoutNumbersAsync();
-                                    System.Console.WriteLine($"      ✅ {domainName}: Migrated {layoutCount} layouts");
-                                }
-                                else
-                                {
-                                    System.Console.WriteLine($"      ✓ {domainName}: Already migrated");
-                                }
-
-                                successCount++;
-                            }
-                        }
-                        catch (Exception tenantEx)
-                        {
-                            System.Console.WriteLine($"      ❌ {domainName}: Migration failed - {tenantEx.Message}");
-                            failureCount++;
-                            // Continue with next tenant - don't halt startup
-                        }
-                    }
-
-                    System.Console.WriteLine($"✅ Multi-tenant migration summary: {successCount} succeeded, {failureCount} failed, {skippedCount} skipped");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Console.WriteLine($"⚠️ WARNING: Multi-tenant migration failed: {ex.Message}");
-            System.Console.WriteLine($"   {ex.StackTrace}");
-            System.Console.WriteLine("   Application will continue, but migrations may not be applied to all tenants.");
-            // Don't throw - allow app to continue
-        }
+        throw new InvalidOperationException("Application startup halted due to migration failure. Please fix the database configuration and restart.");
     }
 }
 
@@ -573,58 +322,12 @@ builder.Services.AddScoped<IPublishedBlogService, PublishedBlogService>();
 builder.Services.AddScoped<IContactManagementService, ContactManagementService>();
 
 // Register SINGLE mediator (Common namespace) with multi-tenant security decorator
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.Mediator>(); // ← Concrete type registration
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IMediator>(sp =>   // ← Interface registration with multi-tenant wrapper
-    new MultiTenantMediator(
-        new Cosmos.Common.Features.Shared.Mediator(sp),
-        sp.GetRequiredService<ApplicationDbContext>(),
-        sp.GetService<IDynamicConfigurationProvider>(),
-        sp.GetRequiredService<ILogger<MultiTenantMediator>>()));
+builder.Services.AddCosmosMediator();
 
-// Register query handlers (Common namespace)
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByUrlQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByIdQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel?>, GetArticleByArticleNumberQueryHandler>();
+// Auto-register all command and query handlers from Editor and Common assemblies
+builder.Services.AddMediatorHandlers();
 
-// Register command handlers (Common namespace)
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>, CreateArticleHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>, SaveArticleHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreatePageDesignVersionCommand, CommandResult<PageDesignVersion>>, CreatePageDesignVersionHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<SavePageDesignVersionCommand, CommandResult<PageDesignVersion>>, SavePageDesignVersionHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<PublishPageDesignVersionCommand, CommandResult<Template>>, PublishPageDesignVersionHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteTemplateCommand, CommandResult<bool>>, DeleteTemplateHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateTemplateMetadataCommand, CommandResult<Template>>, UpdateTemplateMetadataHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetTemplateQuery, CommandResult<GetTemplateQueryResult>>, GetTemplateQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetTemplateListQuery, CommandResult<GetTemplateListQueryResult>>, GetTemplateListQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Editor.Features.Blogs.GetStream.GetBlogStreamQuery, CommandResult<Sky.Editor.Features.Blogs.GetStream.GetBlogStreamQueryResult>>, Sky.Editor.Features.Blogs.GetStream.GetBlogStreamQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateBlogStreamCommand, CommandResult<Article>>, UpdateBlogStreamHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>, DeleteBlogStreamHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateBlogPostCommand, CommandResult<CreateBlogPostCommandResult>>, CreateBlogPostCommandHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<UpdateBlogPostCommand, CommandResult<UpdateBlogPostCommandResult>>, UpdateBlogPostCommandHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<DeleteBlogPostCommand, CommandResult<DeleteBlogPostCommandResult>>, DeleteBlogPostCommandHandler>();
 builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
-
-// Register article query handlers - Editor-facing (decoupled from ArticleEditLogic)
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQuery, System.DateTimeOffset?>, Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQuery, Cosmos.Common.Data.CatalogEntry>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQuery, System.Collections.Generic.IEnumerable<Cosmos.Common.Models.RedirectItemViewModel>>, Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQueryHandler>();
-
-// Register article query handlers - Publisher-facing (for public website rendering)
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQuery, TableOfContents>, Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetPublishedPageByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.Queries.GetPublishedPageByUrlQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetPublishedPageHeaderByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>, Cosmos.Common.Features.Articles.Queries.GetPublishedPageHeaderByUrlQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQuery, System.Collections.Generic.List<TableOfContentsItem>>, Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQueryHandler>();
-
-// Register blog query handlers - Publisher-facing (for public blog rendering)
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Blogs.Queries.GetBlogStreamQuery, Cosmos.Common.Features.Blogs.Queries.GetBlogStreamQueryResult>, Cosmos.Common.Features.Blogs.Queries.GetBlogStreamQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Blogs.Queries.GetBlogPostQuery, Cosmos.Common.Features.Blogs.Queries.GetBlogPostQueryResult>, Cosmos.Common.Features.Blogs.Queries.GetBlogPostQueryHandler>();
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Blogs.Queries.GetBlogPostNavigationQuery, Cosmos.Common.Features.Blogs.Queries.GetBlogPostNavigationQueryResult>, Cosmos.Common.Features.Blogs.Queries.GetBlogPostNavigationQueryHandler>();
-
-// Register blog query handlers - Editor-facing (for editor navigation)
-builder.Services.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Blogs.EditorQueries.GetBlogPostNavigationQuery, Cosmos.Common.Features.Blogs.EditorQueries.GetBlogPostNavigationQueryResult>, Cosmos.Common.Features.Blogs.EditorQueries.GetBlogPostNavigationQueryHandler>();
 
 builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
     new ArticleViewModelBuilder(
@@ -648,7 +351,7 @@ builder.Services.AddTransient<ISlugService, SlugService>();
 builder.Services.AddTransient<ITitleChangeService, TitleChangeService>();
 builder.Services.AddTransient<IBlogStreamRenderingService, BlogStreamRenderingService>();
 builder.Services.AddTransient<IEmailConfigurationService, EmailConfigurationService>();
-builder.Services.AddTransient<ArticleScheduler>();
+builder.Services.AddTransient<IArticleScheduler, ArticleScheduler>();
 builder.Services.AddTransient<ArticleEditLogic>();
 builder.Services.AddTransient<ISetupCheckService, SetupCheckService>();
 
@@ -688,13 +391,11 @@ builder.Services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>();
 // Progress reporter (SCOPED for tenant isolation) - allows per-user progress updates via SignalR
 builder.Services.AddScoped<IPublishingProgressReporter, PublishingProgressReporter>();
 
-
 // ---------------------------------------------------------------
 // STEP 10: Register MVC & Razor Pages
 // ---------------------------------------------------------------
 // Normal mode: Full controller registration with API support
 // Api route is /_api/*
-
 builder.Services.AddControllersWithViews()
     .AddApplicationPart(typeof(Sky.Cms.Api.Shared.Controllers.ContactApiController).Assembly);
 

@@ -44,27 +44,8 @@
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\Index.cshtml" />
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\TextFile1.txt" />
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\_CosmosLayout.cshtml" />
-	  <Content Remove="stylecop.json" />
-	  <Content Remove="wwwroot\css\sky-blog.css" />
-	  <Content Remove="wwwroot\images\samples\134038968578143524.jpg" />
-	  <Content Remove="wwwroot\images\samples\20250917_OHR.YoungMoose_EN-US2991221135_UHD_bing.jpg" />
-	  <Content Remove="wwwroot\images\samples\20250920_OHR.OktoberfestSwing_EN-US7916182497_UHD_bing.jpg" />
-	  <Content Remove="wwwroot\images\samples\20250921_OHR.IceOtters_EN-US7982442590_UHD_bing.jpg" />
-	  <Content Remove="wwwroot\images\samples\20250924_OHR.BearLodge_EN-US9061134971_UHD_bing.jpg" />
-	  <Content Remove="wwwroot\images\samples\20250926_OHR.AutumnChipmunk_EN-US9248345602_UHD_bing.jpg" />
-	  <Content Remove="wwwroot\images\samples\20251015_OHR.AmethystLaccaria_EN-US0640413961_UHD_bing.jpg" />
-	  <Content Remove="wwwroot\images\skycms\SkyCMSLogoDarkBackground.jpeg" />
-	  <Content Remove="wwwroot\images\skycms\SkyCMSLogoLightBackground.jpeg" />
 	  <Content Remove="wwwroot\js\blog-stream-loader.js" />
-	  <Content Remove="wwwroot\js\editors\editorCore.js" />
-	  <Content Remove="wwwroot\js\editors\JavaScript - Copy (2).js" />
-	  <Content Remove="wwwroot\js\editors\JavaScript - Copy (3).js" />
-	  <Content Remove="wwwroot\js\editors\JavaScript - Copy.js" />
-	  <Content Remove="wwwroot\js\editors\JavaScript.js" />
-	  <Content Remove="wwwroot\js\editors\monaco-editor-core.js" />
-	  <Content Remove="wwwroot\js\editors\monaco-editor-insert-helpers.js" />
-	  <Content Remove="wwwroot\js\setup-sensitive-fields.js" />
-	  <Content Remove="wwwroot\lib\cosmos\ckeditor\ckeditor-widget.301.js" />
+	  <Content Remove="wwwroot\js\ccms-author-widget.js" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -128,14 +109,7 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-	
-	<ItemGroup>
-	  <Compile Remove="Services\BlogPublishing\**" />
-	  <Content Remove="Services\BlogPublishing\**" />
-	  <EmbeddedResource Remove="Services\BlogPublishing\**" />
-	  <None Remove="Services\BlogPublishing\**" />
-	</ItemGroup>
-	
+		
 	<ItemGroup>
 	  <Folder Include="Services\Migrations\Testing\" />
 	</ItemGroup>
@@ -145,6 +119,5 @@
 			<UserProperties libman_1json__JsonSchema="" />
 		</VisualStudio>
 	</ProjectExtensions>
-
 
 </Project>

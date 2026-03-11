@@ -5,28 +5,28 @@
     ViewData["Title"] = $"Editing '{Model.Title}' with the Code Editor.";
     var fields = Model.EditorFields.ToArray();
     var hasPermissionsSet = Model.ArticlePermissions.Any();
+    
+    // Pass content to the save form partial via ViewData
+    ViewData["Content"] = Model.Content;
+    ViewData["HeadJavaScript"] = Model.HeadJavaScript;
+    ViewData["FooterJavaScript"] = Model.FooterJavaScript;
 }
 
 <partial name="_CodeEditorShared" model="Model" />
 
-<form id="frmSave" asp-action="EditCode">
-    <input type="hidden" asp-for="Id" value="@Model.Id" />
-    <input type="hidden" asp-for="SaveAsNewVersion" />
-    <input type="hidden" asp-for="VersionNumber" />
-    <input type="hidden" asp-for="ArticleNumber" />
-    <input type="hidden" asp-for="EditingField" />
-    <input type="hidden" asp-for="Content" />
-    <input type="hidden" asp-for="Title" />
-    <input type="hidden" asp-for="Published" />
-    <input type="hidden" asp-for="Updated" />
-    <input type="hidden" asp-for="RoleList" />
-    <input type="hidden" asp-for="UrlPath" />
-    <input type="hidden" asp-for="IsValid" />
-    <input type="hidden" asp-for="HeadJavaScript" />
-    <input type="hidden" asp-for="FooterJavaScript" />
-    <input type="hidden" asp-for="EditorType" />
-    <input type="hidden" asp-for="UpdateExisting" />
-    <input type="hidden" asp-for="BannerImage" />
+<form id="frmSave" autocomplete="off">
+    @Html.AntiForgeryToken()
+    <partial name="_EditorSaveForm" model="new Sky.Cms.Models.EditPostViewModel {
+        Id = Model.Id,
+        ArticleNumber = Model.ArticleNumber,
+        VersionNumber = Model.VersionNumber,
+        Title = Model.Title,
+        UrlPath = Model.UrlPath,
+        Published = Model.Published,
+        Updated = Model.Updated,
+        BannerImage = Model.BannerImage,
+        SaveAsNewVersion = false
+    }" />
 </form>
 
 @if (Model != null)
@@ -43,6 +43,12 @@
         </div>
     </div>
 }
+
+<!-- Shared error modal -->
+<partial name="_EditorErrorModal" />
+
+<!-- Include shared editor infrastructure -->
+<partial name="_EditorCommonScripts" />
 
 <script>
     // View-specific constants
@@ -71,28 +77,19 @@
                 isDirty: false
             });
         }
-
-        // Check after loading data
-        if (typeof checkDisplayLiveEditorButton === 'function') {
-            checkDisplayLiveEditorButton('Content');
-        }
     }
 
-    // View-specific save function
-    function saveChanges(postProcessing) {
+    // View-specific save function using unified EditorSaveService
+    async function saveChanges(postProcessing) {
         if (typeof validatePermissions === 'function' && validatePermissions() === false) {
             return;
         }
 
-        if (saveInProgress === true) {
+        if (EditorSaveService.state.saveInProgress === true) {
             return;
         }
 
-        saveInProgress = true;
-        
-        if (typeof showSaving === 'function') {
-            showSaving();
-        }
+        EditorUI.saving();
         
         if (typeof savePublishDateTime === 'function') {
             savePublishDateTime();
@@ -105,84 +102,66 @@
             $("#" + fieldId).val(editor.getValue());
         }
 
+        // Copy content buffer into canonical payload
+        $("#Payload").val($("#Content").val());
+
+        await EditorSaveService.ensureEncryptionContext();
+
         let model = {
-            Id: $("#Id").val(),
-            SaveAsNewVersion: $("#SaveAsNewVersion").val(),
             ArticleNumber: $("#ArticleNumber").val(),
             VersionNumber: $("#VersionNumber").val(),
             Title: $("#Title").val(),
-            RoleList: $("#RoleList").val(),
             Published: "",
             Updated: $("#Updated").val(),
-            Content: encryptData($("#Content").val()),
-            HeadJavaScript: encryptData($("#HeadJavaScript").val()),
-            FooterJavaScript: encryptData($("#FooterJavaScript").val()),
+            Payload: $("#Payload").val(),
+            HeadJavaScript: $("#HeadJavaScript").val(),
+            FooterJavaScript: $("#FooterJavaScript").val(),
             EditingField: $("#EditingField").val(),
             UrlPath: $("#UrlPath").val(),
-            EditorType: $("#EditorType").val(),
-            UpdateExisting: $("#UpdateExisting").val(),
-            BannerImage: $("#BannerImage").val()
+            BannerImage: $("#BannerImage").val(),
+            Command: "SaveCode"
         };
 
-        $.post("/Editor/EditCode", model, function (response) {
-            saveInProgress = false;
-            
-            if (typeof doneSaving === 'function') {
-                doneSaving();
-            }
+        try {
+            const response = await EditorSaveService.saveArticle(model, "SaveCode", {
+                encryptFields: ['Payload', 'HeadJavaScript', 'FooterJavaScript']
+            });
 
-            if (response.IsValid) {
-                // Mark document as clean after successful save
-                if (window.activeDocumentTracker) {
-                    window.activeDocumentTracker.markClean();
+            if (EditorSaveService.handleSaveResponse(response, {
+                updateUI: true,
+                onSuccess: () => {
+                    // Mark document as clean after successful save
+                    if (window.activeDocumentTracker) {
+                        window.activeDocumentTracker.markClean();
+                    }
+                    if (typeof checkDisplayLiveEditorButton === 'function') {
+                        checkDisplayLiveEditorButton('Content');
+                    }
+                    if (typeof next !== 'undefined' && next !== null && typeof next === 'function') {
+                        next();
+                        next = null;
+                    }
+                    EditorUI.doneSaving();
+                },
+                onError: (msg) => {
+                    EditorUI.showError(msg);
+                    EditorUI.doneSaving();
                 }
-                if (typeof checkDisplayLiveEditorButton === 'function') {
-                    checkDisplayLiveEditorButton('Content');
-                }
-
-                if (typeof next !== 'undefined' && next !== null && typeof next === 'function') {
-                    next();
-                    next = null;
-                }
-
+            })) {
+                // Success
             } else {
-                var errorMsg = "Error(s):";
-                $.each(response.Errors, function (index, error) {
-                    errorMsg = "<p>" + error.Key + "</p><ul>";
-                    $.each(error.Errors, function (index, innerError) {
-                        errorMsg = errorMsg + "<li>" + innerError.Exception.Message + "</li>";
-                    });
-                    errorMsg = errorMsg + "</ul>";
-                });
-                $("#divErrorLog").html(errorMsg);
-                
-                if (typeof bootstrap !== 'undefined') {
-                    var errorModal = new bootstrap.Modal(document.getElementById('modalSavingError'));
-                    errorModal.show();
-                }
+                // Error handled by EditorSaveService.handleSaveResponse
             }
-        }).fail(function (xhr, status, error) {
-            saveInProgress = false;
-            
-            if (typeof doneSaving === 'function') {
-                doneSaving();
-            }
-            
-            $("#divErrorLog").html(xhr.responseText);
-            
-            if (typeof bootstrap !== 'undefined' && document.getElementById('modalSavingError')) {
-                var errorModal = new bootstrap.Modal(document.getElementById('modalSavingError'));
-                errorModal.show();
-            }
-        });
+        } catch (error) {
+            EditorUI.showError(error.message);
+            EditorUI.doneSaving();
+        }
     }
 
     // Add listener for active document changes
     if (window.activeDocumentTracker) {
         window.activeDocumentTracker.addListener((docInfo) => {
             console.log('Active document changed:', docInfo);
-            // You can add custom behavior here
-            // For example, update analytics, logging, etc.
         });
     }
 
@@ -202,7 +181,7 @@
                 basePath: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min'
             });
             
-            // Close loading spiner and display saved status
+            // Close loading spinner and display saved status
             $("#spinLoading").hide();
             // View-specific initialization
             $("#btnOtherPages").show();

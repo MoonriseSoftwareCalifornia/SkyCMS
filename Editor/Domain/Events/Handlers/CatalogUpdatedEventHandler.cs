@@ -37,14 +37,14 @@ namespace Sky.Editor.Domain.Events.Handlers
     /// </summary>
     public sealed class CatalogUpdatedEventHandler : IDomainEventHandler<CatalogUpdatedEvent>
     {
-        private readonly ILogger<CatalogUpdatedEventHandler> _logger;
+        private readonly ILogger<CatalogUpdatedEventHandler> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CatalogUpdatedEventHandler"/> class.
         /// </summary>
         /// <param name="logger">Typed logger used to record diagnostic information when catalog updates occur.</param>
         public CatalogUpdatedEventHandler(ILogger<CatalogUpdatedEventHandler> logger) =>
-            _logger = logger;
+            this.logger = logger;
 
         /// <summary>
         /// Handles the <see cref="CatalogUpdatedEvent"/> by delegating to the cancellation-enabled overload
@@ -73,7 +73,7 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// </remarks>
         public Task HandleAsync(CatalogUpdatedEvent @event, CancellationToken cancellationToken)
         {
-            _logger.LogDebug("Catalog updated for ArticleNumber={ArticleNumber}", @event.ArticleNumber);
+            logger.LogDebug("Catalog updated for ArticleNumber={ArticleNumber}", @event.ArticleNumber);
             return Task.CompletedTask;
         }
     }

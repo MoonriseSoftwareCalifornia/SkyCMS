@@ -32,14 +32,14 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// <summary>
         /// Logger used to record publication diagnostics.
         /// </summary>
-        private readonly ILogger<ArticlePublishedEventHandler> _logger;
+        private readonly ILogger<ArticlePublishedEventHandler> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ArticlePublishedEventHandler"/> class.
         /// </summary>
         /// <param name="logger">Application logger instance.</param>
         public ArticlePublishedEventHandler(ILogger<ArticlePublishedEventHandler> logger) =>
-            _logger = logger;
+            this.logger = logger;
 
         /// <summary>
         /// Handles the <see cref="ArticlePublishedEvent"/> without an external cancellation token.
@@ -69,7 +69,7 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// </remarks>
         public Task HandleAsync(ArticlePublishedEvent @event, CancellationToken cancellationToken)
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Article published: ArticleNumber={ArticleNumber} Id={Id}",
                 @event.ArticleNumber,
                 @event.ArticleId);

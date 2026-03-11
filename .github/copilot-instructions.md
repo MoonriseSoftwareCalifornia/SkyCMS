@@ -13,6 +13,13 @@
   - **Rate limiter policy** "contact-form" already configured (3 req/5min in production, 20 req/1min in development).
   - **Antiforgery tokens** automatically scoped per HttpContext (per-tenant).
 
+## Planned Improvement Initiative
+- There is an ongoing architecture-hardening initiative to narrow unnecessary `public` visibility in class libraries.
+- Preferred execution model: dedicated branch and one library-focused PR at a time.
+- First candidate library: `Cosmos.MicrosoftGraph`; treat `Cosmos.ConnectionStrings` and `Common/Cosmos.Common` as later/high-coupling phases.
+- Keep changes behavior-preserving and visibility-focused; do not mix unrelated refactors.
+- Validate with solution build and relevant tests before merge.
+
 ---
 
 ## Purpose

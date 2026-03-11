@@ -40,12 +40,6 @@ namespace Sky.Editor.Features.Articles.Save
                 errors[nameof(command.Title)] = new[] { "Title must not exceed 254 characters." };
             }
 
-            // Content validation
-            if (string.IsNullOrWhiteSpace(command.Content))
-            {
-                errors[nameof(command.Content)] = new[] { "Content is required." };
-            }
-
             // UserId validation
             if (command.UserId == Guid.Empty)
             {

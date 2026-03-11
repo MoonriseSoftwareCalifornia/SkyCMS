@@ -8,7 +8,9 @@
 namespace Sky.Cms.Controllers
 {
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Identity;
@@ -18,6 +20,7 @@ namespace Sky.Cms.Controllers
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Cms.Models;
+    using Sky.Editor.Features.Templates.Get;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -32,25 +35,29 @@ namespace Sky.Cms.Controllers
         private readonly UserManager<IdentityUser> baseUserManager;
         private readonly ApplicationDbContext dbContext;
         private readonly IMemoryCache? memoryCache;
-        private readonly IDynamicConfigurationProvider? configProvider;
+        private readonly IDynamicConfigurationProvider configProvider;
+        private readonly IMediator mediator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseController"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="userManager">User manager.</param>
+        /// <param name="mediator">Mediator service.</param>
         /// <param name="memoryCache">Memory cache (optional, for layout caching).</param>
         /// <param name="configProvider">Dynamic configuration provider (optional, for tenant-aware caching).</param>
         public BaseController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
-            IMemoryCache? memoryCache = null,
-            IDynamicConfigurationProvider? configProvider = null)
+            IMediator mediator,
+            IMemoryCache memoryCache = null,
+            IDynamicConfigurationProvider configProvider = null)
         {
             this.dbContext = dbContext;
             baseUserManager = userManager;
             this.memoryCache = memoryCache;
             this.configProvider = configProvider;
+            this.mediator = mediator;
         }
 
         /// <summary>
@@ -234,6 +241,281 @@ namespace Sky.Cms.Controllers
             jsonModel.ValidationState = ModelState.ValidationState;
 
             return jsonModel;
+        }
+
+        /// <summary>
+        /// Edit template title and description.
+        /// </summary>
+        /// <param name="id">Template ID.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task<IActionResult> Edit(Guid id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var query = new GetTemplateQuery { TemplateId = id };
+            var result = await mediator.QueryAsync(query);
+            
+            if (!result.IsSuccess || result.Data?.Template == null)
+            {
+                return NotFound();
+            }
+
+            var template = result.Data.Template;
+            ViewData["Title"] = template.Title;
+
+            var model = new TemplateEditViewModel()
+            {
+                Title = template.Title,
+                Description = template.Description,
+                Id = id
+            };
+            return View(model);
+        }
+
+        /// <summary>
+        /// Returns a <see cref="BadRequestObjectResult"/> when model state is invalid; otherwise <see langword="null"/>.
+        /// </summary>
+        /// <returns>Bad-request result or <see langword="null"/>.</returns>
+        protected IActionResult? GetInvalidModelStateResult()
+        {
+            if (ModelState.IsValid)
+            {
+                return null;
+            }
+
+            return BadRequest(ModelState);
+        }
+
+        /// <summary>
+        /// Populates common sort and paging view data values.
+        /// </summary>
+        /// <param name="sortOrder">Sort order.</param>
+        /// <param name="currentSort">Current sort field.</param>
+        /// <param name="pageNo">Page number.</param>
+        /// <param name="pageSize">Page size.</param>
+        protected void PopulateSortPagingViewData(string sortOrder, string currentSort, int pageNo, int pageSize)
+        {
+            ViewData["sortOrder"] = sortOrder;
+            ViewData["currentSort"] = currentSort;
+            ViewData["pageNo"] = pageNo;
+            ViewData["pageSize"] = pageSize;
+        }
+
+        /// <summary>
+        /// Validates the CryptoContextToken format and authenticity.
+        /// </summary>
+        /// <param name="token">The token to validate.</param>
+        /// <returns><see langword="true"/> if valid; otherwise <see langword="false"/>.</returns>
+        protected bool IsValidCryptoContextToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return false;
+            }
+
+            if (token.StartsWith("invalid-", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Builds a dictionary of model-state errors keyed by field name, suitable for JSON responses.
+        /// </summary>
+        /// <returns>Dictionary of field-name to error-message arrays.</returns>
+        protected Dictionary<string, string[]> BuildModelStateErrors()
+        {
+            return ModelState
+                .Where(kvp => kvp.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value!.Errors
+                        .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Invalid value." : e.ErrorMessage)
+                        .ToArray());
+        }
+
+        /// <summary>
+        /// Safely decrypts CryptoJS-encrypted content, returning an empty string for null or empty input.
+        /// </summary>
+        /// <param name="content">Encrypted content to decrypt.</param>
+        /// <returns>Decrypted string, or <see cref="string.Empty"/> if <paramref name="content"/> is null or empty.</returns>
+        protected static string DecryptContent(string content)
+        {
+            return string.IsNullOrEmpty(content) ? string.Empty : CryptoJsDecryption.Decrypt(content);
+        }
+
+        /// <summary>
+        /// Gets the default code editor fields used by article code editing.
+        /// </summary>
+        /// <returns>Default article code editor fields.</returns>
+        protected static EditorField[] GetDefaultCodeEditorFields()
+        {
+            return new[]
+            {
+                new EditorField
+                {
+                    FieldId = "HeadJavaScript",
+                    FieldName = "Head Block",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear at the bottom of the <head> tag."
+                },
+                new EditorField
+                {
+                    FieldId = "Content",
+                    FieldName = "Html Content",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "~/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear in the <body>."
+                },
+                new EditorField
+                {
+                    FieldId = "FooterJavaScript",
+                    FieldName = "Footer Block",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "~/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear at the bottom of the <body> tag."
+                }
+            };
+        }
+
+        /// <summary>
+        /// Gets the default code editor fields used by template code editing.
+        /// </summary>
+        /// <returns>Default template code editor fields.</returns>
+        protected static List<EditorField> GetTemplateCodeEditorFields()
+        {
+            return new List<EditorField>
+            {
+                new ()
+                {
+                    EditorMode = EditorMode.Html,
+                    FieldName = "Html Content",
+                    FieldId = "Content",
+                    IconUrl = "~/images/seti-ui/icons/html.svg",
+                    ToolTip = string.Empty
+                }
+            };
+        }
+
+        /// <summary>
+        /// Applies query-string overrides to the edit post model.
+        /// Fields in <paramref name="model"/> are only overwritten when they are empty/default
+        /// and the corresponding field in <paramref name="queryModel"/> has a value.
+        /// </summary>
+        /// <param name="model">Primary edit post model (body).</param>
+        /// <param name="queryModel">Optional query model containing override values.</param>
+        protected static void ApplyQueryOverrides(EditPostViewModel model, EditPostViewModel? queryModel)
+        {
+            if (queryModel == null)
+            {
+                return;
+            }
+
+            if (model.Id == Guid.Empty && queryModel.Id != Guid.Empty)
+            {
+                model.Id = queryModel.Id;
+            }
+
+            if (model.ArticleNumber == 0 && queryModel.ArticleNumber > 0)
+            {
+                model.ArticleNumber = queryModel.ArticleNumber;
+            }
+
+            if (model.VersionNumber == 0 && queryModel.VersionNumber > 0)
+            {
+                model.VersionNumber = queryModel.VersionNumber;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditorId) && !string.IsNullOrWhiteSpace(queryModel.EditorId))
+            {
+                model.EditorId = queryModel.EditorId;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Command) && !string.IsNullOrWhiteSpace(queryModel.Command))
+            {
+                model.Command = queryModel.Command;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Payload) && !string.IsNullOrWhiteSpace(queryModel.Payload))
+            {
+                model.Payload = queryModel.Payload;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.HeadJavaScript) && !string.IsNullOrWhiteSpace(queryModel.HeadJavaScript))
+            {
+                model.HeadJavaScript = queryModel.HeadJavaScript;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.FooterJavaScript) && !string.IsNullOrWhiteSpace(queryModel.FooterJavaScript))
+            {
+                model.FooterJavaScript = queryModel.FooterJavaScript;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CssContent) && !string.IsNullOrWhiteSpace(queryModel.CssContent))
+            {
+                model.CssContent = queryModel.CssContent;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditingField) && !string.IsNullOrWhiteSpace(queryModel.EditingField))
+            {
+                model.EditingField = queryModel.EditingField;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditorType) && !string.IsNullOrWhiteSpace(queryModel.EditorType))
+            {
+                model.EditorType = queryModel.EditorType;
+            }
+
+            if (!model.Published.HasValue && queryModel.Published.HasValue)
+            {
+                model.Published = queryModel.Published;
+            }
+
+            if (!model.Updated.HasValue && queryModel.Updated.HasValue)
+            {
+                model.Updated = queryModel.Updated;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CryptoContextToken) && !string.IsNullOrWhiteSpace(queryModel.CryptoContextToken))
+            {
+                model.CryptoContextToken = queryModel.CryptoContextToken;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title) && !string.IsNullOrWhiteSpace(queryModel.Title))
+            {
+                model.Title = queryModel.Title;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.UrlPath) && !string.IsNullOrWhiteSpace(queryModel.UrlPath))
+            {
+                model.UrlPath = queryModel.UrlPath;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.BannerImage) && !string.IsNullOrWhiteSpace(queryModel.BannerImage))
+            {
+                model.BannerImage = queryModel.BannerImage;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.RoleList) && !string.IsNullOrWhiteSpace(queryModel.RoleList))
+            {
+                model.RoleList = queryModel.RoleList;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Category) && !string.IsNullOrWhiteSpace(queryModel.Category))
+            {
+                model.Category = queryModel.Category;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Introduction) && !string.IsNullOrWhiteSpace(queryModel.Introduction))
+            {
+                model.Introduction = queryModel.Introduction;
+            }
         }
     }
 }

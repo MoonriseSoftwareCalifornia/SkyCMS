@@ -57,7 +57,7 @@ namespace Sky.Tests.DynamicConfig
         [TestMethod]
         public void Constructor_InvalidTrustedProxyEntries_LogsWarnings()
         {
-            var inMemorySettings = new Dictionary<string, string?>
+            var inMemorySettings = new Dictionary<string, string>
             {
                 {"ConnectionStrings:ConfigDbConnectionString", "DummyConnectionStringValue"}
             };
@@ -85,7 +85,7 @@ namespace Sky.Tests.DynamicConfig
         [TestMethod]
         public async Task PreloadAllConnectionsAsync_ConcurrentCalls_InvokeCoreOnce()
         {
-            var inMemorySettings = new Dictionary<string, string?>
+            var inMemorySettings = new Dictionary<string, string>
             {
                 {"ConnectionStrings:ConfigDbConnectionString", "DummyConnectionStringValue"}
             };

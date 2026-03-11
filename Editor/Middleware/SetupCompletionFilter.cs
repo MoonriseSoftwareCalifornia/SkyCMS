@@ -5,12 +5,12 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Sky.Editor.Services.Setup;
-using System;
-using System.Threading.Tasks;
 
 namespace Sky.Editor.Middleware;
 
@@ -30,7 +30,7 @@ public class SetupCompletionFilter : IEndpointFilter
     private const string SETUP_CACHE_KEY_PREFIX = "SetupComplete";
     private const string HEADER_ORIGIN_HOSTNAME = "x-origin-hostname";
     
-    private readonly bool _isMultiTenantEditor;
+    private readonly bool isMultiTenantEditor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetupCompletionFilter"/> class.
@@ -38,7 +38,7 @@ public class SetupCompletionFilter : IEndpointFilter
     /// <param name="isMultiTenantEditor">Whether the application is running in multi-tenant mode.</param>
     public SetupCompletionFilter(bool isMultiTenantEditor)
     {
-        _isMultiTenantEditor = isMultiTenantEditor;
+        this.isMultiTenantEditor = isMultiTenantEditor;
     }
 
     /// <inheritdoc/>
@@ -55,7 +55,7 @@ public class SetupCompletionFilter : IEndpointFilter
         if (!cache.TryGetValue(cacheKey, out requiresSetup))
         {
             // Call the appropriate service based on deployment mode
-            if (_isMultiTenantEditor)
+            if (isMultiTenantEditor)
             {
                 var multiTenantSetupService = httpContext.RequestServices.GetService<IMultiTenantSetupService>();
                 requiresSetup = multiTenantSetupService != null
@@ -72,7 +72,7 @@ public class SetupCompletionFilter : IEndpointFilter
             // Cache: 24 hours if complete, 2-5 minutes if incomplete
             var cacheExpiration = !requiresSetup
                 ? TimeSpan.FromHours(24)
-                : (_isMultiTenantEditor ? TimeSpan.FromMinutes(2) : TimeSpan.FromMinutes(5));
+                : (isMultiTenantEditor ? TimeSpan.FromMinutes(2) : TimeSpan.FromMinutes(5));
 
             cache.Set(cacheKey, requiresSetup, cacheExpiration);
         }

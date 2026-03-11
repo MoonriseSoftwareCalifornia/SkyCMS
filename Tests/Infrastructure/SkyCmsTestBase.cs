@@ -623,7 +623,6 @@ namespace Sky.Tests
             // ✅ CREATE CreateArticleVersionHandler
             var createArticleVersionHandler = new Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionHandler(
                 Db,
-                ArticleLogic,
                 new NullLogger<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionHandler>());
 
             // ✅ NOW POPULATE THE LAZY FACTORIES so the Mediator can resolve the handlers

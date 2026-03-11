@@ -14,9 +14,7 @@ namespace Sky.Editor.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Features.Shared;
-    using Cosmos.Common.Models;
     using Cosmos.Common.Services.BlogPublishing;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
@@ -26,7 +24,7 @@ namespace Sky.Editor.Controllers
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Articles.Save;
+    using Sky.Editor.Features.Articles.Delete;
     using Sky.Editor.Features.Blogs.CreatePost;
     using Sky.Editor.Features.Blogs.DeleteStream;
     using Sky.Editor.Features.Blogs.GetStream;
@@ -61,7 +59,6 @@ namespace Sky.Editor.Controllers
         private readonly ISlugService slugService;
         private readonly ITemplateService templateService;
         private readonly IBlogStreamRenderingService blogStreamRenderingService;
-        private readonly ITitleChangeService titleChangeService;
         private readonly IMediator mediator;
 
         /// <summary>
@@ -73,7 +70,6 @@ namespace Sky.Editor.Controllers
         /// <param name="templateService">Template management service.</param>
         /// <param name="userManager">User management service.</param>
         /// <param name="blogStreamRenderingService">Blog stream rendering service for modern client-side orchestration.</param>
-        /// <param name="titleChangeService">Title change service.</param>
         /// <param name="mediator">Mediator for dispatching commands.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
@@ -84,18 +80,16 @@ namespace Sky.Editor.Controllers
             ITemplateService templateService,
             UserManager<IdentityUser> userManager,
             IBlogStreamRenderingService blogStreamRenderingService,
-            ITitleChangeService titleChangeService,
             IMediator mediator,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
-            : base(db, userManager, memoryCache, configProvider)
+            : base(db, userManager, mediator, memoryCache, configProvider)
         {
             this.db = db;
             this.articleLogic = articleLogic;
             this.slugService = slugService;
             this.templateService = templateService;
             this.blogStreamRenderingService = blogStreamRenderingService;
-            this.titleChangeService = titleChangeService;
             this.mediator = mediator;
         }
 
@@ -409,22 +403,16 @@ namespace Sky.Editor.Controllers
             }
 
             var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
-            var blogEntryTemplate = await db.Templates.FirstOrDefaultAsync(t => t.LayoutId == defaultLayout.Id && t.PageType == "blog-post");
-
-            if (blogEntryTemplate == null)
-            {
-                throw new InvalidOperationException("Blog entry template not found.");
-            }
-
+            
             var userId = Guid.Parse(await GetUserId());
 
             // Use dedicated CreateBlogPostCommand handler
             var command = new CreateBlogPostCommand
             {
                 Title = title,
-                Content = blogEntryTemplate.Content, // Blog posts start with template content
+                Content = string.Empty, // Start with empty content; user will edit and publish
                 BlogKey = blogKey,
-                TemplateId = blogEntryTemplate.Id,
+                TemplateId = Guid.Empty,
                 UserId = userId,
                 Published = null // Explicitly unpublished until user publishes
             };
@@ -441,114 +429,6 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Displays edit form for an existing blog entry (latest version).
-        /// </summary>
-        /// <param name="blogKey">Blog key.</param>
-        /// <param name="articleNumber">Logical article number.</param>
-        /// <returns>Edit entry view or 404.</returns>
-        [HttpGet("{blogKey}/entries/{articleNumber:int}/edit")]
-        public async Task<IActionResult> EditEntry(string blogKey, int articleNumber)
-        {
-            var article = await db.Articles
-                .Where(a => a.ArticleNumber == articleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstOrDefaultAsync();
-
-            if (article == null || article.BlogKey != blogKey)
-            {
-                return NotFound();
-            }
-
-            var vm = new BlogEntryEditViewModel
-            {
-                BlogKey = blogKey,
-                ArticleNumber = article.ArticleNumber,
-                Id = article.Id,
-                Title = article.Title,
-                Introduction = article.Introduction,
-                Content = article.Content,
-                BannerImage = article.BannerImage,
-                PublishNow = article.Published != null
-            };
-            return View("EditEntry", vm);
-        }
-
-        /// <summary>
-        /// Processes edits to a blog entry. May trigger publish if requested.
-        /// </summary>
-        /// <param name="blogKey">Blog key.</param>
-        /// <param name="articleNumber">Article number.</param>
-        /// <param name="model">Edited entry model.</param>
-        /// <returns>Redirect to entries list on success; same view with errors otherwise.</returns>
-        [HttpPost("{blogKey}/entries/{articleNumber:int}/edit")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditEntry(string blogKey, int articleNumber, BlogEntryEditViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View("EditEntry", model);
-            }
-
-            var userId = Guid.Parse(await GetUserId());
-            var blogStreamType = (int)ArticleType.BlogStream;
-
-            var articleVm = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByArticleNumberQuery
-            {
-                ArticleNumber = articleNumber
-            });
-
-            if (articleVm == null)
-            {
-                return NotFound();
-            }
-
-            // MIGRATED: Use SaveArticleHandler via mediator
-            var command = new SaveArticleCommand
-            {
-                ArticleNumber = articleVm.ArticleNumber,
-                Title = model.Title,
-                Content = model.Content,
-                Introduction = model.Introduction,
-                BannerImage = model.BannerImage,
-                Published = model.Published,
-                ArticleType = ArticleType.BlogPost,
-                UserId = userId
-            };
-
-            var result = await mediator.SendAsync(command);
-
-            if (!result.IsSuccess)
-            {
-                foreach (var error in result.Errors)
-                {
-                    foreach (var message in error.Value)
-                    {
-                        ModelState.AddModelError(error.Key, message);
-                    }
-                }
-                return View("EditEntry", model);
-            }
-
-            if (model.PublishNow)
-            {
-                if (model.Published == null)
-                {
-                    await articleLogic.PublishArticle(articleVm.Id, DateTimeOffset.UtcNow);
-                }
-                else
-                {
-                    await articleLogic.PublishArticle(articleVm.Id, model.Published.Value);
-                }
-            }
-
-            // Render the blog stream article
-            var blogStreamArticle = await db.Articles.FirstOrDefaultAsync(a => a.BlogKey == blogKey && a.ArticleType == blogStreamType);
-            blogStreamArticle.Content = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(blogStreamArticle, blogKey);
-
-            return RedirectToAction(nameof(Entries), new { blogKey });
-        }
-
-        /// <summary>
         /// Displays delete confirmation for a blog entry.
         /// </summary>
         /// <param name="blogKey">Blog key.</param>
@@ -557,22 +437,25 @@ namespace Sky.Editor.Controllers
         [HttpGet("{blogKey}/entries/{articleNumber:int}/delete")]
         public async Task<IActionResult> DeleteEntry(string blogKey, int articleNumber)
         {
-            var catalog = await db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == articleNumber);
-            if (catalog == null || catalog.BlogKey != blogKey)
+            // Verify the article belongs to this blog
+            var article = await db.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .FirstOrDefaultAsync();
+            if (article == null || article.BlogKey != blogKey)
             {
                 return NotFound();
             }
 
             var vm = new BlogEntryListItem
             {
-                BlogKey = catalog.BlogKey,
-                ArticleNumber = catalog.ArticleNumber,
-                Title = catalog.Title,
-                Published = catalog.Published,
-                Updated = catalog.Updated,
-                UrlPath = catalog.UrlPath,
-                Introduction = catalog.Introduction,
-                BannerImage = catalog.BannerImage
+                BlogKey = article.BlogKey,
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                Published = article.Published,
+                Updated = article.Updated,
+                UrlPath = article.UrlPath,
+                Introduction = article.Introduction,
+                BannerImage = article.BannerImage
             };
             return View("DeleteEntry", vm);
         }
@@ -599,13 +482,17 @@ namespace Sky.Editor.Controllers
                     return RedirectToAction(nameof(Entries), new { blogKey });
                 }
 
-                if (article.BlogKey != blogKey)
+                var deleteArticleCommand = new DeleteArticleCommand()
                 {
-                    TempData["Error"] = "Article does not belong to this blog.";
-                    return RedirectToAction(nameof(Entries), new { blogKey });
-                }
+                    ArticleNumber = articleNumber
+                };
 
-                await articleLogic.DeleteArticle(articleNumber);
+                var result = await mediator.SendAsync(deleteArticleCommand);
+
+                if (!result.IsSuccess)
+                {
+                    throw new Exception(result.ErrorMessage);
+                }
 
                 TempData["Success"] = "Blog entry deleted successfully.";
             }

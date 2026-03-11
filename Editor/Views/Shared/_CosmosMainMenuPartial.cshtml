@@ -105,8 +105,6 @@
                         Edit
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark" id="ddEditMenu">
-                        <li><a class="dropdown-item" href="#">Choose version to edit:</a></li>
-                        <li><hr class="dropdown-divider"></li>
                     </ul>
                 </li>
                 <li class="nav-item"><span title="Cosmos Version" class="nav-link text-mute">@assemblyName.Version.ToString()</span></li>
@@ -123,149 +121,146 @@
     </div>
 </nav>
 <script>
+    const isAuthor = @(isAuthor.ToString().ToLower());
+    const isReviewer = @(isReviewer.ToString().ToLower());
+    const loadList = @loadList.ToString().ToLower();
 
-        var isAuthor = @(isAuthor.ToString().ToLower());
-
-        let pageTitle = "";
-        let pagePath = "";
-        let loadList = @loadList.ToString().ToLower();
-
-
-        function closePreview() {
-            if (window.opener) {
-                window.close();
-            } else {
-                location.href = "/Editor/Versions/@Context.Request.Query["ArticleNumber"]";
-            }
-        }
-
-        function loadDdEditMenu() {
-        const ddMenu = $("#ddEditMenu");
-
-        // Check if already loaded (avoid duplicate loading)
-        if (ddMenu.data('loaded')) {
+    const getEl = (id) => document.getElementById(id);
+    const setVisible = (el, visible) => {
+        if (!el) {
             return;
         }
 
-        ddMenu.html("Loading...");
+        el.style.display = visible ? "" : "none";
+    };
 
-        const iframe = document.getElementById("iFrameWebPage");
-        const iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
-
-        let showEditDropDown = false;
-
-        if (loadList) {
-            // Use fetch API for more robust error handling
-            const apiUrl = `${window.location.origin}/Home/EditList?target=${encodeURIComponent(iframeWin.parent.location.pathname)}`;
-
-            fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                ddMenu.html("");
-
-                if (!data || data.length === 0) {
-                    ddMenu.append("<li><a class='dropdown-item' href='#'>No versions available</a></li>");
-                    $("#editorDropDown").hide();
-                    return;
-                }
-
-                data.forEach((element, index) => {
-                    let div = "<li>";
-                    div += "<div class='dropdown-item'>";
-                    div += "<div class='btn-group btn-group-sm' role='group'>";
-
-                    if (element.Published === null || element.Published === "") {
-                        div += "<span class='badge text-bg-secondary'>v." + element.VersionNumber + " DRAFT</span>";
-                    } else {
-                        const pDate = new Date(element.Published);
-                        const today = new Date();
-
-                        if (pDate > today) {
-                            div += "<span class='badge text-bg-primary'>v." + element.VersionNumber + " Future</span>";
-                        } else {
-                            div += "<span class='badge text-bg-success'>v." + element.VersionNumber + " Published</span>";
-                        }
-                    }
-
-                    if (isAuthor === false) {
-                        showEditDropDown = true;
-                        div += "<a class='btn btn-sm btn-secondary' title='Designer editor' href='/Editor/Designer/" + element.ArticleNumber + "'>Designer</a>";
-                        div += "<a class='btn btn-sm btn-secondary' title='Code editor' href='/Editor/EditCode/" + element.ArticleNumber + "'>Code</a>";
-                        if (element.UsesHtmlEditor === true) {
-                            div += "<a class='btn btn-sm btn-secondary' title='Page editor' href='/Editor/Edit/" + element.ArticleNumber + "'>HTML</a>";
-                        } else {
-                            div += "<a class='btn btn-sm btn-secondary' href='#' style='width:109px;'></a>";
-                        }
-                    }
-
-                    div += "</div>";
-                    div += "</div>";
-                    div += "</li>";
-                    ddMenu.append(div);
-                });
-
-                let endDiv = "<li><hr class='dropdown-divider'></li>";
-                endDiv += "<a class='btn btn-sm btn-secondary ms-3' href='/Editor/Versions/" + data[0].ArticleNumber + "' class='dropdown-item'>All versions <i class='fa-solid fa-circle-right'></i></a>";
-                ddMenu.append(endDiv);
-
-                // Mark as loaded
-                ddMenu.data('loaded', true);
-
-                if (showEditDropDown) {
-                    $("#editorDropDown").show();
-                } else {
-                    $("#editorDropDown").hide();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading edit menu:', error);
-                ddMenu.html("<li><a class='dropdown-item text-danger' href='#'>Error loading versions</a></li>");
-                $("#editorDropDown").hide();
-            });
+    function closePreview() {
+        if (window.opener) {
+            window.close();
         } else {
-            ddMenu.hide();
-            $("#editorDropDown").hide();
+            location.href = "/Editor/Versions/@Context.Request.Query["ArticleNumber"]";
         }
     }
 
-        function closeDropDowns() {
-            $("#navbarEditDropdown").removeClass("show");
-            $("#ddEditMenu").removeClass("show");
-            $("#btnManage").removeClass("show");
-            $("#ddManageMenu").removeClass("show");
+    function loadDdEditMenu() {
+        const editorDropDown = getEl("editorDropDown");
+        const ddMenu = getEl("ddEditMenu");
+        if (!ddMenu) {
+            return;
         }
 
-        $(document).ready(function () {
-            setPublicSiteUrl();
-            if (loadList) {
-                // Don't load automatically - will load on dropdown click
-                $("#editorDropDown").show();
-            } else {
-                $("#ddEditMenu").hide();
-                $("#editorDropDown").hide();
+        if (isReviewer) {
+            setVisible(editorDropDown, false);
+            return;
+        }
+
+        ddMenu.innerHTML = "Loading...";
+
+        const iframe = getEl("iFrameWebPage");
+        const iframeWin = iframe?.contentWindow || iframe?.contentDocument?.parentWindow;
+        const targetPath = iframeWin?.parent?.location?.pathname || window.location.pathname;
+        const apiUrl = `${window.location.origin}/Home/EditList?target=${encodeURIComponent(targetPath)}`;
+
+        fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                Accept: "application/json"
+            },
+            credentials: "same-origin"
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return response.json();
+            })
+            .then((data) => {
+                if (!Array.isArray(data) || isAuthor) {
+                    ddMenu.innerHTML = "";
+                    return;
+                }
+
+                const items = [];
+                data.forEach((element) => {
+                    if (element.UsesHtmlEditor === true) {
+                        items.push(`<li><a class='dropdown-item' href='/Editor/Edit/${element.ArticleNumber}'><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a></li>`);
+                    }
+
+                    items.push(`<li><a class='dropdown-item' title='Designer editor' href='/Editor/Designer/${element.ArticleNumber}'><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a></li>`);
+                    items.push(`<li><a class='dropdown-item' title='Code editor' href='/Editor/EditCode/${element.ArticleNumber}'><i class='fa-solid fa-code me-2'></i> Code Editor</a></li>`);
+                });
+
+                ddMenu.innerHTML = items.join("");
+                ddMenu.dataset.loaded = "true";
+            })
+            .catch((error) => {
+                console.error("Error loading edit menu:", error);
+                ddMenu.innerHTML = "<li><a class='dropdown-item text-danger' href='#'>Error loading versions</a></li>";
+                setVisible(editorDropDown, false);
+            });
+    }
+
+    function closeDropDowns() {
+        getEl("navbarEditDropdown")?.classList.remove("show");
+        getEl("ddEditMenu")?.classList.remove("show");
+        getEl("btnManage")?.classList.remove("show");
+        getEl("ddManageMenu")?.classList.remove("show");
+    }
+
+    function attachIframeCloseListeners() {
+        const attachSameOriginListener = (iframe) => {
+            const tryAttach = () => {
+                try {
+                    iframe.contentDocument?.addEventListener("click", closeDropDowns, true);
+                } catch {
+                    // Cross-origin iframe: not directly accessible.
+                }
+            };
+
+            iframe.addEventListener("load", tryAttach);
+            tryAttach();
+        };
+
+        document.querySelectorAll("iframe").forEach(attachSameOriginListener);
+
+        window.addEventListener("blur", () => {
+            if (document.activeElement?.tagName === "IFRAME") {
+                closeDropDowns();
             }
         });
+    }
 
-        function setPublicSiteUrl() {
+    document.addEventListener("DOMContentLoaded", () => {
+        setPublicSiteUrl();
 
-            let publicBaseUrl = "@options.PublisherUrl.TrimEnd('/')";
-            const el = document.getElementById("btnPublicWebsite");
-            if (el) {
-                el.setAttribute("href", publicBaseUrl);
+        const editorDropDown = getEl("editorDropDown");
+        const ddEditMenu = getEl("ddEditMenu");
+        const navMenu = getEl("ccmsNavMenu");
+
+        document.addEventListener("click", (event) => {
+            if (navMenu && event.target instanceof Node && !navMenu.contains(event.target)) {
+                closeDropDowns();
             }
+        }, true);
+
+        if (loadList) {
+            setVisible(editorDropDown, true);
+        } else {
+            setVisible(ddEditMenu, false);
+            setVisible(editorDropDown, false);
         }
+    });
+
+    window.addEventListener("load", attachIframeCloseListeners);
+
+    function setPublicSiteUrl() {
+        const publicBaseUrl = "@options.PublisherUrl.TrimEnd('/')";
+        const el = getEl("btnPublicWebsite");
+        if (el) {
+            el.setAttribute("href", publicBaseUrl);
+        }
+    }
 </script>
 
 <!-- Modal -->
@@ -282,10 +277,13 @@
     </div>
 </div>
 <script>
-    $("#btnGetHelp").click(function () {
-        $("#iframeContactSupport").attr("src", "/Ccms__ContactUs/Index");
-    });
-    $("#btnNewPage").click(function (e) {
-        window.location.href = "@Url.Action("Create", "Editor")";
+    document.addEventListener("DOMContentLoaded", () => {
+        getEl("btnGetHelp")?.addEventListener("click", () => {
+            getEl("iframeContactSupport")?.setAttribute("src", "/Ccms__ContactUs/Index");
+        });
+
+        getEl("btnNewPage")?.addEventListener("click", () => {
+            window.location.href = "@Url.Action("Create", "Editor")";
+        });
     });
 </script>

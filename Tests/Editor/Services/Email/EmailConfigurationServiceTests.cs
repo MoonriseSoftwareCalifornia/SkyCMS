@@ -34,7 +34,7 @@ public class EmailConfigurationServiceTests
     public void TestInitialize()
     {
         // Initialize configuration values dictionary
-        configValues = new Dictionary<string, string?>();
+        configValues = new Dictionary<string, string>();
 
         // Setup in-memory database with unique name per test
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -645,7 +645,7 @@ public class EmailConfigurationServiceTests
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Email settings not found in environment variables, checking database")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.Once);
     }
 
@@ -666,7 +666,7 @@ public class EmailConfigurationServiceTests
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Email settings not found in environment variables, checking database")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.Never);
     }
 
@@ -705,7 +705,7 @@ public class EmailConfigurationServiceTests
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to load email settings")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.Once);
     }
 

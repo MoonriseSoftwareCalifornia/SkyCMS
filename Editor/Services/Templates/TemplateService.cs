@@ -29,18 +29,19 @@ namespace Sky.Editor.Services.Templates
     /// </summary>
     public class TemplateService : ITemplateService
     {
-        private readonly IWebHostEnvironment _environment;
-        private readonly ILogger<TemplateService> _logger;
-        private readonly ApplicationDbContext dbContext;
-        private readonly IDynamicConfigurationProvider _dynamicConfigProvider;
-        private List<PageTemplate>? _cachedTemplates;
-        private readonly SemaphoreSlim _lock = new(1, 1);
-        
+
         /// <summary>
         /// Tracks which tenants have had templates seeded to avoid redundant DB checks.
         /// Key: Tenant ID (Connection.Id), Value: true when seeded.
         /// </summary>
-        private static readonly ConcurrentDictionary<Guid, bool> _seededTenants = new();
+        private static readonly ConcurrentDictionary<Guid, bool> SeededTenants = new ();
+
+        private readonly IWebHostEnvironment environment;
+        private readonly ILogger<TemplateService> logger;
+        private readonly ApplicationDbContext dbContext;
+        private readonly IDynamicConfigurationProvider dynamicConfigProvider;
+        private readonly SemaphoreSlim @lock = new (1, 1);
+        private List<PageTemplate> cachedTemplates;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TemplateService"/> class.
@@ -55,10 +56,10 @@ namespace Sky.Editor.Services.Templates
             ApplicationDbContext dbContext,
             IDynamicConfigurationProvider dynamicConfigProvider)
         {
-            _environment = environment;
-            _logger = logger;
+            this.environment = environment;
+            this.logger = logger;
             this.dbContext = dbContext;
-            _dynamicConfigProvider = dynamicConfigProvider;
+            this.dynamicConfigProvider = dynamicConfigProvider;
         }
 
         /// <inheritdoc/>
@@ -67,37 +68,37 @@ namespace Sky.Editor.Services.Templates
             // Get current tenant ID from the request context (multi-tenant only)
             Guid? tenantId = null;
             
-            if (_dynamicConfigProvider != null)
+            if (dynamicConfigProvider != null)
             {
-                tenantId = await _dynamicConfigProvider.GetCurrentTenantIdAsync();
+                tenantId = await dynamicConfigProvider.GetCurrentTenantIdAsync();
                 
                 if (tenantId == null)
                 {
-                    _logger.LogWarning("Cannot ensure templates: Tenant ID not available (HttpContext may be unavailable)");
+                    logger.LogWarning("Cannot ensure templates: Tenant ID not available (HttpContext may be unavailable)");
                     return;
                 }
                 
                 // Check if we've already seeded templates for this tenant (in-memory cache)
-                if (_seededTenants.ContainsKey(tenantId.Value))
+                if (SeededTenants.ContainsKey(tenantId.Value))
                 {
-                    _logger.LogDebug("Templates already ensured for tenant {TenantId}, skipping", tenantId.Value);
+                    logger.LogDebug("Templates already ensured for tenant {TenantId}, skipping", tenantId.Value);
                     return;
                 }
 
-                _logger.LogInformation("Ensuring default templates exist for tenant {TenantId}", tenantId.Value);
+                logger.LogInformation("Ensuring default templates exist for tenant {TenantId}", tenantId.Value);
             }
             else
             {
                 // Single-tenant mode: use a fixed sentinel value for caching
                 tenantId = Guid.Empty;
                 
-                if (_seededTenants.ContainsKey(tenantId.Value))
+                if (SeededTenants.ContainsKey(tenantId.Value))
                 {
-                    _logger.LogDebug("Templates already ensured (single-tenant), skipping");
+                    logger.LogDebug("Templates already ensured (single-tenant), skipping");
                     return;
                 }
                 
-                _logger.LogInformation("Ensuring default templates exist (single-tenant mode)");
+                logger.LogInformation("Ensuring default templates exist (single-tenant mode)");
             }
 
             var allTemplates = await GetAllTemplatesAsync();
@@ -106,7 +107,7 @@ namespace Sky.Editor.Services.Templates
             // If no default layout exists, we can't create templates
             if (defaultLayout == null)
             {
-                _logger.LogWarning("No default layout found. Cannot ensure default templates exist.");
+                logger.LogWarning("No default layout found. Cannot ensure default templates exist.");
                 return;
             }
 
@@ -140,13 +141,13 @@ namespace Sky.Editor.Services.Templates
                     dbContext.Templates.Add(dbTemplate);
                     templatesCreated++;
                     
-                    _logger.LogInformation("Created template '{PageType}' ({Title})", 
+                    logger.LogInformation("Created template '{PageType}' ({Title})", 
                         template.Key, template.Name);
                 }
                 else if (dbTemplate.LayoutId != layoutId)
                 {
                     // Template exists but uses a different layout - update it to use the current default layout
-                    _logger.LogInformation(
+                    logger.LogInformation(
                         "Template '{PageType}' exists under different layout (old: {OldLayoutId}, new: {NewLayoutId}). Updating to current default", 
                         template.Key, 
                         dbTemplate.LayoutId,
@@ -162,7 +163,7 @@ namespace Sky.Editor.Services.Templates
                 {
                     // Template exists and is already using the current default layout
                     templatesSkipped++;
-                    _logger.LogDebug("Template '{PageType}' already exists with correct layout", 
+                    logger.LogDebug("Template '{PageType}' already exists with correct layout", 
                         template.Key);
                 }
             }
@@ -170,41 +171,41 @@ namespace Sky.Editor.Services.Templates
             if (templatesCreated > 0 || templatesUpdated > 0)
             {
                 await dbContext.SaveChangesAsync();
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Templates ensured: {Created} created, {Updated} updated, {Skipped} skipped", 
                     templatesCreated, templatesUpdated, templatesSkipped);
             }
             else
             {
-                _logger.LogDebug("All templates already exist, no changes made");
+                logger.LogDebug("All templates already exist, no changes made");
             }
             
             // Mark as seeded (in-memory cache to avoid redundant checks on subsequent requests)
-            _seededTenants.TryAdd(tenantId.Value, true);
+            SeededTenants.TryAdd(tenantId.Value, true);
         }
 
         /// <inheritdoc/>
         public async Task<List<PageTemplate>> GetAllTemplatesAsync()
         {
-            if (_cachedTemplates != null)
+            if (cachedTemplates != null)
             {
-                return _cachedTemplates;
+                return cachedTemplates;
             }
 
-            await _lock.WaitAsync();
+            await @lock.WaitAsync();
             try
             {
-                if (_cachedTemplates != null)
+                if (cachedTemplates != null)
                 {
-                    return _cachedTemplates;
+                    return cachedTemplates;
                 }
 
-                _cachedTemplates = GetStandardTemplates();
-                return _cachedTemplates;
+                cachedTemplates = GetStandardTemplates();
+                return cachedTemplates;
             }
             finally
             {
-                _lock.Release();
+                @lock.Release();
             }
         }
 
@@ -273,7 +274,7 @@ namespace Sky.Editor.Services.Templates
                 // Add null check for template
                 if (template == null)
                 {
-                    _logger.LogWarning("No template found with PageType: {PageType}", key);
+                    logger.LogWarning("No template found with PageType: {PageType}", key);
                     return new List<PageDesignVersion>(); // Return empty list
                 }
                 
@@ -309,7 +310,7 @@ namespace Sky.Editor.Services.Templates
             // Add null check for version
             if (version == null)
             {
-                _logger.LogWarning("No page design version found for PageType: {PageType}", key);
+                logger.LogWarning("No page design version found for PageType: {PageType}", key);
                 throw new InvalidOperationException($"No page design version found for PageType: {key}");
             }
 
@@ -366,12 +367,13 @@ namespace Sky.Editor.Services.Templates
                     existing.Description = model.Description;
                     existing.Content = model.Content;
                     existing.Modified = DateTimeOffset.UtcNow;
+
                     // Don't modify Published date or Version number
                 }
 
                 await dbContext.SaveChangesAsync();
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Saved page design version {VersionId} (PageType: {PageType}, Version: {Version})",
                     model.Id,
                     model.PageType,
@@ -379,7 +381,7 @@ namespace Sky.Editor.Services.Templates
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving page design version {VersionId}", model.Id);
+                logger.LogError(ex, "Error saving page design version {VersionId}", model.Id);
                 throw;
             }
         }
@@ -427,7 +429,7 @@ namespace Sky.Editor.Services.Templates
 
                 await dbContext.SaveChangesAsync();
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Published page design version {VersionId} (PageType: {PageType}, Version: {Version})",
                     versionToPublish.Id,
                     versionToPublish.PageType,
@@ -435,7 +437,7 @@ namespace Sky.Editor.Services.Templates
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error publishing page design version {VersionId}", model.Id);
+                logger.LogError(ex, "Error publishing page design version {VersionId}", model.Id);
                 throw;
             }
         }
@@ -498,6 +500,7 @@ namespace Sky.Editor.Services.Templates
                         // Preserve user content from matching region
                         templateRegion.InnerHtml = articleRegion.InnerHtml;
                     }
+
                     // else: Region is new in template, keep template default content
                 }
 
@@ -522,7 +525,7 @@ namespace Sky.Editor.Services.Templates
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error merging editable content");
+                logger.LogError(ex, "Error merging editable content");
                 throw new InvalidOperationException("Failed to merge template and article content. HTML may be malformed.", ex);
             }
         }
@@ -669,7 +672,7 @@ namespace Sky.Editor.Services.Templates
                     result.IsDraft = latestArticle.Published == null;
                     result.Warnings = warnings;
 
-                    _logger.LogInformation(
+                    logger.LogInformation(
                         "Template {TemplateId} (no editable regions) applied to article {ArticleNumber}. Updated existing version {VersionNumber}",
                         templateId,
                         articleNumber,
@@ -720,7 +723,7 @@ namespace Sky.Editor.Services.Templates
                 result.IsDraft = true;
                 result.Warnings = warnings;
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Template {TemplateId} applied to article {ArticleNumber}. Created new version {VersionNumber} (DRAFT)",
                     templateId,
                     articleNumber,
@@ -730,7 +733,7 @@ namespace Sky.Editor.Services.Templates
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error applying template {TemplateId} to article {ArticleNumber}", templateId, articleNumber);
+                logger.LogError(ex, "Error applying template {TemplateId} to article {ArticleNumber}", templateId, articleNumber);
                 result.ErrorMessage = $"Unexpected error: {ex.Message}";
                 return result;
             }
@@ -751,7 +754,7 @@ namespace Sky.Editor.Services.Templates
 
                 if (template == null)
                 {
-                    _logger.LogWarning("Template {TemplateId} not found for batch application", templateId);
+                    logger.LogWarning("Template {TemplateId} not found for batch application", templateId);
                     return result;
                 }
 
@@ -772,7 +775,7 @@ namespace Sky.Editor.Services.Templates
                     articlesToProcess = articleNumbers;
                 }
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Starting batch template application: {TemplateId} to {Count} articles",
                     templateId,
                     articlesToProcess.Count);
@@ -790,7 +793,7 @@ namespace Sky.Editor.Services.Templates
                     else
                     {
                         result.FailureCount++;
-                        _logger.LogWarning(
+                        logger.LogWarning(
                             "Failed to apply template {TemplateId} to article {ArticleNumber}: {Error}",
                             templateId,
                             articleNumber,
@@ -800,7 +803,7 @@ namespace Sky.Editor.Services.Templates
 
                 result.Duration = DateTimeOffset.UtcNow - startTime;
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Batch template application completed: {Success} succeeded, {Failed} failed in {Duration}ms",
                     result.SuccessCount,
                     result.FailureCount,
@@ -810,7 +813,7 @@ namespace Sky.Editor.Services.Templates
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during batch template application for template {TemplateId}", templateId);
+                logger.LogError(ex, "Error during batch template application for template {TemplateId}", templateId);
                 result.Duration = DateTimeOffset.UtcNow - startTime;
                 return result;
             }
@@ -883,7 +886,7 @@ namespace Sky.Editor.Services.Templates
                 preview.Articles.Add(previewItem);
             }
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Preview generated for template {TemplateId}: {Count} articles affected",
                 templateId,
                 preview.TotalAffectedArticles);
@@ -906,7 +909,7 @@ namespace Sky.Editor.Services.Templates
 
                 if (template == null)
                 {
-                    _logger.LogWarning("Template {TemplateId} not found for publishing changes", templateId);
+                    logger.LogWarning("Template {TemplateId} not found for publishing changes", templateId);
                     return result;
                 }
 
@@ -930,7 +933,7 @@ namespace Sky.Editor.Services.Templates
                     articlesToPublish = articleNumbers;
                 }
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Publishing template changes: {TemplateId} to {PublishCount} of {TotalCount} articles",
                     templateId,
                     articlesToPublish.Count,
@@ -974,7 +977,7 @@ namespace Sky.Editor.Services.Templates
                             publishResult.Success = true;
                             publishResult.PublishedVersionNumber = draftArticle.VersionNumber;
 
-                            _logger.LogInformation(
+                            logger.LogInformation(
                                 "Published draft article {ArticleNumber}, version {VersionNumber}",
                                 articleNumber,
                                 draftArticle.VersionNumber);
@@ -982,7 +985,7 @@ namespace Sky.Editor.Services.Templates
                         else
                         {
                             publishResult.ErrorMessage = $"No draft version found for article {articleNumber} with template {templateId}";
-                            _logger.LogWarning(
+                            logger.LogWarning(
                                 "No draft found for article {ArticleNumber} with template {TemplateId}",
                                 articleNumber,
                                 templateId);
@@ -992,7 +995,7 @@ namespace Sky.Editor.Services.Templates
                     }
                     catch (Exception articleEx)
                     {
-                        _logger.LogError(articleEx, "Error processing article {ArticleNumber}", articleNumber);
+                        logger.LogError(articleEx, "Error processing article {ArticleNumber}", articleNumber);
                         result.Results.Add(new ArticlePublishResult
                         {
                             ArticleNumber = articleNumber,
@@ -1013,7 +1016,7 @@ namespace Sky.Editor.Services.Templates
 
                 result.Duration = DateTimeOffset.UtcNow - startTime;
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Template publishing completed: {Success} succeeded, {Failed} failed, {Skipped} skipped in {Duration}ms",
                     result.PublishedCount,
                     result.FailureCount,
@@ -1024,7 +1027,7 @@ namespace Sky.Editor.Services.Templates
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during template publishing for template {TemplateId}", templateId);
+                logger.LogError(ex, "Error during template publishing for template {TemplateId}", templateId);
                 result.Duration = DateTimeOffset.UtcNow - startTime;
                 return result;
             }
@@ -1055,18 +1058,18 @@ namespace Sky.Editor.Services.Templates
                 }
 
                 // Fallback to file system
-                var physicalPath = Path.Combine(_environment.ContentRootPath, "Templates", filePath);
+                var physicalPath = Path.Combine(environment.ContentRootPath, "Templates", filePath);
                 if (File.Exists(physicalPath))
                 {
                     return await File.ReadAllTextAsync(physicalPath);
                 }
 
-                _logger.LogWarning("Template file not found: {FilePath}", filePath);
+                logger.LogWarning("Template file not found: {FilePath}", filePath);
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading template: {FilePath}", filePath);
+                logger.LogError(ex, "Error loading template: {FilePath}", filePath);
                 return null;
             }
         }

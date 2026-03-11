@@ -60,7 +60,6 @@ namespace Sky.Tests.Controllers
                 Db,
                 _mockUserManager.Object,
                 Storage,
-                Logic,
                 EditorSettings,
                 ArticleHtmlService,
                 TemplateService,
@@ -1214,11 +1213,12 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            var model = new TemplateEditViewModel
+            var model = new EditPostViewModel
             {
                 Id = template.Id,
                 Title = "Updated Title",
-                Description = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Updated Description")
+                Command = "SavePageProperties",
+                Payload = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Updated Description")
             };
 
             // Act
@@ -1256,11 +1256,12 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             var encryptedDescription = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Encrypted Description");
-            var model = new TemplateEditViewModel
+            var model = new EditPostViewModel
             {
                 Id = template.Id,
                 Title = "Test Template",
-                Description = encryptedDescription
+                Command = "SavePageProperties",
+                Payload = encryptedDescription
             };
 
             // Act
@@ -1279,11 +1280,12 @@ namespace Sky.Tests.Controllers
         public async Task Edit_Post_ReturnsView_WhenModelStateInvalid()
         {
             // Arrange
-            var model = new TemplateEditViewModel
+            var model = new EditPostViewModel
             {
                 Id = Guid.NewGuid(),
                 Title = "Test",
-                Description = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Description")
+                Command = "SavePageProperties",
+                Payload = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Description")
             };
             _controller.ModelState.AddModelError("Title", "Title is required");
 
@@ -1291,9 +1293,7 @@ namespace Sky.Tests.Controllers
             var result = await _controller.Edit(model);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.IsNotNull(viewResult.Model);
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
             Assert.IsFalse(_controller.ModelState.IsValid);
         }
 
@@ -1317,20 +1317,19 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
-            var model = new TemplateEditViewModel
+            var model = new EditPostViewModel
             {
                 Id = template.Id,
                 Title = "Updated Title",
-                Description = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Updated Description")
+                Command = "SavePageProperties",
+                Payload = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("Updated Description")
             };
 
             // Act
             var result = await _controller.Edit(model);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Index", redirectResult.ActionName);
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
         #endregion
@@ -1454,17 +1453,16 @@ namespace Sky.Tests.Controllers
             Db.PageDesignVersions.Add(pageDesignVersion);
             await Db.SaveChangesAsync();
 
-            var model = new TemplateCodeEditorViewModel
+            var model = new EditPostViewModel
             {
                 Id = template.Id,
                 Title = "Updated Title",
-                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Updated Content</div>"),
-                EditorTitle = "Template Editor",
-                EditingField = "Content"
+                Command = "SaveCode",
+                Payload = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div data-ccms-ceid='region1'>Updated Content</div>")
             };
 
             // Act
-            var result = await _controller.EditCode(model);
+            var result = await _controller.Edit(model);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
@@ -1474,9 +1472,7 @@ namespace Sky.Tests.Controllers
                 .FirstOrDefaultAsync(v => v.TemplateId == model.Id);
             Assert.IsNotNull(updatedVersion);
             Assert.AreEqual("Updated Title", updatedVersion.Title);
-            Assert.IsTrue(
-                updatedVersion.Content.Contains("data-ccms-ceid"),
-                "Updated content should have editable markers");
+            Assert.AreEqual("<div data-ccms-ceid=\"region1\">Updated Content</div>", updatedVersion.Content);
         }
 
         /// <summary>
@@ -1513,151 +1509,20 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             var nestedContent = "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>";
-            var model = new Sky.Cms.Models.TemplateCodeEditorViewModel
+            var model = new EditPostViewModel
             {
                 Id = template.Id,
                 Title = "Updated",
-                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(nestedContent),
-                Version = 1
+                Command = "SaveCode",
+                Payload = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(nestedContent),
+                VersionNumber = 1
             };
 
             // Act
-            var result = await _controller.EditCode(model);
+            var result = await _controller.Edit(model);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST uses SavePageDesignVersionHandler.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_UsesSaveHandler_ForDesignerUpdates()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Designer Template",
-                Content = "<div>Original</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            var designerVersion = new PageDesignVersion
-            {
-                Id = Guid.NewGuid(),
-                TemplateId = template.Id,
-                Version = 1,
-                Title = template.Title,
-                Content = template.Content,
-                PageType = "template"
-            };
-            Db.PageDesignVersions.Add(designerVersion);
-            await Db.SaveChangesAsync();
-
-            // HTML with contenteditable attribute (added by designer UI)
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("<div contenteditable='true'>Designer Content</div>");
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(".class { color: red; }");
-
-            // Act
-            var result = await _controller.DesignerData(template.Id, "Updated by Designer", htmlContent, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            var resultValue = jsonResult.Value as dynamic;
-            Assert.IsTrue(resultValue.success, "Designer save should succeed");
-
-            // Verify version was updated
-            var updatedVersion = await Db.PageDesignVersions.FindAsync(designerVersion.Id);
-            Assert.IsNotNull(updatedVersion);
-            Assert.IsTrue(
-                updatedVersion.Content.Contains("data-ccms-ceid"),
-                "Designer updated content should have editable markers");
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST ensures editable markers are present.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_EnsuresEditableMarkers()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Designer Template",
-                Content = "<div>Original</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            var designerVersion = new PageDesignVersion
-            {
-                Id = Guid.NewGuid(),
-                TemplateId = template.Id,
-                Version = 1,
-                Title = template.Title,
-                Content = template.Content,
-                PageType = "template"
-            };
-            Db.PageDesignVersions.Add(designerVersion);
-            await Db.SaveChangesAsync();
-
-            // HTML with contenteditable attribute (added by designer UI) that needs data-ccms-ceid markers
-            var plainHtml = "<div contenteditable='true'>HTML with editable marker that needs CEID</div>";
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(plainHtml);
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(string.Empty);
-
-            // Act
-            var result = await _controller.DesignerData(template.Id, "Test", htmlContent, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-
-            // Verify markers were added
-            var updatedVersion = await Db.PageDesignVersions.FindAsync(designerVersion.Id);
-            Assert.IsNotNull(updatedVersion);
-            Assert.IsTrue(
-                updatedVersion.Content.Contains("data-ccms-ceid"),
-                "Content should have data-ccms-ceid markers");
-        }
-
-        /// <summary>
-        /// Tests that DesignerData POST rejects nested editable regions.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_RejectsNestedEditableRegions()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Designer Template",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            var nestedHtml = "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>";
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(nestedHtml);
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(string.Empty);
-
-            // Act
-            var result = await _controller.DesignerData(template.Id, "Test", htmlContent, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         #endregion

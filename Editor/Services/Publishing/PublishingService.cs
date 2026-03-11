@@ -45,20 +45,20 @@ namespace Sky.Editor.Services.Publishing
     /// </remarks>
     public class PublishingService : IPublishingService
     {
-        private readonly ApplicationDbContext _db;
-        private readonly IStorageContext _storage;
-        private readonly IEditorSettings _settings;
-        private readonly ILogger<PublishingService> _logger;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IAuthorInfoService _authors;
-        private readonly IClock _systemClock;
+        private readonly ApplicationDbContext db;
+        private readonly IStorageContext storage;
+        private readonly IEditorSettings settings;
+        private readonly ILogger<PublishingService> logger;
+        private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly IAuthorInfoService authors;
+        private readonly IClock systemClock;
         private readonly IBlogStreamRenderingService blogStreamRenderingService;
         private readonly IViewRenderService viewRenderService;
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IPublishingProgressReporter _progressReporter;
+        private readonly IServiceProvider serviceProvider;
+        private readonly IPublishingProgressReporter progressReporter;
         private readonly IArticleCatalogQueryService articleCatalogQueryService;
-        private readonly SemaphoreSlim _writeTocSemaphore = new SemaphoreSlim(1, 1);
-        private readonly SemaphoreSlim _layoutLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim writeTocSemaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim layoutLock = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PublishingService"/> class.
@@ -89,23 +89,23 @@ namespace Sky.Editor.Services.Publishing
             IPublishingProgressReporter progressReporter,
             IArticleCatalogQueryService articleCatalogQueryService)
         {
-            _db = db;
-            _storage = storage;
-            _settings = settings;
-            _logger = logger;
-            _httpContextAccessor = accessor;
-            _authors = authors;
-            _systemClock = systemClock;
+            this.db = db;
+            this.storage = storage;
+            this.settings = settings;
+            this.logger = logger;
+            httpContextAccessor = accessor;
+            this.authors = authors;
+            this.systemClock = systemClock;
             this.blogStreamRenderingService = blogStreamRenderingService;
             this.viewRenderService = viewRenderService;
-            _serviceProvider = serviceProvider;
-            _progressReporter = progressReporter;
+            this.serviceProvider = serviceProvider;
+            this.progressReporter = progressReporter;
             this.articleCatalogQueryService = articleCatalogQueryService;
         }
 
         private LayoutViewModel defaultLayout;
 
-        private Guid userId => Guid.Parse(_httpContextAccessor.HttpContext.User.Claims
+        private Guid userId => Guid.Parse(httpContextAccessor.HttpContext.User.Claims
             .FirstOrDefault(f => f.Type == "sub")?.Value ?? Guid.Empty.ToString());
 
         /// <summary>
@@ -124,15 +124,15 @@ namespace Sky.Editor.Services.Publishing
         /// </remarks>
         public async Task<List<CdnResult>> PublishBlogStreamAsync(Article blog, CancellationToken cancellationToken = default)
         {
-            var article = await _db.Articles
+            var article = await db.Articles
                 .Where(a => a.BlogKey == blog.BlogKey && a.ArticleType == (int)ArticleType.BlogStream)
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
 
             if (article == null)
             {
-                var articleNumber = (await _db.Articles.AnyAsync()) ?
-                    (await _db.Articles.Select(s => s.ArticleNumber).MaxAsync()) + 1 : 1;
+                var articleNumber = (await db.Articles.AnyAsync()) ?
+                    (await db.Articles.Select(s => s.ArticleNumber).MaxAsync()) + 1 : 1;
 
                 article = new Article
                 {
@@ -155,7 +155,7 @@ namespace Sky.Editor.Services.Publishing
                     BlogKey = blog.BlogKey
                 };
 
-                _db.Articles.Add(article);
+                db.Articles.Add(article);
             }
             else
             {
@@ -179,7 +179,7 @@ namespace Sky.Editor.Services.Publishing
             // Additionally publish the versioned wrapper as a static file for direct access
             var wrapperPath = GetWrapperVersionedPath(blog.BlogKey);
             using var ms = new MemoryStream(Encoding.UTF8.GetBytes(article.Content));
-            await _storage.AppendBlob(ms, new FileUploadMetaData
+            await storage.AppendBlob(ms, new FileUploadMetaData
             {
                 ChunkIndex = 0,
                 ContentType = "text/html",
@@ -227,23 +227,23 @@ namespace Sky.Editor.Services.Publishing
             await UnpublishEalierVersions(article);
 
             // Remove prior published (non-redirect) pages for this article number
-            var prior = await _db.Pages
+            var prior = await db.Pages
                 .Where(p => p.ArticleNumber == article.ArticleNumber && p.StatusCode != (int)StatusCodeEnum.Redirect)
                 .ToListAsync();
 
             if (prior.Any())
             {
-                _db.Pages.RemoveRange(prior);
-                await _db.SaveChangesAsync();
+                db.Pages.RemoveRange(prior);
+                await db.SaveChangesAsync();
 
                 DeleteStatic(prior);
             }
 
             // ✅ BUGFIX: Save the Article entity with its Published property
             // This ensures the Published timestamp persists to the database
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
 
-            var authorInfo = await _authors.GetOrCreateAsync(userId);
+            var authorInfo = await authors.GetOrCreateAsync(userId);
 
             PublishedPage page;
 
@@ -333,8 +333,8 @@ namespace Sky.Editor.Services.Publishing
                 };
             }
 
-            _db.Pages.Add(page);
-            await _db.SaveChangesAsync();
+            db.Pages.Add(page);
+            await db.SaveChangesAsync();
 
             await CreateStaticFile(page);
             await WriteTocAsync("/");
@@ -377,26 +377,26 @@ namespace Sky.Editor.Services.Publishing
 
             // If no IDs provided, publish all pages
             var pageIds = (ids == null || !ids.Any())
-                ? await _db.Pages.Select(p => p.Id).ToListAsync()
+                ? await db.Pages.Select(p => p.Id).ToListAsync()
                 : ids.ToList();
 
-            await _progressReporter.ReportProgressAsync(0, pageIds.Count, "Preparing to generate static pages...");
+            await progressReporter.ReportProgressAsync(0, pageIds.Count, "Preparing to generate static pages...");
 
             // Pre-load layout once
             var layout = await GetDefaultLayoutAsync();
 
             // Determine optimal parallelism based on storage backend
             var parallelism = StorageParallelismHelper.GetOptimalParallelism(
-                _storage,
-                _logger,
-                _settings.StaticPageParallelism);
+                storage,
+                logger,
+                settings.StaticPageParallelism);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Starting static page generation for {PageCount} page(s) with parallelism: {Parallelism}",
                 pageIds.Count,
                 parallelism);
 
-            await _progressReporter.ReportProgressAsync(
+            await progressReporter.ReportProgressAsync(
                 0,
                 pageIds.Count,
                 $"Starting generation of {pageIds.Count} page(s) with parallelism: {parallelism}");
@@ -408,7 +408,7 @@ namespace Sky.Editor.Services.Publishing
             for (int i = 0; i < pageIds.Count; i += batchSize)
             {
                 var batchIds = pageIds.Skip(i).Take(batchSize);
-                var pages = await _db.Pages.Where(w => batchIds.Contains(w.Id)).ToListAsync();
+                var pages = await db.Pages.Where(w => batchIds.Contains(w.Id)).ToListAsync();
 
                 // Process this batch with adaptive parallelism
                 var options = new ParallelOptions
@@ -420,7 +420,7 @@ namespace Sky.Editor.Services.Publishing
 
                 await Parallel.ForEachAsync(pages, options, async (page, cancellationToken) =>
                 {
-                    await using var scope = _serviceProvider.CreateAsyncScope();
+                    await using var scope = serviceProvider.CreateAsyncScope();
                     var scopedStorage = scope.ServiceProvider.GetRequiredService<IStorageContext>();
                     var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<PublishingService>>();
                     var scopedViewRenderer = scope.ServiceProvider.GetRequiredService<IViewRenderService>();
@@ -444,7 +444,7 @@ namespace Sky.Editor.Services.Publishing
                     // Report progress every 5 pages to avoid flooding SignalR
                     if (currentCount % 5 == 0 || currentCount == pageIds.Count)
                     {
-                        await _progressReporter.ReportProgressAsync(
+                        await progressReporter.ReportProgressAsync(
                             currentCount,
                             pageIds.Count,
                             $"Generated {currentCount} of {pageIds.Count} page(s)");
@@ -453,20 +453,20 @@ namespace Sky.Editor.Services.Publishing
 
                 processedCount += batchProcessedCount;
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Completed batch {BatchNumber}/{TotalBatches} ({PagesProcessed}/{TotalPages} pages)",
                     (i / batchSize) + 1,
                     (pageIds.Count + batchSize - 1) / batchSize,
                     Math.Min(i + batchSize, pageIds.Count),
                     pageIds.Count);
 
-                await _progressReporter.ReportProgressAsync(
+                await progressReporter.ReportProgressAsync(
                     processedCount,
                     pageIds.Count,
                     $"Completed batch {(i / batchSize) + 1}/{(pageIds.Count + batchSize - 1) / batchSize}");
             }
 
-            await _progressReporter.ReportProgressAsync(
+            await progressReporter.ReportProgressAsync(
                 pageIds.Count,
                 pageIds.Count,
                 "Updating table of contents...");
@@ -474,18 +474,18 @@ namespace Sky.Editor.Services.Publishing
             // Write TOC and purge CDN after all batches
             await WriteTocAsync("/");
 
-            await _progressReporter.ReportProgressAsync(
+            await progressReporter.ReportProgressAsync(
                 pageIds.Count,
                 pageIds.Count,
                 "Purging CDN cache...");
 
-            var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _httpContextAccessor.HttpContext);
+            var cdnService = await CdnService.GetCdnServiceAsync(db, logger, httpContextAccessor.HttpContext);
             if (cdnService != null)
             {
                 await cdnService.PurgeCdn();
             }
 
-            await _progressReporter.ReportProgressAsync(
+            await progressReporter.ReportProgressAsync(
                 pageIds.Count,
                 pageIds.Count,
                 "Static page generation completed successfully!");
@@ -571,18 +571,18 @@ namespace Sky.Editor.Services.Publishing
         {
             if (defaultLayout == null)
             {
-                await _layoutLock.WaitAsync();
+                await layoutLock.WaitAsync();
                 try
                 {
                     if (defaultLayout == null) // Double-check after acquiring lock
                     {
-                        var layout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(_db);
+                        var layout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
                         defaultLayout = new LayoutViewModel(layout);
                     }
                 }
                 finally
                 {
-                    _layoutLock.Release();
+                    layoutLock.Release();
                 }
             }
 
@@ -603,7 +603,7 @@ namespace Sky.Editor.Services.Publishing
             IStorageContext storage,
             IViewRenderService viewRenderer)
         {
-            if (!_settings.StaticWebPages)
+            if (!settings.StaticWebPages)
             {
                 return;
             }
@@ -687,7 +687,7 @@ namespace Sky.Editor.Services.Publishing
         {
             var articleNumber = article.ArticleNumber;
 
-            var versions = await _db.Articles.Where(a => a.ArticleNumber == articleNumber && a.Published != null).ToListAsync();
+            var versions = await db.Articles.Where(a => a.ArticleNumber == articleNumber && a.Published != null).ToListAsync();
             if (!versions.Any())
             {
                 return;
@@ -698,12 +698,12 @@ namespace Sky.Editor.Services.Publishing
                 v.Published = null;
             }
 
-            var pages = await _db.Pages
+            var pages = await db.Pages
                 .Where(p => p.ArticleNumber == articleNumber && p.StatusCode != (int)StatusCodeEnum.Redirect)
                 .ToListAsync();
 
-            _db.Pages.RemoveRange(pages);
-            await _db.SaveChangesAsync();
+            db.Pages.RemoveRange(pages);
+            await db.SaveChangesAsync();
             DeleteStatic(pages);
 
             foreach (var page in pages)
@@ -712,11 +712,11 @@ namespace Sky.Editor.Services.Publishing
             }
 
             // Update catalog entry to reflect unpublished state
-            var catalogEntry = await _db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == articleNumber);
+            var catalogEntry = await db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == articleNumber);
             if (catalogEntry != null)
             {
                 catalogEntry.Published = null;
-                await _db.SaveChangesAsync();
+                await db.SaveChangesAsync();
             }
 
             await WriteTocAsync("/");
@@ -725,14 +725,14 @@ namespace Sky.Editor.Services.Publishing
         /// <inheritdoc/>
         public async Task WriteTocAsync(string prefix = "/")
         {
-            if (!_settings.StaticWebPages)
+            if (!settings.StaticWebPages)
             {
                 return;
             }
 
             // ✅ ADD THREAD-SAFETY: Ensure only one operation writes TOC at a time
             // This prevents "DbContext concurrent operation" exceptions when multiple tenants publish simultaneously
-            await _writeTocSemaphore.WaitAsync();
+            await writeTocSemaphore.WaitAsync();
             try
             {
                 var toc = await articleCatalogQueryService.GetTableOfContentsAsync(prefix, 0, 500, false);
@@ -745,7 +745,7 @@ namespace Sky.Editor.Services.Publishing
                 var json = JsonConvert.SerializeObject(toc);
                 var target = string.IsNullOrEmpty(prefix) || prefix == "/" ? "/toc.json" : $"/pub/---toc/{prefix}/toc.json";
                 using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
-                await _storage.AppendBlob(ms, new FileUploadMetaData
+                await storage.AppendBlob(ms, new FileUploadMetaData
                 {
                     ChunkIndex = 0,
                     ContentType = "application/json",
@@ -758,7 +758,7 @@ namespace Sky.Editor.Services.Publishing
             }
             finally
             {
-                _writeTocSemaphore.Release();
+                writeTocSemaphore.Release();
             }
         }
 
@@ -786,7 +786,7 @@ namespace Sky.Editor.Services.Publishing
         /// </remarks>
         private async Task UnpublishEalierVersions(Article article)
         {
-            var dateTime = _systemClock.UtcNow;
+            var dateTime = systemClock.UtcNow;
 
             if (article.Published == null || article.Published > dateTime)
             {
@@ -798,7 +798,7 @@ namespace Sky.Editor.Services.Publishing
             var versionNumber = article.VersionNumber;
 
             // Find previous versions of this article number that are published before this one.
-            var others = await _db.Articles.Where(a =>
+            var others = await db.Articles.Where(a =>
                 a.ArticleNumber == article.ArticleNumber &&
                 a.Published != null &&
                 a.VersionNumber < versionNumber).ToListAsync();
@@ -817,15 +817,15 @@ namespace Sky.Editor.Services.Publishing
                 o.Published = null;
             }
 
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
 
             // Remove their published pages.
-            var doomedPages = await _db.Pages
+            var doomedPages = await db.Pages
                 .Where(p => ids.Contains(p.Id))
                 .ToListAsync();
 
-            _db.Pages.RemoveRange(doomedPages);
-            await _db.SaveChangesAsync();
+            db.Pages.RemoveRange(doomedPages);
+            await db.SaveChangesAsync();
 
             // Remove their static files.
             DeleteStatic(doomedPages);
@@ -854,7 +854,7 @@ namespace Sky.Editor.Services.Publishing
         /// </remarks>
         private void DeleteStatic(IEnumerable<PublishedPage> pages)
         {
-            if (!_settings.StaticWebPages)
+            if (!settings.StaticWebPages)
             {
                 return;
             }
@@ -866,7 +866,7 @@ namespace Sky.Editor.Services.Publishing
                 : "/" + page.UrlPath.TrimStart('/');
                 try
                 {
-                    _storage.DeleteFile(rel);
+                    storage.DeleteFile(rel);
                 }
                 catch
                 {
@@ -906,7 +906,7 @@ namespace Sky.Editor.Services.Publishing
         /// </remarks>
         private async Task CreateStaticFile(PublishedPage page)
         {
-            if (!_settings.StaticWebPages)
+            if (!settings.StaticWebPages)
             {
                 return;
             }
@@ -945,7 +945,7 @@ namespace Sky.Editor.Services.Publishing
             var html = await viewRenderService.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
 
             using var ms = new MemoryStream(Encoding.UTF8.GetBytes(html));
-            await _storage.AppendBlob(ms, new FileUploadMetaData
+            await storage.AppendBlob(ms, new FileUploadMetaData
             {
                 ChunkIndex = 0,
                 ContentType = "text/html",
@@ -988,7 +988,7 @@ namespace Sky.Editor.Services.Publishing
             var results = new List<CdnResult>();
             try
             {
-                var cdnService = await CdnService.GetCdnServiceAsync(_db, _logger, _httpContextAccessor.HttpContext);
+                var cdnService = await CdnService.GetCdnServiceAsync(db, logger, httpContextAccessor.HttpContext);
                 if (cdnService == null)
                 {
                     return results;
@@ -996,14 +996,14 @@ namespace Sky.Editor.Services.Publishing
 
                 var path = page.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase)
                     ? "/"
-                    : $"{_settings.PublisherUrl.TrimEnd('/')}/{page.UrlPath.TrimStart('/')}";
+                    : $"{settings.PublisherUrl.TrimEnd('/')}/{page.UrlPath.TrimStart('/')}";
                 var paths = new List<string> { path };
 
                 results = await cdnService.PurgeCdn(paths);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "CDN purge failed");
+                logger.LogWarning(ex, "CDN purge failed");
             }
 
             return results;

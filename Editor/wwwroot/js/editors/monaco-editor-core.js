@@ -19,7 +19,7 @@ class MonacoEditorCore {
             this.saveCurrentFieldContent();
         }
 
-        const fieldInfo = this.fields.find(f => f.FieldName === fieldName);
+        const fieldInfo = this.editFields.find(f => f.FieldName === fieldName);
         if (!fieldInfo) {
             console.error('Field not found:', fieldName);
             return;
@@ -235,6 +235,17 @@ class MonacoEditorCore {
                     alert('Failed to switch editor field. Please try again.');
                 }
             });
+        });
+    }
+
+    updateTabHighlight(fieldName) {
+        const tabs = document.querySelectorAll('[data-ccms-fieldname]');
+        tabs.forEach(tab => {
+            if (tab.getAttribute('data-ccms-fieldname') === fieldName) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
         });
     }
 

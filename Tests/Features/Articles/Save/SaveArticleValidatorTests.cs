@@ -111,10 +111,10 @@ namespace Sky.Tests.Features.Articles.Save
         }
 
         /// <summary>
-        /// Tests that Validate_EmptyContent_ReturnsError.
+        /// Tests that Validate_EmptyContent_DoesNotReturnError.
         /// </summary>
         [TestMethod]
-        public void Validate_EmptyContent_ReturnsError()
+        public void Validate_EmptyContent_DoesNotReturnError()
         {
             // Arrange
             var command = new SaveArticleCommand
@@ -129,7 +129,29 @@ namespace Sky.Tests.Features.Articles.Save
             var errors = validator.Validate(command);
 
             // Assert
-            Assert.IsTrue(errors.ContainsKey(nameof(command.Content)));
+            Assert.IsFalse(errors.ContainsKey(nameof(command.Content)));
+        }
+
+        /// <summary>
+        /// Tests that Validate_NullContent_DoesNotReturnError.
+        /// </summary>
+        [TestMethod]
+        public void Validate_NullContent_DoesNotReturnError()
+        {
+            // Arrange
+            var command = new SaveArticleCommand
+            {
+                ArticleNumber = 1,
+                Title = "Valid Title",
+                Content = null!,
+                UserId = Guid.NewGuid()
+            };
+
+            // Act
+            var errors = validator.Validate(command);
+
+            // Assert
+            Assert.IsFalse(errors.ContainsKey(nameof(command.Content)));
         }
 
         /// <summary>

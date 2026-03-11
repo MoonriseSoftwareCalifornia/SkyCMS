@@ -140,7 +140,7 @@ namespace Sky.Editor.Services.Scheduling
                     if (dbContextFromDI != null)
                     {
                         // Use the DbContext from DI (typically in test scenarios with in-memory database)
-                        var storageContext = scopedServices.GetRequiredService<StorageContext>();
+                        var storageContext = scopedServices.GetRequiredService<IStorageContext>();
                         await Run(dbContextFromDI, storageContext, domainName, scopedServices);
                     }
                     else
@@ -171,7 +171,7 @@ namespace Sky.Editor.Services.Scheduling
             }
         }
 
-        private async Task Run(ApplicationDbContext dbContext, StorageContext storageContext, string domainName, IServiceProvider scopedServices)
+        private async Task Run(ApplicationDbContext dbContext, IStorageContext storageContext, string domainName, IServiceProvider scopedServices)
         {
             var now = clock.UtcNow;
 
@@ -205,7 +205,7 @@ namespace Sky.Editor.Services.Scheduling
         /// </summary>
         /// <param name="now">Current UTC timestamp.</param>
         /// <param name="dbContext">The database context.</param>
-        /// <param name="storageContext">The storage context (Not IStorageContext).</param>
+        /// <param name="storageContext">The storage context.</param>
         /// <param name="articleNumber">Article number.</param>
         /// <param name="domainName">Domain name for logging.</param>
         /// <param name="scopedServices">Scoped service provider.</param>
@@ -213,7 +213,7 @@ namespace Sky.Editor.Services.Scheduling
         private async Task ProcessArticleVersions(
             DateTimeOffset now,
             ApplicationDbContext dbContext,
-            StorageContext storageContext,
+            IStorageContext storageContext,
             int articleNumber,
             string domainName,
             IServiceProvider scopedServices)

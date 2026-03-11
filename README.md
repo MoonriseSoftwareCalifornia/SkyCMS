@@ -540,48 +540,46 @@ See the [Azure installation guide](./Docs/Installation/AzureInstall.md) for conf
 
 ## SkyCMS Licensing
 
-SkyCMS is **dual-licensed** to provide maximum flexibility:
+SkyCMS source includes components under different licenses. Use depends on what you distribute.
 
-## GPL 2.0-or-later License (Default for Open Source Use)
+### SkyCMS Original Code (MIT)
 
-When using SkyCMS with the included open-source **CKEditor 5**, the entire
-application is licensed under **GNU General Public License Version 2.0 or later (GPL-2.0-or-later)**.
+SkyCMS original source code is available under the MIT License.  
+See [LICENSE-MIT](LICENSE-MIT).
 
-This matches CKEditor's licensing and allows you to choose GPL 2.0, GPL 3.0,
-or any later version of the GPL.
+### CKEditor 5 (Dual-Licensed by CKSource)
 
-**License Files:**
+CKEditor 5 is licensed by CKSource under:
 
-- [LICENSE-GPL](LICENSE-GPL) - Full GPL 2.0 license text
-- [LICENSE-CKEDITOR-GPL](LICENSE-CKEDITOR-GPL) - CKEditor-specific licensing information
+- GPL-2.0-or-later, or
+- Commercial terms
 
-**This means:**
+See:
 
-- Free to use for open-source projects
-- Must distribute source code of modifications
-- Derivative works must also be GPL-licensed
+- [LICENSE-CKEDITOR-GPL](LICENSE-CKEDITOR-GPL)
+- https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5/LICENSE.md
+- https://ckeditor.com/legal/ckeditor-licensing-options/
 
----
+### Distribution Guidance
 
-## MIT License (For Commercial Use)
+| Scenario | Typical licensing path |
+|---|---|
+| Internal use only (no software distribution) | MIT for SkyCMS code + comply with third-party terms |
+| Hosted/SaaS only (no software distribution) | MIT for SkyCMS code + comply with third-party terms |
+| Distributing builds/images/packages that include GPL CKEditor 5 | GPL-2.0-or-later obligations apply to distributed GPL-covered work |
+| Proprietary/commercial distribution including CKEditor 5 | Obtain CKEditor commercial license from CKSource |
 
-### Option 1: Source Code MIT License
+### Important
 
-All **original SkyCMS source code** (excluding CKEditor and other third-party components)
-is available under the **MIT License**.
+- Third-party components keep their own licenses; SkyCMS does not relicense third-party code.
+- If distributing software that includes GPL CKEditor 5, ensure GPL compliance (license notices, source availability obligations, and no additional downstream restrictions).
+- For proprietary distribution with CKEditor 5, use CKSource commercial licensing.
 
-See [LICENSE-MIT](LICENSE-MIT) for full MIT license terms.
+See [NOTICE.md](NOTICE.md) for third-party attribution details.
 
-### Option 2: Complete Application with Commercial CKEditor
+> This section is technical guidance, not legal advice.
 
-If you purchase a **commercial license for CKEditor** from CKSource,
-you may use the **entire SkyCMS application** under the **MIT License**.
-
-**This means:**
-
-- Use in proprietary/commercial applications
-- No requirement to distribute source code
-- Minimal restrictions
+See [LICENSES DISTRIBUTION](LICENSES-DISTRIBUTION.md) for further clarification on distribution of SkyCMS.
 
 ---
 

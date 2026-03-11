@@ -38,7 +38,7 @@ public class CommandResult
     /// Creates a successful command result.
     /// </summary>
     /// <returns>A successful command result.</returns>
-    public static CommandResult Success() => new() { IsSuccess = true };
+    public static CommandResult Success() => new () { IsSuccess = true };
 
     /// <summary>
     /// Creates a failed command result with a single error message.
@@ -46,7 +46,7 @@ public class CommandResult
     /// <param name="errorMessage">The error message.</param>
     /// <returns>A failed command result.</returns>
     public static CommandResult Failure(string errorMessage) =>
-        new() { IsSuccess = false, ErrorMessage = errorMessage };
+        new () { IsSuccess = false, ErrorMessage = errorMessage };
 
     /// <summary>
     /// Creates a failed command result with validation errors.
@@ -54,7 +54,7 @@ public class CommandResult
     /// <param name="errors">The validation errors.</param>
     /// <returns>A failed command result.</returns>
     public static CommandResult Failure(Dictionary<string, string[]> errors) =>
-        new() { IsSuccess = false, Errors = errors };
+        new () { IsSuccess = false, Errors = errors };
 }
 
 /// <summary>
@@ -95,5 +95,5 @@ public class CommandResult<T> : CommandResult
     /// <param name="errors">The validation errors.</param>
     /// <returns>A failed command result.</returns>
     public new static CommandResult<T> Failure(Dictionary<string, string[]> errors) =>
-        new() { IsSuccess = false, Errors = errors };
+        new () { IsSuccess = false, Errors = errors };
 }

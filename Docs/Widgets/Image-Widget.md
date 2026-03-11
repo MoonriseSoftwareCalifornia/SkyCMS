@@ -4,7 +4,7 @@ description: Interactive image upload and management widget with drag-and-drop, 
 keywords: widget, image, upload, FilePond, editor, drag-and-drop
 audience: [developers]
 ---
-# Cosmos CMS Image Widget
+## Cosmos CMS Image Widget
 
 Interactive image upload and management widget used by the Sky Editor. It provides drag‑and‑drop uploads (via FilePond), an image library picker, in-place replacement, and an alt-text editor, then saves the widget’s HTML back to the editor region.
 
@@ -152,6 +152,29 @@ If you already have an image and want the widget to attach controls to it:
 
 The widget exposes a global event dispatcher at `window.CCMSImageWidgetEvents` that allows you to hook into image lifecycle events. This is useful for custom analytics, UI updates, or integration with other systems.
 
+### Easiest subscription (recommended)
+
+Use the helper function and read `info.imageSrc`.
+
+```javascript
+// Returns an unsubscribe function
+const unsubscribe = window.ccmsOnImageChanged(function(info) {
+  // info.imageSrc => image URL on upload/selection, '' on delete
+  console.log('Current widget image URL:', info.imageSrc);
+});
+
+// Later (optional cleanup)
+unsubscribe();
+```
+
+Alternative helper on the dispatcher:
+
+```javascript
+const unsubscribe = window.CCMSImageWidgetEvents.onImageChanged(function(info) {
+  console.log(info.imageSrc, info.type, info.id);
+});
+```
+
 ### Supported event: `imageChanged`
 
 Fired after an image is successfully uploaded or deleted.
@@ -161,7 +184,7 @@ Fired after an image is successfully uploaded or deleted.
 - `type` (string): `'uploaded'` or `'deleted'`
 - `id` (string): The widget's unique identifier (`data-ccms-ceid`)
 - `element` (HTMLElement): The widget container DOM element
-- `imageSrc` (string | undefined): The image src URL when `type === 'uploaded'`; `undefined` when `type === 'deleted'`
+- `imageSrc` (string): The image src URL when `type === 'uploaded'`; blank (`''`) when `type === 'deleted'`
 
 ### Usage example
 
@@ -181,6 +204,12 @@ window.CCMSImageWidgetEvents.on('imageChanged', function(info) {
         console.log('Image removed from widget', info.id);
         // Custom logic: clean up related data, update UI, etc.
     }
+});
+
+// URL-focused usage via imageChanged
+window.CCMSImageWidgetEvents.on('imageChanged', function(info) {
+  // info.imageSrc is either the current image URL or '' when removed
+  console.log('Image URL changed:', info.imageSrc);
 });
 ```
 
@@ -250,7 +279,7 @@ window.CCMSImageWidgetEvents.on('imageChanged', myHandler);
 window.CCMSImageWidgetEvents.off('imageChanged', myHandler);
 ```
 
-**Note:** The event fires when an image is uploaded or deleted. The widget no longer calls `parent.saveEditorRegion` or `parent.saveChanges` - use this event system instead to respond to image lifecycle changes.
+**Note:** Events fire when an image is uploaded, selected from library, or deleted. The widget no longer calls `parent.saveEditorRegion` or `parent.saveChanges` - use this event system instead to respond to image lifecycle changes.
 
 ## Troubleshooting
 

@@ -80,7 +80,7 @@ namespace Cosmos.Common
         /// <param name="path">Path to article.</param>
         /// <returns>Returns file and folder metadata as a <see cref="FileManagerEntry"/> <see cref="List{T}"/>.</returns>
         /// <remarks>Does NOT authenticate the user.</remarks>
-        public static async Task<List<FileManagerEntry>> GetArticleFolderContents(StorageContext storageContext, int articleNumber, string path = "")
+        public static async Task<List<FileManagerEntry>> GetArticleFolderContents(IStorageContext storageContext, int articleNumber, string path = "")
         {
             path = $"/pub/articles/{articleNumber}/{path.TrimStart('/')}";
 

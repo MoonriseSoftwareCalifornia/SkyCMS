@@ -11,12 +11,20 @@ namespace Cosmos.Common.Services
     using System.IO;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Text.Json;
 
     /// <summary>
     /// AesDecryption utility for CryptoJS.
     /// </summary>
     public class CryptoJsDecryption
     {
+        private sealed class CryptoEnvelope
+        {
+            public string iv { get; set; }
+
+            public string ct { get; set; }
+        }
+
         /// <summary>
         /// Decrypts the encrypted text if not null or empty.
         /// </summary>
@@ -35,29 +43,25 @@ namespace Cosmos.Common.Services
                 keyText = "1234567890123456";
             }
 
-            // Decode the base64 encoded string
-            byte[] encryptedBytes = Convert.FromBase64String(encryptedText);
-
-            // Generate the key and IV using the passphrase and salt
             byte[] key = Encoding.UTF8.GetBytes(keyText);
-            byte[] iv = Encoding.UTF8.GetBytes(keyText);
 
-            // Decrypt the data
-            using (var aes = Aes.Create())
+            try
             {
-                aes.Key = key;
-                aes.IV = iv;
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-
-                using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
-                using (var ms = new MemoryStream(encryptedBytes))
-                using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                using (var sr = new StreamReader(cs))
+                var envelope = JsonSerializer.Deserialize<CryptoEnvelope>(encryptedText);
+                if (envelope != null && !string.IsNullOrWhiteSpace(envelope.ct) && !string.IsNullOrWhiteSpace(envelope.iv))
                 {
-                    return sr.ReadToEnd();
+                    var encryptedBytes = Convert.FromBase64String(envelope.ct);
+                    var ivBytes = Convert.FromBase64String(envelope.iv);
+                    return DecryptInternal(encryptedBytes, key, ivBytes);
                 }
             }
+            catch (JsonException)
+            {
+            }
+
+            byte[] legacyEncryptedBytes = Convert.FromBase64String(encryptedText);
+            byte[] legacyIv = Encoding.UTF8.GetBytes(keyText);
+            return DecryptInternal(legacyEncryptedBytes, key, legacyIv);
         }
 
         /// <summary>
@@ -98,6 +102,25 @@ namespace Cosmos.Common.Services
                     sw.Flush();
                     cs.FlushFinalBlock();
                     return Convert.ToBase64String(ms.ToArray());
+                }
+            }
+        }
+
+        private static string DecryptInternal(byte[] encryptedBytes, byte[] key, byte[] iv)
+        {
+            using (var aes = Aes.Create())
+            {
+                aes.Key = key;
+                aes.IV = iv;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+
+                using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
+                using (var ms = new MemoryStream(encryptedBytes))
+                using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                using (var sr = new StreamReader(cs))
+                {
+                    return sr.ReadToEnd();
                 }
             }
         }

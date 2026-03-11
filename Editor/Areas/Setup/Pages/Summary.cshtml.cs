@@ -50,7 +50,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <summary>
         /// Gets or sets critical settings for display.
         /// </summary>
-        public CriticalSettingsSummary CriticalSettings { get; set; } = new();
+        public CriticalSettingsSummary CriticalSettings { get; set; } = new ();
 
         /// <summary>
         /// Gets or sets the error message.

@@ -39,7 +39,7 @@ namespace Sky.Editor.Services.EditorSettings
         private EditorConfig editorConfig;
         private readonly string backupStorageConnectionString;
         private readonly IDynamicConfigurationProvider dynamicConfigurationProvider;
-        private readonly SemaphoreSlim _configSemaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim configSemaphore = new SemaphoreSlim(1, 1);
         private readonly string domainName;
 
         /// <summary>
@@ -455,7 +455,7 @@ namespace Sky.Editor.Services.EditorSettings
         {
             if (editorConfig == null)
             {
-                _configSemaphore.Wait();
+                configSemaphore.Wait();
                 try
                 {
                     if (editorConfig == null)
@@ -465,7 +465,7 @@ namespace Sky.Editor.Services.EditorSettings
                 }
                 finally
                 {
-                    _configSemaphore.Release();
+                    configSemaphore.Release();
                 }
             }
         }
