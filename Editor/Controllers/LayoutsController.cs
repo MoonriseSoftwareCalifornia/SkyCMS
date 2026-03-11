@@ -20,7 +20,6 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
-    using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
@@ -170,9 +169,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A list of layouts.</returns>
         public async Task<IActionResult> GetLayouts()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             try
@@ -213,32 +213,19 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Index(string sortOrder = SortOrderAsc, string currentSort = SortFieldLayoutName, int pageNo = 0, int pageSize = 10)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            // Validate pagination parameters
-            if (pageNo < 0)
-            {
-                logger.LogWarning("Invalid pageNo {PageNo} provided, defaulting to 0", pageNo);
-                pageNo = 0;
-            }
-
-            if (pageSize <= 0 || pageSize > 100)
-            {
-                logger.LogWarning("Invalid pageSize {PageSize} provided, defaulting to 10", pageSize);
-                pageSize = 10;
-            }
+            EnsureValidPagingParameters(ref pageNo, ref pageSize);
 
             try
             {
                 ViewData["ShowCreateFirstLayout"] = !await dbContext.Layouts.CosmosAnyAsync();
                 ViewData["ShowFirstPageBtn"] = !await dbContext.Articles.CosmosAnyAsync();
-                ViewData["sortOrder"] = sortOrder;
-                ViewData["currentSort"] = currentSort;
-                ViewData["pageNo"] = pageNo;
-                ViewData["pageSize"] = pageSize;
+                PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
 
                 var query = dbContext.Layouts.AsQueryable();
 
@@ -273,30 +260,17 @@ namespace Sky.Cms.Controllers
         /// <returns>Returns an <see cref="IActionResult"/>.</returns>
         public async Task<IActionResult> CommunityLayouts(string sortOrder = SortOrderAsc, string currentSort = SortFieldName, int pageNo = 0, int pageSize = 10)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            // Validate pagination parameters
-            if (pageNo < 0)
-            {
-                logger.LogWarning("Invalid pageNo {PageNo} provided, defaulting to 0", pageNo);
-                pageNo = 0;
-            }
-
-            if (pageSize <= 0 || pageSize > 100)
-            {
-                logger.LogWarning("Invalid pageSize {PageSize} provided, defaulting to 10", pageSize);
-                pageSize = 10;
-            }
+            EnsureValidPagingParameters(ref pageNo, ref pageSize);
 
             try
             {
-                ViewData["sortOrder"] = sortOrder;
-                ViewData["currentSort"] = currentSort;
-                ViewData["pageNo"] = pageNo;
-                ViewData["pageSize"] = pageSize;
+                PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
 
                 var catalog = await layoutImportService.GetCommunityCatalogAsync();
                 var query = catalog.LayoutCatalog.AsQueryable();
@@ -320,9 +294,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Create()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             try
@@ -367,9 +342,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Delete(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             if (id == Guid.Empty)
@@ -414,9 +390,10 @@ namespace Sky.Cms.Controllers
         /// <returns>View.</returns>
         public async Task<IActionResult> Designer()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             try
@@ -448,9 +425,10 @@ namespace Sky.Cms.Controllers
         [HttpGet]
         public async Task<IActionResult> DesignerData()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             try
@@ -714,9 +692,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> EditPreview(Guid? id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest();
+                return invalidModelState;
             }
 
             if (!id.HasValue || id.Value == Guid.Empty)
@@ -765,9 +744,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
         public async Task<IActionResult> ExportLayout(Guid? id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest();
+                return invalidModelState;
             }
 
             if (!id.HasValue || id.Value == Guid.Empty)
@@ -869,9 +849,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Import(string id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest();
+                return invalidModelState;
             }
 
             if (string.IsNullOrWhiteSpace(id))
@@ -935,9 +916,10 @@ namespace Sky.Cms.Controllers
         /// <returns>New version number.</returns>
         public async Task<IActionResult> Promote(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest();
+                return invalidModelState;
             }
 
             if (id == Guid.Empty)
@@ -1021,6 +1003,27 @@ namespace Sky.Cms.Controllers
                 await transaction.RollbackAsync();
                 logger.LogError(ex, "Error initializing layout versions");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Clamps <paramref name="pageNo"/> and <paramref name="pageSize"/> to valid ranges, logging a warning for each
+        /// out-of-range value.
+        /// </summary>
+        /// <param name="pageNo">Page number; clamped to ≥ 0.</param>
+        /// <param name="pageSize">Page size; clamped to [1, 100].</param>
+        private void EnsureValidPagingParameters(ref int pageNo, ref int pageSize)
+        {
+            if (pageNo < 0)
+            {
+                logger.LogWarning("Invalid pageNo {PageNo} provided, defaulting to 0", pageNo);
+                pageNo = 0;
+            }
+
+            if (pageSize <= 0 || pageSize > 100)
+            {
+                logger.LogWarning("Invalid pageSize {PageSize} provided, defaulting to 10", pageSize);
+                pageSize = 10;
             }
         }
 
@@ -1207,14 +1210,6 @@ namespace Sky.Cms.Controllers
             var clean = Encoding.UTF8.GetString(memStream.ToArray());
 
             return clean;
-        }
-
-        /// <summary>
-        /// Decrypts content safely.
-        /// </summary>
-        private static string DecryptContent(string content)
-        {
-            return string.IsNullOrEmpty(content) ? string.Empty : CryptoJsDecryption.Decrypt(content);
         }
 
         /// <summary>

@@ -10,6 +10,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Identity;
@@ -272,6 +273,195 @@ namespace Sky.Cms.Controllers
                 Id = id
             };
             return View(model);
+        }
+
+        /// <summary>
+        /// Returns a <see cref="BadRequestObjectResult"/> when model state is invalid; otherwise <see langword="null"/>.
+        /// </summary>
+        /// <returns>Bad-request result or <see langword="null"/>.</returns>
+        protected IActionResult? GetInvalidModelStateResult()
+        {
+            if (ModelState.IsValid)
+            {
+                return null;
+            }
+
+            return BadRequest(ModelState);
+        }
+
+        /// <summary>
+        /// Populates common sort and paging view data values.
+        /// </summary>
+        /// <param name="sortOrder">Sort order.</param>
+        /// <param name="currentSort">Current sort field.</param>
+        /// <param name="pageNo">Page number.</param>
+        /// <param name="pageSize">Page size.</param>
+        protected void PopulateSortPagingViewData(string sortOrder, string currentSort, int pageNo, int pageSize)
+        {
+            ViewData["sortOrder"] = sortOrder;
+            ViewData["currentSort"] = currentSort;
+            ViewData["pageNo"] = pageNo;
+            ViewData["pageSize"] = pageSize;
+        }
+
+        /// <summary>
+        /// Validates the CryptoContextToken format and authenticity.
+        /// </summary>
+        /// <param name="token">The token to validate.</param>
+        /// <returns><see langword="true"/> if valid; otherwise <see langword="false"/>.</returns>
+        protected bool IsValidCryptoContextToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return false;
+            }
+
+            if (token.StartsWith("invalid-", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Builds a dictionary of model-state errors keyed by field name, suitable for JSON responses.
+        /// </summary>
+        /// <returns>Dictionary of field-name to error-message arrays.</returns>
+        protected Dictionary<string, string[]> BuildModelStateErrors()
+        {
+            return ModelState
+                .Where(kvp => kvp.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value!.Errors
+                        .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Invalid value." : e.ErrorMessage)
+                        .ToArray());
+        }
+
+        /// <summary>
+        /// Safely decrypts CryptoJS-encrypted content, returning an empty string for null or empty input.
+        /// </summary>
+        /// <param name="content">Encrypted content to decrypt.</param>
+        /// <returns>Decrypted string, or <see cref="string.Empty"/> if <paramref name="content"/> is null or empty.</returns>
+        protected static string DecryptContent(string content)
+        {
+            return string.IsNullOrEmpty(content) ? string.Empty : CryptoJsDecryption.Decrypt(content);
+        }
+
+        /// <summary>
+        /// Applies query-string overrides to the edit post model.
+        /// Fields in <paramref name="model"/> are only overwritten when they are empty/default
+        /// and the corresponding field in <paramref name="queryModel"/> has a value.
+        /// </summary>
+        /// <param name="model">Primary edit post model (body).</param>
+        /// <param name="queryModel">Optional query model containing override values.</param>
+        protected static void ApplyQueryOverrides(EditPostViewModel model, EditPostViewModel? queryModel)
+        {
+            if (queryModel == null)
+            {
+                return;
+            }
+
+            if (model.Id == Guid.Empty && queryModel.Id != Guid.Empty)
+            {
+                model.Id = queryModel.Id;
+            }
+
+            if (model.ArticleNumber == 0 && queryModel.ArticleNumber > 0)
+            {
+                model.ArticleNumber = queryModel.ArticleNumber;
+            }
+
+            if (model.VersionNumber == 0 && queryModel.VersionNumber > 0)
+            {
+                model.VersionNumber = queryModel.VersionNumber;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditorId) && !string.IsNullOrWhiteSpace(queryModel.EditorId))
+            {
+                model.EditorId = queryModel.EditorId;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Command) && !string.IsNullOrWhiteSpace(queryModel.Command))
+            {
+                model.Command = queryModel.Command;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Payload) && !string.IsNullOrWhiteSpace(queryModel.Payload))
+            {
+                model.Payload = queryModel.Payload;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.HeadJavaScript) && !string.IsNullOrWhiteSpace(queryModel.HeadJavaScript))
+            {
+                model.HeadJavaScript = queryModel.HeadJavaScript;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.FooterJavaScript) && !string.IsNullOrWhiteSpace(queryModel.FooterJavaScript))
+            {
+                model.FooterJavaScript = queryModel.FooterJavaScript;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CssContent) && !string.IsNullOrWhiteSpace(queryModel.CssContent))
+            {
+                model.CssContent = queryModel.CssContent;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditingField) && !string.IsNullOrWhiteSpace(queryModel.EditingField))
+            {
+                model.EditingField = queryModel.EditingField;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EditorType) && !string.IsNullOrWhiteSpace(queryModel.EditorType))
+            {
+                model.EditorType = queryModel.EditorType;
+            }
+
+            if (!model.Published.HasValue && queryModel.Published.HasValue)
+            {
+                model.Published = queryModel.Published;
+            }
+
+            if (!model.Updated.HasValue && queryModel.Updated.HasValue)
+            {
+                model.Updated = queryModel.Updated;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CryptoContextToken) && !string.IsNullOrWhiteSpace(queryModel.CryptoContextToken))
+            {
+                model.CryptoContextToken = queryModel.CryptoContextToken;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title) && !string.IsNullOrWhiteSpace(queryModel.Title))
+            {
+                model.Title = queryModel.Title;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.UrlPath) && !string.IsNullOrWhiteSpace(queryModel.UrlPath))
+            {
+                model.UrlPath = queryModel.UrlPath;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.BannerImage) && !string.IsNullOrWhiteSpace(queryModel.BannerImage))
+            {
+                model.BannerImage = queryModel.BannerImage;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.RoleList) && !string.IsNullOrWhiteSpace(queryModel.RoleList))
+            {
+                model.RoleList = queryModel.RoleList;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Category) && !string.IsNullOrWhiteSpace(queryModel.Category))
+            {
+                model.Category = queryModel.Category;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Introduction) && !string.IsNullOrWhiteSpace(queryModel.Introduction))
+            {
+                model.Introduction = queryModel.Introduction;
+            }
         }
     }
 }

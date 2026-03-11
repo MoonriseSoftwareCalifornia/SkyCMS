@@ -148,32 +148,16 @@ namespace Sky.Cms.Controllers
             // Ensure default templates exist.
             await this.templateService.EnsureDefaultTemplatesExistAsync();
 
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            ViewData["ShowFirstPageBtn"] = false; // Default unless changed below.
-
-            if ((await dbContext.Articles.CountAsync()) == 0)
+            var initialHomePageResult = await TryGetInitialHomePageResultAsync();
+            if (initialHomePageResult != null)
             {
-                var template = await dbContext.Templates.Where(w => w.Title.ToLower().Contains("home page")).FirstOrDefaultAsync();
-
-                if (template == null)
-                {
-                    ViewData["ShowFirstPageBtn"] = true;
-                }
-                else
-                {
-                    return View(viewName: "__NewHomePage", model:
-                        new CreatePageViewModel()
-                        {
-                            TemplateId = template.Id,
-                            Title = string.Empty,
-                            ArticleNumber = 1,
-                            Id = Guid.NewGuid()
-                        });
-                }
+                return initialHomePageResult;
             }
 
             ViewData["HomePageArticleNumber"] = await dbContext.Pages.Where(f => f.UrlPath == "root").Select(s => s.ArticleNumber).FirstOrDefaultAsync();
@@ -190,20 +174,21 @@ namespace Sky.Cms.Controllers
         /// <returns>View.</returns>
         public async Task<IActionResult> Designer(int id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            // Loads GrapeJS.
             ViewData["IsDesigner"] = true;
 
-            var article = await GetArticleForEdit(id);
-
-            if (article == null)
+            var context = await GetEditableArticleContextAsync(id);
+            if (context == null)
             {
                 return NotFound();
             }
+
+            var (article, catalogEntry) = context.Value;
 
             var defaultLayout = await GetCurrentLayoutAsync();
             var config = new DesignerConfig(defaultLayout, article.ArticleNumber.ToString(), article.Title);
@@ -214,21 +199,7 @@ namespace Sky.Cms.Controllers
             }
 
             ViewData["DesignerConfig"] = config;
-            ViewData["Version"] = article.VersionNumber;
-
-            ViewData["PageTitle"] = article.Title;
-            ViewData["Published"] = null;
-            ViewData["LastPubDateTime"] = await mediator.QueryAsync(new GetLastPublishedDateQuery
-            {
-                ArticleNumber = article.ArticleNumber
-            });
-            var htmlContent = htmlService.EnsureEditableMarkers(article.Content);
-            ViewData["EnableHtmlEditorMenuPick"] = htmlService.HasEditableRegions(htmlContent);
-
-            var catalogEntry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
-            {
-                ArticleNumber = article.ArticleNumber
-            });
+            await PopulateEditorViewDataAsync(article.ArticleNumber, article.Title, article.Content, article.VersionNumber);
 
             var designerUtils = new DesignerUtilities();
             var data = designerUtils.ExtractDesignerData(article.Content);
@@ -257,15 +228,13 @@ namespace Sky.Cms.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDesignerData(int id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            var article = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByArticleNumberQuery 
-            { 
-                ArticleNumber = id 
-            });
+            var article = await GetArticleViewModelAsync(id);
 
             if (article == null)
             {
@@ -288,9 +257,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Versions(int? id, string sortOrder = "desc", string currentSort = "VersionNumber", int pageNo = 0, int pageSize = 10)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             if (id == null)
@@ -298,10 +268,7 @@ namespace Sky.Cms.Controllers
                 return RedirectToAction("Index");
             }
 
-            ViewData["sortOrder"] = sortOrder;
-            ViewData["currentSort"] = currentSort;
-            ViewData["pageNo"] = pageNo;
-            ViewData["pageSize"] = pageSize;
+            PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
             ViewData["articleNumber"] = id;
 
             var articleNumber = id.Value;
@@ -415,9 +382,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors, Authors")]
         public IActionResult Trash()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             return View();
@@ -431,9 +399,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Compare(Guid leftId, Guid rightId)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var left = await mediator.QueryAsync<ArticleViewModel>(new GetArticleByIdQuery { Id = leftId });
@@ -446,33 +415,7 @@ namespace Sky.Cms.Controllers
             var model = new CompareCodeViewModel()
             {
                 EditorTitle = left.Title,
-                EditorFields = new[]
-                {
-                    new EditorField
-                    {
-                        FieldId = "HeadJavaScript",
-                        FieldName = "Head Block",
-                        EditorMode = EditorMode.Html,
-                        IconUrl = "/images/seti-ui/icons/html.svg",
-                        ToolTip = "Content to appear at the bottom of the <head> tag."
-                    },
-                    new EditorField
-                    {
-                        FieldId = "Content",
-                        FieldName = "Html Content",
-                        EditorMode = EditorMode.Html,
-                        IconUrl = "~/images/seti-ui/icons/html.svg",
-                        ToolTip = "Content to appear in the <body>."
-                    },
-                    new EditorField
-                    {
-                        FieldId = "FooterJavaScript",
-                        FieldName = "Footer Block",
-                        EditorMode = EditorMode.Html,
-                        IconUrl = "~/images/seti-ui/icons/html.svg",
-                        ToolTip = "Content to appear at the bottom of the <body> tag."
-                    }
-                },
+                EditorFields = GetDefaultCodeEditorFields(),
                 Articles = new ArticleViewModel[] { left, right }
             };
             return View(model);
@@ -486,9 +429,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
         public async Task<IActionResult> GetTemplateInfo(Guid? id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             if (id == null)
@@ -496,7 +440,6 @@ namespace Sky.Cms.Controllers
                 return Json(string.Empty);
             }
 
-            // Use GetTemplateQuery to retrieve the template
             var query = new GetTemplateQuery { TemplateId = id.Value };
             var result = await mediator.QueryAsync(query);
             
@@ -520,96 +463,19 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
         public async Task<IActionResult> Create(string title = "", string sortOrder = "asc", string currentSort = "Title", int pageNo = 0, int pageSize = 20)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            if ((await dbContext.Articles.CountAsync()) == 0)
+            var initialHomePageResult = await TryGetInitialHomePageResultAsync();
+            if (initialHomePageResult != null)
             {
-                var template = await dbContext.Templates.Where(w => w.Title.ToLower().Contains("home page")).FirstOrDefaultAsync();
-
-                if (template == null)
-                {
-                    ViewData["ShowFirstPageBtn"] = true;
-                }
-                else
-                {
-                    return View(viewName: "__NewHomePage", model:
-                        new CreatePageViewModel()
-                        {
-                            TemplateId = template.Id,
-                            Title = string.Empty,
-                            ArticleNumber = 1,
-                            Id = Guid.NewGuid()
-                        });
-                }
+                return initialHomePageResult;
             }
 
-            var defaultLayout = await GetCurrentLayoutAsync();
-
-            ViewData["Layouts"] = await BaseGetLayoutListItems();
-
-            ViewData["sortOrder"] = sortOrder;
-            ViewData["currentSort"] = currentSort;
-            ViewData["pageNo"] = pageNo;
-            ViewData["pageSize"] = pageSize;
-            var reserved = await reservedPaths.GetReservedPaths();
-            var existingUrls = await dbContext.Articles.Where(w => w.StatusCode == (int)StatusCodeEnum.Active).Select(s => s.Title).Distinct().ToListAsync();
-            existingUrls.AddRange(reserved.Select(s => s.Path));
-            ViewData["reservedPaths"] = existingUrls;
-
-            var query = (await GetTemplatesForCurrentLayoutAsync())
-                .OrderBy(t => t.Title)
-                .Select(s => new TemplateIndexViewModel
-                {
-                    Id = s.Id,
-                    LayoutName = defaultLayout.LayoutName,
-                    Description = s.Description,
-                    Title = s.Title,
-                    UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
-                });
-
-            ViewData["RowCount"] = await query.CountAsync();
-
-            if (sortOrder == "desc")
-            {
-                if (!string.IsNullOrEmpty(currentSort))
-                {
-                    switch (currentSort)
-                    {
-                        case "LayoutName":
-                            query = query.OrderByDescending(o => o.LayoutName);
-                            break;
-                        case "Description":
-                            query = query.OrderByDescending(o => o.Description);
-                            break;
-                        case "Title":
-                            query = query.OrderByDescending(o => o.Title);
-                            break;
-                    }
-                }
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(currentSort))
-                {
-                    switch (currentSort)
-                    {
-                        case "LayoutName":
-                            query = query.OrderBy(o => o.LayoutName);
-                            break;
-                        case "Title":
-                            query = query.OrderBy(o => o.Title);
-                            break;
-                        case "Description":
-                            query = query.OrderBy(o => o.Description);
-                            break;
-                    }
-                }
-            }
-
-            ViewData["TemplateList"] = await query.Skip(pageNo * pageSize).Take(pageSize).ToListAsync();
+            await PopulateCreatePageViewDataAsync(sortOrder, currentSort, pageNo, pageSize);
 
             return View(new CreatePageViewModel()
             {
@@ -627,30 +493,10 @@ namespace Sky.Cms.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreatePageViewModel model)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                // Re-populate ViewData for error display
-                var defaultLayout = await GetCurrentLayoutAsync();
-                ViewData["Layouts"] = await BaseGetLayoutListItems();
-                ViewData["sortOrder"] = "asc";
-                ViewData["currentSort"] = "title";
-                ViewData["pageNo"] = 0;
-                ViewData["pageSize"] = 20;
-
-                var query = (await GetTemplatesForCurrentLayoutAsync())
-                   .OrderBy(t => t.Title)
-                   .Select(s => new TemplateIndexViewModel
-                   {
-                       Id = s.Id,
-                       LayoutName = defaultLayout.LayoutName,
-                       Description = s.Description,
-                       Title = s.Title,
-                       UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
-                   });
-
-                ViewData["RowCount"] = await query.CountAsync();
-                ViewData["TemplateList"] = await query.Skip(0 * 20).Take(20).ToListAsync();
-
+                await PopulateCreatePageViewDataAsync(pageNo: 0, pageSize: 20, currentSort: "title");
                 return View(model);
             }
 
@@ -661,11 +507,6 @@ namespace Sky.Cms.Controllers
 
             model.Title = model.Title.TrimStart('/');
 
-            // REMOVED: Title validation now handled in CreateArticleHandler
-            // var validTitle = await titleChangeService.ValidateTitle(model.Title, null);
-            // if (!validTitle) { ... }
-
-            // CreateArticleHandler will validate title and return error if conflicts exist
             var command = new CreateArticleCommand
             {
                 Title = model.Title,
@@ -681,15 +522,10 @@ namespace Sky.Cms.Controllers
 
             if (!result.IsSuccess)
             {
-                // Handler validation errors (including title conflicts)
-                var errors = result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>();
-                var errorMessage = result.ErrorMessage ?? string.Join(", ", errors);
-                ModelState.AddModelError(string.Empty, errorMessage);
-                
+                AddCommandErrorsToModelState(result);
                 return View(viewName: "__NewHomePage", model: model);
             }
 
-            // Successfully created - redirect to Versions action to view/edit the new article
             return RedirectToAction("Versions", new { id = result.Data.Id });
         }
 
@@ -702,7 +538,8 @@ namespace Sky.Cms.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateInitialHomePage(CreatePageViewModel model)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
                 return View(viewName: "__NewHomePage", model: model);
             }
@@ -721,19 +558,14 @@ namespace Sky.Cms.Controllers
 
             model.Title = model.Title.TrimStart('/');
 
-            // REMOVED: Title validation now handled in CreateArticleHandler
-            // var validTitle = await titleChangeService.ValidateTitle(model.Title, null);
-            // if (!validTitle) { ... }
+            var template = await GetHomePageTemplateAsync(exactTitleMatch: true);
 
-            var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Title.ToLower() == "home page");
-            
             if (template == null)
             {
                 ModelState.AddModelError("Title", "Home page template not found.");
                 return View(viewName: "__NewHomePage", model: model);
             }
 
-            // REFACTORED: Use CreateArticleCommand via mediator
             var command = new CreateArticleCommand
             {
                 Title = model.Title,
@@ -741,27 +573,20 @@ namespace Sky.Cms.Controllers
                 UserId = Guid.Parse(await GetUserId()),
                 ArticleType = ArticleType.General,
                 BlogKey = string.Empty,
-                
-                // Special home page properties
-                Published = DateTimeOffset.UtcNow,           // Auto-publish
-                StatusCode = StatusCodeEnum.Active,          // Override default
-                ContentOverride = template.Content,          // Use template as-is
-                UrlPathOverride = "root"                     // CRITICAL: Home page must be "root"
+                Published = DateTimeOffset.UtcNow,
+                StatusCode = StatusCodeEnum.Active,
+                ContentOverride = template.Content,
+                UrlPathOverride = "root"
             };
 
             var result = await mediator.SendAsync<CommandResult<ArticleViewModel>>(command);
 
             if (!result.IsSuccess)
             {
-                // Handler validation errors (including title conflicts)
-                var errors = result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>();
-                var errorMessage = result.ErrorMessage ?? string.Join(", ", errors);
-                ModelState.AddModelError(string.Empty, errorMessage);
-                
+                AddCommandErrorsToModelState(result);
                 return View(viewName: "__NewHomePage", model: model);
             }
 
-            // Successfully created - redirect to home
             return Redirect("/");
         }
 
@@ -773,9 +598,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors, Authors")]
         public async Task<IActionResult> Restore(int id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             await articleLogic.RestoreArticle(id, await GetUserId());
@@ -790,9 +616,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public IActionResult Publish()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             return View();
@@ -853,9 +680,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> UnpublishPage(int id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var article = await dbContext.Articles.Where(w => w.ArticleNumber == id).OrderByDescending(o => o.VersionNumber).FirstOrDefaultAsync();
@@ -878,23 +706,20 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> Permissions(int id, bool forRoles = true, string sortOrder = "asc", string currentSort = "Name", int pageNo = 0, int pageSize = 10)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            ViewData["sortOrder"] = sortOrder;
-            ViewData["currentSort"] = currentSort;
-            ViewData["pageNo"] = pageNo;
-            ViewData["pageSize"] = pageSize;
+            PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
             ViewData["showingRoles"] = forRoles;
 
-            var article = await dbContext.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == id);
-
-            var catalogEntry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+            var catalogEntry = await GetArticleCatalogEntryAsync(id);
+            if (catalogEntry == null)
             {
-                ArticleNumber = id
-            });
+                return NotFound();
+            }
 
             ViewData["ArticleNumber"] = catalogEntry.ArticleNumber;
             ViewData["ArticlePermissions"] = catalogEntry.ArticlePermissions;
@@ -903,31 +728,10 @@ namespace Sky.Cms.Controllers
             ViewData["ViewModel"] = new ArticlePermissionsViewModel(catalogEntry, forRoles);
             ViewData["Title"] = catalogEntry.Title;
             ViewData["AllowedUsers"] = await userManager.Users.Where(w => objectIds.Contains(w.Id)).ToListAsync();
-
             ViewData["AllowedRoles"] = await roleManager.Roles.Where(w => objectIds.Contains(w.Id)).ToListAsync();
 
-            IQueryable<ArticlePermisionItem> query;
+            var query = GetPermissionItemsQuery(forRoles);
 
-            if (forRoles)
-            {
-                query = roleManager.Roles.Select(
-                    s => new ArticlePermisionItem
-                    {
-                        IdentityObjectId = s.Id,
-                        Name = s.Name,
-                    }).AsQueryable();
-            }
-            else
-            {
-                query = userManager.Users.Select(
-                    s => new ArticlePermisionItem
-                    {
-                        IdentityObjectId = s.Id,
-                        Name = s.Email,
-                    }).AsQueryable();
-            }
-
-            // Get count
             ViewData["RowCount"] = await query.CountAsync();
 
             if (sortOrder.Equals("desc", StringComparison.InvariantCultureIgnoreCase))
@@ -966,18 +770,19 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> Permissions(int id, string[] identityObjectIds)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             try
             {
-                var article = await dbContext.Articles.Where(w => w.ArticleNumber == id).OrderByDescending(o => o.VersionNumber).LastOrDefaultAsync();
-                var entry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+                var entry = await GetArticleCatalogEntryAsync(id);
+                if (entry == null)
                 {
-                    ArticleNumber = id
-                });
+                    return NotFound();
+                }
 
                 if (entry.ArticlePermissions == null)
                 {
@@ -1026,9 +831,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> Logs()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var data = await dbContext.ArticleLogs
@@ -1063,9 +869,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> ReservedPaths(string sortOrder, string currentSort, int pageNo = 0, int pageSize = 10, string filter = "")
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var paths = await reservedPaths.GetReservedPaths();
@@ -1075,10 +882,7 @@ namespace Sky.Cms.Controllers
             var query = paths.AsQueryable();
 
             ViewData["Filter"] = filter;
-            ViewData["sortOrder"] = sortOrder;
-            ViewData["currentSort"] = currentSort;
-            ViewData["pageNo"] = pageNo;
-            ViewData["pageSize"] = pageSize;
+            PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
 
             if (!string.IsNullOrEmpty(filter))
             {
@@ -1117,7 +921,6 @@ namespace Sky.Cms.Controllers
                 }
                 else
                 {
-                    // Default sort order
                     query = query.OrderBy(o => o.Path);
                 }
             }
@@ -1134,9 +937,10 @@ namespace Sky.Cms.Controllers
         [HttpGet]
         public IActionResult CreateReservedPath()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             ViewData["Title"] = "Create a Reserved Path";
@@ -1151,9 +955,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> EditReservedPath(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             ViewData["Title"] = "Edit Reserved Path";
@@ -1177,9 +982,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> CcmsContent(int id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var article = await mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = id });
@@ -1195,44 +1001,39 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
         public async Task<IActionResult> Edit(int id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            // Web browser may ask for favicon.ico, so if the ID is not a number, just skip the response.
             ViewData["BlobEndpointUrl"] = editorSettings.BlobPublicUrl;
 
-            // Get an article, or a template based on the controller name.
-            var model = await mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = id });
-
-            ViewData["PageTitle"] = model.Title;
-            ViewData["Published"] = null;
-            ViewData["LastPubDateTime"] = await mediator.QueryAsync(new GetLastPublishedDateQuery
+            var model = await GetArticleViewModelAsync(id);
+            if (model == null)
             {
-                ArticleNumber = model.ArticleNumber
-            });
-            var htmlContent = htmlService.EnsureEditableMarkers(model.Content);
-            ViewData["EnableHtmlEditorMenuPick"] = false; // Not needed because already in HTML editor.
+                return NotFound();
+            }
 
-            // Override defaults
+            var isPublished = model.Published.HasValue;
+
+            await PopulateEditorViewDataAsync(model.ArticleNumber, model.Title, model.Content, showHtmlEditorMenuPick: false);
+
             model.EditModeOn = true;
             model.Published = null;
 
-            // Authors cannot edit published articles
-            if (model.Published.HasValue && User.IsInRole("Authors"))
+            if (isPublished && User.IsInRole("Authors"))
             {
                 return Unauthorized();
             }
 
-            var article = await GetArticleForEdit(id);
-
-            var entry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+            var context = await GetEditableArticleContextAsync(id);
+            if (context == null)
             {
-                ArticleNumber = article.ArticleNumber
-            });
+                return NotFound();
+            }
 
-            return View(new HtmlEditorViewModel(model, entry));
+            return View(new HtmlEditorViewModel(model, context.Value.CatalogEntry));
         }
 
         /// <summary>
@@ -1251,9 +1052,10 @@ namespace Sky.Cms.Controllers
 
             ApplyQueryOverrides(model, queryModel);
 
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             // Validate CryptoContextToken if provided
@@ -1455,33 +1257,21 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> EditCode(int id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            // Get an article, or a template based on the controller name.
-            var article = await GetArticleForEdit(id);
-            if (article == null)
+            var context = await GetEditableArticleContextAsync(id);
+            if (context == null)
             {
                 return NotFound();
             }
 
-            ViewData["Version"] = article.VersionNumber;
+            var (article, catalogEntry) = context.Value;
 
-            ViewData["PageTitle"] = article.Title;
-            ViewData["Published"] = null;
-            ViewData["LastPubDateTime"] = await mediator.QueryAsync(new GetLastPublishedDateQuery
-            {
-                ArticleNumber = article.ArticleNumber
-            });
-            var htmlContent = htmlService.EnsureEditableMarkers(article.Content);
-            ViewData["EnableHtmlEditorMenuPick"] = htmlService.HasEditableRegions(htmlContent);
-
-            var catalogEntry = await mediator.QueryAsync(new GetArticleCatalogEntryQuery
-            {
-                ArticleNumber = article.ArticleNumber
-            });
+            await PopulateEditorViewDataAsync(article.ArticleNumber, article.Title, article.Content, article.VersionNumber);
 
             return View(new EditCodePostModel
             {
@@ -1495,33 +1285,7 @@ namespace Sky.Cms.Controllers
                 UrlPath = article.UrlPath,
                 BannerImage = article.BannerImage,
                 Updated = article.Updated,
-                EditorFields = new[]
-                {
-                    new EditorField
-                    {
-                        FieldId = "HeadJavaScript",
-                        FieldName = "Head Block",
-                        EditorMode = EditorMode.Html,
-                        IconUrl = "/images/seti-ui/icons/html.svg",
-                        ToolTip = "Content to appear at the bottom of the <head> tag."
-                    },
-                    new EditorField
-                    {
-                        FieldId = "Content",
-                        FieldName = "Html Content",
-                        EditorMode = EditorMode.Html,
-                        IconUrl = "~/images/seti-ui/icons/html.svg",
-                        ToolTip = "Content to appear in the <body>."
-                    },
-                    new EditorField
-                    {
-                        FieldId = "FooterJavaScript",
-                        FieldName = "Footer Block",
-                        EditorMode = EditorMode.Html,
-                        IconUrl = "~/images/seti-ui/icons/html.svg",
-                        ToolTip = "Content to appear at the bottom of the <body> tag."
-                    }
-                },
+                EditorFields = GetDefaultCodeEditorFields(),
                 HeadJavaScript = article.HeaderJavaScript,
                 FooterJavaScript = article.FooterJavaScript,
                 Content = article.Content,
@@ -1536,9 +1300,10 @@ namespace Sky.Cms.Controllers
         /// <returns>View.</returns>
         public IActionResult Scheduler()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             return View();
@@ -1552,9 +1317,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
         public async Task<IActionResult> ExportPage(Guid? id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             ArticleViewModel article;
@@ -1568,7 +1334,6 @@ namespace Sky.Cms.Controllers
             }
             else
             {
-                // Create temporary blank page for export using CQRS command
                 var command = new CreateArticleCommand
                 {
                     Title = "Blank Page",
@@ -1605,9 +1370,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators")]
         public IActionResult Preload()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             return View(new PreloadViewModel());
@@ -1623,9 +1389,10 @@ namespace Sky.Cms.Controllers
         [HttpPost]
         public async Task<IActionResult> CheckTitle(int articleNumber, string title)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var result = await titleChangeService.ValidateTitle(title, articleNumber);
@@ -1648,9 +1415,10 @@ namespace Sky.Cms.Controllers
         [HttpGet]
         public async Task<IActionResult> GetArticleList(string term = "", bool publishedOnly = true, int articleType = 0)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var blogPostArticleType = (int)ArticleType.BlogPost;
@@ -1686,7 +1454,6 @@ namespace Sky.Cms.Controllers
             }
             else
             {
-                // LINQ equivalent for the SQL GROUP BY and MAX aggregate
                 var query = publishedOnly ? dbContext.Articles
                     .Where(a => a.Published != null && a.StatusCode == (int)StatusCodeEnum.Active && a.ArticleType != blogPostArticleType) :
                     dbContext.Articles
@@ -1730,9 +1497,10 @@ namespace Sky.Cms.Controllers
         /// <returns>Key.</returns>
         public async Task<IActionResult> GetEncryptionKey()
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var setting = await dbContext.Settings.Where(w => w.Description == "EncryptionKey").FirstOrDefaultAsync();
@@ -1799,9 +1567,10 @@ namespace Sky.Cms.Controllers
         [HttpGet]
         public async Task<IActionResult> TrashArticle(int id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             await articleLogic.DeleteArticle(id);
@@ -1819,15 +1588,13 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> Redirects(string sortOrder, string currentSort, int pageNo = 0, int pageSize = 10)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
-            ViewData["sortOrder"] = sortOrder;
-            ViewData["currentSort"] = currentSort;
-            ViewData["pageNo"] = pageNo;
-            ViewData["pageSize"] = pageSize;
+            PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
 
             var redirectsResult = await mediator.QueryAsync(new GetArticleRedirectsQuery());
             var query = redirectsResult.AsQueryable();
@@ -1884,9 +1651,10 @@ namespace Sky.Cms.Controllers
         [HttpGet]
         public async Task<IActionResult> RedirectDelete(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var article = await dbContext.Articles.FirstOrDefaultAsync(f => f.Id == id);
@@ -1906,9 +1674,10 @@ namespace Sky.Cms.Controllers
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> RedirectEdit([FromForm] Guid id, string fromUrl, string toUrl)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var redirect = await dbContext.Articles.FirstOrDefaultAsync(f => f.Id == id && f.StatusCode == (int)StatusCodeEnum.Redirect);
@@ -1975,112 +1744,276 @@ namespace Sky.Cms.Controllers
             base.Dispose(disposing);
         }
 
-        private static void ApplyQueryOverrides(EditPostViewModel model, EditPostViewModel? queryModel)
+        /// <summary>
+        /// Populates editor view data values.
+        /// </summary>
+        /// <param name="articleNumber">Article number.</param>
+        /// <param name="title">Article title.</param>
+        /// <param name="content">Article content.</param>
+        /// <param name="versionNumber">Optional version number.</param>
+        /// <param name="showHtmlEditorMenuPick">Whether to enable the HTML editor menu pick option.</param>
+        private async Task PopulateEditorViewDataAsync(int articleNumber, string title, string content, int? versionNumber = null, bool showHtmlEditorMenuPick = true)
         {
-            if (queryModel == null)
+            if (versionNumber.HasValue)
             {
-                return;
+                ViewData["Version"] = versionNumber.Value;
             }
 
-            if (model.Id == Guid.Empty && queryModel.Id != Guid.Empty)
+            ViewData["PageTitle"] = title;
+            ViewData["Published"] = null;
+            ViewData["LastPubDateTime"] = await mediator.QueryAsync(new GetLastPublishedDateQuery
             {
-                model.Id = queryModel.Id;
+                ArticleNumber = articleNumber
+            });
+
+            var htmlContent = htmlService.EnsureEditableMarkers(content);
+            ViewData["EnableHtmlEditorMenuPick"] = showHtmlEditorMenuPick && htmlService.HasEditableRegions(htmlContent);
+        }
+
+        /// <summary>
+        /// Populates create page view data values.
+        /// </summary>
+        /// <param name="sortOrder">Sort order.</param>
+        /// <param name="currentSort">Current sort field.</param>
+        /// <param name="pageNo">Page number to retrieve.</param>
+        /// <param name="pageSize">Number of records in each page.</param>
+        private async Task PopulateCreatePageViewDataAsync(string sortOrder = "asc", string currentSort = "Title", int pageNo = 0, int pageSize = 20)
+        {
+            var defaultLayout = await GetCurrentLayoutAsync();
+
+            ViewData["Layouts"] = await BaseGetLayoutListItems();
+            PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
+
+            var reserved = await reservedPaths.GetReservedPaths();
+            var existingUrls = await dbContext.Articles.Where(w => w.StatusCode == (int)StatusCodeEnum.Active).Select(s => s.Title).Distinct().ToListAsync();
+            existingUrls.AddRange(reserved.Select(s => s.Path));
+            ViewData["reservedPaths"] = existingUrls;
+
+            var query = (await GetTemplatesForCurrentLayoutAsync())
+                .OrderBy(t => t.Title)
+                .Select(s => new TemplateIndexViewModel
+                {
+                    Id = s.Id,
+                    LayoutName = defaultLayout.LayoutName,
+                    Description = s.Description,
+                    Title = s.Title,
+                    UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
+                });
+
+            ViewData["RowCount"] = await query.CountAsync();
+
+            if (sortOrder == "desc")
+            {
+                if (!string.IsNullOrEmpty(currentSort))
+                {
+                    switch (currentSort)
+                    {
+                        case "LayoutName":
+                            query = query.OrderByDescending(o => o.LayoutName);
+                            break;
+                        case "Description":
+                            query = query.OrderByDescending(o => o.Description);
+                            break;
+                        case "Title":
+                            query = query.OrderByDescending(o => o.Title);
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(currentSort))
+                {
+                    switch (currentSort)
+                    {
+                        case "LayoutName":
+                            query = query.OrderBy(o => o.LayoutName);
+                            break;
+                        case "Title":
+                            query = query.OrderBy(o => o.Title);
+                            break;
+                        case "Description":
+                            query = query.OrderBy(o => o.Description);
+                            break;
+                    }
+                }
             }
 
-            if (model.ArticleNumber == 0 && queryModel.ArticleNumber > 0)
+            ViewData["TemplateList"] = await query.Skip(pageNo * pageSize).Take(pageSize).ToListAsync();
+        }
+
+        /// <summary>
+        /// Gets the permission item query.
+        /// </summary>
+        /// <param name="forRoles">Whether to return role items instead of user items.</param>
+        /// <returns>A queryable list of permission items.</returns>
+        private IQueryable<ArticlePermisionItem> GetPermissionItemsQuery(bool forRoles)
+        {
+            if (forRoles)
             {
-                model.ArticleNumber = queryModel.ArticleNumber;
+                return roleManager.Roles.Select(
+                    s => new ArticlePermisionItem
+                    {
+                        IdentityObjectId = s.Id,
+                        Name = s.Name,
+                    }).AsQueryable();
             }
 
-            if (model.VersionNumber == 0 && queryModel.VersionNumber > 0)
+            return userManager.Users.Select(
+                s => new ArticlePermisionItem
+                {
+                    IdentityObjectId = s.Id,
+                    Name = s.Email,
+                }).AsQueryable();
+        }
+
+        /// <summary>
+        /// Gets the initial home page result when the site has no articles.
+        /// </summary>
+        /// <returns>A result for first-time home page creation; otherwise, <see langword="null" />.</returns>
+        private async Task<IActionResult?> TryGetInitialHomePageResultAsync()
+        {
+            ViewData["ShowFirstPageBtn"] = false;
+
+            if (await dbContext.Articles.CountAsync() != 0)
             {
-                model.VersionNumber = queryModel.VersionNumber;
+                return null;
             }
 
-            if (string.IsNullOrWhiteSpace(model.EditorId) && !string.IsNullOrWhiteSpace(queryModel.EditorId))
+            var template = await GetHomePageTemplateAsync();
+            if (template == null)
             {
-                model.EditorId = queryModel.EditorId;
+                ViewData["ShowFirstPageBtn"] = true;
+                return null;
             }
 
-            if (string.IsNullOrWhiteSpace(model.Command) && !string.IsNullOrWhiteSpace(queryModel.Command))
+            return View(viewName: "__NewHomePage", model: CreateInitialHomePageViewModel(template.Id));
+        }
+
+        /// <summary>
+        /// Gets the home page template.
+        /// </summary>
+        /// <param name="exactTitleMatch">Whether to require an exact title match.</param>
+        /// <returns>The matching home page template, if found; otherwise, <see langword="null" />.</returns>
+        private async Task<Template?> GetHomePageTemplateAsync(bool exactTitleMatch = false)
+        {
+            if (exactTitleMatch)
             {
-                model.Command = queryModel.Command;
+                return await dbContext.Templates.FirstOrDefaultAsync(f => f.Title.ToLower() == "home page");
             }
 
-            if (string.IsNullOrWhiteSpace(model.Payload) && !string.IsNullOrWhiteSpace(queryModel.Payload))
+            return await dbContext.Templates.FirstOrDefaultAsync(f => f.Title.ToLower().Contains("home page"));
+        }
+
+        /// <summary>
+        /// Creates the initial home page view model.
+        /// </summary>
+        /// <param name="templateId">Template ID.</param>
+        /// <returns>A populated initial home page view model.</returns>
+        private CreatePageViewModel CreateInitialHomePageViewModel(Guid templateId)
+        {
+            return new CreatePageViewModel
             {
-                model.Payload = queryModel.Payload;
+                TemplateId = templateId,
+                Title = string.Empty,
+                ArticleNumber = 1,
+                Id = Guid.NewGuid()
+            };
+        }
+
+        /// <summary>
+        /// Gets the default code editor fields.
+        /// </summary>
+        /// <returns>An array of default editor fields.</returns>
+        private EditorField[] GetDefaultCodeEditorFields()
+        {
+            return new[]
+            {
+                new EditorField
+                {
+                    FieldId = "HeadJavaScript",
+                    FieldName = "Head Block",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear at the bottom of the <head> tag."
+                },
+                new EditorField
+                {
+                    FieldId = "Content",
+                    FieldName = "Html Content",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "~/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear in the <body>."
+                },
+                new EditorField
+                {
+                    FieldId = "FooterJavaScript",
+                    FieldName = "Footer Block",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "~/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear at the bottom of the <body> tag."
+                }
+            };
+        }
+
+        /// <summary>
+        /// Adds command errors to model state.
+        /// </summary>
+        /// <typeparam name="T">Command result data type.</typeparam>
+        /// <param name="result">Command result.</param>
+        private void AddCommandErrorsToModelState<T>(CommandResult<T> result)
+        {
+            var errors = result.Errors?.SelectMany(e => e.Value) ?? Enumerable.Empty<string>();
+            var errorMessage = result.ErrorMessage ?? string.Join(", ", errors);
+            ModelState.AddModelError(string.Empty, errorMessage);
+        }
+
+        /// <summary>
+        /// Gets an article view model by article number.
+        /// </summary>
+        /// <param name="articleNumber">Article number.</param>
+        /// <returns>The article view model, if found; otherwise, <see langword="null" />.</returns>
+        private async Task<ArticleViewModel?> GetArticleViewModelAsync(int articleNumber)
+        {
+            return await mediator.QueryAsync<ArticleViewModel>(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = articleNumber
+            });
+        }
+
+        /// <summary>
+        /// Gets an article catalog entry by article number.
+        /// </summary>
+        /// <param name="articleNumber">Article number.</param>
+        /// <returns>The catalog entry, if found; otherwise, <see langword="null" />.</returns>
+        private async Task<CatalogEntry?> GetArticleCatalogEntryAsync(int articleNumber)
+        {
+            return await mediator.QueryAsync(new GetArticleCatalogEntryQuery
+            {
+                ArticleNumber = articleNumber
+            });
+        }
+
+        /// <summary>
+        /// Gets the editable article context.
+        /// </summary>
+        /// <param name="articleNumber">Article number.</param>
+        /// <returns>The editable article and catalog entry, if found; otherwise, <see langword="null" />.</returns>
+        private async Task<(Article Article, CatalogEntry CatalogEntry)?> GetEditableArticleContextAsync(int articleNumber)
+        {
+            var article = await GetArticleForEdit(articleNumber);
+            if (article == null)
+            {
+                return null;
             }
 
-            if (string.IsNullOrWhiteSpace(model.HeadJavaScript) && !string.IsNullOrWhiteSpace(queryModel.HeadJavaScript))
+            var catalogEntry = await GetArticleCatalogEntryAsync(article.ArticleNumber);
+            if (catalogEntry == null)
             {
-                model.HeadJavaScript = queryModel.HeadJavaScript;
+                return null;
             }
 
-            if (string.IsNullOrWhiteSpace(model.FooterJavaScript) && !string.IsNullOrWhiteSpace(queryModel.FooterJavaScript))
-            {
-                model.FooterJavaScript = queryModel.FooterJavaScript;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.CssContent) && !string.IsNullOrWhiteSpace(queryModel.CssContent))
-            {
-                model.CssContent = queryModel.CssContent;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.EditingField) && !string.IsNullOrWhiteSpace(queryModel.EditingField))
-            {
-                model.EditingField = queryModel.EditingField;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.EditorType) && !string.IsNullOrWhiteSpace(queryModel.EditorType))
-            {
-                model.EditorType = queryModel.EditorType;
-            }
-
-            if (!model.Published.HasValue && queryModel.Published.HasValue)
-            {
-                model.Published = queryModel.Published;
-            }
-
-            if (!model.Updated.HasValue && queryModel.Updated.HasValue)
-            {
-                model.Updated = queryModel.Updated;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.CryptoContextToken) && !string.IsNullOrWhiteSpace(queryModel.CryptoContextToken))
-            {
-                model.CryptoContextToken = queryModel.CryptoContextToken;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Title) && !string.IsNullOrWhiteSpace(queryModel.Title))
-            {
-                model.Title = queryModel.Title;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.UrlPath) && !string.IsNullOrWhiteSpace(queryModel.UrlPath))
-            {
-                model.UrlPath = queryModel.UrlPath;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.BannerImage) && !string.IsNullOrWhiteSpace(queryModel.BannerImage))
-            {
-                model.BannerImage = queryModel.BannerImage;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.RoleList) && !string.IsNullOrWhiteSpace(queryModel.RoleList))
-            {
-                model.RoleList = queryModel.RoleList;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Category) && !string.IsNullOrWhiteSpace(queryModel.Category))
-            {
-                model.Category = queryModel.Category;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Introduction) && !string.IsNullOrWhiteSpace(queryModel.Introduction))
-            {
-                model.Introduction = queryModel.Introduction;
-            }
+            return (article, catalogEntry);
         }
 
         /// <summary>
@@ -2092,20 +2025,16 @@ namespace Sky.Cms.Controllers
         /// <returns>Revised page body.</returns>
         private string UpdateRegionInDocument(string editorId, string pageBody, string updatedContent)
         {
-            // Get the editable regions from the original document.
             var originalHtmlDoc = new HtmlDocument();
             originalHtmlDoc.LoadHtml(pageBody);
             var originalEditableDivs = originalHtmlDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]");
 
-            // Find the region we are updating
             var target = originalEditableDivs.FirstOrDefault(w => w.Attributes["data-ccms-ceid"].Value == editorId);
             if (target != null)
             {
-                // Update the region now
                 target.InnerHtml = updatedContent;
             }
 
-            // Now carry over what's being UPDATED to the original.
             return originalHtmlDoc.DocumentNode.OuterHtml;
         }
 
@@ -2124,7 +2053,6 @@ namespace Sky.Cms.Controllers
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(htmlContent);
 
-            // Find all elements with data-ccms-ceid attribute
             var editableRegions = htmlDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]");
 
             if (editableRegions == null || editableRegions.Count == 0)
@@ -2132,10 +2060,8 @@ namespace Sky.Cms.Controllers
                 return null;
             }
 
-            // Check each region for nested regions
             foreach (var region in editableRegions)
             {
-                // Check if this region has any descendant with data-ccms-ceid
                 var nestedRegions = region.SelectNodes(".//*[@data-ccms-ceid]");
                 if (nestedRegions != null && nestedRegions.Count > 0)
                 {
@@ -2148,29 +2074,10 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Validates the CryptoContextToken format and authenticity.
+        /// Gets an article ready for editing.
         /// </summary>
-        /// <param name="token">The token to validate.</param>
-        /// <returns>True if valid, false otherwise.</returns>
-        private bool IsValidCryptoContextToken(string token)
-        {
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                return false;
-            }
-
-            // For now, reject obviously invalid tokens (e.g., test tokens)
-            // In a full implementation, this would validate against a secure store
-            if (token.StartsWith("invalid-", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            // TODO: Implement full token validation against session store
-            // For now, accept any non-empty, non-invalid token as valid
-            return true;
-        }
-
+        /// <param name="articleNumber">Article number.</param>
+        /// <returns>The editable article, if found; otherwise, <see langword="null" />.</returns>
         private async Task<Article> GetArticleForEdit(int articleNumber)
         {
             var article = await dbContext.Articles.Where(w => w.ArticleNumber == articleNumber).OrderByDescending(o => o.VersionNumber).FirstOrDefaultAsync();

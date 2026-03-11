@@ -95,19 +95,17 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Index(string sortOrder = "asc", string currentSort = "Title", int pageNo = 0, int pageSize = 10)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var defaultLayout = await GetCurrentLayoutAsync();
 
             ViewData["Layouts"] = await BaseGetLayoutListItems();
 
-            ViewData["sortOrder"] = sortOrder;
-            ViewData["currentSort"] = currentSort;
-            ViewData["pageNo"] = pageNo;
-            ViewData["pageSize"] = pageSize;
+            PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
 
             await templateServices.EnsureDefaultTemplatesExistAsync();
 
@@ -178,9 +176,10 @@ namespace Sky.Cms.Controllers
         /// <returns>Returns an <see cref="IActionResult"/>.</returns>
         public async Task<IActionResult> Pages(Guid id, string sortOrder = "asc", string currentSort = "Title", int pageNo = 0, int pageSize = 10, string filter = "")
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var template = await dbContext.Templates.FirstOrDefaultAsync(f => f.Id == id);
@@ -191,10 +190,7 @@ namespace Sky.Cms.Controllers
             }
 
             ViewData["templateId"] = id;
-            ViewData["sortOrder"] = sortOrder;
-            ViewData["currentSort"] = currentSort;
-            ViewData["pageNo"] = pageNo;
-            ViewData["pageSize"] = pageSize;
+            PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
             ViewData["template"] = template;
             ViewData["canApplyChanges"] = template.Content.ToLower().Contains(" data-ccms-ceid=");
 
@@ -204,22 +200,8 @@ namespace Sky.Cms.Controllers
             }
 
             ViewData["Filter"] = filter;
-
             ViewData["PublisherUrl"] = options.PublisherUrl;
-
             ViewData["ShowNotFoundBtn"] = !await dbContext.ArticleCatalog.Where(w => w.UrlPath == "not_found").CosmosAnyAsync();
-
-            if (!string.IsNullOrEmpty(filter))
-            {
-                filter = filter.TrimStart('/');
-            }
-
-            ViewData["Filter"] = filter;
-
-            ViewData["sortOrder"] = sortOrder;
-            ViewData["currentSort"] = currentSort;
-            ViewData["pageNo"] = pageNo;
-            ViewData["pageSize"] = pageSize;
 
             var pages = await dbContext.ArticleCatalog.Where(w => w.TemplateId == id).Select(s => new
             {
@@ -464,9 +446,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Delete(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             if (id == Guid.Empty)
@@ -500,9 +483,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> EditCode(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var editableCommand = new GetEditablePageDesignVersionCommand { TemplateId = id };
@@ -549,9 +533,10 @@ namespace Sky.Cms.Controllers
         /// <returns>View.</returns>
         public async Task<IActionResult> Designer(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             // Loads GrapeJS.
@@ -589,9 +574,10 @@ namespace Sky.Cms.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDesignerData(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             // Loads GrapeJS.
@@ -631,9 +617,10 @@ namespace Sky.Cms.Controllers
         [HttpPost]
         public async Task<IActionResult> DesignerData(Guid id, string title, string htmlContent, string cssContent)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             if (id == Guid.Empty)
@@ -700,9 +687,10 @@ namespace Sky.Cms.Controllers
         /// <returns>Returns a redirect to the live editor.</returns>
         public async Task<IActionResult> UpdatePage(int id, Guid templateId)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             // Use GetTemplateQuery to retrieve the template
@@ -747,9 +735,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> PreviewImpact(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             try
@@ -776,9 +765,10 @@ namespace Sky.Cms.Controllers
         [HttpGet]
         public async Task<IActionResult> PreviewImpactJson(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             try
@@ -799,9 +789,10 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Publish(Guid id)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             var editableResult = await mediator.SendAsync(new GetEditablePageDesignVersionCommand { TemplateId = id });
@@ -847,9 +838,10 @@ namespace Sky.Cms.Controllers
         [HttpPost]
         public async Task<IActionResult> PublishDrafts(Guid id, List<int>? articleNumbers = null)
         {
-            if (!ModelState.IsValid)
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
             {
-                return BadRequest(ModelState);
+                return invalidModelState;
             }
 
             try
@@ -1083,75 +1075,6 @@ namespace Sky.Cms.Controllers
                         }
                     });
             }
-        }
-
-        private static void ApplyQueryOverrides(EditPostViewModel model, EditPostViewModel? queryModel)
-        {
-            if (queryModel == null)
-            {
-                return;
-            }
-
-            if (queryModel.Id != Guid.Empty)
-            {
-                model.Id = queryModel.Id;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Command) && !string.IsNullOrWhiteSpace(queryModel.Command))
-            {
-                model.Command = queryModel.Command;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Payload) && !string.IsNullOrWhiteSpace(queryModel.Payload))
-            {
-                model.Payload = queryModel.Payload;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.CssContent) && !string.IsNullOrWhiteSpace(queryModel.CssContent))
-            {
-                model.CssContent = queryModel.CssContent;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.CryptoContextToken) && !string.IsNullOrWhiteSpace(queryModel.CryptoContextToken))
-            {
-                model.CryptoContextToken = queryModel.CryptoContextToken;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Title) && !string.IsNullOrWhiteSpace(queryModel.Title))
-            {
-                model.Title = queryModel.Title;
-            }
-        }
-
-        /// <summary>
-        /// Validates the CryptoContextToken format and authenticity.
-        /// </summary>
-        /// <param name="token">The token to validate.</param>
-        /// <returns>True if valid, false otherwise.</returns>
-        private bool IsValidCryptoContextToken(string token)
-        {
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                return false;
-            }
-
-            if (token.StartsWith("invalid-", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private Dictionary<string, string[]> BuildModelStateErrors()
-        {
-            return ModelState
-                .Where(kvp => kvp.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value!.Errors
-                        .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage) ? "Invalid value." : e.ErrorMessage)
-                        .ToArray());
         }
 
         private async Task<IActionResult> SaveTemplateVersionAsync(Guid templateId, string title, string content)
