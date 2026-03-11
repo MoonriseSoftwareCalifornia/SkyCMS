@@ -46,6 +46,8 @@ namespace Sky.Cms.Controllers
         private readonly ApplicationDbContext dbContext;
         private readonly UserManager<IdentityUser> userManager;
         private readonly IArticleHtmlService articleHtmlService;
+        private readonly ILayoutTemplateService layoutTemplateService;
+        private readonly IViewRenderService viewRenderService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeController"/> class.
@@ -60,6 +62,8 @@ namespace Sky.Cms.Controllers
         /// <param name="configuration">Website configuration.</param>
         /// <param name="services">Services provider.</param>
         /// <param name="articleHtmlService">Article HTML service.</param>
+        /// <param name="layoutTemplateService">Layout template service.</param>
+        /// <param name="viewRenderService">View rendering service.</param>
         public HomeController(
             ILogger<HomeController> logger,
             IEditorSettings options,
@@ -70,14 +74,21 @@ namespace Sky.Cms.Controllers
             IEmailSender emailSender,
             IConfiguration configuration,
             IServiceProvider services,
-            IArticleHtmlService articleHtmlService)
+            IArticleHtmlService articleHtmlService,
+            ILayoutTemplateService layoutTemplateService = null,
+            IViewRenderService viewRenderService = null)
         {
-            // This handles injection manually to make sure everything is setup.
             this.options = (EditorSettings)options;
             this.articleQueries = articleQueries;
             this.dbContext = dbContext;
             this.userManager = userManager;
             this.articleHtmlService = articleHtmlService;
+            this.layoutTemplateService = layoutTemplateService
+                ?? services?.GetService(typeof(ILayoutTemplateService)) as ILayoutTemplateService
+                ?? throw new InvalidOperationException("Layout template service is not available");
+            this.viewRenderService = viewRenderService
+                ?? services?.GetService(typeof(IViewRenderService)) as IViewRenderService
+                ?? throw new InvalidOperationException("View rendering service is not available");
         }
 
         /// <summary>
@@ -87,12 +98,7 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> EditList(string target)
         {
-            // Decode and normalize the target URL
-            if (!string.IsNullOrEmpty(target))
-            {
-                target = System.Net.WebUtility.UrlDecode(target);
-                target = target.Trim().TrimStart('/').TrimEnd('/');
-            }
+            target = NormalizeTargetPath(target);
 
             var article = await articleQueries.QueryAsync(new GetArticleByUrlQuery
             {
@@ -294,14 +300,6 @@ namespace Sky.Cms.Controllers
                 throw new InvalidOperationException($"Layout with ID {itemId} not found");
             }
 
-            var layoutTemplateService
-                = HttpContext.RequestServices.GetService(typeof(ILayoutTemplateService)) as ILayoutTemplateService;
-
-            if (layoutTemplateService == null)
-            {
-                throw new InvalidOperationException("Layout template service is not available");
-            }
-
             var previews = await layoutTemplateService.GetAllTemplatesAsync();
             var defaultPreview = previews?.FirstOrDefault();
 
@@ -310,25 +308,7 @@ namespace Sky.Cms.Controllers
                 throw new InvalidOperationException("No default preview template available");
             }
 
-            ArticleViewModel model = new ()
-            {
-                ArticleNumber = 1,
-                LanguageCode = string.Empty,
-                LanguageName = string.Empty,
-                CacheDuration = 10,
-                Content = defaultPreview.Content,
-                StatusCode = StatusCodeEnum.Active,
-                Id = entity.Id,
-                Published = DateTimeOffset.UtcNow,
-                Title = defaultPreview.Name,
-                UrlPath = Guid.NewGuid().ToString(),
-                Updated = DateTimeOffset.UtcNow,
-                VersionNumber = 1,
-                HeadJavaScript = string.Empty,
-                FooterJavaScript = string.Empty,
-                Layout = new LayoutViewModel(entity)
-            };
-            return model;
+            return CreatePreviewArticleModel(entity.Id, defaultPreview.Name, defaultPreview.Content, new LayoutViewModel(entity));
         }
 
         private async Task<ArticleViewModel> GetTemplatePreview(Guid? itemId)
@@ -345,23 +325,12 @@ namespace Sky.Cms.Controllers
                 throw new InvalidOperationException($"Template with ID {itemId} not found");
             }
 
-            var guid = Guid.NewGuid();
-
             // Prepare preview content: ensure markers, then populate editable regions with Lorem Ipsum.
-            var htmlService = HttpContext.RequestServices.GetService(typeof(IArticleHtmlService)) as IArticleHtmlService;
-
-            if (htmlService == null)
-            {
-                throw new InvalidOperationException("Article HTML service is not available");
-            }
-
-            var markedHtml = htmlService.EnsureEditableMarkers(entity.Content);
+            var markedHtml = articleHtmlService.EnsureEditableMarkers(entity.Content);
 
             var doc = new HtmlDocument();
             doc.LoadHtml(markedHtml);
 
-            var imageWidgetNodes = doc.DocumentNode.SelectNodes("//*[@data-editor-config='image-widget']") ?? new HtmlNodeCollection(null);
-            
             var legacyEditableNodes = doc.DocumentNode.SelectNodes("//*[@contenteditable]") ?? new HtmlNodeCollection(null);
             bool templateUpdated = false;
 
@@ -429,35 +398,47 @@ namespace Sky.Cms.Controllers
             }
 
             var previewHtml = previewDoc.DocumentNode.OuterHtml;
+            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
 
-            // Template preview
-            ArticleViewModel model = new ()
+            return CreatePreviewArticleModel(entity.Id, entity.Title, previewHtml, new LayoutViewModel(defaultLayout));
+        }
+
+        private async Task SetRenderedView(ArticleViewModel model)
+        {
+            var renderedView = await viewRenderService.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
+            ViewData["RenderedView"] = renderedView;
+        }
+
+        private static string NormalizeTargetPath(string target)
+        {
+            if (string.IsNullOrWhiteSpace(target))
+            {
+                return string.Empty;
+            }
+
+            return WebUtility.UrlDecode(target).Trim().TrimStart('/').TrimEnd('/');
+        }
+
+        private static ArticleViewModel CreatePreviewArticleModel(Guid id, string title, string content, LayoutViewModel layout)
+        {
+            return new ArticleViewModel
             {
                 ArticleNumber = 1,
                 LanguageCode = string.Empty,
                 LanguageName = string.Empty,
                 CacheDuration = 10,
-                Content = previewHtml,
+                Content = content,
                 StatusCode = StatusCodeEnum.Active,
-                Id = entity.Id,
+                Id = id,
                 Published = DateTimeOffset.UtcNow,
-                Title = entity.Title,
-                UrlPath = guid.ToString(),
+                Title = title,
+                UrlPath = Guid.NewGuid().ToString(),
                 Updated = DateTimeOffset.UtcNow,
                 VersionNumber = 1,
                 HeadJavaScript = string.Empty,
                 FooterJavaScript = string.Empty,
-                Layout = new LayoutViewModel(await LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext))
+                Layout = layout
             };
-
-            return model;
-        }
-
-        private async Task SetRenderedView(ArticleViewModel model)
-        {
-            var viewRenderingService = HttpContext.RequestServices.GetService(typeof(IViewRenderService)) as IViewRenderService;
-            var renderedView = await viewRenderingService.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
-            ViewData["RenderedView"] = renderedView;
         }
     }
 }

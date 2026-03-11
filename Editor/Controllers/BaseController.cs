@@ -350,6 +350,60 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
+        /// Gets the default code editor fields used by article code editing.
+        /// </summary>
+        /// <returns>Default article code editor fields.</returns>
+        protected static EditorField[] GetDefaultCodeEditorFields()
+        {
+            return new[]
+            {
+                new EditorField
+                {
+                    FieldId = "HeadJavaScript",
+                    FieldName = "Head Block",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear at the bottom of the <head> tag."
+                },
+                new EditorField
+                {
+                    FieldId = "Content",
+                    FieldName = "Html Content",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "~/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear in the <body>."
+                },
+                new EditorField
+                {
+                    FieldId = "FooterJavaScript",
+                    FieldName = "Footer Block",
+                    EditorMode = EditorMode.Html,
+                    IconUrl = "~/images/seti-ui/icons/html.svg",
+                    ToolTip = "Content to appear at the bottom of the <body> tag."
+                }
+            };
+        }
+
+        /// <summary>
+        /// Gets the default code editor fields used by template code editing.
+        /// </summary>
+        /// <returns>Default template code editor fields.</returns>
+        protected static List<EditorField> GetTemplateCodeEditorFields()
+        {
+            return new List<EditorField>
+            {
+                new ()
+                {
+                    EditorMode = EditorMode.Html,
+                    FieldName = "Html Content",
+                    FieldId = "Content",
+                    IconUrl = "~/images/seti-ui/icons/html.svg",
+                    ToolTip = string.Empty
+                }
+            };
+        }
+
+        /// <summary>
         /// Applies query-string overrides to the edit post model.
         /// Fields in <paramref name="model"/> are only overwritten when they are empty/default
         /// and the corresponding field in <paramref name="queryModel"/> has a value.

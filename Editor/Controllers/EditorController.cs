@@ -1090,7 +1090,7 @@ namespace Sky.Cms.Controllers
             // Update content if editor region specified
             if (!string.IsNullOrWhiteSpace(model.EditorId))
             {
-                var decryptedPayload = CryptoJsDecryption.Decrypt(model.Payload);
+                var decryptedPayload = DecryptContent(model.Payload);
                 article.Content = UpdateRegionInDocument(
                     model.EditorId,
                     article.Content,
@@ -1099,12 +1099,12 @@ namespace Sky.Cms.Controllers
             else if (model.Command == "SaveBody")
             {
                 // SaveBody command: replace entire content (empty or null payload is valid)
-                article.Content = CryptoJsDecryption.Decrypt(model.Payload);
+                article.Content = DecryptContent(model.Payload);
             }
             else if (model.Command == "SaveCode")
             {
                 // SaveCode command: update content and scripts from Code Editor
-                var decryptedContent = CryptoJsDecryption.Decrypt(model.Payload);
+                var decryptedContent = DecryptContent(model.Payload);
 
                 // Validate no nested editable regions
                 var nestedRegionError = ValidateNoNestedEditableRegions(decryptedContent);
@@ -1121,8 +1121,8 @@ namespace Sky.Cms.Controllers
                 }
 
                 article.Content = decryptedContent;
-                article.HeadJavaScript = CryptoJsDecryption.Decrypt(model.HeadJavaScript);
-                article.FooterJavaScript = CryptoJsDecryption.Decrypt(model.FooterJavaScript);
+                article.HeadJavaScript = DecryptContent(model.HeadJavaScript);
+                article.FooterJavaScript = DecryptContent(model.FooterJavaScript);
             }
             else if (model.Command == "SaveDesigner")
             {
@@ -1133,12 +1133,12 @@ namespace Sky.Cms.Controllers
 
                 if (model.Payload != null)
                 {
-                    htmlContent = CryptoJsDecryption.Decrypt(model.Payload);
+                    htmlContent = DecryptContent(model.Payload);
                 }
 
                 if (model.CssContent != null)
                 {
-                    cssContent = CryptoJsDecryption.Decrypt(model.CssContent);
+                    cssContent = DecryptContent(model.CssContent);
                 }
 
                 // Validate no nested editable regions in HTML content
@@ -1918,41 +1918,6 @@ namespace Sky.Cms.Controllers
                 Title = string.Empty,
                 ArticleNumber = 1,
                 Id = Guid.NewGuid()
-            };
-        }
-
-        /// <summary>
-        /// Gets the default code editor fields.
-        /// </summary>
-        /// <returns>An array of default editor fields.</returns>
-        private EditorField[] GetDefaultCodeEditorFields()
-        {
-            return new[]
-            {
-                new EditorField
-                {
-                    FieldId = "HeadJavaScript",
-                    FieldName = "Head Block",
-                    EditorMode = EditorMode.Html,
-                    IconUrl = "/images/seti-ui/icons/html.svg",
-                    ToolTip = "Content to appear at the bottom of the <head> tag."
-                },
-                new EditorField
-                {
-                    FieldId = "Content",
-                    FieldName = "Html Content",
-                    EditorMode = EditorMode.Html,
-                    IconUrl = "~/images/seti-ui/icons/html.svg",
-                    ToolTip = "Content to appear in the <body>."
-                },
-                new EditorField
-                {
-                    FieldId = "FooterJavaScript",
-                    FieldName = "Footer Block",
-                    EditorMode = EditorMode.Html,
-                    IconUrl = "~/images/seti-ui/icons/html.svg",
-                    ToolTip = "Content to appear at the bottom of the <body> tag."
-                }
             };
         }
 

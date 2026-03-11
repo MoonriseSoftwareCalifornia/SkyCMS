@@ -503,17 +503,7 @@ namespace Sky.Cms.Controllers
             {
                 Id = id,
                 EditorTitle = "Template Editor",
-                EditorFields = new List<EditorField>
-                {
-                    new ()
-                    {
-                        EditorMode = EditorMode.Html,
-                        FieldName = "Html Content",
-                        FieldId = "Content",
-                        IconUrl = "~/images/seti-ui/icons/html.svg",
-                        ToolTip = string.Empty
-                    }
-                },
+                EditorFields = GetTemplateCodeEditorFields(),
                 CustomButtons = new List<string>
                 {
                     "Preview"
