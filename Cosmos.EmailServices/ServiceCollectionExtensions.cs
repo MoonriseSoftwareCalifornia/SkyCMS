@@ -8,6 +8,7 @@
 namespace Cosmos.EmailServices
 {
     using System.Configuration;
+    using System.Linq;
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,23 @@ namespace Cosmos.EmailServices
         /// </remarks>
         public static void AddCosmosEmailServices(this IServiceCollection services, IConfiguration configuration)
         {
+            // Register required dependencies if not already registered
+            if (!services.Any(x => x.ServiceType == typeof(IConfiguration)))
+            {
+                services.AddSingleton(configuration);
+            }
+
+            if (!services.Any(x => x.ServiceType == typeof(Microsoft.AspNetCore.Http.IHttpContextAccessor)))
+            {
+                services.AddHttpContextAccessor();
+            }
+
+            // Ensure logging is configured
+            if (!services.Any(x => x.ServiceType == typeof(Microsoft.Extensions.Logging.ILoggerFactory)))
+            {
+                services.AddLogging();
+            }
+
             // Register DynamicEmailSender as SCOPED (supports per-request tenant resolution)
             services.AddScoped<IEmailSender, DynamicEmailSender>();
             services.AddScoped<ICosmosEmailSender>(sp => (ICosmosEmailSender)sp.GetRequiredService<IEmailSender>());

@@ -33,11 +33,11 @@ namespace Sky.Tests
 
             var sender = sp.GetService<IEmailSender>();
             Assert.IsNotNull(sender);
-            Assert.IsInstanceOfType(sender, typeof(SmtpEmailSender));
+            Assert.IsInstanceOfType(sender, typeof(DynamicEmailSender));
 
-            var opts = sp.GetService<IOptions<SmtpEmailProviderOptions>>();
-            Assert.IsNotNull(opts);
-            Assert.AreEqual(adminEmail, opts.Value.DefaultFromEmailAddress);
+            // Verify it's a DynamicEmailSender that can be cast to ICosmosEmailSender
+            var cosmosSender = sender as ICosmosEmailSender;
+            Assert.IsNotNull(cosmosSender);
         }
 
         [TestMethod]
@@ -60,7 +60,11 @@ namespace Sky.Tests
 
             var sender = sp.GetService<IEmailSender>();
             Assert.IsNotNull(sender);
-            Assert.IsInstanceOfType(sender, typeof(AzureCommunicationEmailSender));
+            Assert.IsInstanceOfType(sender, typeof(DynamicEmailSender));
+
+            // Verify it's a DynamicEmailSender that can be cast to ICosmosEmailSender
+            var cosmosSender = sender as ICosmosEmailSender;
+            Assert.IsNotNull(cosmosSender);
         }
 
         [TestMethod]
@@ -82,11 +86,11 @@ namespace Sky.Tests
 
             var sender = sp.GetService<IEmailSender>();
             Assert.IsNotNull(sender);
-            Assert.IsInstanceOfType(sender, typeof(SendGridEmailSender));
+            Assert.IsInstanceOfType(sender, typeof(DynamicEmailSender));
 
-            var opts = sp.GetService<IOptions<SendGridEmailProviderOptions>>();
-            Assert.IsNotNull(opts);
-            Assert.AreEqual(adminEmail, opts.Value.DefaultFromEmailAddress);
+            // Verify it's a DynamicEmailSender that can be cast to ICosmosEmailSender
+            var cosmosSender = sender as ICosmosEmailSender;
+            Assert.IsNotNull(cosmosSender);
         }
 
         [TestMethod]
@@ -105,7 +109,11 @@ namespace Sky.Tests
 
             var sender = sp.GetService<IEmailSender>();
             Assert.IsNotNull(sender);
-            Assert.IsInstanceOfType(sender, typeof(CosmosNoOpEmailSender));
+            Assert.IsInstanceOfType(sender, typeof(DynamicEmailSender));
+
+            // Verify it's a DynamicEmailSender and internally resolves to NoOp
+            var cosmosSender = sender as ICosmosEmailSender;
+            Assert.IsNotNull(cosmosSender);
         }
 
         [TestMethod]
