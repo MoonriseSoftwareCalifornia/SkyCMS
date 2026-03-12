@@ -32,10 +32,14 @@ namespace Sky.Cms.Controllers
     using Sky.Cms.Services;
     using Sky.Editor.Data;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Layouts.Create;
+    using Sky.Editor.Features.Layouts.Delete;
+    using Sky.Editor.Features.Layouts.Import;
+    using Sky.Editor.Features.Layouts.Promote;
+    using Sky.Editor.Features.Layouts.Publish;
     using Sky.Editor.Models;
     using Sky.Editor.Models.GrapesJs;
     using Sky.Editor.Services.EditorSettings;
-    using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Layouts;
 
     /// <summary>
@@ -46,9 +50,7 @@ namespace Sky.Cms.Controllers
     {
         // Constants for magic strings
         private const string DefaultLayoutName = "Default Layout";
-        private const string NewLayoutPrefix = "New Layout";
         private const string DefaultLayoutNotes = "Default layout created. Please customize using code editor.";
-        private const string NewLayoutNotes = "New layout created. Please customize using code editor.";
         private const string HtmlRemovalDiv = "<div style=\"display:none;\"></div>";
 
         // HTML comment markers
@@ -67,56 +69,50 @@ namespace Sky.Cms.Controllers
         private const string SortOrderAsc = "asc";
         private const string SortOrderDesc = "desc";
 
-        private readonly ArticleEditLogic articleLogic;
-        private readonly IMediator articleQueries;
+        private readonly IMediator mediator;
         private readonly ApplicationDbContext dbContext;
         private readonly Uri blobPublicAbsoluteUrl;
         private readonly IViewRenderService viewRenderService;
         private readonly IStorageContext storageContext;
-        private readonly IArticleHtmlService htmlService;
         private readonly ILogger<LayoutsController> logger;
         private readonly ILayoutImportService layoutImportService;
+        private readonly ILayoutVersioningService layoutVersioningService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LayoutsController"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="userManager">User manager.</param>
-        /// <param name="articleLogic"><see cref="ArticleEditLogic">Article edit logic</see>.</param>
         /// <param name="mediator">Mediator service.</param>
         /// <param name="options"><see cref="IEditorSettings">Editor configuration</see> options.</param>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="viewRenderService">View rendering service.</param>
-        /// <param name="editorSettings">Editor settings.</param>
-        /// <param name="htmlService">Html service.</param>
         /// <param name="logger">Logger instance.</param>
         /// <param name="layoutImportService">Layout import service.</param>
+        /// <param name="layoutVersioningService">Layout versioning service.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public LayoutsController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
-            ArticleEditLogic articleLogic,
             IMediator mediator,
             IEditorSettings options,
             IStorageContext storageContext,
             IViewRenderService viewRenderService,
-            IEditorSettings editorSettings,
-            IArticleHtmlService htmlService,
             ILogger<LayoutsController> logger,
             ILayoutImportService layoutImportService,
+            ILayoutVersioningService layoutVersioningService,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(dbContext, userManager, mediator,memoryCache, configProvider)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            this.articleLogic = articleLogic ?? throw new ArgumentNullException(nameof(articleLogic));
-            this.articleQueries = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             this.storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext));
-            this.htmlService = htmlService ?? throw new ArgumentNullException(nameof(htmlService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.viewRenderService = viewRenderService ?? throw new ArgumentNullException(nameof(viewRenderService));
             this.layoutImportService = layoutImportService ?? throw new ArgumentNullException(nameof(layoutImportService));
+            this.layoutVersioningService = layoutVersioningService ?? throw new ArgumentNullException(nameof(layoutVersioningService));
 
             if (options == null)
             {
@@ -124,43 +120,6 @@ namespace Sky.Cms.Controllers
             }
 
             blobPublicAbsoluteUrl = options.GetBlobAbsoluteUrl();
-        }
-
-        /// <summary>
-        /// Imports community templates.
-        /// </summary>
-        /// <param name="htmlService">HTML service.</param>
-        /// <param name="dbContext">Database context.</param>
-        /// <param name="communityPages">Community pages.</param>
-        /// <param name="layoutId">Layout ID.</param>
-        /// <param name="communityLayoutId">Community layout ID.</param>
-        /// <param name="layoutNumber">Layout number to assign to templates.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public static async Task ImportCommunityTemplates(
-            IArticleHtmlService htmlService,
-            ApplicationDbContext dbContext,
-            IEnumerable<Template> communityPages,
-            Guid layoutId,
-            string communityLayoutId,
-            int layoutNumber)
-        {
-            foreach (var page in communityPages)
-            {
-                var template = new Template
-                {
-                    CommunityLayoutId = page.CommunityLayoutId,
-                    Content = htmlService.EnsureEditableMarkers(page.Content),
-                    Description = page.Description,
-                    LayoutId = layoutId,
-                    LayoutNumber = layoutNumber,
-                    Title = page.Title,
-                    PageType = page.PageType,
-                    Id = Guid.NewGuid()
-                };
-                dbContext.Templates.Add(template);
-            }
-
-            await dbContext.SaveChangesAsync();
         }
 
         /// <summary>
@@ -300,39 +259,16 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            try
+            var result = await mediator.SendAsync(new CreateLayoutCommand());
+
+            if (!result.IsSuccess)
             {
-                var layoutCount = await dbContext.Layouts.CountAsync();
-                
-                // Get next available LayoutNumber
-                var maxLayoutNumber = await dbContext.Layouts
-                    .Where(l => l.LayoutNumber > 0)
-                    .MaxAsync(l => (int?)l.LayoutNumber) ?? 0;
-                
-                var layout = new Cosmos.Common.Data.Layout
-                {
-                    IsDefault = false,
-                    LayoutName = $"{NewLayoutPrefix} {layoutCount}",
-                    Notes = NewLayoutNotes,
-                    LayoutNumber = maxLayoutNumber + 1,
-                    Version = 1
-                };
-
-                dbContext.Layouts.Add(layout);
-                await dbContext.SaveChangesAsync();
-
-                logger.LogInformation(
-                    "Created new layout {LayoutId} with name '{LayoutName}', LayoutNumber={LayoutNumber}",
-                    layout.Id, layout.LayoutName, layout.LayoutNumber);
-
-                return RedirectToAction("EditCode", new { layout.Id });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error creating new layout");
-                ModelState.AddModelError(string.Empty, "An error occurred while creating the layout");
+                logger.LogError("Error creating new layout: {ErrorMessage}", result.ErrorMessage);
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "An error occurred while creating the layout");
                 return RedirectToAction("Index");
             }
+
+            return RedirectToAction("EditCode", new { Id = result.Data });
         }
 
         /// <summary>
@@ -348,40 +284,24 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            if (id == Guid.Empty)
+            var command = new DeleteLayoutCommand
             {
-                return BadRequest("Invalid layout ID");
+                LayoutId = id
+            };
+
+            var result = await mediator.SendAsync(command);
+
+            if (!result.IsSuccess)
+            {
+                return BuildCommandFailureResult(
+                    result,
+                    nameof(command.LayoutId),
+                    "An error occurred while deleting the layout",
+                    (message => message.Contains("not found", StringComparison.OrdinalIgnoreCase), message => NotFound(message)),
+                    (message => message.Contains("Cannot delete the default layout", StringComparison.OrdinalIgnoreCase), message => BadRequest(message)));
             }
 
-            try
-            {
-                var entity = await dbContext.Layouts.FindAsync(id);
-
-                if (entity == null)
-                {
-                    return NotFound($"Layout with ID {id} not found");
-                }
-
-                if (entity.IsDefault)
-                {
-                    return BadRequest("Cannot delete the default layout.");
-                }
-
-                var pages = await dbContext.Templates.Where(t => t.LayoutId == id).ToListAsync();
-                dbContext.Templates.RemoveRange(pages);
-                dbContext.Layouts.Remove(entity);
-                await dbContext.SaveChangesAsync();
-
-                logger.LogInformation("Deleted layout {LayoutId} '{LayoutName}' and {TemplateCount} associated templates",
-                    id, entity.LayoutName, pages.Count);
-
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error deleting layout {LayoutId}", id);
-                return StatusCode(500, "An error occurred while deleting the layout");
-            }
+            return RedirectToAction("Index");
         }
 
         /// <summary>
@@ -712,7 +632,7 @@ namespace Sky.Cms.Controllers
                     return NotFound($"Layout with ID {id} not found");
                 }
 
-                var model = await articleQueries.QueryAsync(new GetArticleByUrlQuery
+                var model = await mediator.QueryAsync(new GetArticleByUrlQuery
                 {
                     UrlPath = string.Empty
                 });
@@ -757,7 +677,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                var article = await articleQueries.QueryAsync(new GetArticleByUrlQuery
+                var article = await mediator.QueryAsync(new GetArticleByUrlQuery
                 {
                     UrlPath = string.Empty
                 });
@@ -800,46 +720,23 @@ namespace Sky.Cms.Controllers
         /// <returns>Success or failure.</returns>
         public async Task<IActionResult> Publish(Guid id)
         {
-            if (id == Guid.Empty)
+            var command = new PublishLayoutCommand
             {
-                return BadRequest("Invalid layout ID");
+                LayoutId = id
+            };
+
+            var result = await mediator.SendAsync(command);
+
+            if (!result.IsSuccess)
+            {
+                return BuildCommandFailureResult(
+                    result,
+                    nameof(command.LayoutId),
+                    "An error occurred while publishing the layout",
+                    (message => message.Contains("not found", StringComparison.OrdinalIgnoreCase), message => NotFound(message)));
             }
 
-            try
-            {
-                var layout = await dbContext.Layouts.FirstOrDefaultAsync(f => f.Id == id);
-
-                if (layout == null)
-                {
-                    return NotFound($"Layout with ID {id} not found");
-                }
-
-                if (layout.IsDefault)
-                {
-                    return Ok();
-                }
-
-                layout.IsDefault = true;
-                layout.Published = DateTimeOffset.UtcNow;
-
-                var others = await dbContext.Layouts.Where(w => w.Id != id && w.IsDefault == true).ToListAsync();
-                foreach (var item in others)
-                {
-                    item.IsDefault = false;
-                    item.Published = null;
-                }
-
-                await dbContext.SaveChangesAsync();
-
-                logger.LogInformation("Published layout {LayoutId} as default", id);
-
-                return RedirectToAction("Publish", "Editor");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error publishing layout {LayoutId}", id);
-                return StatusCode(500, "An error occurred while publishing the layout");
-            }
+            return RedirectToAction("Publish", "Editor");
         }
 
         /// <summary>
@@ -855,55 +752,26 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            if (string.IsNullOrWhiteSpace(id))
+            var command = new ImportLayoutCommand
             {
-                return BadRequest("Layout ID is required");
-            }
+                CommunityLayoutId = id
+            };
 
-            try
+            var result = await mediator.SendAsync(command);
+
+            if (!result.IsSuccess)
             {
-                if (await dbContext.Layouts.Where(c => c.CommunityLayoutId == id).CosmosAnyAsync())
-                {
-                    return BadRequest("Design already loaded.");
-                }
-
-                var layout = await layoutImportService.GetCommunityLayoutAsync(id, false);
-                var communityPages = await layoutImportService.GetCommunityTemplatePagesAsync(id);
-
-                // Get next available LayoutNumber
-                var maxLayoutNumber = await dbContext.Layouts
-                    .Where(l => l.LayoutNumber > 0)
-                    .MaxAsync(l => (int?)l.LayoutNumber) ?? 0;
-
-                layout.LayoutNumber = maxLayoutNumber + 1;
-
-                if (!await Cosmos.Common.Data.Logic.LayoutHelper.HasDefaultLayoutAsync(dbContext))
-                {
-                    layout.Version = 1;
-                    layout.IsDefault = true;
-                }
-                else
-                {
-                    layout.Version = (await dbContext.Layouts.CountAsync()) + 1;
-                    layout.IsDefault = false;
-                }
-
-                dbContext.Layouts.Add(layout);
-                await dbContext.SaveChangesAsync();
-
-                logger.LogInformation(
-                    "Imported community layout {CommunityLayoutId} as layout {LayoutId} with LayoutNumber={LayoutNumber}",
-                    id, layout.Id, layout.LayoutNumber);
-
-                if (communityPages != null && communityPages.Any())
-                {
-                    await ImportCommunityTemplates(htmlService, dbContext, communityPages, layout.Id, id, layout.LayoutNumber);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error importing community layout {CommunityLayoutId}", id);
-                ModelState.AddModelError("Id", ex.Message);
+                return BuildCommandFailureResult(
+                    result,
+                    nameof(command.CommunityLayoutId),
+                    "An error occurred while importing the layout",
+                    message =>
+                    {
+                        logger.LogError("Error importing community layout {CommunityLayoutId}: {ErrorMessage}", id, message);
+                        ModelState.AddModelError("Id", message);
+                        return RedirectToAction("Index");
+                    },
+                    (message => message.Equals("Design already loaded.", StringComparison.Ordinal), message => BadRequest(message)));
             }
 
             return RedirectToAction("Index");
@@ -922,32 +790,80 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            if (id == Guid.Empty)
+            var command = new PromoteLayoutCommand
             {
-                return BadRequest("Invalid layout ID");
+                LayoutId = id
+            };
+
+            var result = await mediator.SendAsync(command);
+
+            if (!result.IsSuccess)
+            {
+                return BuildCommandFailureResult(
+                    result,
+                    nameof(command.LayoutId),
+                    "An error occurred while promoting the layout",
+                    (message => message.Contains("not found", StringComparison.OrdinalIgnoreCase), message => NotFound(message)));
             }
 
-            try
-            {
-                var layout = await dbContext.Layouts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+            return Json(result.Data);
+        }
 
-                if (layout == null)
+        private IActionResult BuildCommandFailureResult(
+            CommandResult result,
+            string validationFieldName,
+            string defaultServerErrorMessage,
+            params (Func<string, bool> Predicate, Func<string, IActionResult> ResultFactory)[] knownErrorMappings)
+        {
+            return BuildCommandFailureResult(
+                result,
+                validationFieldName,
+                defaultServerErrorMessage,
+                message => StatusCode(500, message),
+                knownErrorMappings);
+        }
+
+        private IActionResult BuildCommandFailureResult(
+            CommandResult result,
+            string validationFieldName,
+            string defaultServerErrorMessage,
+            Func<string, IActionResult> fallbackFactory,
+            params (Func<string, bool> Predicate, Func<string, IActionResult> ResultFactory)[] knownErrorMappings)
+        {
+            var validationMessage = GetFirstValidationError(result, validationFieldName);
+            if (!string.IsNullOrWhiteSpace(validationMessage))
+            {
+                return BadRequest(validationMessage);
+            }
+
+            var errorMessage = result.ErrorMessage;
+            if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                foreach (var mapping in knownErrorMappings)
                 {
-                    return NotFound($"Layout with ID {id} not found");
+                    if (mapping.Predicate(errorMessage))
+                    {
+                        return mapping.ResultFactory(errorMessage);
+                    }
                 }
-
-                var newLayout = await NewVersion(layout);
-
-                logger.LogInformation("Promoted layout {OldLayoutId} to new version {NewLayoutId} with version number {Version}",
-                    id, newLayout.Id, newLayout.Version);
-
-                return Json(newLayout.Version);
             }
-            catch (Exception ex)
+
+            return fallbackFactory(errorMessage ?? defaultServerErrorMessage);
+        }
+
+        private static string GetFirstValidationError(CommandResult result, string validationFieldName)
+        {
+            if (result?.Errors == null)
             {
-                logger.LogError(ex, "Error promoting layout {LayoutId}", id);
-                return StatusCode(500, "An error occurred while promoting the layout");
+                return string.Empty;
             }
+
+            if (!result.Errors.TryGetValue(validationFieldName, out var fieldErrors) || fieldErrors == null || !fieldErrors.Any())
+            {
+                return string.Empty;
+            }
+
+            return fieldErrors.FirstOrDefault() ?? string.Empty;
         }
 
         /// <summary>
@@ -1249,7 +1165,7 @@ namespace Sky.Cms.Controllers
         /// Gets the layout for editing - creates a new version if the current one is default.
         /// </summary>
         /// <returns>Layout for editing.</returns>
-        private async Task<Cosmos.Common.Data.Layout> GetLayoutForEdit()
+        private async Task<Layout> GetLayoutForEdit()
         {
             var layout = await dbContext.Layouts.OrderByDescending(o => o.Version).FirstOrDefaultAsync();
 
@@ -1275,44 +1191,10 @@ namespace Sky.Cms.Controllers
 
             if (layout.IsDefault)
             {
-                return await NewVersion(layout);
+                return await layoutVersioningService.CreateNewVersionAsync(layout);
             }
 
             return layout;
-        }
-
-        /// <summary>
-        ///  Creates a new layout from an existing layout.
-        /// </summary>
-        /// <param name="layout">Existing layout.</param>
-        /// <returns>New layout with an incremented version number.</returns>
-        private async Task<Cosmos.Common.Data.Layout> NewVersion(Cosmos.Common.Data.Layout layout)
-        {
-            var newLayout = new Layout
-            {
-                CommunityLayoutId = layout.CommunityLayoutId,
-                LayoutName = layout.LayoutName,
-                Notes = layout.Notes,
-                Head = layout.Head,
-                HtmlHeader = layout.HtmlHeader,
-                BodyHtmlAttributes = layout.BodyHtmlAttributes,
-                FooterHtmlContent = layout.FooterHtmlContent,
-                IsDefault = false,
-                LayoutNumber = layout.LayoutNumber,
-                Version = (await dbContext.Layouts.Where(l => l.LayoutNumber == layout.LayoutNumber).CountAsync()) + 1,
-                LastModified = DateTimeOffset.UtcNow,
-                Published = null,
-                Id = Guid.NewGuid()
-            };
-
-            dbContext.Layouts.Add(newLayout);
-            await dbContext.SaveChangesAsync();
-
-            logger.LogInformation(
-                "Created new version of layout family LayoutNumber={LayoutNumber}, Version={Version}",
-                newLayout.LayoutNumber, newLayout.Version);
-
-            return newLayout;
         }
 
         /// <summary>

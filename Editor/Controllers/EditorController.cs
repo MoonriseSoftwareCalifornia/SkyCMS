@@ -132,9 +132,6 @@ namespace Sky.Cms.Controllers
             this.titleChangeService = titleChangeService;
             this.templateService = templateService;
             this.mediator = mediator;
-
-            var htmlUtilities = new HtmlUtilities();
-
             this.viewRenderService = viewRenderService;
         }
 

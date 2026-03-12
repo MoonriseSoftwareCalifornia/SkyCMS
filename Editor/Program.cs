@@ -309,6 +309,7 @@ builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 builder.Services.AddScoped<IStorageContext, StorageContext>();
 builder.Services.AddScoped<IEditorSettings, EditorSettings>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
+builder.Services.AddScoped<ILayoutVersioningService, LayoutVersioningService>();
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 
 // Register shared query services (Common namespace - used by both Editor and Publisher)

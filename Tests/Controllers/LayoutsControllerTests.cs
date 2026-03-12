@@ -12,10 +12,8 @@ namespace Sky.Tests.Controllers
     using System.Security.Claims;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
     using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging.Abstractions;
@@ -23,7 +21,6 @@ namespace Sky.Tests.Controllers
     using Moq;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
-    using Sky.Editor.Models;
 
     /// <summary>
     /// Tests for LayoutsController.
@@ -60,19 +57,22 @@ namespace Sky.Tests.Controllers
             layoutImportServiceMock.Setup(s => s.GetCommunityCatalogAsync())
                 .ReturnsAsync(mockCatalog);
 
+            var layoutVersioningService = new Sky.Editor.Services.Layouts.LayoutVersioningService(
+                Db,
+                ArticleHtmlService,
+                NullLogger<Sky.Editor.Services.Layouts.LayoutVersioningService>.Instance);
+
             // Create controller with all dependencies
             controller = new LayoutsController(
                 Db,
                 UserManager,
-                Logic,
                 mockArticleQueries.Object,
                 EditorSettings,
                 Storage,
                 ViewRenderService,
-                EditorSettings,
-                ArticleHtmlService,
                 NullLogger<LayoutsController>.Instance,
                 layoutImportServiceMock.Object,
+                layoutVersioningService,
                 Cache,
                 DynamicConfigurationProvider);
 
