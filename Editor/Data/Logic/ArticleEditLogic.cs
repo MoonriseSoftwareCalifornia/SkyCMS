@@ -481,6 +481,7 @@ namespace Sky.Editor.Data.Logic
         /// </summary>
         /// <param name="articleNumber">Target article number.</param>
         /// <returns>Awaitable task.</returns>
+        [Obsolete("Use TrashArticle instead. This method will be removed in version 3.0.", error: false)]
         public async Task DeleteArticle(int articleNumber)
         {
             var doomed = await DbContext.Articles

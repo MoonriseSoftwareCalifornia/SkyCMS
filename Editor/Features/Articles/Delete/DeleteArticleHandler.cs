@@ -32,6 +32,11 @@ namespace Sky.Editor.Features.Articles.Delete
         /// <summary>
         /// Initializes a new instance of the <see cref="DeleteArticleHandler"/> class.
         /// </summary>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="publishingService">The publishing service.</param>
+        /// <param name="storageContext">The storage context.</param>
+        /// <param name="settings">The editor settings.</param>
+        /// <param name="logger">The logger.</param>
         public DeleteArticleHandler(
             ApplicationDbContext dbContext,
             IPublishingService publishingService,
@@ -49,6 +54,9 @@ namespace Sky.Editor.Features.Articles.Delete
         /// <summary>
         /// Handles the delete article command.
         /// </summary>
+        /// <param name="command">The command.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The command result.</returns>
         public async Task<CommandResult<Unit>> HandleAsync(DeleteArticleCommand command, CancellationToken cancellationToken = default)
         {
             if (command == null)

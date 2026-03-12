@@ -117,8 +117,13 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("Versions", redirect.ActionName);
 
             // Verify article was created in database
-            var articles = await Db.Articles.Where(a => a.Title == "New Article").ToListAsync();
-            Assert.IsTrue(articles.Count > 0, "Article should be created in database");
+            var createdArticle = await Db.Articles
+                .Where(a => a.Title == "New Article")
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
+
+            Assert.IsNotNull(createdArticle, "Article should be created in database");
+            Assert.AreEqual((int)ArticleType.BlogStream, createdArticle.ArticleType, "Created article should be BlogStream");
         }
 
         [TestMethod]
@@ -304,6 +309,31 @@ namespace Sky.Tests.Controllers
             
             Assert.IsNotNull(trashedArticle);
             Assert.AreEqual((int)StatusCodeEnum.Deleted, trashedArticle.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task TrashPermanently_RemovesDeletedArticleVersions()
+        {
+            // Arrange
+            var homePage = await CreateArticleAsync("Home Page", TestUserId);
+            await SaveArticleAsync(homePage, TestUserId);
+
+            var article = await CreateArticleAsync("Delete Forever", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            await controller.TrashArticle(article.ArticleNumber);
+
+            // Act
+            var result = await controller.TrashPermanently(article.ArticleNumber);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+
+            var remaining = await Db.Articles
+                .Where(a => a.ArticleNumber == article.ArticleNumber)
+                .ToListAsync();
+
+            Assert.AreEqual(0, remaining.Count);
         }
 
         [TestMethod]

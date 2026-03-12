@@ -20,7 +20,6 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
-    using Cosmos.Common.Services;
     using Cosmos.DynamicConfig;
     using Cosmos.Editor.Services;
     using HtmlAgilityPack;
@@ -39,10 +38,13 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Data;
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
+    using Sky.Editor.Features.Articles.Delete;
     using Sky.Editor.Features.Articles.Save;
+    using Sky.Editor.Features.Articles.Trash;
     using Sky.Editor.Features.Templates.Get;
     using Sky.Editor.Models;
     using Sky.Editor.Models.GrapesJs;
+    using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
@@ -485,7 +487,7 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        ///     Uses <see cref="CreateArticleCommand"/> via mediator to create an <see cref="ArticleViewModel"/> ready for editing.
+        ///     Uses <see cref="CreateArticleCommand"/> via mediator to create an <see cref="ArticleViewModel"/> (BlogStream) ready for editing.
         /// </summary>
         /// <param name="model">Create page view model.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -512,7 +514,7 @@ namespace Sky.Cms.Controllers
                 Title = model.Title,
                 TemplateId = model.TemplateId,
                 UserId = Guid.Parse(await GetUserId()),
-                ArticleType = model.ArticleType,
+                ArticleType = ArticleType.BlogStream,
                 BlogKey = string.Empty,
                 Category = model.Category,
                 Introduction = model.Introduction
@@ -999,6 +1001,7 @@ namespace Sky.Cms.Controllers
         /// <param name="id">Article number.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             var invalidModelState = GetInvalidModelStateResult();
@@ -1573,7 +1576,18 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            await articleLogic.DeleteArticle(id);
+            var deleteArticleCommand = new DeleteArticleCommand
+            {
+                ArticleNumber = id
+            };
+
+            var result = await mediator.SendAsync<CommandResult<Unit>>(deleteArticleCommand);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage);
+            }
+
             return Ok();
         }
 
@@ -2063,6 +2077,34 @@ namespace Sky.Cms.Controllers
             }
 
             return article;
+        }
+
+        /// <summary>
+        /// Permanently trashes an article.
+        /// </summary>
+        /// <param name="id">Article number.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpGet]
+        [Authorize(Roles = "Administrators, Editors")]
+        public async Task<IActionResult> TrashPermanently(int id)
+        {
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
+            {
+                return invalidModelState;
+            }
+
+            var result = await mediator.SendAsync<CommandResult<Unit>>(new TrashArticleCommand
+            {
+                ArticleNumber = id
+            });
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage ?? "Failed to permanently trash article.");
+            }
+
+            return Ok();
         }
     }
 }

@@ -58,9 +58,9 @@ namespace Sky.Tests.Controllers
                 ReservedPaths,
                 TitleChangeService,
                 TemplateService,
-                Mediator,                        // Use Mediator from base class
-                Cache,                           // ✅ Add memory cache
-                DynamicConfigurationProvider);   // ✅ Add config provider
+                Mediator,
+                Cache,
+                DynamicConfigurationProvider);
 
             // Setup user context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new[]

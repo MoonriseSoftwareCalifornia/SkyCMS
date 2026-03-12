@@ -166,7 +166,7 @@ namespace Sky.Editor.Controllers
                 BannerImage = heroImage,
                 Introduction = model.Description,
                 ContentOverride = blogStreamTemplate.Content, // Blog streams use template content as-is
-                Published = model.Published
+                Published = DateTimeOffset.UtcNow // Publish immediately upon creation
             };
 
             var result = await mediator.SendAsync(command);

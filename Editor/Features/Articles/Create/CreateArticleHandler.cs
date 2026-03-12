@@ -28,7 +28,6 @@ namespace Sky.Editor.Features.Articles.Create
         private readonly ICatalogService catalogService;
         private readonly IPublishingService publishingService;
         private readonly ITitleChangeService titleChangeService;
-        private readonly ITemplateService templateService;
         private readonly IClock clock;
         private readonly ILogger<CreateArticleHandler> logger;
         private readonly CreateArticleValidator validator;
@@ -59,12 +58,17 @@ namespace Sky.Editor.Features.Articles.Create
             this.catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
             this.publishingService = publishingService ?? throw new ArgumentNullException(nameof(publishingService));
             this.titleChangeService = titleChangeService ?? throw new ArgumentNullException(nameof(titleChangeService));
-            this.templateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
             this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             validator = new CreateArticleValidator();
         }
 
+        /// <summary>
+        /// Handles create article command.
+        /// </summary>
+        /// <param name="command">The command.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Command result with an ArticleViewModel.</returns>
         public async Task<CommandResult<ArticleViewModel>> HandleAsync(
             CreateArticleCommand command,
             CancellationToken cancellationToken = default)

@@ -71,10 +71,22 @@
                         }
                     }
 
+                    async function trashPermanently(articleNumber) {
+                        if (!confirm("Permanently delete this article and all versions? This cannot be undone.")) {
+                            return;
+                        }
+
+                        const result = await fetch("@Url.Action("TrashPermanently", "Editor")/" + articleNumber);
+                        if (result.ok) {
+                            pageTable.setData();
+                        }
+                    }
+
                     const menuBar = function(cell, formatterParams){
                         data = cell.getRow().getData();
                         let html = "<div class='btn-group btn-group-sm' role='group' aria-label='Page actions.'>";
                         html += "<button title='Recover page from trash' onclick='restore(" + data.ArticleNumber + ")' class='btn btn-sm btn-success'> Restore <i class='fa-solid fa-trash-can-arrow-up'></i></button>";
+                        html += "<button title='Permanently delete from trash' onclick='trashPermanently(" + data.ArticleNumber + ")' class='btn btn-sm btn-danger'> Delete <i class='fa-solid fa-trash'></i></button>";
                         html += "</div>";
                         return html;
                     };

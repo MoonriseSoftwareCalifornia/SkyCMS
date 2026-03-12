@@ -430,7 +430,7 @@ namespace Sky.Tests
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandResult>>>(sp =>
                 new Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandHandler(
                     Db,
-                    SlugService,
+                    sp.GetRequiredService<IMediator>(),
                     new NullLogger<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandHandler>()));
             
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommandResult>>>(sp =>
@@ -928,9 +928,9 @@ namespace Sky.Tests
                 TitleChangeService,
                 TemplateService,
                 Mediator,
-                Cache,                          // ✅ Add memory cache for layout caching
-                DynamicConfigurationProvider);  // ✅ Add config provider for tenant-aware caching
-
+                Cache,
+                DynamicConfigurationProvider);
+            
             // Setup user context
             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {

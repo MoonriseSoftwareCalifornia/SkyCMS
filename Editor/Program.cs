@@ -308,6 +308,7 @@ builder.Services.AddScoped<ISetupService, SetupService>();
 builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 builder.Services.AddScoped<IStorageContext, StorageContext>();
 builder.Services.AddScoped<IEditorSettings, EditorSettings>();
+builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 
 // Register shared query services (Common namespace - used by both Editor and Publisher)
@@ -771,9 +772,6 @@ app.MapControllerRoute(name: "pub", pattern: "pub/{*index}", defaults: new { con
 app.MapControllerRoute(name: "blog_rss", pattern: "blog/rss", defaults: new { controller = "Blog", action = "Rss" });
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 
-// Add this catch-all route for dynamic pages (blog streams, articles, etc.)
-app.MapFallbackToController("Index", "Home");
-
 app.MapAreaControllerRoute(
     name: "setup",
     areaName: "Setup",
@@ -785,5 +783,8 @@ app.MapRazorPages();
 app.MapControllers();
 app.MapHub<PublishingProgressHub>("/hubs/publishing-progress");
 app.MapHub<LiveEditorHub>("/___cwps_hubs_live_editor");
+
+// Add this catch-all route for dynamic pages (blog streams, articles, etc.)
+app.MapFallbackToController("Index", "Home");
 
 await app.RunAsync();

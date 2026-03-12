@@ -501,8 +501,8 @@ namespace Sky.Tests.Security
                 TitleChangeService,
                 TemplateService,
                 Mediator,
-                Cache,                           // ✅ Add memory cache
-                DynamicConfigurationProvider);   // ✅ Add config provider
+                Cache,
+                DynamicConfigurationProvider);
 
             SetupControllerContext(controller, roles, isAuthenticated);
             return controller;

@@ -8,39 +8,41 @@
 namespace Sky.Editor.Features.Blogs.CreatePost
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Models;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Slugs;
+    using Sky.Editor.Features.Articles.Create;
 
     /// <summary>
     /// Handler for creating a new blog post within a blog stream.
-    /// Validates that the blog stream exists, creates the article entity, and sets initial metadata.
+    /// Validates that the blog stream exists, then delegates to the shared article creation pipeline.
     /// </summary>
     public class CreateBlogPostCommandHandler : ICommandHandler<CreateBlogPostCommand, CommandResult<CreateBlogPostCommandResult>>
     {
         private readonly ApplicationDbContext dbContext;
-        private readonly ISlugService slugService;
+        private readonly IMediator mediator;
         private readonly ILogger<CreateBlogPostCommandHandler> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CreateBlogPostCommandHandler"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
-        /// <param name="slugService">Service for normalizing URLs and titles to slugs.</param>
+        /// <param name="mediator">Mediator instance.</param>
         /// <param name="logger">Logger instance.</param>
         public CreateBlogPostCommandHandler(
             ApplicationDbContext dbContext,
-            ISlugService slugService,
+            IMediator mediator,
             ILogger<CreateBlogPostCommandHandler> logger)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            this.slugService = slugService ?? throw new ArgumentNullException(nameof(slugService));
+            this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -59,7 +61,6 @@ namespace Sky.Editor.Features.Blogs.CreatePost
                 throw new ArgumentNullException(nameof(command));
             }
 
-            // Validation
             if (command.UserId == Guid.Empty)
             {
                 logger.LogWarning("CreateBlogPost called with empty UserId");
@@ -80,11 +81,10 @@ namespace Sky.Editor.Features.Blogs.CreatePost
 
             try
             {
-                // Verify the parent blog stream exists
                 var blogStreamType = (int)ArticleType.BlogStream;
                 var parentStream = await dbContext.Articles
                     .FirstOrDefaultAsync(
-                        a => a.BlogKey == command.BlogKey && 
+                        a => a.BlogKey == command.BlogKey &&
                              a.ArticleType == blogStreamType &&
                              a.StatusCode != (int)StatusCodeEnum.Deleted,
                         cancellationToken);
@@ -96,51 +96,52 @@ namespace Sky.Editor.Features.Blogs.CreatePost
                         $"Blog stream '{command.BlogKey}' not found.");
                 }
 
-                // Create the URL path: blog_key/post_slug
-                var postSlug = slugService.Normalize(command.Title);
-                var urlPath = $"{command.BlogKey}/{postSlug}";
+                logger.LogInformation(
+                    "Creating blog post '{Title}' in stream {BlogKey} for user {UserId}",
+                    command.Title,
+                    command.BlogKey,
+                    command.UserId);
 
-                // Get next article number
-                var maxArticleNumber = await dbContext.Articles.MaxAsync(a => (int?)a.ArticleNumber, cancellationToken) ?? 0;
-                var nextArticleNumber = maxArticleNumber + 1;
-
-                // Create the article entity
-                var article = new Article
+                var createArticleCommand = new CreateArticleCommand
                 {
-                    Id = Guid.NewGuid(),
-                    ArticleNumber = nextArticleNumber,
-                    VersionNumber = 1,
-                    Title = command.Title.Trim(),
-                    Content = command.Content,
-                    Introduction = command.Introduction ?? string.Empty,
-                    BannerImage = command.BannerImage ?? string.Empty,
-                    UrlPath = urlPath,
+                    Title = command.Title,
+                    UserId = command.UserId,
+                    TemplateId = command.TemplateId == Guid.Empty ? null : command.TemplateId,
                     BlogKey = command.BlogKey,
-                    ArticleType = (int)ArticleType.BlogPost,
-                    StatusCode = (int)StatusCodeEnum.Active,
-                    TemplateId = command.TemplateId,
-                    Published = command.Published,
-                    UserId = command.UserId.ToString(),
-                    Updated = DateTimeOffset.UtcNow
+                    ArticleType = ArticleType.BlogPost,
+                    Introduction = command.Introduction,
+                    BannerImage = command.BannerImage,
+                    ContentOverride = command.Content,
+                    Published = command.Published
                 };
 
-                dbContext.Articles.Add(article);
-                await dbContext.SaveChangesAsync(cancellationToken);
+                var createResult = await mediator.SendAsync<CommandResult<ArticleViewModel>>(createArticleCommand, cancellationToken);
+
+                if (!createResult.IsSuccess || createResult.Data == null)
+                {
+                    return CommandResult<CreateBlogPostCommandResult>.Failure(
+                        createResult.Errors ?? new Dictionary<string, string[]>
+                        {
+                            ["general"] = new[] { createResult.ErrorMessage ?? "Failed to create blog post." }
+                        });
+                }
+
+                var createdArticle = createResult.Data;
 
                 logger.LogInformation(
                     "Successfully created blog post {PostId} in stream {BlogKey}: '{Title}' (UrlPath: {UrlPath})",
-                    article.Id,
+                    createdArticle.Id,
                     command.BlogKey,
-                    command.Title,
-                    urlPath);
+                    createdArticle.Title,
+                    createdArticle.UrlPath);
 
                 return CommandResult<CreateBlogPostCommandResult>.Success(
                     new CreateBlogPostCommandResult
                     {
-                        Id = article.Id,
-                        ArticleNumber = article.ArticleNumber,
-                        UrlPath = article.UrlPath,
-                        BlogKey = article.BlogKey
+                        Id = createdArticle.Id,
+                        ArticleNumber = createdArticle.ArticleNumber,
+                        UrlPath = createdArticle.UrlPath,
+                        BlogKey = command.BlogKey
                     });
             }
             catch (DbUpdateException ex)
@@ -153,7 +154,7 @@ namespace Sky.Editor.Features.Blogs.CreatePost
             {
                 logger.LogError(ex, "Unexpected error creating blog post in stream {BlogKey}", command.BlogKey);
                 return CommandResult<CreateBlogPostCommandResult>.Failure(
-                    $"An unexpected error occurred: {ex.Message}");
+                    "An unexpected error occurred while creating the blog post.");
             }
         }
     }
