@@ -20,7 +20,7 @@ jobs:
 
       - name: Run duplicate test audit
         shell: pwsh
-        run: ./scripts/audit-duplicate-tests.ps1 -BaselinePath ./.github/duplicate-test-audit-baseline.json
+        run: ./scripts/audit-duplicate-tests.ps1 -BaselinePath ./.github/duplicate-test-audit-baseline.json -FailOnNameCollisions
 
       - name: Publish step summary
         if: always()

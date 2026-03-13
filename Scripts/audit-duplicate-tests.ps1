@@ -4,7 +4,8 @@ param(
     [string]$BaselinePath = '',
     [double]$HighConfidenceMethodThreshold = 0.75,
     [double]$HighConfidenceTokenThreshold = 0.82,
-    [switch]$FailOnHighConfidenceDuplicates
+    [switch]$FailOnHighConfidenceDuplicates,
+    [switch]$FailOnNameCollisions
 )
 
 $ErrorActionPreference = 'Stop'
@@ -577,4 +578,8 @@ Write-Host "Machine-readable report written to $jsonPath"
 
 if ($FailOnHighConfidenceDuplicates -and $summary.NewHighConfidencePairs -gt 0) {
     throw "Found $($summary.NewHighConfidencePairs) net-new high-confidence duplicate test pairs."
+}
+
+if ($FailOnNameCollisions -and ($summary.DuplicateFileNameGroups -gt 0 -or $summary.DuplicateClassNameGroups -gt 0)) {
+    throw "Found duplicate test name collisions (files: $($summary.DuplicateFileNameGroups), classes: $($summary.DuplicateClassNameGroups))."
 }
