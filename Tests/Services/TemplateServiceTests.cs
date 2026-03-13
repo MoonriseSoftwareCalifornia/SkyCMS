@@ -56,13 +56,13 @@ namespace Sky.Tests.Services
         }
         
         /// <summary>
-        /// Clears the static _seededTenants cache in TemplateService using reflection.
+        /// Clears the static SeededTenants cache in TemplateService using reflection.
         /// This ensures tests don't affect each other via shared static state.
         /// </summary>
         private void ClearSeededTenantsCache()
         {
             var seededTenantsField = typeof(TemplateService).GetField(
-                "_seededTenants", 
+                "SeededTenants", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             
             if (seededTenantsField != null)

@@ -526,7 +526,11 @@ namespace Sky.Tests.Controllers
                     <p>Only region</p>
                 </div>";
             await SaveArticleAsync(article, TestUserId);
-            var originalContent = article.Content;
+
+            // Retrieve from database to get the actual stored content (which may be normalized)
+            var savedArticle = await Mediator.QueryAsync(
+                new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
+            var originalContent = savedArticle.Content;
 
             var model = new EditPostViewModel
             {
