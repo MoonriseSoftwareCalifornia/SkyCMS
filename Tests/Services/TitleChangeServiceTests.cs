@@ -1222,6 +1222,23 @@ namespace Sky.Tests.Services
             Assert.IsTrue(isValid, "Unique, non-reserved title should be valid");
         }
 
+        /// <summary>
+        /// Tests that ValidateTitle_SameArticleNumber_AllowsSameTitle.
+        /// </summary>
+        [TestMethod]
+        public async Task ValidateTitle_SameArticleNumber_AllowsSameTitle()
+        {
+            // Arrange
+            await CreateArticleAsync("Home Page", TestUserId); // Create root first
+            var existingArticle = await CreateArticleAsync("Existing Article", TestUserId);
+
+            // Act
+            var isValid = await TitleChangeService.ValidateTitle("Existing Article", existingArticle.ArticleNumber);
+
+            // Assert
+            Assert.IsTrue(isValid, "Editing the same article should allow retaining the same title");
+        }
+
         #endregion
     }
 }
