@@ -97,7 +97,9 @@ namespace Sky.Tests.Features.Shared
                 await Mediator.SendAsync(command);
             });
 
-            Assert.IsTrue(exception.Message.Contains("No service for type"));
+            Assert.IsTrue(exception.Message.Contains("No command handler registered"));
+            Assert.IsNotNull(exception.InnerException);
+            Assert.IsTrue(exception.InnerException.Message.Contains("No service for type"));
         }
 
         #endregion
@@ -209,15 +211,14 @@ namespace Sky.Tests.Features.Shared
             var command = new ThrowingCommand();
 
             // Act & Assert
-            // Reflection wraps exceptions in TargetInvocationException
-            var exception = await Assert.ThrowsExactlyAsync<TargetInvocationException>(async () =>
+            // Reflection wraps exceptions in TargetInvocationException, but the Mediator unwraps it
+            // to provide better exception messages, so we receive the actual exception directly
+            var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
             {
                 await mediator.SendAsync(command);
             });
 
-            Assert.IsNotNull(exception.InnerException);
-            Assert.IsInstanceOfType(exception.InnerException, typeof(InvalidOperationException));
-            Assert.AreEqual("Test exception from handler", exception.InnerException.Message);
+            Assert.AreEqual("Test exception from handler", exception.Message);
         }
 
         #endregion
@@ -304,7 +305,9 @@ namespace Sky.Tests.Features.Shared
                 await Mediator.QueryAsync(query);
             });
 
-            Assert.IsTrue(exception.Message.Contains("No service for type"));
+            Assert.IsTrue(exception.Message.Contains("No query handler registered"));
+            Assert.IsNotNull(exception.InnerException);
+            Assert.IsTrue(exception.InnerException.Message.Contains("No service for type"));
         }
 
         #endregion
@@ -455,16 +458,16 @@ namespace Sky.Tests.Features.Shared
             // Act & Assert
             // In .NET 9, the cast (Task<CommandResult>)(object)Task<string> throws InvalidCastException
             // This happens inside the handler's HandleAsync method during method.Invoke()
-            // Reflection wraps this in TargetInvocationException
-            var exception = await Assert.ThrowsExactlyAsync<TargetInvocationException>(async () =>
+            // Reflection wraps this in TargetInvocationException, but the Mediator unwraps it
+            // to provide better exception messages, so we receive the InvalidCastException directly
+            var exception = await Assert.ThrowsExactlyAsync<InvalidCastException>(async () =>
             {
                 await mediator.SendAsync(command);
             });
 
-            // Verify the inner exception is the InvalidCastException from the bad cast
-            Assert.IsNotNull(exception.InnerException);
-            Assert.IsInstanceOfType(exception.InnerException, typeof(InvalidCastException));
-            Assert.IsTrue(exception.InnerException.Message.Contains("Task`1[System.String]"));
+            // Verify the exception message contains the type information
+            Assert.IsTrue(exception.Message.Contains("Task`1[System.String]"));
+            Assert.IsTrue(exception.Message.Contains("Task`1[Cosmos.Common.Features.Shared.CommandResult]"));
         }
 
         #endregion

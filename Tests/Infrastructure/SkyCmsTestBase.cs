@@ -79,6 +79,7 @@ namespace Sky.Tests
         protected IBlogStreamRenderingService BlogStreamRenderingService = null!;
         protected IViewRenderService ViewRenderService = null!;
         protected IServiceProvider Services = null!;
+        protected IServiceScope ServiceScope = null!;
         protected IArticleScheduler ArticleScheduler = null!;
         protected IDynamicConfigurationProvider DynamicConfigurationProvider = null!;
         protected ITenantArticleLogicFactory TenantArticleLogicFactory = null!;
@@ -419,7 +420,7 @@ namespace Sky.Tests
                 .AddSingleton<IReservedPaths>(ReservedPaths)
                 .AddSingleton<IEditorSettings>(EditorSettings)
                 .AddHttpClient() // Register IHttpClientFactory
-                .AddSingleton<IMediator, Cosmos.Common.Features.Shared.Mediator>() // Register Mediator
+                .AddScoped<IMediator, Cosmos.Common.Features.Shared.Mediator>() // Register Mediator as Scoped (matching production)
                 .AddScoped<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
                     new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(
                         Db,
@@ -442,7 +443,29 @@ namespace Sky.Tests
                 new Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler(
                     Db,
                     new NullLogger<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler>()));
-            
+
+            // Register article delete command handler
+            // Note: This handler requires PublishingService which is created after Services is built
+            // So we'll register it using a lazy factory approach (see below)
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Delete.DeleteArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Features.Shared.Unit>>> deleteArticleHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Delete.DeleteArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Features.Shared.Unit>>>(sp =>
+                deleteArticleHandlerFactory());
+
+            // Register article restore command handler
+            // This handler only needs DbContext and SlugService which are already available
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Restore.RestoreArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Features.Shared.Unit>>>(sp =>
+                new Sky.Editor.Features.Articles.Restore.RestoreArticleHandler(
+                    Db,
+                    SlugService,
+                    new NullLogger<Sky.Editor.Features.Articles.Restore.RestoreArticleHandler>()));
+
+            // Register article trash command handler (permanent delete)
+            // Note: This handler requires PublishingService which is created after Services is built
+            // So we'll register it using a lazy factory approach (see below)
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Trash.TrashArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Features.Shared.Unit>>> trashArticleHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Trash.TrashArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Features.Shared.Unit>>>(sp =>
+                trashArticleHandlerFactory());
+
             // Register template command handlers
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.Create.CreatePageDesignVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Data.PageDesignVersion>>>(sp =>
                 new Sky.Editor.Features.Templates.Create.CreatePageDesignVersionHandler(
@@ -465,7 +488,46 @@ namespace Sky.Tests
                 new Sky.Editor.Features.Templates.UpdateMetadata.UpdateTemplateMetadataHandler(
                     Db,
                     new NullLogger<Sky.Editor.Features.Templates.UpdateMetadata.UpdateTemplateMetadataHandler>()));
-            
+
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.GetEditable.GetEditablePageDesignVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Templates.GetEditable.GetEditablePageDesignVersionResult>>>(sp =>
+                new Sky.Editor.Features.Templates.GetEditable.GetEditablePageDesignVersionHandler(
+                    Db,
+                    ArticleHtmlService,
+                    Clock,
+                    new NullLogger<Sky.Editor.Features.Templates.GetEditable.GetEditablePageDesignVersionHandler>()));
+
+            // PublishPageDesignVersionHandler needs PublishingService and Mediator which will be created later
+            // We'll register it using a lazy factory like we did for article handlers
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.Publishing.PublishPageDesignVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Data.Template>>> publishPageDesignVersionHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.Publishing.PublishPageDesignVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Data.Template>>>(sp =>
+                publishPageDesignVersionHandlerFactory());
+
+            // Register layout command handlers
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Create.CreateLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<System.Guid>>>(sp =>
+                new Sky.Editor.Features.Layouts.Create.CreateLayoutHandler(
+                    Db,
+                    new NullLogger<Sky.Editor.Features.Layouts.Create.CreateLayoutHandler>()));
+
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Delete.DeleteLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<bool>>>(sp =>
+                new Sky.Editor.Features.Layouts.Delete.DeleteLayoutHandler(
+                    Db,
+                    new NullLogger<Sky.Editor.Features.Layouts.Delete.DeleteLayoutHandler>()));
+
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Publish.PublishLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<bool>>>(sp =>
+                new Sky.Editor.Features.Layouts.Publish.PublishLayoutHandler(
+                    Db,
+                    new NullLogger<Sky.Editor.Features.Layouts.Publish.PublishLayoutHandler>()));
+
+            // PromoteLayoutHandler and ImportLayoutHandler need LayoutVersioningService which will be created later
+            // We'll register these using lazy factories like we did for article handlers
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Promote.PromoteLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<int>>> promoteLayoutHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Promote.PromoteLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<int>>>(sp =>
+                promoteLayoutHandlerFactory());
+
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Import.ImportLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<bool>>> importLayoutHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Import.ImportLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<bool>>>(sp =>
+                importLayoutHandlerFactory());
+
             // Register template query handlers
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Editor.Features.Templates.Get.GetTemplateQuery, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Templates.Get.GetTemplateQueryResult>>>(sp =>
                 new Sky.Editor.Features.Templates.Get.GetTemplateQueryHandler(
@@ -497,8 +559,15 @@ namespace Sky.Tests
             // ✅ Register GetLastPublishedDateQueryHandler for EditorController.Designer
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQuery, System.DateTimeOffset?>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQueryHandler(Db));
-            
-            
+
+            // ✅ Register GetArticleByUrlQueryHandler for LayoutsController.ExportLayout and EditPreview
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>>(sp =>
+                new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQueryHandler(
+                    Db,
+                    Cache,
+                    configuration));
+
+
             // Register article catalog query handlers for HomeControllerBase
             serviceCollection.AddScoped<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
                 new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(
@@ -545,8 +614,9 @@ namespace Sky.Tests
 
             Services = serviceCollection.BuildServiceProvider();
 
-            // ✅ GET MEDIATOR FROM SERVICE PROVIDER FIRST
-            Mediator = Services.GetRequiredService<IMediator>();
+            // ✅ CREATE A SCOPE AND GET MEDIATOR FROM IT (scoped services need to be resolved from a scope)
+            ServiceScope = Services.CreateScope();
+            Mediator = ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
 
             // ✅ NOW CREATE TEMPLATE SERVICE WITH CONFIGURATION AND SERVICE PROVIDER
             TemplateService = new TemplateService(
@@ -625,10 +695,36 @@ namespace Sky.Tests
                 Db,
                 new NullLogger<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionHandler>());
 
+            // ✅ CREATE DeleteArticleHandler
+            var deleteArticleHandler = new Sky.Editor.Features.Articles.Delete.DeleteArticleHandler(
+                Db,
+                PublishingService,
+                Storage,
+                EditorSettings,
+                new NullLogger<Sky.Editor.Features.Articles.Delete.DeleteArticleHandler>());
+
+            // ✅ CREATE TrashArticleHandler (permanent delete)
+            var trashArticleHandler = new Sky.Editor.Features.Articles.Trash.TrashArticleHandler(
+                Db,
+                PublishingService,
+                Storage,
+                new NullLogger<Sky.Editor.Features.Articles.Trash.TrashArticleHandler>());
+
+            // ✅ CREATE PublishPageDesignVersionHandler
+            var publishPageDesignVersionHandler = new Sky.Editor.Features.Templates.Publishing.PublishPageDesignVersionHandler(
+                Db,
+                PublishingService,
+                Clock,
+                new NullLogger<Sky.Editor.Features.Templates.Publishing.PublishPageDesignVersionHandler>(),
+                Mediator);
+
             // ✅ NOW POPULATE THE LAZY FACTORIES so the Mediator can resolve the handlers
             saveArticleHandlerFactory = () => SaveArticleHandler;
             createArticleHandlerFactory = () => CreateArticleHandler;
             createArticleVersionHandlerFactory = () => createArticleVersionHandler;
+            deleteArticleHandlerFactory = () => deleteArticleHandler;
+            trashArticleHandlerFactory = () => trashArticleHandler;
+            publishPageDesignVersionHandlerFactory = () => publishPageDesignVersionHandler;
 
             // ✅ ADD THIS - Get the real IHttpClientFactory from DI
             HttpClientFactory = Services.GetRequiredService<IHttpClientFactory>();
@@ -638,6 +734,29 @@ namespace Sky.Tests
                 HttpClientFactory,
                 Cache,
                 new LoggerFactory().CreateLogger<LayoutImportService>());
+
+            // ✅ CREATE LayoutVersioningService (needed by PromoteLayoutHandler and ImportLayoutHandler)
+            var layoutVersioningService = new Sky.Editor.Services.Layouts.LayoutVersioningService(
+                Db,
+                ArticleHtmlService,
+                new NullLogger<Sky.Editor.Services.Layouts.LayoutVersioningService>());
+
+            // ✅ CREATE PromoteLayoutHandler
+            var promoteLayoutHandler = new Sky.Editor.Features.Layouts.Promote.PromoteLayoutHandler(
+                Db,
+                layoutVersioningService,
+                new NullLogger<Sky.Editor.Features.Layouts.Promote.PromoteLayoutHandler>());
+
+            // ✅ CREATE ImportLayoutHandler
+            var importLayoutHandler = new Sky.Editor.Features.Layouts.Import.ImportLayoutHandler(
+                Db,
+                LayoutImportService,
+                layoutVersioningService,
+                new NullLogger<Sky.Editor.Features.Layouts.Import.ImportLayoutHandler>());
+
+            // ✅ POPULATE THE LAYOUT HANDLER LAZY FACTORIES
+            promoteLayoutHandlerFactory = () => promoteLayoutHandler;
+            importLayoutHandlerFactory = () => importLayoutHandler;
 
             ArticleScheduler = new ArticleScheduler(
                 new NullLogger<ArticleScheduler>(),
@@ -845,6 +964,8 @@ namespace Sky.Tests
 
         public virtual async ValueTask DisposeAsync()
         {
+            if (ServiceScope != null)
+                ServiceScope.Dispose();
             if (Db != null)
                 await Db.DisposeAsync();
             Cache.Dispose();

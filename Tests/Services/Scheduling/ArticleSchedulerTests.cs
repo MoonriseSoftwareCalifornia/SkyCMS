@@ -75,6 +75,7 @@ namespace Sky.Tests.Services.Scheduling
             // Register all required services from base properties
             services.AddSingleton<ApplicationDbContext>(Db);
             services.AddSingleton<StorageContext>(Storage);
+            services.AddSingleton<IStorageContext>(Storage);
             services.AddSingleton<IMemoryCache>(Cache);
             services.AddSingleton<IHttpContextAccessor>(HttpContextAccessor);
             services.AddSingleton<ISlugService>(SlugService);
@@ -1400,6 +1401,7 @@ namespace Sky.Tests.Services.Scheduling
             var servicesWithoutEmail = new ServiceCollection();
             servicesWithoutEmail.AddSingleton<ApplicationDbContext>(Db);
             servicesWithoutEmail.AddSingleton<StorageContext>(Storage);
+            servicesWithoutEmail.AddSingleton<IStorageContext>(Storage);
             servicesWithoutEmail.AddSingleton<IMemoryCache>(Cache);
             servicesWithoutEmail.AddSingleton<IHttpContextAccessor>(HttpContextAccessor);
             servicesWithoutEmail.AddSingleton<ISlugService>(SlugService);
@@ -1482,6 +1484,7 @@ namespace Sky.Tests.Services.Scheduling
             var servicesWithoutUserManager = new ServiceCollection();
             servicesWithoutUserManager.AddSingleton<ApplicationDbContext>(Db);
             servicesWithoutUserManager.AddSingleton<StorageContext>(Storage);
+            servicesWithoutUserManager.AddSingleton<IStorageContext>(Storage);
             servicesWithoutUserManager.AddSingleton<IMemoryCache>(Cache);
             servicesWithoutUserManager.AddSingleton<IHttpContextAccessor>(HttpContextAccessor);
             servicesWithoutUserManager.AddSingleton<ISlugService>(SlugService);
@@ -1916,6 +1919,56 @@ namespace Sky.Tests.Services.Scheduling
             Assert.IsNotNull((await Db.Articles.FindAsync(article100v2.Id)).Published);
             Assert.IsNull((await Db.Articles.FindAsync(article200v1.Id)).Published);
             Assert.IsNotNull((await Db.Articles.FindAsync(article200v2.Id)).Published);
+        }
+
+        /// <summary>
+        /// Tests that scheduler does not remove versions that have no published date.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WithArticlesWithoutPublishedVersions_DoesNotRemoveUnpublishedVersions()
+        {
+            // Arrange
+            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            testClock.SetUtcNow(now);
+
+            var article1 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 1,
+                Title = "To Be Removed Article",
+                Content = "Content",
+                Published = null, // No published date
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/to-be-removed"
+            };
+
+            var article2 = new Article
+            {
+                ArticleNumber = 1,
+                VersionNumber = 2,
+                Title = "Kept Article",
+                Content = "Content",
+                Published = now.AddDays(-1),
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = TestUserId.ToString(),
+                UrlPath = "/kept-article"
+            };
+
+            Db.Articles.AddRange(article1, article2);
+            await Db.SaveChangesAsync();
+
+            // Act
+            await ArticleScheduler.ExecuteAsync();
+
+            // Assert
+            Assert.IsTrue(await Db.Articles.AnyAsync(a => a.Id == article1.Id), "Unpublished version should remain in database");
+            Assert.IsTrue(await Db.Articles.AnyAsync(a => a.Id == article2.Id), "Published version should still exist");
+
+            var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNull(updatedArticle1.Published, "Unpublished version should remain unpublished");
+            Assert.IsNotNull(updatedArticle2.Published, "Published version should remain published");
         }
 
         /// <summary>

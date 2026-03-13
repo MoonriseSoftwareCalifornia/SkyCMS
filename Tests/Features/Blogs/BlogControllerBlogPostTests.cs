@@ -68,6 +68,10 @@ namespace Sky.Tests.Features.Blogs
                 Published = DateTimeOffset.UtcNow
             };
             Db.Articles.Add(blogStream);
+
+            // Add ArticleNumber record so CreateArticleHandler can generate the next article number
+            Db.ArticleNumbers.Add(new ArticleNumber { LastNumber = 1 });
+
             await Db.SaveChangesAsync();
 
             // Initialize the controller

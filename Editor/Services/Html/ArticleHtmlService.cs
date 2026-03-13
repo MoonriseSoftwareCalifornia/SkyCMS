@@ -27,6 +27,63 @@ namespace Sky.Editor.Services.Html
         /// </summary>
         private const string EditableRegionsXPath = "//*[@contenteditable='true' or @data-ccms-ceid]";
 
+        /// <summary>
+        /// Normalizes HTML attribute quotes from single to double quotes.
+        /// HtmlAgilityPack serializes attributes with single quotes by default; this method converts them to double quotes.
+        /// </summary>
+        /// <param name="html">The HTML string with single-quoted attributes.</param>
+        /// <returns>The HTML string with double-quoted attributes.</returns>
+        private static string NormalizeQuotesToDouble(string html)
+        {
+            if (string.IsNullOrEmpty(html))
+            {
+                return html;
+            }
+
+            // Use a simple state machine to replace single quotes with double quotes only in attribute values
+            // This is a simplified approach that works for well-formed HTML from HtmlAgilityPack
+            var result = new System.Text.StringBuilder(html.Length);
+            bool inTag = false;
+            bool inAttributeValue = false;
+            char quoteChar = '\0';
+
+            for (int i = 0; i < html.Length; i++)
+            {
+                char c = html[i];
+
+                if (!inTag && c == '<')
+                {
+                    inTag = true;
+                    result.Append(c);
+                }
+                else if (inTag && c == '>')
+                {
+                    inTag = false;
+                    inAttributeValue = false;
+                    result.Append(c);
+                }
+                else if (inTag && !inAttributeValue && (c == '\'' || c == '"'))
+                {
+                    // Starting an attribute value
+                    inAttributeValue = true;
+                    quoteChar = c;
+                    result.Append('"'); // Always use double quote
+                }
+                else if (inTag && inAttributeValue && c == quoteChar)
+                {
+                    // Ending an attribute value
+                    inAttributeValue = false;
+                    result.Append('"'); // Always use double quote
+                }
+                else
+                {
+                    result.Append(c);
+                }
+            }
+
+            return result.ToString();
+        }
+
         /// <inheritdoc />
         public string EnsureEditableMarkers(string html)
         {
@@ -40,10 +97,10 @@ namespace Sky.Editor.Services.Html
                 return string.Empty;
             }
 
-            // Early exit if no unmarked regions
+            // Early exit if no unmarked regions - but still normalize quotes
             if (!HasUnMarkedEditableRegions(html))
             {
-                return html;
+                return NormalizeQuotesToDouble(html);
             }
 
             try
@@ -91,7 +148,9 @@ namespace Sky.Editor.Services.Html
                     }
                 }
 
-                return doc.DocumentNode.OuterHtml;
+                // HtmlAgilityPack uses single quotes by default; normalize to double quotes
+                var output = doc.DocumentNode.OuterHtml;
+                return NormalizeQuotesToDouble(output);
             }
             catch
             {
@@ -143,7 +202,8 @@ namespace Sky.Editor.Services.Html
                 }
             }
 
-            return doc.DocumentNode.OuterHtml;
+            // HtmlAgilityPack uses single quotes by default; normalize to double quotes
+            return NormalizeQuotesToDouble(doc.DocumentNode.OuterHtml);
         }
 
         /// <inheritdoc />

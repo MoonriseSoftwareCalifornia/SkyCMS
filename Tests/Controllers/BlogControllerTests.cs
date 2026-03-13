@@ -364,6 +364,21 @@ namespace Sky.Tests.Controllers
             await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
             var entry = await CreateArticleAsync("Blog Post", TestUserId, null, blogKey, ArticleType.BlogPost);
 
+            // Configure mediator to handle DeleteArticleCommand
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<Sky.Editor.Features.Articles.Delete.DeleteArticleCommand>(), default))
+                .ReturnsAsync((Sky.Editor.Features.Articles.Delete.DeleteArticleCommand cmd, System.Threading.CancellationToken ct) =>
+                {
+                    // Simulate the delete operation by marking the article as deleted
+                    var articles = Db.Articles.Where(a => a.ArticleNumber == cmd.ArticleNumber).ToList();
+                    foreach (var article in articles)
+                    {
+                        article.StatusCode = (int)StatusCodeEnum.Deleted;
+                    }
+                    Db.SaveChanges();
+                    return new CommandResult<Unit> { IsSuccess = true, Data = Unit.Value };
+                });
+
             // Act
             var result = await controller.ConfirmDeleteEntry(blogKey, entry.ArticleNumber);
 

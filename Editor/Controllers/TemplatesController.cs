@@ -804,18 +804,8 @@ namespace Sky.Cms.Controllers
                 return RedirectToAction("Pages", routeValues: new { id });
             }
 
-            // Apply template to all articles using this template - creates drafts
-            var result = await templateServices.ApplyTemplateToArticlesAsync(id, null);
-
-            if (result.AllSucceeded)
-            {
-                TempData["Success"] = $"Template applied to {result.SuccessCount} articles. Draft versions created. Review and publish individually.";
-            }
-            else
-            {
-                TempData["Warning"] = $"Template applied: {result.SuccessCount} succeeded, {result.FailureCount} failed.";
-            }
-
+            // Template publishing already applies template to all articles via PublishPageDesignVersionCommand
+            TempData["Success"] = "Template published successfully.";
             return RedirectToAction("Pages", routeValues: new { id });
         }
 

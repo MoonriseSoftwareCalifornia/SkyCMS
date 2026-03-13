@@ -482,6 +482,12 @@ namespace Sky.Editor.Controllers
                     return RedirectToAction(nameof(Entries), new { blogKey });
                 }
 
+                if (article.BlogKey != blogKey)
+                {
+                    TempData["Error"] = "Article does not belong to this blog.";
+                    return RedirectToAction(nameof(Entries), new { blogKey });
+                }
+
                 var deleteArticleCommand = new DeleteArticleCommand()
                 {
                     ArticleNumber = articleNumber

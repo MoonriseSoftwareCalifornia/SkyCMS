@@ -12,6 +12,7 @@ namespace Sky.Editor.Features.Articles.Save
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
@@ -124,6 +125,12 @@ namespace Sky.Editor.Features.Articles.Save
                 // Process HTML content
                 var processedContent = htmlService.EnsureEditableMarkers(normalizedContent);
                 htmlService.EnsureAngularBase(normalizedHeadJavaScript, command.UrlPath ?? currentArticle.UrlPath);
+
+                // Auto-generate introduction for blog posts if not provided
+                if (command.ArticleType == ArticleType.BlogPost && string.IsNullOrWhiteSpace(normalizedIntroduction))
+                {
+                    normalizedIntroduction = htmlService.ExtractIntroduction(normalizedContent);
+                }
 
                 // Update the existing article in-place
                 currentArticle.Content = processedContent;

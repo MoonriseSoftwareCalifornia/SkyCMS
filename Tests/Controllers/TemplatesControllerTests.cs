@@ -1224,10 +1224,18 @@ namespace Sky.Tests.Controllers
             // Act
             var result = await _controller.Edit(model);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Index", redirectResult.ActionName);
+            // Assert - Controller now returns JSON for AJAX requests
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = result as JsonResult;
+            Assert.IsNotNull(jsonResult.Value);
+
+            // Verify JSON response structure
+            var json = System.Text.Json.JsonSerializer.Serialize(jsonResult.Value);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            Assert.IsTrue(root.TryGetProperty("ServerSideSuccess", out var successProp));
+            Assert.IsTrue(successProp.GetBoolean(), "ServerSideSuccess should be true");
 
             // Verify changes were saved
             var updatedTemplate = await Db.Templates.FindAsync(template.Id);

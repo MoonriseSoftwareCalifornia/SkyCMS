@@ -142,6 +142,9 @@ namespace Sky.Editor.Services.Titles
                     // Update versions but don't change URL paths for root page
                     await UpdateVersionsForRootPageAsync(article);
 
+                    // Save the main article entity changes (title, etc.)
+                    await db.SaveChangesAsync();
+
                     // Republish if the article is currently published
                     if (wasPublished)
                     {
@@ -204,6 +207,9 @@ namespace Sky.Editor.Services.Titles
 
                 // Synchronize all versions of this article
                 await UpdateVersionsAsync(article, newSlug, oldSlug);
+
+                // Save the main article entity changes (title, URL, etc.)
+                await db.SaveChangesAsync();
 
                 // Republish if the article is currently published
                 if (wasPublished)

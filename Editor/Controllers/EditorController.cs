@@ -1096,6 +1096,11 @@ namespace Sky.Cms.Controllers
                     article.Content,
                     decryptedPayload);
             }
+            else if (model.Command == "SaveRegion")
+            {
+                // SaveRegion command without EditorId: keep content unchanged
+                // This is a no-op case - content is already loaded in 'article'
+            }
             else if (model.Command == "SaveBody")
             {
                 // SaveBody command: replace entire content (empty or null payload is valid)
@@ -1198,7 +1203,7 @@ namespace Sky.Cms.Controllers
                     ServerSideSuccess = false,
                     errors = new Dictionary<string, string[]>
                     {
-                        ["Command"] = new[] { $"Unrecognized command: '{model.Command}'. Valid commands are: SaveBody, SaveCode, SaveDesigner, SavePageProperties." }
+                        ["Command"] = new[] { $"Unrecognized command: '{model.Command}'. Valid commands are: SaveRegion, SaveBody, SaveCode, SaveDesigner, SavePageProperties." }
                     }
                 });
             }

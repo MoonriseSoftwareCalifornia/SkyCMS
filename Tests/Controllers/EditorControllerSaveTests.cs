@@ -193,7 +193,8 @@ namespace Sky.Tests.Controllers
                 BannerImage = "https://example.com/banner.jpg",
                 ArticleType = ArticleType.General,
                 Category = "Technology",
-                Introduction = "Test intro"
+                Introduction = "Test intro",
+                Command = "SavePageProperties" // Metadata-only update, preserves existing content
                 // Note: EditorId and Data are NOT set, so existing content should be preserved
             };
 
@@ -1186,7 +1187,7 @@ redirect.Content, "Redirect content should have clickable link to new URL");
             {
                 ArticleNumber = article.ArticleNumber,
                 Title = article.Title,
-                Command = string.Empty,
+                Command = "SavePageProperties",
                 Introduction = string.Empty,
                 Category = string.Empty,
                 BannerImage = string.Empty

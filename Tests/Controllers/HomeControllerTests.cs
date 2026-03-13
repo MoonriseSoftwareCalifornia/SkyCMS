@@ -43,8 +43,22 @@ namespace Sky.Tests.Controllers
         /// Initialize test - create HomeController instance.
         /// </summary>
         [TestInitialize]
-        public void InitializeTest()
+        public new void InitializeTest()
         {
+            InitializeTestContext(seedLayout: true);
+
+            // CREATE TEST USER IN DATABASE (required for HomeController authentication checks)
+            var testUser = new IdentityUser
+            {
+                Id = TestUserId.ToString(),
+                UserName = "test@example.com",
+                Email = "test@example.com",
+                NormalizedUserName = "TEST@EXAMPLE.COM",
+                NormalizedEmail = "TEST@EXAMPLE.COM",
+                EmailConfirmed = true
+            };
+            UserManager.CreateAsync(testUser).Wait();
+
             var logger = new Mock<ILogger<HomeController>>();
             var signInManager = new Mock<SignInManager<IdentityUser>>(
                 UserManager,
@@ -160,7 +174,9 @@ namespace Sky.Tests.Controllers
                 emailSender.Object,
                 configuration.Object,
                 services.Object,
-                mockArticleHtmlService.Object);
+                mockArticleHtmlService.Object,
+                mockLayoutTemplateService.Object,
+                mockViewRenderService.Object);
 
             // Setup user context
             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]

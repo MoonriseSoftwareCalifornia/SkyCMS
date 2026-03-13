@@ -736,6 +736,12 @@ namespace Sky.Cms.Controllers
                     (message => message.Contains("not found", StringComparison.OrdinalIgnoreCase), message => NotFound(message)));
             }
 
+            // If the layout was already default, return Ok instead of redirecting
+            if (result.Data == true)
+            {
+                return Ok();
+            }
+
             return RedirectToAction("Publish", "Editor");
         }
 
