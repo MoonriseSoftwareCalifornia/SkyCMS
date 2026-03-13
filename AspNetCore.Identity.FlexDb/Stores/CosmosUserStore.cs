@@ -39,6 +39,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         private const string RecoveryCodeTokenName = "RecoveryCodes";
 
         private readonly IRepository _repo;
+        private readonly ILookupNormalizer _normalizer;
         private bool _disposed;
 
         public IQueryable<TUserEntity> Users
@@ -69,10 +70,12 @@ namespace AspNetCore.Identity.FlexDb.Stores
         /// Constructor
         /// </summary>
         /// <param name="repo"></param>
-        public CosmosUserStore(IRepository repo)
+        /// <param name="normalizer">Identity normalizer for user/role lookup normalization.</param>
+        public CosmosUserStore(IRepository repo, ILookupNormalizer normalizer)
             : base(repo)
         {
-            _repo = repo;
+            _repo = repo ?? throw new ArgumentNullException(nameof(repo));
+            _normalizer = normalizer ?? throw new ArgumentNullException(nameof(normalizer));
         }
 
         /// <inheritdoc/>
@@ -147,8 +150,8 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 // FIX: Normalize role names before calling RemoveFromRoleAsync
                 foreach (var role in roles)
                 {
-                    // RemoveFromRoleAsync expects NormalizedName, so normalize it
-                    var normalizedRoleName = role.ToUpper(); // ASP.NET Identity normalizes to uppercase
+                    // RemoveFromRoleAsync expects normalized role name
+                    var normalizedRoleName = _normalizer.NormalizeName(role) ?? role.ToUpperInvariant();
                     await RemoveFromRoleAsync(user, normalizedRoleName, cancellationToken);
                 }
 
@@ -191,8 +194,9 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (string.IsNullOrEmpty(normalizedEmailName))
                 return null;
 
+            var normalizedSearchEmail = _normalizer.NormalizeEmail(normalizedEmailName) ?? normalizedEmailName;
             var user = await _repo.Table<TUserEntity>()
-                .SingleOrDefaultAsync(_ => _.NormalizedEmail == normalizedEmailName.ToUpperInvariant(),
+                .SingleOrDefaultAsync(_ => _.NormalizedEmail == normalizedSearchEmail,
                     cancellationToken: cancellationToken);
 
             return user;
@@ -238,7 +242,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 return null;
 
             // Normalize the input to ensure case-insensitive comparison
-            var normalizedSearchName = normalizedUserName.ToUpperInvariant();
+            var normalizedSearchName = _normalizer.NormalizeName(normalizedUserName) ?? normalizedUserName;
 
             var user = await _repo.Table<TUserEntity>()
                 .SingleOrDefaultAsync(_ => _.NormalizedUserName == normalizedSearchName || _.NormalizedEmail == normalizedSearchName);
@@ -361,11 +365,8 @@ namespace AspNetCore.Identity.FlexDb.Stores
         /// <param name="emailAddress">The email address to set.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public Task SetEmailAsync(TUserEntity user, string emailAddress, CancellationToken cancellationToken = default)
+        public Task SetEmailAsync(TUserEntity user, string? emailAddress, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(emailAddress))
-                throw new ArgumentNullException(nameof(emailAddress));
-
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
@@ -420,7 +421,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         }
 
         // <inheritdoc />
-        public Task SetPasswordHashAsync(TUserEntity user, string passwordHash,
+        public Task SetPasswordHashAsync(TUserEntity user, string? passwordHash,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -431,7 +432,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         }
 
         // <inheritdoc />
-        public Task SetPhoneNumberAsync(TUserEntity user, string phoneNumber,
+        public Task SetPhoneNumberAsync(TUserEntity user, string? phoneNumber,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -453,7 +454,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         }
 
         // <inheritdoc />
-        public Task SetUserNameAsync(TUserEntity user, string userName, CancellationToken cancellationToken = default)
+        public Task SetUserNameAsync(TUserEntity user, string? userName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -531,10 +532,9 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 _repo.Add(loginEntity);
                 await _repo.SaveChangesAsync();
             }
-            catch (Exception e)
+            catch
             {
                 // Debugging purposes.
-                //var x = e;
                 throw;
             }
         }
@@ -593,7 +593,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         }
 
         // <inheritdoc />
-        public async Task<TUserEntity> FindByLoginAsync(string loginProvider, string providerKey,
+        public async Task<TUserEntity?> FindByLoginAsync(string loginProvider, string providerKey,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -606,10 +606,12 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 await _repo.Table<IdentityUserLogin<TKey>>().SingleOrDefaultAsync(l =>
                     l.LoginProvider == loginProvider && l.ProviderKey == providerKey);
 
+            if (user is null || user.UserId is null)
+            {
+                return null;
+            }
 
-            return user is null
-                ? default(TUserEntity)
-                : await FindByIdAsync(user.UserId?.ToString(), cancellationToken);
+            return await FindByIdAsync(user.UserId.ToString()!, cancellationToken);
         }
 
         // <inheritdoc />
@@ -689,6 +691,8 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 .Table<TRoleEntity>()
                 .Where(m => roleIds.Contains(m.Id))
                 .Select(m => m.Name)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(n => n!)
                 .ToListAsync(cancellationToken);
 
             return res;
@@ -767,7 +771,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             var entity = await _repo.Table<TUserEntity>()
                 .FirstOrDefaultAsync(m => m.Id.Equals(user.Id), cancellationToken);
 
-            return entity.LockoutEnd;
+            return entity?.LockoutEnd;
         }
 
         // <inheritdoc />
@@ -795,7 +799,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             var entity = await _repo.Table<TUserEntity>()
                 .FirstOrDefaultAsync(m => m.Id.Equals(user.Id), cancellationToken);
 
-            var count = entity.AccessFailedCount + 1;
+            var count = (entity?.AccessFailedCount ?? user.AccessFailedCount) + 1;
             SetUserProperty(user, count, (u, v) => user.AccessFailedCount = v, cancellationToken);
 
             return count;
@@ -895,7 +899,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
         private async Task InternalAddClaimAsync(TUserEntity user, Claim claim, CancellationToken cancellationToken)
         {
-            if (_repo.ProviderName == "Microsoft.EntityFrameworkCore.Cosmos")
+            if (ProviderNames.IsCosmos(_repo.ProviderName))
             {
                 var identityUserClaim = new IdentityUserClaim<TKey>()
                 {
@@ -997,7 +1001,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         }
 
         // <inheritdoc />
-        public Task<string> GetSecurityStampAsync(TUserEntity user, CancellationToken cancellationToken)
+        public Task<string?> GetSecurityStampAsync(TUserEntity user, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -1113,7 +1117,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         /// <param name="user">The user whose security stamp should be set.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation, containing the security stamp for the specified <paramref name="user"/>.</returns>
-        public async Task<string> GetAuthenticatorKeyAsync(TUserEntity user, CancellationToken cancellationToken)
+        public async Task<string?> GetAuthenticatorKeyAsync(TUserEntity user, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -1123,25 +1127,19 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 throw new ArgumentNullException(nameof(user));
             }
 
-            var queryable = (IQueryable<IdentityUserToken<TKey>>)_repo.UserTokens;
-
             return await GetTokenAsync(user, InternalLoginProvider, AuthenticatorKeyTokenName, cancellationToken);
         }
 
 
-        private async Task<string> GetTokenAsync(TUserEntity user, string provider, string tokenName,
+        private async Task<string?> GetTokenAsync(TUserEntity user, string provider, string tokenName,
             CancellationToken cancellationToken)
         {
             var queryable = (IQueryable<IdentityUserToken<TKey>>)_repo.UserTokens;
             var token = await queryable.FirstOrDefaultAsync(
                 t => t.UserId.Equals(user.Id) && t.LoginProvider == provider && t.Name == tokenName,
                 cancellationToken: cancellationToken);
-            if (token == null)
-            {
-                return null;
-            }
 
-            return token.Value;
+            return token?.Value;
         }
 
         public string GenerateNewAuthenticatorKey()

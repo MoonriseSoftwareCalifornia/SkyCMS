@@ -8,7 +8,7 @@
 		<PackageVersion>9.3.0.1</PackageVersion>
 		<Authors>toiyabe62</Authors>
 		<Nullable>enable</Nullable>
-		<RepositoryType>GitHub</RepositoryType>
+		<RepositoryType>git</RepositoryType>
 		<PackageTags>Cosmos, CosmosDB, Identity, Provider, AspNetCore, Membership, Roles, AspNetCore.Identity, AspNetCore.Identity.CosmosDb, Microsoft.AspNetCore.Identity, aspnet, efcore, Azure Cosmos DB</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AspNetCore.Identity.FlexDb</PackageId>
@@ -17,7 +17,6 @@
 		<PackageIcon>B2C_BrandIcon_Black.png</PackageIcon>
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<RepositoryType>git</RepositoryType>
 		<Description>A Cosmos DB, MySQL and MS SQL implementation of ASP.NET Core Identity. The choice of DB provider is automatically chosen by the connection string.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
@@ -47,13 +46,13 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
 		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
+		<PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" />
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Content Include="B2C_BrandIcon_Black.png" />
 		<Content Include="_res\icons\B2C_BrandIcon_Black.png" />
-		<PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" />
-		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" />
 	</ItemGroup>
 
 	<ItemGroup>

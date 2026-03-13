@@ -19,11 +19,27 @@ namespace AspNetCore.Identity.FlexDb
             TimeSpan retryInterval,
             int maxAttemptCount = 5)
         {
-            Do<object>(() =>
+            var exceptions = new List<Exception>();
+
+            for (var attempted = 0; attempted < maxAttemptCount; attempted++)
             {
-                action();
-                return null;
-            }, retryInterval, maxAttemptCount);
+                try
+                {
+                    if (attempted > 0)
+                    {
+                        Thread.Sleep(retryInterval);
+                    }
+
+                    action();
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ex);
+                }
+            }
+
+            throw new AggregateException(exceptions);
         }
 
         /// <summary>
