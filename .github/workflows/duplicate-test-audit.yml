@@ -1,0 +1,43 @@
+name: Duplicate Test Audit
+
+on:
+  pull_request:
+    paths:
+      - 'Tests/**/*.cs'
+      - 'scripts/audit-duplicate-tests.ps1'
+      - '.github/duplicate-test-audit-baseline.json'
+      - '.github/workflows/duplicate-test-audit.yml'
+  workflow_dispatch:
+
+jobs:
+  duplicate-test-audit:
+    name: Audit Duplicate Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run duplicate test audit
+        shell: pwsh
+        run: ./scripts/audit-duplicate-tests.ps1 -BaselinePath ./.github/duplicate-test-audit-baseline.json
+
+      - name: Publish step summary
+        if: always()
+        shell: pwsh
+        run: |
+          $reportPath = Join-Path $PWD 'TestResults/DuplicateTestAudit/duplicate-test-audit.md'
+          if (Test-Path $reportPath) {
+            Get-Content -Path $reportPath | Select-Object -First 200 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          }
+          else {
+            "Duplicate test audit report was not generated." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          }
+
+      - name: Upload duplicate test audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duplicate-test-audit-${{ github.run_number }}
+          path: TestResults/DuplicateTestAudit/
+          retention-days: 30
