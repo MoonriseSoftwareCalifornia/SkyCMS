@@ -148,7 +148,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 foreach (var role in roles)
                 {
                     // RemoveFromRoleAsync expects NormalizedName, so normalize it
-                    var normalizedRoleName = role.ToUpper(); // ASP.NET Identity normalizes to uppercase
+                    var normalizedRoleName = role.ToUpperInvariant(); // ASP.NET Identity normalizes to uppercase
                     await RemoveFromRoleAsync(user, normalizedRoleName, cancellationToken);
                 }
 
@@ -895,7 +895,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
         private async Task InternalAddClaimAsync(TUserEntity user, Claim claim, CancellationToken cancellationToken)
         {
-            if (_repo.ProviderName == "Microsoft.EntityFrameworkCore.Cosmos")
+            if (ProviderNames.IsCosmos(_repo.ProviderName))
             {
                 var identityUserClaim = new IdentityUserClaim<TKey>()
                 {

@@ -1,56 +1,52 @@
 using AspNetCore.Identity.FlexDb.Contracts;
 using Microsoft.AspNetCore.Identity;
 using System;
-using System.Collections.Generic;
 
 namespace AspNetCore.Identity.FlexDb.Stores
 {
     /// <summary>
-    /// Identity store base
+    /// Identity store base.
     /// </summary>
     public abstract class IdentityStoreBase
     {
-        private readonly IRepository _repo;
-
-        public IdentityStoreBase(IRepository repo)
+        protected IdentityStoreBase(IRepository repo)
         {
-            _repo = repo;
+            ArgumentNullException.ThrowIfNull(repo);
         }
 
         /// <summary>
-        /// Processes exceptions thrown by a store method
+        /// Processes exceptions thrown by a store method.
         /// </summary>
-        /// <param name="e"></param>
-        /// <returns></returns>
+        /// <param name="e">Exception raised by the store operation.</param>
+        /// <returns>A failed <see cref="IdentityResult"/> containing mapped identity error details.</returns>
         protected IdentityResult ProcessExceptions(Exception e)
-        {
-            var errors = new List<IdentityError>();
+            => IdentityResult.Failed(CreateIdentityError(e));
 
-            errors.Add(new IdentityError()
+        /// <summary>
+        /// Creates a failed identity result from explicit code and description.
+        /// </summary>
+        protected static IdentityResult Fail(string code, string description)
+            => IdentityResult.Failed(new IdentityError { Code = code, Description = description });
+
+        /// <summary>
+        /// Maps an exception to an <see cref="IdentityError"/>.
+        /// </summary>
+        protected static IdentityError CreateIdentityError(Exception e)
+        {
+            if (e is Microsoft.Azure.Cosmos.CosmosException cosmosException)
+            {
+                return new IdentityError
+                {
+                    Code = ((int)cosmosException.StatusCode).ToString(),
+                    Description = cosmosException.Message
+                };
+            }
+
+            return new IdentityError
             {
                 Code = "500",
                 Description = e.Message
-            });
-
-            return IdentityResult.Failed(errors.ToArray());
-        }
-
-        /// <summary>
-        /// Gets an identity error
-        /// </summary>
-        /// <param name="e"></param>
-        /// <returns></returns>
-        protected IdentityError Get(Exception e)
-        {
-            if (e.GetType() == typeof(Microsoft.Azure.Cosmos.CosmosException))
-            {
-                var error = (Microsoft.Azure.Cosmos.CosmosException)e;
-                return new IdentityError()
-                {
-                    //; ; Code = error.
-                };
-            }
-            return new IdentityError() { Code = "500", Description = e.Message };
+            };
         }
     }
 }

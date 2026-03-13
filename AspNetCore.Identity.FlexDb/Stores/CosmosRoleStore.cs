@@ -14,7 +14,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
     /// Cosmos DB Role Store
     /// </summary>
     /// <typeparam name="TRoleEntity"></typeparam>
-    public class CosmosRoleStore<TUserRoleEntity, TRoleEntity, TKey> : IRoleStore<TRoleEntity>,
+    public class CosmosRoleStore<TUserRoleEntity, TRoleEntity, TKey> : IdentityStoreBase, IRoleStore<TRoleEntity>,
         IQueryableRoleStore<TRoleEntity>,
         IRoleClaimStore<TRoleEntity>
         where TRoleEntity : IdentityRole<TKey>, new()
@@ -64,6 +64,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         /// </summary>
         /// <param name="repo"></param>
         public CosmosRoleStore(IRepository repo)
+            : base(repo)
         {
             _repo = repo;
         }
@@ -88,7 +89,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                     
                     if (existingRole != null)
                     {
-                        return IdentityResult.Failed(new IdentityError { Description = "Role with this name already exists." });
+                        return Fail("DuplicateRoleName", "Role with this name already exists.");
                     }
                 }
 
@@ -97,7 +98,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             }
             catch (Exception ex)
             {
-                return IdentityResult.Failed(new IdentityError { Description = ex.Message });
+                return ProcessExceptions(ex);
             }
 
             return IdentityResult.Success;
@@ -133,7 +134,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             }
             catch (Exception ex)
             {
-                return IdentityResult.Failed(new IdentityError { Description = ex.Message });
+                return ProcessExceptions(ex);
             }
 
             return IdentityResult.Success;
@@ -264,7 +265,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             }
             catch (Exception ex)
             {
-                return IdentityResult.Failed(new IdentityError { Description = ex.Message });
+                return ProcessExceptions(ex);
             }
 
             return IdentityResult.Success;
@@ -322,7 +323,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 throw new ArgumentNullException(nameof(claim));
 
 
-            if (_repo.ProviderName == "Microsoft.EntityFrameworkCore.Cosmos")
+            if (ProviderNames.IsCosmos(_repo.ProviderName))
             {
                 var identityRoleClaim = new IdentityRoleClaim<TKey>()
                 {
