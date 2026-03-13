@@ -173,6 +173,7 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert - Version 1 should be unpublished
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Version 1 should be unpublished");
 
             // Version 2 should remain published (most recent non-future)
@@ -268,6 +269,7 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert - Article should not be processed
             var updatedArticle = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle, "Expected article to exist after scheduler execution");
             Assert.AreEqual((int)StatusCodeEnum.Deleted, updatedArticle.StatusCode);
             Assert.IsNotNull(updatedArticle.Published, "Deleted article should not be modified");
         }
@@ -338,8 +340,11 @@ namespace Sky.Tests.Services.Scheduling
             // Act - Should not throw exception even if race condition occurs
             await ArticleScheduler.ExecuteAsync();
 
-            // Assert - No exception thrown
-            Assert.IsTrue(true);
+            // Assert - Article is left unmodified; scheduler handles single-version gracefully
+            var updatedArticle = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle, "Article should still exist after execution");
+            Assert.IsNotNull(updatedArticle.Published, "Publish date should remain set when scheduler handles gracefully");
+            Assert.AreEqual((int)StatusCodeEnum.Active, updatedArticle.StatusCode, "Status should remain Active");
         }
 
         /// <summary>
@@ -436,6 +441,7 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert - Version 1 should be unpublished (lower version number)
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Version 1 should be unpublished");
 
             // Version 2 should remain published (higher version number, same date)
@@ -488,6 +494,7 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert - Version 1 should be unpublished
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Version 1 should be unpublished");
 
             // Version 2 should remain published (at exact boundary)
@@ -540,6 +547,7 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert - Version 1 should be unpublished
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Inactive version 1 should be unpublished");
 
             // Version 2 should remain published (most recent)
@@ -666,12 +674,14 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert
             var updatedArticle1v1 = await Db.Articles.FindAsync(article1v1.Id);
+            Assert.IsNotNull(updatedArticle1v1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1v1.Published, "Article 1 Version 1 should be unpublished");
 
             var updatedArticle1v2 = await Db.Articles.FindAsync(article1v2.Id);
             Assert.IsNotNull(updatedArticle1v2.Published, "Article 1 Version 2 should remain published");
 
             var updatedArticle2v1 = await Db.Articles.FindAsync(article2v1.Id);
+            Assert.IsNotNull(updatedArticle2v1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle2v1.Published, "Article 2 Version 1 should be unpublished");
 
             var updatedArticle2v2 = await Db.Articles.FindAsync(article2v2.Id);
@@ -734,9 +744,11 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Version 1 should be unpublished");
 
             var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updatedArticle2, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle2.Published, "Version 2 should be unpublished");
 
             var updatedArticle3 = await Db.Articles.FindAsync(article3.Id);
@@ -799,9 +811,11 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Version 1 should be unpublished");
 
             var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updatedArticle2, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle2.Published, "Version 2 should remain unpublished (was never published)");
 
             var updatedArticle3 = await Db.Articles.FindAsync(article3.Id);
@@ -960,7 +974,9 @@ namespace Sky.Tests.Services.Scheduling
             
             // Assert
             var updated1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updated1, "Expected article to exist after scheduler execution");
             var updated2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updated2, "Expected article to exist after scheduler execution");
             
             Assert.IsNull(updated1.Published);
             Assert.IsNotNull(updated2.Published);
@@ -1177,6 +1193,7 @@ namespace Sky.Tests.Services.Scheduling
             Assert.IsNotNull(publishedPage, "Article should be published even if email fails");
             
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Old version should be unpublished");
             
             var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
@@ -1464,6 +1481,7 @@ namespace Sky.Tests.Services.Scheduling
             Assert.IsNotNull(publishedPage, "Article should be published even if email service is unavailable");
 
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Old version should be unpublished");
 
             var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
@@ -1636,7 +1654,9 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert - Version 1 should be unpublished, Version 2 should remain published
             var updated1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updated1, "Expected article to exist after scheduler execution");
             var updated2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updated2, "Expected article to exist after scheduler execution");
 
             Assert.IsNull(updated1.Published, "Version 1 should be unpublished");
             Assert.IsNotNull(updated2.Published, "Version 2 should remain published");
@@ -1682,7 +1702,9 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert - Both versions should remain unpublished
             var updated1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updated1, "Expected article to exist after scheduler execution");
             var updated2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updated2, "Expected article to exist after scheduler execution");
 
             Assert.IsNull(updated1.Published, "Version 1 should remain unpublished");
             Assert.IsNull(updated2.Published, "Version 2 should remain unpublished");
@@ -1728,7 +1750,9 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert
             var updated1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updated1, "Expected article to exist after scheduler execution");
             var updated2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updated2, "Expected article to exist after scheduler execution");
 
             Assert.IsNull(updated1.Published, "Version 999 should be unpublished");
             Assert.IsNotNull(updated2.Published, "Version 1000 should remain published");
@@ -1850,7 +1874,9 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert
             var updated1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updated1, "Expected article to exist after scheduler execution");
             var updated2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updated2, "Expected article to exist after scheduler execution");
 
             Assert.IsNull(updated1.Published, "Very old version 1 should be unpublished");
             Assert.IsNotNull(updated2.Published, "More recent (but still old) version 2 should remain published");
@@ -1966,7 +1992,9 @@ namespace Sky.Tests.Services.Scheduling
             Assert.IsTrue(await Db.Articles.AnyAsync(a => a.Id == article2.Id), "Published version should still exist");
 
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(updatedArticle2, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Unpublished version should remain unpublished");
             Assert.IsNotNull(updatedArticle2.Published, "Published version should remain published");
         }

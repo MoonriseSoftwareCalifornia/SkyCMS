@@ -304,6 +304,10 @@ builder.Services.AddCosmosEmailServices(builder.Configuration);
 // STEP 7: Register Application Services
 // ---------------------------------------------------------------
 // Scoped services (per-request lifecycle, can access HttpContext)
+builder.Services.AddTransient<IDatabaseConnectionTester, DatabaseConnectionTester>();
+builder.Services.AddScoped<IStorageConnectionTester>(sp => new StorageConnectionTester(sp.GetRequiredService<IMemoryCache>()));
+builder.Services.AddTransient<ISendGridEmailTester, SendGridEmailTester>();
+builder.Services.AddTransient<ISmtpEmailTester, SmtpEmailTester>();
 builder.Services.AddScoped<ISetupService, SetupService>();
 builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 builder.Services.AddScoped<IStorageContext, StorageContext>();

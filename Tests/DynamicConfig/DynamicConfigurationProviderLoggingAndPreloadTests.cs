@@ -116,6 +116,62 @@ namespace Sky.Tests.DynamicConfig
             Assert.AreEqual(1, invokeCount);
         }
 
+        [TestMethod]
+        public async Task PreloadAllConnectionsAsync_SequentialCallsWithinThrottleWindow_InvokeCoreOnce()
+        {
+            var inMemorySettings = new Dictionary<string, string>
+            {
+                {"ConnectionStrings:ConfigDbConnectionString", "DummyConnectionStringValue"}
+            };
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
+
+            var httpAccessor = CreateHttpContextAccessor("localhost");
+            var memoryCache = new MemoryCache(new MemoryCacheOptions());
+            var proxySettings = Options.Create(new ProxySettings());
+            var mockLogger = new Mock<ILogger<DynamicConfigurationProvider>>();
+
+            int invokeCount = 0;
+            var provider = new TestPreloadProvider(configuration, httpAccessor, memoryCache, mockLogger.Object, proxySettings,
+                async ct =>
+                {
+                    invokeCount++;
+                    await Task.CompletedTask;
+                });
+
+            await provider.PreloadAllConnectionsAsync();
+            await provider.PreloadAllConnectionsAsync();
+
+            Assert.AreEqual(1, invokeCount, "Second call should be skipped inside preload throttle interval.");
+        }
+
+        [TestMethod]
+        public async Task PreloadAllConnectionsAsync_CoreThrows_PropagatesException()
+        {
+            var inMemorySettings = new Dictionary<string, string>
+            {
+                {"ConnectionStrings:ConfigDbConnectionString", "DummyConnectionStringValue"}
+            };
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
+
+            var httpAccessor = CreateHttpContextAccessor("localhost");
+            var memoryCache = new MemoryCache(new MemoryCacheOptions());
+            var proxySettings = Options.Create(new ProxySettings());
+            var mockLogger = new Mock<ILogger<DynamicConfigurationProvider>>();
+
+            var provider = new TestPreloadProvider(configuration, httpAccessor, memoryCache, mockLogger.Object, proxySettings,
+                ct => throw new InvalidOperationException("preload failed"));
+
+            try
+            {
+                await provider.PreloadAllConnectionsAsync();
+                Assert.Fail("Expected InvalidOperationException was not thrown.");
+            }
+            catch (InvalidOperationException)
+            {
+                // Expected.
+            }
+        }
+
         private sealed class TestPreloadProvider : DynamicConfigurationProvider
         {
             private readonly Func<System.Threading.CancellationToken, Task> _coreOverride;

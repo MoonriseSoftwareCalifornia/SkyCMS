@@ -10,9 +10,7 @@ namespace Sky.Editor.Services.Setup
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Net.Mail;
     using System.Threading.Tasks;
-    using Cosmos.BlobService;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
@@ -65,6 +63,10 @@ namespace Sky.Editor.Services.Setup
         private readonly UserManager<IdentityUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly ApplicationDbContext applicationDbContext;
+        private readonly IDatabaseConnectionTester databaseConnectionTester;
+        private readonly IStorageConnectionTester storageConnectionTester;
+        private readonly ISendGridEmailTester sendGridEmailTester;
+        private readonly ISmtpEmailTester smtpEmailTester;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SetupService"/> class.
@@ -86,6 +88,50 @@ namespace Sky.Editor.Services.Setup
             ApplicationDbContext applicationDbContext,
             ILayoutImportService layoutImportService,
             CommonMediator mediator)
+            : this(
+                configuration,
+                logger,
+                memoryCache,
+                userManager,
+                roleManager,
+                applicationDbContext,
+                layoutImportService,
+                mediator,
+                new DatabaseConnectionTester(),
+                new StorageConnectionTester(memoryCache),
+                new SendGridEmailTester(),
+                new SmtpEmailTester())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SetupService"/> class.
+        /// </summary>
+        /// <param name="configuration">Configuration.</param>
+        /// <param name="logger">Logger.</param>
+        /// <param name="memoryCache">Memory cache.</param>
+        /// <param name="userManager">User manager.</param>
+        /// <param name="roleManager">Role manager.</param>
+        /// <param name="applicationDbContext">Database context.</param>
+        /// <param name="layoutImportService">Layout import service.</param>
+        /// <param name="mediator">Mediator.</param>
+        /// <param name="databaseConnectionTester">Database connection tester.</param>
+        /// <param name="storageConnectionTester">Storage connection tester.</param>
+        /// <param name="sendGridEmailTester">SendGrid tester.</param>
+        /// <param name="smtpEmailTester">SMTP tester.</param>
+        public SetupService(
+            IConfiguration configuration,
+            ILogger<SetupService> logger,
+            IMemoryCache memoryCache,
+            UserManager<IdentityUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext applicationDbContext,
+            ILayoutImportService layoutImportService,
+            CommonMediator mediator,
+            IDatabaseConnectionTester databaseConnectionTester,
+            IStorageConnectionTester storageConnectionTester,
+            ISendGridEmailTester sendGridEmailTester,
+            ISmtpEmailTester smtpEmailTester)
         {
             this.configuration = configuration;
             this.logger = logger;
@@ -95,6 +141,10 @@ namespace Sky.Editor.Services.Setup
             this.applicationDbContext = applicationDbContext;
             this.layoutImportService = layoutImportService;
             this.mediator = mediator;
+            this.databaseConnectionTester = databaseConnectionTester;
+            this.storageConnectionTester = storageConnectionTester;
+            this.sendGridEmailTester = sendGridEmailTester;
+            this.smtpEmailTester = smtpEmailTester;
         }
 
         /// <inheritdoc/>
@@ -194,27 +244,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                // Test connection by creating a temporary context
-                using var context = new ApplicationDbContext(connectionString);
-                var canConnect = await context.Database.CanConnectAsync();
-
-                if (!canConnect)
-                {
-                    return new TestResult
-                    {
-                        Success = false,
-                        Message = "Unable to connect to database"
-                    };
-                }
-
-                var dbStatus = ApplicationDbContext.EnsureDatabaseExists(connectionString);
-
-                return new TestResult
-                {
-                    Success = dbStatus == DbStatus.ExistsWithNoUsers,
-                    Message = $"Database connection successful. Status: {dbStatus}",
-                    Status = dbStatus
-                };
+                return await databaseConnectionTester.TestConnectionAsync(connectionString);
             }
             catch (Exception ex)
             {
@@ -255,28 +285,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var storageContext = new StorageContext(connectionString, memoryCache);
-
-                // Enable static website to ensure proper configuration for Azure, AWS S3, etc.
-                await storageContext.EnableAzureStaticWebsite();
-
-                // Test by listing root directory
-                var result = await storageContext.GetFilesAndDirectories("/");
-
-                if (result == null)
-                {
-                    return new TestResult
-                    {
-                        Success = false,
-                        Message = "Unable to connect to storage"
-                    };
-                }
-
-                return new TestResult
-                {
-                    Success = true,
-                    Message = $"Storage connection successful. Found {result.Count} items in root."
-                };
+                return await storageConnectionTester.TestConnectionAsync(connectionString);
             }
             catch (Exception ex)
             {
@@ -878,33 +887,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var client = new SendGrid.SendGridClient(apiKey);
-                var from = new SendGrid.Helpers.Mail.EmailAddress(senderEmail, "SkyCMS Setup");
-                var to = new SendGrid.Helpers.Mail.EmailAddress(recipient);
-                var msg = SendGrid.Helpers.Mail.MailHelper.CreateSingleEmail(
-                    from,
-                    to,
-                    "SkyCMS Setup Test Email",
-                    "This is a test email from SkyCMS setup wizard.",
-                    "<p>This is a test email from SkyCMS setup wizard.</p>");
-
-                var response = await client.SendEmailAsync(msg);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return new TestResult
-                    {
-                        Success = true,
-                        Message = $"Test email sent successfully to {recipient}"
-                    };
-                }
-
-                var body = await response.Body.ReadAsStringAsync();
-                return new TestResult
-                {
-                    Success = false,
-                    Message = $"SendGrid returned status {response.StatusCode}: {body}"
-                };
+                return await sendGridEmailTester.TestAsync(apiKey, senderEmail, recipient);
             }
             catch (Exception ex)
             {
@@ -952,25 +935,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                using var client = new SmtpClient(host, int.Parse(port));
-                client.EnableSsl = port == "587" || port == "465";
-                client.UseDefaultCredentials = false;
-                client.Credentials = new System.Net.NetworkCredential(username, password);
-
-                var message = new MailMessage(senderEmail, recipient)
-                {
-                    Subject = "SkyCMS Setup Test Email",
-                    Body = "This is a test email from SkyCMS setup wizard.",
-                    IsBodyHtml = false
-                };
-
-                await client.SendMailAsync(message);
-
-                return new TestResult
-                {
-                    Success = true,
-                    Message = $"Test email sent successfully to {recipient}"
-                };
+                return await smtpEmailTester.TestAsync(host, port, username, password, senderEmail, recipient);
             }
             catch (Exception ex)
             {

@@ -23,6 +23,7 @@ namespace Sky.Tests.Services.Setup
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using SetupTestResult = Sky.Editor.Services.Setup.TestResult;
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Setup;
@@ -80,6 +81,10 @@ namespace Sky.Tests.Services.Setup
             public Mock<UserManager<IdentityUser>> UserManagerMock { get; }
             public Mock<RoleManager<IdentityRole>> RoleManagerMock { get; }
             public Mock<ArticleEditLogic> ArticleEditLogicMock { get; }
+            public Mock<IDatabaseConnectionTester> DatabaseConnectionTesterMock { get; }
+            public Mock<IStorageConnectionTester> StorageConnectionTesterMock { get; }
+            public Mock<ISendGridEmailTester> SendGridEmailTesterMock { get; }
+            public Mock<ISmtpEmailTester> SmtpEmailTesterMock { get; }
             public SetupService Service { get; }
 
             public TestContext()
@@ -106,6 +111,60 @@ namespace Sky.Tests.Services.Setup
                 MediatorMock = new Mock<CommonMediator>();
                 UserManagerMock = CreateUserManagerMock();
                 RoleManagerMock = CreateRoleManagerMock();
+                DatabaseConnectionTesterMock = new Mock<IDatabaseConnectionTester>();
+                StorageConnectionTesterMock = new Mock<IStorageConnectionTester>();
+                SendGridEmailTesterMock = new Mock<ISendGridEmailTester>();
+                SmtpEmailTesterMock = new Mock<ISmtpEmailTester>();
+
+                DatabaseConnectionTesterMock
+                    .Setup(x => x.TestConnectionAsync(It.IsAny<string>()))
+                    .ReturnsAsync((string connectionString) =>
+                    {
+                        var isInvalid = string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("Invalid", StringComparison.OrdinalIgnoreCase);
+                        if (isInvalid)
+                        {
+                            return new SetupTestResult { Success = false, Message = "Connection failed: invalid connection string" };
+                        }
+
+                        return new SetupTestResult { Success = true, Message = "Database connection successful" };
+                    });
+
+                StorageConnectionTesterMock
+                    .Setup(x => x.TestConnectionAsync(It.IsAny<string>()))
+                    .ReturnsAsync((string connectionString) =>
+                    {
+                        var isInvalid = string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("Invalid", StringComparison.OrdinalIgnoreCase);
+                        if (isInvalid)
+                        {
+                            return new SetupTestResult { Success = false, Message = "Connection failed: invalid storage connection" };
+                        }
+
+                        return new SetupTestResult { Success = true, Message = "Storage connection successful" };
+                    });
+
+                SendGridEmailTesterMock
+                    .Setup(x => x.TestAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                    .ReturnsAsync((string apiKey, string sender, string recipient) =>
+                    {
+                        var shouldFail = string.IsNullOrWhiteSpace(apiKey) || apiKey.Contains("invalid", StringComparison.OrdinalIgnoreCase);
+                        return new SetupTestResult
+                        {
+                            Success = !shouldFail,
+                            Message = shouldFail ? "SendGrid test failed: invalid api key" : $"Test email sent successfully to {recipient}"
+                        };
+                    });
+
+                SmtpEmailTesterMock
+                    .Setup(x => x.TestAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                    .ReturnsAsync((string host, string port, string username, string password, string sender, string recipient) =>
+                    {
+                        var shouldFail = string.IsNullOrWhiteSpace(host) || host.Contains("invalid", StringComparison.OrdinalIgnoreCase);
+                        return new SetupTestResult
+                        {
+                            Success = !shouldFail,
+                            Message = shouldFail ? "SMTP test failed: invalid host" : $"Test email sent successfully to {recipient}"
+                        };
+                    });
                 
                 // ArticleEditLogic is injected but never used in SetupService - pass null
                 ArticleEditLogicMock = null;
@@ -119,7 +178,11 @@ namespace Sky.Tests.Services.Setup
                     RoleManagerMock.Object,
                     DbContext,
                     LayoutImportServiceMock.Object,
-                    MediatorMock.Object);
+                    MediatorMock.Object,
+                    DatabaseConnectionTesterMock.Object,
+                    StorageConnectionTesterMock.Object,
+                    SendGridEmailTesterMock.Object,
+                    SmtpEmailTesterMock.Object);
             }
 
             private Mock<UserManager<IdentityUser>> CreateUserManagerMock()
@@ -326,12 +389,16 @@ namespace Sky.Tests.Services.Setup
         [TestMethod]
         public async Task TestDatabaseConnectionAsync_ValidConnection_ReturnsSuccess()
         {
-            // NOTE: This test would require creating an actual database connection
-            // which is environment-specific. For true unit testing, we'd need to:
-            // 1. Extract database connection logic to an interface
-            // 2. Mock that interface
-            // 3. Or use integration tests
-            Assert.Inconclusive("Test requires actual database - consider refactoring to use IDbConnectionTester interface");
+            // Arrange
+            using var context = CreateTestContext();
+
+            // Act
+            var result = await context.Service.TestDatabaseConnectionAsync("Data Source=valid.db");
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.Success);
+            Assert.IsTrue(result.Message.Contains("successful", StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]
@@ -348,13 +415,6 @@ namespace Sky.Tests.Services.Setup
             Assert.IsNotNull(result);
             Assert.IsFalse(result.Success);
             Assert.IsTrue(result.Message.Contains("failed") || result.Message.Contains("Unable"));
-        }
-
-        [TestMethod]
-        public async Task TestDatabaseConnectionAsync_ExceptionThrown_ReturnsFailure()
-        {
-            // Already tested via InvalidConnection test
-            Assert.Inconclusive("Covered by InvalidConnection test");
         }
 
         #endregion
@@ -396,9 +456,16 @@ namespace Sky.Tests.Services.Setup
         [TestMethod]
         public async Task TestStorageConnectionAsync_ValidConnection_ReturnsSuccess()
         {
-            // NOTE: This test requires actual storage account or extensive StorageContext mocking
-            // StorageContext is complex and not easily mockable without refactoring
-            Assert.Inconclusive("Test requires actual storage account - consider refactoring to use IStorageTester interface");
+            // Arrange
+            using var context = CreateTestContext();
+
+            // Act
+            var result = await context.Service.TestStorageConnectionAsync("DefaultEndpointsProtocol=https;AccountName=test");
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.Success);
+            Assert.IsTrue(result.Message.Contains("successful", StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]
@@ -415,13 +482,6 @@ namespace Sky.Tests.Services.Setup
             Assert.IsNotNull(result);
             Assert.IsFalse(result.Success);
             Assert.IsTrue(result.Message.Contains("failed") || result.Message.Contains("Connection"));
-        }
-
-        [TestMethod]
-        public async Task TestStorageConnectionAsync_ExceptionThrown_ReturnsFailure()
-        {
-            // Already tested via InvalidConnection test
-            Assert.Inconclusive("Covered by InvalidConnection test");
         }
 
         #endregion
@@ -604,35 +664,95 @@ namespace Sky.Tests.Services.Setup
         [TestMethod]
         public async Task TestEmailConfigAsync_SendGridSuccess_ReturnsSuccess()
         {
-            // NOTE: This test requires actual SendGrid API access or mocking HttpClient
-            // which is complex. Marking as inconclusive for now.
-            // In production, you would:
-            // 1. Use a mock HttpClient/HttpMessageHandler
-            // 2. Mock the SendGridClient
-            // 3. Or use integration tests with a test API key
-            Assert.Inconclusive("Test requires SendGrid API mocking - see test comments for implementation approach");
+            // Arrange
+            using var context = CreateTestContext();
+
+            // Act
+            var result = await context.Service.TestEmailConfigAsync(
+                "SendGrid",
+                "valid-sendgrid-key",
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                "sender@test.com",
+                "recipient@test.com");
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.Success);
         }
 
         [TestMethod]
         public async Task TestEmailConfigAsync_SendGridFailure_ReturnsFailure()
         {
-            // NOTE: This test requires actual SendGrid API access or mocking HttpClient
-            Assert.Inconclusive("Test requires SendGrid API mocking - see test comments for implementation approach");
+            // Arrange
+            using var context = CreateTestContext();
+
+            // Act
+            var result = await context.Service.TestEmailConfigAsync(
+                "SendGrid",
+                "invalid-key",
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                "sender@test.com",
+                "recipient@test.com");
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsFalse(result.Success);
+            Assert.IsTrue(result.Message.Contains("failed", StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]
         public async Task TestEmailConfigAsync_SmtpSuccess_ReturnsSuccess()
         {
-            // NOTE: This test requires actual SMTP server or complex SmtpClient mocking
-            // SmtpClient doesn't have an interface, making it difficult to mock
-            Assert.Inconclusive("Test requires SMTP server or wrapper interface - see test comments");
+            // Arrange
+            using var context = CreateTestContext();
+
+            // Act
+            var result = await context.Service.TestEmailConfigAsync(
+                "SMTP",
+                string.Empty,
+                string.Empty,
+                "smtp.test.com",
+                "587",
+                "user",
+                "pass",
+                "sender@test.com",
+                "recipient@test.com");
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.Success);
         }
 
         [TestMethod]
         public async Task TestEmailConfigAsync_SmtpFailure_ReturnsFailure()
         {
-            // NOTE: This test requires actual SMTP server or complex SmtpClient mocking
-            Assert.Inconclusive("Test requires SMTP server or wrapper interface - see test comments");
+            // Arrange
+            using var context = CreateTestContext();
+
+            // Act
+            var result = await context.Service.TestEmailConfigAsync(
+                "SMTP",
+                string.Empty,
+                string.Empty,
+                "invalid.smtp.test",
+                "587",
+                "user",
+                "pass",
+                "sender@test.com",
+                "recipient@test.com");
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsFalse(result.Success);
+            Assert.IsTrue(result.Message.Contains("failed", StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]
@@ -859,26 +979,15 @@ namespace Sky.Tests.Services.Setup
         }
 
         [TestMethod]
+        [Ignore("Integration scenario: requires full UserManager/RoleManager/LayoutImport chain to be wired. Cover via integration test or after extracting SetupNewAdministrator from a static call.")]
         public async Task CompleteSetupAsync_NewAdmin_CreatesSuccessfully()
         {
-            // NOTE: This test requires extensive mocking of:
-            // 1. UserManager (user creation)
-            // 2. RoleManager (role creation)
-            // 3. SetupNewAdministrator static method
-            // 4. Layout import service
-            // 5. Mediator (for home page creation)
-            // 6. ApplicationDbContext (for saving settings)
-            // 
-            // This would be better tested as an integration test
-            Assert.Inconclusive("Test requires extensive mocking - recommend integration test approach");
         }
 
         [TestMethod]
+        [Ignore("Integration scenario: requires full UserManager/RoleManager/LayoutImport chain to be wired. Cover via integration test or after extracting SetupNewAdministrator from a static call.")]
         public async Task CompleteSetupAsync_ExistingAdmin_SkipsCreation()
         {
-            // NOTE: Similar to NewAdmin test - requires extensive setup
-            // This would be better tested as an integration test
-            Assert.Inconclusive("Test requires extensive mocking - recommend integration test approach");
         }
 
         #endregion
