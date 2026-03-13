@@ -22,6 +22,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
     {
         private readonly IRepository _repo;
+        private readonly ILookupNormalizer _normalizer;
         private bool _disposed;
 
         /// <summary>
@@ -63,10 +64,12 @@ namespace AspNetCore.Identity.FlexDb.Stores
         /// Constructor
         /// </summary>
         /// <param name="repo"></param>
-        public CosmosRoleStore(IRepository repo)
+        /// <param name="normalizer">Identity normalizer for role lookup normalization.</param>
+        public CosmosRoleStore(IRepository repo, ILookupNormalizer normalizer)
             : base(repo)
         {
-            _repo = repo;
+            _repo = repo ?? throw new ArgumentNullException(nameof(repo));
+            _normalizer = normalizer ?? throw new ArgumentNullException(nameof(normalizer));
         }
 
 
@@ -166,7 +169,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 throw new ArgumentNullException(nameof(normalizedName));
 
             // Normalize the input to ensure case-insensitive comparison
-            var normalizedSearchName = normalizedName.ToUpperInvariant();
+            var normalizedSearchName = _normalizer.NormalizeName(normalizedName) ?? normalizedName;
 
             var role = await _repo.Table<TRoleEntity>()
                 .SingleOrDefaultAsync(_ => _.NormalizedName == normalizedSearchName, cancellationToken: cancellationToken);
@@ -199,7 +202,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 throw new ArgumentNullException(nameof(role));
             }
 
-            return Task.FromResult(role.Id.ToString());
+            return Task.FromResult(role.Id.ToString()!);
         }
 
         // <inheritdoc />

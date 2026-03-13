@@ -79,13 +79,13 @@ namespace AspNetCore.Identity.FlexDb.Repositories
                 return _db.Set<TEntity>().WithPartitionKey(id).Single();
             }
 
-            return _db.Set<TEntity>().Find(id); // Cosmos provider does not support WithPartitionKey in queries
+            return _db.Set<TEntity>().Find(id)!; // Cosmos provider does not support WithPartitionKey in queries
         }
 
         public TEntity TryFindOne<TEntity>(Expression<Func<TEntity, bool>> predicate)
             where TEntity : class, new()
         {
-            return _db.Set<TEntity>().SingleOrDefault(predicate);
+            return _db.Set<TEntity>().SingleOrDefault(predicate)!;
         }
 
         public IQueryable<TEntity> Find<TEntity>(Expression<Func<TEntity, bool>> predicate)

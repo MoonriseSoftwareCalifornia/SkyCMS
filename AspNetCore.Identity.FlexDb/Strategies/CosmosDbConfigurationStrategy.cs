@@ -80,9 +80,9 @@ namespace AspNetCore.Identity.FlexDb.Strategies
                 throw new ArgumentNullException(nameof(connectionString));
             }
             var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            var databaseName = GetConnectionStringPart(parts, "Database=");
-            var accountEndpoint = GetConnectionStringPart(parts, "AccountEndpoint=");
-            var accountKey = GetConnectionStringPart(parts, "AccountKey=");
+            var databaseName = GetConnectionStringPart(parts, "Database=") ?? string.Empty;
+            var accountEndpoint = GetConnectionStringPart(parts, "AccountEndpoint=") ?? string.Empty;
+            var accountKey = GetConnectionStringPart(parts, "AccountKey=") ?? string.Empty;
 
             return new CosmosDbAccountProperties
             {
@@ -92,7 +92,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
             };
         }
 
-        private static string GetConnectionStringPart(string[] parts, string prefix)
+        private static string? GetConnectionStringPart(string[] parts, string prefix)
         {
             var part = parts.FirstOrDefault(p => p.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
 
