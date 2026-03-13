@@ -2,6 +2,7 @@
 
 ## General Guidelines
 - Follow existing project patterns and be concise in changes.
+- Preserve compatibility across MS SQL, MySQL, SQLite, and Azure Cosmos DB for AspNetCore.Identity.FlexDb changes; avoid provider-specific EF behavior unless guarded by provider-aware strategies and tests.
 
 ## Architecture Overview
 - The SkyCMS multi-tenant architecture utilizes the following components:
@@ -55,7 +56,7 @@ Provide concise, actionable guidance for AI coding agents working in this reposi
 - Preserve DI registrations and lifetime scopes; prefer adding new scoped services over changing lifetimes.
 - Tenant-aware data access must flow through `IDynamicConfigurationProvider` — search for that symbol when in doubt.
 - Keep changes minimal and focused: fix root cause when practical, but avoid sweeping refactors without test coverage.
- - Respect analyzer and formatting configuration in `stylecop.json` files (e.g., `Editor/stylecop.json`). Run `dotnet build` to surface StyleCop analyzer warnings (SA*). Use `dotnet format` or IDE formatting to fix style issues and avoid introducing new `SA*` warnings; if a rule needs suppression or adjustment, propose it and request approval.
+- Respect analyzer and formatting configuration in `stylecop.json` files (e.g., `Editor/stylecop.json`). Run `dotnet build` to surface StyleCop analyzer warnings (SA*). Use `dotnet format` or IDE formatting to fix style issues and avoid introducing new `SA*` warnings; if a rule needs suppression or adjustment, propose it and request approval.
 
 ## Useful places to inspect (quick grep targets)
 - `Program.cs` — app startup and middleware ordering
@@ -74,18 +75,3 @@ Provide concise, actionable guidance for AI coding agents working in this reposi
 ---
 
 Please review and tell me if you'd like any section expanded or if there are other internal conventions I should include.
-# Copilot Instructions
-
-## General Guidelines
-- First general instruction
-- Second general instruction
-
-## Architecture Overview
-- The SkyCMS multi-tenant architecture utilizes the following components:
-  - **IDynamicConfigurationProvider** (singleton) for tenant resolution via headers (x-origin-hostname priority over Host header).
-  - **Per-request scoped services** that inject the provider to get the current tenant.
-  - **Cookie isolation** with CookieDomain claims in Sky.Editor.
-  - **Early middleware** (DomainMiddleware) to establish tenant context.
-  - **Settings queries** filtered by tenant domain.
-  - **Rate limiter policy** "contact-form" already configured (3 req/5min in production, 20 req/1min in development).
-  - **Antiforgery tokens** automatically scoped per HttpContext (per-tenant).

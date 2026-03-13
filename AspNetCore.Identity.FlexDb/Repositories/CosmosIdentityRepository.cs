@@ -74,10 +74,11 @@ namespace AspNetCore.Identity.FlexDb.Repositories
         public TEntity GetById<TEntity>(string id)
             where TEntity : class, new()
         {
-            if (_db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Cosmos")
+            if (ProviderNames.IsCosmos(_db.Database.ProviderName))
             {
                 return _db.Set<TEntity>().WithPartitionKey(id).Single();
             }
+
             return _db.Set<TEntity>().Find(id); // Cosmos provider does not support WithPartitionKey in queries
         }
 

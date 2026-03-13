@@ -208,17 +208,14 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (userId == null)
                 throw new ArgumentNullException(nameof(userId));
 
-            if (_repo.ProviderName == "Microsoft.EntityFrameworkCore.Cosmos")
+            if (ProviderNames.IsCosmos(_repo.ProviderName))
             {
                 // Cosmos DB requires partition key to be specified for lookups.
-                // Assuming userId is the partition key.
-                // return await _repo.Table<TUserEntity>()
-                //     .WithPartitionKey(userId)
-                //     .SingleOrDefaultAsync(cancellationToken);
                 var user = await _repo.Table<TUserEntity>().WithPartitionKey(userId).SingleOrDefaultAsync(cancellationToken);
                 return user;
             }
-            else if (_repo.ProviderName == "MySql.EntityFrameworkCore")
+
+            if (ProviderNames.IsMySql(_repo.ProviderName))
             {
                 var user = await _repo.Table<IdentityUser>()
                     .FirstOrDefaultAsync(_ => _.Id == userId, cancellationToken: cancellationToken);
@@ -228,7 +225,6 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
             return await _repo.Table<TUserEntity>()
                    .SingleOrDefaultAsync(_ => _.Id.ToString() == userId, cancellationToken: cancellationToken);
-
         }
 
         // <inheritdoc />

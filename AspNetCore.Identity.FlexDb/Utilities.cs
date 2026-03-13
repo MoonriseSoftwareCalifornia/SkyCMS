@@ -3,6 +3,23 @@ using System.Threading;
 
 namespace AspNetCore.Identity.FlexDb
 {
+    internal static class ProviderNames
+    {
+        internal const string Cosmos = "Microsoft.EntityFrameworkCore.Cosmos";
+        internal const string SqlServer = "Microsoft.EntityFrameworkCore.SqlServer";
+        internal const string Sqlite = "Microsoft.EntityFrameworkCore.Sqlite";
+        internal const string PomeloMySql = "Pomelo.EntityFrameworkCore.MySql";
+        internal const string OracleMySql = "MySql.EntityFrameworkCore";
+
+        internal static bool IsCosmos(string? providerName)
+            => string.Equals(providerName, Cosmos, StringComparison.OrdinalIgnoreCase);
+
+        internal static bool IsMySql(string? providerName)
+            => !string.IsNullOrWhiteSpace(providerName)
+               && (providerName.Contains("MySql", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(providerName, PomeloMySql, StringComparison.OrdinalIgnoreCase));
+    }
+
     /// <summary>
     /// Utility methods for the FlexDb library.
     /// </summary>
@@ -52,11 +69,11 @@ namespace AspNetCore.Identity.FlexDb
             {
                 if (strategy.CanHandle(connectionString))
                 {
-                    if (strategy.ProviderName.Contains("Cosmos"))
+                    if (ProviderNames.IsCosmos(strategy.ProviderName))
                     { return "Cosmos"; }
                     else if (strategy.ProviderName.Contains("SqlServer"))
                     { return "SQL Server"; }
-                    else if (strategy.ProviderName.Contains("MySql"))
+                    else if (ProviderNames.IsMySql(strategy.ProviderName))
                     { return "MySQL"; }
                     else if (strategy.ProviderName.Contains("PostgreSql"))
                     { return "PostgreSQL"; }
