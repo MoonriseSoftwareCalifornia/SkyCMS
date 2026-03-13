@@ -7,6 +7,7 @@
 
 namespace Cosmos.BlobService
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading.Tasks;
@@ -27,7 +28,7 @@ namespace Cosmos.BlobService
         /// Provider-specific implementations may support additional modes.
         /// </param>
         /// <returns>A <see cref="Task"/> that represents the asynchronous append operation.</returns>
-        Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData, string mode = "append");
+        Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData, string mode = StorageConstants.UploadModeAppend);
 
         /// <summary>
         /// Determines whether a blob exists at the specified path.
@@ -61,7 +62,15 @@ namespace Cosmos.BlobService
         /// Deletes the file at the specified path.
         /// </summary>
         /// <param name="path">The path of the file to delete.</param>
+        [Obsolete("Use DeleteFileAsync instead to avoid blocking. This method will be removed in a future version.")]
         void DeleteFile(string path);
+
+        /// <summary>
+        /// Deletes the file at the specified path asynchronously.
+        /// </summary>
+        /// <param name="path">The path of the file to delete.</param>
+        /// <returns>A <see cref="Task"/> that represents the asynchronous delete operation.</returns>
+        Task DeleteFileAsync(string path);
 
         /// <summary>
         /// Deletes the folder at the specified path, including any contained files and subfolders.

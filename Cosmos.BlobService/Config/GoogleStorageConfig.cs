@@ -7,9 +7,12 @@
 
 namespace Cosmos.BlobService.Config
 {
+    using System;
+
     /// <summary>
     ///     Google configuration.
     /// </summary>
+    [Obsolete("This class is not used and will be removed in a future version. Use connection strings instead.")]
     public class GoogleStorageConfig
     {
         /// <summary>

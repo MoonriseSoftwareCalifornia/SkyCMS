@@ -8,6 +8,7 @@ using System;
 using System.Reflection;
 using Cosmos.BlobService;
 using Cosmos.BlobService.Drivers;
+using Cosmos.BlobService.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -99,16 +100,16 @@ namespace Sky.Tests.BlobStorage
         [TestMethod]
         public void GetDriverFromConnectionString_WithInvalidAmazonS3RegionFormat_ThrowsException()
         {
-            // Arrange - Missing required parameters
-            var connectionString = "Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE";
-            
-            // Act & Assert - Should throw InvalidOperationException
+            // Arrange - Missing required Key parameter (has Bucket, KeyId, and Region but no Key)
+            var connectionString = "Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Region=us-east-1";
+
+            // Act & Assert - Should throw InvalidConnectionStringException
             try
             {
                 var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown InvalidOperationException");
+                Assert.Fail("Should have thrown InvalidConnectionStringException");
             }
-            catch (InvalidOperationException)
+            catch (InvalidConnectionStringException)
             {
                 // Expected exception
             }
@@ -120,13 +121,13 @@ namespace Sky.Tests.BlobStorage
             // Arrange - Missing required parameters
             var connectionString = "AccountId=123456789012;Bucket=test-bucket";
             
-            // Act & Assert - Should throw InvalidOperationException
+            // Act & Assert - Should throw InvalidConnectionStringException
             try
             {
                 var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown InvalidOperationException");
+                Assert.Fail("Should have thrown InvalidConnectionStringException");
             }
-            catch (InvalidOperationException)
+            catch (InvalidConnectionStringException)
             {
                 // Expected exception
             }
@@ -137,14 +138,14 @@ namespace Sky.Tests.BlobStorage
         {
             // Arrange
             var connectionString = "InvalidFormat=true;NoProvider=yes";
-            
-            // Act & Assert - Should throw InvalidOperationException
+
+            // Act & Assert - Should throw UnsupportedStorageProviderException
             try
             {
                 var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown InvalidOperationException");
+                Assert.Fail("Should have thrown UnsupportedStorageProviderException");
             }
-            catch (InvalidOperationException)
+            catch (UnsupportedStorageProviderException)
             {
                 // Expected exception
             }

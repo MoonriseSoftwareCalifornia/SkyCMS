@@ -15,6 +15,7 @@ namespace Cosmos.BlobService
     using Azure.Identity;
     using Cosmos.BlobService.Config;
     using Cosmos.BlobService.Drivers;
+    using Cosmos.BlobService.Exceptions;
     using Cosmos.BlobService.Models;
     using Cosmos.DynamicConfig;
     using Microsoft.Extensions.Caching.Memory;
@@ -26,16 +27,6 @@ namespace Cosmos.BlobService
     /// </summary>
     public sealed class StorageContext : IStorageContext
     {
-        /// <summary>
-        /// Folder marker file name used to represent directories in blob storage.
-        /// </summary>
-        private const string FolderStubMarker = "folder.stubxx";
-
-        /// <summary>
-        /// Cache key prefix for storing storage drivers in multi-tenant mode.
-        /// </summary>
-        private const string DriverCacheKeyPrefix = "StorageDriver_";
-
         /// <summary>
         /// Cache expiration time for storage drivers (1 hour).
         /// </summary>
@@ -133,7 +124,7 @@ namespace Cosmos.BlobService
         {
             // Ensure leading slash is removed.
             var driver = GetPrimaryDriver();
-            await driver.DeleteFolderAsync(path.TrimStart('/')).ConfigureAwait(false);
+            await driver.DeleteFolderAsync(PathUtilities.NormalizePath(path)).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -144,7 +135,7 @@ namespace Cosmos.BlobService
         public async Task DeleteFileAsync(string path)
         {
             // Ensure leading slash is removed.
-            path = path.TrimStart('/');
+            path = PathUtilities.NormalizePath(path);
 
             var driver = this.GetPrimaryDriver();
             await driver.DeleteIfExistsAsync(path).ConfigureAwait(false);
@@ -158,6 +149,7 @@ namespace Cosmos.BlobService
         /// This is a synchronous wrapper around <see cref="DeleteFileAsync"/>. 
         /// Consider using <see cref="DeleteFileAsync"/> instead to avoid blocking.
         /// </remarks>
+        [Obsolete("Use DeleteFileAsync instead to avoid blocking. This method will be removed in a future version.")]
         public void DeleteFile(string path)
         {
             DeleteFileAsync(path).GetAwaiter().GetResult();
@@ -199,9 +191,9 @@ namespace Cosmos.BlobService
         public async Task<List<string>> GetFilesAsync(string path)
         {
             var driver = this.GetPrimaryDriver();
-            path = path.TrimStart('/');
+            path = PathUtilities.NormalizePath(path);
             var blobNames = await driver.GetBlobNamesByPath(path).ConfigureAwait(false);
-            return blobNames.Where(w => !w.EndsWith(FolderStubMarker)).ToList();
+            return blobNames.Where(w => !w.EndsWith(StorageConstants.FolderMarkerFile)).ToList();
         }
 
         /// <summary>
@@ -212,7 +204,7 @@ namespace Cosmos.BlobService
         public async Task<FileManagerEntry> GetFileAsync(string path)
         {
             // Ensure leading slash is removed.
-            path = path.TrimStart('/');
+            path = PathUtilities.NormalizePath(path);
 
             var driver = this.GetPrimaryDriver();
 
@@ -229,7 +221,7 @@ namespace Cosmos.BlobService
                 return null;
             }
 
-            var isDirectory = metadata.FileName.EndsWith(FolderStubMarker);
+            var isDirectory = metadata.FileName.EndsWith(StorageConstants.FolderMarkerFile);
             var fileName = Path.GetFileName(metadata.FileName);
             var blobName = metadata.FileName;
             var hasDirectories = false;
@@ -237,7 +229,7 @@ namespace Cosmos.BlobService
             if (isDirectory)
             {
                 var children = await driver.GetBlobNamesByPath(path).ConfigureAwait(false);
-                hasDirectories = children.Any(c => c.EndsWith(FolderStubMarker));
+                hasDirectories = children.Any(c => c.EndsWith(StorageConstants.FolderMarkerFile));
             }
 
             var fileManagerEntry = new FileManagerEntry
@@ -267,7 +259,7 @@ namespace Cosmos.BlobService
         public async Task<Stream> GetStreamAsync(string path)
         {
             // Ensure leading slash is removed.
-            path = path.TrimStart('/');
+            path = PathUtilities.NormalizePath(path);
 
             // Get the primary driver based on the configuration.
             var driver = GetPrimaryDriver();
@@ -305,7 +297,7 @@ namespace Cosmos.BlobService
         /// <param name="fileMetaData"><see cref="FileUploadMetaData"/> containing metadata about the data 'chunk' and blob.</param>
         /// <param name="mode">Is either append or block.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData, string mode = "append")
+        public async Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData, string mode = StorageConstants.UploadModeAppend)
         {
             var mark = DateTimeOffset.UtcNow;
 
@@ -324,7 +316,7 @@ namespace Cosmos.BlobService
         public async Task<FileManagerEntry> CreateFolder(string path)
         {
             var driver = this.GetPrimaryDriver();
-            var folderMarkerPath = path + "/" + FolderStubMarker;
+            var folderMarkerPath = path + "/" + StorageConstants.FolderMarkerFile;
             
             // Check if folder already exists using proper async/await
             var exists = await driver.BlobExistsAsync(folderMarkerPath).ConfigureAwait(false);
@@ -359,7 +351,7 @@ namespace Cosmos.BlobService
         {
             var driver = this.GetPrimaryDriver();
 
-            path = path.TrimStart('/');
+            path = PathUtilities.NormalizePath(path);
 
             var entries = await driver.GetFilesAndDirectories(path).ConfigureAwait(false);
 
@@ -385,8 +377,8 @@ namespace Cosmos.BlobService
         private async Task CopyObjectsAsync(string target, string destination, bool deleteSource)
         {
             // Make sure leading slashes are removed.
-            target = target.TrimStart('/');
-            destination = destination.TrimStart('/');
+            target = PathUtilities.NormalizePath(target);
+            destination = PathUtilities.NormalizePath(destination);
 
             if (string.IsNullOrEmpty(target))
             {
@@ -447,7 +439,7 @@ namespace Cosmos.BlobService
 
                 if (string.IsNullOrWhiteSpace(connectionString))
                 {
-                    throw new InvalidOperationException(
+                    throw new TenantResolutionException(
                         "Cannot resolve tenant storage connection. Ensure HttpContext is available or provide domain explicitly. " +
                         "For background jobs, consider storing domain context before invoking storage operations.");
                 }
@@ -472,11 +464,11 @@ namespace Cosmos.BlobService
         {
             if (string.IsNullOrWhiteSpace(connectionString))
             {
-                throw new ArgumentException("Connection string cannot be null or empty.", nameof(connectionString));
+                throw new InvalidConnectionStringException("Connection string cannot be null or empty.");
             }
 
             // Create a cache key based on the connection string hash to avoid storing sensitive data as key
-            var cacheKey = DriverCacheKeyPrefix + connectionString.GetHashCode();
+            var cacheKey = StorageConstants.DriverCacheKeyPrefix + connectionString.GetHashCode();
 
             // Try to get the driver from cache
             if (!memoryCache.TryGetValue(cacheKey, out ICosmosStorage driver))
@@ -496,12 +488,12 @@ namespace Cosmos.BlobService
         }
 
         /// <summary>
-        /// Gets the driver from a connection string.
-        /// CRITICAL: Implements driver caching with tenant-specific cache keys for multi-tenant isolation.
+        /// Creates a storage driver from a connection string.
         /// </summary>
         /// <param name="connectionString">Connection string.</param>
-        /// <returns>ICosmosStorage driver.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when connection string format is invalid or missing required parameters.</exception>
+        /// <returns>ICosmosStorage driver instance.</returns>
+        /// <exception cref="InvalidConnectionStringException">Thrown when connection string format is invalid or missing required parameters.</exception>
+        /// <exception cref="UnsupportedStorageProviderException">Thrown when the storage provider is not supported.</exception>
         private ICosmosStorage GetDriverFromConnectionString(string connectionString)
         {
             if (string.IsNullOrEmpty(connectionString))
@@ -509,115 +501,38 @@ namespace Cosmos.BlobService
                 return null;
             }
 
-            // CRITICAL: Use connection string hash as cache key to ensure tenant isolation
-            // Different tenants with different connection strings will have different cache keys
-            var cacheKey = DriverCacheKeyPrefix + connectionString.GetHashCode();
+            var provider = ConnectionStringParser.DetermineProvider(connectionString);
 
-            // Try to get cached driver first
-            if (memoryCache != null && memoryCache.TryGetValue(cacheKey, out ICosmosStorage cachedDriver))
+            switch (provider)
             {
-                return cachedDriver;
-            }
+                case CloudStorageProvider.Azure:
+                    var isAzurite = ConnectionStringParser.IsAzurite(connectionString);
+                    var credential = isAzurite ? null : new DefaultAzureCredential();
+                    return new AzureStorage(connectionString, credential);
 
-            // Cache miss - create new driver
-            ICosmosStorage driver;
+                case CloudStorageProvider.CloudflareR2:
+                case CloudStorageProvider.AmazonS3:
+                    var amazonComponents = ConnectionStringParser.ParseAmazonConnectionString(connectionString);
+                    return new AmazonStorage(
+                        new AmazonStorageConfig
+                        {
+                            AccountId = amazonComponents.AccountId,
+                            AmazonRegion = amazonComponents.Region,
+                            BucketName = amazonComponents.BucketName,
+                            KeyId = amazonComponents.KeyId,
+                            Key = amazonComponents.Key
+                        },
+                        memoryCache);
 
-            if (connectionString.StartsWith("DefaultEndpointsProtocol=", StringComparison.CurrentCultureIgnoreCase))
-            {
-                // Check if this is Azurite (local emulator)
-                bool isAzurite = connectionString.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
-                                connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
-                                connectionString.Contains("devstoreaccount1", StringComparison.OrdinalIgnoreCase);
-
-                // Azurite doesn't use Azure AD credentials, so we can skip DefaultAzureCredential
-                // Pass null for Azurite to avoid unnecessary credential initialization
-                var credential = isAzurite ? null : new DefaultAzureCredential();
-                driver = new AzureStorage(connectionString, credential);
-            }
-            else if (connectionString.Contains("accountid", StringComparison.CurrentCultureIgnoreCase))
-            {
-                // Example: AccountId=xxxxxx;Bucket=cosmoscms-001;KeyId=AKIA;Key=MySecretKey;
-                var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
-
-                var bucketPart = parts.FirstOrDefault(p => p.StartsWith("Bucket=", StringComparison.CurrentCultureIgnoreCase));
-                var accountIdPart = parts.FirstOrDefault(p => p.StartsWith("AccountId=", StringComparison.CurrentCultureIgnoreCase));
-                var keyIdPart = parts.FirstOrDefault(p => p.StartsWith("KeyId=", StringComparison.CurrentCultureIgnoreCase));
-                var keyPart = parts.FirstOrDefault(p => p.StartsWith("Key=", StringComparison.CurrentCultureIgnoreCase));
-
-                if (bucketPart == null || accountIdPart == null || keyIdPart == null || keyPart == null)
-                {
-                    throw new InvalidOperationException(
-                        "Invalid Amazon S3 connection string format. Required parameters: AccountId, Bucket, KeyId, Key. " +
-                        $"Connection string: {connectionString}");
-                }
-
-                var bucket = bucketPart.Split("=")[1];
-                var accountId = accountIdPart.Split("=")[1];
-                var keyId = keyIdPart.Split("=")[1];
-                var key = keyPart.Split("=")[1];
-
-                driver = new AmazonStorage(
-                    new AmazonStorageConfig()
+                default:
+                    throw new UnsupportedStorageProviderException(
+                        "No valid storage connection string found. Please check your configuration. " +
+                        "Supported formats: Azure Blob Storage (DefaultEndpointsProtocol=...), " +
+                        "Amazon S3 (Bucket=...;Region=... or AccountId=...;Bucket=...).")
                     {
-                        AccountId = accountId,
-                        KeyId = keyId,
-                        Key = key,
-                        BucketName = bucket,
-                    },
-                    memoryCache);
+                        Provider = provider
+                    };
             }
-            else if (connectionString.Contains("bucket", StringComparison.CurrentCultureIgnoreCase))
-            {
-                // Example: Bucket=cosmoscms-001;Region=us-east-2;KeyId=AKIA;Key=MySecretKey;
-                var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
-
-                var bucketPart = parts.FirstOrDefault(p => p.StartsWith("Bucket=", StringComparison.CurrentCultureIgnoreCase));
-                var regionPart = parts.FirstOrDefault(p => p.StartsWith("Region=", StringComparison.CurrentCultureIgnoreCase));
-                var keyIdPart = parts.FirstOrDefault(p => p.StartsWith("KeyId=", StringComparison.CurrentCultureIgnoreCase));
-                var keyPart = parts.FirstOrDefault(p => p.StartsWith("Key=", StringComparison.CurrentCultureIgnoreCase));
-
-                if (bucketPart == null || regionPart == null || keyIdPart == null || keyPart == null)
-                {
-                    throw new InvalidOperationException(
-                        "Invalid Amazon S3 connection string format. Required parameters: Bucket, Region, KeyId, Key. " +
-                        $"Connection string: {connectionString}");
-                }
-
-                var bucket = bucketPart.Split("=")[1];
-                var region = regionPart.Split("=")[1];
-                var keyId = keyIdPart.Split("=")[1];
-                var key = keyPart.Split("=")[1];
-
-                driver = new AmazonStorage(
-                    new AmazonStorageConfig()
-                    {
-                        AmazonRegion = region,
-                        BucketName = bucket,
-                        KeyId = keyId,
-                        Key = key
-                    },
-                    memoryCache);
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    "No valid storage connection string found. Please check your configuration. " +
-                    "Supported formats: Azure Blob Storage (DefaultEndpointsProtocol=...), " +
-                    "Amazon S3 (Bucket=...;Region=... or AccountId=...;Bucket=...).");
-            }
-
-            // Cache the driver with sliding expiration for performance
-            // CRITICAL: Each tenant's driver is cached separately based on their connection string
-            if (memoryCache != null)
-            {
-                memoryCache.Set(cacheKey, driver, new MemoryCacheEntryOptions
-                {
-                    SlidingExpiration = DriverCacheExpiration,
-                    Size = 1 // Each driver instance counts as 1 unit; adjust if you want to track actual memory usage
-                });
-            }
-
-            return driver;
         }
     }
 }
