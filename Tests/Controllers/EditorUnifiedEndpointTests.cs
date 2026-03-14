@@ -218,48 +218,52 @@ namespace Sky.Tests.Controllers
         // ============================================================================
 
         /// <summary>
-        /// Test that CryptoContextToken is validated when provided.
+        /// Tests that invalid requests (null model or invalid crypto token) return bad request.
         /// </summary>
         [TestMethod]
-        public async Task Edit_WithInvalidCryptoContextToken_ReturnsBadRequest()
+        public async Task Edit_WithInvalidRequests_ReturnsBadRequest()
         {
-            // Arrange
-            var article = await CreateArticleAsync("Test Article", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-
-            var model = new EditPostViewModel
+            var scenarios = new[]
             {
-                ArticleNumber = article.ArticleNumber,
-                Command = "SaveBody",
-                Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
-                CryptoContextToken = "invalid-token-12345",
-                Title = article.Title,
-                VersionNumber = article.VersionNumber
+                new
+                {
+                    Name = "NullModel",
+                    BuildModel = (Func<Task<EditPostViewModel>>)(() =>
+                        Task.FromResult<EditPostViewModel>(null)),
+                },
+                new
+                {
+                    Name = "InvalidCryptoContextToken",
+                    BuildModel = (Func<Task<EditPostViewModel>>)(async () =>
+                    {
+                        var article = await CreateArticleAsync("Test Article", TestUserId);
+                        await SaveArticleAsync(article, TestUserId);
+
+                        return new EditPostViewModel
+                        {
+                            ArticleNumber = article.ArticleNumber,
+                            Command = "SaveBody",
+                            Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
+                            CryptoContextToken = "invalid-token-12345",
+                            Title = article.Title,
+                            VersionNumber = article.VersionNumber
+                        };
+                    }),
+                },
             };
 
-            // Act
-            var result = await controller.Edit(model);
-
-            // Assert - Invalid token returns BadRequest
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult),
-                "Invalid CryptoContextToken should return BadRequest");
+            foreach (var scenario in scenarios)
+            {
+                var model = await scenario.BuildModel();
+                var result = await controller.Edit(model!);
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult),
+                    $"{scenario.Name} should return BadRequest");
+            }
         }
 
         // ============================================================================
         // VALIDATION TESTS
         // ============================================================================
-
-        /// <summary>
-        /// Test that null model returns BadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Edit_WithNullModel_ReturnsBadRequest()
-        {
-            // Act & Assert
-            var result = await controller.Edit(null!);
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), 
-                "Null model should return BadRequest");
-        }
 
         /// <summary>
         /// Test that SaveCode validates against nested editable regions.
