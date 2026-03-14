@@ -37,40 +37,39 @@ namespace Sky.Tests.BlobStorage
         #region GetDriverFromConnectionString Tests
 
         [TestMethod]
-        public void GetDriverFromConnectionString_WithAzureFormats_ReturnsAzureStorage()
+        public void GetDriverFromConnectionString_WithKnownProviderFormats_ReturnsExpectedDriverType()
         {
-            var connectionStrings = new[]
+            var scenarios = new[]
             {
-                "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net",
-                "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+                new
+                {
+                    ConnectionString = "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net",
+                    ExpectedDriverType = typeof(AzureStorage),
+                },
+                new
+                {
+                    ConnectionString = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;",
+                    ExpectedDriverType = typeof(AzureStorage),
+                },
+                new
+                {
+                    ConnectionString = "Bucket=test-bucket;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    ExpectedDriverType = typeof(AmazonStorage),
+                },
+                new
+                {
+                    ConnectionString = "AccountId=123456789012;Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    ExpectedDriverType = typeof(AmazonStorage),
+                },
             };
 
-            foreach (var connectionString in connectionStrings)
+            foreach (var scenario in scenarios)
             {
-                var context = new StorageContext(connectionString, memoryCache);
-                var driver = GetPrivateDriver(context);
-
-                Assert.IsNotNull(driver, "Driver should not be null for Azure/Azurite formats");
-                Assert.IsInstanceOfType(driver, typeof(AzureStorage), "Driver should be AzureStorage type");
-            }
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithAmazonS3Formats_ReturnsAmazonStorage()
-        {
-            var connectionStrings = new[]
-            {
-                "Bucket=test-bucket;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-                "AccountId=123456789012;Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-            };
-
-            foreach (var connectionString in connectionStrings)
-            {
-                var context = new StorageContext(connectionString, memoryCache);
+                var context = new StorageContext(scenario.ConnectionString, memoryCache);
                 var driver = GetPrivateDriver(context);
 
                 Assert.IsNotNull(driver, "Driver should not be null");
-                Assert.IsInstanceOfType(driver, typeof(AmazonStorage), "Driver should be AmazonStorage type");
+                Assert.IsInstanceOfType(driver, scenario.ExpectedDriverType, "Driver type should match connection string provider");
             }
         }
 
