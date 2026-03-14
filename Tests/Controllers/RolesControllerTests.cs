@@ -246,22 +246,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Index_WithInvalidModelState_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_WithInvalidModelState_ReturnsBadRequest()
-        {
-            // Arrange
-            controller.ModelState.AddModelError("Error", "Invalid");
-
-            // Act
-            var result = await controller.Index(null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
         /// Tests that Index_WithIds_SetsViewData.
         /// </summary>
         [TestMethod]
@@ -356,22 +340,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Delete_WithInvalidModelState_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Delete_WithInvalidModelState_ReturnsBadRequest()
-        {
-            // Arrange
-            controller.ModelState.AddModelError("Error", "Invalid");
-
-            // Act
-            var result = await controller.Delete(new[] { "id" });
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
         /// Tests that Delete_WithEmptyArray_ReturnsOk.
         /// </summary>
         [TestMethod]
@@ -426,22 +394,6 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-        }
-
-        /// <summary>
-        /// Tests that GetUsers_WithInvalidModelState_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task GetUsers_WithInvalidModelState_ReturnsBadRequest()
-        {
-            // Arrange
-            controller.ModelState.AddModelError("Error", "Invalid");
-
-            // Act
-            var result = await controller.GetUsers("test");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         /// <summary>
@@ -667,22 +619,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that RemoveUsers_WithInvalidModelState_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task RemoveUsers_WithInvalidModelState_ReturnsBadRequest()
-        {
-            // Arrange
-            controller.ModelState.AddModelError("Error", "Invalid");
-
-            // Act
-            var result = await controller.RemoveUsers("roleId", new[] { "userId" });
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
         /// Tests that RemoveUsers_WithMultipleUsers_RemovesAll.
         /// </summary>
         [TestMethod]
@@ -761,19 +697,28 @@ namespace Sky.Tests.Controllers
         #region Edge Case Tests
 
         /// <summary>
-        /// Tests that UsersInRole_Get_WithInvalidModelState_ReturnsBadRequest.
+        /// Tests that actions return BadRequest when model state is invalid.
         /// </summary>
         [TestMethod]
-        public async Task UsersInRole_Get_WithInvalidModelState_ReturnsBadRequest()
+        public async Task Actions_WithInvalidModelState_ReturnBadRequest()
         {
-            // Arrange
-            controller.ModelState.AddModelError("Error", "Invalid");
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("Index", async () => (IActionResult)await controller.Index(null)),
+                ("Delete", async () => (IActionResult)await controller.Delete(new[] { "id" })),
+                ("GetUsers", async () => (IActionResult)await controller.GetUsers("test")),
+                ("RemoveUsers", async () => (IActionResult)await controller.RemoveUsers("roleId", new[] { "userId" })),
+                ("UsersInRole", async () => (IActionResult)await controller.UsersInRole("roleId")),
+            };
 
-            // Act
-            var result = await controller.UsersInRole("roleId");
+            foreach (var scenario in scenarios)
+            {
+                controller.ModelState.AddModelError("Error", "Invalid");
+                var result = await scenario.Action();
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), $"{scenario.Name} should return BadRequest when ModelState is invalid.");
+                controller.ModelState.Clear();
+            }
         }
 
         /// <summary>
