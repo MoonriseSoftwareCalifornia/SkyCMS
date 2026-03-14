@@ -1072,17 +1072,20 @@ namespace Sky.Tests.Controllers
         public async Task GetImageAssetArray_WithExcludePath_ExcludesCorrectly()
         {
             // Arrange
-            await Storage.CreateFolder("/pub/images");
-            await Storage.CreateFolder("/pub/images/exclude");
+            var testRoot = $"/pub/images-exclude-{Guid.NewGuid():N}";
+            var excludePath = testRoot + "/exclude";
+
+            await Storage.CreateFolder(testRoot);
+            await Storage.CreateFolder(excludePath);
             
-            await CreateTestImageFile("/pub/images/keep.jpg");
-            await CreateTestImageFile("/pub/images/exclude/remove.jpg");
+            await CreateTestImageFile(testRoot + "/keep.jpg");
+            await CreateTestImageFile(excludePath + "/remove.jpg");
             
             // Wait for storage consistency
             await Task.Delay(200);
             
-            var keepExists = await Storage.BlobExistsAsync("/pub/images/keep.jpg");
-            var removeExists = await Storage.BlobExistsAsync("/pub/images/exclude/remove.jpg");
+            var keepExists = await Storage.BlobExistsAsync(testRoot + "/keep.jpg");
+            var removeExists = await Storage.BlobExistsAsync(excludePath + "/remove.jpg");
             
             Console.WriteLine($"Files exist - keep.jpg: {keepExists}, remove.jpg: {removeExists}");
             
@@ -1094,14 +1097,14 @@ namespace Sky.Tests.Controllers
             // Act
             var result = await FileManagerController.GetImageAssetArray(
                 Storage,
-                "/pub/images",
-                "/pub/images/exclude");
+                testRoot,
+                excludePath);
 
             // Assert
             Console.WriteLine($"Found {result.Length} images after exclusion");
             if (result.Length == 0)
             {
-                var files = await Storage.GetFilesAndDirectories("/pub/images");
+                var files = await Storage.GetFilesAndDirectories(testRoot);
                 var fileInfo = string.Join(", ", files.Select(f => f.Path));
                 Assert.Inconclusive($"No images found. All files: {fileInfo}");
             }

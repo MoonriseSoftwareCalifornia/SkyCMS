@@ -9,6 +9,7 @@ namespace Sky.Tests.Services
     using System.Linq;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -307,22 +308,37 @@ namespace Sky.Tests.Services
         public async Task PublishArticle_Homepage_CreatesRootPage()
         {
             // Arrange
-            var articles = await Db.Articles.Where(a => a.ArticleNumber == 0).ToListAsync();
-            if (articles.Any())
-            {
-                var homepage = articles.First();
+            var homepage = await Db.Articles
+                .Where(a => a.ArticleNumber == 0)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
 
-                // Act
-                await PublishingService.PublishAsync(homepage);
-
-                // Assert
-                var page = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == 0);
-                Assert.IsNotNull(page, "Homepage page should be created");
-                Assert.AreEqual("/", page.UrlPath, "Homepage should have root URL path");
-            }
+            if (homepage == null)
             {
-                Assert.Inconclusive("No homepage article found for test");
+                homepage = new Article
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = 0,
+                    VersionNumber = 1,
+                    Title = "Home",
+                    Content = "<h1>Home</h1>",
+                    UrlPath = "root",
+                    StatusCode = (int)StatusCodeEnum.Active,
+                    UserId = TestUserId.ToString(),
+                    Updated = DateTimeOffset.UtcNow
+                };
+
+                Db.Articles.Add(homepage);
+                await Db.SaveChangesAsync();
             }
+
+            // Act
+            await PublishingService.PublishAsync(homepage);
+
+            // Assert
+            var page = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == 0);
+            Assert.IsNotNull(page, "Homepage page should be created");
+            Assert.AreEqual("root", page.UrlPath, "Homepage should use the root article path");
         }
 
         #endregion

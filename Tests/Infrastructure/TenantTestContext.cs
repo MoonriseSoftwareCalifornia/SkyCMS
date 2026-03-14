@@ -37,7 +37,6 @@ namespace Sky.Tests
     using Sky.Editor.Features.Articles.CreateVersion;
     using Sky.Editor.Features.Articles.Save;
     using Cosmos.Common.Models;
-    using Microsoft.Extensions.Caching.Memory;
 
     /// <summary>
     /// Represents a complete isolated test context for a single tenant.

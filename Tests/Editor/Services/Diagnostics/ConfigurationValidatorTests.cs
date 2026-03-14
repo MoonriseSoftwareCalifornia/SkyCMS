@@ -29,10 +29,10 @@ namespace Sky.Tests.Editor.Services.Diagnostics
     {
         #region Test Initialization & Helpers
 
-        private Mock<IConfiguration>? configMock;
-        private Mock<ILogger<ConfigurationValidator>>? loggerMock;
+        private Mock<IConfiguration> configMock = null!;
+        private Mock<ILogger<ConfigurationValidator>> loggerMock = null!;
 
-        private ConfigurationValidator validator;
+        private ConfigurationValidator validator = null!;
 
         [TestInitialize]
         public void Setup()
@@ -296,6 +296,11 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 var testValidator = new ConfigurationValidator(config.Object, logger.Object);
                 var result = await testValidator.ValidateAsync();
                 var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
+                if (adminEmailCheck is null)
+                {
+                    Assert.Fail("AdminEmail check should be present in validation results.");
+                }
+
                 Assert.AreEqual(CheckStatus.Success, adminEmailCheck.Status, $"Email {email} should be valid");
             }
         }
