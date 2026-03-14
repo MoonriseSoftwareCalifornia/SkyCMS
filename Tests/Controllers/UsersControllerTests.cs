@@ -727,44 +727,26 @@ namespace Sky.Tests.Controllers
         #region GetRoles Tests
 
         /// <summary>
-        /// Tests that GetRoles_ReturnsAllRoles.
+        /// Tests that GetRoles returns JSON for null and filtered text inputs.
         /// </summary>
         [TestMethod]
-        public async Task GetRoles_ReturnsAllRoles()
+        public async Task GetRoles_ReturnsJson_ForNullAndFilteredText()
         {
             // Arrange
             var role1 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Alpha" };
-            var role2 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Beta" };
+            var role2 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Admin" };
             await RoleManager.CreateAsync(role1);
             await RoleManager.CreateAsync(role2);
 
-            // Act
-            var result = await controller.GetRoles(null);
+            foreach (var filter in new string[] { null, "admin" })
+            {
+                var result = await controller.GetRoles(filter);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            var roles = jsonResult.Value as IEnumerable<object>;
-            Assert.IsNotNull(roles);
-        }
-
-        /// <summary>
-        /// Tests that GetRoles_FiltersRolesByText.
-        /// </summary>
-        [TestMethod]
-        public async Task GetRoles_FiltersRolesByText()
-        {
-            // Arrange
-            var role1 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Admin" };
-            var role2 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "User" };
-            await RoleManager.CreateAsync(role1);
-            await RoleManager.CreateAsync(role2);
-
-            // Act
-            var result = await controller.GetRoles("admin");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
+                Assert.IsInstanceOfType(result, typeof(JsonResult));
+                var jsonResult = (JsonResult)result;
+                var roles = jsonResult.Value as IEnumerable<object>;
+                Assert.IsNotNull(roles);
+            }
         }
 
         #endregion
@@ -1009,19 +991,38 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Index_HandlesInvalidRoleId.
+        /// Tests that actions throw expected exceptions for invalid IDs.
         /// </summary>
         [TestMethod]
-        public async Task Index_HandlesInvalidRoleId()
+        public async Task InvalidIds_ThrowExpectedExceptions()
         {
-            // Arrange
             var invalidRoleId = Guid.NewGuid().ToString();
-
-            // Act & Assert
-            await Assert.ThrowsExactlyAsync<NullReferenceException>(async () =>
+            var invalidUserModel = new UserRoleAssignmentsViewModel
             {
-                await controller.Index(id: invalidRoleId);
-            });
+                Id = Guid.NewGuid().ToString(),
+                RoleIds = new List<string>()
+            };
+
+            var scenarios = new (string Name, Type ExceptionType, Func<Task> Action)[]
+            {
+                ("Index", typeof(NullReferenceException), () => controller.Index(id: invalidRoleId)),
+                ("UserRolesPost", typeof(ArgumentNullException), () => controller.UserRoles(invalidUserModel)),
+            };
+
+            foreach (var scenario in scenarios)
+            {
+                var exceptionThrown = false;
+                try
+                {
+                    await scenario.Action();
+                }
+                catch (Exception ex)
+                {
+                    exceptionThrown = ex.GetType() == scenario.ExceptionType;
+                }
+
+                Assert.IsTrue(exceptionThrown, $"{scenario.Name} should throw {scenario.ExceptionType.Name} for invalid input.");
+            }
         }
 
         /// <summary>
@@ -1104,27 +1105,6 @@ namespace Sky.Tests.Controllers
             // The controller logic appears inverted - a future LockoutEnd means still locked
             Assert.IsFalse(lockedUser.IsLockedOut, 
                 "The controller logic shows IsLockedOut is false when LockoutEnd is in the future");
-        }
-
-        /// <summary>
-        /// Tests that UserRoles_Post_HandlesInvalidUserId.
-        /// </summary>
-        [TestMethod]
-        public async Task UserRoles_Post_HandlesInvalidUserId()
-        {
-            // Arrange
-            var model = new UserRoleAssignmentsViewModel
-            {
-                Id = Guid.NewGuid().ToString(),
-                RoleIds = new List<string>()
-            };
-
-            // Act & Assert
-            // FindByIdAsync returns null, causing GetRolesAsync to throw ArgumentNullException
-            await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
-            {
-                await controller.UserRoles(model);
-            });
         }
 
         /// <summary>
