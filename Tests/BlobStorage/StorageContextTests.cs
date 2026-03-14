@@ -498,36 +498,11 @@ namespace Sky.Tests.BlobStorage
         }
 
         /// <summary>
-        /// Tests that GetFileAsync returns null for non-existent files across all providers.
+        /// Tests that existence and metadata retrieval APIs correctly handle existing and non-existing files across all providers.
         /// </summary>
         [DataTestMethod]
         [DynamicData(nameof(GetTestProviders), typeof(StorageContextConfigUtilities), DynamicDataSourceType.Method)]
-        public async Task GetFileAsync_NonExistentFile_ReturnsNull(StorageProvider provider)
-        {
-            // Arrange
-            SetupForProvider(provider);
-            var nonExistentPath = $"{testFolderPrefix}/does-not-exist.jpg";
-
-            try
-            {
-                // Act
-                var result = await storageContext.GetFileAsync(nonExistentPath);
-
-                // Assert
-                Assert.IsNull(result, $"[{provider}] Non-existent file should return null");
-            }
-            finally
-            {
-                await CleanupForProvider();
-            }
-        }
-
-        /// <summary>
-        /// Tests that BlobExistsAsync correctly identifies existing and non-existing files across all providers.
-        /// </summary>
-        [DataTestMethod]
-        [DynamicData(nameof(GetTestProviders), typeof(StorageContextConfigUtilities), DynamicDataSourceType.Method)]
-        public async Task BlobExistsAsync_ChecksExistence_ReturnsCorrectResult(StorageProvider provider)
+        public async Task FileExistenceApis_ChecksExistenceAndMissingMetadata_ReturnsCorrectResult(StorageProvider provider)
         {
             // Arrange
             SetupForProvider(provider);
@@ -543,10 +518,12 @@ namespace Sky.Tests.BlobStorage
                 // Act
                 var existsResult = await storageContext.BlobExistsAsync(existingPath);
                 var notExistsResult = await storageContext.BlobExistsAsync(nonExistentPath);
+                var missingFileMetadata = await storageContext.GetFileAsync(nonExistentPath);
 
                 // Assert
                 Assert.IsTrue(existsResult, $"[{provider}] Existing file should return true");
                 Assert.IsFalse(notExistsResult, $"[{provider}] Non-existent file should return false");
+                Assert.IsNull(missingFileMetadata, $"[{provider}] Non-existent file metadata should be null");
             }
             finally
             {
