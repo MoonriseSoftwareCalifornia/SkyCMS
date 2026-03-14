@@ -317,10 +317,10 @@ namespace Sky.Tests.Controllers
         #region Index Tests
 
         /// <summary>
-        /// Tests that Index_ReturnsAllUsers.
+        /// Tests that Index returns all users when role filter is missing or empty.
         /// </summary>
         [TestMethod]
-        public async Task Index_ReturnsAllUsers()
+        public async Task Index_ReturnsAllUsers_WhenRoleFilterMissingOrEmpty()
         {
             // Arrange
             var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), Email = "user1@example.com" };
@@ -328,15 +328,23 @@ namespace Sky.Tests.Controllers
             await UserManager.CreateAsync(user1);
             await UserManager.CreateAsync(user2);
 
-            // Act
-            var result = await controller.Index();
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("NoParameter", () => controller.Index()),
+                ("NullId", () => controller.Index(id: null)),
+                ("EmptyId", () => controller.Index(id: string.Empty)),
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            var model = viewResult.Model as List<UserIndexViewModel>;
-            Assert.IsNotNull(model);
-            Assert.IsTrue(model.Count >= 2);
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+
+                Assert.IsInstanceOfType(result, typeof(ViewResult), $"{scenario.Name} should return a ViewResult.");
+                var viewResult = (ViewResult)result;
+                var model = viewResult.Model as List<UserIndexViewModel>;
+                Assert.IsNotNull(model, $"{scenario.Name} should return a user model.");
+                Assert.IsTrue(model.Count >= 2, $"{scenario.Name} should return all users when role filter is missing or empty.");
+            }
         }
 
         /// <summary>
@@ -965,29 +973,6 @@ namespace Sky.Tests.Controllers
             var model = viewResult.Model as List<AuthorInfo>;
             Assert.IsNotNull(model);
             Assert.IsTrue(model.Count <= 10, "Page size should be respected");
-        }
-
-        [TestMethod]
-        public async Task Index_HandlesMissingRoleId_ReturnsAllUsers()
-        {
-            // Arrange
-            var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user1@test.com", Email = "user1@test.com" };
-            var user2 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user2@test.com", Email = "user2@test.com" };
-            await UserManager.CreateAsync(user1);
-            await UserManager.CreateAsync(user2);
-
-            foreach (var roleId in new object[] { null, string.Empty })
-            {
-                // Act
-                var result = await controller.Index(id: roleId as string);
-
-                // Assert
-                Assert.IsInstanceOfType(result, typeof(ViewResult));
-                var viewResult = (ViewResult)result;
-                var model = viewResult.Model as List<UserIndexViewModel>;
-                Assert.IsNotNull(model);
-                Assert.IsTrue(model.Count >= 2, "Should return all users when role ID is null or empty");
-            }
         }
 
         /// <summary>
