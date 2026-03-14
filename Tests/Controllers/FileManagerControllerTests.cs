@@ -1229,43 +1229,37 @@ namespace Sky.Tests.Controllers
         #region Multi-File Operation Edge Cases Tests
 
         /// <summary>
-        /// Tests that Delete_WithEmptyList_ReturnsOk.
+        /// Tests that multi-file operations with empty lists return Ok.
         /// </summary>
         [TestMethod]
-        public async Task Delete_WithEmptyList_ReturnsOk()
+        public async Task MultiFileOperations_WithEmptyLists_ReturnOk()
         {
-            // Arrange
-            var model = new DeleteBlobItemsViewModel
-            {
-                Paths = new List<string>()
-            };
-
-            // Act
-            var result = await controller.Delete(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-        }
-
-        /// <summary>
-        /// Tests that Copy_WithEmptyList_ReturnsOk.
-        /// </summary>
-        [TestMethod]
-        public async Task Copy_WithEmptyList_ReturnsOk()
-        {
-            // Arrange
             await Storage.CreateFolder("/pub/destination");
-            var model = new MoveFilesViewModel
+
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
             {
-                Items = new List<string>(),
-                Destination = "/pub/destination"
+                (
+                    "Delete",
+                    async () => (IActionResult)await controller.Delete(new DeleteBlobItemsViewModel
+                    {
+                        Paths = new List<string>()
+                    })
+                ),
+                (
+                    "Copy",
+                    async () => (IActionResult)await controller.Copy(new MoveFilesViewModel
+                    {
+                        Items = new List<string>(),
+                        Destination = "/pub/destination"
+                    })
+                ),
             };
 
-            // Act
-            var result = await controller.Copy(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, typeof(OkResult), $"{scenario.Name} should return Ok for an empty list.");
+            }
         }
 
         /// <summary>
