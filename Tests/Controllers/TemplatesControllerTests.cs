@@ -1051,10 +1051,10 @@ namespace Sky.Tests.Controllers
         #region Phase 3: Create & Edit Operations Tests
 
         /// <summary>
-        /// Tests that Create creates new template with default content.
+        /// Tests that Create initializes a new template and its first version.
         /// </summary>
         [TestMethod]
-        public async Task Create_CreatesNewTemplate_WithDefaultContent()
+        public async Task Create_InitializesTemplateAndFirstVersion()
         {
             // Arrange
             var initialCount = await Db.Templates.CountAsync();
@@ -1068,7 +1068,6 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("EditCode", redirectResult.ActionName);
             Assert.AreEqual("Templates", redirectResult.ControllerName);
 
-            // Verify new template was created
             var finalCount = await Db.Templates.CountAsync();
             Assert.AreEqual(initialCount + 1, finalCount, "Should create one new template");
 
@@ -1076,36 +1075,7 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(newTemplate.Title.StartsWith("New Template"), "Title should start with 'New Template'");
             Assert.IsNotNull(newTemplate.Description);
             Assert.IsNotNull(newTemplate.Content);
-        }
-
-        /// <summary>
-        /// Tests that Create ensures editable markers in content.
-        /// </summary>
-        [TestMethod]
-        public async Task Create_EnsuresEditableMarkers_InContent()
-        {
-            // Act
-            var result = await _controller.Create();
-
-            // Assert
-            var newTemplate = await Db.Templates.OrderByDescending(t => t.Title).FirstAsync();
-            
-            // Content should be processed through htmlService.EnsureEditableMarkers
-            Assert.IsNotNull(newTemplate.Content);
             Assert.IsTrue(newTemplate.Content.Length > 0, "Content should not be empty");
-        }
-
-        /// <summary>
-        /// Tests that Create creates first version in version history.
-        /// </summary>
-        [TestMethod]
-        public async Task Create_CreatesFirstVersion_InVersionHistory()
-        {
-            // Act
-            var result = await _controller.Create();
-
-            // Assert
-            var newTemplate = await Db.Templates.OrderByDescending(t => t.Title).FirstAsync();
             
             // Verify PageDesignVersion was created
             var version = await Db.PageDesignVersions.FirstOrDefaultAsync(v => v.TemplateId == newTemplate.Id);

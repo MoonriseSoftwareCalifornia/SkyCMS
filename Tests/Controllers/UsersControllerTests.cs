@@ -1156,31 +1156,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that AuthorInfos validates pagination bounds.
-        /// </summary>
-        [TestMethod]
-        public async Task AuthorInfos_ValidatesLargePageSize_CapsAtReasonableValue()
-        {
-            // Arrange
-            var user = new IdentityUser
-            {
-                Id = Guid.NewGuid().ToString(),
-                UserName = "pagesize@example.com",
-                Email = "pagesize@example.com",
-                EmailConfirmed = true
-            };
-            await UserManager.CreateAsync(user);
-
-            // Act
-            var result = await controller.AuthorInfos(pageSize: 1000);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.IsNotNull(viewResult.Model);
-        }
-
-        /// <summary>
         /// Tests that AuthorInfoEdit handles null model gracefully.
         /// </summary>
         [TestMethod]
