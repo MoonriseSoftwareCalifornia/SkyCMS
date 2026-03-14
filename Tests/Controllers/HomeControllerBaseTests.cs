@@ -410,29 +410,18 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Search_EmptyQuery_ReturnsBadRequest.
+        /// Tests that Search with null or empty query returns bad request.
         /// </summary>
         [TestMethod]
-        public async Task Search_EmptyQuery_ReturnsBadRequest()
+        public async Task Search_NullOrEmptyQuery_ReturnsBadRequest()
         {
-            // Act
-            var result = await controller.CCMS___SEARCH("");
+            var scenarios = new string[] { string.Empty, null };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Search_NullQuery_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Search_NullQuery_ReturnsBadRequest()
-        {
-            // Act
-            var result = await controller.CCMS___SEARCH(null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            foreach (var query in scenarios)
+            {
+                var result = await controller.CCMS___SEARCH(query);
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            }
         }
 
         /// <summary>
