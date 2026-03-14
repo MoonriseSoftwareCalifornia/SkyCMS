@@ -417,22 +417,6 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(jsonResult.Value);
         }
 
-        /// <summary>
-        /// Tests that SimpleUpload_WithInvalidModelState_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task SimpleUpload_WithInvalidModelState_ReturnsBadRequest()
-        {
-            // Arrange
-            controller.ModelState.AddModelError("test", "Test error");
-
-            // Act
-            var result = await controller.SimpleUpload("123", "articles");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
         #endregion
 
         #region File and Folder Operations Tests
@@ -1313,60 +1297,38 @@ namespace Sky.Tests.Controllers
         #region Permission and Authorization Tests
 
         /// <summary>
-        /// Tests that Index_WithInvalidModelState_ReturnsBadRequest.
+        /// Tests that actions return BadRequest when model state is invalid.
         /// </summary>
         [TestMethod]
-        public async Task Index_WithInvalidModelState_ReturnsBadRequest()
+        public async Task Actions_WithInvalidModelState_ReturnBadRequest()
         {
-            // Arrange
-            controller.ModelState.AddModelError("test", "Test error");
-
-            // Act
-            var result = await controller.Index("/pub", false);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that NewFolder_WithInvalidModelState_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task NewFolder_WithInvalidModelState_ReturnsBadRequest()
-        {
-            // Arrange
-            controller.ModelState.AddModelError("test", "Test error");
-            var model = new NewFolderViewModel
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
             {
-                ParentFolder = "/pub",
-                FolderName = "test"
+                ("SimpleUpload", async () => (IActionResult)await controller.SimpleUpload("123", "articles")),
+                ("Index", async () => (IActionResult)await controller.Index("/pub", false)),
+                (
+                    "NewFolder",
+                    async () => (IActionResult)await controller.NewFolder(new NewFolderViewModel
+                    {
+                        ParentFolder = "/pub",
+                        FolderName = "test"
+                    })),
+                (
+                    "Delete",
+                    async () => (IActionResult)await controller.Delete(new DeleteBlobItemsViewModel
+                    {
+                        Paths = new List<string> { "/pub/test.txt" }
+                    })),
             };
 
-            // Act
-            var result = await controller.NewFolder(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Delete_WithInvalidModelState_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Delete_WithInvalidModelState_ReturnsBadRequest()
-        {
-            // Arrange
-            controller.ModelState.AddModelError("test", "Test error");
-            var model = new DeleteBlobItemsViewModel
+            foreach (var scenario in scenarios)
             {
-                Paths = new List<string> { "/pub/test.txt" }
-            };
+                controller.ModelState.Clear();
+                controller.ModelState.AddModelError("test", "Test error");
 
-            // Act
-            var result = await controller.Delete(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), $"{scenario.Name} should return BadRequest when ModelState is invalid.");
+            }
         }
 
         #endregion
