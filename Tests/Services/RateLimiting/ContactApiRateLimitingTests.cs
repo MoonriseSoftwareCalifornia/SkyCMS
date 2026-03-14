@@ -86,6 +86,12 @@ namespace Sky.Tests.Services.RateLimiting
 
             // Assert
             Assert.IsFalse(blockedLease.IsAcquired, "6th request should be blocked as it exceeds the 5 req/min limit");
+
+            // QueueLimit is configured as 0, so rejection should provide metadata immediately.
+            Assert.IsTrue(
+                blockedLease.TryGetMetadata(MetadataName.RetryAfter, out _),
+                "Blocked request should not be queued when queue limit is 0");
+
             blockedLease.Dispose();
         }
 
@@ -182,32 +188,6 @@ namespace Sky.Tests.Services.RateLimiting
             // Assert
             Assert.IsNotNull(limiter, "Limiter should be created");
             // FixedWindowRateLimiter is expected based on the implementation
-        }
-
-        [TestMethod]
-        public async Task ContactForm_RateLimit_QueueLimitIsZero()
-        {
-            // Arrange
-            var options = new RateLimiterOptions();
-            ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
-
-            var httpContext = CreateHttpContext("192.168.1.106");
-            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
-
-            // Act - Fill the limit
-            for (int i = 0; i < 5; i++)
-            {
-                var lease = await limiter.AcquireAsync(httpContext, permitCount: 1);
-                Assert.IsTrue(lease.IsAcquired);
-                lease.Dispose();
-            }
-
-            // Try to acquire one more (should be rejected immediately, not queued)
-            var rejectedLease = await limiter.AcquireAsync(httpContext, permitCount: 1);
-
-            // Assert
-            Assert.IsFalse(rejectedLease.IsAcquired, "Request should be rejected immediately when queue limit is 0");
-            rejectedLease.Dispose();
         }
 
         [TestMethod]
