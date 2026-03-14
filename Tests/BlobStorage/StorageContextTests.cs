@@ -106,53 +106,11 @@ namespace Sky.Tests.BlobStorage
         }
 
         /// <summary>
-        /// Tests that creating nested subfolders works correctly across all providers.
+        /// Tests nested folder creation and listing behavior across all providers.
         /// </summary>
         [DataTestMethod]
         [DynamicData(nameof(GetTestProviders), typeof(StorageContextConfigUtilities), DynamicDataSourceType.Method)]
-        public async Task CreateFolder_WithNestedStructure_CreatesAllSubfolders(StorageProvider provider)
-        {
-            // Arrange
-            SetupForProvider(provider);
-            var folder1 = $"{testFolderPrefix}/folder1";
-            var folder2 = $"{testFolderPrefix}/folder1/subfolder1";
-            var folder3 = $"{testFolderPrefix}/folder1/subfolder2";
-            var folder4 = $"{testFolderPrefix}/folder1/subfolder2/subfolder3";
-
-            try
-            {
-                // Act
-                await storageContext.CreateFolder(folder1);
-                await storageContext.CreateFolder(folder2);
-                await storageContext.CreateFolder(folder3);
-                await storageContext.CreateFolder(folder4);
-
-                // Assert
-                var result1 = await storageContext.GetFilesAndDirectories(folder1);
-                var result2 = await storageContext.GetFilesAndDirectories(folder2);
-                var result3 = await storageContext.GetFilesAndDirectories(folder3);
-                var result4 = await storageContext.GetFilesAndDirectories(folder4);
-
-                const int ExpectedSubfoldersInFolder1 = 2; // subfolder1 and subfolder2
-                const int ExpectedItemsInLeafFolders = 0; // Empty leaf folders
-
-                Assert.AreEqual(ExpectedSubfoldersInFolder1, result1.Count, $"[{provider}] folder1 should contain 2 subfolders");
-                Assert.AreEqual(ExpectedItemsInLeafFolders, result2.Count, $"[{provider}] subfolder1 should be empty");
-                Assert.AreEqual(1, result3.Count, $"[{provider}] subfolder2 should contain 1 subfolder");
-                Assert.AreEqual(ExpectedItemsInLeafFolders, result4.Count, $"[{provider}] subfolder3 should be empty");
-            }
-            finally
-            {
-                await CleanupForProvider();
-            }
-        }
-
-        /// <summary>
-        /// Tests that GetFilesAndDirectories returns correct subfolder listing across all providers.
-        /// </summary>
-        [DataTestMethod]
-        [DynamicData(nameof(GetTestProviders), typeof(StorageContextConfigUtilities), DynamicDataSourceType.Method)]
-        public async Task GetFilesAndDirectories_WithSubfolders_ReturnsCorrectListing(StorageProvider provider)
+        public async Task NestedFolders_CreateAndList_ReturnsExpectedStructure(StorageProvider provider)
         {
             // Arrange
             SetupForProvider(provider);
@@ -172,12 +130,15 @@ namespace Sky.Tests.BlobStorage
                 var folder1Contents = await storageContext.GetFilesAndDirectories(folder1);
                 var subfolder1Contents = await storageContext.GetFilesAndDirectories(subfolder1);
                 var subfolder2Contents = await storageContext.GetFilesAndDirectories(subfolder2);
+                var subfolder3Contents = await storageContext.GetFilesAndDirectories(subfolder3);
 
                 // Assert
                 const int ExpectedSubfoldersInFolder1 = 2;
+                const int ExpectedItemsInLeafFolders = 0;
                 Assert.AreEqual(ExpectedSubfoldersInFolder1, folder1Contents.Count, $"[{provider}] folder1 should have 2 subfolders");
-                Assert.AreEqual(0, subfolder1Contents.Count, $"[{provider}] subfolder1 should be empty");
+                Assert.AreEqual(ExpectedItemsInLeafFolders, subfolder1Contents.Count, $"[{provider}] subfolder1 should be empty");
                 Assert.AreEqual(1, subfolder2Contents.Count, $"[{provider}] subfolder2 should have 1 subfolder");
+                Assert.AreEqual(ExpectedItemsInLeafFolders, subfolder3Contents.Count, $"[{provider}] subfolder3 should be empty");
             }
             finally
             {
