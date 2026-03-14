@@ -419,24 +419,48 @@ namespace Sky.Tests.Integration
         #region Error Recovery Tests
 
         /// <summary>
-        /// Tests that deleting non-existent article throws appropriate exception.
+        /// Tests that delete operations throw expected exceptions for invalid targets.
         /// </summary>
         [TestMethod]
-        public async Task DeleteNonExistentArticle_ThrowsException()
+        public async Task DeleteArticle_InvalidTargets_ThrowsExpectedException()
         {
-            // Arrange
-            var nonExistentArticleNumber = 99999;
+            var scenarios = new[]
+            {
+                new
+                {
+                    Name = "NonExistentArticle",
+                    GetArticleNumber = (Func<Task<int>>)(() => Task.FromResult(99999)),
+                    ExpectedExceptionType = typeof(KeyNotFoundException),
+                    ExpectedMessageFragment = "99999",
+                },
+                new
+                {
+                    Name = "RootPage",
+                    GetArticleNumber = (Func<Task<int>>)(async () =>
+                    {
+                        var rootArticle = await CreateArticleAsync("Root Page", TestUserId);
+                        Assert.AreEqual("root", rootArticle.UrlPath);
+                        return rootArticle.ArticleNumber;
+                    }),
+                    ExpectedExceptionType = typeof(NotSupportedException),
+                    ExpectedMessageFragment = "Cannot trash the home page",
+                },
+            };
 
-            // Act
-            try
+            foreach (var scenario in scenarios)
             {
-                await Logic.DeleteArticle(nonExistentArticleNumber);
-                Assert.Fail("Expected KeyNotFoundException was not thrown.");
-            }
-            catch (KeyNotFoundException ex)
-            {
-                // Assert
-                StringAssert.Contains(ex.Message, nonExistentArticleNumber.ToString());
+                var articleNumber = await scenario.GetArticleNumber();
+
+                try
+                {
+                    await Logic.DeleteArticle(articleNumber);
+                    Assert.Fail($"Expected {scenario.ExpectedExceptionType.Name} was not thrown ({scenario.Name}).");
+                }
+                catch (Exception ex)
+                {
+                    Assert.AreEqual(scenario.ExpectedExceptionType, ex.GetType(), scenario.Name);
+                    StringAssert.Contains(ex.Message, scenario.ExpectedMessageFragment, scenario.Name);
+                }
             }
         }
 
@@ -459,27 +483,6 @@ namespace Sky.Tests.Integration
             var secondArticle = await CreateArticleAsync("Second Article", TestUserId);
             Assert.AreNotEqual("root", secondArticle.UrlPath);
             Assert.IsNull(secondArticle.Published, "Second article should not auto-publish");
-        }
-
-        /// <summary>
-        /// Tests that root page cannot be deleted.
-        /// </summary>
-        [TestMethod]
-        public async Task DeleteRootPage_ThrowsNotSupportedException()
-        {
-            // Get root article
-            var rootArticle = await CreateArticleAsync("Root Page", TestUserId);
-            Assert.AreEqual("root", rootArticle.UrlPath);
-
-            try
-            {
-                await Logic.DeleteArticle(rootArticle.ArticleNumber);
-                Assert.Fail("Expected NotSupportedException was not thrown.");
-            }
-            catch (NotSupportedException ex)
-            {
-                Assert.AreEqual("Cannot trash the home page. Replace it then delete.", ex.Message);
-            }
         }
 
         #endregion
