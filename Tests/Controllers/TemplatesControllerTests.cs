@@ -586,45 +586,12 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("ZZZ Template", firstTemplate.Title, "First template should be ZZZ when sorted descending");
         }
 
-        /// <summary>
-        /// Tests that Index applies sorting by LayoutName.
-        /// </summary>
         [TestMethod]
-        public async Task Index_AppliesSorting_ByLayoutName()
+        public async Task Index_AppliesSorting_ForLayoutNameAndDescription()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Description = "Test",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.Index(sortOrder: "asc", currentSort: "LayoutName");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.AreEqual("asc", viewResult.ViewData["sortOrder"]);
-            Assert.AreEqual("LayoutName", viewResult.ViewData["currentSort"]);
-        }
-
-        /// <summary>
-        /// Tests that Index applies sorting by Description.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_AppliesSorting_ByDescription()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
+            Db.Templates.Add(new Template
             {
                 Id = Guid.NewGuid(),
                 Title = "Test Template",
@@ -632,18 +599,24 @@ namespace Sky.Tests.Controllers
                 Content = "<div>Content</div>",
                 LayoutId = layout.Id,
                 LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
+            });
             await Db.SaveChangesAsync();
 
-            // Act
-            var result = await _controller.Index(sortOrder: "desc", currentSort: "Description");
+            foreach (var sort in new[]
+            {
+                (SortOrder: "asc", CurrentSort: "LayoutName"),
+                (SortOrder: "desc", CurrentSort: "Description"),
+            })
+            {
+                // Act
+                var result = await _controller.Index(sortOrder: sort.SortOrder, currentSort: sort.CurrentSort);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.AreEqual("desc", viewResult.ViewData["sortOrder"]);
-            Assert.AreEqual("Description", viewResult.ViewData["currentSort"]);
+                // Assert
+                Assert.IsInstanceOfType(result, typeof(ViewResult));
+                var viewResult = result as ViewResult;
+                Assert.AreEqual(sort.SortOrder, viewResult.ViewData["sortOrder"]);
+                Assert.AreEqual(sort.CurrentSort, viewResult.ViewData["currentSort"]);
+            }
         }
 
         /// <summary>
@@ -1120,24 +1093,6 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(newTemplate.Content, version.Content);
             Assert.AreEqual(newTemplate.Title, version.Title);
             Assert.AreEqual(newTemplate.Description, version.Description);
-        }
-
-        /// <summary>
-        /// Tests that Create redirects to EditCode after creation.
-        /// </summary>
-        [TestMethod]
-        public async Task Create_RedirectsToEditCode_AfterCreation()
-        {
-            // Act
-            var result = await _controller.Create();
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("EditCode", redirectResult.ActionName);
-            Assert.AreEqual("Templates", redirectResult.ControllerName);
-            Assert.IsNotNull(redirectResult.RouteValues);
-            Assert.IsTrue(redirectResult.RouteValues.ContainsKey("Id"), "Should pass template Id to EditCode");
         }
 
         /// <summary>

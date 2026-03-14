@@ -38,7 +38,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Unit tests for the <see cref="FileManagerController"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class FileManagerControllerTests : SkyCmsTestBase
     {
@@ -47,11 +46,19 @@ namespace Sky.Tests.Controllers
         private Mock<IWebHostEnvironment> mockHostEnvironment;
         private Mock<IViewRenderService> mockViewRenderService;
         private Mock<CommonMediator> mockArticleQueries;
+        private StorageContext rawStorage;
+        private IStorageContext isolatedStorage;
+        private string testRoot;
+
+        private new IStorageContext Storage => isolatedStorage;
 
         [TestInitialize]
         public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
+            rawStorage = base.Storage;
+            testRoot = $"/pub/filemanager-tests-{Guid.NewGuid():N}";
+            isolatedStorage = new PathIsolatingStorageContext(rawStorage, testRoot);
 
             mockLogger = new Mock<ILogger<FileManagerController>>();
             mockHostEnvironment = new Mock<IWebHostEnvironment>();
@@ -62,7 +69,7 @@ namespace Sky.Tests.Controllers
                 EditorSettings,
                 mockLogger.Object,
                 Db,
-                Storage,
+                isolatedStorage,
                 UserManager,
                 Logic,
                 mockArticleQueries.Object,
@@ -91,40 +98,17 @@ namespace Sky.Tests.Controllers
         {
             try
             {
-                // Clean up all test directories
-                var testPaths = new[]
-                {
-                    "/pub/source",
-                    "/pub/destination",
-                    "/pub/deeply",
-                    "/pub/test",
-                    "/pub/downloads",
-                    "/pub/sort",
-                    "/pub/paging",
-                    "/pub/folders",
-                    "/pub/images",
-                    "/pub/files",
-                    "/pub/gallery",
-                    "/pub/uploads"
-                };
-
-                foreach (var path in testPaths)
+                if (!string.IsNullOrWhiteSpace(testRoot))
                 {
                     try
                     {
-                        if (await Storage.BlobExistsAsync(path + "/"))
-                        {
-                            await Storage.DeleteFolderAsync(path);
-                        }
+                        await rawStorage.DeleteFolderAsync(testRoot);
                     }
                     catch
                     {
-                        // Ignore individual cleanup errors
+                        // Ignore cleanup errors for already-removed test roots.
                     }
                 }
-                
-                // Small delay to allow storage to finish cleanup
-                await Task.Delay(200);
             }
             finally
             {
@@ -298,40 +282,20 @@ namespace Sky.Tests.Controllers
         /// Tests that Upload_WithEmptyPath_ReturnsUnauthorized.
         /// </summary>
         [TestMethod]
-        public async Task Upload_WithEmptyPath_ReturnsUnauthorized()
+        public async Task Upload_WithUnauthorizedPaths_ReturnsUnauthorized()
         {
-            // Arrange
-            var fileMock = CreateMockFile("test.txt", "Hello World");
-            var metadata = CreateFileMetadata("test.txt", string.Empty);
+            foreach (var uploadPath in new[] { string.Empty, "/private/uploads", "../../../etc/passwd" })
+            {
+                var fileMock = CreateMockFile("test.txt", "Hello World");
+                var metadata = CreateFileMetadata("test.txt", uploadPath);
 
-            // Act
-            var result = await controller.Upload(
-                new[] { fileMock },
-                JsonConvert.SerializeObject(metadata),
-                string.Empty);
+                var result = await controller.Upload(
+                    new[] { fileMock },
+                    JsonConvert.SerializeObject(metadata),
+                    uploadPath);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Upload_WithNonPubPath_ReturnsUnauthorized.
-        /// </summary>
-        [TestMethod]
-        public async Task Upload_WithNonPubPath_ReturnsUnauthorized()
-        {
-            // Arrange
-            var fileMock = CreateMockFile("test.txt", "Hello World");
-            var metadata = CreateFileMetadata("test.txt", "/private/uploads");
-
-            // Act
-            var result = await controller.Upload(
-                new[] { fileMock },
-                JsonConvert.SerializeObject(metadata),
-                "/private/uploads");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
+                Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
+            }
         }
 
         /// <summary>
@@ -495,24 +459,21 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(await Storage.BlobExistsAsync("/pub/files/newfile.txt"));
         }
 
-        /// <summary>
-        /// Tests that NewFile_WithInvalidExtension_ReturnsBadRequest.
-        /// </summary>
         [TestMethod]
-        public async Task NewFile_WithInvalidExtension_ReturnsBadRequest()
+        public async Task NewFile_WithInvalidInputs_ReturnsBadRequest()
         {
-            // Arrange
-            var model = new NewFileViewModel
+            foreach (var fileName in new[] { "badfile.exe", "dangerous.sh", string.Empty })
             {
-                ParentFolder = "/pub/files",
-                FileName = "badfile.exe"
-            };
+                var model = new NewFileViewModel
+                {
+                    ParentFolder = "/pub/files",
+                    FileName = fileName
+                };
 
-            // Act
-            var result = await controller.NewFile(model);
+                var result = await controller.NewFile(model);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            }
         }
 
         /// <summary>
@@ -563,25 +524,12 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task Copy_WithValidPaths_CopiesFiles()
         {
-            // Arrange - Clean up any existing files from previous test runs
-            var sourceExists = await Storage.BlobExistsAsync("/pub/source/file.txt");
-            if (sourceExists)
-            {
-                Storage.DeleteFile("/pub/source/file.txt");
-            }
-            
-            var destExists = await Storage.BlobExistsAsync("/pub/destination/file.txt");
-            if (destExists)
-            {
-                Storage.DeleteFile("/pub/destination/file.txt");
-            }
-            
             const string sourceContent = "Test file content for copy operation";
             await CreateTestFile("/pub/source/file.txt", sourceContent);
             await Storage.CreateFolder("/pub/destination");
             
             // Verify source file exists before copy
-            sourceExists = await Storage.BlobExistsAsync("/pub/source/file.txt");
+            var sourceExists = await Storage.BlobExistsAsync("/pub/source/file.txt");
             Assert.IsTrue(sourceExists, "Source file should exist before copy");
             
             var model = new MoveFilesViewModel
@@ -663,25 +611,11 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task Copy_WithNestedPath_PreservesFilename()
         {
-            // Arrange - Ensure clean state by removing any pre-existing files
             var testPath = "/pub/deeply/nested/source/file.txt";
             var destPath = "/pub/destination/file.txt";
             
             try
             {
-                // Clean up any existing files from previous test runs
-                if (await Storage.BlobExistsAsync(testPath))
-                {
-                    Storage.DeleteFile(testPath);
-                    await Task.Delay(100); // Give storage time to process deletion
-                }
-                
-                if (await Storage.BlobExistsAsync(destPath))
-                {
-                    Storage.DeleteFile(destPath);
-                    await Task.Delay(100); // Give storage time to process deletion
-                }
-                
                 // Create test file
                 await CreateTestFile(testPath);
                 await Storage.CreateFolder("/pub/destination");
@@ -723,23 +657,6 @@ namespace Sky.Tests.Controllers
             }
             finally
             {
-                // Cleanup - Remove test files to ensure clean state for next run
-                try
-                {
-                    if (await Storage.BlobExistsAsync(testPath))
-                    {
-                        Storage.DeleteFile(testPath);
-                    }
-                    
-                    if (await Storage.BlobExistsAsync(destPath))
-                    {
-                        Storage.DeleteFile(destPath);
-                    }
-                }
-                catch
-                {
-                    // Ignore cleanup errors
-                }
             }
         }
 
@@ -840,74 +757,37 @@ namespace Sky.Tests.Controllers
         /// Tests that Download_WithNonExistentFile_ReturnsNotFound.
         /// </summary>
         [TestMethod]
-        public async Task Download_WithNonExistentFile_ReturnsNotFound()
+        public async Task Download_WithInvalidPaths_ReturnsNotFound()
         {
-            // Act
-            var result = await controller.Download("/pub/nonexistent.txt");
+            foreach (var rawPath in new object[] { "/pub/nonexistent.txt", null, "../../../etc/passwd" })
+            {
+                var path = rawPath as string;
+                var result = await controller.Download(path);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
-        /// <summary>
-        /// Tests that Download_WithNullPath_ReturnsNotFound.
-        /// </summary>
-        [TestMethod]
-        public async Task Download_WithNullPath_ReturnsNotFound()
-        {
-            // Act
-            var result = await controller.Download(null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+                Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+            }
         }
 
         #endregion
 
         #region Path Helper Tests
 
-        /// <summary>
-        /// Tests that ParsePath_WithMultipleParts_ReturnsArray.
-        /// </summary>
         [TestMethod]
-        public void ParsePath_WithMultipleParts_ReturnsArray()
+        public void ParsePath_ReturnsExpectedParts()
         {
-            // Act
-            var result = controller.ParsePath("/pub", "test", "file.txt");
-
-            // Assert
-            Assert.HasCount(3, result);
-            Assert.AreEqual("pub", result[0]);
-            Assert.AreEqual("test", result[1]);
-            Assert.AreEqual("file.txt", result[2]);
-        }
-
-        /// <summary>
-        /// Tests that ParsePath_WithSlashes_RemovesSlashes.
-        /// </summary>
-        [TestMethod]
-        public void ParsePath_WithSlashes_RemovesSlashes()
-        {
-            // Act
-            var result = controller.ParsePath("//pub//test//");
-
-            // Assert
-            Assert.HasCount(2, result);
-            Assert.AreEqual("pub", result[0]);
-            Assert.AreEqual("test", result[1]);
+            CollectionAssert.AreEqual(new[] { "pub", "test", "file.txt" }, controller.ParsePath("/pub", "test", "file.txt"));
+            CollectionAssert.AreEqual(new[] { "pub", "test" }, controller.ParsePath("//pub//test//"));
+            CollectionAssert.AreEqual(Array.Empty<string>(), controller.ParsePath((string)null));
         }
 
         /// <summary>
         /// Tests that TrimPathPart_WithSlashes_TrimsCorrectly.
         /// </summary>
         [TestMethod]
-        public void TrimPathPart_WithSlashes_TrimsCorrectly()
+        public void TrimPathPart_ReturnsExpectedValues()
         {
-            // Act
-            var result = controller.TrimPathPart("/test/");
-
-            // Assert
-            Assert.AreEqual("test", result);
+            Assert.AreEqual("test", controller.TrimPathPart("/test/"));
+            Assert.AreEqual(string.Empty, controller.TrimPathPart(null));
         }
 
         /// <summary>
@@ -927,22 +807,24 @@ namespace Sky.Tests.Controllers
 
         #region Image Operations Tests
 
-        /// <summary>
-        /// Tests that GetImageThumbnail_WithValidImage_ReturnsThumbnail.
-        /// </summary>
         [TestMethod]
-        public async Task GetImageThumbnail_WithValidImage_ReturnsThumbnail()
+        public async Task GetImageThumbnail_WithSupportedImages_ReturnsThumbnail()
         {
-            // Arrange
-            await CreateTestImageFile("/pub/images/thumb.jpg");
+            foreach (var scenario in new[]
+            {
+                (Path: "/pub/images/thumb.jpg", Width: 100, Height: 100),
+                (Path: "/pub/images/defaultsize.jpg", Width: 0, Height: 0),
+                (Path: "/pub/images/negative.jpg", Width: -100, Height: -100),
+            })
+            {
+                await CreateTestImageFile(scenario.Path);
 
-            // Act
-            var result = await controller.GetImageThumbnail("/pub/images/thumb.jpg", 100, 100);
+                var result = await controller.GetImageThumbnail(scenario.Path, scenario.Width, scenario.Height);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(FileContentResult));
-            var fileResult = result as FileContentResult;
-            Assert.AreEqual("image/webp", fileResult.ContentType);
+                Assert.IsInstanceOfType(result, typeof(FileContentResult));
+                var fileResult = result as FileContentResult;
+                Assert.AreEqual("image/webp", fileResult.ContentType);
+            }
         }
 
         /// <summary>
@@ -995,26 +877,11 @@ namespace Sky.Tests.Controllers
         /// Tests that FixPath_WithAbsoluteUrl_ReturnsUnchanged.
         /// </summary>
         [TestMethod]
-        public void FixPath_WithAbsoluteUrl_ReturnsUnchanged()
+        public void FixPath_ReturnsExpectedValues()
         {
-            // Act
-            var result = FileManagerController.FixPath("https://example.com/image.jpg");
-
-            // Assert
-            Assert.AreEqual("https://example.com/image.jpg", result);
-        }
-
-        /// <summary>
-        /// Tests that FixPath_WithRelativePath_AddLeadingSlash.
-        /// </summary>
-        [TestMethod]
-        public void FixPath_WithRelativePath_AddLeadingSlash()
-        {
-            // Act
-            var result = FileManagerController.FixPath("images/test.jpg");
-
-            // Assert
-            Assert.AreEqual("/images/test.jpg", result);
+            Assert.AreEqual("https://example.com/image.jpg", FileManagerController.FixPath("https://example.com/image.jpg"));
+            Assert.AreEqual("/images/test.jpg", FileManagerController.FixPath("images/test.jpg"));
+            Assert.AreEqual("/", FileManagerController.FixPath(null));
         }
 
         /// <summary>
@@ -1117,57 +984,21 @@ namespace Sky.Tests.Controllers
 
         #region Security - Path Traversal Tests
 
-        /// <summary>
-        /// Tests that Upload_WithPathTraversalAttempt_ReturnsUnauthorized.
-        /// </summary>
         [TestMethod]
-        public async Task Upload_WithPathTraversalAttempt_ReturnsUnauthorized()
+        public async Task NewFolder_WithInvalidNames_ReturnsBadRequest()
         {
-            // Arrange
-            var fileMock = CreateMockFile("test.txt", "Malicious Content");
-            var metadata = CreateFileMetadata("test.txt", "../../../etc/passwd");
-
-            // Act
-            var result = await controller.Upload(
-                new[] { fileMock },
-                JsonConvert.SerializeObject(metadata),
-                "../../../etc/passwd");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that NewFolder_WithPathTraversalAttempt_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task NewFolder_WithPathTraversalAttempt_ReturnsBadRequest()
-        {
-            // Arrange
-            var model = new NewFolderViewModel
+            foreach (var folderName in new[] { "../../../malicious", string.Empty })
             {
-                ParentFolder = "/pub",
-                FolderName = "../../../malicious"
-            };
+                var model = new NewFolderViewModel
+                {
+                    ParentFolder = "/pub",
+                    FolderName = folderName
+                };
 
-            // Act
-            var result = await controller.NewFolder(model);
+                var result = await controller.NewFolder(model);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Download_WithPathTraversalAttempt_ReturnsNotFound.
-        /// </summary>
-        [TestMethod]
-        public async Task Download_WithPathTraversalAttempt_ReturnsNotFound()
-        {
-            // Act
-            var result = await controller.Download("../../../etc/passwd");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            }
         }
 
         #endregion
@@ -1178,66 +1009,27 @@ namespace Sky.Tests.Controllers
         /// Tests that Upload_WithExecutableFile_ReturnsError.
         /// </summary>
         [TestMethod]
-        public async Task Upload_WithExecutableFile_ReturnsError()
+        public async Task Upload_WithDangerousFiles_ReturnsError()
         {
-            // Arrange
-            var fileMock = CreateMockFile("malware.exe", "MZ executable content");
-            var metadata = CreateFileMetadata("malware.exe", "/pub/uploads");
-
-            // Act
-            var result = await controller.Upload(
-                new[] { fileMock },
-                JsonConvert.SerializeObject(metadata),
-                "/pub/uploads");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            var uploadResult = jsonResult.Value as FileUploadResult;
-            Assert.IsFalse(uploadResult.uploaded, "Executable files should not be uploaded");
-        }
-
-        /// <summary>
-        /// Tests that Upload_WithScriptFile_ReturnsError.
-        /// </summary>
-        [TestMethod]
-        public async Task Upload_WithScriptFile_ReturnsError()
-        {
-            // Arrange
-            var fileMock = CreateMockFile("script.bat", "@echo off\nmalicious command");
-            var metadata = CreateFileMetadata("script.bat", "/pub/uploads");
-
-            // Act
-            var result = await controller.Upload(
-                new[] { fileMock },
-                JsonConvert.SerializeObject(metadata),
-                "/pub/uploads");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = result as JsonResult;
-            var uploadResult = jsonResult.Value as FileUploadResult;
-            Assert.IsFalse(uploadResult.uploaded, "Script files should not be uploaded");
-        }
-
-        /// <summary>
-        /// Tests that NewFile_WithDangerousExtension_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task NewFile_WithDangerousExtension_ReturnsBadRequest()
-        {
-            // Arrange
-            var model = new NewFileViewModel
+            foreach (var scenario in new[]
             {
-                ParentFolder = "/pub/files",
-                FileName = "dangerous.sh"
-            };
+                (FileName: "malware.exe", Content: "MZ executable content"),
+                (FileName: "script.bat", Content: "@echo off\nmalicious command"),
+            })
+            {
+                var fileMock = CreateMockFile(scenario.FileName, scenario.Content);
+                var metadata = CreateFileMetadata(scenario.FileName, "/pub/uploads");
 
-            // Act
-            var result = await controller.NewFile(model);
+                var result = await controller.Upload(
+                    new[] { fileMock },
+                    JsonConvert.SerializeObject(metadata),
+                    "/pub/uploads");
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+                Assert.IsInstanceOfType(result, typeof(JsonResult));
+                var jsonResult = result as JsonResult;
+                var uploadResult = jsonResult.Value as FileUploadResult;
+                Assert.IsFalse(uploadResult.uploaded, "Dangerous files should not be uploaded");
+            }
         }
 
         #endregion
@@ -1372,40 +1164,6 @@ namespace Sky.Tests.Controllers
         #region Image Processing Edge Cases Tests
 
         /// <summary>
-        /// Tests that GetImageThumbnail_WithZeroDimensions_UsesDefaults.
-        /// </summary>
-        [TestMethod]
-        public async Task GetImageThumbnail_WithZeroDimensions_UsesDefaults()
-        {
-            // Arrange
-            await CreateTestImageFile("/pub/images/defaultsize.jpg");
-
-            // Act
-            var result = await controller.GetImageThumbnail("/pub/images/defaultsize.jpg", 0, 0);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(FileContentResult));
-            var fileResult = result as FileContentResult;
-            Assert.AreEqual("image/webp", fileResult.ContentType);
-        }
-
-        /// <summary>
-        /// Tests that GetImageThumbnail_WithNegativeDimensions_UsesDefaults.
-        /// </summary>
-        [TestMethod]
-        public async Task GetImageThumbnail_WithNegativeDimensions_UsesDefaults()
-        {
-            // Arrange
-            await CreateTestImageFile("/pub/images/negative.jpg");
-
-            // Act
-            var result = await controller.GetImageThumbnail("/pub/images/negative.jpg", -100, -100);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(FileContentResult));
-        }
-
-        /// <summary>
         /// Tests that UploadImage_WithNonImageContentType_ReturnsError.
         /// </summary>
         [TestMethod]
@@ -1457,46 +1215,6 @@ namespace Sky.Tests.Controllers
                     invalidJson,
                     "/pub/uploads");
             });
-        }
-
-        /// <summary>
-        /// Tests that NewFolder_WithEmptyName_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task NewFolder_WithEmptyName_ReturnsBadRequest()
-        {
-            // Arrange
-            var model = new NewFolderViewModel
-            {
-                ParentFolder = "/pub",
-                FolderName = string.Empty
-            };
-
-            // Act
-            var result = await controller.NewFolder(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that NewFile_WithEmptyFileName_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task NewFile_WithEmptyFileName_ReturnsBadRequest()
-        {
-            // Arrange
-            var model = new NewFileViewModel
-            {
-                ParentFolder = "/pub/files",
-                FileName = string.Empty
-            };
-
-            // Act
-            var result = await controller.NewFile(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         /// <summary>
@@ -1740,46 +1458,6 @@ namespace Sky.Tests.Controllers
                 "Should handle naming conflict");
         }
 
-        /// <summary>
-        /// Tests that ParsePath_WithNullInput_ReturnsEmptyArray.
-        /// </summary>
-        [TestMethod]
-        public void ParsePath_WithNullInput_ReturnsEmptyArray()
-        {
-            // Act
-            var result = controller.ParsePath(null);
-
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(0, result.Length);
-        }
-
-        /// <summary>
-        /// Tests that TrimPathPart_WithNullInput_ReturnsEmptyString.
-        /// </summary>
-        [TestMethod]
-        public void TrimPathPart_WithNullInput_ReturnsEmptyString()
-        {
-            // Act
-            var result = controller.TrimPathPart(null);
-
-            // Assert
-            Assert.AreEqual(string.Empty, result);
-        }
-
-        /// <summary>
-        /// Tests that FixPath_WithNullInput_ReturnsSlash.
-        /// </summary>
-        [TestMethod]
-        public void FixPath_WithNullInput_ReturnsSlash()
-        {
-            // Act
-            var result = FileManagerController.FixPath(null);
-
-            // Assert
-            Assert.AreEqual("/", result);
-        }
-
         #endregion
 
         #region Helper Methods
@@ -2004,6 +1682,166 @@ namespace Sky.Tests.Controllers
                 TotalFileSize = 1024,
                 UploadUid = Guid.NewGuid().ToString()
             };
+        }
+
+        private sealed class PathIsolatingStorageContext : IStorageContext
+        {
+            private const string LogicalRoot = "/pub";
+            private readonly IStorageContext inner;
+            private readonly string isolatedRoot;
+            private readonly string isolatedRelativeRoot;
+
+            public PathIsolatingStorageContext(IStorageContext inner, string isolatedRoot)
+            {
+                this.inner = inner;
+                this.isolatedRoot = NormalizePath(isolatedRoot);
+                isolatedRelativeRoot = this.isolatedRoot.TrimStart('/');
+            }
+
+            public Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData, string mode = "append")
+            {
+                var mapped = new FileUploadMetaData
+                {
+                    UploadUid = fileMetaData.UploadUid,
+                    FileName = fileMetaData.FileName,
+                    RelativePath = MapRelativePath(fileMetaData.RelativePath),
+                    ContentType = fileMetaData.ContentType,
+                    ChunkIndex = fileMetaData.ChunkIndex,
+                    TotalChunks = fileMetaData.TotalChunks,
+                    TotalFileSize = fileMetaData.TotalFileSize,
+                    ImageWidth = fileMetaData.ImageWidth,
+                    ImageHeight = fileMetaData.ImageHeight,
+                    CacheControl = fileMetaData.CacheControl,
+                };
+
+                return inner.AppendBlob(stream, mapped, mode);
+            }
+
+            public Task<bool> BlobExistsAsync(string path) => inner.BlobExistsAsync(MapPath(path));
+
+            public Task CopyAsync(string target, string destination) => inner.CopyAsync(MapPath(target), MapPath(destination));
+
+            public async Task<FileManagerEntry> CreateFolder(string path) => UnmapEntry(await inner.CreateFolder(MapPath(path)));
+
+            public void DeleteFile(string path) => inner.DeleteFile(MapPath(path));
+
+            public Task DeleteFolderAsync(string path) => inner.DeleteFolderAsync(MapPath(path));
+
+            public Task DisableAzureStaticWebsite() => inner.DisableAzureStaticWebsite();
+
+            public Task EnableAzureStaticWebsite() => inner.EnableAzureStaticWebsite();
+
+            public async Task<FileManagerEntry> GetFileAsync(string path) => UnmapEntry(await inner.GetFileAsync(MapPath(path)));
+
+            public async Task<List<FileManagerEntry>> GetFilesAndDirectories(string path)
+            {
+                var entries = await inner.GetFilesAndDirectories(MapPath(path));
+                return entries.Select(UnmapEntry).ToList();
+            }
+
+            public async Task<List<string>> GetFilesAsync(string path)
+            {
+                var files = await inner.GetFilesAsync(MapPath(path));
+                return files.Select(UnmapPath).ToList();
+            }
+
+            public Task<Stream> GetStreamAsync(string path) => inner.GetStreamAsync(MapPath(path));
+
+            public Task MoveFileAsync(string sourceFile, string destinationFile) => inner.MoveFileAsync(MapPath(sourceFile), MapPath(destinationFile));
+
+            public Task MoveFolderAsync(string sourceFolder, string destinationFolder) => inner.MoveFolderAsync(MapPath(sourceFolder), MapPath(destinationFolder));
+
+            private static string NormalizePath(string path)
+            {
+                return path.Replace('\\', '/').TrimEnd('/');
+            }
+
+            private string MapPath(string path)
+            {
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    return path;
+                }
+
+                var normalized = NormalizePath(path);
+                if (string.Equals(normalized, LogicalRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    return isolatedRoot;
+                }
+
+                if (normalized.StartsWith(LogicalRoot + "/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isolatedRoot + normalized.Substring(LogicalRoot.Length);
+                }
+
+                return normalized;
+            }
+
+            private string MapRelativePath(string relativePath)
+            {
+                if (string.IsNullOrWhiteSpace(relativePath))
+                {
+                    return relativePath;
+                }
+
+                var normalized = relativePath.Replace('\\', '/').TrimStart('/');
+                if (string.Equals(normalized, "pub", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isolatedRelativeRoot;
+                }
+
+                if (normalized.StartsWith("pub/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isolatedRelativeRoot + normalized.Substring(3);
+                }
+
+                return normalized;
+            }
+
+            private FileManagerEntry UnmapEntry(FileManagerEntry entry)
+            {
+                return new FileManagerEntry
+                {
+                    ContentType = entry.ContentType,
+                    Created = entry.Created,
+                    CreatedUtc = entry.CreatedUtc,
+                    Description = entry.Description,
+                    ETag = entry.ETag,
+                    Extension = entry.Extension,
+                    HasDirectories = entry.HasDirectories,
+                    ImageDpi = entry.ImageDpi,
+                    ImageX = entry.ImageX,
+                    ImageY = entry.ImageY,
+                    IsDirectory = entry.IsDirectory,
+                    Modified = entry.Modified,
+                    ModifiedUtc = entry.ModifiedUtc,
+                    Name = entry.Name,
+                    Path = UnmapPath(entry.Path),
+                    Size = entry.Size,
+                    Title = entry.Title,
+                };
+            }
+
+            private string UnmapPath(string path)
+            {
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    return path;
+                }
+
+                var normalized = NormalizePath(path);
+                if (string.Equals(normalized, isolatedRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    return LogicalRoot;
+                }
+
+                if (normalized.StartsWith(isolatedRoot + "/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return LogicalRoot + normalized.Substring(isolatedRoot.Length);
+                }
+
+                return normalized;
+            }
         }
 
         #endregion
