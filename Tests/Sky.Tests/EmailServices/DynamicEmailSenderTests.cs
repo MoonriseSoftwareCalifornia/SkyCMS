@@ -62,51 +62,34 @@ namespace Sky.Tests.EmailServices
         #region Single-Tenant with Environment Variables Tests
 
         [TestMethod]
-        public void SendEmailAsync_SingleTenant_WithSmtpEnvVars_UsesSMTP()
+        public void SendEmailAsync_SingleTenant_WithEnvVarProviders_ResolvesExpectedProvider()
         {
-            // Arrange
-            SetupSingleTenantMode();
-            SetupSmtpEnvironmentVariables();
+            var scenarios = new[]
+            {
+                new { SetupProvider = (Action)SetupSmtpEnvironmentVariables, ExpectedLog = "SMTP provider" },
+                new { SetupProvider = (Action)SetupSendGridEnvironmentVariable, ExpectedLog = "SendGrid provider" },
+            };
 
-            var sender = CreateDynamicEmailSender();
+            foreach (var scenario in scenarios)
+            {
+                Setup();
+                SetupSingleTenantMode();
+                scenario.SetupProvider();
 
-            // Act
-            var task = sender.SendEmailAsync("test@example.com", "Test Subject", "Plain text", "<p>HTML</p>");
-            task.Wait();
+                var sender = CreateDynamicEmailSender();
 
-            // Assert
-            mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("SMTP provider")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-                Times.Once);
-        }
+                var task = sender.SendEmailAsync("test@example.com", "Test Subject", "Plain text", "<p>HTML</p>");
+                task.Wait();
 
-        [TestMethod]
-        public void SendEmailAsync_SingleTenant_WithSendGridEnvVar_UsesSendGrid()
-        {
-            // Arrange
-            SetupSingleTenantMode();
-            SetupSendGridEnvironmentVariable();
-
-            var sender = CreateDynamicEmailSender();
-
-            // Act
-            var task = sender.SendEmailAsync("test@example.com", "Test Subject", "Plain text", "<p>HTML</p>");
-            task.Wait();
-
-            // Assert
-            mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("SendGrid provider")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-                Times.Once);
+                mockLogger.Verify(
+                    x => x.Log(
+                        LogLevel.Information,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(scenario.ExpectedLog)),
+                        It.IsAny<Exception>(),
+                        It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    Times.Once);
+            }
         }
 
         [TestMethod]
