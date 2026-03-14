@@ -128,55 +128,32 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_MissingAdminEmail_ReturnsErrorCheck()
+        public async Task ValidateAsync_MissingOrEmptyAdminEmail_ReturnsErrorCheck()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            foreach (var emailValue in new string?[] { null, string.Empty })
             {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = null
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = emailValue
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
-            Assert.IsNotNull(adminEmailCheck);
-            Assert.AreEqual(CheckStatus.Error, adminEmailCheck.Status);
-            Assert.AreEqual("Not configured or empty", adminEmailCheck.Message);
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_EmptyAdminEmail_ReturnsErrorCheck()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = string.Empty
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
-            Assert.IsNotNull(adminEmailCheck);
-            Assert.AreEqual(CheckStatus.Error, adminEmailCheck.Status);
+                // Assert
+                Assert.IsNotNull(result);
+                var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
+                Assert.IsNotNull(adminEmailCheck);
+                Assert.AreEqual(CheckStatus.Error, adminEmailCheck.Status);
+                Assert.AreEqual("Not configured or empty", adminEmailCheck.Message);
+            }
         }
 
         [TestMethod]
@@ -311,56 +288,32 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_CosmosAllowSetupTrue_ReturnsSuccessCheck()
+        public async Task ValidateAsync_CosmosAllowSetupBooleanValue_ReturnsSuccessCheck()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            foreach (var cosmosAllowSetup in new[] { true, false })
             {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com",
-                ["CosmosAllowSetup"] = true
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = "admin@example.com",
+                    ["CosmosAllowSetup"] = cosmosAllowSetup
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            var cosmosCheck = result.Checks.Find(c => c.Name == "CosmosAllowSetup");
-            Assert.IsNotNull(cosmosCheck);
-            Assert.AreEqual(CheckStatus.Success, cosmosCheck.Status);
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_CosmosAllowSetupFalse_ReturnsSuccessCheck()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com",
-                ["CosmosAllowSetup"] = false
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var cosmosCheck = result.Checks.Find(c => c.Name == "CosmosAllowSetup");
-            Assert.IsNotNull(cosmosCheck);
-            Assert.AreEqual(CheckStatus.Success, cosmosCheck.Status);
+                // Assert
+                Assert.IsNotNull(result);
+                var cosmosCheck = result.Checks.Find(c => c.Name == "CosmosAllowSetup");
+                Assert.IsNotNull(cosmosCheck);
+                Assert.AreEqual(CheckStatus.Success, cosmosCheck.Status);
+            }
         }
 
         [TestMethod]
@@ -397,56 +350,33 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantMissingDatabaseConnection_ReturnsErrorCheck()
+        public async Task ValidateAsync_SingleTenantMissingOrEmptyDatabaseConnection_ReturnsErrorCheck()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            foreach (var connectionValue in new string?[] { null, string.Empty })
             {
-                ["ApplicationDbContextConnection"] = null
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = connectionValue
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = "admin@example.com"
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual("Single-Tenant", result.Mode);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            Assert.AreEqual(CheckStatus.Error, dbCheck.Status);
-            Assert.AreEqual("Not configured or empty", dbCheck.Message);
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantEmptyDatabaseConnection_ReturnsErrorCheck()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = string.Empty
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            Assert.AreEqual(CheckStatus.Error, dbCheck.Status);
+                // Assert
+                Assert.IsNotNull(result);
+                Assert.AreEqual("Single-Tenant", result.Mode);
+                var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
+                Assert.IsNotNull(dbCheck);
+                Assert.AreEqual(CheckStatus.Error, dbCheck.Status);
+                Assert.AreEqual("Not configured or empty", dbCheck.Message);
+            }
         }
 
         [TestMethod]
@@ -626,57 +556,33 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantMissingStorageConnection_ReturnsErrorCheck()
+        public async Task ValidateAsync_SingleTenantMissingOrEmptyStorageConnection_ReturnsErrorCheck()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            foreach (var storageConnectionValue in new string?[] { null, string.Empty })
             {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;",
-                ["StorageConnectionString"] = null
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;",
+                    ["StorageConnectionString"] = storageConnectionValue
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = "admin@example.com"
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
-            Assert.IsNotNull(storageCheck);
-            Assert.AreEqual(CheckStatus.Error, storageCheck.Status);
-            Assert.AreEqual("Not configured or empty", storageCheck.Message);
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantEmptyStorageConnection_ReturnsErrorCheck()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;",
-                ["StorageConnectionString"] = string.Empty
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
-            Assert.IsNotNull(storageCheck);
-            Assert.AreEqual(CheckStatus.Error, storageCheck.Status);
+                // Assert
+                Assert.IsNotNull(result);
+                var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
+                Assert.IsNotNull(storageCheck);
+                Assert.AreEqual(CheckStatus.Error, storageCheck.Status);
+                Assert.AreEqual("Not configured or empty", storageCheck.Message);
+            }
         }
 
         [TestMethod]

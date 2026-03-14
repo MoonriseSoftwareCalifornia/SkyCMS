@@ -1203,55 +1203,45 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Test that Promote returns BadRequest for empty GUID.
+        /// Test that layout ID actions return BadRequest for empty GUID.
         /// </summary>
         [TestMethod]
-        public async Task Promote_ReturnsBadRequest_ForEmptyGuid()
+        public async Task LayoutIdActions_ReturnBadRequest_ForEmptyGuid()
         {
-            // Act
-            var result = await controller.Promote(Guid.Empty);
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("Delete", () => controller.Delete(Guid.Empty)),
+                ("Promote", () => controller.Promote(Guid.Empty)),
+                ("Publish", () => controller.Publish(Guid.Empty)),
+                ("ExportLayout", () => controller.ExportLayout(Guid.Empty)),
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), $"{scenario.Name} should return BadRequest for empty GUID.");
+            }
         }
 
         /// <summary>
-        /// Test that Promote returns NotFound when layout does not exist.
+        /// Test that Promote, Publish, and ExportLayout return NotFound for missing layouts.
         /// </summary>
         [TestMethod]
-        public async Task Promote_ReturnsNotFound_WhenLayoutDoesNotExist()
+        public async Task LayoutIdActions_ReturnNotFound_WhenLayoutDoesNotExist()
         {
-            // Act
-            var result = await controller.Promote(Guid.NewGuid());
+            var missingId = Guid.NewGuid();
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("Promote", () => controller.Promote(missingId)),
+                ("Publish", () => controller.Publish(missingId)),
+                ("ExportLayout", () => controller.ExportLayout(missingId)),
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
-        }
-
-        /// <summary>
-        /// Test that Publish returns BadRequest for empty GUID.
-        /// </summary>
-        [TestMethod]
-        public async Task Publish_ReturnsBadRequest_ForEmptyGuid()
-        {
-            // Act
-            var result = await controller.Publish(Guid.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Test that Publish returns NotFound when layout does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task Publish_ReturnsNotFound_WhenLayoutDoesNotExist()
-        {
-            // Act
-            var result = await controller.Publish(Guid.NewGuid());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult), $"{scenario.Name} should return NotFound for missing layout.");
+            }
         }
 
         /// <summary>
@@ -1441,19 +1431,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Test that Delete returns BadRequest for empty GUID.
-        /// </summary>
-        [TestMethod]
-        public async Task Delete_ReturnsBadRequest_ForEmptyGuid()
-        {
-            // Act
-            var result = await controller.Delete(Guid.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
         /// Test that DesignerData POST returns BadRequest for empty GUID.
         /// </summary>
         [TestMethod]
@@ -1480,32 +1457,6 @@ namespace Sky.Tests.Controllers
 
             // Act
             var result = await controller.DesignerData(Guid.NewGuid(), "Test", htmlContent, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
-        }
-
-        /// <summary>
-        /// Test that ExportLayout returns BadRequest for null or empty GUID.
-        /// </summary>
-        [TestMethod]
-        public async Task ExportLayout_ReturnsBadRequest_ForEmptyGuid()
-        {
-            // Act
-            var result = await controller.ExportLayout(Guid.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Test that ExportLayout returns NotFound when layout does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task ExportLayout_ReturnsNotFound_WhenLayoutDoesNotExist()
-        {
-            // Act
-            var result = await controller.ExportLayout(Guid.NewGuid());
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));

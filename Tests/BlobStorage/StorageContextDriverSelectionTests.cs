@@ -37,116 +37,66 @@ namespace Sky.Tests.BlobStorage
         #region GetDriverFromConnectionString Tests
 
         [TestMethod]
-        public void GetDriverFromConnectionString_WithAzureConnectionString_ReturnsAzureStorage()
+        public void GetDriverFromConnectionString_WithAzureFormats_ReturnsAzureStorage()
         {
-            // Arrange
-            var connectionString = "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
-            var context = new StorageContext(connectionString, memoryCache);
+            var connectionStrings = new[]
+            {
+                "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net",
+                "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+            };
 
-            // Act
-            var driver = GetPrivateDriver(context);
-
-            // Assert
-            Assert.IsNotNull(driver, "Driver should not be null");
-            Assert.IsInstanceOfType(driver, typeof(AzureStorage), "Driver should be AzureStorage type");
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithAzuriteConnectionString_ReturnsAzureStorage()
-        {
-            // Arrange - Azurite local emulator connection string
-            var connectionString = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
-            var context = new StorageContext(connectionString, memoryCache);
-
-            // Act
-            var driver = GetPrivateDriver(context);
-
-            // Assert
-            Assert.IsNotNull(driver, "Driver should not be null for Azurite");
-            Assert.IsInstanceOfType(driver, typeof(AzureStorage), "Driver should be AzureStorage type for Azurite");
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithAmazonS3RegionFormat_ReturnsAmazonStorage()
-        {
-            // Arrange
-            var connectionString = "Bucket=test-bucket;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
-            var context = new StorageContext(connectionString, memoryCache);
-
-            // Act
-            var driver = GetPrivateDriver(context);
-
-            // Assert
-            Assert.IsNotNull(driver, "Driver should not be null");
-            Assert.IsInstanceOfType(driver, typeof(AmazonStorage), "Driver should be AmazonStorage type");
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithAmazonS3AccountIdFormat_ReturnsAmazonStorage()
-        {
-            // Arrange
-            var connectionString = "AccountId=123456789012;Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
-            var context = new StorageContext(connectionString, memoryCache);
-
-            // Act
-            var driver = GetPrivateDriver(context);
-
-            // Assert
-            Assert.IsNotNull(driver, "Driver should not be null");
-            Assert.IsInstanceOfType(driver, typeof(AmazonStorage), "Driver should be AmazonStorage type");
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithInvalidAmazonS3RegionFormat_ThrowsException()
-        {
-            // Arrange - Missing required parameters
-            var connectionString = "Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE";
-            
-            // Act & Assert - Should throw InvalidOperationException
-            try
+            foreach (var connectionString in connectionStrings)
             {
                 var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown InvalidOperationException");
-            }
-            catch (InvalidOperationException)
-            {
-                // Expected exception
+                var driver = GetPrivateDriver(context);
+
+                Assert.IsNotNull(driver, "Driver should not be null for Azure/Azurite formats");
+                Assert.IsInstanceOfType(driver, typeof(AzureStorage), "Driver should be AzureStorage type");
             }
         }
 
         [TestMethod]
-        public void GetDriverFromConnectionString_WithInvalidAmazonS3AccountIdFormat_ThrowsException()
+        public void GetDriverFromConnectionString_WithAmazonS3Formats_ReturnsAmazonStorage()
         {
-            // Arrange - Missing required parameters
-            var connectionString = "AccountId=123456789012;Bucket=test-bucket";
-            
-            // Act & Assert - Should throw InvalidOperationException
-            try
+            var connectionStrings = new[]
+            {
+                "Bucket=test-bucket;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                "AccountId=123456789012;Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+            };
+
+            foreach (var connectionString in connectionStrings)
             {
                 var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown InvalidOperationException");
-            }
-            catch (InvalidOperationException)
-            {
-                // Expected exception
+                var driver = GetPrivateDriver(context);
+
+                Assert.IsNotNull(driver, "Driver should not be null");
+                Assert.IsInstanceOfType(driver, typeof(AmazonStorage), "Driver should be AmazonStorage type");
             }
         }
 
         [TestMethod]
-        public void GetDriverFromConnectionString_WithInvalidFormat_ThrowsException()
+        public void GetDriverFromConnectionString_WithInvalidFormats_ThrowsException()
         {
-            // Arrange
-            var connectionString = "InvalidFormat=true;NoProvider=yes";
-            
-            // Act & Assert - Should throw InvalidOperationException
-            try
+            var invalidConnectionStrings = new[]
             {
-                var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown InvalidOperationException");
-            }
-            catch (InvalidOperationException)
+                "Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE",
+                "AccountId=123456789012;Bucket=test-bucket",
+                "InvalidFormat=true;NoProvider=yes"
+            };
+
+            foreach (var connectionString in invalidConnectionStrings)
             {
-                // Expected exception
+                var exceptionThrown = false;
+                try
+                {
+                    _ = new StorageContext(connectionString, memoryCache);
+                }
+                catch (InvalidOperationException)
+                {
+                    exceptionThrown = true;
+                }
+
+                Assert.IsTrue(exceptionThrown, "Should throw InvalidOperationException for invalid connection string format");
             }
         }
 
