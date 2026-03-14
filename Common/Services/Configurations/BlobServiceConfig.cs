@@ -7,11 +7,18 @@
 
 namespace Cosmos.Cms.Common.Services.Configurations
 {
+    using System;
     using System.ComponentModel.DataAnnotations;
 
     /// <summary>
     ///     Azure blob storage config.
     /// </summary>
+    /// <remarks>
+    /// This class is marked as obsolete and will be removed in a future version.
+    /// Storage configuration has been moved to Cosmos.BlobService project.
+    /// Please use the storage configuration provided by Cosmos.BlobService instead.
+    /// </remarks>
+    [Obsolete("This class is unused and superseded by Cosmos.BlobService configuration. It will be removed in a future version.", false)]
     public class BlobServiceConfig
     {
         /// <summary>

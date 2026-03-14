@@ -8,6 +8,7 @@
 namespace Cosmos.Cms.Common.Services.Configurations
 {
     using System.ComponentModel.DataAnnotations;
+    using Cosmos.Cms.Common.Constants;
 
     /// <summary>
     ///     Startup.ConfigureServices method captures the site customization options found in "secrets" in this
@@ -20,7 +21,7 @@ namespace Cosmos.Cms.Common.Services.Configurations
         /// </summary>
         [Display(Name = "File types")]
         [Required]
-        public string AllowedFileTypes { get; set; } = ".js,.css,.htm,.html,.mov,.webm,.avi,.mp4,.mpeg,.ts,.svg,.json";
+        public string AllowedFileTypes { get; set; } = FileTypeConstants.DefaultAllowedFileTypes;
 
         /// <summary>
         ///     Gets or sets a value indicating whether allows a website to go into setup mode. For use only on fresh sites.

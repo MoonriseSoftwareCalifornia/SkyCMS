@@ -16,6 +16,12 @@ namespace Cosmos.Cms.Common
     /// <summary>
     /// Generic retry logic.
     /// </summary>
+    /// <remarks>
+    /// This class is marked as obsolete and will be removed in a future version.
+    /// No usage found in the codebase. Consider using modern retry policies from Polly or built-in resilience features.
+    /// See: https://learn.microsoft.com/en-us/dotnet/core/resilience/
+    /// </remarks>
+    [Obsolete("This class is unused and will be removed in a future version. Consider using Polly or built-in .NET resilience features.", false)]
     public static class Retry
     {
         /// <summary>

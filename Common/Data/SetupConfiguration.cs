@@ -9,6 +9,7 @@ namespace Cosmos.Common.Data
 {
     using System;
     using System.ComponentModel.DataAnnotations;
+    using Cosmos.Cms.Common.Constants;
 
     /// <summary>
     /// Setup configuration stored in SQLite database during installation.
@@ -27,7 +28,7 @@ namespace Cosmos.Common.Data
         /// </summary>
         [Required]
         [MaxLength(50)]
-        public string TenantMode { get; set; } = "SingleTenant"; // Default.
+        public string TenantMode { get; set; } = TenantConstants.SingleTenant; // Default.
 
         /// <summary>
         /// Gets or sets the publisher URL.
@@ -53,13 +54,13 @@ namespace Cosmos.Common.Data
         /// Gets or sets the blob public URL (for static assets).
         /// </summary>
         [Display(Name = "Static Assets URL")]
-        public string BlobPublicUrl { get; set; } = "/";
+        public string BlobPublicUrl { get; set; } = TenantConstants.DefaultBlobPublicUrl;
 
         /// <summary>
         /// Gets or sets the allowed file types for upload.
         /// </summary>
         [Display(Name = "Allowed File Types")]
-        public string AllowedFileTypes { get; set; } = ".js,.css,.htm,.html,.mov,.webm,.avi,.mp4,.mpeg,.ts,.svg,.json";
+        public string AllowedFileTypes { get; set; } = FileTypeConstants.DefaultAllowedFileTypes;
 
         /// <summary>
         /// Gets or sets the Microsoft App ID (for OAuth).
