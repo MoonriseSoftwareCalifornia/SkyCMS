@@ -201,10 +201,10 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Test that Index action returns a view.
+        /// Test that Index action returns a view for default and language-specific requests.
         /// </summary>
         [TestMethod]
-        public async Task Index_ReturnsView()
+        public async Task Index_ReturnsView_ForDefaultAndLanguage()
         {
             // Arrange - Create a root page article so Index can return a ViewResult
             var rootArticle = new Article
@@ -220,40 +220,18 @@ namespace Sky.Tests.Controllers
             Db.Articles.Add(rootArticle);
             await Db.SaveChangesAsync();
 
-            // Act
-            var result = await homeController.Index();
-
-            // Assert
-            Assert.IsNotNull(result, "Index should return a result");
-            Assert.IsInstanceOfType(result, typeof(ViewResult), "Index should return a ViewResult");
-        }
-
-        /// <summary>
-        /// Test that Index action with language parameter works.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_WithLanguage_ReturnsView()
-        {
-            // Arrange - Create a root page article so Index can return a ViewResult
-            var rootArticle = new Article
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
             {
-                Id = Guid.NewGuid(),
-                Title = "Home Page",
-                UrlPath = "root",  // "root" is the canonical path for the home page
-                Published = DateTime.UtcNow,
-                Updated = DateTime.UtcNow,
-                ArticleNumber = 1,
-                Content = "<p>Welcome to the home page</p>"
+                ("Default", () => homeController.Index()),
+                ("LanguageEn", () => homeController.Index(lang: "en")),
             };
-            Db.Articles.Add(rootArticle);
-            await Db.SaveChangesAsync();
 
-            // Act
-            var result = await homeController.Index(lang: "en");
-
-            // Assert
-            Assert.IsNotNull(result, "Index should return a result");
-            Assert.IsInstanceOfType(result, typeof(ViewResult), "Index should return a ViewResult");
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsNotNull(result, $"{scenario.Name} should return a result");
+                Assert.IsInstanceOfType(result, typeof(ViewResult), $"{scenario.Name} should return a ViewResult");
+            }
         }
 
         /// <summary>
