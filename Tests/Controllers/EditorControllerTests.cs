@@ -416,34 +416,45 @@ namespace Sky.Tests.Controllers
         #region Title Validation Tests
 
         [TestMethod]
-        public async Task CheckTitle_ReturnsTrue_WhenTitleAvailable()
+        public async Task CheckTitle_AvailabilityScenarios_ReturnExpectedResults()
         {
-            // Arrange
-            var uniqueTitle = "Unique Title " + Guid.NewGuid();
-
-            // Act
-            var result = await controller.CheckTitle(0, uniqueTitle);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.AreEqual(true, jsonResult.Value);
-        }
-
-        [TestMethod]
-        public async Task CheckTitle_ReturnsFalse_WhenTitleTaken()
-        {
-            // Arrange
             var article = await CreateArticleAsync("Taken Title", TestUserId);
             await SaveArticleAsync(article, TestUserId);
 
-            // Act
-            var result = await controller.CheckTitle(0, "Taken Title");
+            var scenarios = new[]
+            {
+                new
+                {
+                    Name = "TitleAvailable",
+                    ArticleNumber = 0,
+                    Title = "Unique Title " + Guid.NewGuid(),
+                    ExpectBooleanTrue = true,
+                },
+                new
+                {
+                    Name = "TitleTaken",
+                    ArticleNumber = 0,
+                    Title = "Taken Title",
+                    ExpectBooleanTrue = false,
+                },
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.AreNotEqual(true, jsonResult.Value); // Should return error message
+            foreach (var scenario in scenarios)
+            {
+                var result = await controller.CheckTitle(scenario.ArticleNumber, scenario.Title);
+
+                Assert.IsInstanceOfType(result, typeof(JsonResult), scenario.Name);
+                var jsonResult = (JsonResult)result;
+
+                if (scenario.ExpectBooleanTrue)
+                {
+                    Assert.AreEqual(true, jsonResult.Value, scenario.Name);
+                }
+                else
+                {
+                    Assert.AreNotEqual(true, jsonResult.Value, scenario.Name);
+                }
+            }
         }
 
         [TestMethod]
