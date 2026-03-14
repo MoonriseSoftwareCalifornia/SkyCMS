@@ -132,8 +132,9 @@ namespace Sky.Editor.Controllers
 
             // Normalize blog key from title
             model.BlogKey = slugService.Normalize(model.Title);
-            
-            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
+
+            var defaultLayoutViewModel = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
+            var defaultLayout = defaultLayoutViewModel != null ? await db.Layouts.FirstOrDefaultAsync(l => l.Id == defaultLayoutViewModel.Id) : null;
 
             var blogStreamTemplate = await db.Templates.FirstOrDefaultAsync(t => t.LayoutId == defaultLayout.Id && t.PageType == "blog-stream");
 
@@ -402,8 +403,9 @@ namespace Sky.Editor.Controllers
                 return BadRequest("Title is required.");
             }
 
-            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
-            
+            var defaultLayoutViewModel = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
+            var defaultLayout = defaultLayoutViewModel != null ? await db.Layouts.FirstOrDefaultAsync(l => l.Id == defaultLayoutViewModel.Id) : null;
+
             var userId = Guid.Parse(await GetUserId());
 
             // Use dedicated CreateBlogPostCommand handler

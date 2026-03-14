@@ -77,7 +77,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article = await CreateArticleAsync("Test Article", TestUserId);
             await SaveArticleAsync(article, TestUserId);
-            await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
+            var articleEntity = await Db.Articles.FirstAsync(a => a.Id == article.Id); await PublishingService.PublishAsync(articleEntity);
 
             // Verify it's published
             var publishedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
@@ -134,11 +134,11 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article1 = await CreateArticleAsync("Page 1", TestUserId);
             await SaveArticleAsync(article1, TestUserId);
-            await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
+            var article1Entity = await Db.Articles.FirstAsync(a => a.Id == article1.Id); await PublishingService.PublishAsync(article1Entity);
 
             var article2 = await CreateArticleAsync("Page 2", TestUserId);
             await SaveArticleAsync(article2, TestUserId);
-            await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
+            var article2Entity = await Db.Articles.FirstAsync(a => a.Id == article2.Id); await PublishingService.PublishAsync(article2Entity);
 
             var page1 = await Db.Pages.FirstAsync(p => p.ArticleNumber == article1.ArticleNumber);
             var page2 = await Db.Pages.FirstAsync(p => p.ArticleNumber == article2.ArticleNumber);
@@ -163,7 +163,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article = await CreateArticleAsync("Test Page", TestUserId);
             await SaveArticleAsync(article, TestUserId);
-            await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
+            var articleEntity = await Db.Articles.FirstAsync(a => a.Id == article.Id); await PublishingService.PublishAsync(articleEntity);
 
             // Act - Empty list should trigger "publish all"
             var result = await controller.PublishStaticPages(new List<Guid>());
@@ -183,7 +183,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article = await CreateArticleAsync("Test Page", TestUserId);
             await SaveArticleAsync(article, TestUserId);
-            await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
+            var articleEntity = await Db.Articles.FirstAsync(a => a.Id == article.Id); await PublishingService.PublishAsync(articleEntity);
 
             // Act
             var result = await controller.PublishStaticPages(null!);
@@ -203,7 +203,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article = await CreateArticleAsync("Test Page", TestUserId);
             await SaveArticleAsync(article, TestUserId);
-            await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
+            var articleEntity = await Db.Articles.FirstAsync(a => a.Id == article.Id); await PublishingService.PublishAsync(articleEntity);
 
             var page = await Db.Pages.FirstAsync(p => p.ArticleNumber == article.ArticleNumber);
             var pageIds = new List<Guid> { page.Id };

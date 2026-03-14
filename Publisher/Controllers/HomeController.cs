@@ -48,7 +48,6 @@ namespace Cosmos.Cms.Publisher.Controllers
         /// <param name="mediator">Mediator.</param>
         /// <param name="options">Cosmos options.</param>
         /// <param name="dbContext">Database Context.</param>
-        /// <param name="storageContext">Storage context.</param>
         /// <param name="emailSender">Email services.</param>
         /// <param name="contactManagementService">Contact management service.</param>
         public HomeController(
@@ -58,10 +57,9 @@ namespace Cosmos.Cms.Publisher.Controllers
             IMediator mediator,
             IOptions<SiteSettings> options,
             ApplicationDbContext dbContext,
-            StorageContext storageContext,
             IEmailSender emailSender,
             IContactManagementService contactManagementService)
-            : base(mediator, dbContext, storageContext, logger, emailSender, contactManagementService)
+            : base(mediator, dbContext, logger, emailSender, contactManagementService)
         {
             this.configuration = configuration;
             this.logger = logger;
@@ -179,7 +177,7 @@ namespace Cosmos.Cms.Publisher.Controllers
                             }
                         }
 
-                        if (!await CosmosUtilities.AuthUser(dbContext, User, article.ArticleNumber))
+                        if (!await mediator.QueryAsync(new Cosmos.Common.Features.Articles.Queries.AuthorizeUserForArticleQuery(User, article.ArticleNumber)))
                         {
                             if (User.Identity.IsAuthenticated)
                             {

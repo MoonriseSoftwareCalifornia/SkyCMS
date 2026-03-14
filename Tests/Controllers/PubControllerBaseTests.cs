@@ -9,6 +9,7 @@ namespace Sky.Tests.Controllers
 {
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Publisher.Controllers;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
@@ -47,7 +48,7 @@ namespace Sky.Tests.Controllers
             memoryCacheMock = new MemoryCache(new MemoryCacheOptions());
 
             controller = new TestPubController(
-                null!,
+                Mediator,
                 Db,
                 Storage,
                 testLogger,
@@ -81,7 +82,7 @@ namespace Sky.Tests.Controllers
         {
             // Act
             var testController = new TestPubController(
-                null!,
+                Mediator,
                 Db,
                 Storage,
                 null!,
@@ -499,14 +500,14 @@ namespace Sky.Tests.Controllers
         public class TestPubController : PubControllerBase
         {
             public TestPubController(
-                Cosmos.Common.Data.Logic.ArticleLogic articleLogic,
+                IMediator mediator,
                 ApplicationDbContext dbContext,
                 StorageContext storageContext,
                 ILogger<TestPubController> logger,
                 IEmailSender<IdentityUser> emailSender,
                 IMemoryCache memoryCache,
                 bool requiresAuthentication = false)
-                : base(dbContext, storageContext, requiresAuthentication, logger, memoryCache)
+                : base(mediator, dbContext, storageContext, requiresAuthentication, logger, memoryCache)
             {
             }
         }

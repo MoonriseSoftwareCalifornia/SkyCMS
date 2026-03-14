@@ -30,10 +30,12 @@ public class GetArticleByIdQueryHandler : IQueryHandler<GetArticleByIdQuery, Art
     /// <summary>
     /// Initializes a new instance of the <see cref="GetArticleByIdQueryHandler"/> class.
     /// </summary>
+    /// <param name="mediator">Mediator for CQRS queries.</param>
     /// <param name="dbContext">Database context.</param>
     /// <param name="memoryCache">Memory cache.</param>
     /// <param name="configuration">Configuration for publisher settings.</param>
     public GetArticleByIdQueryHandler(
+        IMediator mediator,
         ApplicationDbContext dbContext,
         IMemoryCache memoryCache,
         IConfiguration configuration)
@@ -45,7 +47,7 @@ public class GetArticleByIdQueryHandler : IQueryHandler<GetArticleByIdQuery, Art
             ?? configuration.GetValue<string>("AzureBlobStorageEndPoint")
             ?? string.Empty;
 
-        articleViewModelBuilder = new ArticleViewModelBuilder(dbContext, memoryCache, publisherUrl, isEditor: true);
+        articleViewModelBuilder = new ArticleViewModelBuilder(mediator, dbContext, memoryCache, publisherUrl, isEditor: true);
     }
 
     /// <inheritdoc />

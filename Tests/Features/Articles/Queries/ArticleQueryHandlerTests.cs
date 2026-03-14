@@ -57,7 +57,7 @@ namespace Sky.Tests.Features.Articles.Queries
         {
             await SeedPublishedPageAsync("blog/test", "Test Title", "Hello world");
 
-            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(dbContext, memoryCache, "https://publisher.test", isEditor: false);
+            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(null!, dbContext, memoryCache, "https://publisher.test", isEditor: false);
             var publishedPageService = new Cosmos.Common.Features.Articles.Shared.PublishedPageQueryService(dbContext, memoryCache, viewModelBuilder);
             var handler = new GetPublishedPageByUrlQueryHandler(publishedPageService);
 
@@ -81,7 +81,7 @@ namespace Sky.Tests.Features.Articles.Queries
         {
             var page = await SeedPublishedPageAsync("about", "About", "Header content");
 
-            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(dbContext, memoryCache, "https://publisher.test", isEditor: false);
+            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(null!, dbContext, memoryCache, "https://publisher.test", isEditor: false);
             var publishedPageService = new Cosmos.Common.Features.Articles.Shared.PublishedPageQueryService(dbContext, memoryCache, viewModelBuilder);
             var handler = new GetPublishedPageHeaderByUrlQueryHandler(publishedPageService);
 

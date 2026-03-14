@@ -10,6 +10,7 @@ namespace Sky.Tests.Services
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Layouts.Queries;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -182,7 +183,7 @@ namespace Sky.Tests.Services
         public async Task GetDefaultLayout_ReturnsDefaultLayout()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
 
             // Assert
             Assert.IsNotNull(defaultLayout);
@@ -196,7 +197,7 @@ namespace Sky.Tests.Services
         public async Task SetDefaultLayout_UnsetsOldDefault()
         {
             // Arrange
-            var oldDefault = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var oldDefaultViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var oldDefault = await Db.Layouts.FirstAsync(l => l.Id == oldDefaultViewModel.Id);
             Assert.IsNotNull(oldDefault);
 
             var newLayout = new Layout
@@ -245,7 +246,7 @@ namespace Sky.Tests.Services
         public async Task DefaultLayout_HasHeadContent()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
 
             // Assert
             Assert.IsNotNull(defaultLayout);
@@ -411,7 +412,7 @@ namespace Sky.Tests.Services
         public async Task CreateTemplate_ReferencesLayout()
         {
             // Arrange
-            var layout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var layoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var layout = await Db.Layouts.FirstAsync(l => l.Id == layoutViewModel.Id);
 
             var template = new Template
             {
@@ -440,7 +441,7 @@ namespace Sky.Tests.Services
         public async Task GetTemplates_ByLayoutId_FindsAll()
         {
             // Arrange
-            var layout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var layoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var layout = await Db.Layouts.FirstAsync(l => l.Id == layoutViewModel.Id);
 
             var template1 = new Template
             {

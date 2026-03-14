@@ -67,6 +67,7 @@ public class TemplateServiceTests
             _mockEnvironment.Object,
             _mockLogger.Object,
             _dbContext,
+            null!, // IMediator
             _mockConfigProvider.Object);
     }
 

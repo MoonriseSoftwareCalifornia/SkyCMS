@@ -13,6 +13,8 @@ namespace Cosmos.Publisher.Controllers
     using Cosmos.BlobService;
     using Cosmos.Common;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.Queries;
+    using Cosmos.Common.Features.Shared;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
@@ -22,6 +24,7 @@ namespace Cosmos.Publisher.Controllers
     /// </summary>
     public class PubControllerBase : Controller
     {
+        private readonly IMediator mediator;
         private readonly ApplicationDbContext dbContext;
         private readonly IStorageContext storageContext;
         private readonly bool requiresAuthentication;
@@ -32,18 +35,21 @@ namespace Cosmos.Publisher.Controllers
         /// Initializes a new instance of the <see cref="PubControllerBase"/> class.
         /// Constructor.
         /// </summary>
+        /// <param name="mediator">Mediator for CQRS queries.</param>
         /// <param name="dbContext">Database context.</param>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="requiresAuthentication">Indicates if authentication is required for the publisher.</param>
         /// <param name="logger">Logger instance.</param>
         /// <param name="memoryCache">Memory cache instance.</param>
         public PubControllerBase(
+            IMediator mediator,
             ApplicationDbContext dbContext,
             IStorageContext storageContext,
             bool requiresAuthentication,
             ILogger<PubControllerBase> logger,
             IMemoryCache memoryCache)
         {
+            this.mediator = mediator;
             this.requiresAuthentication = requiresAuthentication;
             this.dbContext = dbContext;
             this.storageContext = storageContext;
@@ -75,7 +81,7 @@ namespace Cosmos.Publisher.Controllers
                     if (pathParts.Length > 2 && int.TryParse(pathParts[2], out var articleNumber))
                     {
                         // Check for user authorization.
-                        if (!await CosmosUtilities.AuthUser(dbContext, User, articleNumber))
+                        if (!await mediator.QueryAsync(new AuthorizeUserForArticleQuery(User, articleNumber)))
                         {
                             logger.LogWarning(
                                 "Unauthorized access attempt to {Path} - User {UserName} not authorized for article {ArticleNumber}",

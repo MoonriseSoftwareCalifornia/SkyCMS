@@ -252,7 +252,7 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
             var totpProvider = new OneTimeTokenProvider<IdentityUser>(DbContext, logger);
             var result = await totpProvider.ValidateAsync(totpToken, user, true);
 
-            if (result == OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid)
+            if (result == TokenVerificationResult.Valid)
             {
                 await SignInManager.SignInAsync(user, true, "TOTP");
 
@@ -264,12 +264,12 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
                 }
             }
 
-            if (result == OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid)
+            if (result == TokenVerificationResult.Invalid)
             {
                 ModelState.AddModelError(string.Empty, "Invalid login link.");
                 return Page();
             }
-            else if (result == OneTimeTokenProvider<IdentityUser>.VerificationResult.Expired)
+            else if (result == TokenVerificationResult.Expired)
             {
                 ModelState.AddModelError(string.Empty, "Login link has expired.");
                 return Page();

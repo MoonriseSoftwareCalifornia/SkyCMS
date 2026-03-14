@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Layouts.Queries;
+using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -24,6 +26,7 @@ using Newtonsoft.Json;
 /// </summary>
 public class ArticleViewModelBuilder : IArticleViewModelBuilder
 {
+    private readonly IMediator mediator;
     private readonly ApplicationDbContext dbContext;
     private readonly IMemoryCache memoryCache;
     private readonly string publisherUrl;
@@ -32,16 +35,19 @@ public class ArticleViewModelBuilder : IArticleViewModelBuilder
     /// <summary>
     /// Initializes a new instance of the <see cref="ArticleViewModelBuilder"/> class.
     /// </summary>
+    /// <param name="mediator">Mediator for CQRS queries.</param>
     /// <param name="dbContext">Database context for author and layout resolution.</param>
     /// <param name="memoryCache">Memory cache for layout caching (optional).</param>
     /// <param name="publisherUrl">Base publisher URL for Open Graph URL generation.</param>
     /// <param name="isEditor">Whether building for editor context (affects ReadWriteMode flag).</param>
     public ArticleViewModelBuilder(
+        IMediator mediator,
         ApplicationDbContext dbContext,
         IMemoryCache memoryCache,
         string publisherUrl,
         bool isEditor = false)
     {
+        this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         this.memoryCache = memoryCache;
         this.publisherUrl = publisherUrl ?? string.Empty;
@@ -125,15 +131,12 @@ public class ArticleViewModelBuilder : IArticleViewModelBuilder
     {
         if (memoryCache == null || layoutCache == null)
         {
-            var entity = await LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
-            return new LayoutViewModel(entity);
+            return await mediator.QueryAsync(new GetDefaultLayoutQuery());
         }
 
         if (!memoryCache.TryGetValue("defLayout", out LayoutViewModel model))
         {
-            var entity = await LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
-            dbContext.Entry(entity).State = EntityState.Detached;
-            model = new LayoutViewModel(entity);
+            model = await mediator.QueryAsync(new GetDefaultLayoutQuery());
             memoryCache.Set("defLayout", model, layoutCache.Value);
         }
 

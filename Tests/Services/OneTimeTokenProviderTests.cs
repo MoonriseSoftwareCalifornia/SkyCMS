@@ -189,7 +189,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result);
+            Assert.AreEqual(TokenVerificationResult.Valid, result);
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, testUser, removeToken: true);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result);
+            Assert.AreEqual(TokenVerificationResult.Valid, result);
 
             var storedToken = await dbContext.TotpTokens.FirstOrDefaultAsync(t => t.Token == token);
             Assert.IsNull(storedToken, "Token should be removed from database after validation");
@@ -224,7 +224,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, testUser, removeToken: false);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result);
+            Assert.AreEqual(TokenVerificationResult.Valid, result);
 
             var storedToken = await dbContext.TotpTokens.FirstOrDefaultAsync(t => t.Token == token);
             Assert.IsNotNull(storedToken, "Token should remain in database when removeToken is false");
@@ -244,7 +244,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(null, testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid, result);
+            Assert.AreEqual(TokenVerificationResult.Invalid, result);
         }
 
         /// <summary>
@@ -257,7 +257,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(string.Empty, testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid, result);
+            Assert.AreEqual(TokenVerificationResult.Invalid, result);
         }
 
         /// <summary>
@@ -270,7 +270,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync("   ", testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid, result);
+            Assert.AreEqual(TokenVerificationResult.Invalid, result);
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync("non-existent-token-123456789012", testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid, result);
+            Assert.AreEqual(TokenVerificationResult.Invalid, result);
         }
 
         /// <summary>
@@ -310,7 +310,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, differentUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid, result);
+            Assert.AreEqual(TokenVerificationResult.Invalid, result);
         }
 
         /// <summary>
@@ -330,7 +330,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid, result);
+            Assert.AreEqual(TokenVerificationResult.Invalid, result);
         }
 
         /// <summary>
@@ -352,7 +352,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid, result);
+            Assert.AreEqual(TokenVerificationResult.Invalid, result);
         }
 
         /// <summary>
@@ -374,7 +374,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result);
+            Assert.AreEqual(TokenVerificationResult.Valid, result);
         }
 
         #endregion
@@ -399,7 +399,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Expired, result);
+            Assert.AreEqual(TokenVerificationResult.Expired, result);
         }
 
         /// <summary>
@@ -423,7 +423,7 @@ namespace Sky.Tests.Services
             var result = await tokenProvider.ValidateAsync(token, testUser);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Expired, result);
+            Assert.AreEqual(TokenVerificationResult.Expired, result);
         }
 
         #endregion
@@ -501,8 +501,8 @@ namespace Sky.Tests.Services
             var results = await Task.WhenAll(task1, task2);
 
             // Assert - At least one should succeed, one might fail depending on timing
-            var validResults = results.Count(r => r == OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid);
-            var invalidResults = results.Count(r => r == OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid);
+            var validResults = results.Count(r => r == TokenVerificationResult.Valid);
+            var invalidResults = results.Count(r => r == TokenVerificationResult.Invalid);
 
             // Either both succeeded (if both read before either deleted), or one succeeded and one failed
             Assert.IsTrue(validResults >= 1, "At least one validation should succeed");
@@ -528,9 +528,9 @@ namespace Sky.Tests.Services
             var result2 = await tokenProvider.ValidateAsync(token2, testUser, removeToken: false);
             var result3 = await tokenProvider.ValidateAsync(token3, testUser, removeToken: false);
 
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result1);
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result2);
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, result3);
+            Assert.AreEqual(TokenVerificationResult.Valid, result1);
+            Assert.AreEqual(TokenVerificationResult.Valid, result2);
+            Assert.AreEqual(TokenVerificationResult.Valid, result3);
 
             // All should exist in database
             var tokensInDb = await dbContext.TotpTokens
@@ -557,8 +557,8 @@ namespace Sky.Tests.Services
             var secondResult = await tokenProvider.ValidateAsync(token, testUser, removeToken: true);
 
             // Assert
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Valid, firstResult);
-            Assert.AreEqual(OneTimeTokenProvider<IdentityUser>.VerificationResult.Invalid, secondResult,
+            Assert.AreEqual(TokenVerificationResult.Valid, firstResult);
+            Assert.AreEqual(TokenVerificationResult.Invalid, secondResult,
                 "Token should not be valid after first use");
         }
 

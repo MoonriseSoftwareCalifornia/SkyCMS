@@ -1725,7 +1725,7 @@ namespace Sky.Editor.Services.Setup
                     var communityPages = await layoutImportService.GetCommunityTemplatePagesAsync(layoutId);
                     var userId = await dbContext.Users.Select(u => u.Id).FirstOrDefaultAsync();
 
-                    if (!await Cosmos.Common.Data.Logic.LayoutHelper.HasDefaultLayoutAsync(dbContext))
+                    if (!await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.CheckDefaultLayoutExistsQuery()))
                     {
                         layout.Version = 1;
                         layout.IsDefault = true;

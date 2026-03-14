@@ -197,7 +197,13 @@ namespace Sky.Cms.Controllers
         /// <returns>The latest version of the default layout that is currently published, or null if none exists.</returns>
         private async Task<Layout?> FetchCurrentLayoutAsync()
         {
-            return await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
+            var layoutViewModel = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
+            if (layoutViewModel == null)
+                return null;
+
+            // GetDefaultLayoutQuery returns LayoutViewModel, but we need Layout entity
+            // Query the database directly for the Layout entity using the Id from the ViewModel
+            return await dbContext.Layouts.FirstOrDefaultAsync(l => l.Id == layoutViewModel.Id);
         }
 
         /// <summary>

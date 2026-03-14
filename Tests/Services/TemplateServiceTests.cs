@@ -1,4 +1,4 @@
-﻿// <copyright file="TemplateServiceTests.cs" company="Moonrise Software, LLC">
+// <copyright file="TemplateServiceTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -10,6 +10,7 @@ namespace Sky.Tests.Services
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Layouts.Queries;
     using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
@@ -49,6 +50,7 @@ namespace Sky.Tests.Services
                 environmentMock.Object,
                 loggerMock.Object,
                 Db,
+                null!, // IMediator
                 null); // Single-tenant mode
             
             // Clear the static _seededTenants cache between tests to avoid cross-test pollution
@@ -194,7 +196,7 @@ namespace Sky.Tests.Services
         public async Task EnsureDefaultTemplatesExist_CreatesTemplates()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             Assert.IsNotNull(defaultLayout, "Must have default layout");
 
             // Act
@@ -214,7 +216,7 @@ namespace Sky.Tests.Services
         public async Task EnsureDefaultTemplatesExist_Idempotent_NoDuplicates()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             Assert.IsNotNull(defaultLayout);
 
             // Act
@@ -235,7 +237,7 @@ namespace Sky.Tests.Services
         public async Task EnsureDefaultTemplatesExist_UsesDefaultLayout()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
 
             // Act
             await templateService.EnsureDefaultTemplatesExistAsync();
@@ -287,7 +289,7 @@ namespace Sky.Tests.Services
         public async Task GetTemplateDesignVersionsAsync_ReturnsVersions()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             await templateService.EnsureDefaultTemplatesExistAsync();
 
             // Act
@@ -306,7 +308,7 @@ namespace Sky.Tests.Services
         public async Task GetTemplateDesignVersionsAsync_OrdersDescending()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             await templateService.EnsureDefaultTemplatesExistAsync();
             
             var template = await Db.Templates.FirstAsync(t => t.PageType == "blog-post");
@@ -351,7 +353,7 @@ namespace Sky.Tests.Services
         public async Task GetVersionForEdit_PublishedVersion_CreatesNew()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             await templateService.EnsureDefaultTemplatesExistAsync();
             
             var versions = await templateService.GetTemplateDesignVersionsAsync("blog-post");
@@ -374,7 +376,7 @@ namespace Sky.Tests.Services
         public async Task GetVersionForEdit_DraftExists_ReturnsDraft()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             await templateService.EnsureDefaultTemplatesExistAsync();
             
             // Create draft version
@@ -411,7 +413,7 @@ namespace Sky.Tests.Services
         public async Task Save_NewVersion_AddsToDatabase()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             await templateService.EnsureDefaultTemplatesExistAsync();
             var template = await Db.Templates.FirstAsync(t => t.PageType == "blog-post");
 
@@ -442,7 +444,7 @@ namespace Sky.Tests.Services
         public async Task Save_ExistingVersion_Updates()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             await templateService.EnsureDefaultTemplatesExistAsync();
             
             var versions = await templateService.GetTemplateDesignVersionsAsync("blog-post");
@@ -464,7 +466,7 @@ namespace Sky.Tests.Services
         public async Task Publish_Version_SetsPublishedAndUpdatesTemplate()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             await templateService.EnsureDefaultTemplatesExistAsync();
             
             var template = await Db.Templates.FirstAsync(t => t.PageType == "blog-post");
@@ -500,7 +502,7 @@ namespace Sky.Tests.Services
         public async Task Publish_UnpublishesOtherVersions()
         {
             // Arrange
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var defaultLayoutViewModel = await Mediator.QueryAsync(new GetDefaultLayoutQuery()); var defaultLayout = await Db.Layouts.FirstAsync(l => l.Id == defaultLayoutViewModel.Id);
             await templateService.EnsureDefaultTemplatesExistAsync();
             
             var template = await Db.Templates.FirstAsync(t => t.PageType == "blog-post");

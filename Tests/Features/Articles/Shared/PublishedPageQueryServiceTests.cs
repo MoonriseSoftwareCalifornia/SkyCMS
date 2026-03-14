@@ -36,7 +36,7 @@ namespace Sky.Tests.Features.Articles.Shared
 
             dbContext = new ApplicationDbContext(options);
             memoryCache = new MemoryCache(new MemoryCacheOptions());
-            viewModelBuilder = new ArticleViewModelBuilder(dbContext, memoryCache, "https://publisher.test", isEditor: false);
+            viewModelBuilder = new ArticleViewModelBuilder(null!, dbContext, memoryCache, "https://publisher.test", isEditor: false);
             service = new PublishedPageQueryService(dbContext, memoryCache, viewModelBuilder);
         }
 

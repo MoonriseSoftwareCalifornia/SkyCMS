@@ -44,11 +44,11 @@ namespace Sky.Editor.Data.Logic
     using ArticleUpdateResult = Cms.Models.ArticleUpdateResult;
 
     /// <summary>
-    /// Article editing and management logic (editor-facing). Inherits read/view logic from <see cref="ArticleLogic"/>.
+    /// Article editing and management logic (editor-facing). 
     /// Coordinates persistence, publishing, catalog updates, static artifact generation and title/slug change handling.
     /// </summary>
-    public partial class ArticleEditLogic : ArticleLogic
-    {
+    public partial class ArticleEditLogic
+    {        private readonly ApplicationDbContext dbContext;
         private readonly IStorageContext storageContext; // Used only for deleting static artifacts.
         private readonly ILogger<ArticleEditLogic> logger;
         private readonly IMemoryCache localCache;
@@ -96,13 +96,8 @@ namespace Sky.Editor.Data.Logic
             IRedirectService redirectService,
             ITemplateService templateService,
             IDynamicConfigurationProvider configurationProvider = null)
-            : base(
-                dbContext,
-                memoryCache,
-                settings.PublisherUrl,
-                settings.BlobPublicUrl,
-                true)
         {
+            this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext)); // Used only for deleting static artifacts.
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -118,9 +113,9 @@ namespace Sky.Editor.Data.Logic
         }
 
         /// <summary>
-        /// Gets the strongly-typed application database context (shadowing base protected context for convenience).
+        /// Gets the strongly-typed application database context.
         /// </summary>
-        public new ApplicationDbContext DbContext => base.DbContext;
+        public ApplicationDbContext DbContext => dbContext;
 
         /// <summary>
         /// Gets the current tenant domain from the configuration provider (or null if single-tenant/not configured).

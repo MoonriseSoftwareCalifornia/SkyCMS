@@ -23,6 +23,7 @@ namespace Sky.Editor.Features.Layouts.Import
     public class ImportLayoutHandler : ICommandHandler<ImportLayoutCommand, CommandResult<bool>>
     {
         private readonly ApplicationDbContext dbContext;
+        private readonly IMediator mediator;
         private readonly ILayoutImportService layoutImportService;
         private readonly ILayoutVersioningService layoutVersioningService;
         private readonly ILogger<ImportLayoutHandler> logger;
@@ -32,16 +33,19 @@ namespace Sky.Editor.Features.Layouts.Import
         /// Initializes a new instance of the <see cref="ImportLayoutHandler"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
+        /// <param name="mediator">Mediator for CQRS queries.</param>
         /// <param name="layoutImportService">Layout import service.</param>
         /// <param name="layoutVersioningService">Layout versioning service.</param>
         /// <param name="logger">Logger.</param>
         public ImportLayoutHandler(
             ApplicationDbContext dbContext,
+            IMediator mediator,
             ILayoutImportService layoutImportService,
             ILayoutVersioningService layoutVersioningService,
             ILogger<ImportLayoutHandler> logger)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             this.layoutImportService = layoutImportService ?? throw new ArgumentNullException(nameof(layoutImportService));
             this.layoutVersioningService = layoutVersioningService ?? throw new ArgumentNullException(nameof(layoutVersioningService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -75,7 +79,7 @@ namespace Sky.Editor.Features.Layouts.Import
 
                 layout.LayoutNumber = maxLayoutNumber + 1;
 
-                if (!await Cosmos.Common.Data.Logic.LayoutHelper.HasDefaultLayoutAsync(dbContext))
+                if (!await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.CheckDefaultLayoutExistsQuery()))
                 {
                     layout.Version = 1;
                     layout.IsDefault = true;

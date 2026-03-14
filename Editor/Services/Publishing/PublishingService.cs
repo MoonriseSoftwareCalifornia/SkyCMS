@@ -52,6 +52,7 @@ namespace Sky.Editor.Services.Publishing
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IAuthorInfoService authors;
         private readonly IClock systemClock;
+        private readonly Cosmos.Common.Features.Shared.IMediator mediator;
         private readonly IBlogStreamRenderingService blogStreamRenderingService;
         private readonly IViewRenderService viewRenderService;
         private readonly IServiceProvider serviceProvider;
@@ -70,6 +71,7 @@ namespace Sky.Editor.Services.Publishing
         /// <param name="accessor">The HTTP context accessor.</param>
         /// <param name="authors">The author information service.</param>
         /// <param name="systemClock">The system clock.</param>
+        /// <param name="mediator">Mediator for CQRS queries.</param>
         /// <param name="blogStreamRenderingService">The blog stream rendering service.</param>
         /// <param name="viewRenderService">View rendering service.</param>
         /// <param name="serviceProvider">Service provider for creating scoped dependencies.</param>
@@ -83,6 +85,7 @@ namespace Sky.Editor.Services.Publishing
             IHttpContextAccessor accessor,
             Authors.IAuthorInfoService authors,
             IClock systemClock,
+            Cosmos.Common.Features.Shared.IMediator mediator,
             IBlogStreamRenderingService blogStreamRenderingService,
             IViewRenderService viewRenderService,
             IServiceProvider serviceProvider,
@@ -96,6 +99,7 @@ namespace Sky.Editor.Services.Publishing
             httpContextAccessor = accessor;
             this.authors = authors;
             this.systemClock = systemClock;
+            this.mediator = mediator;
             this.blogStreamRenderingService = blogStreamRenderingService;
             this.viewRenderService = viewRenderService;
             this.serviceProvider = serviceProvider;
@@ -576,8 +580,7 @@ namespace Sky.Editor.Services.Publishing
                 {
                     if (defaultLayout == null) // Double-check after acquiring lock
                     {
-                        var layout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
-                        defaultLayout = new LayoutViewModel(layout);
+                        defaultLayout = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
                     }
                 }
                 finally

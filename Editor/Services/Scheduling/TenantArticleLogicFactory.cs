@@ -116,6 +116,7 @@ namespace Sky.Editor.Services.Scheduling
                 null,  // No HttpContextAccessor in background jobs
                 authorService,
                 scopedServices.GetRequiredService<IClock>(),
+                scopedServices.GetRequiredService<Cosmos.Common.Features.Shared.IMediator>(),
                 blogStreamRenderingService,
                 scopedServices.GetRequiredService<IViewRenderService>(),
                 scopedServices,
@@ -132,6 +133,7 @@ namespace Sky.Editor.Services.Scheduling
                 scopedServices.GetRequiredService<IWebHostEnvironment>(),
                 scopedServices.GetRequiredService<ILogger<TemplateService>>(),
                 dbContext,
+                scopedServices.GetRequiredService<Cosmos.Common.Features.Shared.IMediator>(),
                 scopedServices.GetRequiredService<IDynamicConfigurationProvider>());
 
             var layoutPreviewService = new LayoutTemplateService(

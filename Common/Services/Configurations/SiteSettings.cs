@@ -5,16 +5,16 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-namespace Cosmos.Cms.Common.Services.Configurations
-{
-    using System.ComponentModel.DataAnnotations;
-    using Cosmos.Cms.Common.Constants;
+namespace Cosmos.Cms.Common.Services.Configurations;
 
-    /// <summary>
-    ///     Startup.ConfigureServices method captures the site customization options found in "secrets" in this
-    ///     object.
-    /// </summary>
-    public class SiteSettings
+using System.ComponentModel.DataAnnotations;
+using Cosmos.Cms.Common.Constants;
+
+/// <summary>
+///     Startup.ConfigureServices method captures the site customization options found in "secrets" in this
+///     object.
+/// </summary>
+public class SiteSettings
     {
         /// <summary>
         ///     Gets or sets allowed file type extensions.
@@ -52,9 +52,8 @@ namespace Cosmos.Cms.Common.Services.Configurations
         /// </summary>
         public string MultiTenantRedirectUrl { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Gets or sets the Microsoft Application Id for OAuth authentication.
-        /// </summary>
-        public string MicrosoftAppId { get; set; }
-    }
-}
+            /// <summary>
+            /// Gets or sets the Microsoft Application Id for OAuth authentication.
+            /// </summary>
+            public string? MicrosoftAppId { get; set; }
+        }

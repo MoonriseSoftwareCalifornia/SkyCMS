@@ -38,27 +38,6 @@ namespace Cosmos.Common.Services
         }
 
         /// <summary>
-        ///  Indicates the verification window for a one-time token.
-        /// </summary>
-        public enum VerificationResult
-        {
-            /// <summary>
-            /// Token is valid.
-            /// </summary>
-            Valid,
-
-            /// <summary>
-            /// Token is invalid.
-            /// </summary>
-            Invalid,
-
-            /// <summary>
-            /// Token is expired.
-            /// </summary>
-            Expired
-        }
-
-        /// <summary>
         ///  Generates a one-time token for a given user.
         /// </summary>
         /// <param name="user">Identity user.</param>
@@ -89,7 +68,7 @@ namespace Cosmos.Common.Services
         /// <param name="user">IdentityUser.</param>
         /// <param name="removeToken">Remove token if present.</param>
         /// <returns>Results.</returns>
-        public async Task<VerificationResult> ValidateAsync(string token, TUser user, bool removeToken = true)
+        public async Task<TokenVerificationResult> ValidateAsync(string token, TUser user, bool removeToken = true)
         {
             if (dbContext == null)
             {
@@ -103,7 +82,7 @@ namespace Cosmos.Common.Services
 
             if (string.IsNullOrWhiteSpace(token))
             {
-                return VerificationResult.Invalid;
+                return TokenVerificationResult.Invalid;
             }
 
             var identityUser = await dbContext.Users.FirstOrDefaultAsync(u => u.NormalizedEmail == user.NormalizedEmail);
@@ -113,7 +92,7 @@ namespace Cosmos.Common.Services
                 logger.LogWarning("User {UserId} email is not confirmed, cannot verify token.", identityUser.Id);
 
                 // User email is not confirmed, so we cannot verify the token.
-                return VerificationResult.Invalid;
+                return TokenVerificationResult.Invalid;
             }
 
             // The following is because SQLite does not support DateTimeOffset natively.
@@ -123,7 +102,7 @@ namespace Cosmos.Common.Services
                 logger.LogWarning("User {UserId} is locked out, cannot verify token.", identityUser.Id);
 
                 // User is locked out, so we cannot verify the token.
-                return VerificationResult.Invalid;
+                return TokenVerificationResult.Invalid;
             }
 
             var totpEntity = await dbContext.TotpTokens.FirstOrDefaultAsync(f => f.Token == token);
@@ -132,7 +111,7 @@ namespace Cosmos.Common.Services
                 logger.LogWarning("Token {Token} does not exist in the database.", token);
 
                 // Token does not exist in the database
-                return VerificationResult.Invalid;
+                return TokenVerificationResult.Invalid;
             }
 
             if (totpEntity.UserId != identityUser.Id || totpEntity.Email != identityUser.NormalizedEmail)
@@ -140,7 +119,7 @@ namespace Cosmos.Common.Services
                 logger.LogWarning("Token {Token} does not match user {UserId}.", token, identityUser.Id);
 
                 // Token does not match the user
-                return VerificationResult.Invalid;
+                return TokenVerificationResult.Invalid;
             }
 
             if (totpEntity.ExpiresAt < DateTimeOffset.UtcNow)
@@ -148,7 +127,7 @@ namespace Cosmos.Common.Services
                 logger.LogWarning("Token {Token} has expired for user {UserId}.", token, identityUser.Id);
 
                 // Token has expired
-                return VerificationResult.Expired;
+                return TokenVerificationResult.Expired;
             }
 
             if (removeToken)
@@ -158,7 +137,7 @@ namespace Cosmos.Common.Services
             }
 
             logger.LogInformation("Token {Token} is valid for user {UserId}.", token, identityUser.Id);
-            return VerificationResult.Valid;
+            return TokenVerificationResult.Valid;
         }
 
         private string RandomKeyGenerator(int length = 32)

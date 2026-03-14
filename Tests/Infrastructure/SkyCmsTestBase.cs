@@ -93,7 +93,6 @@ namespace Sky.Tests
         protected IMediator Mediator = null!;
         protected ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>> CreateArticleHandler = null!;
         protected ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>> SaveArticleHandler = null!;
-        protected ArticleLogic ArticleLogic = null!;
 
         private async Task EnsureBlogStreamTemplateExistsAsync()
         {
@@ -101,7 +100,7 @@ namespace Sky.Tests
                 .FirstOrDefaultAsync(t => t.PageType == "blog-stream");
             if (existingTemplate == null)
             {
-                var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+                var defaultLayout = await Mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
                 var t = TemplateService.GetTemplateByKeyAsync("blog-stream").Result;
                 var template = new Template
                 {
@@ -123,7 +122,7 @@ namespace Sky.Tests
 
             if (existingTemplate == null)
             {
-                var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+                var defaultLayout = await Mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
                 var t = TemplateService.GetTemplateByKeyAsync("blog-post").Result;
                 var template = new Template
                 {
@@ -528,6 +527,18 @@ namespace Sky.Tests
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Import.ImportLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<bool>>>(sp =>
                 importLayoutHandlerFactory());
 
+            // Register layout query handlers (Phase 2a - CQRS migration)
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery, Cosmos.Common.Models.LayoutViewModel>>(sp =>
+                new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQueryHandler(
+                    Db,
+                    Cache));
+
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Layouts.Queries.CheckDefaultLayoutExistsQuery, bool>>(sp =>
+                new Cosmos.Common.Features.Layouts.Queries.CheckDefaultLayoutExistsQueryHandler(Db));
+
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Layouts.Queries.GetLayoutByIdQuery, Cosmos.Common.Data.Layout?>>(sp =>
+                new Cosmos.Common.Features.Layouts.Queries.GetLayoutByIdQueryHandler(Db));
+
             // Register template query handlers
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Editor.Features.Templates.Get.GetTemplateQuery, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Templates.Get.GetTemplateQueryResult>>>(sp =>
                 new Sky.Editor.Features.Templates.Get.GetTemplateQueryHandler(
@@ -538,12 +549,14 @@ namespace Sky.Tests
             // ✅ Register with non-nullable ArticleViewModel to match EditorController expectations
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQueryHandler(
+                    Mediator,
                     Db,
                     Cache,
                     configuration));
             
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQueryHandler(
+                    Mediator,
                     Db,
                     Cache,
                     configuration));
@@ -563,6 +576,7 @@ namespace Sky.Tests
             // ✅ Register GetArticleByUrlQueryHandler for LayoutsController.ExportLayout and EditPreview
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQueryHandler(
+                    Mediator,
                     Db,
                     Cache,
                     configuration));
@@ -623,6 +637,7 @@ namespace Sky.Tests
                 webHostEnvironment,
                 new LoggerFactory().CreateLogger<TemplateService>(),
                 Db,
+                Mediator,
                 DynamicConfigurationProvider);      // ✅ Pass service provider (already built)
 
             // ✅ CREATE PublishingService WITH Services as the provider (needed for CreateStaticPages)
@@ -634,6 +649,7 @@ namespace Sky.Tests
                 HttpContextAccessor,
                 authorInfoService,
                 Clock,
+                Mediator,
                 BlogStreamRenderingService,
                 ViewRenderService,
                 Services, // ✅ Pass the service provider
@@ -659,14 +675,6 @@ namespace Sky.Tests
                 TitleChangeService,
                 RedirectService,
                 TemplateService);
-
-            // ✅ CREATE ArticleLogic for handlers that need it
-            ArticleLogic = new Cosmos.Common.Data.Logic.ArticleLogic(
-                Db,
-                Cache,
-                EditorSettings.PublisherUrl.ToString(),
-                configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? string.Empty,
-                isEditor: true);
 
             // ✅ NOW CREATE FEATURE HANDLERS WITH TEMPLATE SERVICE
             CreateArticleHandler = new CreateArticleHandler(
@@ -750,6 +758,7 @@ namespace Sky.Tests
             // ✅ CREATE ImportLayoutHandler
             var importLayoutHandler = new Sky.Editor.Features.Layouts.Import.ImportLayoutHandler(
                 Db,
+                Mediator,
                 LayoutImportService,
                 layoutVersioningService,
                 new NullLogger<Sky.Editor.Features.Layouts.Import.ImportLayoutHandler>());

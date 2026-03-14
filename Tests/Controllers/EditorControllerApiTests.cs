@@ -191,7 +191,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article1 = await CreateArticleAsync("Published Article", TestUserId);
             await SaveArticleAsync(article1, TestUserId);
-            await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
+            var article1Entity = await Db.Articles.FirstAsync(a => a.Id == article1.Id); await PublishingService.PublishAsync(article1Entity);
 
             var article2 = await CreateArticleAsync("Unpublished Article", TestUserId);
             await SaveArticleAsync(article2, TestUserId);
@@ -214,11 +214,11 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article1 = await CreateArticleAsync("Test Article About Dogs", TestUserId);
             await SaveArticleAsync(article1, TestUserId);
-            await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
+            var article1Entity = await Db.Articles.FirstAsync(a => a.Id == article1.Id); await PublishingService.PublishAsync(article1Entity);
 
             var article2 = await CreateArticleAsync("Test Article About Cats", TestUserId);
             await SaveArticleAsync(article2, TestUserId);
-            await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
+            var article2Entity = await Db.Articles.FirstAsync(a => a.Id == article2.Id); await PublishingService.PublishAsync(article2Entity);
 
             // Act
             var result = await controller.GetArticleList(term: "dogs");
@@ -237,7 +237,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var publishedArticle = await CreateArticleAsync("Published", TestUserId);
             await SaveArticleAsync(publishedArticle, TestUserId);
-            await Logic.PublishArticle(publishedArticle.Id, DateTimeOffset.UtcNow);
+            var publishedArticleEntity = await Db.Articles.FirstAsync(a => a.Id == publishedArticle.Id); await PublishingService.PublishAsync(publishedArticleEntity);
 
             var unpublishedArticle = await CreateArticleAsync("Unpublished", TestUserId);
             await SaveArticleAsync(unpublishedArticle, TestUserId);

@@ -66,7 +66,7 @@ namespace Sky.Tests.Features.Articles.EditorQueries
             dbContext.Articles.Add(article);
             await dbContext.SaveChangesAsync();
 
-            var handler = new GetArticleByUrlQueryHandler(dbContext, memoryCache, configuration);
+            var handler = new GetArticleByUrlQueryHandler(null!, dbContext, memoryCache, configuration);
 
             // Act
             var result = await handler.HandleAsync(new GetArticleByUrlQuery { UrlPath = "test-page" });
@@ -81,7 +81,7 @@ namespace Sky.Tests.Features.Articles.EditorQueries
         public async Task GetArticleByUrlQuery_WithInvalidUrl_ReturnsNull()
         {
             // Arrange
-            var handler = new GetArticleByUrlQueryHandler(dbContext, memoryCache, configuration);
+            var handler = new GetArticleByUrlQueryHandler(null!, dbContext, memoryCache, configuration);
 
             // Act
             var result = await handler.HandleAsync(new GetArticleByUrlQuery { UrlPath = "nonexistent" });
@@ -102,7 +102,7 @@ namespace Sky.Tests.Features.Articles.EditorQueries
             dbContext.Articles.Add(article);
             await dbContext.SaveChangesAsync();
 
-            var handler = new GetArticleByIdQueryHandler(dbContext, memoryCache, configuration);
+            var handler = new GetArticleByIdQueryHandler(null!, dbContext, memoryCache, configuration);
 
             // Act
             var result = await handler.HandleAsync(new GetArticleByIdQuery { Id = article.Id });
@@ -117,7 +117,7 @@ namespace Sky.Tests.Features.Articles.EditorQueries
         public async Task GetArticleByIdQuery_WithInvalidId_ReturnsNull()
         {
             // Arrange
-            var handler = new GetArticleByIdQueryHandler(dbContext, memoryCache, configuration);
+            var handler = new GetArticleByIdQueryHandler(null!, dbContext, memoryCache, configuration);
 
             // Act
             var result = await handler.HandleAsync(new GetArticleByIdQuery { Id = Guid.NewGuid() });
@@ -139,7 +139,7 @@ namespace Sky.Tests.Features.Articles.EditorQueries
             dbContext.Articles.Add(article);
             await dbContext.SaveChangesAsync();
 
-            var handler = new GetArticleByArticleNumberQueryHandler(dbContext, memoryCache, configuration);
+            var handler = new GetArticleByArticleNumberQueryHandler(null!, dbContext, memoryCache, configuration);
 
             // Act
             var result = await handler.HandleAsync(new GetArticleByArticleNumberQuery { ArticleNumber = 42 });
@@ -154,7 +154,7 @@ namespace Sky.Tests.Features.Articles.EditorQueries
         public async Task GetArticleByArticleNumberQuery_WithInvalidNumber_ReturnsNull()
         {
             // Arrange
-            var handler = new GetArticleByArticleNumberQueryHandler(dbContext, memoryCache, configuration);
+            var handler = new GetArticleByArticleNumberQueryHandler(null!, dbContext, memoryCache, configuration);
 
             // Act
             var result = await handler.HandleAsync(new GetArticleByArticleNumberQuery { ArticleNumber = 999 });

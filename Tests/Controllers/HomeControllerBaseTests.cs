@@ -52,7 +52,6 @@ namespace Sky.Tests.Controllers
             controller = new TestHomeController(
                 Mediator,
                 Db,
-                Storage,
                 loggerMock.Object,
                 emailSenderMock.Object,
                 contactManagementServiceMock.Object);
@@ -136,7 +135,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article = await CreateArticleAsync("Test Article", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
+            await PublishingService.PublishAsync(entity);
 
             // Use the article number in referer instead of URL path
             controller.ControllerContext.HttpContext.Request.Headers["referer"] =
@@ -167,8 +166,8 @@ namespace Sky.Tests.Controllers
             var entity1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page1.ArticleNumber);
             var entity2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page2.ArticleNumber);
 
-            await Logic.PublishArticle(entity1.Id, DateTimeOffset.UtcNow.AddDays(-1));
-            await Logic.PublishArticle(entity2.Id, DateTimeOffset.UtcNow);
+            await PublishingService.PublishAsync(entity1);
+            await PublishingService.PublishAsync(entity2);
 
             // Act
             var result = await controller.GetTOC("", false, 0, 10);
@@ -193,7 +192,9 @@ namespace Sky.Tests.Controllers
             await CreateArticleAsync("Home Page", TestUserId);
             var parent = await CreateArticleAsync("Parent Page", TestUserId);
             var parentEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == parent.ArticleNumber);
-            await Logic.PublishArticle(parentEntity.Id, DateTimeOffset.UtcNow);
+            await CreateArticleAsync("Child Page", TestUserId);
+
+            await PublishingService.PublishAsync(parentEntity);
 
             // Act
             var result = await controller.GetTOC("parent-page", false, 0, 10);
@@ -216,8 +217,8 @@ namespace Sky.Tests.Controllers
             var entity1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page1.ArticleNumber);
             var entity2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page2.ArticleNumber);
 
-            await Logic.PublishArticle(entity1.Id, DateTimeOffset.UtcNow.AddDays(-5));
-            await Logic.PublishArticle(entity2.Id, DateTimeOffset.UtcNow.AddDays(-1));
+            await PublishingService.PublishAsync(entity1);
+            await PublishingService.PublishAsync(entity2);
 
             // Act
             var result = await controller.GetTOC("", true, 0, 10);
@@ -261,7 +262,7 @@ namespace Sky.Tests.Controllers
             {
                 var page = await CreateArticleAsync($"Page {i}", TestUserId);
                 var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == page.ArticleNumber);
-                await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow.AddMinutes(-i));
+                await PublishingService.PublishAsync(entity);
             }
 
             // Act - Get second page with 10 items per page
@@ -394,7 +395,7 @@ namespace Sky.Tests.Controllers
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             entity.Content = "<p>This is searchable content with unique terms.</p>";
             await Db.SaveChangesAsync();
-            await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
+            await PublishingService.PublishAsync(entity);
 
             // Act
             var result = await controller.CCMS___SEARCH("searchable");
@@ -447,7 +448,7 @@ namespace Sky.Tests.Controllers
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             entity.Content = "<p>Content with multiple searchable unique terms here.</p>";
             await Db.SaveChangesAsync();
-            await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
+            await PublishingService.PublishAsync(entity);
 
             // Act
             var result = await controller.CCMS___SEARCH("searchable unique");
@@ -507,7 +508,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article = await CreateArticleAsync("Test Article", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
+            await PublishingService.PublishAsync(entity);
 
             controller.ControllerContext.HttpContext.Request.Headers["referer"] =
                 $"http://localhost/editor?articleNumber={article.ArticleNumber}";
@@ -528,7 +529,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article = await CreateArticleAsync("Test Article", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
+            await PublishingService.PublishAsync(entity);
 
             controller.ControllerContext.HttpContext.Request.Headers["referer"] =
                 $"http://localhost/editor/ccmscontent/{article.ArticleNumber}";
@@ -549,7 +550,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             var article = await CreateArticleAsync("Test Article", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            await Logic.PublishArticle(entity.Id, DateTimeOffset.UtcNow);
+            await PublishingService.PublishAsync(entity);
 
             controller.ControllerContext.HttpContext.Request.Headers["referer"] =
                 $"http://localhost/{article.UrlPath}";
@@ -571,11 +572,10 @@ namespace Sky.Tests.Controllers
             public TestHomeController(
                 IMediator mediator,
                 ApplicationDbContext dbContext,
-                StorageContext storageContext,
                 ILogger<HomeControllerBase> logger,
                 IEmailSender emailSender,
                 IContactManagementService contactManagementService)
-                : base(mediator, dbContext, storageContext, logger, emailSender, contactManagementService)
+                : base(mediator, dbContext, logger, emailSender, contactManagementService)
             {
             }
         }

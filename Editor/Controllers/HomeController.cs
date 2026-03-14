@@ -398,9 +398,9 @@ namespace Sky.Cms.Controllers
             }
 
             var previewHtml = previewDoc.DocumentNode.OuterHtml;
-            var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
+            var defaultLayout = await articleQueries.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
 
-            return CreatePreviewArticleModel(entity.Id, entity.Title, previewHtml, new LayoutViewModel(defaultLayout));
+            return CreatePreviewArticleModel(entity.Id, entity.Title, previewHtml, defaultLayout);
         }
 
         private async Task SetRenderedView(ArticleViewModel model)

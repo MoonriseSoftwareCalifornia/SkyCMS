@@ -5,15 +5,15 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-namespace Cosmos.Common.Data
-{
-    using System;
-    using System.ComponentModel.DataAnnotations;
+namespace Cosmos.Common.Data;
 
-    /// <summary>
-    /// Cosmos CMS Metrics Class.
-    /// </summary>
-    public class Metric
+using System;
+using System.ComponentModel.DataAnnotations;
+
+/// <summary>
+/// Cosmos CMS Metrics Class.
+/// </summary>
+public class Metric
     {
         /// <summary>
         /// Gets or sets the unique identifier for the metric.
@@ -69,6 +69,5 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets the total size of RU usage for the day.
         /// </summary>
-        public long FrontDoorResponseBytes { get; set; } = 0;
-    }
-}
+            public long FrontDoorResponseBytes { get; set; } = 0;
+        }

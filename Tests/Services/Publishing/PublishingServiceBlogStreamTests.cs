@@ -44,6 +44,7 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
+                null!, // IMediator
                 mockBlogStreamService.Object,
                 ViewRenderService,
                 Services,

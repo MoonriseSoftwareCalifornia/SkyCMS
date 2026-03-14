@@ -1,4 +1,4 @@
-﻿// <copyright file="TenantArticleLogicFactoryTests.cs" company="Moonrise Software, LLC">
+// <copyright file="TenantArticleLogicFactoryTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -221,6 +221,7 @@ namespace Sky.Tests.Services
                     null,  // No HttpContextAccessor in tests
                     mockAuthorService.Object,
                     sp.GetRequiredService<IClock>(),
+                    null!, // IMediator
                     mockBlogStreamRenderingService.Object,
                     sp.GetRequiredService<IViewRenderService>(),
                     sp,

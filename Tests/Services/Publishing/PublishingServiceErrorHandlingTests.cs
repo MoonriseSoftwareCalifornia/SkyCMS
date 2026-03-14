@@ -649,6 +649,7 @@ namespace Sky.Tests.Services.Publishing
                 accessor,
                 authors.Object,
                 new SystemClock(),
+                null!, // IMediator
                 blogStreamRenderingService,
                 viewRenderer.Object,
                 serviceProvider,

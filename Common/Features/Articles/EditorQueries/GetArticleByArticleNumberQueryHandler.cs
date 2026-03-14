@@ -34,6 +34,7 @@ public class GetArticleByArticleNumberQueryHandler : IQueryHandler<GetArticleByA
     /// <param name="memoryCache">Memory cache.</param>
     /// <param name="configuration">Configuration for publisher settings.</param>
     public GetArticleByArticleNumberQueryHandler(
+        IMediator mediator,
         ApplicationDbContext dbContext,
         IMemoryCache memoryCache,
         IConfiguration configuration)
@@ -45,7 +46,7 @@ public class GetArticleByArticleNumberQueryHandler : IQueryHandler<GetArticleByA
             ?? configuration.GetValue<string>("AzureBlobStorageEndPoint")
             ?? string.Empty;
 
-        articleViewModelBuilder = new ArticleViewModelBuilder(dbContext, memoryCache, publisherUrl, isEditor: true);
+        articleViewModelBuilder = new ArticleViewModelBuilder(mediator, dbContext, memoryCache, publisherUrl, isEditor: true);
     }
 
     /// <inheritdoc />

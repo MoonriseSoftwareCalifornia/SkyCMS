@@ -39,6 +39,7 @@ namespace Sky.Editor.Services.Templates
         private readonly IWebHostEnvironment environment;
         private readonly ILogger<TemplateService> logger;
         private readonly ApplicationDbContext dbContext;
+        private readonly Cosmos.Common.Features.Shared.IMediator mediator;
         private readonly IDynamicConfigurationProvider dynamicConfigProvider;
         private readonly SemaphoreSlim @lock = new (1, 1);
         private List<PageTemplate> cachedTemplates;
@@ -49,16 +50,19 @@ namespace Sky.Editor.Services.Templates
         /// <param name="environment">The web hosting environment.</param>
         /// <param name="logger">The logger.</param>
         /// <param name="dbContext">The database context.</param>
+        /// <param name="mediator">Mediator for CQRS queries.</param>
         /// <param name="dynamicConfigProvider">The dynamic configuration provider for tenant resolution.</param>
         public TemplateService(
             IWebHostEnvironment environment,
             ILogger<TemplateService> logger,
             ApplicationDbContext dbContext,
+            Cosmos.Common.Features.Shared.IMediator mediator,
             IDynamicConfigurationProvider dynamicConfigProvider)
         {
             this.environment = environment;
             this.logger = logger;
             this.dbContext = dbContext;
+            this.mediator = mediator;
             this.dynamicConfigProvider = dynamicConfigProvider;
         }
 
@@ -102,16 +106,19 @@ namespace Sky.Editor.Services.Templates
             }
 
             var allTemplates = await GetAllTemplatesAsync();
-            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
-            
+            var defaultLayoutViewModel = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
+
             // If no default layout exists, we can't create templates
-            if (defaultLayout == null)
+            if (defaultLayoutViewModel == null)
             {
                 logger.LogWarning("No default layout found. Cannot ensure default templates exist.");
                 return;
             }
 
-            var layoutId = defaultLayout.Id;
+            var layoutId = defaultLayoutViewModel.Id;
+
+            // Fetch the full Layout entity from database since we need LayoutNumber and CommunityLayoutId
+            var defaultLayout = await dbContext.Layouts.FirstOrDefaultAsync(l => l.Id == layoutId);
             var templatesCreated = 0;
             var templatesUpdated = 0;
             var templatesSkipped = 0;

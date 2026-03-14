@@ -673,8 +673,8 @@ namespace Sky.Tests.Controllers
             // Publish the blog entries to create catalog entries
             var article1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry1.ArticleNumber);
             var article2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry2.ArticleNumber);
-            await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
-            await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
+            await PublishingService.PublishAsync(article1);
+            await PublishingService.PublishAsync(article2);
             
             // Update catalog entries to link them to the blog
             var catalog1 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry1.ArticleNumber);

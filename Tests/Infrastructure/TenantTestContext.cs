@@ -241,6 +241,10 @@ namespace Sky.Tests
                 var viewRenderService = (Sky.Cms.Services.IViewRenderService)viewRenderServiceField?.GetValue(baseTestContext);
                 var httpContextAccessor = (IHttpContextAccessor)httpContextAccessorField?.GetValue(baseTestContext);
 
+                // Get Mediator from base test context
+                var mediatorField = typeof(SkyCmsTestBase).GetField("Mediator", BindingFlags.NonPublic | BindingFlags.Instance);
+                var mediator = (Cosmos.Common.Features.Shared.IMediator)mediatorField?.GetValue(baseTestContext);
+
                 // Build a minimal service provider for this tenant's PublishingService
                 var tenantServiceCollection = new ServiceCollection();
                 tenantServiceCollection.AddSingleton(DbContext); // Use THIS tenant's DbContext
@@ -261,6 +265,7 @@ namespace Sky.Tests
                     httpContextAccessor,
                     authorInfoService,
                     clock,
+                    mediator,
                     blogStreamRenderingService,
                     viewRenderService,
                     tenantServiceProvider,

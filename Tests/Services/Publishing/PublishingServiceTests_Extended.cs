@@ -892,6 +892,7 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
+                null!, // IMediator
                 blogStreamRenderingMock.Object,
                 _mockViewRenderService.Object,
                 _serviceProvider,
@@ -921,6 +922,7 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
+                null!, // IMediator
                 mockBlogStreamService.Object,
                 _mockViewRenderService.Object,
                 _serviceProvider,
@@ -939,6 +941,7 @@ namespace Sky.Tests.Services.Publishing
                 HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
+                null!, // IMediator
                 mockBlogStreamService.Object,
                 _mockViewRenderService.Object,
                 _serviceProvider,

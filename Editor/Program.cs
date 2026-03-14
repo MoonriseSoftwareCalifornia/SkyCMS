@@ -333,6 +333,7 @@ builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
 
 builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
     new ArticleViewModelBuilder(
+        sp.GetRequiredService<Cosmos.Common.Features.Shared.IMediator>(),
         sp.GetRequiredService<ApplicationDbContext>(),
         sp.GetRequiredService<IMemoryCache>(),
         builder.Configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty,

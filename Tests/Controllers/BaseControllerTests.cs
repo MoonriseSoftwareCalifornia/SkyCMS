@@ -3,6 +3,7 @@ using Cosmos.Common.Features.Shared;
 using Cosmos.DynamicConfig;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Sky.Cms.Controllers;
 using System.Security.Claims;
@@ -87,7 +88,8 @@ namespace Sky.Tests.Controllers
         public async Task GetTemplatesForCurrentLayoutAsync_ReturnsTemplatesForLayout()
         {
             // Arrange: Add a template for the default layout
-            var layout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+            var layoutViewModel = await Mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
+            var layout = await Db.Layouts.FirstOrDefaultAsync(l => l.Id == layoutViewModel.Id);
             var template = new Template
             {
                 Id = Guid.NewGuid(),

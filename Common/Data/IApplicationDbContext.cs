@@ -9,6 +9,7 @@ namespace Cosmos.Common.Data
 {
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
+    using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
 
     /// <summary>
@@ -94,6 +95,31 @@ namespace Cosmos.Common.Data
         /// Gets or sets the time-based one-time password (TOTP) tokens for users.
         /// </summary>
         DbSet<TotpToken> TotpTokens { get; set; }
+
+        /// <summary>
+        /// Gets or sets the page design versions (draft and historical design iterations).
+        /// </summary>
+        DbSet<PageDesignVersion> PageDesignVersions { get; set; }
+
+        /// <summary>
+        /// Gets or sets the migration history tracking records.
+        /// </summary>
+        DbSet<MigrationHistory> MigrationHistory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the identity users collection.
+        /// </summary>
+        DbSet<IdentityUser> Users { get; set; }
+
+        /// <summary>
+        /// Gets or sets the identity roles collection.
+        /// </summary>
+        DbSet<IdentityRole> Roles { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user-role associations collection.
+        /// </summary>
+        DbSet<IdentityUserRole<string>> UserRoles { get; set; }
 
         /// <summary>
         /// Ensures that the backing database for the supplied context exists and,
