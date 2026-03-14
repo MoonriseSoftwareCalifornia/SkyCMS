@@ -381,80 +381,55 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantSqlServerConnection_DetectsCorrectDatabaseType()
+        public async Task ValidateAsync_SingleTenantConnections_DetectCorrectDatabaseType()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            var scenarios = new[]
             {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
+                new
+                {
+                    ConnectionString = "Server=localhost;Database=test;Trusted_Connection=true;",
+                    ExpectedDatabaseType = "SQL Server",
+                },
+                new
+                {
+                    ConnectionString = "Server=localhost;Port=3306;Database=test;User=root;Password=pass;",
+                    ExpectedDatabaseType = "MySQL",
+                },
+                new
+                {
+                    ConnectionString = "Data Source=test.db",
+                    ExpectedDatabaseType = "SQLite",
+                },
+                new
+                {
+                    ConnectionString = "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=key;",
+                    ExpectedDatabaseType = "Azure Cosmos DB",
+                },
             };
-            var values = new Dictionary<string, object?>
+
+            foreach (var scenario in scenarios)
             {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = scenario.ConnectionString
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = "admin@example.com"
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            StringAssert.Contains(dbCheck.Message, "SQL Server");
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantMySqlConnection_DetectsCorrectDatabaseType()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Port=3306;Database=test;User=root;Password=pass;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            StringAssert.Contains(dbCheck.Message, "MySQL");
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantSqliteConnection_DetectsCorrectDatabaseType()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Data Source=test.db"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            StringAssert.Contains(dbCheck.Message, "SQLite");
+                // Assert
+                Assert.IsNotNull(result);
+                var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
+                Assert.IsNotNull(dbCheck);
+                StringAssert.Contains(dbCheck.Message, scenario.ExpectedDatabaseType);
+            }
         }
 
         [TestMethod]
@@ -493,32 +468,6 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                     File.Delete(dbPath);
                 }
             }
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantCosmosConnection_DetectsCorrectDatabaseType()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=key;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            StringAssert.Contains(dbCheck.Message, "Azure Cosmos DB");
         }
 
         [TestMethod]
