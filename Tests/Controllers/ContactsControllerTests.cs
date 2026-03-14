@@ -621,46 +621,25 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that MailChimp POST returns view when ApiKey is null.
+        /// Tests that MailChimp POST returns view when required fields are null.
         /// </summary>
         [TestMethod]
-        public async Task MailChimp_Post_WithNullApiKey_ReturnsViewWithError()
+        public async Task MailChimp_Post_WithNullRequiredField_ReturnsViewWithError()
         {
-            // Arrange
-            var model = new MailChimpConfig
+            var scenarios = new[]
             {
-                ApiKey = null,
-                ContactListName = "Test List"
+                new MailChimpConfig { ApiKey = null, ContactListName = "Test List" },
+                new MailChimpConfig { ApiKey = "test-key", ContactListName = null }
             };
 
-            // Act
-            var result = await controller.MailChimp(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            Assert.IsFalse(controller.ModelState.IsValid);
-            Assert.IsTrue(controller.ModelState.ContainsKey(string.Empty));
-        }
-
-        /// <summary>
-        /// Tests that MailChimp POST returns view when ContactListName is null.
-        /// </summary>
-        [TestMethod]
-        public async Task MailChimp_Post_WithNullContactListName_ReturnsViewWithError()
-        {
-            // Arrange
-            var model = new MailChimpConfig
+            foreach (var model in scenarios)
             {
-                ApiKey = "test-key",
-                ContactListName = null
-            };
+                var result = await controller.MailChimp(model);
 
-            // Act
-            var result = await controller.MailChimp(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            Assert.IsFalse(controller.ModelState.IsValid);
+                Assert.IsInstanceOfType(result, typeof(ViewResult));
+                Assert.IsFalse(controller.ModelState.IsValid);
+                controller.ModelState.Clear();
+            }
         }
 
         /// <summary>
@@ -826,25 +805,21 @@ namespace Sky.Tests.Controllers
         #region Constructor Tests
 
         /// <summary>
-        /// Tests that constructor throws ArgumentNullException when dbContext is null.
+        /// Tests that constructor throws ArgumentNullException for null dependencies.
         /// </summary>
         [TestMethod]
-        public void Constructor_WithNullDbContext_ThrowsArgumentNullException()
+        public void Constructor_WithNullDependencies_ThrowsArgumentNullException()
         {
-            // Act & Assert
-            Assert.ThrowsExactly<ArgumentNullException>(() => 
-                new ContactsController(null!, mockLogger.Object));
-        }
+            var scenarios = new Action[]
+            {
+                () => _ = new ContactsController(null!, mockLogger.Object),
+                () => _ = new ContactsController(Db, null!),
+            };
 
-        /// <summary>
-        /// Tests that constructor throws ArgumentNullException when logger is null.
-        /// </summary>
-        [TestMethod]
-        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-        {
-            // Act & Assert
-            Assert.ThrowsExactly<ArgumentNullException>(() => 
-                new ContactsController(Db, null!));
+            foreach (var scenario in scenarios)
+            {
+                Assert.ThrowsExactly<ArgumentNullException>(scenario);
+            }
         }
 
         #endregion
@@ -1169,24 +1144,33 @@ namespace Sky.Tests.Controllers
         #region MailChimp POST Edge Cases
 
         /// <summary>
-        /// Tests that MailChimp POST handles whitespace-only values correctly.
+        /// Tests that MailChimp POST rejects blank values.
         /// </summary>
         [TestMethod]
-        public async Task MailChimp_Post_WithWhitespaceOnlyValues_ReturnsViewWithError()
+        public async Task MailChimp_Post_WithBlankValues_ReturnsViewWithError()
         {
-            // Arrange
-            var model = new MailChimpConfig
+            var scenarios = new[]
             {
-                ApiKey = "   ",
-                ContactListName = "   "
+                new MailChimpConfig
+                {
+                    ApiKey = "   ",
+                    ContactListName = "   "
+                },
+                new MailChimpConfig
+                {
+                    ApiKey = string.Empty,
+                    ContactListName = string.Empty
+                }
             };
 
-            // Act
-            var result = await controller.MailChimp(model);
+            foreach (var model in scenarios)
+            {
+                var result = await controller.MailChimp(model);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            Assert.IsFalse(controller.ModelState.IsValid);
+                Assert.IsInstanceOfType(result, typeof(ViewResult));
+                Assert.IsFalse(controller.ModelState.IsValid);
+                controller.ModelState.Clear();
+            }
         }
 
         /// <summary>
@@ -1261,27 +1245,6 @@ namespace Sky.Tests.Controllers
             var apiKeySetting = await Db.Settings
                 .FirstOrDefaultAsync(s => s.Group == "MailChimp" && s.Name == "ApiKey");
             Assert.AreEqual("key-with-special!@#$%^&*()", apiKeySetting!.Value);
-        }
-
-        /// <summary>
-        /// Tests that MailChimp POST handles empty string (not null) correctly.
-        /// </summary>
-        [TestMethod]
-        public async Task MailChimp_Post_WithEmptyStringValues_ReturnsViewWithError()
-        {
-            // Arrange
-            var model = new MailChimpConfig
-            {
-                ApiKey = string.Empty,
-                ContactListName = string.Empty
-            };
-
-            // Act
-            var result = await controller.MailChimp(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            Assert.IsFalse(controller.ModelState.IsValid);
         }
 
         #endregion
