@@ -753,93 +753,38 @@ namespace Sky.Tests.Controllers
         #region Preview Error Handling Tests
 
         /// <summary>
-        /// Test that Index throws exception when previewing non-existent layout.
+        /// Test that Index throws ArgumentNullException when previewing layouts or templates with null IDs.
         /// </summary>
         [TestMethod]
-        public async Task Index_ThrowsException_WhenPreviewingNonExistentLayout()
+        public async Task Index_ThrowsArgumentNullException_WhenPreviewingWithNullId()
         {
-            // Arrange - Use a non-existent layout ID
-            var nonExistentLayoutId = Guid.NewGuid();
-
-            // Act & Assert - Should throw InvalidOperationException
-            var exceptionThrown = false;
-            try
+            foreach (var previewType in new[] { "layouts", "templates" })
             {
-                await homeController.Index(previewType: "layouts", itemId: nonExistentLayoutId);
-            }
-            catch (InvalidOperationException ex)
-            {
-                exceptionThrown = true;
-                Assert.IsTrue(ex.Message.Contains("not found"), "Exception message should indicate layout not found");
-            }
+                var ex = await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
+                {
+                    await homeController.Index(previewType: previewType, itemId: null);
+                });
 
-            Assert.IsTrue(exceptionThrown, "InvalidOperationException should be thrown");
+                Assert.AreEqual("itemId", ex.ParamName, $"{previewType} preview should fail on itemId parameter");
+            }
         }
 
         /// <summary>
-        /// Test that Index throws exception when previewing layout with null ID.
+        /// Test that Index throws InvalidOperationException when previewing missing layouts or templates.
         /// </summary>
         [TestMethod]
-        public async Task Index_ThrowsException_WhenPreviewingLayoutWithNullId()
+        public async Task Index_ThrowsInvalidOperationException_WhenPreviewingMissingEntities()
         {
-            // Act & Assert - Should throw ArgumentNullException
-            var exceptionThrown = false;
-            try
+            foreach (var previewType in new[] { "layouts", "templates" })
             {
-                await homeController.Index(previewType: "layouts", itemId: null);
-            }
-            catch (ArgumentNullException ex)
-            {
-                exceptionThrown = true;
-                Assert.IsTrue(ex.ParamName == "itemId", "Parameter name should be itemId");
-            }
+                var missingId = Guid.NewGuid();
+                var ex = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
+                {
+                    await homeController.Index(previewType: previewType, itemId: missingId);
+                });
 
-            Assert.IsTrue(exceptionThrown, "ArgumentNullException should be thrown");
-        }
-
-        /// <summary>
-        /// Test that Index throws exception when previewing non-existent template.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_ThrowsException_WhenPreviewingNonExistentTemplate()
-        {
-            // Arrange - Use a non-existent template ID
-            var nonExistentTemplateId = Guid.NewGuid();
-
-            // Act & Assert - Should throw InvalidOperationException
-            var exceptionThrown = false;
-            try
-            {
-                await homeController.Index(previewType: "templates", itemId: nonExistentTemplateId);
+                Assert.IsTrue(ex.Message.Contains("not found"), $"{previewType} preview should indicate missing entity");
             }
-            catch (InvalidOperationException ex)
-            {
-                exceptionThrown = true;
-                Assert.IsTrue(ex.Message.Contains("not found"), "Exception message should indicate template not found");
-            }
-
-            Assert.IsTrue(exceptionThrown, "InvalidOperationException should be thrown");
-        }
-
-        /// <summary>
-        /// Test that Index throws exception when previewing template with null ID.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_ThrowsException_WhenPreviewingTemplateWithNullId()
-        {
-            // Act & Assert - Should throw ArgumentNullException
-            var exceptionThrown = false;
-            try
-            {
-                await homeController.Index(previewType: "templates", itemId: null);
-            }
-            catch (ArgumentNullException ex)
-            {
-                exceptionThrown = true;
-                Assert.IsTrue(ex.ParamName == "itemId", "Parameter name should be itemId");
-            }
-
-            Assert.IsTrue(exceptionThrown, "ArgumentNullException should be thrown");
         }
 
         #endregion

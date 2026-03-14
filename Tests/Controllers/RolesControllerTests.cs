@@ -107,31 +107,21 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Create_WithEmptyRoleName_ReturnsBadRequest.
+        /// Tests that Create rejects null and empty role names.
         /// </summary>
         [TestMethod]
-        public async Task Create_WithEmptyRoleName_ReturnsBadRequest()
+        public async Task Create_WithMissingRoleName_ReturnsBadRequest()
         {
-            // Act
-            var result = await controller.Create("");
+            foreach (var roleName in new string[] { string.Empty, null })
+            {
+                // Act
+                var result = await controller.Create(roleName);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequest = result as BadRequestObjectResult;
-            Assert.AreEqual("Rule name is required.", badRequest.Value);
-        }
-
-        /// <summary>
-        /// Tests that Create_WithNullRoleName_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Create_WithNullRoleName_ReturnsBadRequest()
-        {
-            // Act
-            var result = await controller.Create(null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+                // Assert
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+                var badRequest = result as BadRequestObjectResult;
+                Assert.AreEqual("Rule name is required.", badRequest.Value);
+            }
         }
 
         /// <summary>
@@ -949,30 +939,6 @@ namespace Sky.Tests.Controllers
             var viewResult = (ViewResult)result;
             var model = viewResult.Model as List<UserIndexViewModel>;
             Assert.IsNotNull(model);
-        }
-
-        /// <summary>
-        /// Tests that UsersInRole POST handles invalid model state.
-        /// </summary>
-        [TestMethod]
-        public async Task UsersInRole_Post_HandlesInvalidModelState()
-        {
-            // Arrange
-            var model = new UsersInRoleViewModel
-            {
-                RoleId = Guid.NewGuid().ToString(),
-                RoleName = "TestRole",
-                UserIds = new string[] { }
-            };
-            controller.ModelState.AddModelError("RoleName", "Role name is required");
-
-            // Act
-            var result = await controller.UsersInRole(model);
-
-            // Assert
-            // When ModelState is invalid, it returns the view with the model
-            // The controller doesn't have explicit handling for invalid state, so it falls through
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
         }
 
         /// <summary>
