@@ -41,7 +41,7 @@ namespace Sky.Tests.Features.Blogs
         /// Initialize test context before each test.
         /// </summary>
         [TestInitialize]
-        public async Task Setup()
+        public new async Task Setup()
         {
             InitializeTestContext(seedLayout: true);
             

@@ -3,6 +3,8 @@
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
+#nullable enable
+
 namespace Sky.Tests.DynamicConfig
 {
     using System;
@@ -326,7 +328,7 @@ namespace Sky.Tests.DynamicConfig
 
             // Assert
             // This depends on test configuration setup
-            Assert.IsTrue(isConfigured is true or false, 
+            Assert.IsNotNull((object)isConfigured,
                 "IsMultiTenantConfigured should return a boolean value");
         }
 

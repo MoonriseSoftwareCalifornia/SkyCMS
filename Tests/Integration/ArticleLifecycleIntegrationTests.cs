@@ -23,7 +23,7 @@ namespace Sky.Tests.Integration
     public class ArticleLifecycleIntegrationTests : SkyCmsTestBase
     {
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }

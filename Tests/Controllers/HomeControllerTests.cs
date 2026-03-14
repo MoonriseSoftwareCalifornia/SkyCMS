@@ -5,6 +5,8 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+#nullable enable
+
 namespace Sky.Tests.Controllers
 {
     using System;
@@ -43,7 +45,7 @@ namespace Sky.Tests.Controllers
         /// Initialize test - create HomeController instance.
         /// </summary>
         [TestInitialize]
-        public new void InitializeTest()
+        public void InitializeTest()
         {
             InitializeTestContext(seedLayout: true);
 

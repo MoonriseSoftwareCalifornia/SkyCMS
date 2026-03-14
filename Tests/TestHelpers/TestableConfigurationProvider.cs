@@ -16,7 +16,6 @@ namespace Sky.Tests.TestHelpers
     internal class TestableConfigurationProvider : DynamicConfigurationProvider
     {
         private readonly DbContextOptions<DynamicConfigDbContext> _testOptions;
-        private Mock<IOptions<ProxySettings>> proxyOptionsMock;
 
         public TestableConfigurationProvider(
             IConfiguration configuration,

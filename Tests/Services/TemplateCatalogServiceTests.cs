@@ -31,7 +31,7 @@ namespace Sky.Tests.Services
         private TemplateService templateService;
 
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
 

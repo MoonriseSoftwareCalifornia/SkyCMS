@@ -34,7 +34,7 @@ namespace Sky.Tests.Performance
     public class PerformanceAndConcurrencyTests : SkyCmsTestBase
     {
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }

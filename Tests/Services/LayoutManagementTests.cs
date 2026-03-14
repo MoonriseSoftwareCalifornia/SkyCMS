@@ -22,7 +22,7 @@ namespace Sky.Tests.Services
     public class LayoutManagementTests : SkyCmsTestBase
     {
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }

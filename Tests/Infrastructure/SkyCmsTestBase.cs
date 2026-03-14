@@ -1,4 +1,7 @@
 using Cosmos.BlobService;
+
+#nullable enable
+
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;

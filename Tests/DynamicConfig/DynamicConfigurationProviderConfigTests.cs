@@ -4,6 +4,8 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;

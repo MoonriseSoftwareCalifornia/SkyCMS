@@ -39,7 +39,7 @@ namespace Sky.Tests.Security
         private const string Tenant2Domain = "tenant2.example.com";
 
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }

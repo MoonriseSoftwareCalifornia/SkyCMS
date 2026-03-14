@@ -5,6 +5,8 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+#nullable enable
+
 namespace Sky.Tests.Services.Publishing
 {
     using System;

@@ -24,7 +24,7 @@ namespace Sky.Tests.Features.Templates
         /// Initialize test context.
         /// </summary>
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }
