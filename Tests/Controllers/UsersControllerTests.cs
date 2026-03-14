@@ -312,26 +312,6 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("new@example.com", updated.EmailAddress);
         }
 
-        /// <summary>
-        /// Tests that AuthorInfoEdit_Post_ReturnsNotFoundForNonExistentAuthor.
-        /// </summary>
-        [TestMethod]
-        public async Task AuthorInfoEdit_Post_ReturnsNotFoundForNonExistentAuthor()
-        {
-            // Arrange
-            var model = new AuthorInfo
-            {
-                Id = Guid.NewGuid().ToString(),
-                AuthorName = "Test"
-            };
-
-            // Act
-            var result = await controller.AuthorInfoEdit(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
         #endregion
 
         #region Index Tests
@@ -433,19 +413,6 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(OkObjectResult));
             var updatedUser = await UserManager.FindByIdAsync(user.Id);
             Assert.IsTrue(updatedUser.EmailConfirmed);
-        }
-
-        /// <summary>
-        /// Tests that ConfirmEmail_ReturnsNotFoundForInvalidUser.
-        /// </summary>
-        [TestMethod]
-        public async Task ConfirmEmail_ReturnsNotFoundForInvalidUser()
-        {
-            // Act
-            var result = await controller.ConfirmEmail(Guid.NewGuid().ToString());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         /// <summary>
@@ -833,19 +800,6 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(resultData.Success || !string.IsNullOrEmpty(resultData.Error));
         }
 
-        /// <summary>
-        /// Tests that ResendEmailConfirmation_ReturnsNotFoundForInvalidUser.
-        /// </summary>
-        [TestMethod]
-        public async Task ResendEmailConfirmation_ReturnsNotFoundForInvalidUser()
-        {
-            // Act
-            var result = await controller.ResendEmailConfirmation(Guid.NewGuid().ToString());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
         #endregion
 
         #region SendPasswordReset Tests
@@ -875,17 +829,18 @@ namespace Sky.Tests.Controllers
                 It.IsAny<string>()), Times.Once);
         }
 
-        /// <summary>
-        /// Tests that SendPasswordReset_ReturnsNotFoundForInvalidEmail.
-        /// </summary>
         [TestMethod]
-        public async Task SendPasswordReset_ReturnsNotFoundForInvalidEmail()
+        public async Task SendPasswordReset_WithInvalidInputs_HandlesAsExpected()
         {
-            // Act
-            var result = await controller.SendPasswordReset("nonexistent@example.com");
+            // Non-existent user email returns NotFound.
+            var missingUserResult = await controller.SendPasswordReset("nonexistent@example.com");
+            Assert.IsInstanceOfType(missingUserResult, typeof(NotFoundResult));
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+            // Null email is rejected by UserManager.
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
+            {
+                await controller.SendPasswordReset(null);
+            });
         }
 
         #endregion
@@ -917,19 +872,6 @@ namespace Sky.Tests.Controllers
             Assert.IsNull(deleted);
         }
 
-        /// <summary>
-        /// Tests that DeleteAuthorInfo_ReturnsNotFoundForNonExistentAuthor.
-        /// </summary>
-        [TestMethod]
-        public async Task DeleteAuthorInfo_ReturnsNotFoundForNonExistentAuthor()
-        {
-            // Act
-            var result = await controller.DeleteAuthorInfo(Guid.NewGuid().ToString());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
         #endregion
 
         #region RoleMembership Tests
@@ -951,17 +893,36 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
         }
 
+        #endregion
+
+        #region Missing Entity Tests
+
         /// <summary>
-        /// Tests that RoleMembership_ReturnsNotFoundForInvalidUser.
+        /// Tests that endpoints return NotFound when the requested user or author does not exist.
         /// </summary>
         [TestMethod]
-        public async Task RoleMembership_ReturnsNotFoundForInvalidUser()
+        public async Task MissingEntities_ReturnNotFound()
         {
-            // Act
-            var result = await controller.RoleMembership(Guid.NewGuid().ToString());
+            var missingId = Guid.NewGuid().ToString();
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("ConfirmEmail", () => controller.ConfirmEmail(missingId)),
+                ("ResendEmailConfirmation", () => controller.ResendEmailConfirmation(missingId)),
+                ("DeleteAuthorInfo", () => controller.DeleteAuthorInfo(missingId)),
+                ("RoleMembership", () => controller.RoleMembership(missingId)),
+                ("AuthorInfoEdit_Post", () => controller.AuthorInfoEdit(new AuthorInfo
+                {
+                    Id = missingId,
+                    AuthorName = "Test"
+                })),
+            };
+
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, typeof(NotFoundResult), $"{scenario.Name} should return NotFound for a missing entity.");
+            }
         }
 
         #endregion
@@ -1024,24 +985,27 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Count <= 10, "Page size should be respected");
         }
 
-        /// <summary>
-        /// Tests that Index_HandlesNullRoleId.
-        /// </summary>
         [TestMethod]
-        public async Task Index_HandlesNullRoleId()
+        public async Task Index_HandlesMissingRoleId_ReturnsAllUsers()
         {
             // Arrange
-            var user = new IdentityUser { Id = Guid.NewGuid().ToString(), Email = "test@example.com" };
-            await UserManager.CreateAsync(user);
+            var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user1@test.com", Email = "user1@test.com" };
+            var user2 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user2@test.com", Email = "user2@test.com" };
+            await UserManager.CreateAsync(user1);
+            await UserManager.CreateAsync(user2);
 
-            // Act - Pass null for id parameter
-            var result = await controller.Index(id: null);
+            foreach (var roleId in new object[] { null, string.Empty })
+            {
+                // Act
+                var result = await controller.Index(id: roleId as string);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            var model = viewResult.Model as List<UserIndexViewModel>;
-            Assert.IsNotNull(model);
+                // Assert
+                Assert.IsInstanceOfType(result, typeof(ViewResult));
+                var viewResult = (ViewResult)result;
+                var model = viewResult.Model as List<UserIndexViewModel>;
+                Assert.IsNotNull(model);
+                Assert.IsTrue(model.Count >= 2, "Should return all users when role ID is null or empty");
+            }
         }
 
         /// <summary>
@@ -1143,20 +1107,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that SendPasswordReset_HandlesNullEmail.
-        /// </summary>
-        [TestMethod]
-        public async Task SendPasswordReset_HandlesNullEmail()
-        {
-            // Act & Assert
-            // UserManager.FindByEmailAsync throws ArgumentNullException for null email
-            await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
-            {
-                await controller.SendPasswordReset(null);
-            });
-        }
-
-        /// <summary>
         /// Tests that UserRoles_Post_HandlesInvalidUserId.
         /// </summary>
         [TestMethod]
@@ -1206,29 +1156,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Index handles empty role ID correctly.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_HandlesEmptyRoleId_ReturnsAllUsers()
-        {
-            // Arrange
-            var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user1@test.com", Email = "user1@test.com" };
-            var user2 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user2@test.com", Email = "user2@test.com" };
-            await UserManager.CreateAsync(user1);
-            await UserManager.CreateAsync(user2);
-
-            // Act
-            var result = await controller.Index(id: string.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            var model = viewResult.Model as List<UserIndexViewModel>;
-            Assert.IsNotNull(model);
-            Assert.IsTrue(model.Count >= 2, "Should return all users when role ID is empty");
-        }
-
-        /// <summary>
         /// Tests that AuthorInfos validates pagination bounds.
         /// </summary>
         [TestMethod]
@@ -1274,19 +1201,6 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual(model, viewResult.Model);
-        }
-
-        /// <summary>
-        /// Tests that ConfirmEmail handles non-existent user.
-        /// </summary>
-        [TestMethod]
-        public async Task ConfirmEmail_ReturnsNotFound_ForNonExistentUser()
-        {
-            // Act
-            var result = await controller.ConfirmEmail(Guid.NewGuid().ToString());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         /// <summary>

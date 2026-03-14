@@ -748,21 +748,42 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Index returns BadRequest when ModelState is invalid.
+        /// Tests that actions reject invalid model state with BadRequest.
         /// </summary>
         [TestMethod]
-        public async Task Index_ReturnsBadRequest_WhenModelStateInvalid()
+        public async Task InvalidModelState_ReturnsBadRequest()
         {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
+            var templateId = Guid.NewGuid();
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action, Action<BadRequestObjectResult> AssertResult)[]
+            {
+                (
+                    "Index",
+                    () => _controller.Index(),
+                    result => Assert.IsInstanceOfType(result.Value, typeof(SerializableError))),
+                (
+                    "Edit_Get",
+                    () => _controller.Edit(templateId),
+                    _ => { }),
+                (
+                    "EditCode_Get",
+                    () => _controller.EditCode(templateId),
+                    _ => { }),
+                (
+                    "Delete",
+                    () => _controller.Delete(templateId),
+                    _ => { }),
+            };
 
-            // Act
-            var result = await _controller.Index();
+            foreach (var scenario in scenarios)
+            {
+                _controller.ModelState.Clear();
+                _controller.ModelState.AddModelError("TestKey", "Test error");
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequestResult = result as BadRequestObjectResult;
-            Assert.IsInstanceOfType(badRequestResult.Value, typeof(SerializableError));
+                var result = await scenario.Action();
+
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), $"{scenario.Name} should return BadRequest when ModelState is invalid.");
+                scenario.AssertResult((BadRequestObjectResult)result);
+            }
         }
 
         #endregion
@@ -1132,23 +1153,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Edit GET returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task Edit_Get_ReturnsBadRequest_WhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.Edit(templateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
         /// Tests that Edit POST saves changes when valid.
         /// </summary>
         [TestMethod]
@@ -1367,23 +1371,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that EditCode GET returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task EditCode_Get_ReturnsBadRequest_WhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.EditCode(templateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
         /// Tests that EditCode POST saves changes when valid.
         /// </summary>
         [TestMethod]
@@ -1579,22 +1566,6 @@ namespace Sky.Tests.Controllers
         {
             // Act
             var result = await _controller.Delete(Guid.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Delete returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task Delete_ReturnsBadRequestWhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-
-            // Act
-            var result = await _controller.Delete(Guid.NewGuid());
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
