@@ -307,27 +307,35 @@ namespace Sky.Tests.Performance
         #region Version Management Performance Tests
 
         /// <summary>
-        /// Tests creating many versions of same article.
+        /// Tests creating and querying many versions of the same article.
         /// </summary>
         [TestMethod]
-        public async Task CreateManyVersions_PerformsEfficiently()
+        public async Task CreateAndQueryManyVersions_PerformsEfficiently()
         {
             // Arrange
             var article = await CreateArticleAsync("Version Test", TestUserId);
             const int versionCount = 20;
 
-            // Act
-            var stopwatch = Stopwatch.StartNew();
+            // Act - Create versions
+            var creationStopwatch = Stopwatch.StartNew();
             var currentArticle = await Db.Articles.FindAsync(article.Id);
             
             for (int i = 2; i <= versionCount; i++)
             {
-                var newVersionVm = await CreateArticleVersionAsync(article.ArticleNumber);
+                _ = await CreateArticleVersionAsync(article.ArticleNumber);
                 currentArticle = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
                 currentArticle.Content = $"<p>Version {i}</p>";
                 await Db.SaveChangesAsync();
             }
-            stopwatch.Stop();
+            creationStopwatch.Stop();
+
+            // Act - Query latest version
+            var queryStopwatch = Stopwatch.StartNew();
+            var latest = await Db.Articles
+                .Where(a => a.ArticleNumber == article.ArticleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstAsync();
+            queryStopwatch.Stop();
 
             // Assert
             var versions = await Db.Articles
@@ -335,38 +343,11 @@ namespace Sky.Tests.Performance
                 .ToListAsync();
 
             Assert.AreEqual(versionCount, versions.Count);
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 5000, 
-                $"Creating {versionCount} versions took {stopwatch.ElapsedMilliseconds}ms (should be < 5s)");
-        }
-
-        /// <summary>
-        /// Tests querying article with many versions.
-        /// </summary>
-        [TestMethod]
-        public async Task QueryArticle_WithManyVersions_PerformsEfficiently()
-        {
-            // Arrange - Create article with 15 versions
-            var article = await CreateArticleAsync("Multi-Version Test", TestUserId);
-            var currentArticle = await Db.Articles.FindAsync(article.Id);
-            
-            for (int i = 2; i <= 15; i++)
-            {
-                var newVersionVm = await CreateArticleVersionAsync(article.ArticleNumber);
-                currentArticle = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
-            }
-
-            // Act - Query latest version
-            var stopwatch = Stopwatch.StartNew();
-            var latest = await Db.Articles
-                .Where(a => a.ArticleNumber == article.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstAsync();
-            stopwatch.Stop();
-
-            // Assert
-            Assert.AreEqual(15, latest.VersionNumber);
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 100, 
-                $"Query took {stopwatch.ElapsedMilliseconds}ms (should be < 100ms)");
+            Assert.AreEqual(versionCount, latest.VersionNumber);
+            Assert.IsTrue(creationStopwatch.ElapsedMilliseconds < 5000, 
+                $"Creating {versionCount} versions took {creationStopwatch.ElapsedMilliseconds}ms (should be < 5s)");
+            Assert.IsTrue(queryStopwatch.ElapsedMilliseconds < 100, 
+                $"Query took {queryStopwatch.ElapsedMilliseconds}ms (should be < 100ms)");
         }
 
         #endregion
