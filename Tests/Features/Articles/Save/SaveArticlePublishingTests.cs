@@ -482,79 +482,57 @@ namespace Sky.Tests.Features.Articles.Save
 }
 
         /// <summary>
-        /// Tests that SaveArticle_RootPageWithSpecialCharactersInTitle_PreservesRoot.
+        /// Tests root page URL path preservation across special title and case-insensitive root scenarios.
         /// </summary>
         [TestMethod]
-        public async Task SaveArticle_RootPageWithSpecialCharactersInTitle_PreservesRoot()
+        public async Task SaveArticle_RootPageEdgeCases_PreserveRootPath()
         {
-            // Arrange
-            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
-
-            var command = new SaveArticleCommand
+            var scenarios = new[]
             {
-                ArticleNumber = rootArticle.ArticleNumber,
-                Title = "Home & Welcome! 2024",
-                Content = "<p>Content</p>",
-                UserId = TestUserId,
-                ArticleType = ArticleType.General,
-                Published = Clock.UtcNow
+                new
+                {
+                    Name = "SpecialCharactersInTitle",
+                    InitialUrlPath = "root",
+                    NewTitle = "Home & Welcome! 2024",
+                },
+                new
+                {
+                    Name = "CaseInsensitiveExistingRoot",
+                    InitialUrlPath = "ROOT",
+                    NewTitle = "Updated Title",
+                },
             };
 
-            // Act
-            var result = await SaveArticleHandler.HandleAsync(command);
-
-            // Assert
-            Assert.IsTrue(result.IsSuccess);
-    
-            var updated = await Db.Articles
-                .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstOrDefaultAsync();
-    
-            Assert.IsNotNull(updated);
-            Assert.AreEqual("root", updated.UrlPath);
-            Assert.AreEqual("Home & Welcome! 2024", updated.Title);
-}
-
-        /// <summary>
-        /// Tests that SaveArticle_RootPageCaseInsensitive_PreservesRoot.
-        /// </summary>
-        [TestMethod]
-        public async Task SaveArticle_RootPageCaseInsensitive_PreservesRoot()
-        {
-            // Arrange
-            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
-    
-            // Manually set UrlPath to different casing (edge case)
-            var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
-            article.UrlPath = "ROOT"; // Uppercase
-            await Db.SaveChangesAsync();
-
-            var command = new SaveArticleCommand
+            foreach (var scenario in scenarios)
             {
-                ArticleNumber = rootArticle.ArticleNumber,
-                Title = "Updated Title",
-                Content = "<p>Content</p>",
-                UserId = TestUserId,
-                ArticleType = ArticleType.General,
-                Published = Clock.UtcNow
-            };
+                var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
+                var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
+                article.UrlPath = scenario.InitialUrlPath;
+                await Db.SaveChangesAsync();
 
-            // Act
-            var result = await SaveArticleHandler.HandleAsync(command);
+                var command = new SaveArticleCommand
+                {
+                    ArticleNumber = rootArticle.ArticleNumber,
+                    Title = scenario.NewTitle,
+                    Content = "<p>Content</p>",
+                    UserId = TestUserId,
+                    ArticleType = ArticleType.General,
+                    Published = Clock.UtcNow
+                };
 
-            // Assert
-            Assert.IsTrue(result.IsSuccess);
-    
-            var updated = await Db.Articles
-                .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstOrDefaultAsync();
-    
-            // Should preserve root (case-insensitive comparison)
-            Assert.IsNotNull(updated);
-            Assert.IsTrue(updated.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase));
-}
+                var result = await SaveArticleHandler.HandleAsync(command);
+                Assert.IsTrue(result.IsSuccess, scenario.Name);
+
+                var updated = await Db.Articles
+                    .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
+                    .OrderByDescending(a => a.VersionNumber)
+                    .FirstOrDefaultAsync();
+
+                Assert.IsNotNull(updated, scenario.Name);
+                Assert.IsTrue(updated.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase), scenario.Name);
+                Assert.AreEqual(scenario.NewTitle, updated.Title, scenario.Name);
+            }
+        }
     }
 }
 
