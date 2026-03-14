@@ -337,20 +337,27 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that ApplyTemplateChanges handles template not found.
+        /// Tests that actions return not found when template does not exist.
         /// </summary>
         [TestMethod]
-        public async Task ApplyTemplateChanges_WithNonExistentTemplate_ReturnsNotFound()
+        public async Task MissingTemplate_ReturnsNotFound_ForTemplateActions()
         {
             // Arrange
             await CreateArticleAsync("Root Article", TestUserId);
             var article = await CreateArticleAsync("Test Article", TestUserId);
+            var nonExistentTemplateId = Guid.NewGuid();
 
-            // Act
-            var result = await _controller.UpdatePage(article.ArticleNumber, Guid.NewGuid());
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action, Type ExpectedType)[]
+            {
+                ("UpdatePage", async () => (IActionResult)await _controller.UpdatePage(article.ArticleNumber, nonExistentTemplateId), typeof(NotFoundObjectResult)),
+                ("Pages", async () => (IActionResult)await _controller.Pages(nonExistentTemplateId), typeof(NotFoundResult)),
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, scenario.ExpectedType, $"{scenario.Name} should return {scenario.ExpectedType.Name} for a missing template.");
+            }
         }
 
         /// <summary>
@@ -495,10 +502,10 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Index applies sorting ascending by Title.
+        /// Tests that Index applies sorting by Title.
         /// </summary>
         [TestMethod]
-        public async Task Index_AppliesSorting_Ascending_ByTitle()
+        public async Task Index_AppliesSorting_ByTitle()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
@@ -524,66 +531,26 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(templateA);
             await Db.SaveChangesAsync();
 
-            // Act
-            var result = await _controller.Index(sortOrder: "asc", currentSort: "Title");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
-            
-            Assert.IsNotNull(model);
-            Assert.IsTrue(model.Count >= 2);
-            
-            // Verify first item is AAA Template (ascending)
-            var firstTemplate = model.First(t => t.Title == "AAA Template" || t.Title == "ZZZ Template");
-            Assert.AreEqual("AAA Template", firstTemplate.Title, "First template should be AAA when sorted ascending");
-        }
-
-        /// <summary>
-        /// Tests that Index applies sorting descending by Title.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_AppliesSorting_Descending_ByTitle()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var templateZ = new Template
+            var scenarios = new[]
             {
-                Id = Guid.NewGuid(),
-                Title = "ZZZ Template",
-                Description = "Last",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
+                new { SortOrder = "asc", ExpectedFirst = "AAA Template" },
+                new { SortOrder = "desc", ExpectedFirst = "ZZZ Template" },
             };
-            var templateA = new Template
+
+            foreach (var scenario in scenarios)
             {
-                Id = Guid.NewGuid(),
-                Title = "AAA Template",
-                Description = "First",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(templateZ);
-            Db.Templates.Add(templateA);
-            await Db.SaveChangesAsync();
+                var result = await _controller.Index(sortOrder: scenario.SortOrder, currentSort: "Title");
 
-            // Act
-            var result = await _controller.Index(sortOrder: "desc", currentSort: "Title");
+                Assert.IsInstanceOfType(result, typeof(ViewResult));
+                var viewResult = result as ViewResult;
+                var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
-            
-            Assert.IsNotNull(model);
-            Assert.IsTrue(model.Count >= 2);
-            
-            // Verify first item is ZZZ Template (descending)
-            var firstTemplate = model.First(t => t.Title == "AAA Template" || t.Title == "ZZZ Template");
-            Assert.AreEqual("ZZZ Template", firstTemplate.Title, "First template should be ZZZ when sorted descending");
+                Assert.IsNotNull(model);
+                Assert.IsTrue(model.Count >= 2);
+
+                var firstTemplate = model.First(t => t.Title == "AAA Template" || t.Title == "ZZZ Template");
+                Assert.AreEqual(scenario.ExpectedFirst, firstTemplate.Title, $"First template should be {scenario.ExpectedFirst} when sorted {scenario.SortOrder}.");
+            }
         }
 
         [TestMethod]
@@ -836,22 +803,6 @@ namespace Sky.Tests.Controllers
             var model = viewResult.Model as List<ArticleListItem>;
             Assert.IsNotNull(model);
             Assert.AreEqual(2, model.Count, "Should have 2 articles using the template");
-        }
-
-        /// <summary>
-        /// Tests that Pages returns NotFound when template does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task Pages_ReturnsNotFound_WhenTemplateDoesNotExist()
-        {
-            // Arrange
-            var nonExistentTemplateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.Pages(nonExistentTemplateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         /// <summary>
