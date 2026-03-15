@@ -1,2 +1,2 @@
-// Enforce single-threaded test execution for the entire test assembly.
-[assembly: Parallelize(Workers = 1, Scope = ExecutionScope.MethodLevel)]
+// Enable limited parallel execution during phased rollout.
+[assembly: Parallelize(Workers = 2, Scope = ExecutionScope.MethodLevel)]

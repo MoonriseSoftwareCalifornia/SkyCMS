@@ -20,7 +20,6 @@ namespace Sky.Tests.Features.Articles.Save
     /// <summary>
     /// Tests for publishing workflow integration during save operations.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class SaveArticlePublishingTests : SkyCmsTestBase
     {
