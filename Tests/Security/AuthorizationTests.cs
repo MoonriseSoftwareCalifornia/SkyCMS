@@ -23,7 +23,6 @@ namespace Sky.Tests.Security
     /// Comprehensive role-based authorization tests for SkyCMS controllers.
     /// Verifies that authorization attributes are properly enforced across all controller actions.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class AuthorizationTests : SkyCmsTestBase
     {

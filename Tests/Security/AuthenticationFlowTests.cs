@@ -25,7 +25,6 @@ namespace Sky.Tests.Security
     /// Comprehensive authentication flow tests for SkyCMS.
     /// Tests local accounts, OAuth providers, session management, and security policies.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class AuthenticationFlowTests : SkyCmsTestBase
     {
