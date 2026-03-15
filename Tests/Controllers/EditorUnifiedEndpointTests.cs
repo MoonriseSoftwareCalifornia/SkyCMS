@@ -32,7 +32,6 @@ namespace Sky.Tests.Controllers
     /// Comprehensive tests for the unified /Editor/Edit endpoint.
     /// Tests command routing, encryption, validation, error handling, and response formats.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class EditorUnifiedEndpointTests : SkyCmsTestBase
     {

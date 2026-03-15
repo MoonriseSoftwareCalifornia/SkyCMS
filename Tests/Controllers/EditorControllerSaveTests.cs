@@ -31,7 +31,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Tests for EditorController save operations using SaveArticle feature.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class EditorControllerSaveTests : SkyCmsTestBase
     {
