@@ -408,8 +408,6 @@ namespace Sky.Tests.Services.Scheduling
 
         #endregion
 
-        #region Email Notification Tests
-
         #region Error Handling Tests
 
         #endregion
