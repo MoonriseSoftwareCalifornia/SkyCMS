@@ -69,12 +69,12 @@ namespace Cosmos.BlobService.Drivers
         /// </remarks>
         public async Task AppendBlobAsync(byte[] data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode)
         {
-            fileMetaData.RelativePath = fileMetaData.RelativePath.TrimStart('/');
+            fileMetaData.RelativePath = PathUtilities.NormalizePath(fileMetaData.RelativePath);
 
             // ReSharper disable once PossibleNullReferenceException
             using var client = GetClient();
 
-            if (fileMetaData.TotalChunks == 1 || mode.Equals("block", StringComparison.CurrentCultureIgnoreCase))
+            if (fileMetaData.TotalChunks == 1 || mode.Equals(StorageConstants.UploadModeBlock, StringComparison.CurrentCultureIgnoreCase))
             {
                 // This is NOT a multi part upload
                 await DeleteIfExistsAsync(fileMetaData.RelativePath);
@@ -110,9 +110,9 @@ namespace Cosmos.BlobService.Drivers
                         Headers = { ContentType = Utilities.GetContentType(fileMetaData) }
                     };
 
-                    initiateRequest.Metadata.Add("ccmsuploaduid", fileMetaData.UploadUid);
-                    initiateRequest.Metadata.Add("ccmssize", fileMetaData.TotalFileSize.ToString());
-                    initiateRequest.Metadata.Add("ccmsdatetime", uploadDateTime.UtcDateTime.Ticks.ToString());
+                    initiateRequest.Metadata.Add(StorageConstants.MetadataUploadUid, fileMetaData.UploadUid);
+                    initiateRequest.Metadata.Add(StorageConstants.MetadataSize, fileMetaData.TotalFileSize.ToString());
+                    initiateRequest.Metadata.Add(StorageConstants.MetadataDateTime, uploadDateTime.UtcDateTime.Ticks.ToString());
 
                     var initiateUpload =
                         await client.InitiateMultipartUploadAsync(initiateRequest);

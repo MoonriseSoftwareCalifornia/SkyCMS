@@ -96,9 +96,9 @@ namespace Cosmos.BlobService.Drivers
         /// <remarks>
         /// Existing blobs will be overwritten if they already exists, otherwise a new blob is created.
         /// </remarks>
-        public async Task AppendBlobAsync(byte[] data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode = "block")
+        public async Task AppendBlobAsync(byte[] data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode = StorageConstants.UploadModeBlock)
         {
-            if (mode.Equals("block", StringComparison.CurrentCultureIgnoreCase) || fileMetaData.TotalChunks == 1)
+            if (mode.Equals(StorageConstants.UploadModeBlock, StringComparison.CurrentCultureIgnoreCase) || fileMetaData.TotalChunks == 1)
             {
                 await this.UpdloadBlockBlobAsync(new MemoryStream(data), fileMetaData, uploadDateTime);
                 return;
@@ -141,11 +141,11 @@ namespace Cosmos.BlobService.Drivers
 
                 var dictionaryObject = new Dictionary<string, string>
                 {
-                    { "ccmsuploaduid", fileMetaData.UploadUid },
-                    { "ccmssize", fileMetaData.TotalFileSize.ToString() },
-                    { "ccmsdatetime", uploadDateTime.UtcDateTime.Ticks.ToString() },
-                    { "ccmsimagewidth", fileMetaData.ImageWidth },
-                    { "ccmsimageheight", fileMetaData.ImageHeight }
+                    { StorageConstants.MetadataUploadUid, fileMetaData.UploadUid },
+                    { StorageConstants.MetadataSize, fileMetaData.TotalFileSize.ToString() },
+                    { StorageConstants.MetadataDateTime, uploadDateTime.UtcDateTime.Ticks.ToString() },
+                    { StorageConstants.MetadataImageWidth, fileMetaData.ImageWidth },
+                    { StorageConstants.MetadataImageHeight, fileMetaData.ImageHeight }
                 };
 
                 _ = await appendClient.SetMetadataAsync(dictionaryObject);

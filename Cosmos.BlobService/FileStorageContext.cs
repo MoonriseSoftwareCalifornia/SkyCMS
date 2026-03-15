@@ -15,9 +15,13 @@ namespace Cosmos.BlobService
     using Cosmos.BlobService.Models;
 
     /// <summary>
-    ///     Azure Files Share Context.
+    /// Azure File Share storage context for file-based operations.
     /// </summary>
-    public sealed class FileStorageContext
+    /// <remarks>
+    /// This class provides file share-specific operations using Azure File Storage.
+    /// For blob storage operations (Azure Blob, Amazon S3, etc.), use <see cref="StorageContext"/> instead.
+    /// </remarks>
+    public sealed class FileStorageContext : IStorageContext
     {
         /// <summary>
         /// Azure file share driver, this is not handled in the collection.
@@ -31,152 +35,198 @@ namespace Cosmos.BlobService
         /// <param name="sharename">File storage share name.</param>
         public FileStorageContext(string connectionString, string sharename)
         {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new ArgumentNullException(nameof(connectionString), "Connection string cannot be null or empty.");
+            }
+
+            if (string.IsNullOrWhiteSpace(sharename))
+            {
+                throw new ArgumentNullException(nameof(sharename), "Share name cannot be null or empty.");
+            }
+
             this.driver = new AzureFileStorage(connectionString, sharename);
         }
 
-        /// <summary>
-        ///     Determines if a blob exists.
-        /// </summary>
-        /// <param name="path">Path to blob.</param>
-        /// <returns>Returns a <see cref="bool"/> indicating that an item exists or not. </returns>
+        /// <inheritdoc/>
         public async Task<bool> BlobExistsAsync(string path)
         {
+            path = PathUtilities.NormalizePath(path);
             return await this.driver.BlobExistsAsync(path);
         }
 
-        /// <summary>
-        ///     Copies a file or folder.
-        /// </summary>
-        /// <param name="sourcePath">Path to source file or folder.</param>
-        /// <param name="destFolderPath">Path to destination folder.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task CopyAsync(string sourcePath, string destFolderPath)
+        /// <inheritdoc/>
+        public async Task CopyAsync(string target, string destination)
         {
-            await this.driver.CopyBlobAsync(sourcePath, destFolderPath);
+            target = PathUtilities.NormalizePath(target);
+            destination = PathUtilities.NormalizePath(destination);
+            await this.driver.CopyBlobAsync(target, destination);
         }
 
-        /// <summary>
-        ///     Delete a folder.
-        /// </summary>
-        /// <param name="folder">Path to folder.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task DeleteFolderAsync(string folder)
+        /// <inheritdoc/>
+        public async Task<FileManagerEntry> CreateFolder(string path)
         {
-            // Ensure leading slash is removed.
-            await this.driver.DeleteFolderAsync(folder);
-        }
-
-        /// <summary>
-        ///     Deletes a file.
-        /// </summary>
-        /// <param name="target">A <see cref="Task"/> representing the asynchronous operation.</param>
-        /// <returns>Returns a <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task DeleteFileAsync(string target)
-        {
-            // Ensure leading slash is removed.
-            target = target.TrimStart('/');
-            await this.driver.DeleteIfExistsAsync(target);
-        }
-
-        /// <summary>
-        ///     Gets the metadata for a file.
-        /// </summary>
-        /// <param name="target">Path to the file.</param>
-        /// <returns>Returns a <see cref="FileManagerEntry"/> representing metadata for a file.</returns>
-        public async Task<FileManagerEntry> GetFileAsync(string target)
-        {
-            // Ensure leading slash is removed.
-            target = target.TrimStart('/');
-
-            var fileManagerEntry = await this.driver.GetBlobAsync(target);
-            return fileManagerEntry;
-        }
-
-        /// <summary>
-        ///     Moves a file or folder to a specified folder.
-        /// </summary>
-        /// <param name="sourcePath">Path to source file or folder.</param>
-        /// <param name="destFolderPath">Path to destination folder.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task MoveAsync(string sourcePath, string destFolderPath)
-        {
-            await this.driver.MoveAsync(sourcePath, destFolderPath);
-        }
-
-        /// <summary>
-        ///     Returns a response stream from the primary blob storage provider.
-        /// </summary>
-        /// <param name="target">Path to the blob to open.</param>
-        /// <returns>A <see cref="Stream"/> that reads bytes from a blob.</returns>
-        public async Task<Stream> OpenBlobReadStreamAsync(string target)
-        {
-            // Ensure leading slash is removed.
-            target = target.TrimStart('/');
-
-            return await this.driver.GetStreamAsync(target);
-        }
-
-        /// <summary>
-        ///     Append bytes to blob(s).
-        /// </summary>
-        /// <param name="stream">Data <see cref="MemoryStream"/> to append to the blob.</param>
-        /// <param name="fileMetaData">Data chuck upload metadata.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData)
-        {
-            await this.driver.AppendBlobAsync(stream.ToArray(), fileMetaData, DateTimeOffset.UtcNow, "append");
-        }
-
-        /// <summary>
-        ///     Creates a folder in all the cloud storage accounts.
-        /// </summary>
-        /// <param name="folderName">Name of folder to create.</param>
-        /// <returns>Returns metadata for the folder as a <see cref="FileManagerEntry"/>.</returns>
-        /// <remarks>Creates the folder if it does not already exist.</remarks>
-        public async Task<FileManagerEntry> CreateFolder(string folderName)
-        {
-            await this.driver.CreateFolderAsync(folderName);
-            var folder = await this.driver.GetBlobAsync(folderName);
+            path = PathUtilities.NormalizePath(path);
+            await this.driver.CreateFolderAsync(path);
+            var folder = await this.driver.GetBlobAsync(path);
             return folder;
         }
 
-        /// <summary>
-        /// Creates a file or fold object.
-        /// </summary>
-        /// <param name="path">Path to the object.</param>
-        /// <returns>Returns object metadata as a <see cref="FileManagerEntry"/>.</returns>
-        public async Task<FileManagerEntry> GetObjectAsync(string path)
+        /// <inheritdoc/>
+        [Obsolete("Use DeleteFileAsync instead to avoid blocking. This method will be removed in a future version.")]
+        public void DeleteFile(string path)
         {
-            var item = await this.driver.GetObjectAsync(path);
-            return item;
+            DeleteFileAsync(path).GetAwaiter().GetResult();
         }
 
-        /// <summary>
-        ///     Gets files and subfolders for a given path.
-        /// </summary>
-        /// <param name="path">Path to get files and folders.</param>
-        /// <returns>Returns the metadata of what is find as a <see cref="FileManagerEntry"/> list.</returns>
-        public async Task<List<FileManagerEntry>> GetObjectsAsync(string path)
+        /// <inheritdoc/>
+        public async Task DeleteFileAsync(string path)
         {
-            if (!string.IsNullOrEmpty(path))
-            {
-                path = path.TrimStart('/');
-            }
+            path = PathUtilities.NormalizePath(path);
+            await this.driver.DeleteIfExistsAsync(path);
+        }
 
+        /// <inheritdoc/>
+        public async Task DeleteFolderAsync(string folder)
+        {
+            folder = PathUtilities.NormalizePath(folder);
+            await this.driver.DeleteFolderAsync(folder);
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// This operation is not supported for Azure File Shares.
+        /// </remarks>
+        /// <exception cref="NotSupportedException">Azure File Shares do not support static website features.</exception>
+        public Task DisableAzureStaticWebsite()
+        {
+            throw new NotSupportedException("Azure File Shares do not support static website features.");
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// This operation is not supported for Azure File Shares.
+        /// </remarks>
+        /// <exception cref="NotSupportedException">Azure File Shares do not support static website features.</exception>
+        public Task EnableAzureStaticWebsite()
+        {
+            throw new NotSupportedException("Azure File Shares do not support static website features.");
+        }
+
+        /// <inheritdoc/>
+        public async Task<FileManagerEntry> GetFileAsync(string path)
+        {
+            path = PathUtilities.NormalizePath(path);
+            var fileManagerEntry = await this.driver.GetBlobAsync(path);
+            return fileManagerEntry;
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<FileManagerEntry>> GetFilesAndDirectories(string path)
+        {
+            path = PathUtilities.NormalizePath(path);
             var entries = await this.driver.GetFilesAndDirectories(path);
             return entries;
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// This method is not implemented for Azure File Shares.
+        /// Use <see cref="GetFilesAndDirectories"/> instead.
+        /// </remarks>
+        /// <exception cref="NotImplementedException">Use GetFilesAndDirectories for Azure File Shares.</exception>
+        public Task<List<string>> GetFilesAsync(string path)
+        {
+            throw new NotImplementedException("Use GetFilesAndDirectories method for Azure File Shares.");
+        }
+
+        /// <inheritdoc/>
+        public async Task<Stream> GetStreamAsync(string path)
+        {
+            path = PathUtilities.NormalizePath(path);
+            return await this.driver.GetStreamAsync(path);
+        }
+
+        /// <inheritdoc/>
+        public async Task MoveFileAsync(string sourceFile, string destinationFile)
+        {
+            sourceFile = PathUtilities.NormalizePath(sourceFile);
+            destinationFile = PathUtilities.NormalizePath(destinationFile);
+            await this.driver.MoveAsync(sourceFile, destinationFile);
+        }
+
+        /// <inheritdoc/>
+        public async Task MoveFolderAsync(string sourceFolder, string destinationFolder)
+        {
+            sourceFolder = PathUtilities.NormalizePath(sourceFolder);
+            destinationFolder = PathUtilities.NormalizePath(destinationFolder);
+            await this.driver.MoveAsync(sourceFolder, destinationFolder);
+        }
+
+        /// <inheritdoc/>
+        public async Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData, string mode = StorageConstants.UploadModeAppend)
+        {
+            await this.driver.AppendBlobAsync(stream.ToArray(), fileMetaData, DateTimeOffset.UtcNow, mode);
+        }
+
+        #region Legacy Methods (Obsolete - For Backward Compatibility)
+
         /// <summary>
-        ///     Gets the contents for a folder.
+        /// Gets the metadata for a file or folder object.
+        /// </summary>
+        /// <param name="path">Path to the object.</param>
+        /// <returns>Returns object metadata as a <see cref="FileManagerEntry"/>.</returns>
+        [Obsolete("Use GetFileAsync instead. This method will be removed in a future version.")]
+        public async Task<FileManagerEntry> GetObjectAsync(string path)
+        {
+            return await GetFileAsync(path);
+        }
+
+        /// <summary>
+        /// Gets files and subfolders for a given path.
+        /// </summary>
+        /// <param name="path">Path to get files and folders.</param>
+        /// <returns>Returns the metadata of what is found as a <see cref="FileManagerEntry"/> list.</returns>
+        [Obsolete("Use GetFilesAndDirectories instead. This method will be removed in a future version.")]
+        public async Task<List<FileManagerEntry>> GetObjectsAsync(string path)
+        {
+            return await GetFilesAndDirectories(path);
+        }
+
+        /// <summary>
+        /// Returns a response stream from the file share.
+        /// </summary>
+        /// <param name="target">Path to the file to open.</param>
+        /// <returns>A <see cref="Stream"/> that reads bytes from a file.</returns>
+        [Obsolete("Use GetStreamAsync instead. This method will be removed in a future version.")]
+        public async Task<Stream> OpenBlobReadStreamAsync(string target)
+        {
+            return await GetStreamAsync(target);
+        }
+
+        /// <summary>
+        /// Moves a file or folder to a specified destination.
+        /// </summary>
+        /// <param name="sourcePath">Path to source file or folder.</param>
+        /// <param name="destFolderPath">Path to destination folder.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [Obsolete("Use MoveFileAsync or MoveFolderAsync instead for clarity. This method will be removed in a future version.")]
+        public async Task MoveAsync(string sourcePath, string destFolderPath)
+        {
+            await MoveFileAsync(sourcePath, destFolderPath);
+        }
+
+        /// <summary>
+        /// Gets the contents for a folder.
         /// </summary>
         /// <param name="path">Path to folder to retrieve contents.</param>
-        /// <returns>Returns the metadata of what is find as a <see cref="FileManagerEntry"/> list.</returns>
+        /// <returns>Returns the metadata of what is found as a <see cref="FileManagerEntry"/> list.</returns>
+        [Obsolete("Use GetFilesAndDirectories instead. This method will be removed in a future version.")]
         public async Task<List<FileManagerEntry>> GetFolderContents(string path)
         {
             if (!string.IsNullOrEmpty(path))
             {
-                path = path.TrimStart('/');
+                path = PathUtilities.NormalizePath(path);
 
                 if (path == "/")
                 {
@@ -191,7 +241,9 @@ namespace Cosmos.BlobService
                 }
             }
 
-            return await this.GetObjectsAsync(path);
+            return await GetFilesAndDirectories(path);
         }
+
+        #endregion
     }
 }
