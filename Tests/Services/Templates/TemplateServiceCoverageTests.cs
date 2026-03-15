@@ -17,7 +17,6 @@ namespace Sky.Tests.Services.Templates
     /// Tests template CRUD operations, default templates, and layout associations.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class TemplateServiceCoverageTests : SkyCmsTestBase
     {
         [TestInitialize]

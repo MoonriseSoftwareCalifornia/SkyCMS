@@ -30,7 +30,6 @@ namespace Sky.Editor.Tests.Features.Templates
     /// and avoiding provider-specific extensions or syntax.
     /// </remarks>
     [TestClass]
-    [DoNotParallelize]
     public class GetTemplateQueryHandlerTests : SkyCmsTestBase
     {
         private GetTemplateQueryHandler handler = null!;
@@ -502,7 +501,7 @@ namespace Sky.Editor.Tests.Features.Templates
         public async Task GetTemplate_Should_PreserveSpecialCharactersInContent()
         {
             // Arrange
-            var specialContent = "<script>alert('test');</script><div data-attr=\"value with 'quotes' & special chars\">Content with émojis ??</div>";
+            var specialContent = "<script>alert('test');</script><div data-attr=\"value with 'quotes' & special chars\">Content with ï¿½mojis ??</div>";
             var specialTemplate = new Template
             {
                 Id = Guid.NewGuid(),
