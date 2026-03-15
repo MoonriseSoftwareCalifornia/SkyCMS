@@ -30,7 +30,6 @@ namespace Sky.Tests.Performance
     /// Tests system behavior under load, concurrent operations, and with large datasets.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class PerformanceAndConcurrencyTests : SkyCmsTestBase
     {
         [TestInitialize]
@@ -45,6 +44,7 @@ namespace Sky.Tests.Performance
         /// Tests creating and querying large number of articles.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CreateManyArticles_PerformsEfficiently()
         {
             // Arrange
@@ -71,6 +71,7 @@ namespace Sky.Tests.Performance
         /// Tests pagination performance with large dataset.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task Pagination_WithLargeDataset_PerformsEfficiently()
         {
             // Arrange - Create 50 articles
@@ -105,6 +106,7 @@ namespace Sky.Tests.Performance
         /// Tests that catalog queries perform well with many entries.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CatalogQuery_WithManyEntries_PerformsEfficiently()
         {
             // Arrange - Create 30 articles and catalog entries
@@ -310,6 +312,7 @@ namespace Sky.Tests.Performance
         /// Tests creating and querying many versions of the same article.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CreateAndQueryManyVersions_PerformsEfficiently()
         {
             // Arrange
@@ -358,6 +361,7 @@ namespace Sky.Tests.Performance
         /// Tests querying blog posts with filtering and pagination.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task BlogPostQuery_WithFilteringAndPagination_PerformsEfficiently()
         {
             // Arrange - Create home page
@@ -432,6 +436,7 @@ namespace Sky.Tests.Performance
         /// Tests catalog synchronization performance.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CatalogSynchronization_WithManyArticles_PerformsEfficiently()
         {
             // Arrange - Create 20 articles and catalog entries
@@ -485,6 +490,7 @@ namespace Sky.Tests.Performance
         /// Tests that creating many articles doesn't cause memory issues.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CreateManyArticles_DoesNotExhaustMemory()
         {
             // Arrange
@@ -520,6 +526,7 @@ namespace Sky.Tests.Performance
         /// Tests that published page queries use efficient indexes.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task PublishedPageQuery_UsesEfficientIndexing()
         {
             // Arrange - Create and publish 25 articles

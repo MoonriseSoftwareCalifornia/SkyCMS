@@ -1,2 +1,2 @@
-// Enable limited parallel execution during phased rollout.
-[assembly: Parallelize(Workers = 2, Scope = ExecutionScope.MethodLevel)]
+// Enable phased parallel execution for the optimized test rollout.
+[assembly: Parallelize(Workers = 4, Scope = ExecutionScope.MethodLevel)]
