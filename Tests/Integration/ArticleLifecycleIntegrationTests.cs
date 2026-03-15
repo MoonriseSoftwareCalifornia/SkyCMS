@@ -19,7 +19,6 @@ namespace Sky.Tests.Integration
     /// Tests end-to-end scenarios from article creation through publishing, editing, and deletion.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class ArticleLifecycleIntegrationTests : SkyCmsTestBase
     {
         [TestInitialize]
