@@ -19,7 +19,6 @@ namespace Sky.Tests.Services.ReservedPaths
     /// <summary>
     /// Unit tests for <see cref="ReservedPaths"/> service.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class ReservedPathsTests : SkyCmsTestBase
     {

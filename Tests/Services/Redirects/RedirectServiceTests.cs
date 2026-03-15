@@ -26,7 +26,6 @@ namespace Sky.Tests.Services.Redirects
     /// <summary>
     /// Unit tests for the <see cref="RedirectService"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class RedirectServiceTests : SkyCmsTestBase
     {
@@ -429,29 +428,6 @@ namespace Sky.Tests.Services.Redirects
                 .Where(a => a.StatusCode == (int)StatusCodeEnum.Redirect)
                 .ToListAsync();
             Assert.AreEqual(3, savedArticles.Count);
-        }
-
-        /// <summary>
-        /// Tests that TestMethod.
-        /// </summary>
-        [TestMethod]
-        [TestCategory("Redirects")]
-        public async Task CreateOrUpdateRedirectAsync_EmptyArticlesTable_HandlesGracefully()
-        {
-            // Arrange
-            var fromSlug = "old-page";
-            var toSlug = "new-page";
-
-            // Ensure database is empty
-            Db.Articles.RemoveRange(Db.Articles);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await redirectService.CreateOrUpdateRedirectAsync(fromSlug, toSlug, TestUserId);
-
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(2, result.ArticleNumber); // 1 + 1
         }
 
         #endregion

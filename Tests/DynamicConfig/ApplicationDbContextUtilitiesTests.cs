@@ -25,7 +25,6 @@ namespace Sky.Tests.Data
     /// CRITICAL SECURITY TESTS: Tests for <see cref="ApplicationDbContextUtilities"/> to ensure
     /// tenant isolation and prevent cross-tenant data access in multi-tenant scenarios.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class ApplicationDbContextUtilitiesTests
     {
