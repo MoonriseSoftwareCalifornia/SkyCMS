@@ -1021,65 +1021,63 @@ namespace Sky.Tests.Controllers
         #region Error Handling - Storage Failures Tests
 
         /// <summary>
-        /// Tests that Delete_WithNonExistentPath_HandlesGracefully.
+        /// Tests that file operations with non-existent paths return expected responses.
         /// </summary>
         [TestMethod]
-        public async Task Delete_WithNonExistentPath_HandlesGracefully()
+        public async Task FileOperations_WithNonExistentPaths_ReturnExpectedResponses()
         {
-            // Arrange
-            var model = new DeleteBlobItemsViewModel
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action, Type ExpectedType)[]
             {
-                Paths = new List<string> { "/pub/nonexistent/file.txt" }
+                (
+                    "DeleteNonExistentPath",
+                    async () =>
+                    {
+                        var model = new DeleteBlobItemsViewModel
+                        {
+                            Paths = new List<string> { "/pub/nonexistent/file.txt" }
+                        };
+
+                        return await controller.Delete(model);
+                    },
+                    typeof(OkResult)
+                ),
+                (
+                    "MoveNonExistentSource",
+                    async () =>
+                    {
+                        await Storage.CreateFolder("/pub/destination");
+                        var model = new MoveFilesViewModel
+                        {
+                            Items = new List<string> { "/pub/nonexistent.txt" },
+                            Destination = "/pub/destination"
+                        };
+
+                        return await controller.Move(model);
+                    },
+                    typeof(BadRequestObjectResult)
+                ),
+                (
+                    "CopyNonExistentDestination",
+                    async () =>
+                    {
+                        await CreateTestFile("/pub/source/file.txt");
+                        var model = new MoveFilesViewModel
+                        {
+                            Items = new List<string> { "/pub/source/file.txt" },
+                            Destination = "/pub/nonexistent-destination"
+                        };
+
+                        return await controller.Copy(model);
+                    },
+                    typeof(BadRequestObjectResult)
+                ),
             };
 
-            // Act
-            var result = await controller.Delete(model);
-
-            // Assert
-            // Should return OK even if file doesn't exist (idempotent operation)
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-        }
-
-        /// <summary>
-        /// Tests that Move_WithNonExistentSource_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Move_WithNonExistentSource_ReturnsBadRequest()
-        {
-            // Arrange
-            await Storage.CreateFolder("/pub/destination");
-            var model = new MoveFilesViewModel
+            foreach (var scenario in scenarios)
             {
-                Items = new List<string> { "/pub/nonexistent.txt" },
-                Destination = "/pub/destination"
-            };
-
-            // Act
-            var result = await controller.Move(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Copy_WithNonExistentDestination_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Copy_WithNonExistentDestination_ReturnsBadRequest()
-        {
-            // Arrange
-            await CreateTestFile("/pub/source/file.txt");
-            var model = new MoveFilesViewModel
-            {
-                Items = new List<string> { "/pub/source/file.txt" },
-                Destination = "/pub/nonexistent-destination"
-            };
-
-            // Act
-            var result = await controller.Copy(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, scenario.ExpectedType, $"{scenario.Name} should return {scenario.ExpectedType.Name}.");
+            }
         }
 
         #endregion
