@@ -18,7 +18,6 @@ namespace Sky.Tests.Services
     /// Tests publishing, unpublishing, and static page generation.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class PublishingWorkflowTests : SkyCmsTestBase
     {
         [TestInitialize]

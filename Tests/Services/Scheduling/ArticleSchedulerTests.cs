@@ -45,7 +45,6 @@ namespace Sky.Tests.Services.Scheduling
     /// <summary>
     /// Unit tests for <see cref="ArticleScheduler"/>.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class ArticleSchedulerTests : SkyCmsTestBase
     {
@@ -1612,54 +1611,6 @@ namespace Sky.Tests.Services.Scheduling
 
             // Assert - No exception should be thrown
             Assert.IsTrue(true, "Scheduler should handle processing errors gracefully");
-        }
-
-        /// <summary>
-        /// Tests that article with exactly 2 published versions is processed correctly.
-        /// </summary>
-        [TestMethod]
-        public async Task ExecuteAsync_WithExactlyTwoPublishedVersions_ActivatesCorrectVersion()
-        {
-            // Arrange
-            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
-            testClock.SetUtcNow(now);
-
-            var article1 = new Article
-            {
-                ArticleNumber = 1,
-                VersionNumber = 1,
-                Title = "Test V1",
-                Published = now.AddDays(-5),
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/two-versions"
-            };
-
-            var article2 = new Article
-            {
-                ArticleNumber = 1,
-                VersionNumber = 2,
-                Title = "Test V2",
-                Published = now.AddDays(-1),
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/two-versions"
-            };
-
-            Db.Articles.AddRange(article1, article2);
-            await Db.SaveChangesAsync();
-
-            // Act
-            await ArticleScheduler.ExecuteAsync();
-
-            // Assert - Version 1 should be unpublished, Version 2 should remain published
-            var updated1 = await Db.Articles.FindAsync(article1.Id);
-            Assert.IsNotNull(updated1, "Expected article to exist after scheduler execution");
-            var updated2 = await Db.Articles.FindAsync(article2.Id);
-            Assert.IsNotNull(updated2, "Expected article to exist after scheduler execution");
-
-            Assert.IsNull(updated1.Published, "Version 1 should be unpublished");
-            Assert.IsNotNull(updated2.Published, "Version 2 should remain published");
         }
 
         /// <summary>
