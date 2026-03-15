@@ -13,7 +13,6 @@ namespace Sky.Tests.Services.Slugs
     /// <summary>
     /// Unit tests for the <see cref="SlugService"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class SlugServiceTests
     {

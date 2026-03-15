@@ -16,7 +16,6 @@ namespace Sky.Tests.Services.Html
     /// Tests HTML manipulation functionality including editable marker injection,
     /// Angular base tag handling, and introduction text extraction.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class ArticleHtmlServiceTests : SkyCmsTestBase
     {

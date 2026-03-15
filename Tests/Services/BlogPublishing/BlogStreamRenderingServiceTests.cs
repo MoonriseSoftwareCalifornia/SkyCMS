@@ -24,7 +24,6 @@ namespace Sky.Tests.Services.BlogPublishing
     /// Unit tests for the <see cref="BlogStreamRenderingService"/> class.
     /// Tests the new client-side orchestration model with embedded JSON metadata.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class BlogStreamRenderingServiceTests : SkyCmsTestBase
     {

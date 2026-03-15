@@ -40,7 +40,6 @@ namespace Sky.Tests.DynamicConfig
     [TestCategory("MultiTenantConfiguration")]
     [TestCategory("SecurityTest")]
     [TestCategory("IntegrationTest")]
-    [DoNotParallelize]
     public class DynamicConfigurationProviderTenantResolutionTests
     {
         private Mock<ILogger<DynamicConfigurationProvider>> _loggerMock = null!;

@@ -26,7 +26,6 @@ namespace Sky.Tests.Services.EditorSettings
     /// <summary>
     /// Comprehensive unit tests for the <see cref="EditorSettings"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class EditorSettingsTests : SkyCmsTestBase
     {

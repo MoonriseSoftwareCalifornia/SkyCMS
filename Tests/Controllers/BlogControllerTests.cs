@@ -39,7 +39,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Integration tests for the <see cref="BlogController"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class BlogControllerTests : SkyCmsTestBase
     {

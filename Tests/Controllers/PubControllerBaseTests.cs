@@ -28,7 +28,6 @@ namespace Sky.Tests.Controllers
     /// Unit tests for the <see cref="PubControllerBase"/> class.
     /// Tests logging integration, file serving, authentication, and error handling.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class PubControllerBaseTests : SkyCmsTestBase
     {

@@ -28,7 +28,6 @@ namespace Sky.Tests.Services.Layouts
     /// <summary>
     /// Unit tests for the <see cref="LayoutImportService"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class LayoutImportServiceTests : SkyCmsTestBase
     {

@@ -18,7 +18,6 @@ namespace Sky.Tests.Services.Publishing
     /// Unit tests for <see cref="PublishingService"/> blog stream functionality.
     /// Tests the new client-side orchestration model with versioned wrappers.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class PublishingServiceBlogStreamTests : SkyCmsTestBase
     {
