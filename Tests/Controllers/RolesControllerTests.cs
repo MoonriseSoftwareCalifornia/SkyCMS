@@ -24,7 +24,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Unit tests for the <see cref="RolesController"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class RolesControllerTests : SkyCmsTestBase
     {
