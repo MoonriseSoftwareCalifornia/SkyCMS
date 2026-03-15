@@ -21,7 +21,6 @@ namespace Sky.Tests.Services.CDN
     /// Unit tests for <see cref="CloudflareCdnDriver"/> class.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class CloudflareCdnDriverTests
     {
         private Mock<ILogger> mockLogger;

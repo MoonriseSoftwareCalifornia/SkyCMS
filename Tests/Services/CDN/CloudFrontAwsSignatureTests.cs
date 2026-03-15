@@ -20,7 +20,6 @@ namespace Sky.Tests.Services.CDN
     /// Tests for AWS Signature Version 4 implementation in CloudFront driver.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class CloudFrontAwsSignatureTests
     {
         private Mock<ILogger> mockLogger;

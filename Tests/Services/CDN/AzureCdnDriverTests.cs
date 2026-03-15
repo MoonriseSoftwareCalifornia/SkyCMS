@@ -20,7 +20,6 @@ namespace Sky.Tests.Services.CDN
     /// Unit tests for <see cref="AzureCdnDriver"/> class.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class AzureCdnDriverTests
     {
         private Mock<ILogger> mockLogger;

@@ -24,7 +24,6 @@ namespace Sky.Tests.Services.CDN
     /// Unit tests for <see cref="CdnService"/> class.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class CdnServiceTests
     {
         private ApplicationDbContext _dbContext;

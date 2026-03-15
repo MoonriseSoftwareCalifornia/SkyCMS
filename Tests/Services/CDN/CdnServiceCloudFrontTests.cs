@@ -20,7 +20,6 @@ namespace Sky.Tests.Services.CDN
     /// Unit tests for <see cref="CdnService"/> CloudFront integration.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class CdnServiceCloudFrontTests
     {
         private Mock<ILogger> mockLogger;

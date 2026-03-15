@@ -21,7 +21,6 @@ namespace Sky.Tests.Services.CDN
     /// Unit tests for <see cref="SucuriCdnService"/> class.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class SucuriCdnServiceTests
     {
         private Mock<ILogger> mockLogger;

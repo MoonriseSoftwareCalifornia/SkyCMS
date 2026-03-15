@@ -35,7 +35,6 @@ namespace Sky.Tests.Services.CDN
     /// </remarks>
     [Ignore("Requires live AWS CloudFront credentials - run CloudFrontTestSetup\\deploy.ps1 and remove this attribute")]
     [TestClass]
-    [DoNotParallelize]
     public class CloudFrontCdnLiveServiceTests
     {
         private ApplicationDbContext dbContext;
