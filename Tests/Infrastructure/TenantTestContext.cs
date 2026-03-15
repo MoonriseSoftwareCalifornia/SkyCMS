@@ -5,16 +5,10 @@
 
 namespace Sky.Tests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Reflection;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
-    using Cosmos.Common;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
@@ -23,6 +17,9 @@ namespace Sky.Tests
     using Microsoft.Extensions.Logging.Abstractions;
     using Moq;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Create;
+    using Sky.Editor.Features.Articles.CreateVersion;
+    using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.EditorSettings;
@@ -32,11 +29,11 @@ namespace Sky.Tests
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using Sky.Editor.Features.Shared;
-    using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Articles.CreateVersion;
-    using Sky.Editor.Features.Articles.Save;
-    using Cosmos.Common.Models;
+    using System;
+    using System.Collections.Generic;
+    using System.Reflection;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Represents a complete isolated test context for a single tenant.
@@ -137,7 +134,7 @@ namespace Sky.Tests
             HttpContext = new DefaultHttpContext();
             HttpContext.Request.Host = new HostString(tenantDomain);
             HttpContext.Request.Headers["x-origin-hostname"] = tenantDomain;
-            
+
             // Set up a minimal service provider for the HttpContext (will be populated later in InitializeAsync)
             var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             HttpContext.RequestServices = services.BuildServiceProvider();
@@ -251,7 +248,7 @@ namespace Sky.Tests
                         editorSettings.PublisherUrl,
                         editorSettings.BlobPublicUrl));
                 var tenantServiceProvider = tenantServiceCollection.BuildServiceProvider();
-                
+
                 PublishingService = new Sky.Editor.Services.Publishing.PublishingService(
                     DbContext, // ? CRITICAL: Use THIS tenant's DbContext, not the shared one
                     storage,
@@ -265,7 +262,7 @@ namespace Sky.Tests
                     tenantServiceProvider,
                     new Sky.Editor.Services.Publishing.NoOpPublishingProgressReporter(),
                     tenantServiceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
-               
+
                 // Create tenant-scoped catalog service
                 var catalogService = new CatalogService(DbContext, articleHtmlService, clock, new NullLogger<CatalogService>());
 
@@ -288,10 +285,10 @@ namespace Sky.Tests
                 // BUILD A PROPER SERVICE PROVIDER WITH COMMAND HANDLERS
                 // This is required for Mediator to resolve handlers
                 var serviceCollection = new ServiceCollection();
-                
+
                 // Register DbContext (tenant-specific)
                 serviceCollection.AddSingleton(DbContext);
-                
+
                 // Register shared services
                 serviceCollection.AddSingleton(articleHtmlService);
                 serviceCollection.AddSingleton(catalogService);
@@ -299,10 +296,10 @@ namespace Sky.Tests
                 serviceCollection.AddSingleton(titleChangeService);
                 serviceCollection.AddSingleton(templateService);
                 serviceCollection.AddSingleton(clock);
-                
+
                 // Register mediator (following the pattern in Program.cs)
                 serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IMediator, Cosmos.Common.Features.Shared.Mediator>();
-                
+
                 // Register command handlers (following the pattern in Program.cs line 521-522)
                 serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>>(sp =>
                     new CreateArticleHandler(
@@ -314,7 +311,7 @@ namespace Sky.Tests
                         templateService,
                         clock,
                         new NullLogger<CreateArticleHandler>()));
-                
+
                 serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>>(sp =>
                     new SaveArticleHandler(
                         DbContext,
@@ -324,7 +321,7 @@ namespace Sky.Tests
                         titleChangeService,
                         clock,
                         new NullLogger<SaveArticleHandler>()));
-                
+
                 // Build and assign to HttpContext
                 HttpContext.RequestServices = serviceCollection.BuildServiceProvider();
 
@@ -340,7 +337,7 @@ namespace Sky.Tests
                 };
                 DbContext.Settings.Add(tenantDomainSetting);
                 await DbContext.SaveChangesAsync();
-                
+
                 // Auto-create a test user for this tenant
                 var testUserId = Guid.NewGuid();
                 await CreateTestUserAsync(testUserId, $"testuser@{TenantDomain}");
@@ -356,10 +353,10 @@ namespace Sky.Tests
         public async Task CreateTestUserAsync(Guid userId, string email = null)
         {
             email ??= $"user-{userId}@{TenantDomain}";
-            
+
             // Store the test user ID
             TestUserId = userId;
-            
+
             var user = new Microsoft.AspNetCore.Identity.IdentityUser
             {
                 Id = userId.ToString(),
@@ -501,7 +498,7 @@ namespace Sky.Tests
             int articleNumber)
         {
             var mediator = (IMediator)HttpContext.RequestServices.GetService(typeof(IMediator));
-            
+
             var command = new CreateArticleVersionCommand
             {
                 ArticleNumber = articleNumber

@@ -7,13 +7,6 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Common.Data;
@@ -41,6 +34,13 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Web;
 
     /// <summary>
     /// File manager controller.
@@ -571,13 +571,13 @@ namespace Sky.Cms.Controllers
             }
 
             var extension = Path.GetExtension(file.FileName).ToLower();
-            
+
             // Validate that the file is an image based on MIME type
             if (!mime.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             {
                 return Json(ReturnSimpleErrorMessage($"The file '{file.FileName}' is not a valid image file."));
             }
-            
+
             var blobEndPoint = options.BlobPublicUrl.TrimEnd('/');
             var directory = parsed.Path.TrimEnd('/');
             var fileName = file.FileName.ToLower();

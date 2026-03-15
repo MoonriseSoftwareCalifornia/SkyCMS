@@ -5,11 +5,8 @@
 
 namespace Sky.Tests.Features.Articles.Restore
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,6 +14,8 @@ namespace Sky.Tests.Features.Articles.Restore
     using Sky.Editor.Features.Articles.Restore;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.Slugs;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for RestoreArticleHandler.

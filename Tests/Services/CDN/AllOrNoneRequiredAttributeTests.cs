@@ -7,9 +7,9 @@
 
 namespace Sky.Tests.Services.CDN
 {
-    using System.ComponentModel.DataAnnotations;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Services.CDN;
+    using System.ComponentModel.DataAnnotations;
 
     /// <summary>
     /// Unit tests for <see cref="AllOrNoneRequiredAttribute"/> validation logic.

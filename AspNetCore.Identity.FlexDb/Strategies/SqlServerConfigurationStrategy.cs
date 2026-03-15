@@ -58,7 +58,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
                     maxRetryCount: 5,
                     maxRetryDelay: TimeSpan.FromSeconds(30),
                     errorNumbersToAdd: null);
-                
+
                 // Set command timeout (optional, but recommended for CI/CD)
                 sqlServerOptions.CommandTimeout(60); // 60 seconds
             });

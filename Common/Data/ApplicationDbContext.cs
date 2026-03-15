@@ -7,9 +7,6 @@
 
 namespace Cosmos.Common.Data
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data.SQlite;
     using Cosmos.DynamicConfig;
@@ -18,6 +15,9 @@ namespace Cosmos.Common.Data
     using Microsoft.Azure.Cosmos;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore.Diagnostics;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Database Context for Sky CMS.

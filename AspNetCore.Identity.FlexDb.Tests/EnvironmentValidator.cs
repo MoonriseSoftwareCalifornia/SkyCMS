@@ -45,7 +45,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
 
             // Log success
             context.WriteLine("✅ All required environment variables are present");
-            
+
             // Log configured providers
             var providers = TestUtilities.GetAvailableProviders();
             context.WriteLine($"✅ Configured database providers: {string.Join(", ", providers.Select(p => p.DisplayName))}");

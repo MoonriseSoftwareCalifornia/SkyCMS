@@ -22,6 +22,6 @@ namespace Cosmos.DynamicConfig.Configurations
         /// <summary>
         /// Gets or sets a list of trusted proxy IP addresses (IPv4 or IPv6).
         /// </summary>
-        public List<string> TrustedProxyIPs { get; set; } = new ();
+        public List<string> TrustedProxyIPs { get; set; } = new();
     }
 }

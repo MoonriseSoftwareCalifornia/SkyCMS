@@ -5,10 +5,6 @@
 
 namespace Sky.Editor.Features.Articles.Delete
 {
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -17,6 +13,10 @@ namespace Sky.Editor.Features.Articles.Delete
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for DeleteArticleCommand. Soft-deletes an article and removes artifacts.

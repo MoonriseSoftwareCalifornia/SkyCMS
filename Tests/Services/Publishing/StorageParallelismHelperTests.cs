@@ -7,14 +7,14 @@
 
 namespace Sky.Tests.Services.Publishing
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Services.Publishing;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="StorageParallelismHelper"/>.

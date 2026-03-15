@@ -7,9 +7,9 @@
 
 namespace Cosmos.Common.Features.Articles.EditorQueries;
 
-using System.Collections.Generic;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using System.Collections.Generic;
 
 /// <summary>
 /// Query to retrieve all article redirects (articles with redirect status).

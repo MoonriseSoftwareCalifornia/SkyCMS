@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Services.BlogPublishing
 {
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for rendering blog streams and posts with client-side orchestration.

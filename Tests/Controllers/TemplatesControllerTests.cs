@@ -16,7 +16,6 @@ namespace Sky.Tests.Controllers
     using Moq;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
-    using Sky.Editor.Models.GrapesJs;
     using System;
     using System.Linq;
     using System.Security.Claims;
@@ -494,7 +493,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
             Assert.IsNotNull(model);
             Assert.IsTrue(model.Count >= 2, "Should have at least 2 templates");
@@ -593,7 +592,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
-            
+
             // Create 15 templates to test pagination
             for (int i = 1; i <= 15; i++)
             {
@@ -617,7 +616,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
-            
+
             Assert.IsNotNull(model);
             Assert.AreEqual(5, model.Count, "First page should have exactly 5 templates");
             Assert.AreEqual(0, viewResult.ViewData["pageNo"]);
@@ -650,7 +649,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
-            
+
             Assert.AreEqual("asc", viewResult.ViewData["sortOrder"]);
             Assert.AreEqual("Title", viewResult.ViewData["currentSort"]);
             Assert.AreEqual(1, viewResult.ViewData["pageNo"]);
@@ -703,11 +702,11 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
-            
+
             var withEditor = model.FirstOrDefault(t => t.Title == "Template With Editor");
             var withCeid = model.FirstOrDefault(t => t.Title == "Template With CEID");
             var noEditor = model.FirstOrDefault(t => t.Title == "Template No Editor");
-            
+
             Assert.IsTrue(withEditor?.UsesHtmlEditor ?? false, "Template with contenteditable should use HTML editor");
             Assert.IsTrue(withCeid?.UsesHtmlEditor ?? false, "Template with data-ccms-ceid should use HTML editor");
             Assert.IsFalse(noEditor?.UsesHtmlEditor ?? true, "Template without markers should not use HTML editor");
@@ -798,7 +797,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as List<ArticleListItem>;
             Assert.IsNotNull(model);
             Assert.AreEqual(2, model.Count, "Should have 2 articles using the template");
@@ -841,7 +840,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<ArticleListItem>;
-            
+
             Assert.IsNotNull(model);
             if (model.Count >= 2)
             {
@@ -880,7 +879,7 @@ namespace Sky.Tests.Controllers
 
             var catalog1 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article1.ArticleNumber);
             var catalog2 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article2.ArticleNumber);
-            
+
             if (catalog1 != null)
             {
                 catalog1.TemplateId = template.Id;
@@ -930,11 +929,11 @@ namespace Sky.Tests.Controllers
             var catalogMatch = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == articleMatch.ArticleNumber);
             catalogMatch.Published = DateTimeOffset.UtcNow;
             catalogMatch.Status = "Active";
-            
+
             var catalogNoMatch = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == articleNoMatch.ArticleNumber);
             catalogNoMatch.Published = DateTimeOffset.UtcNow;
             catalogNoMatch.Status = "Active";
-            
+
             await Db.SaveChangesAsync();
 
             // Act
@@ -943,7 +942,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<ArticleListItem>;
-            
+
             Assert.IsNotNull(model);
             var matchingArticles = model.Where(a => a.Title.Contains("Matching", StringComparison.OrdinalIgnoreCase)).ToList();
             Assert.IsTrue(matchingArticles.Count >= 1, "Should have at least one matching article");
@@ -989,7 +988,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<ArticleListItem>;
-            
+
             Assert.IsNotNull(model);
             Assert.IsTrue(model.Count <= 5, "First page should have at most 5 articles");
             Assert.AreEqual(0, viewResult.ViewData["pageNo"]);
@@ -1026,7 +1025,7 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(newTemplate.Description);
             Assert.IsNotNull(newTemplate.Content);
             Assert.IsTrue(newTemplate.Content.Length > 0, "Content should not be empty");
-            
+
             // Verify PageDesignVersion was created
             var version = await Db.PageDesignVersions.FirstOrDefaultAsync(v => v.TemplateId == newTemplate.Id);
             Assert.IsNotNull(version, "Should create a PageDesignVersion");
@@ -1063,7 +1062,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as TemplateEditViewModel;
             Assert.IsNotNull(model);
             Assert.AreEqual(template.Id, model.Id);
@@ -1156,7 +1155,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.AreEqual("Encrypted Description", updatedTemplate.Description, 
+            Assert.AreEqual("Encrypted Description", updatedTemplate.Description,
                 "Description should be decrypted before saving");
         }
 
@@ -1249,7 +1248,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as TemplateCodeEditorViewModel;
             Assert.IsNotNull(model);
             Assert.AreEqual(template.Id, model.Id);
@@ -1285,7 +1284,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as TemplateCodeEditorViewModel;
-            
+
             // Content should be processed through htmlService.EnsureEditableMarkers
             Assert.IsNotNull(model.Content);
         }
@@ -1336,7 +1335,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-            
+
             // Verify the version was updated (query by TemplateId, not by primary key)
             var updatedVersion = await Db.PageDesignVersions
                 .FirstOrDefaultAsync(v => v.TemplateId == model.Id);

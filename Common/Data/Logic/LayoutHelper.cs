@@ -7,11 +7,11 @@
 
 namespace Cosmos.Common.Data.Logic
 {
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
     using System;
     using System.Linq;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Helper class for layout-related database operations.

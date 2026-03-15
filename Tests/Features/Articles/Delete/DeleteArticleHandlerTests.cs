@@ -5,11 +5,9 @@
 
 namespace Sky.Tests.Features.Articles.Delete
 {
-    using System;
-    using System.Threading.Tasks;
+    using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,7 +15,8 @@ namespace Sky.Tests.Features.Articles.Delete
     using Sky.Editor.Features.Articles.Delete;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
-    using Cosmos.BlobService;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for DeleteArticleHandler.

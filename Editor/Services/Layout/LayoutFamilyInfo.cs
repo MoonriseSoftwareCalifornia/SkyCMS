@@ -9,7 +9,6 @@ namespace Sky.Editor.Services.Layout
 {
     using System;
     using System.Collections.Generic;
-    using Cosmos.Common.Data;
 
     /// <summary>
     /// Information about a layout family (all versions of a layout).

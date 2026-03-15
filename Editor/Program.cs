@@ -5,13 +5,6 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-using System;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.RateLimiting;
-using System.Threading.Tasks;
-using System.Web;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
 using Cosmos.BlobService;
@@ -71,6 +64,13 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading.RateLimiting;
+using System.Threading.Tasks;
+using System.Web;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
 

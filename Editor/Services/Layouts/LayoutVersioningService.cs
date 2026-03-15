@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Services.Layouts
 {
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Html;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Html;
 
     /// <summary>
     /// Shared service for creating layout versions and importing community templates.

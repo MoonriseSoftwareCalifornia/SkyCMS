@@ -5,11 +5,11 @@
 
 namespace Cosmos.DynamicConfig
 {
+    using Microsoft.Extensions.Configuration;
     using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Extensions.Configuration;
 
     /// <summary>
     /// Single-tenant implementation of IDynamicConfigurationProvider.

@@ -7,13 +7,6 @@
 
 namespace Sky.Tests.Services.Layouts
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Net.Http;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Data.Logic;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -24,6 +17,13 @@ namespace Sky.Tests.Services.Layouts
     using Moq.Protected;
     using Newtonsoft.Json;
     using Sky.Editor.Services.Layouts;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for the <see cref="LayoutImportService"/> class.
@@ -1036,7 +1036,7 @@ namespace Sky.Tests.Services.Layouts
                     // Successful page response
                     var successIndex = currentCall - initialResponses.Length;
                     var adjustedIndex = successIndex;
-                    
+
                     // Adjust index for failed calls
                     foreach (var failIndex in failureIndices)
                     {

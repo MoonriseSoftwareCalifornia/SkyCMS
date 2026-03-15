@@ -5,9 +5,6 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.DynamicConfig;
@@ -16,6 +13,9 @@ namespace Sky.Tests.Services
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Services.Templates;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="TemplateService"/>.
@@ -38,9 +38,9 @@ namespace Sky.Tests.Services
 
             environmentMock = new Mock<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>();
             environmentMock.Setup(e => e.ContentRootPath).Returns(AppDomain.CurrentDomain.BaseDirectory);
-            
+
             loggerMock = new Mock<ILogger<TemplateService>>();
-            
+
             dynamicConfigProviderMock = new Mock<IDynamicConfigurationProvider>();
             dynamicConfigProviderMock
                 .Setup(p => p.GetCurrentTenantIdAsync())
@@ -144,7 +144,7 @@ namespace Sky.Tests.Services
             // Assert
             Assert.IsNotNull(results);
             Assert.IsTrue(results.Count >= 2);
-            Assert.IsTrue(results.All(t => 
+            Assert.IsTrue(results.All(t =>
                 t.Name.Contains("blog", StringComparison.OrdinalIgnoreCase) ||
                 t.Description.Contains("blog", StringComparison.OrdinalIgnoreCase) ||
                 t.Tags.Any(tag => tag.Contains("blog", StringComparison.OrdinalIgnoreCase))));
@@ -201,7 +201,7 @@ namespace Sky.Tests.Services
             // Act
             await templateService.EnsureDefaultTemplatesExistAsync();
             var count1 = await Db.Templates.CountAsync();
-            
+
             await templateService.EnsureDefaultTemplatesExistAsync(); // Second call
             var count2 = await Db.Templates.CountAsync();
 
@@ -237,7 +237,7 @@ namespace Sky.Tests.Services
             dynamicConfigProviderMock
                 .Setup(p => p.GetCurrentTenantIdAsync())
                 .ReturnsAsync(testTenantId);
-            
+
             // Arrange - Remove any layouts
             var layouts = await Db.Layouts.ToListAsync();
             Db.Layouts.RemoveRange(layouts);
@@ -289,9 +289,9 @@ namespace Sky.Tests.Services
             // Arrange
             var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
             await templateService.EnsureDefaultTemplatesExistAsync();
-            
+
             var template = await Db.Templates.FirstAsync(t => t.PageType == "blog-post");
-            
+
             // Create initial version
             Db.PageDesignVersions.Add(new PageDesignVersion
             {
@@ -303,7 +303,7 @@ namespace Sky.Tests.Services
                 Title = "V1",
                 Published = DateTimeOffset.UtcNow
             });
-            
+
             // Create additional version
             Db.PageDesignVersions.Add(new PageDesignVersion
             {
@@ -334,7 +334,7 @@ namespace Sky.Tests.Services
             // Arrange
             var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
             await templateService.EnsureDefaultTemplatesExistAsync();
-            
+
             var versions = await templateService.GetTemplateDesignVersionsAsync("blog-post");
             var publishedVersion = versions.First();
             Assert.IsNotNull(publishedVersion.Published);
@@ -357,7 +357,7 @@ namespace Sky.Tests.Services
             // Arrange
             var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
             await templateService.EnsureDefaultTemplatesExistAsync();
-            
+
             // Create draft version
             var template = await Db.Templates.FirstAsync(t => t.PageType == "blog-post");
             var draftVersion = new PageDesignVersion
@@ -425,7 +425,7 @@ namespace Sky.Tests.Services
             // Arrange
             var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
             await templateService.EnsureDefaultTemplatesExistAsync();
-            
+
             var versions = await templateService.GetTemplateDesignVersionsAsync("blog-post");
             var version = versions.First();
             version.Content = "<div>Updated content</div>";
@@ -447,7 +447,7 @@ namespace Sky.Tests.Services
             // Arrange
             var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
             await templateService.EnsureDefaultTemplatesExistAsync();
-            
+
             var template = await Db.Templates.FirstAsync(t => t.PageType == "blog-post");
             var version = new PageDesignVersion
             {
@@ -469,7 +469,7 @@ namespace Sky.Tests.Services
             // Assert
             var published = await Db.PageDesignVersions.FindAsync(version.Id);
             Assert.IsNotNull(published.Published);
-            
+
             var updatedTemplate = await Db.Templates.FindAsync(template.Id);
             Assert.AreEqual("<div>Version 2 content</div>", updatedTemplate.Content);
         }
@@ -483,9 +483,9 @@ namespace Sky.Tests.Services
             // Arrange
             var defaultLayout = await LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
             await templateService.EnsureDefaultTemplatesExistAsync();
-            
+
             var template = await Db.Templates.FirstAsync(t => t.PageType == "blog-post");
-            
+
             // Create version 1 and publish it
             var version1 = new PageDesignVersion
             {
@@ -498,7 +498,7 @@ namespace Sky.Tests.Services
                 Published = DateTimeOffset.UtcNow
             };
             Db.PageDesignVersions.Add(version1);
-            
+
             // Create version 2 (unpublished)
             var version2 = new PageDesignVersion
             {
@@ -519,7 +519,7 @@ namespace Sky.Tests.Services
             // Assert
             var version1Updated = await Db.PageDesignVersions.FindAsync(version1.Id);
             Assert.IsNull(version1Updated.Published, "Version 1 should be unpublished");
-            
+
             var version2Published = await Db.PageDesignVersions.FindAsync(version2.Id);
             Assert.IsNotNull(version2Published.Published, "Version 2 should be published");
         }

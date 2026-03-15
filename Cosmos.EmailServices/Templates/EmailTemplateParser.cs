@@ -7,8 +7,8 @@
 
 namespace Cosmos.EmailServices.Templates
 {
-    using System.Resources;
     using HtmlAgilityPack;
+    using System.Resources;
 
     /// <summary>
     /// Email template utilities.

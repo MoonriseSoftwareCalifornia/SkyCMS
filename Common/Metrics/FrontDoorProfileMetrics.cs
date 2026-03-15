@@ -7,14 +7,14 @@
 
 namespace Cosmos.Common.Metrics
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using Azure;
     using Azure.Core;
     using Azure.Identity;
     using Azure.Monitor.Query;
     using Azure.Monitor.Query.Models;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Gets statistics from an Azure Front Door profile.

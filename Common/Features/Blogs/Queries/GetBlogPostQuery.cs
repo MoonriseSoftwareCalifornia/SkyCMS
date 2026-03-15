@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Features.Blogs.Queries
 {
-    using System;
     using Cosmos.Common.Features.Shared;
+    using System;
 
     /// <summary>
     /// Query to retrieve a single blog post by its URL path.

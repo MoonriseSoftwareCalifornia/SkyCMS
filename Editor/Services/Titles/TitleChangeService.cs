@@ -7,10 +7,6 @@
 
 namespace Sky.Editor.Services.Titles
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -19,11 +15,14 @@ namespace Sky.Editor.Services.Titles
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Domain.Events;
     using Sky.Editor.Infrastructure.Time;
-    using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.ReservedPaths;
     using Sky.Editor.Services.Slugs;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Coordinates updates required when an article title changes: slug normalization, child URL adjustments,
@@ -115,7 +114,7 @@ namespace Sky.Editor.Services.Titles
             // If any critical operation fails, all changes will be rolled back
             // Note: In-memory databases may not support transactions
             var transaction = await db.Database.BeginTransactionAsync();
-            
+
             try
             {
                 // Use a list to track URL changes with published status for this operation
@@ -308,7 +307,7 @@ namespace Sky.Editor.Services.Titles
             }
 
             var normalizedTitle = title.Trim();
-            
+
             // Generate the URL slug that would be used for this title
             var slug = slugs.Normalize(normalizedTitle);
 

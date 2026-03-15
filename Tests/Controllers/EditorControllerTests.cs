@@ -1,21 +1,13 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sky.Cms.Controllers;
-using Sky.Editor.Models;
-using Sky.Cms.Models;
-using Cosmos.BlobService;
-using Cosmos.Cms.Common;
+﻿using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
 using Cosmos.Common.Features.Articles.EditorQueries;
-using Cosmos.Common.Features.Shared;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Cosmos.Common.Models;
 using Microsoft.AspNetCore.Identity;
-using Cosmos.Common.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Sky.Cms.Controllers;
+using Sky.Cms.Models;
 
 namespace Sky.Tests.Controllers
 {
@@ -173,9 +165,9 @@ namespace Sky.Tests.Controllers
 
             // Verify article was published
             //var publishedArticle = await Logic.GetArticleByArticleNumber(article.ArticleNumber, null);
-            var publishedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery 
-            { 
-                ArticleNumber = article.ArticleNumber 
+            var publishedArticle = await Mediator.QueryAsync(new GetArticleByArticleNumberQuery
+            {
+                ArticleNumber = article.ArticleNumber
             });
             Assert.IsNotNull(publishedArticle.Published, "Article should have a Published date");
             Assert.IsTrue(publishedArticle.StatusCode == (int)StatusCodeEnum.Active,
@@ -192,7 +184,7 @@ namespace Sky.Tests.Controllers
             // Manually create a second version in the database
             // (SaveArticle updates in place, so we need to manually create a snapshot)
             var version1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            
+
             var version2 = new Article
             {
                 Id = Guid.NewGuid(),
@@ -292,7 +284,7 @@ namespace Sky.Tests.Controllers
             // Create a home page first (first article becomes home page with UrlPath="root")
             var homePage = await CreateArticleAsync("Home Page", TestUserId);
             await SaveArticleAsync(homePage, TestUserId);
-            
+
             // Create the article we want to trash (this will be the second article)
             var article = await CreateArticleAsync("Article to Trash", TestUserId);
             await SaveArticleAsync(article, TestUserId);
@@ -306,7 +298,7 @@ namespace Sky.Tests.Controllers
             // Verify article is marked as deleted
             var trashedArticle = await Db.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == article.ArticleNumber);
-            
+
             Assert.IsNotNull(trashedArticle);
             Assert.AreEqual((int)StatusCodeEnum.Deleted, trashedArticle.StatusCode);
         }
@@ -358,7 +350,7 @@ namespace Sky.Tests.Controllers
             // The value should be a collection containing only the trashed article
             var trashList = jsonResult.Value as System.Collections.IEnumerable;
             Assert.IsNotNull(trashList);
-            
+
             // Verify trash list contains at least one item
             var items = trashList.Cast<object>().ToList();
             Assert.IsTrue(items.Count > 0, "Trash list should contain deleted articles");
@@ -371,14 +363,14 @@ namespace Sky.Tests.Controllers
             // Create home page first (cannot be trashed)
             var homePage = await CreateArticleAsync("Home Page", TestUserId);
             await SaveArticleAsync(homePage, TestUserId);
-            
+
             // Create a second article that can be trashed
             var article = await CreateArticleAsync("Article to Restore", TestUserId);
             await SaveArticleAsync(article, TestUserId);
-            
+
             // Trash it first
             await controller.TrashArticle(article.ArticleNumber);
-            
+
             // Verify it's trashed
             var trashedArticle = await Db.Articles
                 .FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
@@ -393,7 +385,7 @@ namespace Sky.Tests.Controllers
             // Verify article is restored
             var restoredArticle = await Db.Articles
                 .FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
-            
+
             Assert.AreNotEqual((int)StatusCodeEnum.Deleted, restoredArticle.StatusCode);
         }
 
@@ -622,11 +614,11 @@ namespace Sky.Tests.Controllers
             // Verify permissions were saved
             var catalogEntry = await Db.ArticleCatalog
                 .FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-            
+
             Assert.IsNotNull(catalogEntry);
             Assert.IsNotNull(catalogEntry.ArticlePermissions);
             Assert.AreEqual(2, catalogEntry.ArticlePermissions.Count, "Should have 2 permissions");
-            
+
             var permissionIds = catalogEntry.ArticlePermissions.Select(p => p.IdentityObjectId).ToList();
             Assert.IsTrue(permissionIds.Contains(role1.Id), "Should contain role1 permission");
             Assert.IsTrue(permissionIds.Contains(role2.Id), "Should contain role2 permission");
@@ -661,7 +653,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             Assert.IsNotNull(jsonResult.Value);
-            
+
             // Verify success response
             var json = System.Text.Json.JsonSerializer.Serialize(jsonResult.Value);
             Assert.IsTrue(json.Contains("success"), "Response should contain success property");
@@ -764,7 +756,7 @@ namespace Sky.Tests.Controllers
                 DateTimeStamp = DateTimeOffset.UtcNow.AddMinutes(-5),
                 IdentityUserId = TestUserId.ToString()
             };
-            
+
             Db.ArticleLogs.Add(log1);
             Db.ArticleLogs.Add(log2);
             await Db.SaveChangesAsync();
@@ -794,7 +786,7 @@ namespace Sky.Tests.Controllers
             var viewResult = (ViewResult)result;
             Assert.IsNotNull(viewResult.Model);
             Assert.IsInstanceOfType(viewResult.Model, typeof(ArticleViewModel));
-            
+
             var model = (ArticleViewModel)viewResult.Model;
             Assert.AreEqual(article.ArticleNumber, model.ArticleNumber);
             Assert.Contains("Test content for CcmsContent", model.Content);

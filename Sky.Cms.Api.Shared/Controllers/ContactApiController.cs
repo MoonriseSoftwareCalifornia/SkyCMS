@@ -7,18 +7,18 @@
 
 namespace Sky.Cms.Api.Shared.Controllers;
 
+using Cosmos.Common.Data;
+using Cosmos.Common.Features.Shared;
+using Cosmos.Common.Services.Email;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Cosmos.Common.Features.Shared;
-using Cosmos.Common.Services.Email;
 using Sky.Cms.Api.Shared.Features.ContactForm.Submit;
 using Sky.Cms.Api.Shared.Features.ContactForm.ValidateCaptcha;
 using Sky.Cms.Api.Shared.Models;
-using Cosmos.Common.Data;
-using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// API controller for handling contact form submissions.
@@ -146,14 +146,14 @@ public class ContactApiController : ControllerBase
                 };
 
                 var captchaValid = await mediator.QueryAsync(captchaQuery, cancellationToken);
-                
+
                 if (!captchaValid)
                 {
                     logger.LogWarning(
                         "CAPTCHA validation failed for IP: {RemoteIp} using provider: {Provider}",
                         remoteIp,
                         config.CaptchaProvider);
-                    
+
                     return BadRequest(new ContactFormResponse
                     {
                         Success = false,
@@ -216,14 +216,14 @@ public class ContactApiController : ControllerBase
                 .ToListAsync(cancellationToken);
 
             var adminEmail = contactApiSettings.FirstOrDefault(s => s.Name == "AdminEmail")?.Value;
-            
+
             // If ContactApi AdminEmail is not configured, fall back to email provider's SenderEmail
             if (string.IsNullOrWhiteSpace(adminEmail))
             {
                 logger.LogInformation("Contact API AdminEmail not configured, falling back to email provider settings");
                 var emailSettings = await emailConfigService.GetEmailSettingsAsync();
                 adminEmail = emailSettings.SenderEmail;
-                
+
                 if (string.IsNullOrWhiteSpace(adminEmail))
                 {
                     logger.LogWarning("No AdminEmail found in Contact API or Email settings, using default");
@@ -234,7 +234,7 @@ public class ContactApiController : ControllerBase
                     logger.LogInformation("Using email provider's SenderEmail as AdminEmail: {AdminEmail}", adminEmail);
                 }
             }
-            
+
             var maxMessageLength = int.Parse(
                 contactApiSettings.FirstOrDefault(s => s.Name == "MaxMessageLength")?.Value ?? "5000");
 
@@ -259,17 +259,17 @@ public class ContactApiController : ControllerBase
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to load Contact API configuration from database");
-            
+
             // Try to get email settings as final fallback
             try
             {
                 var emailSettings = await emailConfigService.GetEmailSettingsAsync();
-                var fallbackEmail = !string.IsNullOrWhiteSpace(emailSettings.SenderEmail) 
-                    ? emailSettings.SenderEmail 
+                var fallbackEmail = !string.IsNullOrWhiteSpace(emailSettings.SenderEmail)
+                    ? emailSettings.SenderEmail
                     : "admin@example.com";
-                
+
                 logger.LogInformation("Using fallback email configuration: {AdminEmail}", fallbackEmail);
-                
+
                 return new ContactApiConfig
                 {
                     AdminEmail = fallbackEmail,

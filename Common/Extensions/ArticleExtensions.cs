@@ -7,10 +7,10 @@
 
 namespace Cosmos.Cms.Common.Extensions;
 
-using System;
-using System.Text.Json;
 using Cosmos.Cms.Common.Models;
 using Cosmos.Common.Data;
+using System;
+using System.Text.Json;
 
 /// <summary>
 /// Extension methods for working with Article entities, especially SPA-specific operations.

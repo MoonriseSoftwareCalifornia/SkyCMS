@@ -22,7 +22,7 @@ namespace Sky.Tests.Services
             // Arrange
             var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
-            
+
             Assert.AreEqual("root", article.UrlPath);
 
             // Capture the old URL path BEFORE changing the title
@@ -51,7 +51,7 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var nonRootArticle = await CreateArticleAsync("About Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == nonRootArticle.ArticleNumber);
-            
+
             var originalPath = article.UrlPath;
             var oldTitle = article.Title;
             Assert.AreNotEqual("root", originalPath);
@@ -80,7 +80,7 @@ namespace Sky.Tests.Services
             // Arrange
             var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             var childArticle = await CreateArticleAsync("root/child", TestUserId);
-            
+
             var root = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
             var child = await Db.Articles.FirstAsync(a => a.ArticleNumber == childArticle.ArticleNumber);
 
@@ -97,7 +97,7 @@ namespace Sky.Tests.Services
             // Assert
             var updatedRoot = await Db.Articles.FirstAsync(a => a.Id == root.Id);
             var updatedChild = await Db.Articles.FirstAsync(a => a.Id == child.Id);
-            
+
             Assert.AreEqual("root", updatedRoot.UrlPath);
             // Child should not be affected since root UrlPath didn't change
             Assert.AreEqual("root/child", updatedChild.UrlPath);
@@ -136,7 +136,7 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("Original Title", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             // Create multiple versions of the same article
             var version2 = new Article
             {
@@ -148,7 +148,7 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             var version3 = new Article
             {
                 ArticleNumber = article.ArticleNumber,
@@ -159,7 +159,7 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             Db.Articles.Add(version2);
             Db.Articles.Add(version3);
             await Db.SaveChangesAsync();
@@ -167,7 +167,7 @@ namespace Sky.Tests.Services
             // Capture old values
             var oldTitle = article.Title;
             var oldUrlPath = article.UrlPath;
-            
+
             // Change the title
             article.Title = "Updated Title";
 
@@ -180,7 +180,7 @@ namespace Sky.Tests.Services
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
                 .OrderBy(a => a.VersionNumber)
                 .ToListAsync();
-            
+
             Assert.AreEqual(3, allVersions.Count);
             Assert.IsTrue(allVersions.All(v => v.Title == "Updated Title"), "All versions should have the updated title");
         }
@@ -195,10 +195,10 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("Original Title", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             var expectedOldUrlPath = "original-title";
             Assert.AreEqual(expectedOldUrlPath, article.UrlPath);
-            
+
             // Create multiple versions with the same UrlPath
             var version2 = new Article
             {
@@ -210,7 +210,7 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             var version3 = new Article
             {
                 ArticleNumber = article.ArticleNumber,
@@ -221,7 +221,7 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             Db.Articles.Add(version2);
             Db.Articles.Add(version3);
             await Db.SaveChangesAsync();
@@ -229,7 +229,7 @@ namespace Sky.Tests.Services
             // Capture old values
             var oldTitle = article.Title;
             var oldUrlPath = article.UrlPath;
-            
+
             // Change the title (which should update the URL path and slug)
             article.Title = "Updated Title";
 
@@ -243,9 +243,9 @@ namespace Sky.Tests.Services
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
                 .OrderBy(a => a.VersionNumber)
                 .ToListAsync();
-            
+
             Assert.AreEqual(3, allVersions.Count);
-            Assert.IsTrue(allVersions.All(v => v.UrlPath == expectedNewUrlPath), 
+            Assert.IsTrue(allVersions.All(v => v.UrlPath == expectedNewUrlPath),
                 $"All versions should have the updated URL path/slug '{expectedNewUrlPath}'");
         }
 
@@ -258,9 +258,9 @@ namespace Sky.Tests.Services
             // Arrange
             var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
-            
+
             Assert.AreEqual("root", article.UrlPath);
-            
+
             // Create multiple versions of the root page
             var version2 = new Article
             {
@@ -272,7 +272,7 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             var version3 = new Article
             {
                 ArticleNumber = article.ArticleNumber,
@@ -283,7 +283,7 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             Db.Articles.Add(version2);
             Db.Articles.Add(version3);
             await Db.SaveChangesAsync();
@@ -291,7 +291,7 @@ namespace Sky.Tests.Services
             // Capture old values
             var oldTitle = article.Title;
             var oldUrlPath = article.UrlPath;
-            
+
             // Change the title
             article.Title = "Welcome Page";
 
@@ -304,11 +304,11 @@ namespace Sky.Tests.Services
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
                 .OrderBy(a => a.VersionNumber)
                 .ToListAsync();
-            
+
             Assert.AreEqual(3, allVersions.Count);
-            Assert.IsTrue(allVersions.All(v => v.UrlPath == "root"), 
+            Assert.IsTrue(allVersions.All(v => v.UrlPath == "root"),
                 "All versions of root page should preserve 'root' URL path");
-            Assert.IsTrue(allVersions.All(v => v.Title == "Welcome Page"), 
+            Assert.IsTrue(allVersions.All(v => v.Title == "Welcome Page"),
                 "All versions should have the updated title");
         }
 
@@ -320,21 +320,21 @@ namespace Sky.Tests.Services
         {
             // Arrange
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
-            
+
             // Create a blog stream
             var blogStreamResult = await CreateArticleAsync("My Blog", TestUserId);
             var blogStream = await Db.Articles.FirstAsync(a => a.ArticleNumber == blogStreamResult.ArticleNumber);
             blogStream.ArticleType = (int)ArticleType.BlogStream;
             blogStream.BlogKey = "my-blog";
             await Db.SaveChangesAsync();
-            
+
             // Create a blog post
             var blogPostResult = await CreateArticleAsync("Blog Post Title", TestUserId);
             var blogPost = await Db.Articles.FirstAsync(a => a.ArticleNumber == blogPostResult.ArticleNumber);
             blogPost.ArticleType = (int)ArticleType.BlogPost;
             blogPost.BlogKey = "my-blog";
             blogPost.UrlPath = "my-blog/blog-post-title";
-            
+
             // Create versions of the blog post
             var version2 = new Article
             {
@@ -348,14 +348,14 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             Db.Articles.Add(version2);
             await Db.SaveChangesAsync();
 
             // Capture old values
             var oldTitle = blogPost.Title;
             var oldUrlPath = blogPost.UrlPath;
-            
+
             // Change the blog post title
             blogPost.Title = "Updated Blog Post";
 
@@ -369,13 +369,13 @@ namespace Sky.Tests.Services
                 .Where(a => a.ArticleNumber == blogPost.ArticleNumber)
                 .OrderBy(a => a.VersionNumber)
                 .ToListAsync();
-            
+
             Assert.AreEqual(2, allVersions.Count);
-            Assert.IsTrue(allVersions.All(v => v.Title == "Updated Blog Post"), 
+            Assert.IsTrue(allVersions.All(v => v.Title == "Updated Blog Post"),
                 "All versions should have the updated title");
-            Assert.IsTrue(allVersions.All(v => v.UrlPath == expectedNewUrlPath), 
+            Assert.IsTrue(allVersions.All(v => v.UrlPath == expectedNewUrlPath),
                 $"All versions should have the updated URL path '{expectedNewUrlPath}'");
-            Assert.IsTrue(allVersions.All(v => v.BlogKey == "my-blog"), 
+            Assert.IsTrue(allVersions.All(v => v.BlogKey == "my-blog"),
                 "All versions should preserve the blog key");
         }
 
@@ -393,14 +393,14 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("About Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             // Publish the article
             article.Published = Clock.UtcNow.AddDays(-1);
             await Db.SaveChangesAsync();
-            
+
             var oldTitle = article.Title;
             var oldUrlPath = article.UrlPath; // "about-us"
-            
+
             // Change the title
             article.Title = "Company Information";
 
@@ -413,15 +413,15 @@ namespace Sky.Tests.Services
             Assert.AreEqual("company-information", updatedArticle.UrlPath);
 
             // Assert - Verify redirect was created (Requirement 4)
-            var redirect = await Db.Articles.FirstOrDefaultAsync(a => 
-                a.StatusCode == (int)StatusCodeEnum.Redirect && 
+            var redirect = await Db.Articles.FirstOrDefaultAsync(a =>
+                a.StatusCode == (int)StatusCodeEnum.Redirect &&
                 a.UrlPath == oldUrlPath);
-            
+
             Assert.IsNotNull(redirect, "A redirect should have been created from the old URL path");
             Assert.AreEqual("about-us", redirect.UrlPath, "Redirect UrlPath should be the OLD URL");
-            Assert.IsTrue(redirect.HeaderJavaScript.Contains("window.location.href"), 
+            Assert.IsTrue(redirect.HeaderJavaScript.Contains("window.location.href"),
                 "Redirect should contain JavaScript redirect in content");
-            Assert.IsTrue(redirect.HeaderJavaScript.Contains("company-information"), 
+            Assert.IsTrue(redirect.HeaderJavaScript.Contains("company-information"),
                 "Redirect should point to the NEW URL in the redirect script");
         }
 
@@ -435,13 +435,13 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("About Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             // Leave article unpublished (Published is null)
             Assert.IsNull(article.Published, "Article should be unpublished");
-            
+
             var oldTitle = article.Title;
             var oldUrlPath = article.UrlPath; // "about-us"
-            
+
             // Change the title
             article.Title = "Company Information";
 
@@ -454,10 +454,10 @@ namespace Sky.Tests.Services
             Assert.AreEqual("company-information", updatedArticle.UrlPath);
 
             // Assert - Verify NO redirect was created (only published articles get redirects)
-            var redirect = await Db.Articles.FirstOrDefaultAsync(a => 
-                a.StatusCode == (int)StatusCodeEnum.Redirect && 
+            var redirect = await Db.Articles.FirstOrDefaultAsync(a =>
+                a.StatusCode == (int)StatusCodeEnum.Redirect &&
                 a.UrlPath == oldUrlPath);
-            
+
             Assert.IsNull(redirect, "No redirect should be created for unpublished articles");
         }
 
@@ -470,16 +470,16 @@ namespace Sky.Tests.Services
             // Arrange
             var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
-            
+
             // Publish the root article
             article.Published = Clock.UtcNow.AddDays(-1);
             await Db.SaveChangesAsync();
-            
+
             Assert.AreEqual("root", article.UrlPath);
-            
+
             var oldTitle = article.Title;
             var oldUrlPath = article.UrlPath;
-            
+
             // Change the title
             article.Title = "Welcome Page";
 
@@ -492,10 +492,10 @@ namespace Sky.Tests.Services
             Assert.AreEqual("root", updatedArticle.UrlPath);
 
             // Assert - Verify NO redirect was created (root pages don't get redirects)
-            var redirectCount = await Db.Articles.CountAsync(a => 
-                a.StatusCode == (int)StatusCodeEnum.Redirect && 
+            var redirectCount = await Db.Articles.CountAsync(a =>
+                a.StatusCode == (int)StatusCodeEnum.Redirect &&
                 a.UrlPath == "root");
-            
+
             Assert.AreEqual(0, redirectCount, "No redirect should be created from root URL path");
         }
 
@@ -509,10 +509,10 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("Services", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             // Publish the article
             article.Published = Clock.UtcNow.AddDays(-1);
-            
+
             // Create additional versions
             var version2 = new Article
             {
@@ -524,13 +524,13 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             Db.Articles.Add(version2);
             await Db.SaveChangesAsync();
-            
+
             var oldTitle = article.Title;
             var oldUrlPath = article.UrlPath; // "services"
-            
+
             // Change the title
             article.Title = "Our Services";
 
@@ -542,20 +542,20 @@ namespace Sky.Tests.Services
             var allVersions = await Db.Articles
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
                 .ToListAsync();
-            
+
             Assert.AreEqual(2, allVersions.Count);
-            Assert.IsTrue(allVersions.All(v => v.UrlPath == "our-services"), 
+            Assert.IsTrue(allVersions.All(v => v.UrlPath == "our-services"),
                 "All versions should have the new URL path");
-            Assert.IsTrue(allVersions.All(v => v.Title == "Our Services"), 
+            Assert.IsTrue(allVersions.All(v => v.Title == "Our Services"),
                 "All versions should have the new title");
 
             // Assert - Verify redirect was created with old URL → new URL (Requirement 4)
-            var redirect = await Db.Articles.FirstOrDefaultAsync(a => 
-                a.StatusCode == (int)StatusCodeEnum.Redirect && 
+            var redirect = await Db.Articles.FirstOrDefaultAsync(a =>
+                a.StatusCode == (int)StatusCodeEnum.Redirect &&
                 a.UrlPath == "services");
-            
+
             Assert.IsNotNull(redirect, "A redirect should have been created");
-            Assert.IsTrue(redirect.HeaderJavaScript.Contains("our-services"), 
+            Assert.IsTrue(redirect.HeaderJavaScript.Contains("our-services"),
                 "Redirect should point to the new URL");
         }
 
@@ -573,10 +573,10 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("About Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             var oldTitle = article.Title; // "About Us"
             var oldUrlPath = article.UrlPath; // "about-us"
-            
+
             // Change only the case of the title (Requirement 5)
             article.Title = "ABOUT US";
 
@@ -600,7 +600,7 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("Contact Us", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             // Create additional versions
             var version2 = new Article
             {
@@ -612,13 +612,13 @@ namespace Sky.Tests.Services
                 UserId = TestUserId.ToString(),
                 StatusCode = 0
             };
-            
+
             Db.Articles.Add(version2);
             await Db.SaveChangesAsync();
-            
+
             var oldTitle = article.Title; // "Contact Us"
             var oldUrlPath = article.UrlPath; // "contact-us"
-            
+
             // Change only the case (Requirement 5)
             article.Title = "CONTACT US";
 
@@ -631,11 +631,11 @@ namespace Sky.Tests.Services
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
                 .OrderBy(a => a.VersionNumber)
                 .ToListAsync();
-            
+
             Assert.AreEqual(2, allVersions.Count);
-            Assert.IsTrue(allVersions.All(v => v.Title == "CONTACT US"), 
+            Assert.IsTrue(allVersions.All(v => v.Title == "CONTACT US"),
                 "All versions should have the updated title with new case (titles are case sensitive)");
-            Assert.IsTrue(allVersions.All(v => v.UrlPath == "contact-us"), 
+            Assert.IsTrue(allVersions.All(v => v.UrlPath == "contact-us"),
                 "All versions should preserve the same URL path (URLs/slugs are case insensitive)");
         }
 
@@ -649,14 +649,14 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("Privacy Policy", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             // Publish the article
             article.Published = Clock.UtcNow.AddDays(-1);
             await Db.SaveChangesAsync();
-            
+
             var oldTitle = article.Title; // "Privacy Policy"
             var oldUrlPath = article.UrlPath; // "privacy-policy"
-            
+
             // Change only the case (Requirement 5)
             article.Title = "PRIVACY POLICY";
 
@@ -670,10 +670,10 @@ namespace Sky.Tests.Services
             Assert.AreEqual("privacy-policy", updatedArticle.UrlPath, "URL should remain lowercase");
 
             // Assert - No redirect should be created (URL didn't actually change) (Requirement 5)
-            var redirectCount = await Db.Articles.CountAsync(a => 
+            var redirectCount = await Db.Articles.CountAsync(a =>
                 a.StatusCode == (int)StatusCodeEnum.Redirect);
-            
-            Assert.AreEqual(0, redirectCount, 
+
+            Assert.AreEqual(0, redirectCount,
                 "No redirect should be created when only title case changes (slug/URL remains the same)");
         }
 
@@ -687,12 +687,12 @@ namespace Sky.Tests.Services
             await CreateArticleAsync("Home Page", TestUserId); // Create root first
             var articleResult = await CreateArticleAsync("products", TestUserId);
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == articleResult.ArticleNumber);
-            
+
             Assert.AreEqual("products", article.UrlPath, "Initial URL should be lowercase");
-            
+
             var oldTitle = article.Title; // "products"
             var oldUrlPath = article.UrlPath; // "products"
-            
+
             // Change to mixed case title that normalizes to same slug (Requirement 5)
             article.Title = "Products"; // Different case but same normalized slug
 

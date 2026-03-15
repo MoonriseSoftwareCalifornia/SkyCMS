@@ -7,11 +7,11 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account.Manage
 {
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Reset authenticator page model.

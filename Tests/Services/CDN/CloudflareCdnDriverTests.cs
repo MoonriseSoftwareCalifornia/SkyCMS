@@ -7,15 +7,14 @@
 
 namespace Sky.Tests.Services.CDN
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json;
     using Sky.Editor.Services.CDN;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="CloudflareCdnDriver"/> class.
@@ -78,7 +77,7 @@ namespace Sky.Tests.Services.CDN
             {
                 var driver = new CloudflareCdnDriver(setting, mockLogger.Object);
             });
-            
+
             // Verify the exception message contains useful information
             Assert.IsTrue(exception.Message.Contains("Invalid JSON in CDN setting"));
             Assert.IsNotNull(exception.InnerException);

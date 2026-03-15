@@ -5,9 +5,6 @@
 
 namespace Sky.Tests.Features.Articles.Trash
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -17,6 +14,8 @@ namespace Sky.Tests.Features.Articles.Trash
     using Moq;
     using Sky.Editor.Features.Articles.Trash;
     using Sky.Editor.Services.Publishing;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for <see cref="TrashArticleHandler"/>.

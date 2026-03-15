@@ -7,9 +7,9 @@
 
 namespace Sky.Cms.Models
 {
+    using Sky.Cms.Models.Interfaces;
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
-    using Sky.Cms.Models.Interfaces;
 
     /// <summary>
     /// File manager edit code view model.

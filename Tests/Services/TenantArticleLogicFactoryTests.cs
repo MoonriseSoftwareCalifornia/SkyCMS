@@ -7,14 +7,11 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Shared;
+    using Cosmos.Common.Services.BlogPublishing;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.EntityFrameworkCore;
@@ -23,12 +20,10 @@ namespace Sky.Tests.Services
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
-    using Microsoft.Extensions.Options;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Cms.Services;
     using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.Catalog;
@@ -41,8 +36,10 @@ namespace Sky.Tests.Services
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using MediatR;
-    using Cosmos.Common.Services.BlogPublishing;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="TenantArticleLogicFactory"/> to ensure proper
@@ -85,7 +82,7 @@ namespace Sky.Tests.Services
             _mockEditorSettings.Setup(x => x.BlobPublicUrl).Returns("/");
             _mockEditorSettings.Setup(x => x.StaticWebPages).Returns(false);
             _mockEditorSettings.Setup(x => x.IsMultiTenantEditor).Returns(false);
-            
+
             _mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
 
             // Setup service provider with all required dependencies
@@ -156,7 +153,7 @@ namespace Sky.Tests.Services
             services.AddSingleton(new SiteSettings());
 
             // Register custom IMediator implementation
-            services.AddSingleton<Cosmos.Common.Features.Shared.IMediator>(sp => 
+            services.AddSingleton<Cosmos.Common.Features.Shared.IMediator>(sp =>
                 new Cosmos.Common.Features.Shared.Mediator(sp));
 
             // Register MediatR with handlers from the Editor assembly
@@ -211,7 +208,7 @@ namespace Sky.Tests.Services
                     dbContext,
                     sp.GetRequiredService<IEditorSettings>().PublisherUrl,
                     sp.GetRequiredService<IEditorSettings>().BlobPublicUrl);
-                
+
                 return new PublishingService(
                     dbContext,
                     storageContext,
@@ -242,7 +239,7 @@ namespace Sky.Tests.Services
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
                 var mockReservedPaths = new Mock<IReservedPaths>();
                 var mockBlogRenderingService = new Mock<IBlogStreamRenderingService>();
-                
+
                 return new TitleChangeService(
                     dbContext,
                     sp.GetRequiredService<ISlugService>(),
@@ -668,7 +665,7 @@ namespace Sky.Tests.Services
 
             // Setup mock to handle normalized domain
             _mockConfigProvider.Setup(x => x.GetTenantConnectionAsync(
-                It.Is<string>(s => s.Equals("tenant1.com", StringComparison.OrdinalIgnoreCase)), 
+                It.Is<string>(s => s.Equals("tenant1.com", StringComparison.OrdinalIgnoreCase)),
                 default))
                 .ReturnsAsync(connection);
 
@@ -730,7 +727,7 @@ namespace Sky.Tests.Services
             // Assert
             Assert.IsNotNull(logic);
             Assert.IsInstanceOfType(logic, typeof(ArticleEditLogic));
-            
+
             // Verify logic instance has required dependencies
             // (This validates the factory wired up all dependencies correctly)
             Assert.IsNotNull(logic);

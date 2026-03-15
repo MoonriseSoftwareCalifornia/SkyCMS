@@ -7,17 +7,16 @@
 
 namespace Cosmos.Common.Data.Logic
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Models;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Newtonsoft.Json;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
     using X.Web.Sitemap;
 
     /// <summary>

@@ -7,15 +7,14 @@
 
 namespace Sky.Editor.Services.Layout
 {
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Migrations.Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.EntityFrameworkCore.Storage;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Migrations.Core;
 
     /// <summary>
     /// Service for migrating existing layouts to use LayoutNumber versioning.
@@ -109,11 +108,11 @@ namespace Sky.Editor.Services.Layout
 
                 // Use execution strategy to handle retries and transactions
                 var strategy = dbContext.Database.CreateExecutionStrategy();
-                
+
                 var updatedCount = await strategy.ExecuteAsync(async () =>
                 {
                     using var transaction = await dbContext.Database.BeginTransactionAsync();
-                    
+
                     try
                     {
                         // Group layouts by CommunityLayoutId to identify version families
@@ -143,7 +142,7 @@ namespace Sky.Editor.Services.Layout
                             foreach (var layout in family.OrderBy(l => l.Version ?? 0))
                             {
                                 layout.LayoutNumber = layoutNumber;
-                                
+
                                 // All versions in an active family get IsDefault = true
                                 // All versions in an inactive family get IsDefault = false
                                 layout.IsDefault = isActiveFamily;

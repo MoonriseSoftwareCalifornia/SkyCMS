@@ -7,12 +7,11 @@
 
 namespace Sky.Editor.Features.Articles.Delete
 {
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
-    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Validates DeleteArticleCommand requests.

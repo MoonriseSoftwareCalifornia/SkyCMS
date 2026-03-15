@@ -7,9 +7,6 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Data;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
@@ -17,6 +14,9 @@ namespace Sky.Editor.Areas.Setup.Pages
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 3: Admin account creation.

@@ -7,14 +7,14 @@
 
 namespace Sky.Cms.Api.Shared.Services;
 
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json.Serialization;
 using Cosmos.EmailServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sky.Cms.Api.Shared.Models;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Service for handling contact form submissions.
@@ -103,7 +103,7 @@ public class ContactService : IContactService
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error processing contact form submission from {Email} (IP: {RemoteIp})", 
+            logger.LogError(ex, "Error processing contact form submission from {Email} (IP: {RemoteIp})",
                 request.Email, remoteIpAddress);
 
             return new ContactFormResponse

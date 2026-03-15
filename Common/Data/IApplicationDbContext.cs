@@ -7,9 +7,9 @@
 
 namespace Cosmos.Common.Data
 {
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Abstraction over the Sky CMS application database context.

@@ -10,14 +10,11 @@ namespace Sky.Tests.Services.BlogPublishing
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Models;
     using Cosmos.Common.Services.BlogPublishing;
-    using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -187,7 +184,7 @@ namespace Sky.Tests.Services.BlogPublishing
 
             // Assert
             Assert.IsNotNull(result, "Result should not be null");
-            Assert.IsFalse(result.Contains("sky-blog-stream-intro"), 
+            Assert.IsFalse(result.Contains("sky-blog-stream-intro"),
                 "Should not contain intro paragraph when introduction is empty");
         }
 
@@ -721,9 +718,9 @@ namespace Sky.Tests.Services.BlogPublishing
             // Assert
             var parsed = JsonConvert.DeserializeObject<List<dynamic>>(result);
             Assert.AreEqual(1, parsed.Count);
-            Assert.AreEqual(string.Empty, (string)parsed[0]["introduction"], 
+            Assert.AreEqual(string.Empty, (string)parsed[0]["introduction"],
                 "Null introduction should be converted to empty string");
-            Assert.AreEqual(string.Empty, (string)parsed[0]["bannerImage"], 
+            Assert.AreEqual(string.Empty, (string)parsed[0]["bannerImage"],
                 "Null bannerImage should be converted to empty string");
         }
 
@@ -804,7 +801,7 @@ namespace Sky.Tests.Services.BlogPublishing
             var result = await service.GenerateBlogPostSnippetAsync(article);
 
             // Assert
-            Assert.IsFalse(result.Contains("<figure"), 
+            Assert.IsFalse(result.Contains("<figure"),
                 "Should not contain figure tag when banner image is empty");
         }
 
@@ -842,9 +839,9 @@ namespace Sky.Tests.Services.BlogPublishing
             var result = await service.GenerateBlogPostSnippetAsync(article);
 
             // Assert
-            Assert.Contains("March 15, 2024", result, 
+            Assert.Contains("March 15, 2024", result,
                 "Should display date in 'MMMM d, yyyy' format");
-            Assert.Contains("2024-03-15T10:30:00+00:00", result, 
+            Assert.Contains("2024-03-15T10:30:00+00:00", result,
                 "Should include ISO 8601 format in datetime attribute");
         }
 
@@ -947,9 +944,9 @@ namespace Sky.Tests.Services.BlogPublishing
             // Assert - Verify metadata
             var parsedMetadata = JsonConvert.DeserializeObject<List<dynamic>>(metadataJson);
             Assert.AreEqual(3, parsedMetadata.Count, "Should have 3 posts");
-            Assert.AreEqual("Blog Post 3", (string)parsedMetadata[0]["title"], 
+            Assert.AreEqual("Blog Post 3", (string)parsedMetadata[0]["title"],
                 "Most recent post should be first");
-            Assert.AreEqual("Blog Post 1", (string)parsedMetadata[2]["title"], 
+            Assert.AreEqual("Blog Post 1", (string)parsedMetadata[2]["title"],
                 "Oldest post should be last");
 
             // Assert - Verify snippets
@@ -963,9 +960,9 @@ namespace Sky.Tests.Services.BlogPublishing
             }
 
             // Verify specific post features
-            Assert.Contains("https://example.com/post-2.jpg", postSnippets[1], 
+            Assert.Contains("https://example.com/post-2.jpg", postSnippets[1],
                 "Post 2 should have banner image");
-            Assert.IsFalse(postSnippets[0].Contains("<figure"), 
+            Assert.IsFalse(postSnippets[0].Contains("<figure"),
                 "Post 1 should not have figure tag (no banner)");
         }
 

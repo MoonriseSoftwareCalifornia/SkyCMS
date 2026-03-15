@@ -48,7 +48,7 @@ namespace Sky.Editor.Services.Templates
         /// <summary>
         /// Gets or sets tags for searching/filtering.
         /// </summary>
-        public List<string> Tags { get; set; } = new ();
+        public List<string> Tags { get; set; } = new();
 
         /// <summary>
         /// Gets or sets a value indicating whether whether this template requires specific configuration.

@@ -7,19 +7,12 @@
 
 namespace Sky.Tests.Controllers;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Cosmos.BlobService;
 using Cosmos.BlobService.Models;
-using Cosmos.Cms.Common;
+using Cosmos.Cms.Editor.Controllers;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
 using Cosmos.Common.Features.Shared;
-using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 using Cosmos.Common.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -29,8 +22,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Sky.Cms.Services;
-using Cosmos.Cms.Editor.Controllers;
 using Sky.Editor.Data.Logic;
 using Sky.Editor.Features.Articles.Create;
 using Sky.Editor.Features.Articles.Save;
@@ -43,6 +34,13 @@ using Sky.Editor.Services.Redirects;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
 /// <summary>
 /// Unit tests for <see cref="DocsImportController"/>.

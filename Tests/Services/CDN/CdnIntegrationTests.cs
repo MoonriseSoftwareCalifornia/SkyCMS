@@ -7,15 +7,15 @@
 
 namespace Sky.Tests.Services.CDN
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json;
     using Sky.Editor.Services.CDN;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Integration tests for CDN providers using actual test accounts.
@@ -74,7 +74,7 @@ namespace Sky.Tests.Services.CDN
             // Assert
             Assert.IsNotNull(results);
             Assert.IsTrue(results.Count > 0, "Should return at least one result");
-            Assert.IsTrue(results[0].IsSuccessStatusCode, 
+            Assert.IsTrue(results[0].IsSuccessStatusCode,
                 $"Purge should succeed. Status: {results[0].Status}, Message: {results[0].Message}");
             Assert.AreEqual("Azure CDN", results[0].ProviderName);
         }
@@ -449,7 +449,7 @@ namespace Sky.Tests.Services.CDN
             }
 
             var service = new CdnService(settings, _mockLogger.Object, null);
-            
+
             // Get URLs in the correct format for the configured providers
             var testUrls = GetProviderSpecificUrls("/test-multi-provider", hasCloudflare);
 
@@ -458,7 +458,7 @@ namespace Sky.Tests.Services.CDN
 
             // Assert
             Assert.IsNotNull(results);
-            Assert.AreEqual(settings.Count, results.Count, 
+            Assert.AreEqual(settings.Count, results.Count,
                 "Should return one result per configured provider");
 
             // Provide detailed diagnostics for each result
@@ -543,7 +543,7 @@ namespace Sky.Tests.Services.CDN
             // Assert
             Assert.IsNotNull(results);
             Assert.IsTrue(results.Count > 0);
-            Assert.IsFalse(results[0].IsSuccessStatusCode, 
+            Assert.IsFalse(results[0].IsSuccessStatusCode,
                 "Should fail with invalid credentials");
         }
 
@@ -638,7 +638,7 @@ namespace Sky.Tests.Services.CDN
         {
             // Try to get from configuration first
             var domain = _configuration["CdnIntegrationTests:Cloudflare:TestDomain"];
-            
+
             // Fallback to example.com if not configured
             return string.IsNullOrEmpty(domain) ? "example.com" : domain;
         }
@@ -654,7 +654,7 @@ namespace Sky.Tests.Services.CDN
                 var domain = GetCloudflareDomain();
                 return new List<string> { $"https://{domain}{relativePath}" };
             }
-            
+
             return new List<string> { relativePath };
         }
 
@@ -718,7 +718,7 @@ namespace Sky.Tests.Services.CDN
             };
 
             var driver = new CloudflareCdnDriver(cdnSetting, _mockLogger.Object);
-            
+
             // Create a list of 30 test URLs (Cloudflare allows up to 30 per request on free tier)
             var testUrls = new List<string>();
             for (int i = 1; i <= 30; i++)
@@ -765,13 +765,13 @@ namespace Sky.Tests.Services.CDN
             // Assert
             Assert.IsNotNull(results);
             Assert.IsTrue(results.Count > 0);
-            
+
             var result = results[0];
             Assert.IsTrue(result.IsSuccessStatusCode);
             Assert.AreEqual("Cloudflare", result.ProviderName);
             Assert.IsNotNull(result.Id, "Result should have an ID");
             Assert.IsNotNull(result.ClientRequestId, "Result should have a ClientRequestId");
-            Assert.IsTrue(result.EstimatedFlushDateTime > DateTimeOffset.UtcNow, 
+            Assert.IsTrue(result.EstimatedFlushDateTime > DateTimeOffset.UtcNow,
                 "EstimatedFlushDateTime should be in the future");
             Assert.IsTrue(result.EstimatedFlushDateTime <= DateTimeOffset.UtcNow.AddMinutes(1),
                 "EstimatedFlushDateTime should be within 1 minute");
@@ -798,10 +798,10 @@ namespace Sky.Tests.Services.CDN
             };
 
             var driver = new CloudflareCdnDriver(cdnSetting, _mockLogger.Object);
-            
+
             // Test purging a directory pattern (Cloudflare supports this)
-            var testUrls = new List<string> 
-            { 
+            var testUrls = new List<string>
+            {
                 "https://example.com/assets/*",
                 "https://example.com/images/*"
             };
@@ -840,11 +840,11 @@ namespace Sky.Tests.Services.CDN
             Assert.IsNotNull(config.ZoneId, "ZoneId should not be null");
             Assert.IsFalse(string.IsNullOrWhiteSpace(config.ApiToken), "ApiToken should not be empty");
             Assert.IsFalse(string.IsNullOrWhiteSpace(config.ZoneId), "ZoneId should not be empty");
-            
+
             // Verify token format (basic validation)
             Assert.IsTrue(config.ApiToken.Length > 10, "ApiToken seems too short");
             Assert.IsTrue(config.ZoneId.Length > 10, "ZoneId seems too short");
-            
+
             Console.WriteLine($"Cloudflare Configuration:");
             Console.WriteLine($"  ZoneId: {config.ZoneId.Substring(0, 8)}... (truncated)");
             Console.WriteLine($"  ApiToken: {config.ApiToken.Substring(0, 8)}... (truncated)");
@@ -866,7 +866,7 @@ namespace Sky.Tests.Services.CDN
             Console.WriteLine($"  Azure CDN: {(hasAzure ? "? Configured" : "? Not Configured")}");
             Console.WriteLine($"  Cloudflare: {(hasCloudflare ? "? Configured" : "? Not Configured")}");
             Console.WriteLine($"  Sucuri: {(hasSucuri ? "? Configured" : "? Not Configured")}");
-            
+
             var configuredCount = (hasAzure ? 1 : 0) + (hasCloudflare ? 1 : 0) + (hasSucuri ? 1 : 0);
             Console.WriteLine($"\nTotal Configured: {configuredCount}/3");
 

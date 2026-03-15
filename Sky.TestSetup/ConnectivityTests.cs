@@ -68,11 +68,11 @@ public class ConnectivityTests
         {
             // Act - Attempt to connect and read database properties
             using var client = new CosmosClient(endpoint, key);
-            
+
             // Create database if it doesn't exist (for CI/CD environments)
             var databaseResponse = await client.CreateDatabaseIfNotExistsAsync(databaseName);
             var database = databaseResponse.Database;
-            
+
             // Read database properties to confirm connectivity
             var response = await database.ReadAsync();
 

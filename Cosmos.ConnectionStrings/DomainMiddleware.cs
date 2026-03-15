@@ -38,31 +38,31 @@ namespace Cosmos.DynamicConfig
         public async Task InvokeAsync(HttpContext context)
         {
             var domain = context.Request.Host.Host.ToLowerInvariant();
-            
+
             _logger.LogDebug("Domain middleware processing request for domain: {Domain}", domain);
-            
+
             // Validate domain exists in configuration
             var configProvider = context.RequestServices.GetService<IDynamicConfigurationProvider>();
-            
+
             if (configProvider != null)
             {
                 try
                 {
                     var connectionString = await configProvider.GetDatabaseConnectionStringAsync(domain, context.RequestAborted);
                     var isValid = !string.IsNullOrEmpty(connectionString);
-                    
+
                     if (!isValid)
                     {
-                        _logger.LogWarning("Unauthorized domain access attempt: {Domain}, Path: {Path}, IP: {IP}", 
-                            domain, 
+                        _logger.LogWarning("Unauthorized domain access attempt: {Domain}, Path: {Path}, IP: {IP}",
+                            domain,
                             context.Request.Path,
                             context.Connection.RemoteIpAddress?.ToString());
-                        
+
                         context.Response.StatusCode = 404;
                         await context.Response.WriteAsync("Not Found");
                         return;
                     }
-                    
+
                     _logger.LogInformation("Valid domain access: {Domain}", domain);
                 }
                 catch (Exception ex)
@@ -71,7 +71,7 @@ namespace Cosmos.DynamicConfig
                     // Continue processing - fail open for availability, but log the error
                 }
             }
-            
+
             context.Items["Domain"] = domain;
             await next(context);
         }

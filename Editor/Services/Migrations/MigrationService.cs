@@ -7,16 +7,16 @@
 
 namespace Sky.Editor.Services.Migrations
 {
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Migrations.Core;
     using System;
     using System.Collections.Generic;
     using System.Data.Common;
     using System.Linq;
     using System.Reflection;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Migrations.Core;
 
     /// <summary>
     /// Discovers and executes database migrations across all supported database providers.
@@ -100,41 +100,41 @@ namespace Sky.Editor.Services.Migrations
             {
                 // Check if this is a brand new database BEFORE creating migration history table
                 bool isBrandNewDatabase = await IsBrandNewDatabaseAsync(context);
-                
+
                 if (isBrandNewDatabase)
                 {
                     logger.LogInformation("📦 Brand new database detected - bootstrapping with EnsureCreated");
-                    
+
                     // Create complete schema from current DbContext model
                     await context.DbContext.Database.EnsureCreatedAsync();
                     logger.LogInformation("✅ Database schema created");
-                    
+
                     // Record virtual "000" migration as the bootstrap marker
                     await RecordVirtualInitialMigrationAsync(context);
-                    
+
                     // Mark ALL currently discovered migrations as applied
                     // (their changes are included in the EnsureCreated schema)
                     logger.LogInformation("📝 Marking {Count} existing migration(s) as pre-applied", migrations.Count);
-                    
+
                     foreach (var migration in migrations.OrderBy(m => m.MigrationId))
                     {
                         await RecordMigrationAsync(context, migration);
                         logger.LogInformation("   ✓ Pre-recorded migration {Id}", migration.MigrationId);
                     }
-                    
+
                     logger.LogInformation("✅ Initial schema setup complete");
                     return;
                 }
-                
+
                 // Existing database - run normal migration flow
                 logger.LogInformation("🔍 Existing database detected - checking for pending migrations");
-                
+
                 // Ensure migration history table exists
                 await EnsureMigrationHistoryTableAsync(context);
 
                 // Get applied migrations
                 var appliedMigrations = await GetAppliedMigrationsAsync(context);
-                
+
                 // Get pending migrations
                 var pendingMigrations = migrations
                     .Where(m => !appliedMigrations.Contains(m.MigrationId))
@@ -168,7 +168,7 @@ namespace Sky.Editor.Services.Migrations
         /// </summary>
         private async Task ApplyMigrationAsync(MigrationContext context, IMigration migration)
         {
-            logger.LogInformation("Applying migration {Id}: {Description}", 
+            logger.LogInformation("Applying migration {Id}: {Description}",
                 migration.MigrationId, migration.Description);
 
             try
@@ -187,13 +187,13 @@ namespace Sky.Editor.Services.Migrations
                 await migration.ApplyAsync(context);
                 await RecordMigrationAsync(context, migration);
 
-                logger.LogInformation("✅ Migration {Id} completed successfully", 
+                logger.LogInformation("✅ Migration {Id} completed successfully",
                     migration.MigrationId);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, 
-                    "❌ Migration {Id} failed: {Message}", 
+                logger.LogError(ex,
+                    "❌ Migration {Id} failed: {Message}",
                     migration.MigrationId, ex.Message);
                 throw new InvalidOperationException(
                     $"Migration {migration.MigrationId} ({migration.Description}) failed. " +
@@ -209,8 +209,8 @@ namespace Sky.Editor.Services.Migrations
             var migrations = new List<IMigration>();
             var migrationTypes = Assembly.GetExecutingAssembly()
                 .GetTypes()
-                .Where(t => typeof(IMigration).IsAssignableFrom(t) 
-                         && !t.IsInterface 
+                .Where(t => typeof(IMigration).IsAssignableFrom(t)
+                         && !t.IsInterface
                          && !t.IsAbstract
                          && !t.IsNested) // Exclude nested types like VirtualMigration
                 .ToList();
@@ -220,7 +220,7 @@ namespace Sky.Editor.Services.Migrations
                 try
                 {
                     var migration = (IMigration)Activator.CreateInstance(type);
-                    
+
                     // Validate migration ID is not "000" (reserved for virtual bootstrap migration)
                     if (migration.MigrationId == "000")
                     {
@@ -228,7 +228,7 @@ namespace Sky.Editor.Services.Migrations
                             $"Migration '{type.FullName}' uses reserved migration ID '000'. " +
                             "Migration ID '000' is reserved for the virtual bootstrap migration created by EnsureCreated.");
                     }
-                    
+
                     migrations.Add(migration);
                 }
                 catch (Exception ex)
@@ -279,7 +279,7 @@ namespace Sky.Editor.Services.Migrations
                         INDEX idx_migration_id (MigrationId),
                         INDEX idx_provider (Provider)
                     )",
-                
+
                 DatabaseProvider.SqlServer => @"
                     IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MigrationHistory')
                     CREATE TABLE MigrationHistory (
@@ -293,7 +293,7 @@ namespace Sky.Editor.Services.Migrations
                         INDEX idx_migration_id NONCLUSTERED (MigrationId),
                         INDEX idx_provider NONCLUSTERED (Provider)
                     )",
-                
+
                 DatabaseProvider.Sqlite => @"
                     CREATE TABLE IF NOT EXISTS MigrationHistory (
                         Id TEXT PRIMARY KEY,
@@ -306,10 +306,10 @@ namespace Sky.Editor.Services.Migrations
                     );
                     CREATE INDEX IF NOT EXISTS idx_migration_id ON MigrationHistory(MigrationId);
                     CREATE INDEX IF NOT EXISTS idx_provider ON MigrationHistory(Provider);",
-                
-                DatabaseProvider.CosmosDb => 
+
+                DatabaseProvider.CosmosDb =>
                     null, // Cosmos DB doesn't need explicit table creation
-                
+
                 _ => throw new NotSupportedException($"Provider {context.Provider} not supported")
             };
 
@@ -348,7 +348,7 @@ namespace Sky.Editor.Services.Migrations
             // Relational databases: Use parameterized SQL
             var connection = context.DbContext.Database.GetDbConnection();
             var wasOpen = connection.State == System.Data.ConnectionState.Open;
-            
+
             if (!wasOpen)
             {
                 await connection.OpenAsync();
@@ -358,18 +358,18 @@ namespace Sky.Editor.Services.Migrations
             {
                 using var command = connection.CreateCommand();
                 command.CommandText = "SELECT MigrationId FROM MigrationHistory WHERE Provider = @Provider";
-                
+
                 var parameter = command.CreateParameter();
                 parameter.ParameterName = "@Provider";
                 parameter.Value = context.Provider.ToString();
                 command.Parameters.Add(parameter);
 
                 var applied = new HashSet<string>();
-                
+
                 try
                 {
                     using var reader = await command.ExecuteReaderAsync();
-                    
+
                     while (await reader.ReadAsync())
                     {
                         if (!reader.IsDBNull(0))
@@ -446,22 +446,22 @@ namespace Sky.Editor.Services.Migrations
             try
             {
                 using var command = connection.CreateCommand();
-                
+
                 // Provider-specific SQL with placeholders
                 command.CommandText = context.Provider switch
                 {
                     DatabaseProvider.MySql =>
                         "INSERT INTO MigrationHistory (Id, MigrationId, Version, Description, AppliedAt, Provider, ApplicationVersion) " +
                         "VALUES (@Id, @MigrationId, @Version, @Description, UTC_TIMESTAMP(6), @Provider, @ApplicationVersion)",
-                    
+
                     DatabaseProvider.SqlServer =>
                         "INSERT INTO MigrationHistory (Id, MigrationId, Version, Description, AppliedAt, Provider, ApplicationVersion) " +
                         "VALUES (@Id, @MigrationId, @Version, @Description, SYSDATETIMEOFFSET(), @Provider, @ApplicationVersion)",
-                    
+
                     DatabaseProvider.Sqlite =>
                         "INSERT INTO MigrationHistory (Id, MigrationId, Version, Description, AppliedAt, Provider, ApplicationVersion) " +
                         "VALUES (@Id, @MigrationId, @Version, @Description, datetime('now'), @Provider, @ApplicationVersion)",
-                    
+
                     _ => throw new NotSupportedException($"Provider {context.Provider} not supported")
                 };
 
@@ -505,7 +505,7 @@ namespace Sky.Editor.Services.Migrations
         private async Task RecordVirtualInitialMigrationAsync(MigrationContext context)
         {
             var appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
-    
+
             // Create a virtual migration marker
             var virtualMigration = new VirtualMigration
             {
@@ -546,7 +546,7 @@ namespace Sky.Editor.Services.Migrations
             // (Layouts is a core table that should exist in any initialized database)
             var connection = context.DbContext.Database.GetDbConnection();
             var wasOpen = connection.State == System.Data.ConnectionState.Open;
-            
+
             if (!wasOpen)
             {
                 await connection.OpenAsync();
@@ -555,23 +555,23 @@ namespace Sky.Editor.Services.Migrations
             try
             {
                 using var command = connection.CreateCommand();
-                
+
                 command.CommandText = context.Provider switch
                 {
-                    DatabaseProvider.Sqlite => 
+                    DatabaseProvider.Sqlite =>
                         "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Layouts'",
-                    DatabaseProvider.MySql => 
+                    DatabaseProvider.MySql =>
                         "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'Layouts'",
-                    DatabaseProvider.SqlServer => 
+                    DatabaseProvider.SqlServer =>
                         "SELECT COUNT(*) FROM sys.tables WHERE name = 'Layouts'",
                     _ => throw new NotSupportedException($"Provider {context.Provider} not supported")
                 };
 
                 var result = await command.ExecuteScalarAsync();
                 var tableCount = Convert.ToInt32(result);
-                
+
                 logger.LogDebug("Layouts table existence check: {Count} table(s) found", tableCount);
-                
+
                 return tableCount == 0; // Brand new if Layouts table doesn't exist
             }
             catch (Exception ex)

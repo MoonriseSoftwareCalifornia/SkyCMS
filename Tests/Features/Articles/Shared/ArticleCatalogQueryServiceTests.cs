@@ -7,15 +7,13 @@
 
 namespace Sky.Tests.Features.Articles.Shared
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Shared;
-    using Cosmos.Common.Models;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for ArticleCatalogQueryService - table of contents and search.

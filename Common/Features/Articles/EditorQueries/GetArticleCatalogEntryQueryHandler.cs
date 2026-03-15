@@ -7,11 +7,11 @@
 
 namespace Cosmos.Common.Features.Articles.EditorQueries;
 
-using System.Threading;
-using System.Threading.Tasks;
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Handler for retrieving article catalog entries.

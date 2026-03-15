@@ -10,7 +10,6 @@ namespace Sky.Tests.Controllers
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services.BlogPublishing;
@@ -23,14 +22,11 @@ namespace Sky.Tests.Controllers
     using Moq;
     using Sky.Editor.Controllers;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Blogs.CreatePost;
     using Sky.Editor.Features.Blogs.DeleteStream;
     using Sky.Editor.Features.Blogs.GetStream;
     using Sky.Editor.Features.Blogs.UpdateStream;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Models.Blogs;
-    using Sky.Editor.Services.CDN;
     using System.Collections.Generic;
     using System.Linq;
     using System.Security.Claims;
@@ -51,10 +47,10 @@ namespace Sky.Tests.Controllers
         public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
-            
+
             mediatorMock = new Mock<IMediator>();
             blogRenderingServiceMock = new Mock<IBlogStreamRenderingService>();
-            
+
             // Create a proper UserManager mock
             var store = new Mock<IUserStore<IdentityUser>>();
             userManagerMock = new Mock<UserManager<IdentityUser>>(
@@ -349,7 +345,7 @@ namespace Sky.Tests.Controllers
         }
 
         #endregion
-                
+
         #region Delete Blog Entry Tests
 
         /// <summary>
@@ -459,7 +455,7 @@ namespace Sky.Tests.Controllers
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Delete", viewResult.ViewName);
             Assert.IsInstanceOfType(viewResult.Model, typeof(BlogStreamViewModel));
-            
+
             var model = (BlogStreamViewModel)viewResult.Model;
             Assert.AreEqual(blogEntity.Id, model.Id);
             Assert.AreEqual("Blog to Delete", model.Title);
@@ -527,7 +523,7 @@ namespace Sky.Tests.Controllers
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Edit", viewResult.ViewName);
             Assert.IsInstanceOfType(viewResult.Model, typeof(BlogStreamViewModel));
-            
+
             var model = (BlogStreamViewModel)viewResult.Model;
             Assert.AreEqual("Edit Test Blog", model.Title);
             Assert.AreEqual("Test description", model.Description);
@@ -668,13 +664,13 @@ namespace Sky.Tests.Controllers
             var blog = await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
             var entry1 = await CreateArticleAsync("Entry 1", TestUserId, null, blogKey, ArticleType.BlogPost);
             var entry2 = await CreateArticleAsync("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
-            
+
             // Publish the blog entries to create catalog entries
             var article1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry1.ArticleNumber);
             var article2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == entry2.ArticleNumber);
             await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
             await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
-            
+
             // Update catalog entries to link them to the blog
             var catalog1 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry1.ArticleNumber);
             var catalog2 = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == entry2.ArticleNumber);
@@ -689,7 +685,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Entries", viewResult.ViewName);
-            
+
             var model = viewResult.Model as BlogEntriesListViewModel;
             Assert.IsNotNull(model);
             Assert.AreEqual(blogKey, model.BlogKey);
@@ -743,7 +739,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             var data = jsonResult.Value as List<BlogStreamViewModel>;
-            
+
             Assert.IsNotNull(data);
             Assert.IsTrue(data.Count >= 2, $"Expected at least 2 blogs, found {data.Count}");
             Assert.IsTrue(data.Any(b => b.Title == "Blog A"));
@@ -809,7 +805,7 @@ namespace Sky.Tests.Controllers
             var blogKey = "tech-blog";
             await CreateArticleAsync("Tech Blog", TestUserId, null, blogKey, ArticleType.BlogStream);
             var entry = await CreateArticleAsync("Entry to Delete", TestUserId, null, blogKey, ArticleType.BlogPost);
-            
+
             // Create catalog entry manually since CreateArticle doesn't create it for unpublished articles
             var catalog = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == entry.ArticleNumber);
             if (catalog == null)
@@ -838,7 +834,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("DeleteEntry", viewResult.ViewName);
-            
+
             var model = viewResult.Model as BlogEntryListItem;
             Assert.IsNotNull(model);
             Assert.AreEqual(entry.ArticleNumber, model.ArticleNumber);
@@ -952,8 +948,8 @@ namespace Sky.Tests.Controllers
 
             // Verify mediator was called with correct command
             mediatorMock.Verify(
-                m => m.SendAsync(It.Is<DeleteBlogStreamCommand>(cmd => 
-                    cmd.Id == blogEntity.Id && 
+                m => m.SendAsync(It.Is<DeleteBlogStreamCommand>(cmd =>
+                    cmd.Id == blogEntity.Id &&
                     cmd.UserId == TestUserId)),
                 Times.Once);
         }
@@ -1052,12 +1048,12 @@ namespace Sky.Tests.Controllers
         {
             // Arrange - Create blog stream using ArticleLogic directly (like other tests)
             var blogStream = await CreateArticleAsync(
-                "My Tech Blog", 
-                TestUserId, 
-                null, 
-                "my-tech-blog", 
+                "My Tech Blog",
+                TestUserId,
+                null,
+                "my-tech-blog",
                 ArticleType.BlogStream);
-            
+
             // Update introduction via database
             var blogStreamEntity = await Db.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == blogStream.ArticleNumber);
@@ -1072,8 +1068,8 @@ namespace Sky.Tests.Controllers
 
             // Mock CreateBlogPostCommand for blog entry creation
             var mockEntryResult = new CreateBlogPostCommandResult
-            { 
-                ArticleNumber = 99, 
+            {
+                ArticleNumber = 99,
                 BlogKey = blogStreamEntity.BlogKey,
                 UrlPath = $"{blogStreamEntity.BlogKey}/first-post"
             };
@@ -1088,7 +1084,7 @@ namespace Sky.Tests.Controllers
 
             // Act - Create blog entry via controller
             var entryResult = await controller.CreateEntry(blogStreamEntity.BlogKey, "First Post");
-            
+
             // Assert
             Assert.IsInstanceOfType(entryResult, typeof(RedirectToActionResult));
             var redirectResult = (RedirectToActionResult)entryResult;
@@ -1098,9 +1094,9 @@ namespace Sky.Tests.Controllers
 
             // Verify mediator was called with correct command
             mediatorMock.Verify(
-                m => m.SendAsync(It.Is<CreateBlogPostCommand>(cmd => 
-                    cmd.Title == "First Post" && 
-                    cmd.BlogKey == blogStreamEntity.BlogKey), 
+                m => m.SendAsync(It.Is<CreateBlogPostCommand>(cmd =>
+                    cmd.Title == "First Post" &&
+                    cmd.BlogKey == blogStreamEntity.BlogKey),
                 default),
                 Times.Once);
         }

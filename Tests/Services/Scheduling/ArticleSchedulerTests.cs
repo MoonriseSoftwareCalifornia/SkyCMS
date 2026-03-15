@@ -7,13 +7,11 @@
 
 namespace Sky.Tests.Services.Scheduling
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Services.BlogPublishing;
     using Cosmos.EmailServices;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
@@ -30,7 +28,6 @@ namespace Sky.Tests.Services.Scheduling
     using Sky.Editor.Domain.Events;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
-    using Cosmos.Common.Services.BlogPublishing;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
@@ -41,6 +38,9 @@ namespace Sky.Tests.Services.Scheduling
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="ArticleScheduler"/>.
@@ -67,10 +67,10 @@ namespace Sky.Tests.Services.Scheduling
 
             // Initialize the base context
             InitializeTestContext();
-            
+
             // Create a new service collection and manually add critical services
             var services = new ServiceCollection();
-            
+
             // Register all required services from base properties
             services.AddSingleton<ApplicationDbContext>(Db);
             services.AddSingleton<StorageContext>(Storage);
@@ -879,7 +879,7 @@ namespace Sky.Tests.Services.Scheduling
             // Arrange
             var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
             testClock.SetUtcNow(now);
-            
+
             var article1 = new Article
             {
                 ArticleNumber = 1,
@@ -891,7 +891,7 @@ namespace Sky.Tests.Services.Scheduling
                 UserId = TestUserId.ToString(),
                 UrlPath = "/test"
             };
-            
+
             var article2 = new Article
             {
                 ArticleNumber = 1,
@@ -903,13 +903,13 @@ namespace Sky.Tests.Services.Scheduling
                 UserId = TestUserId.ToString(),
                 UrlPath = "/test"
             };
-            
+
             Db.Articles.AddRange(article1, article2);
             await Db.SaveChangesAsync();
-            
+
             // Act
             await ArticleScheduler.ExecuteAsync();
-            
+
             // Assert - Verify factory was called
             var factoryFromServices = Services.GetRequiredService<ITenantArticleLogicFactory>();
             Assert.IsNotNull(factoryFromServices);
@@ -924,10 +924,10 @@ namespace Sky.Tests.Services.Scheduling
             // Arrange
             var factory = Services.GetRequiredService<ITenantArticleLogicFactory>();
             var domainName = "test.com";
-            
+
             // Act
             var articleLogic = await factory.CreateForTenantAsync(domainName);
-            
+
             // Assert
             Assert.IsNotNull(articleLogic);
             Assert.IsInstanceOfType(articleLogic, typeof(ArticleEditLogic));
@@ -942,7 +942,7 @@ namespace Sky.Tests.Services.Scheduling
             // Arrange
             var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
             testClock.SetUtcNow(now);
-            
+
             var article1 = new Article
             {
                 ArticleNumber = 1,
@@ -953,7 +953,7 @@ namespace Sky.Tests.Services.Scheduling
                 UserId = TestUserId.ToString(),
                 UrlPath = "/test"
             };
-            
+
             var article2 = new Article
             {
                 ArticleNumber = 1,
@@ -964,19 +964,19 @@ namespace Sky.Tests.Services.Scheduling
                 UserId = TestUserId.ToString(),
                 UrlPath = "/test"
             };
-            
+
             Db.Articles.AddRange(article1, article2);
             await Db.SaveChangesAsync();
-            
+
             // Act
             await ArticleScheduler.ExecuteAsync();
-            
+
             // Assert
             var updated1 = await Db.Articles.FindAsync(article1.Id);
             Assert.IsNotNull(updated1, "Expected article to exist after scheduler execution");
             var updated2 = await Db.Articles.FindAsync(article2.Id);
             Assert.IsNotNull(updated2, "Expected article to exist after scheduler execution");
-            
+
             Assert.IsNull(updated1.Published);
             Assert.IsNotNull(updated2.Published);
         }
@@ -990,9 +990,9 @@ namespace Sky.Tests.Services.Scheduling
             // Arrange
             var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
             testClock.SetUtcNow(now);
-            
+
             // Version numbers: 1, 5, 10 (gaps intentional)
-            var articles = new []
+            var articles = new[]
             {
                 new Article
                 {
@@ -1022,13 +1022,13 @@ namespace Sky.Tests.Services.Scheduling
                     UrlPath = "/test"
                 }
             };
-            
+
             Db.Articles.AddRange(articles);
             await Db.SaveChangesAsync();
-            
+
             // Act
             await ArticleScheduler.ExecuteAsync();
-            
+
             // Assert - Only version 10 should remain published
             Assert.IsNull((await Db.Articles.FindAsync(articles[0].Id)).Published);
             Assert.IsNull((await Db.Articles.FindAsync(articles[1].Id)).Published);
@@ -1044,7 +1044,7 @@ namespace Sky.Tests.Services.Scheduling
             // Arrange
             var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
             testClock.SetUtcNow(now);
-    
+
             // Setup test data
             for (int i = 1; i <= 10; i++)
             {
@@ -1059,14 +1059,14 @@ namespace Sky.Tests.Services.Scheduling
                 });
             }
             await Db.SaveChangesAsync();
-    
+
             // Act - Run scheduler concurrently
             var tasks = Enumerable.Range(0, 3)
                 .Select(_ => ArticleScheduler.ExecuteAsync())
                 .ToArray();
-    
+
             await Task.WhenAll(tasks);
-    
+
             // Assert - All articles should still be published (no corruption)
             var publishedCount = await Db.Articles.CountAsync(a => a.Published != null);
             Assert.AreEqual(10, publishedCount);
@@ -1190,11 +1190,11 @@ namespace Sky.Tests.Services.Scheduling
             // Assert - Article should still be published despite email failure
             var publishedPage = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == 1);
             Assert.IsNotNull(publishedPage, "Article should be published even if email fails");
-            
+
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
             Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Old version should be unpublished");
-            
+
             var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
             Assert.IsNotNull(updatedArticle2.Published, "New version should remain published");
         }

@@ -7,9 +7,9 @@
 
 namespace Cosmos.Common.Features.Articles.Queries;
 
-using System.Collections.Generic;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using System.Collections.Generic;
 
 /// <summary>
 /// Query to search published articles by text.

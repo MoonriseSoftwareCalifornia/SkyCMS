@@ -5,9 +5,6 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
@@ -18,6 +15,8 @@ namespace Sky.Tests.Services
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="IContactManagementService"/>.
@@ -359,7 +358,7 @@ namespace Sky.Tests.Services
 
             // Assert - Should succeed and log warning
             Assert.IsNotNull(result);
-            
+
             loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Warning,
@@ -459,7 +458,7 @@ namespace Sky.Tests.Services
 
             // Assert - Should succeed and log warning
             Assert.IsNotNull(result);
-            
+
             loggerMock.Verify(
                 x => x.Log(
                     LogLevel.Warning,
@@ -658,7 +657,7 @@ namespace Sky.Tests.Services
             try
             {
                 await service.AddContactAsync(model);
-                
+
                 // If no exception, verify no emails were sent
                 emailSenderMock.Verify(
                     x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),

@@ -7,10 +7,10 @@
 
 namespace Sky.Cms.Models
 {
+    using Sky.Cms.Models.Interfaces;
     using System;
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
-    using Sky.Cms.Models.Interfaces;
 
     /// <summary>
     /// Template code editor view model.

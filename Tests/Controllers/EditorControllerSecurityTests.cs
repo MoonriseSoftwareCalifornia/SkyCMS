@@ -7,20 +7,16 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Models;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
-    using Sky.Cms.Models;
+    using System;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for EditorController security-related functionality.

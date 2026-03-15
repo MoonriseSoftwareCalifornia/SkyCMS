@@ -7,11 +7,10 @@
 
 namespace Sky.Editor.Services.Email
 {
-    using System;
-    using System.Threading.Tasks;
-    using Cosmos.EmailServices;
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// No-op email service used during setup wizard before email is configured.

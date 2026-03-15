@@ -4,12 +4,6 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
 using Cosmos.DynamicConfig;
 using Cosmos.DynamicConfig.Configurations;
 using Microsoft.AspNetCore.Http;
@@ -18,9 +12,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Sky.Tests.TestHelpers;
+using System.Net;
 
 namespace Sky.Tests.DynamicConfig
 {

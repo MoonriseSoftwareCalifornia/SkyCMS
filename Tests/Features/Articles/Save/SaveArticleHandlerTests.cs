@@ -7,18 +7,15 @@
 
 namespace Sky.Tests.Features.Articles.Save
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using Sky.Cms.Models;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Tests.Editor.Features.Articles;
+    using System;
+    using System.Threading.Tasks;
 
     [TestClass]
     public class SaveArticleHandlerTests : ArticleTestBase
@@ -81,7 +78,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Verify database was updated
             var updatedArticle = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
-            
+
             Assert.IsNotNull(updatedArticle, "Article should exist");
             Assert.AreEqual("Updated Title", updatedArticle.Title);
             StringAssert.Contains(updatedArticle.Content, "Updated Content");
@@ -101,7 +98,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await SeedArticleAsync("Original Title", 1, urlPath: "original-title", published: true);
-            
+
             // Setup mock to detect title change
             string capturedOldTitle = null;
             string capturedOldUrlPath = null;
@@ -167,7 +164,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Assert
             Assert.IsFalse(result.IsSuccess, "Should fail with invalid article number");
             Assert.IsNotNull(result.ErrorMessage, "Should have error message");
-            StringAssert.Contains(result.ErrorMessage, "not found", 
+            StringAssert.Contains(result.ErrorMessage, "not found",
                 "Error should mention article not found");
         }
 
@@ -199,7 +196,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Verify article was NOT updated
             var unchangedArticle = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
-            Assert.AreEqual("Original", unchangedArticle.Title, 
+            Assert.AreEqual("Original", unchangedArticle.Title,
                 "Title should remain unchanged");
         }
 
@@ -211,7 +208,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await SeedArticleAsync("Test Article", 1, published: false);
-            
+
             var command = new SaveArticleCommand
             {
                 ArticleNumber = 1,
@@ -316,7 +313,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await SeedArticleAsync("Concurrent Test", 1);
-            
+
             // First command
             var command1 = new SaveArticleCommand
             {
@@ -348,7 +345,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Verify final state matches the second update
             var finalArticle = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
-            Assert.AreEqual("Second Update", finalArticle.Title, 
+            Assert.AreEqual("Second Update", finalArticle.Title,
                 "Last write should win");
             StringAssert.Contains(finalArticle.Content, "Second content",
                 "Content should match last update");

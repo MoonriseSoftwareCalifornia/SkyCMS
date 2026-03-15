@@ -13,7 +13,6 @@ namespace Sky.Tests.Features.Shared
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Articles.Create;
     using System;
-    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -505,20 +504,20 @@ namespace Sky.Tests.Features.Shared
 
             // Assert - All should succeed since there's no database contention
             Assert.AreEqual(10, results.Length, "Should have 10 results");
-            
+
             foreach (var result in results)
             {
                 Assert.IsNotNull(result, "Result should not be null");
                 Assert.IsTrue(result.IsSuccess, "Result should be successful");
             }
-            
+
             // Verify we got all expected values
             var values = results.Select(r => r.Data).OrderBy(v => v).ToArray();
             CollectionAssert.AreEqual(Enumerable.Range(0, 10).ToArray(), values);
         }
 
         #endregion
-        
+
         #region Test Helpers - Commands
 
         private class UnregisteredCommand : ICommand<CommandResult>
@@ -614,11 +613,11 @@ namespace Sky.Tests.Features.Shared
         {
             public int Value { get; set; }
         }
-        
+
         private class ThreadSafeTestCommandHandler : ICommandHandler<ThreadSafeTestCommand, CommandResult<int>>
         {
             public async Task<CommandResult<int>> HandleAsync(
-                ThreadSafeTestCommand command, 
+                ThreadSafeTestCommand command,
                 CancellationToken cancellationToken = default)
             {
                 // Simulate some async work without database access
@@ -626,7 +625,7 @@ namespace Sky.Tests.Features.Shared
                 return CommandResult<int>.Success(command.Value);
             }
         }
-        
+
         #endregion
     }
 }

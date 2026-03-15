@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Layouts.Promote
 {
-    using System;
     using Cosmos.Common.Features.Shared;
+    using System;
 
     /// <summary>
     /// Command to promote a layout to a new version.

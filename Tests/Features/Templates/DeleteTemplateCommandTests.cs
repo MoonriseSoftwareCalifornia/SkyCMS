@@ -7,13 +7,13 @@
 
 namespace Sky.Tests.Features.Templates
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Templates.Delete;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for the <see cref="DeleteTemplateHandler"/> class.
@@ -195,7 +195,7 @@ namespace Sky.Tests.Features.Templates
             // Verify only template1 was deleted
             var deletedTemplate = await Db.Templates.FindAsync(template1.Id);
             var remainingTemplate = await Db.Templates.FindAsync(template2.Id);
-            
+
             Assert.IsNull(deletedTemplate, "Template 1 should be deleted");
             Assert.IsNotNull(remainingTemplate, "Template 2 should still exist");
         }

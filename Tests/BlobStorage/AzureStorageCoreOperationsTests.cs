@@ -4,13 +4,8 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 using Cosmos.BlobService.Drivers;
-using Cosmos.BlobService.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 namespace Sky.Tests.BlobStorage

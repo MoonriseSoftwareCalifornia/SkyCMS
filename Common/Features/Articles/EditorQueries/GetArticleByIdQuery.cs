@@ -7,9 +7,9 @@
 
 namespace Cosmos.Common.Features.Articles.EditorQueries;
 
-using System;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using System;
 
 /// <summary>
 /// Query to retrieve an article by row ID for editor usage.

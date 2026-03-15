@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Services.Publishing
 {
-    using System;
-    using System.Reflection;  // ✅ ADD THIS LINE
     using Cosmos.BlobService;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Reflection;  // ✅ ADD THIS LINE
 
     /// <summary>
     /// Determines optimal parallelism for static page generation based on storage backend characteristics.
@@ -82,7 +82,7 @@ namespace Sky.Editor.Services.Publishing
         private static StorageType DetectStorageType(IStorageContext storage)
         {
             var typeName = storage.GetType().Name;
-            
+
             // Try to get storage URL from various possible properties
             var storageUrl = GetStorageUrl(storage);
 
@@ -157,7 +157,7 @@ namespace Sky.Editor.Services.Publishing
             var urlProperties = new[]
             {
                 "AzureBlobStorageUrl",
-                "StorageEndpointUrl", 
+                "StorageEndpointUrl",
                 "ServiceUrl",
                 "Endpoint",
                 "BaseUrl",
@@ -168,9 +168,9 @@ namespace Sky.Editor.Services.Publishing
             foreach (var propName in urlProperties)
             {
                 var prop = type.GetProperty(
-                    propName, 
+                    propName,
                     BindingFlags.Public | BindingFlags.Instance);
-                
+
                 if (prop?.PropertyType == typeof(string))
                 {
                     var value = prop.GetValue(storage) as string;

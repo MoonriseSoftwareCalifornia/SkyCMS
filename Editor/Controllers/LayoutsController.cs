@@ -7,13 +7,6 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
     using Cosmos.BlobService;
     using Cosmos.Cms.Data.Logic;
     using Cosmos.Common.Data;
@@ -41,6 +34,13 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Models.GrapesJs;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Layouts;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Web;
 
     /// <summary>
     /// Layouts controller.
@@ -104,7 +104,7 @@ namespace Sky.Cms.Controllers
             ILayoutVersioningService layoutVersioningService,
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
-            : base(dbContext, userManager, mediator,memoryCache, configProvider)
+            : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
@@ -636,7 +636,7 @@ namespace Sky.Cms.Controllers
                 {
                     UrlPath = string.Empty
                 });
-                
+
                 if (model == null)
                 {
                     return BadRequest("Unable to load root article for preview. Please ensure a root article exists.");

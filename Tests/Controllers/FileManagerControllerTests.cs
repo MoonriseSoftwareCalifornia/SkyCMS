@@ -10,11 +10,8 @@ namespace Sky.Tests.Controllers
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
@@ -24,9 +21,7 @@ namespace Sky.Tests.Controllers
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
-    using Sky.Editor.Data.Logic;
     using Sky.Editor.Models;
-    using Sky.Editor.Services.EditorSettings;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -34,6 +29,7 @@ namespace Sky.Tests.Controllers
     using System.Security.Claims;
     using System.Text;
     using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Unit tests for the <see cref="FileManagerController"/> class.
@@ -230,7 +226,7 @@ namespace Sky.Tests.Controllers
             await Storage.CreateFolder("/pub/sort");
             await CreateTestFile("/pub/sort/zebra.txt", "Zebra content");
             await CreateTestFile("/pub/sort/alpha.txt", "Alpha content");
-            
+
             // Verify files were created
             Assert.IsTrue(await Storage.BlobExistsAsync("/pub/sort/zebra.txt"), "zebra.txt should exist");
             Assert.IsTrue(await Storage.BlobExistsAsync("/pub/sort/alpha.txt"), "alpha.txt should exist");
@@ -244,10 +240,10 @@ namespace Sky.Tests.Controllers
             var model = viewResult.Model as List<FileManagerEntry>;
             Assert.IsNotNull(model);
             Assert.IsTrue(model.Count > 0, "Model should contain files");
-            
+
             // The first file should be "alpha.txt" or contain "alpha"
             var firstName = model.First().Name;
-            Assert.IsTrue(firstName.Contains("alpha", StringComparison.OrdinalIgnoreCase), 
+            Assert.IsTrue(firstName.Contains("alpha", StringComparison.OrdinalIgnoreCase),
                 $"Expected first file to contain 'alpha', but got '{firstName}'");
         }
 
@@ -511,11 +507,11 @@ namespace Sky.Tests.Controllers
             const string sourceContent = "Test file content for copy operation";
             await CreateTestFile("/pub/source/file.txt", sourceContent);
             await Storage.CreateFolder("/pub/destination");
-            
+
             // Verify source file exists before copy
             var sourceExists = await Storage.BlobExistsAsync("/pub/source/file.txt");
             Assert.IsTrue(sourceExists, "Source file should exist before copy");
-            
+
             var model = new MoveFilesViewModel
             {
                 Items = new List<string> { "/pub/source/file.txt" },
@@ -531,23 +527,23 @@ namespace Sky.Tests.Controllers
                 var errorMessage = badRequest.Value?.ToString() ?? "Unknown error";
                 Assert.Fail($"Copy operation failed with BadRequest: {errorMessage}");
             }
-            
+
             Assert.IsInstanceOfType(result, typeof(OkResult), "Copy should return OkResult");
-            
+
             // Verify destination file exists
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/file.txt"), 
+            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/file.txt"),
                 "Destination file should exist after copy");
-            
+
             // Verify source file still exists (copy shouldn't delete source)
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/source/file.txt"), 
+            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/source/file.txt"),
                 "Source file should still exist after copy");
-            
+
             // Verify file content was copied correctly
             using var destStream = await Storage.GetStreamAsync("/pub/destination/file.txt");
             using var reader = new StreamReader(destStream);
             var copiedContent = await reader.ReadToEndAsync();
             Assert.AreEqual(sourceContent, copiedContent, "Copied file content should match source");
-            
+
             // Verify file metadata
             var destFileMetadata = await Storage.GetFileAsync("/pub/destination/file.txt");
             Assert.IsNotNull(destFileMetadata, "Destination file metadata should exist");
@@ -567,11 +563,11 @@ namespace Sky.Tests.Controllers
             await CreateTestFile("/pub/source/file2.txt", "Content 2");
             await CreateTestFile("/pub/source/file3.txt", "Content 3");
             await Storage.CreateFolder("/pub/destination");
-            
+
             var model = new MoveFilesViewModel
             {
-                Items = new List<string> 
-                { 
+                Items = new List<string>
+                {
                     "/pub/source/file1.txt",
                     "/pub/source/file2.txt",
                     "/pub/source/file3.txt"
@@ -597,16 +593,16 @@ namespace Sky.Tests.Controllers
         {
             var testPath = "/pub/deeply/nested/source/file.txt";
             var destPath = "/pub/destination/file.txt";
-            
+
             try
             {
                 // Create test file
                 await CreateTestFile(testPath);
                 await Storage.CreateFolder("/pub/destination");
-                
+
                 // Additional delay to ensure storage is consistent
                 await Task.Delay(200);
-                
+
                 // Verify source file exists before copy with detailed diagnostics
                 var sourceExists = await Storage.BlobExistsAsync(testPath);
                 if (!sourceExists)
@@ -615,7 +611,7 @@ namespace Sky.Tests.Controllers
                     var fileList = string.Join(", ", allFiles.Select(f => f.Path));
                     Assert.Fail($"Source file not created. Platform: {Environment.OSVersion.Platform}. Files: {fileList}");
                 }
-                
+
                 var model = new MoveFilesViewModel
                 {
                     Items = new List<string> { testPath },
@@ -631,7 +627,7 @@ namespace Sky.Tests.Controllers
                     var errorMessage = badRequest.Value?.ToString() ?? "Unknown error";
                     Assert.Fail($"Copy operation failed. Platform: {Environment.OSVersion.Platform}. Error: {errorMessage}");
                 }
-                
+
                 Assert.IsInstanceOfType(result, typeof(OkResult));
                 Assert.IsTrue(await Storage.BlobExistsAsync(destPath));
             }
@@ -653,7 +649,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             await CreateTestFile("/pub/source/test-file_2024.txt", "Special content");
             await Storage.CreateFolder("/pub/destination");
-            
+
             var model = new MoveFilesViewModel
             {
                 Items = new List<string> { "/pub/source/test-file_2024.txt" },
@@ -879,17 +875,17 @@ namespace Sky.Tests.Controllers
             await CreateTestImageFile("/pub/gallery/image1.jpg");
             await CreateTestImageFile("/pub/gallery/image2.png");
             await CreateTestFile("/pub/gallery/document.txt", "text");
-            
+
             // Wait for storage consistency
             await Task.Delay(200);
-            
+
             // Verify files exist
             var img1 = await Storage.BlobExistsAsync("/pub/gallery/image1.jpg");
             var img2 = await Storage.BlobExistsAsync("/pub/gallery/image2.png");
             var doc = await Storage.BlobExistsAsync("/pub/gallery/document.txt");
-            
+
             Console.WriteLine($"Files exist - image1.jpg: {img1}, image2.png: {img2}, document.txt: {doc}");
-            
+
             if (!img1 || !img2)
             {
                 Assert.Inconclusive("Test files were not created successfully");
@@ -910,9 +906,9 @@ namespace Sky.Tests.Controllers
                 var fileInfo = string.Join(", ", files.Select(f => $"{f.Name} (ext:{f.Extension})"));
                 Assert.Inconclusive($"Expected 2 images but found {result.Length}. Files in directory: {fileInfo}");
             }
-            
+
             Assert.HasCount(2, result);
-            Assert.IsTrue(result.All(r => 
+            Assert.IsTrue(result.All(r =>
                 FileManagerController.ValidImageExtensions.Contains(Path.GetExtension(r).ToLower())));
         }
 
@@ -928,18 +924,18 @@ namespace Sky.Tests.Controllers
 
             await Storage.CreateFolder(testRoot);
             await Storage.CreateFolder(excludePath);
-            
+
             await CreateTestImageFile(testRoot + "/keep.jpg");
             await CreateTestImageFile(excludePath + "/remove.jpg");
-            
+
             // Wait for storage consistency
             await Task.Delay(200);
-            
+
             var keepExists = await Storage.BlobExistsAsync(testRoot + "/keep.jpg");
             var removeExists = await Storage.BlobExistsAsync(excludePath + "/remove.jpg");
-            
+
             Console.WriteLine($"Files exist - keep.jpg: {keepExists}, remove.jpg: {removeExists}");
-            
+
             if (!keepExists || !removeExists)
             {
                 Assert.Inconclusive("Test files were not created successfully");
@@ -959,7 +955,7 @@ namespace Sky.Tests.Controllers
                 var fileInfo = string.Join(", ", files.Select(f => f.Path));
                 Assert.Inconclusive($"No images found. All files: {fileInfo}");
             }
-            
+
             Assert.HasCount(1, result);
             Assert.Contains("keep.jpg", result[0]);
         }
@@ -1126,7 +1122,7 @@ namespace Sky.Tests.Controllers
                 new[] { file1 },
                 JsonConvert.SerializeObject(metadata1),
                 "/pub/uploads");
-            
+
             var result2 = await controller.Upload(
                 new[] { file2 },
                 JsonConvert.SerializeObject(metadata2),
@@ -1394,7 +1390,7 @@ namespace Sky.Tests.Controllers
             // Arrange
             await CreateTestFile("/pub/test/existing.txt", "Existing");
             await CreateTestFile("/pub/test/conflict.txt", "Conflict");
-            
+
             var model = new RenameBlobViewModel
             {
                 BlobRootPath = "/pub/test",
@@ -1420,28 +1416,28 @@ namespace Sky.Tests.Controllers
         {
             // Normalize path to Unix-style (always use forward slashes)
             path = path.Replace('\\', '/');
-            
+
             // Ensure ALL parent directories exist (handle nested paths)
             var directory = Path.GetDirectoryName(path);
-            
+
             if (!string.IsNullOrEmpty(directory))
             {
                 // Normalize directory path to Unix-style
                 directory = directory.Replace('\\', '/');
-                
+
                 // Split the path and create each level
                 var pathParts = directory.TrimStart('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
                 var currentPath = string.Empty;
-                
+
                 foreach (var part in pathParts)
                 {
-                    currentPath = string.IsNullOrEmpty(currentPath) 
-                        ? $"/{part}" 
+                    currentPath = string.IsNullOrEmpty(currentPath)
+                        ? $"/{part}"
                         : $"{currentPath}/{part}";
-                    
+
                     // Always attempt to create the folder - CreateFolder should be idempotent
                     await Storage.CreateFolder(currentPath);
-                    
+
                     // Increased delay for CI environments
                     await Task.Delay(100);
                 }
@@ -1453,7 +1449,7 @@ namespace Sky.Tests.Controllers
             // The RelativePath should be the full path including filename
             var fileName = Path.GetFileName(path);
             var relativePath = path.TrimStart('/');
-            
+
             var metadata = new FileUploadMetaData
             {
                 FileName = fileName,
@@ -1464,21 +1460,21 @@ namespace Sky.Tests.Controllers
                 TotalFileSize = Encoding.UTF8.GetByteCount(content),
                 UploadUid = Guid.NewGuid().ToString()
             };
-            
+
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
             await Storage.AppendBlob(stream, metadata);
-            
+
             // Verify the file was created successfully with retry
             var maxRetries = 3;
             var exists = false;
-            
+
             for (int i = 0; i < maxRetries; i++)
             {
                 exists = await Storage.BlobExistsAsync(path);
                 if (exists) break;
                 await Task.Delay(100);
             }
-            
+
             if (!exists)
             {
                 // Provide detailed diagnostic information
@@ -1495,28 +1491,28 @@ namespace Sky.Tests.Controllers
         {
             // Normalize path to Unix-style (always use forward slashes)
             path = path.Replace('\\', '/');
-            
+
             // Ensure ALL parent directories exist (handle nested paths)
             var directory = Path.GetDirectoryName(path);
-            
+
             if (!string.IsNullOrEmpty(directory))
             {
                 // Normalize directory path to Unix-style
                 directory = directory.Replace('\\', '/');
-                
+
                 // Split the path and create each level
                 var pathParts = directory.TrimStart('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
                 var currentPath = string.Empty;
-                
+
                 foreach (var part in pathParts)
                 {
-                    currentPath = string.IsNullOrEmpty(currentPath) 
-                        ? $"/{part}" 
+                    currentPath = string.IsNullOrEmpty(currentPath)
+                        ? $"/{part}"
                         : $"{currentPath}/{part}";
-                    
+
                     // Always attempt to create the folder - CreateFolder should be idempotent
                     await Storage.CreateFolder(currentPath);
-                    
+
                     // Increased delay for CI environments
                     await Task.Delay(100);
                 }
@@ -1548,7 +1544,7 @@ namespace Sky.Tests.Controllers
             // The RelativePath should be the full path including filename
             var fileName = Path.GetFileName(path);
             var relativePath = path.TrimStart('/');
-            
+
             var metadata = new FileUploadMetaData
             {
                 FileName = fileName,
@@ -1559,21 +1555,21 @@ namespace Sky.Tests.Controllers
                 TotalFileSize = jpegBytes.Length,
                 UploadUid = Guid.NewGuid().ToString()
             };
-            
+
             using var stream = new MemoryStream(jpegBytes);
             await Storage.AppendBlob(stream, metadata);
-            
+
             // Verify the file was created successfully with retry
             var maxRetries = 3;
             var exists = false;
-            
+
             for (int i = 0; i < maxRetries; i++)
             {
                 exists = await Storage.BlobExistsAsync(path);
                 if (exists) break;
                 await Task.Delay(100);
             }
-            
+
             if (!exists)
             {
                 // Provide detailed diagnostic information
@@ -1611,7 +1607,7 @@ namespace Sky.Tests.Controllers
                 0xFF, 0x00,
                 0xFF, 0xD9 // EOI
             };
-    
+
             var stream = new MemoryStream(jpegBytes);
             return new FormFile(stream, 0, jpegBytes.Length, "file", fileName)
             {
@@ -1678,6 +1674,8 @@ namespace Sky.Tests.Controllers
             public async Task<FileManagerEntry> CreateFolder(string path) => UnmapEntry(await inner.CreateFolder(MapPath(path)));
 
             public void DeleteFile(string path) => inner.DeleteFile(MapPath(path));
+
+            public Task DeleteFileAsync(string path) => inner.DeleteFileAsync(MapPath(path));
 
             public Task DeleteFolderAsync(string path) => inner.DeleteFolderAsync(MapPath(path));
 

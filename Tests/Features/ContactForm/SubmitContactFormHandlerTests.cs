@@ -8,7 +8,6 @@
 namespace Sky.Tests.Features.ContactForm;
 
 using Cosmos.Common.Data;
-using Cosmos.Common.Models;
 using Cosmos.Common.Services.Email;
 using Cosmos.EmailServices;
 using Microsoft.EntityFrameworkCore;

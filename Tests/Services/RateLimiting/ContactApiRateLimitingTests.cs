@@ -4,16 +4,11 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Net;
-using System.Threading;
-using System.Threading.RateLimiting;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Sky.Cms.Api.Shared.Extensions;
+using System.Net;
+using System.Threading.RateLimiting;
 
 namespace Sky.Tests.Services.RateLimiting
 {
@@ -125,7 +120,7 @@ namespace Sky.Tests.Services.RateLimiting
             // for 1 minute from that point plus a small buffer
             var elapsed = DateTime.UtcNow - windowStartTime;
             var remainingTime = TimeSpan.FromMinutes(1) - elapsed + TimeSpan.FromMilliseconds(200);
-            
+
             if (remainingTime > TimeSpan.Zero)
             {
                 await Task.Delay(remainingTime);
@@ -244,7 +239,7 @@ namespace Sky.Tests.Services.RateLimiting
         private static HttpContext CreateHttpContext(string? ipAddress)
         {
             var context = new DefaultHttpContext();
-            
+
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 context.Connection.RemoteIpAddress = IPAddress.Parse(ipAddress);

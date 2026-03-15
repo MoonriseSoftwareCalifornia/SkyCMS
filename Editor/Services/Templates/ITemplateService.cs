@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Services.Templates
 {
+    using Cosmos.Common.Data;
+    using Sky.Editor.Services.Templates.Models;
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Sky.Editor.Services.Templates.Models;
 
     /// <summary>
     /// Service for managing page templates and template operations.

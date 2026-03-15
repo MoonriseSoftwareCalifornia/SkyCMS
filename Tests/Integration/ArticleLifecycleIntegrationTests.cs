@@ -5,14 +5,14 @@
 
 namespace Sky.Tests.Integration
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Articles.Save;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Integration tests for complete article lifecycle workflows.
@@ -86,7 +86,7 @@ namespace Sky.Tests.Integration
                 originalArticle.UrlPath = "lifecycle-test-article";
             }
             await Db.SaveChangesAsync();
-            
+
             await Logic.DeleteArticle(article.ArticleNumber);
             var deletedArticle = await Db.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == article.ArticleNumber);
             Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedArticle.StatusCode);
@@ -149,7 +149,7 @@ namespace Sky.Tests.Integration
                 ArticleType = ArticleType.General
             };
             await SaveArticleHandler.HandleAsync(saveCommand);
-            
+
             await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             var initialPublishedDate = (await Db.Articles.FindAsync(article.Id)).Published;
@@ -244,7 +244,7 @@ namespace Sky.Tests.Integration
             for (int i = 1; i <= 10; i++)
             {
                 var post = await CreateArticleAsync($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
-                
+
                 var postCommand = new SaveArticleCommand
                 {
                     ArticleNumber = post.ArticleNumber,
@@ -379,7 +379,7 @@ namespace Sky.Tests.Integration
         {
             // Create a first article so the test article isn't auto-published
             await CreateArticleAsync("First Article", TestUserId);
-            
+
             // Create article
             var article = await CreateArticleAsync("Catalog Sync Test", TestUserId);
 

@@ -29,8 +29,8 @@ namespace Cosmos.Publisher.Controllers
         /// <param name="logger">Logger instance.</param>
         /// <param name="memoryCache">Memory cache.</param>
         public PubController(
-            IOptions<SiteSettings> options, 
-            ApplicationDbContext dbContext, 
+            IOptions<SiteSettings> options,
+            ApplicationDbContext dbContext,
             StorageContext storageContext,
             ILogger<PubController> logger,
             IMemoryCache memoryCache)

@@ -7,12 +7,8 @@
 
 namespace Sky.Tests.Editor.Middleware
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Http.Features;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +16,8 @@ namespace Sky.Tests.Editor.Middleware
     using Moq;
     using Sky.Editor.Middleware;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="SetupMiddlewareExtensions"/> setup detection and access control middleware.

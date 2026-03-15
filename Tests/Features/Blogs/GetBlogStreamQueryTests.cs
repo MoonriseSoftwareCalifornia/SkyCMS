@@ -7,14 +7,14 @@
 
 namespace Sky.Tests.Features.Blogs
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Blogs.GetStream;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for <see cref="GetBlogStreamQuery"/> and <see cref="GetBlogStreamQueryHandler"/>.

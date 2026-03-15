@@ -7,39 +7,22 @@
 
 namespace Sky.Tests.Areas.Setup
 {
-    using Cosmos.BlobService;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Identity;
-    using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
-    using Microsoft.Extensions.Options;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using Sky.Editor.Data;
-    using Sky.Editor.Data.Logic;
-    using Sky.Editor.Infrastructure.Time;
-    using Sky.Editor.Services.Catalog;
-    using Sky.Editor.Services.CDN;
-    using Sky.Editor.Services.EditorSettings;
-    using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Layouts;
-    using Sky.Editor.Services.Publishing;
-    using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.Setup;
-    using Sky.Editor.Services.Slugs;
-    using Sky.Editor.Services.Templates;
-    using Sky.Editor.Services.Titles;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Comprehensive unit tests for the Setup Wizard service and pages.
@@ -149,7 +132,7 @@ namespace Sky.Tests.Areas.Setup
             var testDbConnectionString = testConfiguration?.GetConnectionString("ApplicationDbContextConnection");
             if (!string.IsNullOrEmpty(testDbConnectionString))
             {
-               
+
             }
 
             await DisposeAsync();
@@ -673,10 +656,10 @@ namespace Sky.Tests.Areas.Setup
         {
             // Arrange
             var setup = await setupService.InitializeSetupAsync();
-            
+
             // Configure storage (so it passes storage validation)
             await setupService.UpdateStorageConfigAsync(setup.Id, "UseDevelopmentStorage=true", "/");
-            
+
             // Skip database configuration - but note: database config is NOT validated in CompleteSetupAsync
             // This test should actually pass since database config is optional
 

@@ -7,8 +7,6 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Mvc;
@@ -18,6 +16,8 @@ namespace Sky.Editor.Areas.Setup.Pages
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup completion page.
@@ -31,7 +31,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         private readonly ISetupCheckService setupCheckService;
         private readonly ApplicationDbContext dbContext;
         private readonly IMemoryCache memoryCache;
-        
+
         private const string SETUP_CACHE_KEY_PREFIX = "SetupComplete";
         private const string HEADER_ORIGIN_HOSTNAME = "x-origin-hostname";
 
@@ -121,7 +121,7 @@ namespace Sky.Editor.Areas.Setup.Pages
             // Detect if running in Docker
             IsDocker = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
         }
-        
+
         /// <summary>
         /// Handles POST requests to commit setup completion and redirect to login.
         /// </summary>
@@ -130,13 +130,13 @@ namespace Sky.Editor.Areas.Setup.Pages
         {
             // Invalidate setup cache - user is committing to the setup configuration
             InvalidateSetupCache();
-            
+
             logger.LogInformation("Setup committed by user, redirecting to login page");
-            
+
             // Redirect to login page using PRG pattern
             return Redirect("/Identity/Account/Login");
         }
-        
+
         /// <summary>
         /// Invalidates the setup completion cache for the current hostname.
         /// </summary>
@@ -147,10 +147,10 @@ namespace Sky.Editor.Areas.Setup.Pages
             {
                 hostname = Request.Host.Host.ToLowerInvariant();
             }
-            
+
             var cacheKey = $"{SETUP_CACHE_KEY_PREFIX}:{hostname}";
             memoryCache.Remove(cacheKey);
-            
+
             logger.LogInformation("Invalidated setup cache for hostname: {Hostname}", hostname);
         }
     }

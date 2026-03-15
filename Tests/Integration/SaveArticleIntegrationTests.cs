@@ -8,7 +8,6 @@
 namespace Sky.Tests.Integration
 {
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;

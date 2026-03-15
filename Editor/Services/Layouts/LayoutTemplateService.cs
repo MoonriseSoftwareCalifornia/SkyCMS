@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
+using Sky.Editor.Services.Templates;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Logging;
-using Sky.Editor.Services.Templates;
 
 namespace Sky.Editor.Services.Layouts
 {

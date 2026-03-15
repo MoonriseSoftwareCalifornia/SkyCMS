@@ -7,15 +7,13 @@
 
 namespace Sky.Tests.DynamicConfig
 {
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Moq;
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for IDynamicConfigurationProvider implementations.
@@ -47,7 +45,7 @@ namespace Sky.Tests.DynamicConfig
             context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("10.0.0.1");
 
             HttpContextAccessor.HttpContext = context;
-            
+
             // Use the provider from base class which is already configured
             var provider = DynamicConfigurationProvider;
 
@@ -55,7 +53,7 @@ namespace Sky.Tests.DynamicConfig
             var domain = provider.GetTenantDomainNameFromRequest();
 
             // Assert
-            Assert.AreEqual("tenant1.example.com", domain, 
+            Assert.AreEqual("tenant1.example.com", domain,
                 "x-origin-hostname header should take priority over Host header");
         }
 
@@ -70,7 +68,7 @@ namespace Sky.Tests.DynamicConfig
             context.Request.Host = new HostString("tenant2.example.com");
 
             HttpContextAccessor.HttpContext = context;
-            
+
             // Use the provider from base class which is already configured
             var provider = DynamicConfigurationProvider;
 
@@ -78,7 +76,7 @@ namespace Sky.Tests.DynamicConfig
             var domain = provider.GetTenantDomainNameFromRequest();
 
             // Assert
-            Assert.AreEqual("tenant2.example.com", domain, 
+            Assert.AreEqual("tenant2.example.com", domain,
                 "Host header should be used when x-origin-hostname is not present");
         }
 
@@ -93,7 +91,7 @@ namespace Sky.Tests.DynamicConfig
             context.Request.Host = new HostString("TENANT3.EXAMPLE.COM");
 
             HttpContextAccessor.HttpContext = context;
-            
+
             // Use the provider from base class
             var provider = DynamicConfigurationProvider;
 
@@ -101,7 +99,7 @@ namespace Sky.Tests.DynamicConfig
             var domain = provider.GetTenantDomainNameFromRequest();
 
             // Assert
-            Assert.AreEqual("tenant3.example.com", domain, 
+            Assert.AreEqual("tenant3.example.com", domain,
                 "Should normalize domain name to lowercase");
         }
 
@@ -117,7 +115,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Note: This test requires actual database seeding with Connection entities
             // For now, we test the contract and error handling
-            
+
             // Arrange - DynamicConfigurationProvider is already set up in base class
             var domain = "example.com";
 
@@ -183,7 +181,7 @@ namespace Sky.Tests.DynamicConfig
 
             // Assert
             // In test environment with mocked provider, this may return a value or null
-            Assert.IsTrue(tenantId == null || tenantId != Guid.Empty, 
+            Assert.IsTrue(tenantId == null || tenantId != Guid.Empty,
                 "Tenant ID should be null or a valid non-empty GUID");
         }
 
@@ -203,7 +201,7 @@ namespace Sky.Tests.DynamicConfig
             var tenantId2 = await DynamicConfigurationProvider.GetCurrentTenantIdAsync();
 
             // Assert
-            Assert.AreEqual(tenantId1, tenantId2, 
+            Assert.AreEqual(tenantId1, tenantId2,
                 "Tenant ID should be consistent for the same request context");
         }
 
@@ -292,7 +290,7 @@ namespace Sky.Tests.DynamicConfig
             var accessor = new HttpContextAccessor();
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<DynamicConfigurationProvider>();
             var proxySettings = Microsoft.Extensions.Options.Options.Create(new Cosmos.DynamicConfig.Configurations.ProxySettings());
-            
+
             // Act & Assert
             // The constructor should throw when ConfigDbConnectionString is missing
             try
@@ -366,7 +364,7 @@ namespace Sky.Tests.DynamicConfig
             if (connection != null)
             {
                 Assert.IsInstanceOfType(connection, typeof(Connection));
-                Assert.IsFalse(connection.DomainNames == null || connection.DomainNames.Length == 0, 
+                Assert.IsFalse(connection.DomainNames == null || connection.DomainNames.Length == 0,
                     "Connection should have at least one domain name");
             }
             else
@@ -452,7 +450,7 @@ namespace Sky.Tests.DynamicConfig
             var domain = DynamicConfigurationProvider.GetTenantDomainNameFromRequest();
 
             // Assert
-            Assert.AreEqual(string.Empty, domain, 
+            Assert.AreEqual(string.Empty, domain,
                 "Should return empty string when HttpContext is null");
         }
 

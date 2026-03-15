@@ -8,16 +8,15 @@
 #nullable enable
 namespace Sky.Tests.Editor.Services.Diagnostics
 {
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
-    using System.IO;
-    using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Services.Diagnostics;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for ConfigurationValidator service.
@@ -53,11 +52,11 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             emptySection.Setup(s => s.Path).Returns(string.Empty);
             emptySection.Setup(s => s.Key).Returns(string.Empty);
             emptySection.Setup(s => s.GetChildren()).Returns(Array.Empty<IConfigurationSection>());
-            
+
             configMock
                 .Setup(c => c.GetSection(It.IsAny<string>()))
                 .Returns(emptySection.Object);
-            
+
             // Mock connection strings section (GetConnectionString is an extension method that uses GetSection)
             var connectionStringsSection = new Mock<IConfigurationSection>();
             configMock
@@ -80,7 +79,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 mockSection.Setup(s => s.Value).Returns(value?.ToString());
                 mockSection.Setup(s => s.Path).Returns(key);
                 mockSection.Setup(s => s.Key).Returns(key);
-                
+
                 configMock
                     .Setup(c => c.GetSection(key))
                     .Returns(mockSection.Object);
@@ -210,7 +209,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             Assert.IsNotNull(adminEmailCheck);
             Assert.IsNotNull(adminEmailCheck.Details);
             StringAssert.Contains(adminEmailCheck.Details, "***");
-            Assert.IsFalse(adminEmailCheck.Details.Contains("admin@example.com"), 
+            Assert.IsFalse(adminEmailCheck.Details.Contains("admin@example.com"),
                 "Details should not contain the actual admin email value");
         }
 
@@ -232,18 +231,18 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 // Use a fresh mock and setup for each iteration
                 var config = new Mock<IConfiguration>();
                 var logger = new Mock<ILogger<ConfigurationValidator>>();
-                
+
                 // Setup default behavior for GetSection - return an empty section for unknown keys
                 var emptySection = new Mock<IConfigurationSection>();
                 emptySection.Setup(s => s.Value).Returns((string?)null);
                 emptySection.Setup(s => s.Path).Returns(string.Empty);
                 emptySection.Setup(s => s.Key).Returns(string.Empty);
                 emptySection.Setup(s => s.GetChildren()).Returns(Array.Empty<IConfigurationSection>());
-                
+
                 config
                     .Setup(c => c.GetSection(It.IsAny<string>()))
                     .Returns(emptySection.Object);
-                
+
                 // Mock connection strings section
                 var connectionStringsSection = new Mock<IConfigurationSection>();
                 config
@@ -252,7 +251,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 connectionStringsSection
                     .Setup(c => c["ApplicationDbContextConnection"])
                     .Returns("Server=localhost;Database=test;Trusted_Connection=true;");
-                
+
                 // Mock configuration values
                 var multiTenantSection = new Mock<IConfigurationSection>();
                 multiTenantSection.Setup(s => s.Value).Returns("false");
@@ -261,7 +260,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 config
                     .Setup(c => c.GetSection("MultiTenantEditor"))
                     .Returns(multiTenantSection.Object);
-                
+
                 var emailSection = new Mock<IConfigurationSection>();
                 emailSection.Setup(s => s.Value).Returns(email);
                 emailSection.Setup(s => s.Path).Returns("AdminEmail");
@@ -494,7 +493,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
             Assert.IsNotNull(dbCheck.Details);
-            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword123"), 
+            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword123"),
                 "Details should not contain the actual database password");
             StringAssert.Contains(dbCheck.Details, "Password=***");
         }
@@ -641,7 +640,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
             Assert.IsNotNull(storageCheck);
             Assert.IsNotNull(storageCheck.Details);
-            Assert.IsFalse(storageCheck.Details.Contains("MySecretAccountKey123"), 
+            Assert.IsFalse(storageCheck.Details.Contains("MySecretAccountKey123"),
                 "Details should not contain the actual storage account key");
             StringAssert.Contains(storageCheck.Details, "AccountKey=***");
         }
@@ -757,7 +756,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var configDbCheck = result.Checks.Find(c => c.Name == "ConfigDbConnectionString");
             Assert.IsNotNull(configDbCheck);
             Assert.IsNotNull(configDbCheck.Details);
-            Assert.IsFalse(configDbCheck.Details.Contains("ConfigPassword123"), 
+            Assert.IsFalse(configDbCheck.Details.Contains("ConfigPassword123"),
                 "Details should not contain the actual config database password");
         }
 
@@ -786,7 +785,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var dpCheck = result.Checks.Find(c => c.Name == "DataProtectionStorage");
             Assert.IsNotNull(dpCheck);
             Assert.IsNotNull(dpCheck.Details);
-            Assert.IsFalse(dpCheck.Details.Contains("DataProtectionSecret123"), 
+            Assert.IsFalse(dpCheck.Details.Contains("DataProtectionSecret123"),
                 "Details should not contain the actual data protection secret");
         }
 
@@ -1122,7 +1121,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword"), 
+            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword"),
                 "Details should not contain the actual database password");
             StringAssert.Contains(dbCheck.Details, "pwd=***");
         }
@@ -1150,7 +1149,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
             Assert.IsNotNull(storageCheck);
-            Assert.IsFalse(storageCheck.Details.Contains("MySecretKey123456789"), 
+            Assert.IsFalse(storageCheck.Details.Contains("MySecretKey123456789"),
                 "Details should not contain the actual storage account key");
             StringAssert.Contains(storageCheck.Details, "AccountKey=***");
         }
@@ -1177,7 +1176,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            Assert.IsFalse(dbCheck.Details.Contains("SuperSecretValue"), 
+            Assert.IsFalse(dbCheck.Details.Contains("SuperSecretValue"),
                 "Details should not contain the actual client secret");
             StringAssert.Contains(dbCheck.Details, "ClientSecret=***");
         }
@@ -1204,7 +1203,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            Assert.IsFalse(dbCheck.Details.Contains("UltraSecretKeyValue"), 
+            Assert.IsFalse(dbCheck.Details.Contains("UltraSecretKeyValue"),
                 "Details should not contain the actual key value");
             StringAssert.Contains(dbCheck.Details, "Key=***");
         }

@@ -7,10 +7,7 @@
 
 namespace Sky.Editor.Services.Scheduling
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
-    using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Shared;
     using Cosmos.Common.Services.BlogPublishing;
@@ -22,7 +19,6 @@ namespace Sky.Editor.Services.Scheduling
     using Microsoft.Extensions.Logging;
     using Sky.Cms.Services;
     using Sky.Editor.Data.Logic;
-    using Sky.Editor.Domain.Events;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.Catalog;
@@ -34,6 +30,8 @@ namespace Sky.Editor.Services.Scheduling
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tenant article logic factory.

@@ -7,18 +7,17 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
-    using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for EditorController publishing operations.
@@ -214,7 +213,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
-            
+
             // Check response structure
             var json = System.Text.Json.JsonSerializer.Serialize(jsonResult.Value);
             Assert.IsTrue(json.Contains("success"), "Response should contain 'success' field");
@@ -237,7 +236,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             Assert.IsNotNull(jsonResult.Value);
-            
+
             // Should return empty list when CDN service is null
             var items = jsonResult.Value as System.Collections.IEnumerable;
             if (items != null)

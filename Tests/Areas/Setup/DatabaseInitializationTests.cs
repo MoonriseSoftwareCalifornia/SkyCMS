@@ -83,13 +83,13 @@ namespace Sky.Tests.Areas.Setup
         {
             // Arrange
             var connectionString = $"Data Source={testDbPath}";
-            
+
             // Pre-create the database with schema so InitializeSetupAsync can save state
             using (var context = new ApplicationDbContext(connectionString))
             {
                 await context.Database.EnsureCreatedAsync();
             }
-            
+
             var setupService = CreateSetupService(connectionString);
             var setup = await setupService.InitializeSetupAsync();
 
@@ -113,21 +113,21 @@ namespace Sky.Tests.Areas.Setup
 
             // Assert
             Assert.IsTrue(result.Success, $"Setup failed: {result.Message}");
-            
+
             // Verify database was created and initialized
             Assert.IsTrue(File.Exists(testDbPath), "Database file should exist");
-            
+
             // Verify schema exists by querying key tables
             using var verifyContext = new ApplicationDbContext(connectionString);
             var articlesTableExists = await verifyContext.Articles.AnyAsync() || true; // Will be true if table exists
             var settingsTableExists = await verifyContext.Settings.AnyAsync() || true;
             var layoutsTableExists = await verifyContext.Layouts.AnyAsync() || true;
-            
+
             Assert.IsTrue(articlesTableExists, "Articles table should exist");
             Assert.IsTrue(settingsTableExists, "Settings table should exist");
             Assert.IsTrue(layoutsTableExists, "Layouts table should exist");
         }
-        
+
         /// <summary>
         /// Tests that SingleTenant_CompleteSetup_CreatesDefaultLayout.
         /// </summary>
@@ -136,13 +136,13 @@ namespace Sky.Tests.Areas.Setup
         {
             // Arrange
             var connectionString = $"Data Source={testDbPath}";
-            
+
             // Pre-create the database with schema
             using (var context = new ApplicationDbContext(connectionString))
             {
                 await context.Database.EnsureCreatedAsync();
             }
-            
+
             var setupService = CreateSetupService(connectionString);
             var setup = await setupService.InitializeSetupAsync();
 
@@ -165,10 +165,10 @@ namespace Sky.Tests.Areas.Setup
 
             // Assert
             Assert.IsTrue(result.Success);
-            
+
             using var verifyContext = new ApplicationDbContext(connectionString);
             var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(verifyContext);
-            
+
             Assert.IsNotNull(defaultLayout, "Default layout should be created");
             Assert.AreEqual("Default Layout", defaultLayout.LayoutName);
         }

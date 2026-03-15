@@ -15,7 +15,7 @@ namespace Cosmos.DynamicConfig
         /// Gets a value indicating if the service is configured.
         /// </summary>
         bool IsMultiTenantConfigured { get; }
-    
+
         /// <summary>
         /// Get database connection string based on domain.
         /// </summary>
@@ -23,7 +23,7 @@ namespace Cosmos.DynamicConfig
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Connection string.</returns>
         Task<string?> GetDatabaseConnectionStringAsync(string domainName = "", CancellationToken cancellationToken = default);
-    
+
         /// <summary>
         /// Get storage connection string based on domain.
         /// </summary>
@@ -31,7 +31,7 @@ namespace Cosmos.DynamicConfig
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Connection string.</returns>
         Task<string?> GetStorageConnectionStringAsync(string domainName = "", CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Get configuration value.
         /// </summary>

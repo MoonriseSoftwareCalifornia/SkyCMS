@@ -7,13 +7,13 @@
 
 namespace Cosmos.Common.Metrics
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using Azure.Core;
     using Azure.Identity;
     using Azure.Monitor.Query;
     using Azure.Monitor.Query.Models;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Represents a class for retrieving Cosmos DB metrics.

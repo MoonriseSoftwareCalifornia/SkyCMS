@@ -1,9 +1,6 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Cosmos.EmailServices;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 
 namespace Sky.Tests
 {

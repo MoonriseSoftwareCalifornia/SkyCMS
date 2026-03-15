@@ -9,13 +9,13 @@
 
 namespace Sky.Tests.Editor.Domain.Events
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Sky.Editor.Domain.Events;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Sky.Editor.Domain.Events;
 
     /// <summary>
     /// Unit tests for <see cref="DomainEventDispatcher"/> event dispatching, handler registration, and error handling.
@@ -755,7 +755,7 @@ namespace Sky.Tests.Editor.Domain.Events
                 new TestEvent("third"),
             };
             var dispatcher = new DomainEventDispatcher(new[] { (object)handler });
-            
+
             // Cancel the token BEFORE starting dispatch
             var cts = new CancellationTokenSource();
             cts.Cancel();
@@ -764,7 +764,7 @@ namespace Sky.Tests.Editor.Domain.Events
             // Should throw immediately when checking cancellation before first event
             await Assert.ThrowsAsync<OperationCanceledException>(async () =>
                 await dispatcher.DispatchAsync(events, cts.Token));
-            
+
             // Verify no events were handled since token was pre-cancelled
             Assert.AreEqual(0, handler.InvokeCount, "No events should be handled when token is pre-cancelled");
         }

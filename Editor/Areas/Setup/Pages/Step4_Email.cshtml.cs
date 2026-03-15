@@ -7,13 +7,13 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 4: Email configuration.
@@ -178,7 +178,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Page result.</returns>
         public async Task<IActionResult> OnPostTestEmailAsync()
         {
-            logger.LogInformation("Step4_Email POST TestEmail - EmailProvider: {Provider}, SenderEmail: {Email}", 
+            logger.LogInformation("Step4_Email POST TestEmail - EmailProvider: {Provider}, SenderEmail: {Email}",
                 EmailProvider, SenderEmail);
 
             // Check if setup has been completed
@@ -273,7 +273,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect to next step.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            logger.LogInformation("Step4_Email POST - SetupId: {SetupId}, EmailProvider: {Provider}, SenderEmail: {Email}", 
+            logger.LogInformation("Step4_Email POST - SetupId: {SetupId}, EmailProvider: {Provider}, SenderEmail: {Email}",
                 SetupId, EmailProvider, SenderEmail);
 
             // Check if setup has been completed
@@ -322,7 +322,7 @@ namespace Sky.Editor.Areas.Setup.Pages
                     SmtpPassword);
 
                 await setupService.UpdateStepAsync(SetupId, 4);
-                
+
                 logger.LogInformation("Step4_Email POST - Successfully completed Step4, redirecting to Step5");
                 return RedirectToPage("./Step5_Cdn");
             }

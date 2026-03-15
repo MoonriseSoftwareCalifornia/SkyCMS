@@ -1,9 +1,6 @@
-using System;
-using System.Net;
+using Cosmos.EmailServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Cosmos.EmailServices;
 
 namespace Sky.Tests
 {

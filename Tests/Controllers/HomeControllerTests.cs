@@ -9,15 +9,10 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Models;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Identity.UI.Services;
@@ -30,6 +25,11 @@ namespace Sky.Tests.Controllers
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
+    using System;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Tests for HomeController.
@@ -187,8 +187,8 @@ namespace Sky.Tests.Controllers
                 new Claim(ClaimTypes.Role, "Administrators")
             }, "TestAuth"));
 
-            var httpContext = new DefaultHttpContext 
-            { 
+            var httpContext = new DefaultHttpContext
+            {
                 User = claimsPrincipal,
                 RequestServices = mockServiceProvider.Object
             };
@@ -258,8 +258,8 @@ namespace Sky.Tests.Controllers
 
             // Override the mock to return null for non-existent articles
             articleQueryMediatorMock
-                .Setup(m => m.QueryAsync(It.Is<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(q => 
-                    q is GetArticleByUrlQuery && ((GetArticleByUrlQuery)q).UrlPath == nonExistentUrl), 
+                .Setup(m => m.QueryAsync(It.Is<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(q =>
+                    q is GetArticleByUrlQuery && ((GetArticleByUrlQuery)q).UrlPath == nonExistentUrl),
                     It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync((ArticleViewModel?)null);
 
@@ -353,7 +353,7 @@ namespace Sky.Tests.Controllers
             var article = await CreateArticleAsync("Test Page", TestUserId);
             article.Content = "<p>Test content</p>";
             await SaveArticleAsync(article, TestUserId);
-            
+
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             dbArticle.Published = DateTimeOffset.UtcNow;
             await Db.SaveChangesAsync();
@@ -428,7 +428,7 @@ namespace Sky.Tests.Controllers
             var article = await CreateArticleAsync("Preview Article", TestUserId);
             article.Content = "<p>Preview content</p>";
             await SaveArticleAsync(article, TestUserId);
-            
+
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 
             // Act
@@ -580,7 +580,7 @@ namespace Sky.Tests.Controllers
             {
                 await RoleManager.CreateAsync(new IdentityRole("Administrators"));
             }
-            
+
             // Create a root article for the index to load
             var rootArticle = new Article
             {
@@ -602,7 +602,7 @@ namespace Sky.Tests.Controllers
             // Verify user is not initially an admin
             var user = await UserManager.FindByIdAsync(TestUserId.ToString());
             var isAdmin = await UserManager.IsInRoleAsync(user, "Administrators");
-            
+
             if (isAdmin)
             {
                 // Remove the role to test auto-promotion
@@ -696,7 +696,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Wrapper", viewResult.ViewName);
-            
+
             // Should load the article (either unpublished or not_found fallback)
             Assert.IsNotNull(viewResult.ViewData["RenderedView"]);
         }
@@ -717,7 +717,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsNotNull(result, "AccessPending should return a ViewResult");
             Assert.IsInstanceOfType(result.Model, typeof(ArticleViewModel), "Model should be ArticleViewModel");
-            
+
             var model = (ArticleViewModel)result.Model;
             Assert.AreEqual("Access Pending", model.Title);
             Assert.IsFalse(model.ReadWriteMode);

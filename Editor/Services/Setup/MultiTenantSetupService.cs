@@ -7,15 +7,10 @@
 
 namespace Sky.Editor.Services.Setup
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.DynamicConfig;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Identity;
@@ -25,6 +20,10 @@ namespace Sky.Editor.Services.Setup
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Services.Layouts;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Multi-tenant setup service for post-provisioning tenant configuration.
@@ -299,11 +298,11 @@ namespace Sky.Editor.Services.Setup
 
                 if (!result.IsSuccess)
                 {
-                    var errorMessage = result.ErrorMessage ?? 
+                    var errorMessage = result.ErrorMessage ??
                         string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>());
-                    
+
                     logger.LogError("Failed to create home page: {Error}", errorMessage);
-                    
+
                     return new SetupCompletionResult
                     {
                         Success = false,

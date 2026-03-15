@@ -7,9 +7,6 @@ namespace Sky.Tests.Security
 {
     using Cosmos.BlobService;
     using Cosmos.Cms.Common;  // ← Added for ArticleType
-    using Cosmos.Common;      // ← Added for ArticleViewModel
-    using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
@@ -26,6 +23,7 @@ namespace Sky.Tests.Security
     using System.Linq;
     using System.Security.Claims;
     using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Security tests for FileManagerController and StorageContext multi-tenant isolation.
@@ -53,15 +51,15 @@ namespace Sky.Tests.Security
         {
             // Arrange
             var authService = CreateFileManagementAuthorizationService();
-            
+
             // Act - Test with unauthenticated user
             var unauthenticatedUser = new ClaimsPrincipal(new ClaimsIdentity()); // No claims
             var httpContext = new DefaultHttpContext { User = unauthenticatedUser };
-            
+
             var result = authService.AuthorizeAsync(unauthenticatedUser, "FileManagement").Result;
 
             // Assert
-            Assert.IsFalse(result.Succeeded, 
+            Assert.IsFalse(result.Succeeded,
                 "CRITICAL: FileManagement policy should reject unauthenticated users");
         }
 
@@ -183,9 +181,9 @@ namespace Sky.Tests.Security
             // Note: This test validates that the configuration provider is called correctly
             // Actual StorageContext tenant isolation depends on GetPrimaryDriver() implementation
             var connectionString = await mockConfig.Object.GetStorageConnectionStringAsync();
-            
+
             Assert.IsNotNull(connectionString, "Storage connection should be resolved");
-            Assert.IsTrue(connectionString.Contains("tenant1storage"), 
+            Assert.IsTrue(connectionString.Contains("tenant1storage"),
                 "Connection should point to tenant-specific storage account");
         }
 
@@ -274,7 +272,7 @@ namespace Sky.Tests.Security
             var result = await singleTenantMediator.SendAsync(command);
 
             // Assert
-            Assert.IsTrue(result.IsSuccess, 
+            Assert.IsTrue(result.IsSuccess,
                 "Single-tenant mediator should allow commands without tenant validation");
         }
 
@@ -378,7 +376,7 @@ namespace Sky.Tests.Security
         {
             // Arrange - Create two storage contexts with different Azurite connection strings
             var cache = new MemoryCache(new MemoryCacheOptions());
-            
+
             // Use valid Azurite emulator connection strings (will work even if emulator isn't running)
             var tenant1ConnectionString = "DefaultEndpointsProtocol=http;AccountName=tenant1storage;AccountKey=Eby8vdM09T0+B8XSm3IYRW/T5+ra2BgfZS12345678901234567890123456789012345678901234567890==;BlobEndpoint=http://127.0.0.1:10000/tenant1storage;";
             var tenant2ConnectionString = "DefaultEndpointsProtocol=http;AccountName=tenant2storage;AccountKey=Eby8vdM09T0+B8XSm3IYRW/T5+ra2BgfZS98765432109876543210987654321098765432109876543210==;BlobEndpoint=http://127.0.0.1:10000/tenant2storage;";
@@ -434,9 +432,9 @@ namespace Sky.Tests.Security
 
                 // Assert - This documents expected behavior
                 // Actual validation should happen in FileManagerController.Upload
-                Assert.IsTrue(true, 
+                Assert.IsTrue(true,
                     $"Path '{maliciousPath}' should be rejected by upload validation");
-                
+
                 // TODO: Implement actual controller test when controller testing infrastructure is available
             }
         }
@@ -477,7 +475,7 @@ namespace Sky.Tests.Security
         {
             // Arrange - Allowed extensions from SiteSettings
             var allowedExtensions = ".js,.css,.htm,.html,.mov,.webm,.avi,.mp4,.mpeg,.ts,.svg,.json".Split(',');
-            
+
             var dangerousExtensions = new[]
             {
                 ".exe", ".dll", ".bat", ".cmd", ".ps1", ".sh",

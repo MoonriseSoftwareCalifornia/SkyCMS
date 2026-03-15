@@ -4,12 +4,10 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Reflection;
 using Cosmos.BlobService;
 using Cosmos.BlobService.Drivers;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
 
 namespace Sky.Tests.BlobStorage
 {
@@ -139,7 +137,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var connectionString1 = "DefaultEndpointsProtocol=https;AccountName=account1;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
             var connectionString2 = "DefaultEndpointsProtocol=https;AccountName=account2;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
-            
+
             var context1 = new StorageContext(connectionString1, memoryCache);
             var context2 = new StorageContext(connectionString2, memoryCache);
 
@@ -159,7 +157,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var azureConnectionString = "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
             var s3ConnectionString = "Bucket=test-bucket;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
-            
+
             var azureContext = new StorageContext(azureConnectionString, memoryCache);
             var s3Context = new StorageContext(s3ConnectionString, memoryCache);
 

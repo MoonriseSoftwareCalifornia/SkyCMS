@@ -4,9 +4,6 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-
 namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 {
     /// <summary>
@@ -20,7 +17,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public static IEnumerable<object[]> GetTestProviders()
         {
             var providers = TestUtilities.GetAvailableProviders();
-            
+
             foreach (var provider in providers)
             {
                 yield return new object[] { provider };
@@ -49,7 +46,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var lockoutEnd = DateTimeOffset.UtcNow.AddHours(1);
 
@@ -60,7 +57,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Assert
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var retrievedLockoutEnd = await userStore.GetLockoutEndDateAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.IsNotNull(retrievedLockoutEnd, $"Failed for provider: {provider.DisplayName}");
             Assert.IsTrue(retrievedLockoutEnd.Value > DateTimeOffset.UtcNow, $"Failed for provider: {provider.DisplayName}");
         }
@@ -72,7 +69,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var lockoutEnd = DateTimeOffset.UtcNow.AddHours(1);
             await userStore.SetLockoutEndDateAsync(user, lockoutEnd, CancellationToken.None);
@@ -85,7 +82,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Assert
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var retrievedLockoutEnd = await userStore.GetLockoutEndDateAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.IsNull(retrievedLockoutEnd, $"Failed for provider: {provider.DisplayName}");
         }
 
@@ -96,7 +93,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -113,7 +110,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -130,7 +127,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -140,7 +137,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Assert
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var lockoutEnabled = await userStore.GetLockoutEnabledAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.IsFalse(lockoutEnabled, $"Failed for provider: {provider.DisplayName}");
         }
 
@@ -155,7 +152,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var initialCount = await userStore.GetAccessFailedCountAsync(user, CancellationToken.None);
 
@@ -166,7 +163,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Assert
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var finalCount = await userStore.GetAccessFailedCountAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.AreEqual(initialCount + 1, newCount, $"Failed for provider: {provider.DisplayName}");
             Assert.AreEqual(newCount, finalCount, $"Failed for provider: {provider.DisplayName}");
         }
@@ -178,23 +175,23 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act - Increment 3 times
             await userStore.IncrementAccessFailedCountAsync(user, CancellationToken.None);
             await userStore.UpdateAsync(user);
-            
+
             await userStore.IncrementAccessFailedCountAsync(user, CancellationToken.None);
             await userStore.UpdateAsync(user);
-            
+
             await userStore.IncrementAccessFailedCountAsync(user, CancellationToken.None);
             await userStore.UpdateAsync(user);
 
             // Assert
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var finalCount = await userStore.GetAccessFailedCountAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.AreEqual(3, finalCount, $"Failed for provider: {provider.DisplayName}");
         }
 
@@ -205,9 +202,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
-            
+
             // Increment multiple times
             await userStore.IncrementAccessFailedCountAsync(user, CancellationToken.None);
             await userStore.IncrementAccessFailedCountAsync(user, CancellationToken.None);
@@ -220,7 +217,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Assert
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var finalCount = await userStore.GetAccessFailedCountAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.AreEqual(0, finalCount, $"Failed for provider: {provider.DisplayName}");
         }
 
@@ -231,7 +228,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -252,7 +249,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             const int maxFailedAttempts = 5;
 
@@ -276,7 +273,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Assert
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var lockoutEndDate = await userStore.GetLockoutEndDateAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.AreEqual(maxFailedAttempts, failedCount, $"Failed for provider: {provider.DisplayName}");
             Assert.IsNotNull(lockoutEndDate, $"Account should be locked for provider: {provider.DisplayName}");
             Assert.IsTrue(lockoutEndDate.Value > DateTimeOffset.UtcNow, $"Failed for provider: {provider.DisplayName}");
@@ -289,9 +286,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
-            
+
             // Simulate failed attempts
             await userStore.IncrementAccessFailedCountAsync(user, CancellationToken.None);
             await userStore.IncrementAccessFailedCountAsync(user, CancellationToken.None);
@@ -307,7 +304,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Assert
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var finalCount = await userStore.GetAccessFailedCountAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.AreEqual(0, finalCount, $"Failed count should reset after successful login for provider: {provider.DisplayName}");
         }
 
@@ -318,9 +315,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
-            
+
             // Disable lockout
             await userStore.SetLockoutEnabledAsync(user, false, CancellationToken.None);
             await userStore.UpdateAsync(user);
@@ -336,7 +333,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             var lockoutEnabled = await userStore.GetLockoutEnabledAsync(updatedUser, CancellationToken.None);
             var lockoutEnd = await userStore.GetLockoutEndDateAsync(updatedUser, CancellationToken.None);
-            
+
             Assert.IsFalse(lockoutEnabled, $"Lockout should be disabled for provider: {provider.DisplayName}");
             Assert.IsNull(lockoutEnd, $"Account should not be locked when lockout is disabled for provider: {provider.DisplayName}");
         }
@@ -348,9 +345,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
-            
+
             // Set lockout to past date (expired)
             var expiredLockout = DateTimeOffset.UtcNow.AddMinutes(-1);
             await userStore.SetLockoutEndDateAsync(user, expiredLockout, CancellationToken.None);

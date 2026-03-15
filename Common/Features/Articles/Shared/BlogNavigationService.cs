@@ -7,13 +7,13 @@
 
 namespace Cosmos.Common.Features.Articles.Shared;
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Implementation of IBlogNavigationService for blog post navigation.

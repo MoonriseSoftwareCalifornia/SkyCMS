@@ -7,13 +7,13 @@
 
 namespace Sky.Tests.Views
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Models;
     using Cosmos.Common.Models.Blog;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// Tests for blog view models to ensure ArticleViewModel with different ArticleTypes

@@ -4,9 +4,6 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Services.Email;
@@ -14,9 +11,7 @@ using Cosmos.EmailServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Sky.Cms.Api.Shared.Extensions;
 using Sky.Cms.Api.Shared.Features.ContactForm.Submit;
@@ -145,7 +140,7 @@ namespace Sky.Tests.Services.Configuration
             // Assert
             var captchaValidator = serviceProvider.GetService<ICaptchaValidator>();
             Assert.IsNotNull(captchaValidator, "ICaptchaValidator should be registered");
-            Assert.IsInstanceOfType(captchaValidator, typeof(NoOpCaptchaValidator), 
+            Assert.IsInstanceOfType(captchaValidator, typeof(NoOpCaptchaValidator),
                 "ICaptchaValidator should default to NoOpCaptchaValidator");
         }
 
@@ -164,7 +159,7 @@ namespace Sky.Tests.Services.Configuration
             // Assert
             var handler = serviceProvider.GetService<ICommandHandler<SubmitContactFormCommand, CommandResult<ContactFormResponse>>>();
             Assert.IsNotNull(handler, "SubmitContactFormHandler should be registered");
-            Assert.IsInstanceOfType(handler, typeof(SubmitContactFormHandler), 
+            Assert.IsInstanceOfType(handler, typeof(SubmitContactFormHandler),
                 "Handler should resolve to SubmitContactFormHandler");
         }
 
@@ -182,7 +177,7 @@ namespace Sky.Tests.Services.Configuration
             // Assert
             var handler = serviceProvider.GetService<IQueryHandler<ValidateCaptchaQuery, bool>>();
             Assert.IsNotNull(handler, "ValidateCaptchaHandler should be registered");
-            Assert.IsInstanceOfType(handler, typeof(ValidateCaptchaHandler), 
+            Assert.IsInstanceOfType(handler, typeof(ValidateCaptchaHandler),
                 "Handler should resolve to ValidateCaptchaHandler");
         }
 
@@ -198,16 +193,16 @@ namespace Sky.Tests.Services.Configuration
 
             // Assert - Verify all services are registered with Scoped lifetime
             var scopedServices = services.Where(s => s.Lifetime == ServiceLifetime.Scoped).ToList();
-            
-            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(IMediator)), 
+
+            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(IMediator)),
                 "IMediator should be registered as Scoped");
-            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(IContactService)), 
+            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(IContactService)),
                 "IContactService should be registered as Scoped");
-            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(ICaptchaValidator)), 
+            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(ICaptchaValidator)),
                 "ICaptchaValidator should be registered as Scoped");
-            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(ICommandHandler<SubmitContactFormCommand, CommandResult<ContactFormResponse>>)), 
+            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(ICommandHandler<SubmitContactFormCommand, CommandResult<ContactFormResponse>>)),
                 "SubmitContactFormHandler should be registered as Scoped");
-            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(IQueryHandler<ValidateCaptchaQuery, bool>)), 
+            Assert.IsTrue(scopedServices.Any(s => s.ServiceType == typeof(IQueryHandler<ValidateCaptchaQuery, bool>)),
                 "ValidateCaptchaHandler should be registered as Scoped");
         }
 

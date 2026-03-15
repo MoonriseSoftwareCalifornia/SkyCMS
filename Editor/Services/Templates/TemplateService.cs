@@ -7,6 +7,12 @@
 
 namespace Sky.Editor.Services.Templates
 {
+    using Cosmos.Common.Data;
+    using Cosmos.DynamicConfig;
+    using Microsoft.AspNetCore.Hosting;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Templates.Models;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -15,14 +21,6 @@ namespace Sky.Editor.Services.Templates
     using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Cosmos.DynamicConfig;
-    using Microsoft.AspNetCore.Hosting;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Templates.Models;
 
     /// <summary>
     /// Implementation of the template service.
@@ -34,13 +32,13 @@ namespace Sky.Editor.Services.Templates
         /// Tracks which tenants have had templates seeded to avoid redundant DB checks.
         /// Key: Tenant ID (Connection.Id), Value: true when seeded.
         /// </summary>
-        private static readonly ConcurrentDictionary<Guid, bool> SeededTenants = new ();
+        private static readonly ConcurrentDictionary<Guid, bool> SeededTenants = new();
 
         private readonly IWebHostEnvironment environment;
         private readonly ILogger<TemplateService> logger;
         private readonly ApplicationDbContext dbContext;
         private readonly IDynamicConfigurationProvider dynamicConfigProvider;
-        private readonly SemaphoreSlim @lock = new (1, 1);
+        private readonly SemaphoreSlim @lock = new(1, 1);
         private List<PageTemplate> cachedTemplates;
 
         /// <summary>
@@ -67,17 +65,17 @@ namespace Sky.Editor.Services.Templates
         {
             // Get current tenant ID from the request context (multi-tenant only)
             Guid? tenantId = null;
-            
+
             if (dynamicConfigProvider != null)
             {
                 tenantId = await dynamicConfigProvider.GetCurrentTenantIdAsync();
-                
+
                 if (tenantId == null)
                 {
                     logger.LogWarning("Cannot ensure templates: Tenant ID not available (HttpContext may be unavailable)");
                     return;
                 }
-                
+
                 // Check if we've already seeded templates for this tenant (in-memory cache)
                 if (SeededTenants.ContainsKey(tenantId.Value))
                 {
@@ -91,19 +89,19 @@ namespace Sky.Editor.Services.Templates
             {
                 // Single-tenant mode: use a fixed sentinel value for caching
                 tenantId = Guid.Empty;
-                
+
                 if (SeededTenants.ContainsKey(tenantId.Value))
                 {
                     logger.LogDebug("Templates already ensured (single-tenant), skipping");
                     return;
                 }
-                
+
                 logger.LogInformation("Ensuring default templates exist (single-tenant mode)");
             }
 
             var allTemplates = await GetAllTemplatesAsync();
             var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(dbContext);
-            
+
             // If no default layout exists, we can't create templates
             if (defaultLayout == null)
             {
@@ -122,7 +120,7 @@ namespace Sky.Editor.Services.Templates
                 // This prevents duplicates even if the default layout changes
                 var dbTemplate = await dbContext.Templates
                     .FirstOrDefaultAsync(t => t.PageType == template.Key);
-                
+
                 if (dbTemplate == null)
                 {
                     // Template doesn't exist - create it
@@ -140,19 +138,19 @@ namespace Sky.Editor.Services.Templates
                     };
                     dbContext.Templates.Add(dbTemplate);
                     templatesCreated++;
-                    
-                    logger.LogInformation("Created template '{PageType}' ({Title})", 
+
+                    logger.LogInformation("Created template '{PageType}' ({Title})",
                         template.Key, template.Name);
                 }
                 else if (dbTemplate.LayoutId != layoutId)
                 {
                     // Template exists but uses a different layout - update it to use the current default layout
                     logger.LogInformation(
-                        "Template '{PageType}' exists under different layout (old: {OldLayoutId}, new: {NewLayoutId}). Updating to current default", 
-                        template.Key, 
+                        "Template '{PageType}' exists under different layout (old: {OldLayoutId}, new: {NewLayoutId}). Updating to current default",
+                        template.Key,
                         dbTemplate.LayoutId,
                         layoutId);
-                    
+
                     dbTemplate.LayoutId = layoutId;
                     dbTemplate.LayoutNumber = defaultLayout.LayoutNumber;
                     dbTemplate.CommunityLayoutId = defaultLayout.CommunityLayoutId;
@@ -163,7 +161,7 @@ namespace Sky.Editor.Services.Templates
                 {
                     // Template exists and is already using the current default layout
                     templatesSkipped++;
-                    logger.LogDebug("Template '{PageType}' already exists with correct layout", 
+                    logger.LogDebug("Template '{PageType}' already exists with correct layout",
                         template.Key);
                 }
             }
@@ -172,14 +170,14 @@ namespace Sky.Editor.Services.Templates
             {
                 await dbContext.SaveChangesAsync();
                 logger.LogInformation(
-                    "Templates ensured: {Created} created, {Updated} updated, {Skipped} skipped", 
+                    "Templates ensured: {Created} created, {Updated} updated, {Skipped} skipped",
                     templatesCreated, templatesUpdated, templatesSkipped);
             }
             else
             {
                 logger.LogDebug("All templates already exist, no changes made");
             }
-            
+
             // Mark as seeded (in-memory cache to avoid redundant checks on subsequent requests)
             SeededTenants.TryAdd(tenantId.Value, true);
         }
@@ -270,14 +268,14 @@ namespace Sky.Editor.Services.Templates
             if (versions == null || versions.Count == 0)
             {
                 var template = await dbContext.Templates.FirstOrDefaultAsync(t => t.PageType == key);
-                
+
                 // Add null check for template
                 if (template == null)
                 {
                     logger.LogWarning("No template found with PageType: {PageType}", key);
                     return new List<PageDesignVersion>(); // Return empty list
                 }
-                
+
                 var version = new PageDesignVersion
                 {
                     Id = Guid.NewGuid(),
@@ -685,7 +683,7 @@ namespace Sky.Editor.Services.Templates
                 var maxVersionNumber = await dbContext.Articles
                     .Where(a => a.ArticleNumber == articleNumber)
                     .MaxAsync(a => a.VersionNumber);
-                
+
                 var newVersionNumber = maxVersionNumber + 1;
 
                 // Create new article version (DRAFT)
@@ -952,8 +950,8 @@ namespace Sky.Editor.Services.Templates
 
                         // Find the latest draft version for this article with the specified template
                         var draftArticle = await dbContext.Articles
-                            .Where(a => a.ArticleNumber == articleNumber 
-                                && a.TemplateId == templateId 
+                            .Where(a => a.ArticleNumber == articleNumber
+                                && a.TemplateId == templateId
                                 && a.Published == null)
                             .OrderByDescending(a => a.VersionNumber)
                             .FirstOrDefaultAsync();
@@ -1007,11 +1005,11 @@ namespace Sky.Editor.Services.Templates
 
                 // Aggregate results into counts
                 result.PublishedCount = result.Results.Count(r => r.Success);
-                result.SkippedCount = result.Results.Count(r => !r.Success && 
-                    (r.ErrorMessage?.Contains("not in publish list") == true || 
+                result.SkippedCount = result.Results.Count(r => !r.Success &&
+                    (r.ErrorMessage?.Contains("not in publish list") == true ||
                      r.ErrorMessage?.Contains("No draft version found") == true));
-                result.FailureCount = result.Results.Count(r => !r.Success && 
-                    r.ErrorMessage?.Contains("not in publish list") != true && 
+                result.FailureCount = result.Results.Count(r => !r.Success &&
+                    r.ErrorMessage?.Contains("not in publish list") != true &&
                     r.ErrorMessage?.Contains("No draft version found") != true);
 
                 result.Duration = DateTimeOffset.UtcNow - startTime;

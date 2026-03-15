@@ -7,13 +7,13 @@
 
 namespace Sky.Editor.Services.Catalog
 {
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Html;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Provides catalog maintenance operations for articles.

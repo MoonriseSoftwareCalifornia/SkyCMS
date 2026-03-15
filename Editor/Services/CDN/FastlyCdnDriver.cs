@@ -7,14 +7,13 @@
 
 namespace Sky.Editor.Services.CDN
 {
+    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net.Http;
-    using System.Text;
     using System.Text.Json;
     using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Fastly CDN driver implementation using native HTTP APIs.
@@ -116,12 +115,12 @@ namespace Sky.Editor.Services.CDN
         {
             // Construct the full URL to purge
             var fullUrl = $"https://{config.Domain}{url}";
-            
+
             // Fastly purge endpoint using PURGE method
             var request = new HttpRequestMessage(HttpMethod.Post, fullUrl);
             request.Method = new HttpMethod("PURGE");
             request.Headers.Add("Fastly-Key", config.ApiToken);
-            
+
             // Optionally add soft purge header for stale-while-revalidate behavior
             if (config.SoftPurge)
             {
@@ -137,8 +136,8 @@ namespace Sky.Editor.Services.CDN
             {
                 ProviderName = ProviderName,
                 IsSuccessStatusCode = response.IsSuccessStatusCode,
-                Message = response.IsSuccessStatusCode 
-                    ? $"Successfully purged: {url}" 
+                Message = response.IsSuccessStatusCode
+                    ? $"Successfully purged: {url}"
                     : $"Failed to purge {url}: {response.ReasonPhrase}",
                 Id = purgeResponse?.id,
                 EstimatedFlushDateTime = DateTimeOffset.UtcNow.AddSeconds(5) // Fastly purges are typically very fast (5-150ms)
@@ -153,7 +152,7 @@ namespace Sky.Editor.Services.CDN
         {
             // Fastly API endpoint for purging all content
             var url = $"https://api.fastly.com/service/{config.ServiceId}/purge_all";
-            
+
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Add("Fastly-Key", config.ApiToken);
             request.Headers.Add("Accept", "application/json");
@@ -167,8 +166,8 @@ namespace Sky.Editor.Services.CDN
             {
                 ProviderName = ProviderName,
                 IsSuccessStatusCode = response.IsSuccessStatusCode,
-                Message = response.IsSuccessStatusCode 
-                    ? $"Successfully purged all content (status: {purgeResponse?.status})" 
+                Message = response.IsSuccessStatusCode
+                    ? $"Successfully purged all content (status: {purgeResponse?.status})"
                     : $"Failed to purge all: {response.ReasonPhrase}",
                 EstimatedFlushDateTime = DateTimeOffset.UtcNow.AddSeconds(5)
             };

@@ -7,13 +7,13 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 5a: CDN configuration (optional).
@@ -246,7 +246,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect to next step.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            logger.LogInformation("Step5_Cdn POST - SetupId: {SetupId}, SelectedProvider: {Provider}", 
+            logger.LogInformation("Step5_Cdn POST - SetupId: {SetupId}, SelectedProvider: {Provider}",
                 SetupId, SelectedProvider);
 
             // Check if setup has been completed
@@ -322,7 +322,7 @@ namespace Sky.Editor.Areas.Setup.Pages
                     SelectedProvider == "Cloudfront" ? CloudFrontRegion : string.Empty);
 
                 await setupService.UpdateStepAsync(SetupId, 5);
-                
+
                 logger.LogInformation("Step5_Cdn POST - Successfully completed Step5, redirecting to Step6");
                 return RedirectToPage("./Step6_Review");
             }
@@ -371,7 +371,7 @@ namespace Sky.Editor.Areas.Setup.Pages
                     string.Empty);
 
                 await setupService.UpdateStepAsync(SetupId, 5);
-                
+
                 logger.LogInformation("Step5_Cdn POST Skip - Successfully skipped Step5, redirecting to Step6");
                 return RedirectToPage("./Step6_Review");
             }

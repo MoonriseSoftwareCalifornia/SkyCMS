@@ -48,7 +48,7 @@ namespace Sky.Editor.Services.Titles
         /// <item><description>Item4: The error message describing why it failed</description></item>
         /// </list>
         /// </remarks>
-        public List<(int ArticleNumber, string OldUrl, string NewUrl, string Error)> FailedRedirects { get; } = new ();
+        public List<(int ArticleNumber, string OldUrl, string NewUrl, string Error)> FailedRedirects { get; } = new();
 
         /// <summary>
         /// Gets a value indicating whether all redirects were created successfully.

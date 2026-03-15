@@ -7,15 +7,15 @@
 
 namespace Cosmos.Common.Features.Articles.Shared;
 
+using Cosmos.Common.Data;
+using Cosmos.Common.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
-using Cosmos.Common.Data;
-using Cosmos.Common.Models;
-using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// Implementation of IArticleCatalogQueryService for querying article catalog.

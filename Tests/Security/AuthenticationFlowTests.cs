@@ -7,19 +7,17 @@
 
 namespace Sky.Tests.Security
 {
-    using System;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
-    using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Authentication;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
-    using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using System;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Comprehensive authentication flow tests for SkyCMS.
@@ -76,7 +74,7 @@ namespace Sky.Tests.Security
             // Create HttpContext with authentication services
             var httpContext = new DefaultHttpContext();
             var mockServiceProvider = new Mock<IServiceProvider>();
-            
+
             // Setup authentication service
             var mockAuthService = new Mock<IAuthenticationService>();
             mockAuthService
@@ -88,7 +86,7 @@ namespace Sky.Tests.Security
 
             mockServiceProvider.Setup(sp => sp.GetService(typeof(IAuthenticationService)))
                 .Returns(mockAuthService.Object);
-            
+
             httpContext.RequestServices = mockServiceProvider.Object;
 
             var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
@@ -426,7 +424,7 @@ namespace Sky.Tests.Security
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Email confirmation should succeed. Errors: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            
+
             var updatedUser = await UserManager.FindByEmailAsync(user.Email);
             Assert.IsTrue(updatedUser.EmailConfirmed, "Email should be marked as confirmed");
         }
@@ -471,10 +469,10 @@ namespace Sky.Tests.Security
             };
 
             await UserManager.CreateAsync(user, "Test@1234");
-            
+
             // Generate token
             var token = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-            
+
             // Simulate token expiration by changing security stamp
             await UserManager.UpdateSecurityStampAsync(user);
 
@@ -512,7 +510,7 @@ namespace Sky.Tests.Security
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Password reset should succeed. Errors: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            
+
             // Refresh user and verify new password works
             user = await UserManager.FindByNameAsync(user.UserName);
             var passwordWorks = await UserManager.CheckPasswordAsync(user, "NewP@ss456");
@@ -598,7 +596,7 @@ namespace Sky.Tests.Security
 
             // Assert
             Assert.IsTrue(result.Succeeded, "Enabling 2FA should succeed");
-            
+
             var updatedUser = await UserManager.FindByEmailAsync(user.Email);
             Assert.IsTrue(updatedUser.TwoFactorEnabled, "2FA should be enabled");
         }
@@ -630,7 +628,7 @@ namespace Sky.Tests.Security
             // Assert
             Assert.IsTrue(createResult.Succeeded, "User creation should succeed");
             Assert.IsTrue(addLoginResult.Succeeded, "External login should be added");
-            
+
             var logins = await UserManager.GetLoginsAsync(user);
             Assert.AreEqual(1, logins.Count, "User should have one external login");
             Assert.AreEqual("Google", logins[0].LoginProvider);
@@ -659,7 +657,7 @@ namespace Sky.Tests.Security
 
             // Act
             await UserManager.ChangePasswordAsync(user, "OldP@ss123", "NewP@ss456");
-            
+
             // Refresh user
             user = await UserManager.FindByNameAsync(user.UserName);
             var newStamp = await UserManager.GetSecurityStampAsync(user);
@@ -687,7 +685,7 @@ namespace Sky.Tests.Security
 
             // Act
             await UserManager.UpdateSecurityStampAsync(user);
-            
+
             // Refresh user
             user = await UserManager.FindByNameAsync(user.UserName);
 
@@ -759,7 +757,7 @@ namespace Sky.Tests.Security
 
             // Assert
             Assert.IsTrue(result.Succeeded, "Manual unlock should succeed");
-            
+
             user = await UserManager.FindByNameAsync(user.UserName);
             var isLocked = await UserManager.IsLockedOutAsync(user);
             Assert.IsFalse(isLocked, "Account should be unlocked");
@@ -784,7 +782,7 @@ namespace Sky.Tests.Security
             };
 
             await UserManager.CreateAsync(user, "Test@1234");
-            
+
             // Ensure Administrator role exists
             if (!await RoleManager.RoleExistsAsync("Administrators"))
             {
@@ -817,7 +815,7 @@ namespace Sky.Tests.Security
             };
 
             await UserManager.CreateAsync(user, "Test@1234");
-            
+
             // Ensure roles exist
             var roles = new[] { "Administrators", "Editors", "Authors" };
             foreach (var role in roles)

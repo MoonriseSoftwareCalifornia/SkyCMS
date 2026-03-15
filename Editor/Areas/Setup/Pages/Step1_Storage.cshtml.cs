@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
     using Azure.Storage.Blobs;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Authorization;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 1: Storage configuration.
@@ -145,7 +145,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect to next step.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            logger.LogInformation("Step1_Storage POST - SetupId: {SetupId}, StorageType: {StorageType}, BlobPublicUrl: {BlobPublicUrl}", 
+            logger.LogInformation("Step1_Storage POST - SetupId: {SetupId}, StorageType: {StorageType}, BlobPublicUrl: {BlobPublicUrl}",
                 SetupId, StorageType, BlobPublicUrl);
 
             // Check if setup has been completed
@@ -165,7 +165,7 @@ namespace Sky.Editor.Areas.Setup.Pages
                     {
                         foreach (var error in state.Errors)
                         {
-                            logger.LogError("Step1_Storage POST - Validation error for {Field}: {Error}", 
+                            logger.LogError("Step1_Storage POST - Validation error for {Field}: {Error}",
                                 key, error.ErrorMessage ?? error.Exception?.Message);
                         }
                     }
@@ -180,7 +180,7 @@ namespace Sky.Editor.Areas.Setup.Pages
                 ErrorMessage = "Setup configuration not found. Please restart the setup process.";
                 return Page();
             }
-            
+
             SetupId = config.Id;
 
             if (!config.StoragePreConfigured && string.IsNullOrWhiteSpace(StorageConnectionString))
@@ -219,9 +219,9 @@ namespace Sky.Editor.Areas.Setup.Pages
                     ? config.StorageConnectionString
                     : StorageConnectionString;
                 var inferredType = InferStorageType(testConnectionString);
-                
+
                 logger.LogInformation("Step1_Storage POST - Inferred storage type: {Type}", inferredType);
-                
+
                 if (inferredType == "AzureBlob" && string.IsNullOrWhiteSpace(ContainerName))
                 {
                     logger.LogInformation("Step1_Storage POST - Creating default Azure Blob container");
@@ -244,12 +244,12 @@ namespace Sky.Editor.Areas.Setup.Pages
                 }
 
                 // Use config values if pre-configured, otherwise use form values
-                var connectionStringToSave = config.StoragePreConfigured 
-                    ? config.StorageConnectionString 
+                var connectionStringToSave = config.StoragePreConfigured
+                    ? config.StorageConnectionString
                     : StorageConnectionString;
-                    
-                var blobPublicUrlToSave = config.BlobPublicUrlPreConfigured 
-                    ? config.BlobPublicUrl 
+
+                var blobPublicUrlToSave = config.BlobPublicUrlPreConfigured
+                    ? config.BlobPublicUrl
                     : BlobPublicUrl;
 
                 logger.LogInformation("Step1_Storage POST - Saving storage configuration");

@@ -7,14 +7,6 @@
 
 namespace Sky.Editor.Services.Publishing
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net.Http;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Cms.Common;
@@ -33,6 +25,14 @@ namespace Sky.Editor.Services.Publishing
     using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Net.Http;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Orchestrates publishing of articles and blog content.

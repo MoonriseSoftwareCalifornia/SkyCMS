@@ -5,27 +5,25 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.IO.Compression;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Cms.Common;
     using Cosmos.Cms.Common.Models;
     using Cosmos.Cms.Editor.Controllers;
-    using Cosmos.Common;  // ✅ For ArticleType enum
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;  // ✅ For StatusCodeEnum
-    using Cosmos.Common.Models;  // ✅ CORRECT - For SpaMetadata (NOT Sky.Common.Models)
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="DeploymentController"/>.
@@ -57,7 +55,7 @@ namespace Sky.Tests.Controllers
             // Create test SPA article with deployment key
             testArticleId = Guid.NewGuid();
             var deploymentKeyHash = BCrypt.Net.BCrypt.HashPassword(TestDeploymentKey);
-            
+
             var spaMetadata = new SpaMetadata
             {
                 DeploymentKeyHash = deploymentKeyHash,
@@ -247,15 +245,15 @@ namespace Sky.Tests.Controllers
             // Arrange
             var newPassword = "new-password-12345678901234567";
             var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            
+
             var article = await dbContext.Pages.FindAsync(testArticleId); // Changed from Articles to Pages
             var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
-            
+
             // Rotate key - old key becomes previous, new key becomes current
             metadata.DeploymentKeyHashPrevious = metadata.DeploymentKeyHash;
             metadata.DeploymentKeyHash = newPasswordHash;
             metadata.DeploymentKeyRotatedAt = DateTimeOffset.UtcNow.AddHours(-1); // Rotated 1 hour ago
-            
+
             article.Content = System.Text.Json.JsonSerializer.Serialize(metadata);
             await dbContext.SaveChangesAsync();
 
@@ -278,15 +276,15 @@ namespace Sky.Tests.Controllers
             // Arrange
             var newPassword = "new-password-12345678901234567";
             var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            
+
             var article = await dbContext.Pages.FindAsync(testArticleId); // Changed from Articles to Pages
             var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
-            
+
             // Rotate key - but grace period expired
             metadata.DeploymentKeyHashPrevious = metadata.DeploymentKeyHash;
             metadata.DeploymentKeyHash = newPasswordHash;
             metadata.DeploymentKeyRotatedAt = DateTimeOffset.UtcNow.AddHours(-25); // Rotated 25 hours ago (expired)
-            
+
             article.Content = System.Text.Json.JsonSerializer.Serialize(metadata);
             await dbContext.SaveChangesAsync();
 
@@ -425,7 +423,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
-            
+
             var errorProperty = badRequestResult.Value.GetType().GetProperty("error");
             var errorMessage = errorProperty.GetValue(badRequestResult.Value).ToString();
             Assert.IsTrue(errorMessage.Contains("100 MB"), "Error should mention size limit");
@@ -548,7 +546,7 @@ namespace Sky.Tests.Controllers
                 { "robots.txt", "text" },
                 { "sitemap.xml", "xml" }
             };
-            
+
             var zipFile = CreateTestZipFile(allowedFiles);
 
             // Act
@@ -573,7 +571,7 @@ namespace Sky.Tests.Controllers
                 { "script.sh", "shell script" }, // Disallowed
                 { "config.php", "php code" } // Disallowed
             };
-            
+
             var zipFile = CreateTestZipFile(mixedFiles);
 
             // Act
@@ -582,7 +580,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var okResult = result as OkObjectResult;
             Assert.IsNotNull(okResult);
-            
+
             // Verify warning was logged for disallowed files
             loggerMock.Verify(
                 x => x.Log(
@@ -613,7 +611,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var article = await dbContext.Pages.FindAsync(testArticleId);
             var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
-            
+
             Assert.AreEqual(1, metadata.DeploymentCount);
             Assert.IsNotNull(metadata.LastDeployedAt);
         }
@@ -627,10 +625,10 @@ namespace Sky.Tests.Controllers
             // Arrange
             var testSha = "abc123def456";
             var testRepo = "owner/repo";
-            
+
             controller.ControllerContext.HttpContext.Request.Headers["X-GitHub-SHA"] = testSha;
             controller.ControllerContext.HttpContext.Request.Headers["X-GitHub-Repository"] = testRepo;
-            
+
             var zipFile = CreateTestZipFile();
 
             // Act
@@ -639,7 +637,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var article = await dbContext.Pages.FindAsync(testArticleId);
             var metadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(article.Content);
-            
+
             Assert.AreEqual(testSha, metadata.LastCommitSha);
             Assert.AreEqual(testRepo, metadata.LastDeployedFrom);
         }
@@ -756,7 +754,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var okResult = result as OkObjectResult;
             Assert.IsNotNull(okResult);
-            
+
             // Anonymous types are internal, so we need to use reflection to access properties
             var responseType = okResult.Value.GetType();
             var successProp = responseType.GetProperty("success");
@@ -765,22 +763,22 @@ namespace Sky.Tests.Controllers
             var urlPathProp = responseType.GetProperty("urlPath");
             var filesDeployedProp = responseType.GetProperty("filesDeployed");
             var cdnPurgedProp = responseType.GetProperty("cdnPurged");
-            
+
             Assert.IsNotNull(successProp, "Response should have 'success' property");
             Assert.IsTrue((bool)successProp.GetValue(okResult.Value), "success should be true");
-            
+
             Assert.IsNotNull(deployedAtProp, "Response should have 'deployedAt' property");
             Assert.IsNotNull(deployedAtProp.GetValue(okResult.Value), "deployedAt should not be null");
-            
+
             Assert.IsNotNull(deploymentCountProp, "Response should have 'deploymentCount' property");
             Assert.IsTrue((int)deploymentCountProp.GetValue(okResult.Value) > 0, "deploymentCount should be greater than 0");
-            
+
             Assert.IsNotNull(urlPathProp, "Response should have 'urlPath' property");
             Assert.IsNotNull(urlPathProp.GetValue(okResult.Value), "urlPath should not be null");
-            
+
             Assert.IsNotNull(filesDeployedProp, "Response should have 'filesDeployed' property");
             Assert.IsTrue((int)filesDeployedProp.GetValue(okResult.Value) > 0, "filesDeployed should be greater than 0");
-            
+
             Assert.IsNotNull(cdnPurgedProp, "Response should have 'cdnPurged' property");
             Assert.IsNotNull(cdnPurgedProp.GetValue(okResult.Value), "cdnPurged should not be null");
         }
@@ -1039,10 +1037,10 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(OkObjectResult));
-            
+
             var updatedArticle = await dbContext.Pages.FirstOrDefaultAsync(p => p.Id == testArticleId);
             var updatedMetadata = System.Text.Json.JsonSerializer.Deserialize<SpaMetadata>(updatedArticle.Content);
-            
+
             Assert.AreEqual(initialCount + 1, updatedMetadata.DeploymentCount, "Deployment count should increment");
         }
 

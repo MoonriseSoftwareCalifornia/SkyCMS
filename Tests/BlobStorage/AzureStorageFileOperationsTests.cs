@@ -4,15 +4,9 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Cosmos.BlobService;
 using Cosmos.BlobService.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text;
 
 namespace Sky.Tests.BlobStorage
 {
@@ -32,7 +26,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var sourcePath = $"copytest/{Guid.NewGuid()}/source.txt";
             var destinationPath = $"copytest/{Guid.NewGuid()}/destination.txt";
-            
+
             // Upload source file
             using var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("test content for copy"));
             var sourceMetadata = new FileUploadMetaData
@@ -52,7 +46,7 @@ namespace Sky.Tests.BlobStorage
             // Assert
             var sourceExists = await Storage.BlobExistsAsync(sourcePath);
             var destinationExists = await Storage.BlobExistsAsync(destinationPath);
-            
+
             Assert.IsTrue(sourceExists, "Source should still exist after copy");
             Assert.IsTrue(destinationExists, "Destination should exist after copy");
         }
@@ -63,7 +57,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var sourcePath = $"copytest/{Guid.NewGuid()}/source.txt";
             var destinationPath = $"copytest/{Guid.NewGuid()}/destination.txt";
-            
+
             // Upload source file
             using var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("test content"));
             var sourceMetadata = new FileUploadMetaData
@@ -92,7 +86,7 @@ namespace Sky.Tests.BlobStorage
             var testFolder = $"copytest/{Guid.NewGuid()}";
             var sourcePath = $"{testFolder}/original.txt";
             var destinationPath = $"{testFolder}/copy.txt";
-            
+
             // Upload source file
             using var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("original content"));
             var sourceMetadata = new FileUploadMetaData
@@ -122,7 +116,7 @@ namespace Sky.Tests.BlobStorage
             var destFolder = $"copytest/{Guid.NewGuid()}/folder2";
             var sourcePath = $"{sourceFolder}/file.txt";
             var destinationPath = $"{destFolder}/file.txt";
-            
+
             // Upload source file
             using var sourceStream = new MemoryStream(Encoding.UTF8.GetBytes("content to copy"));
             var sourceMetadata = new FileUploadMetaData
@@ -188,10 +182,10 @@ namespace Sky.Tests.BlobStorage
             // Assert
             var destFile1 = file1Path.Replace(sourceFolder, destFolder);
             var destFile2 = file2Path.Replace(sourceFolder, destFolder);
-            
+
             var dest1Exists = await Storage.BlobExistsAsync(destFile1);
             var dest2Exists = await Storage.BlobExistsAsync(destFile2);
-            
+
             Assert.IsTrue(dest1Exists, "First file should be copied");
             Assert.IsTrue(dest2Exists, "Nested file should be copied");
         }
@@ -228,7 +222,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var testPath = $"filetest/{Guid.NewGuid()}";
             var filePath = $"{testPath}/testfile.txt";
-            
+
             // Upload a test file
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes("test content"));
             var metadata = new FileUploadMetaData
@@ -257,7 +251,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var testPath = $"filetest/{Guid.NewGuid()}";
             var filePath = $"{testPath}/file.txt";
-            
+
             // Upload a test file
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes("content"));
             var metadata = new FileUploadMetaData
@@ -284,7 +278,7 @@ namespace Sky.Tests.BlobStorage
         {
             // Arrange
             var testPath = $"filetest/{Guid.NewGuid()}";
-            
+
             // Create a folder (which creates a folder.stubxx marker)
             await Storage.CreateFolder(testPath);
 
@@ -305,7 +299,7 @@ namespace Sky.Tests.BlobStorage
             var testPath = $"filetest/{Guid.NewGuid()}";
             var filePath = $"{testPath}/document.txt";
             var subfolderPath = $"{testPath}/subfolder";
-            
+
             // Upload a file
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes("file content")))
             {
@@ -320,7 +314,7 @@ namespace Sky.Tests.BlobStorage
                 };
                 await Storage.AppendBlob(stream, metadata, "block");
             }
-            
+
             // Create a folder
             await Storage.CreateFolder(subfolderPath);
 
@@ -329,10 +323,10 @@ namespace Sky.Tests.BlobStorage
 
             // Assert
             Assert.IsNotNull(result, "Result should not be null");
-            
+
             var file = result.FirstOrDefault(r => r.Name == "document.txt");
             var folder = result.FirstOrDefault(r => r.Name == "subfolder");
-            
+
             Assert.IsNotNull(file, "Should contain the file");
             Assert.IsNotNull(folder, "Should contain the folder");
             Assert.IsFalse(file.IsDirectory, "File should not be marked as directory");
@@ -347,7 +341,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var testPath = $"filetest/{Guid.NewGuid()}";
             var filePath = $"{testPath}/properties.txt";
-            
+
             // Upload a file
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes("test content for properties"));
             var metadata = new FileUploadMetaData
@@ -367,7 +361,7 @@ namespace Sky.Tests.BlobStorage
             // Assert
             Assert.IsNotNull(result, "Result should not be null");
             Assert.IsTrue(result.Count > 0, "Should have at least one entry");
-            
+
             foreach (var entry in result)
             {
                 Assert.IsNotNull(entry.Name, "Entry should have a name");

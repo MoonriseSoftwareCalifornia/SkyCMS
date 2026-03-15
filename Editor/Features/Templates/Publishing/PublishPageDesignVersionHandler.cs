@@ -7,18 +7,17 @@
 
 namespace Sky.Editor.Features.Templates.Publishing
 {
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using HtmlAgilityPack;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Publishing;
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handles publishing page design versions and updating all related articles.

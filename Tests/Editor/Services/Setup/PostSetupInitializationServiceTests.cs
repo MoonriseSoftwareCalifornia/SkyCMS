@@ -7,12 +7,6 @@
 
 namespace Sky.Tests.Editor.Services.Setup
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -25,8 +19,14 @@ namespace Sky.Tests.Editor.Services.Setup
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Features.Articles.Create;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Unit tests for <see cref="PostSetupInitializationService"/>.

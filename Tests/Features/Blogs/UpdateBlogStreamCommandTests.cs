@@ -7,15 +7,14 @@
 
 namespace Sky.Tests.Features.Blogs
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Blogs.UpdateStream;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for <see cref="UpdateBlogStreamCommand"/> and <see cref="UpdateBlogStreamHandler"/>.
@@ -813,10 +812,10 @@ namespace Sky.Tests.Features.Blogs
 
             Assert.IsNotNull(updatedActivePost, "Active post should exist");
             Assert.IsNotNull(updatedDeletedPost, "Archived post should exist");
-            
+
             // Active post should be updated with new stream prefix
             Assert.AreEqual("pet-wash/shampo", updatedActivePost.UrlPath, "Active post UrlPath should be updated to use new stream slug");
-            
+
             // Archived post should NOT be updated (different BlogKey means it's not queried by handler)
             Assert.AreEqual("cat_wash/archived-post", updatedDeletedPost.UrlPath, "Archived post should NOT be updated - handler queries by BlogKey");
         }
@@ -864,7 +863,7 @@ namespace Sky.Tests.Features.Blogs
             // Assert
             Assert.IsTrue(result.IsSuccess);
             var updatedArticle = await Db.Articles.FindAsync(article.Id);
-            
+
             // Content should be regenerated (BlogStreamRenderingService returns mock HTML)
             Assert.IsNotNull(updatedArticle.Content, "Content should be regenerated");
             Assert.IsFalse(updatedArticle.Content.Equals("<div>Old Content</div>"), "Content should be updated from rendering service");

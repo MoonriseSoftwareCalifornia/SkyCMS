@@ -3,11 +3,6 @@
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Threading.Tasks;
 using Cosmos.DynamicConfig;
 using Cosmos.DynamicConfig.Configurations;
 using Microsoft.AspNetCore.Http;
@@ -15,8 +10,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Net;
 
 namespace Sky.Tests.DynamicConfig
 {

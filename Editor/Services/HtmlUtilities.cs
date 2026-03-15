@@ -7,8 +7,8 @@
 
 namespace Sky.Cms.Services
 {
-    using System;
     using HtmlAgilityPack;
+    using System;
 
     /// <summary>
     /// Html Utilities.

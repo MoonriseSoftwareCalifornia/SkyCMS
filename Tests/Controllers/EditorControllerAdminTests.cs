@@ -7,15 +7,14 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Security.Claims;
-    using System.Text;
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
+    using System.Security.Claims;
+    using System.Text;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for EditorController administrative and utility functions.
@@ -121,7 +120,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(FileContentResult));
             var fileResult = (FileContentResult)result;
             Assert.IsTrue(fileResult.FileContents.Length > 0);
-            
+
             // Verify content is valid UTF-8
             var htmlContent = Encoding.UTF8.GetString(fileResult.FileContents);
             Assert.IsNotNull(htmlContent);
@@ -197,7 +196,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.IsNotNull(viewResult.Model);
-            
+
             // Model should be IQueryable<ArticleLogJsonModel>
             Assert.IsInstanceOfType(viewResult.Model, typeof(System.Linq.IQueryable<ArticleLogJsonModel>));
         }

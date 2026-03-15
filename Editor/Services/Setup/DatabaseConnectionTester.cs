@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Services.Setup
 {
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Default runtime implementation for setup database connectivity validation.

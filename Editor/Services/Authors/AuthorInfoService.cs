@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Services.Authors
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Provides operations for retrieving or creating <see cref="AuthorInfo"/> records

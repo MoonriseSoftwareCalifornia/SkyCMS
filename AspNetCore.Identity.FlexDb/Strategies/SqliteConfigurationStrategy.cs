@@ -10,7 +10,6 @@ namespace AspNetCore.Identity.FlexDb.Strategies
     using Microsoft.EntityFrameworkCore;
     using SQLitePCL;
     using System;
-    using System.Linq;
 
     /// <summary>
     /// Configuration strategy for SQLite.

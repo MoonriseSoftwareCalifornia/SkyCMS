@@ -48,7 +48,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task Consolidated_ClaimsAsync_CRUD_Tests(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             var user1 = await GetMockRandomUserAsync(userStore);
@@ -101,13 +101,14 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task GetUsersForClaimAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             var val = Guid.NewGuid().ToString();
             var claims = new Claim[] { new Claim(val, val) };
-            
+
             using (var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName))
-            {;
+            {
+                ;
                 var user1 = await GetMockRandomUserAsync(userStore);
                 await userStore.AddClaimsAsync(user1, claims, default);
             }
@@ -122,7 +123,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             {
                 // Act
                 var result1 = await userStore.GetUsersForClaimAsync(claims.FirstOrDefault(), default);
-                
+
                 // Assert
                 Assert.AreEqual(2, result1.Count, $"Failed for provider: {provider.DisplayName}");
             }

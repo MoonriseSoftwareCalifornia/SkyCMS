@@ -7,11 +7,9 @@
 
 namespace Sky.Tests.Controllers
 {
-    using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Models;
     using Sky.Editor.Controllers;

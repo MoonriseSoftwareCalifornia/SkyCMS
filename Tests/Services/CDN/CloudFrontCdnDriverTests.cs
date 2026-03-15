@@ -7,14 +7,14 @@
 
 namespace Sky.Tests.Services.CDN
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json;
     using Sky.Editor.Services.CDN;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="CloudFrontCdnDriver"/> class.

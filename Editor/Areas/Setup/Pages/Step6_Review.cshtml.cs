@@ -7,8 +7,6 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Mvc;
@@ -16,6 +14,8 @@ namespace Sky.Editor.Areas.Setup.Pages
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 6: Review and complete setup.

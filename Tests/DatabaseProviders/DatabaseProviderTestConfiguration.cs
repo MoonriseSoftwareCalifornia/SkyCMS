@@ -7,9 +7,9 @@
 
 namespace Sky.Tests.DatabaseProviders
 {
+    using Microsoft.Extensions.Configuration;
     using System;
     using System.Collections.Generic;
-    using Microsoft.Extensions.Configuration;
 
     /// <summary>
     /// Configuration helper for database provider testing.

@@ -7,9 +7,8 @@
 
 namespace Sky.Editor.Features.Blogs.DeletePost
 {
-    using System;
-    using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
+    using System;
 
     /// <summary>
     /// Command to delete a blog post.

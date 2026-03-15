@@ -7,9 +7,6 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account
 {
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.EmailServices;
     using Microsoft.AspNetCore.Authorization;
@@ -20,6 +17,9 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
     using Microsoft.AspNetCore.WebUtilities;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Confirm Email Razor page.

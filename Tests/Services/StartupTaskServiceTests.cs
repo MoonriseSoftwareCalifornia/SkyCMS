@@ -7,19 +7,18 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Azure;
     using Cosmos.DynamicConfig;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Comprehensive unit tests for the <see cref="StartupTaskService"/> class.
@@ -56,7 +55,7 @@ namespace Sky.Tests.Services
                     ["ConnectionStrings:ConfigDbConnectionString"] = "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=testkey;",
                     ["MultiTenantEditor"] = "false"
                 });
-            
+
             var configuration = configurationBuilder.Build();
 
             // Create mock with real configuration

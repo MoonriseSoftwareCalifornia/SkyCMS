@@ -5,13 +5,13 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for PublishingService - Critical for article publishing workflow.
@@ -63,11 +63,11 @@ namespace Sky.Tests.Services
             var article = await CreateArticleAsync("Timestamp Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
             Assert.IsNotNull(articleEntity, "Expected article to exist in database");
-            
+
             // Ensure Published is null before testing PublishAsync
             articleEntity.Published = null;
             await Db.SaveChangesAsync();
-            
+
             var publishDate = DateTimeOffset.UtcNow;
 
             // Act

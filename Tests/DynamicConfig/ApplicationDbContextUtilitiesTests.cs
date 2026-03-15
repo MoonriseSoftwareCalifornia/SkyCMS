@@ -7,19 +7,16 @@
 
 namespace Sky.Tests.Data
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Data;
-    using Sky.Tests.TestHelpers;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// CRITICAL SECURITY TESTS: Tests for <see cref="ApplicationDbContextUtilities"/> to ensure

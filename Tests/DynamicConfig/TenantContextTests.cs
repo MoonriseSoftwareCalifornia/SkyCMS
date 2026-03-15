@@ -4,10 +4,7 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Threading.Tasks;
 using Cosmos.DynamicConfig;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Sky.Tests.DynamicConfig
 {
@@ -180,7 +177,7 @@ namespace Sky.Tests.DynamicConfig
             TenantContext.Execute(outerDomain, () =>
             {
                 outerCaptured = TenantContext.CurrentDomain;
-                
+
                 TenantContext.Execute(innerDomain, () =>
                 {
                     innerCaptured = TenantContext.CurrentDomain;
@@ -326,7 +323,7 @@ namespace Sky.Tests.DynamicConfig
             {
                 await Task.Delay(10);
                 outerCaptured = TenantContext.CurrentDomain;
-                
+
                 await TenantContext.ExecuteAsync(innerDomain, async () =>
                 {
                     await Task.Delay(10);

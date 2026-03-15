@@ -7,17 +7,15 @@
 
 namespace Sky.Tests.Security
 {
-    using System;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
-    using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
     using Sky.Editor.Controllers;
+    using System;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Comprehensive role-based authorization tests for SkyCMS controllers.

@@ -7,13 +7,13 @@
 
 namespace Cosmos.Common.Features.Articles.EditorQueries;
 
+using Cosmos.Common.Data;
+using Cosmos.Common.Features.Shared;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Cosmos.Common.Data;
-using Cosmos.Common.Features.Shared;
-using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// Handler for retrieving the last published date of an article.

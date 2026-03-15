@@ -7,13 +7,13 @@
 
 namespace Sky.Tests.Features.Articles.Shared
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for PublishedPageQueryService - query and caching logic.
@@ -75,7 +75,7 @@ namespace Sky.Tests.Features.Articles.Shared
 
             // Act - First call
             var result1 = await service.GetPublishedPageByUrlAsync("test-page", cacheSpan: cacheSpan);
-            
+
             // Modify database
             publishedPage.Title = "Modified Title";
             dbContext.Pages.Update(publishedPage);
@@ -114,7 +114,7 @@ namespace Sky.Tests.Features.Articles.Shared
 
             // Act - First call without caching
             var result1 = await service.GetPublishedPageByUrlAsync("test-page", cacheSpan: null);
-            
+
             // Modify database
             publishedPage.Title = "Modified Title";
             dbContext.Pages.Update(publishedPage);

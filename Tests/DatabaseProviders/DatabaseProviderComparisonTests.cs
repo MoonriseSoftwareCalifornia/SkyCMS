@@ -7,20 +7,17 @@
 
 namespace Sky.Tests.DatabaseProviders
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Data.Common;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
-    using AspNetCore.Identity.FlexDb.Strategies;
-    using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Data.Sqlite;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Collections.Generic;
+    using System.Data.Common;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Comprehensive tests comparing performance and functionality across all four database providers.
@@ -44,19 +41,19 @@ namespace Sky.Tests.DatabaseProviders
                 .Build();
 
             // Setup SQLite in-memory connection (must stay open)
-            var sqliteConnectionString = _configuration.GetConnectionString("SQLite") 
+            var sqliteConnectionString = _configuration.GetConnectionString("SQLite")
                 ?? "Data Source=:memory:;Mode=Memory;Cache=Shared;";
-            
+
             _sqliteConnection = new SqliteConnection(sqliteConnectionString);
             _sqliteConnection.Open();
 
             _connectionStrings = new Dictionary<string, string>
             {
-                ["CosmosDB"] = _configuration.GetConnectionString("CosmosDB") 
+                ["CosmosDB"] = _configuration.GetConnectionString("CosmosDB")
                     ?? "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;Database=TestDb",
-                ["SqlServer"] = _configuration.GetConnectionString("SqlServer") 
+                ["SqlServer"] = _configuration.GetConnectionString("SqlServer")
                     ?? $"Server=(localdb)\\mssqllocaldb;Database=TestDb_{Guid.NewGuid()};Trusted_Connection=True;MultipleActiveResultSets=true",
-                ["MySQL"] = _configuration.GetConnectionString("MySQL") 
+                ["MySQL"] = _configuration.GetConnectionString("MySQL")
                     ?? "Server=localhost;Port=3306;Database=testdb;uid=test;pwd=test;",
                 ["SQLite"] = _sqliteConnection.ConnectionString
             };

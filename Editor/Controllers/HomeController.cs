@@ -7,12 +7,6 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Net;
-    using System.Text;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
@@ -32,6 +26,12 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Layouts;
+    using System;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Net;
+    using System.Text;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Home page controller.

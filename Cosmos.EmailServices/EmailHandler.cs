@@ -7,10 +7,10 @@
 
 namespace Cosmos.EmailServices
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.EmailServices.Templates;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handles certain types of emails for both the Cosmos editor and publisher.

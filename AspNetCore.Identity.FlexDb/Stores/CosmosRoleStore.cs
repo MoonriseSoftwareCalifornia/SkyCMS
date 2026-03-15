@@ -89,7 +89,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 {
                     var existingRole = await _repo.Table<TRoleEntity>()
                         .FirstOrDefaultAsync(_ => _.NormalizedName == role.NormalizedName, cancellationToken: cancellationToken);
-                    
+
                     if (existingRole != null)
                     {
                         return Fail("DuplicateRoleName", "Role with this name already exists.");

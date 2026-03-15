@@ -7,9 +7,9 @@
 
 namespace Cosmos.Common.Features.Articles.Shared;
 
+using Cosmos.Common.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Cosmos.Common.Models;
 
 /// <summary>
 /// Service for querying the article catalog - indexed metadata of published articles.

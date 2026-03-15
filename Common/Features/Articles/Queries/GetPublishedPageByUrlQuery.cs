@@ -7,9 +7,9 @@
 
 namespace Cosmos.Common.Features.Articles.Queries;
 
-using System;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using System;
 
 /// <summary>
 /// Query to retrieve a published page by URL path.

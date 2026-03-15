@@ -7,14 +7,8 @@
 
 namespace Sky.Editor.Services.Setup
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
@@ -22,10 +16,13 @@ namespace Sky.Editor.Services.Setup
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
-    using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Services.Layouts;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Service for setup wizard operations.

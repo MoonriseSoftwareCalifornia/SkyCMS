@@ -8,7 +8,6 @@
 namespace Sky.Tests.Controllers
 {
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Services;
@@ -19,7 +18,6 @@ namespace Sky.Tests.Controllers
     using SendGrid.Helpers.Errors.Model;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
-    using Sky.Editor.Models;
     using System;
     using System.Linq;
     using System.Security.Claims;

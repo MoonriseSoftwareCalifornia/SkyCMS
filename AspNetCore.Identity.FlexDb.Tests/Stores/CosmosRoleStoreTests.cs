@@ -64,7 +64,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task CreateAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Act
             // Create a bunch of roles in rapid succession
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
@@ -86,7 +86,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task DeleteAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
@@ -117,7 +117,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task FindByIdAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -137,7 +137,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task FindByNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -157,7 +157,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task GetNormalizedRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -177,7 +177,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task GetRoleIdAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -197,7 +197,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task GetRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -217,7 +217,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task SetNormalizedRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -239,7 +239,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task SetRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -261,7 +261,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task UpdateAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(roleStore);
@@ -288,7 +288,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task GetClaimsAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var claims = new Claim[] { GetMockClaim(), GetMockClaim(), GetMockClaim() };
@@ -312,7 +312,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task AddClaimAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Assert
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -334,7 +334,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task RemoveClaimAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Assert
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
@@ -359,7 +359,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public async Task QueryRolesTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roletore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             var user1 = await GetMockRandomRoleAsync(roletore);

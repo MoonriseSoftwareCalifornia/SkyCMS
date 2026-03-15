@@ -7,9 +7,6 @@
 
 namespace Sky.Editor.Tests.Features.Templates
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
@@ -20,6 +17,9 @@ namespace Sky.Editor.Tests.Features.Templates
     using Sky.Editor.Features.Templates.Publishing;
     using Sky.Editor.Features.Templates.Save;
     using Sky.Tests;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for PageDesignVersion command handlers.
@@ -320,9 +320,9 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.IsTrue(articleVersions.Count >= 2, "New article version should be created");
 
             var latestVersion = articleVersions.First();
-            Assert.IsTrue(latestVersion.Content.Contains("New Template Structure"), 
+            Assert.IsTrue(latestVersion.Content.Contains("New Template Structure"),
                 "Should have new template structure");
-            Assert.IsTrue(latestVersion.Content.Contains("Article Specific Content"), 
+            Assert.IsTrue(latestVersion.Content.Contains("Article Specific Content"),
                 "Should preserve editable content");
         }
 
@@ -334,7 +334,7 @@ namespace Sky.Editor.Tests.Features.Templates
         {
             // Arrange
             var publishedDate = DateTimeOffset.UtcNow.AddDays(-7);
-            
+
             var version = new PageDesignVersion
             {
                 Id = Guid.NewGuid(),
@@ -389,7 +389,7 @@ namespace Sky.Editor.Tests.Features.Templates
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
 
-            Assert.AreEqual(publishedDate, latestArticle.Published, 
+            Assert.AreEqual(publishedDate, latestArticle.Published,
                 "Published date should be preserved");
         }
 
@@ -434,7 +434,7 @@ namespace Sky.Editor.Tests.Features.Templates
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-            Assert.IsTrue(result.Data.Content.Contains("data-ccms-ceid"), 
+            Assert.IsTrue(result.Data.Content.Contains("data-ccms-ceid"),
                 "Should add editable markers");
         }
 

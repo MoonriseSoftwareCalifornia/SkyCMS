@@ -9,26 +9,22 @@
 
 namespace Sky.Tests.Services.Publishing
 {
+    using Cosmos.BlobService;
+    using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
-    using Cosmos.Cms.Common;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+    using Sky.Cms.Services;
     using Sky.Editor.Services.Publishing;
-    using Cosmos.Common.Services.BlogPublishing;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Microsoft.Extensions.DependencyInjection;
-    using Moq;
-    using Sky.Cms.Services;
-    using Cosmos.BlobService;
-    using Cosmos.BlobService.Models;
-    using Cosmos.Common.Models;
-    using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Logging.Abstractions;
-    using Sky.Editor.Services.CDN;
 
     /// <summary>
     /// Extended unit tests for <see cref="PublishingService"/> covering gap areas:
@@ -62,7 +58,7 @@ namespace Sky.Tests.Services.Publishing
             services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
             services.AddScoped<IStorageContext>(_ => Storage);
             services.AddLogging();
-            
+
             // Register IArticleCatalogQueryService (required by PublishingService constructor)
             services.AddSingleton<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(sp =>
                 new Cosmos.Common.Features.Articles.Shared.ArticleCatalogQueryService(

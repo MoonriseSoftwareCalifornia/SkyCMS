@@ -7,10 +7,10 @@
 
 namespace Cosmos.Common.Services.PublishedBlog
 {
+    using Cosmos.Common.Data;
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
 
     /// <summary>
     /// Service for accessing published blog content (streams and entries).

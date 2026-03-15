@@ -4,12 +4,9 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Net;
-using System.Threading.Tasks;
 using Cosmos.EmailServices;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Net;
 
 namespace Sky.Tests.EmailServices
 {

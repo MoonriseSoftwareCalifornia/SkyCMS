@@ -5,16 +5,15 @@
 
 namespace Sky.Tests.Features.Articles.Queries
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Queries;
-    using Cosmos.Common.Models;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     [TestClass]
     public class ArticleQueryHandlerTests

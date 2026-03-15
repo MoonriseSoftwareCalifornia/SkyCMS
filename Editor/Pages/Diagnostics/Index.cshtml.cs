@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Pages.Diagnostics
 {
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Diagnostics;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Diagnostic page model for configuration validation.
@@ -29,7 +29,7 @@ namespace Sky.Editor.Pages.Diagnostics
         /// <param name="logger">Logger instance.</param>
         /// <param name="validator">Configuration validator service.</param>
         public IndexModel(
-            IConfiguration configuration, 
+            IConfiguration configuration,
             ILogger<IndexModel> logger,
             ConfigurationValidator validator)
         {

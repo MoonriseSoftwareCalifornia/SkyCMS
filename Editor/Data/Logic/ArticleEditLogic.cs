@@ -7,14 +7,7 @@
 
 namespace Sky.Editor.Data.Logic
 {
-    // PATCHED: orchestrates via services; legacy method names preserved
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
-    using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
@@ -22,15 +15,9 @@ namespace Sky.Editor.Data.Logic
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Options;
     using Newtonsoft.Json;
-    using SendGrid.Helpers.Errors.Model;
-    using Sky.Cms.Controllers;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
-    using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Articles.Save;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.CDN;
@@ -41,7 +28,12 @@ namespace Sky.Editor.Data.Logic
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using ArticleUpdateResult = Cms.Models.ArticleUpdateResult;
+    // PATCHED: orchestrates via services; legacy method names preserved
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Article editing and management logic (editor-facing). Inherits read/view logic from <see cref="ArticleLogic"/>.
@@ -137,7 +129,7 @@ namespace Sky.Editor.Data.Logic
                     var tenantDomain = configurationProvider.GetTenantDomainNameFromRequest();
                     return Task.FromResult(tenantDomain);
                 }
-                
+
                 // If no configuration provider, assume single-tenant scenario
                 return Task.FromResult<string>(null);
             }
@@ -201,12 +193,12 @@ namespace Sky.Editor.Data.Logic
         //            entity.ArticleNumber,
         //            entity.VersionNumber,
         //            entity.Id);
-                
+
         //        // Try to reload explicitly
         //        entity = await DbContext.Articles
         //            .AsNoTracking()
         //            .FirstOrDefaultAsync(a => a.Id == entity.Id);
-                
+
         //        if (entity?.Content == null)
         //        {
         //            logger.LogError(
@@ -273,10 +265,10 @@ namespace Sky.Editor.Data.Logic
         //{
         //    // Get current tenant domain for filtering
         //    var tenantDomain = await GetCurrentTenantDomainAsync();
-            
+
         //    IQueryable<Article> query = DbContext.Articles
         //        .Where(a => a.Id == id && a.StatusCode != (int)StatusCodeEnum.Deleted);
-            
+
         //    var entity = await query.FirstOrDefaultAsync();
         //    return entity == null ? null : await BuildArticleViewModel(entity, "en-US");
         //}
@@ -303,11 +295,11 @@ namespace Sky.Editor.Data.Logic
 
         //    // Get current tenant domain for filtering
         //    var tenantDomain = await GetCurrentTenantDomainAsync();
-            
+
         //    var deletedEnum = (int)StatusCodeEnum.Deleted;
         //    IQueryable<Article> query = DbContext.Articles
         //        .Where(a => a.UrlPath == urlPath && a.StatusCode != deletedEnum);
-            
+
         //    var entity = await query
         //        .OrderByDescending(a => a.VersionNumber)
         //        .FirstOrDefaultAsync();

@@ -7,9 +7,9 @@
 
 namespace Cosmos.Common
 {
-    using System;
     using Microsoft.EntityFrameworkCore.Storage;
     using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+    using System;
 
     /// <summary>
     /// Converts a <see cref="DateTimeOffset"/> value to the number of ticks representing the corresponding UTC <see
@@ -42,6 +42,6 @@ namespace Cosmos.Common
         ///     Gets a <see cref="ValueConverterInfo" /> for the default use of this converter.
         /// </summary>
         public static ValueConverterInfo DefaultInfo { get; }
-            = new (typeof(DateTimeOffset), typeof(long), i => new DateTimeOffsetToUtcDateTimeTicksConverter(i.MappingHints));
+            = new(typeof(DateTimeOffset), typeof(long), i => new DateTimeOffsetToUtcDateTimeTicksConverter(i.MappingHints));
     }
 }

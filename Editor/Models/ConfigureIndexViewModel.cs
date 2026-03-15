@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Models
 {
-    using System.ComponentModel.DataAnnotations;
     using Cosmos.Cms.Common.Services.Configurations;
+    using System.ComponentModel.DataAnnotations;
 
     /// <summary>
     /// Configuration view model for setup wizard.

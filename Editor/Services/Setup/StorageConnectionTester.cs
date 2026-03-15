@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Services.Setup
 {
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Microsoft.Extensions.Caching.Memory;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Default runtime implementation for setup storage connectivity validation.

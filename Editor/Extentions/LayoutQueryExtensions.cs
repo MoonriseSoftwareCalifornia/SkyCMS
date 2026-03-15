@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Extensions
 {
-    using System.Linq;
     using Cosmos.Common.Data;
+    using System.Linq;
 
     /// <summary>
     /// LINQ extension methods for querying Layout entities with LayoutNumber support.

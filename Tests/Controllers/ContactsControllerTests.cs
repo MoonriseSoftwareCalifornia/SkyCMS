@@ -7,13 +7,6 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Text.Json;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Services.Configurations;
     using Microsoft.AspNetCore.Http;
@@ -24,7 +17,12 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Controllers;
-    using Sky.Editor.Models;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Text.Json;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for the <see cref="ContactsController"/> class.
@@ -40,9 +38,9 @@ namespace Sky.Tests.Controllers
         {
             InitializeTestContext();
             mockLogger = new Mock<ILogger<ContactsController>>();
-            
+
             controller = new ContactsController(Db, mockLogger.Object);
-            
+
             // Setup TempData for redirect scenarios
             controller.TempData = new TempDataDictionary(
                 new DefaultHttpContext(),
@@ -142,7 +140,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(OkObjectResult));
             var okResult = (OkObjectResult)result;
-            
+
             // FIX: Properly deserialize the anonymous object
             var json = JsonSerializer.Serialize(okResult.Value);
             var response = JsonSerializer.Deserialize<EnableAlertsResponse>(json);
@@ -241,7 +239,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
-            
+
             // FIX: Properly deserialize the response
             var json = JsonSerializer.Serialize(jsonResult.Value);
             var response = JsonSerializer.Deserialize<ContactsListResponse>(json);
@@ -288,7 +286,7 @@ namespace Sky.Tests.Controllers
             var jsonResult = (JsonResult)result;
             var json = JsonSerializer.Serialize(jsonResult.Value);
             var response = JsonSerializer.Deserialize<ContactsListResponse>(json);
-            
+
             Assert.AreEqual(3, response!.data.Count);
             Assert.AreEqual("alice@example.com", response.data[0].Email);
             Assert.AreEqual("bob@example.com", response.data[1].Email);
@@ -406,11 +404,11 @@ namespace Sky.Tests.Controllers
             // Assert
             var fileResult = (FileContentResult)result;
             var csvContent = Encoding.UTF8.GetString(fileResult.FileContents);
-            
+
             var firstIndex = csvContent.IndexOf("first@example.com");
             var secondIndex = csvContent.IndexOf("second@example.com");
             var thirdIndex = csvContent.IndexOf("third@example.com");
-            
+
             Assert.IsTrue(firstIndex < secondIndex);
             Assert.IsTrue(secondIndex < thirdIndex);
         }
@@ -976,7 +974,7 @@ namespace Sky.Tests.Controllers
             var jsonResult = (JsonResult)result;
             var json = JsonSerializer.Serialize(jsonResult.Value);
             var response = JsonSerializer.Deserialize<ContactsListResponse>(json);
-            
+
             // Verify alphabetical order
             Assert.AreEqual("user@example.com", response.data[0].Email);
             Assert.AreEqual("user1@example.com", response.data[1].Email);
@@ -1012,7 +1010,7 @@ namespace Sky.Tests.Controllers
             var fileResult = (FileContentResult)result;
             var csvContent = Encoding.UTF8.GetString(fileResult.FileContents);
             var lines = csvContent.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-            
+
             Assert.IsTrue(lines.Length >= 2, "CSV should have header and at least one data row");
             Assert.IsTrue(lines[0].Contains("Id") || lines[0].Contains("Email"), "First line should be header");
         }
@@ -1040,7 +1038,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var fileResult = (FileContentResult)result;
             var csvContent = Encoding.UTF8.GetString(fileResult.FileContents);
-            
+
             // CSV should properly escape commas and quotes
             Assert.IsTrue(csvContent.Contains("Test, User") || csvContent.Contains("\"Test, User\""));
         }
@@ -1098,11 +1096,11 @@ namespace Sky.Tests.Controllers
             // Assert
             var fileResult = (FileContentResult)result;
             var csvContent = Encoding.UTF8.GetString(fileResult.FileContents);
-            
+
             // Should contain sequential IDs 1-5
             for (int i = 1; i <= 5; i++)
             {
-                Assert.IsTrue(csvContent.Contains($"{i},") || csvContent.Contains($"\"{i}\""), 
+                Assert.IsTrue(csvContent.Contains($"{i},") || csvContent.Contains($"\"{i}\""),
                     $"CSV should contain ID {i}");
             }
         }

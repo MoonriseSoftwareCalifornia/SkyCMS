@@ -7,10 +7,10 @@
 
 namespace Cosmos.Common.Features.Articles.Shared;
 
-using System;
-using System.Threading.Tasks;
 using Cosmos.Common.Data;
 using Cosmos.Common.Models;
+using System;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Service for building ArticleViewModel instances from Article and PublishedPage entities.

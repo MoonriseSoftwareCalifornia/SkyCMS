@@ -10,7 +10,6 @@ namespace Sky.Editor.Services.Layout
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
 
     /// <summary>
     /// Service for managing layout families and their versions.

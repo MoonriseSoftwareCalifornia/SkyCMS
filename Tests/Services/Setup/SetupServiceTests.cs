@@ -7,14 +7,7 @@
 
 namespace Sky.Tests.Services.Setup
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cosmos.BlobService;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Data.Sqlite;
     using Microsoft.EntityFrameworkCore;
@@ -23,10 +16,14 @@ namespace Sky.Tests.Services.Setup
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using SetupTestResult = Sky.Editor.Services.Setup.TestResult;
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
+    using SetupTestResult = Sky.Editor.Services.Setup.TestResult;
 
     /// <summary>
     /// Comprehensive unit tests for SetupService.
@@ -104,7 +101,7 @@ namespace Sky.Tests.Services.Setup
                 var configBuilder = new ConfigurationBuilder();
                 configBuilder.AddInMemoryCollection(new Dictionary<string, string>());
                 Configuration = configBuilder.Build();
-                
+
                 LoggerMock = new Mock<ILogger<SetupService>>();
                 MemoryCache = new MemoryCache(new MemoryCacheOptions());
                 LayoutImportServiceMock = new Mock<ILayoutImportService>();
@@ -165,7 +162,7 @@ namespace Sky.Tests.Services.Setup
                             Message = shouldFail ? "SMTP test failed: invalid host" : $"Test email sent successfully to {recipient}"
                         };
                     });
-                
+
                 // ArticleEditLogic is injected but never used in SetupService - pass null
                 ArticleEditLogicMock = null;
 
@@ -236,7 +233,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Create initial setup
             var firstSetup = await context.Service.InitializeSetupAsync(false);
             var firstSetupId = firstSetup.Id;
@@ -254,7 +251,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Create initial setup
             var firstSetup = await context.Service.InitializeSetupAsync(false);
             var firstSetupId = firstSetup.Id;
@@ -272,7 +269,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Dispose the context to force an exception
             context.DbContext.Dispose();
 
@@ -298,7 +295,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Create setup
             var setup = await context.Service.InitializeSetupAsync(false);
 
@@ -316,12 +313,12 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Create setup and mark as complete
             var setup = await context.Service.InitializeSetupAsync(false);
             var setting = await context.DbContext.Settings
                 .FirstOrDefaultAsync(s => s.Group == "SETUP" && s.Name == "DRAFT_STATE");
-            
+
             var config = Newtonsoft.Json.JsonConvert.DeserializeObject<SetupConfiguration>(setting.Value);
             config.IsComplete = true;
             setting.Value = Newtonsoft.Json.JsonConvert.SerializeObject(config);
@@ -339,7 +336,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Dispose the context to force an exception
             context.DbContext.Dispose();
 
@@ -359,7 +356,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             var setup = await context.Service.InitializeSetupAsync(false);
 
             // Act
@@ -864,7 +861,7 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Configuration already returns null for connection strings by default
 
             // Act
@@ -882,12 +879,12 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Set all required fields except storage
             await context.Service.UpdateAdminAccountAsync(setup.Id, "admin@test.com", "Pass@123");
             await context.Service.UpdatePublisherConfigAsync(
                 setup.Id, "https://pub.test.com", false, false, "*.jpg", "", "", "Test");
-            
+
             // Note: ApplicationDbContextConnection is not in configuration, so test will fail on that check first
             // This test needs refactoring to properly test storage validation
 
@@ -907,12 +904,12 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Set all required fields except email
             await context.Service.UpdateStorageConfigAsync(setup.Id, "storage-conn", "https://blob.test.com");
             await context.Service.UpdatePublisherConfigAsync(
                 setup.Id, "https://pub.test.com", false, false, "*.jpg", "", "", "Test");
-            
+
             // Note: ApplicationDbContextConnection is not in configuration
 
             // Act
@@ -931,7 +928,7 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Set email but not password
             var setting = await context.DbContext.Settings
                 .FirstOrDefaultAsync(s => s.Group == "SETUP" && s.Name == "DRAFT_STATE");
@@ -942,7 +939,7 @@ namespace Sky.Tests.Services.Setup
             config.PublisherUrl = "https://pub.test.com";
             setting.Value = Newtonsoft.Json.JsonConvert.SerializeObject(config);
             await context.DbContext.SaveChangesAsync();
-            
+
             // Note: ApplicationDbContextConnection is not in configuration
 
             // Act
@@ -961,11 +958,11 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Set all except publisher URL
             await context.Service.UpdateStorageConfigAsync(setup.Id, "storage-conn", "https://blob.test.com");
             await context.Service.UpdateAdminAccountAsync(setup.Id, "admin@test.com", "Pass@123");
-            
+
             // Note: ApplicationDbContextConnection is not in configuration
 
             // Act
@@ -1060,7 +1057,7 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Manually set StoragePreConfigured flag
             var setting = await context.DbContext.Settings
                 .FirstOrDefaultAsync(s => s.Group == "SETUP" && s.Name == "DRAFT_STATE");
@@ -1082,7 +1079,7 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Set database connection string
             await context.Service.UpdateDatabaseConfigAsync(setup.Id, "Server=test;Database=db");
 
@@ -1099,7 +1096,7 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Mock UserManager to return an admin user
             var adminUser = new IdentityUser { Id = Guid.NewGuid().ToString(), Email = "admin@test.com" };
             var adminList = new List<IdentityUser> { adminUser };
@@ -1119,7 +1116,7 @@ namespace Sky.Tests.Services.Setup
             // Arrange
             using var context = CreateTestContext();
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Manually set PublisherPreConfigured flag
             var setting = await context.DbContext.Settings
                 .FirstOrDefaultAsync(s => s.Group == "SETUP" && s.Name == "DRAFT_STATE");
@@ -1202,7 +1199,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Add AllowSetup setting as false
             context.DbContext.Settings.Add(new Setting
             {
@@ -1225,7 +1222,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Add AllowSetup setting as true
             context.DbContext.Settings.Add(new Setting
             {
@@ -1248,9 +1245,9 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             var setup = await context.Service.InitializeSetupAsync(false);
-            
+
             // Mark as complete and save to committed state (SYSTEM/SETUP_WIZARD_STATE)
             var config = new SetupConfiguration
             {
@@ -1259,7 +1256,7 @@ namespace Sky.Tests.Services.Setup
                 CompletedAt = DateTime.UtcNow,
                 CurrentStep = 7
             };
-            
+
             var committedSetting = new Setting
             {
                 Group = "SYSTEM",
@@ -1283,7 +1280,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // Create admin user (simulating legacy setup)
             var adminUser = new IdentityUser
             {
@@ -1313,7 +1310,7 @@ namespace Sky.Tests.Services.Setup
                 Title = "Home",
                 VersionNumber = 1
             });
-            
+
             await context.DbContext.SaveChangesAsync();
 
             // Act
@@ -1328,7 +1325,7 @@ namespace Sky.Tests.Services.Setup
         {
             // Arrange
             using var context = CreateTestContext();
-            
+
             // No setup state, no admin, no layouts - fresh database
             context.UserManagerMock
                 .Setup(u => u.GetUsersInRoleAsync("Administrators"))

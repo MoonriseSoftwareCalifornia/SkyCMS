@@ -20,7 +20,7 @@ namespace Cosmos.EmailServices
         }
 
         /// <inheritdoc/>
-        public SendResult SendResult => new () { Message = "NoOpEmailSender", StatusCode = System.Net.HttpStatusCode.OK };
+        public SendResult SendResult => new() { Message = "NoOpEmailSender", StatusCode = System.Net.HttpStatusCode.OK };
 
         /// <inheritdoc/>
         public Task SendEmailAsync(string emailTo, string subject, string textVersion, string htmlVersion, string? emailFrom = null)

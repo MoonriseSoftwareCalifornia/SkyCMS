@@ -1,8 +1,7 @@
-using System;
 using Cosmos.Common.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using System;
 
 namespace Sky.Editor.Data
 {

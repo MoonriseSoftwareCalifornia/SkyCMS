@@ -7,12 +7,6 @@
 
 namespace Cosmos.Cms.Editor.Controllers;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Threading.Tasks;
 using BCrypt.Net;
 using Cosmos.BlobService;
 using Cosmos.BlobService.Models;
@@ -25,6 +19,12 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Sky.Editor.Services.CDN;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Threading.Tasks;
 
 /// <summary>
 /// API controller for deploying SPA applications from CI/CD pipelines.

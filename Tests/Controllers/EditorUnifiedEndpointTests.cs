@@ -7,24 +7,17 @@
 
 namespace Sky.Tests.Controllers
 {
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Services;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using SendGrid.Helpers.Errors.Model;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
-    using Sky.Editor.Models;
     using Sky.Tests;
     using System;
-    using System.Linq;
     using System.Security.Claims;
-    using System.Text;
     using System.Text.Json;
     using System.Threading.Tasks;
 
@@ -451,7 +444,7 @@ namespace Sky.Tests.Controllers
             var updated1 = await Mediator.QueryAsync(
                 new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.IsNotNull(updated1.Content, "Content should not be null after first save");
-            Assert.IsTrue(updated1.Content.Contains("First save"), 
+            Assert.IsTrue(updated1.Content.Contains("First save"),
                 $"Expected content to contain 'First save', but got: {updated1.Content}");
 
             // Second save
@@ -554,7 +547,7 @@ namespace Sky.Tests.Controllers
             // Verify content unchanged when region not found
             var updated = await Mediator.QueryAsync(
                 new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
-            Assert.AreEqual(originalContent, updated.Content, 
+            Assert.AreEqual(originalContent, updated.Content,
                 "Content should remain unchanged when EditorId doesn't exist");
         }
 
@@ -583,9 +576,9 @@ namespace Sky.Tests.Controllers
             // Assert - Should return error for invalid/empty command
             Assert.IsNotNull(result);
             Assert.IsTrue(
-                result is BadRequestObjectResult || 
+                result is BadRequestObjectResult ||
                 (result is JsonResult jr && JsonDocument.Parse(
-                    JsonSerializer.Serialize(jr.Value)).RootElement.TryGetProperty("ServerSideSuccess", out var success) 
+                    JsonSerializer.Serialize(jr.Value)).RootElement.TryGetProperty("ServerSideSuccess", out var success)
                     && !success.GetBoolean()),
                 "Empty command should result in error");
         }
@@ -620,7 +613,7 @@ namespace Sky.Tests.Controllers
             var response = JsonDocument.Parse(JsonSerializer.Serialize(jsonResult.Value)).RootElement;
 
             // Verify response contains Model
-            Assert.IsTrue(response.TryGetProperty("Model", out var modelElement), 
+            Assert.IsTrue(response.TryGetProperty("Model", out var modelElement),
                 "Response should contain Model property");
             Assert.IsTrue(response.GetProperty("ServerSideSuccess").GetBoolean(),
                 "Save should be successful");

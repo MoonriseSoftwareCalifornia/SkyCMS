@@ -7,10 +7,6 @@
 
 namespace Sky.Editor.Services.EditorSettings
 {
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
@@ -20,6 +16,10 @@ namespace Sky.Editor.Services.EditorSettings
     using Microsoft.Extensions.DependencyInjection;
     using Sky.Cms.Services;
     using Sky.Editor.Models;
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     ///   Logic for managing settings in the application.
@@ -66,11 +66,11 @@ namespace Sky.Editor.Services.EditorSettings
             backupStorageConnectionString = this.configuration.GetConnectionString("BackupStorageConnectionString") ?? null;
             this.domainName = domainName ?? string.Empty;
             isMultiTenantEditor = this.configuration.GetValue<bool?>("MultiTenantEditor") ?? false;
-            
+
             if (isMultiTenantEditor)
             {
                 dynamicConfigurationProvider = serviceProvider.GetService<IDynamicConfigurationProvider>();
-                
+
                 if (dynamicConfigurationProvider == null)
                 {
                     throw new InvalidOperationException(
@@ -201,7 +201,7 @@ namespace Sky.Editor.Services.EditorSettings
         public Uri GetBlobAbsoluteUrl()
         {
             EnsureConfigLoaded();  // Ensure config is loaded BEFORE accessing properties
-            
+
             var htmlUtilities = new HtmlUtilities();
             var blobUrl = BlobPublicUrl;
             var publisherUrl = PublisherUrl;
@@ -218,7 +218,7 @@ namespace Sky.Editor.Services.EditorSettings
                     // If no publisher URL is configured, return a relative URI
                     return new Uri(blobUrl, UriKind.Relative);
                 }
-                
+
                 return new Uri(publisherUrl.TrimEnd('/') + "/" + blobUrl.TrimStart('/'));
             }
         }
@@ -329,34 +329,34 @@ namespace Sky.Editor.Services.EditorSettings
             {
                 // ✅ CORRECT PRIORITY: IConfiguration > Database > Default
                 // If IConfiguration has a value (even false), use it. Otherwise fall back to database, then default.
-                AllowSetup = configSource.AllowSetup 
-                    ?? dbSource?.AllowSetup 
+                AllowSetup = configSource.AllowSetup
+                    ?? dbSource?.AllowSetup
                     ?? false,
 
                 IsMultiTenantEditor = isMultiTenantEditor,
 
-                BlobPublicUrl = configSource.BlobPublicUrl 
-                    ?? dbSource?.BlobPublicUrl 
+                BlobPublicUrl = configSource.BlobPublicUrl
+                    ?? dbSource?.BlobPublicUrl
                     ?? "/",
 
-                CosmosRequiresAuthentication = configSource.CosmosRequiresAuthentication 
-                    ?? dbSource?.CosmosRequiresAuthentication 
+                CosmosRequiresAuthentication = configSource.CosmosRequiresAuthentication
+                    ?? dbSource?.CosmosRequiresAuthentication
                     ?? false,
 
-                MicrosoftAppId = configSource.MicrosoftAppId 
-                    ?? dbSource?.MicrosoftAppId 
+                MicrosoftAppId = configSource.MicrosoftAppId
+                    ?? dbSource?.MicrosoftAppId
                     ?? string.Empty,
 
-                PublisherUrl = configSource.PublisherUrl 
-                    ?? dbSource?.PublisherUrl 
+                PublisherUrl = configSource.PublisherUrl
+                    ?? dbSource?.PublisherUrl
                     ?? string.Empty,
 
-                StaticWebPages = configSource.StaticWebPages 
-                    ?? dbSource?.StaticWebPages 
+                StaticWebPages = configSource.StaticWebPages
+                    ?? dbSource?.StaticWebPages
                     ?? true,
 
-                AllowedFileTypes = configSource.AllowedFileTypes 
-                    ?? dbSource?.AllowedFileTypes 
+                AllowedFileTypes = configSource.AllowedFileTypes
+                    ?? dbSource?.AllowedFileTypes
                     ?? ".js,.css,.htm,.html,.mov,.webm,.avi,.mp4,.mpeg,.ts,.svg,.json"
             };
         }
@@ -434,7 +434,7 @@ namespace Sky.Editor.Services.EditorSettings
         private bool? GetSettingValueAsBool(System.Collections.Generic.List<Setting> settings, string group, string name)
         {
             var value = GetSettingValue(settings, group, name);
-            
+
             if (string.IsNullOrEmpty(value))
             {
                 return null;

@@ -7,14 +7,14 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
+    using System;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for EditorController reserved paths management.
@@ -187,7 +187,7 @@ namespace Sky.Tests.Controllers
             var viewResult = (ViewResult)result;
             Assert.IsNotNull(viewResult.Model);
             Assert.IsInstanceOfType(viewResult.Model, typeof(ReservedPath));
-            
+
             Assert.AreEqual("Create a Reserved Path", controller.ViewData["Title"]);
         }
 

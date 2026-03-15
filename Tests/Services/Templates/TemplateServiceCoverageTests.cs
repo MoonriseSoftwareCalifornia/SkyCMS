@@ -5,12 +5,12 @@
 
 namespace Sky.Tests.Services.Templates
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Additional tests for TemplateService to increase code coverage.
@@ -296,7 +296,7 @@ namespace Sky.Tests.Services.Templates
         {
             // Arrange
             var original = await Db.Templates.FirstAsync();
-            
+
             var clone = new Template
             {
                 Id = Guid.NewGuid(),

@@ -7,11 +7,6 @@
 
 namespace Sky.Tests.Services.Redirects
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
@@ -22,6 +17,11 @@ namespace Sky.Tests.Services.Redirects
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.Slugs;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for the <see cref="RedirectService"/> class.

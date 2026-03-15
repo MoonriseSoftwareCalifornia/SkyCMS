@@ -7,10 +7,6 @@
 
 namespace Sky.Tests.Services.CDN
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
@@ -19,6 +15,10 @@ namespace Sky.Tests.Services.CDN
     using Moq;
     using Newtonsoft.Json;
     using Sky.Editor.Services.CDN;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="CdnService"/> class.
@@ -254,14 +254,14 @@ namespace Sky.Tests.Services.CDN
 
             var settings = new List<CdnSetting>
             {
-                new CdnSetting 
-                { 
-                    CdnProvider = CdnProviderEnum.Cloudflare, 
-                    Value = JsonConvert.SerializeObject(new CloudflareCdnConfig 
-                    { 
-                        ApiToken = "test-token", 
-                        ZoneId = "test-zone" 
-                    }) 
+                new CdnSetting
+                {
+                    CdnProvider = CdnProviderEnum.Cloudflare,
+                    Value = JsonConvert.SerializeObject(new CloudflareCdnConfig
+                    {
+                        ApiToken = "test-token",
+                        ZoneId = "test-zone"
+                    })
                 }
             };
 

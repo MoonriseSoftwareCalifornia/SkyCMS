@@ -7,12 +7,12 @@
 
 namespace Sky.Tests.Services.CDN
 {
-    using System;
-    using System.Collections.Generic;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Newtonsoft.Json;
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
+    using System;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Unit tests for <see cref="CdnViewModel"/> initialization and configuration deserialization.

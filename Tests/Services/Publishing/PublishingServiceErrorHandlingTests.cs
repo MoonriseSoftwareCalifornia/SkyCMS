@@ -9,15 +9,6 @@
 
 namespace Sky.Tests.Services.Publishing
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Net;
-    using System.Net.Http;
-    using System.Reflection;
-    using System.Security.Claims;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Cms.Common;
@@ -36,6 +27,15 @@ namespace Sky.Tests.Services.Publishing
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Net;
+    using System.Net.Http;
+    using System.Reflection;
+    using System.Security.Claims;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Error handling and resilience tests for <see cref="PublishingService"/>.

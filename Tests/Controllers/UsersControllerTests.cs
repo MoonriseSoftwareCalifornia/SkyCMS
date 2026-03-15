@@ -14,7 +14,6 @@ namespace Sky.Tests.Controllers
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.Routing;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -723,7 +722,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var userRoles = await UserManager.GetRolesAsync(admin);
             var adminsAfter = await UserManager.GetUsersInRoleAsync("Administrators");
-            
+
             // Since there's still another administrator (testuser), this one can be removed
             // But if we tried to remove the last admin, they should remain in the role
             Assert.IsTrue(adminsAfter.Count >= 1, "Should have at least one administrator remaining");
@@ -1082,12 +1081,12 @@ namespace Sky.Tests.Controllers
             var model = viewResult.Model as List<UserIndexViewModel>;
             var lockedUser = model.FirstOrDefault(u => u.EmailAddress == "locked@example.com");
             Assert.IsNotNull(lockedUser);
-            
+
             // The logic in the controller checks if LockoutEnd < DateTimeOffset.UtcNow
             // which means the lockout has ENDED. If LockoutEnd is in the future, 
             // LockoutEnd < UtcNow is false, so IsLockedOut should be false.
             // The controller logic appears inverted - a future LockoutEnd means still locked
-            Assert.IsFalse(lockedUser.IsLockedOut, 
+            Assert.IsFalse(lockedUser.IsLockedOut,
                 "The controller logic shows IsLockedOut is false when LockoutEnd is in the future");
         }
 

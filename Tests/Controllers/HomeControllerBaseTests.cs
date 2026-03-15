@@ -10,7 +10,6 @@ namespace Sky.Tests.Controllers
     using Cosmos.BlobService;
     using Cosmos.Common;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
@@ -23,8 +22,6 @@ namespace Sky.Tests.Controllers
     using Moq;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>

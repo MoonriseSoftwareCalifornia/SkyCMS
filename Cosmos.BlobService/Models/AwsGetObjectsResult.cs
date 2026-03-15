@@ -7,8 +7,8 @@
 
 namespace Cosmos.BlobService.Models
 {
-    using System.Collections.Generic;
     using Amazon.S3.Model;
+    using System.Collections.Generic;
 
     /// <summary>
     /// AWS Get Objects Result.

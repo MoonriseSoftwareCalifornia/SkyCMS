@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 3: Publisher configuration.
@@ -35,8 +35,8 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <param name="setupCheckService">Setup check service.</param>
         /// <param name="logger">Logger.</param>
         public Step3_Publisher(
-            ISetupService setupService, 
-            ILayoutImportService layoutImportService, 
+            ISetupService setupService,
+            ILayoutImportService layoutImportService,
             ISetupCheckService setupCheckService,
             ILogger<Step3_Publisher> logger)
         {
@@ -175,7 +175,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect to next step.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            logger.LogInformation("Step3_Publisher POST - SetupId: {SetupId}, PublisherUrl: {Url}, WebsiteTitle: {Title}, SiteDesignId: {DesignId}", 
+            logger.LogInformation("Step3_Publisher POST - SetupId: {SetupId}, PublisherUrl: {Url}, WebsiteTitle: {Title}, SiteDesignId: {DesignId}",
                 SetupId, PublisherUrl, WebsiteTitle, SiteDesignId);
 
             // Check if setup has been completed
@@ -195,7 +195,7 @@ namespace Sky.Editor.Areas.Setup.Pages
                     {
                         foreach (var error in state.Errors)
                         {
-                            logger.LogError("Step3_Publisher POST - Validation error for {Field}: {Error}", 
+                            logger.LogError("Step3_Publisher POST - Validation error for {Field}: {Error}",
                                 key, error.ErrorMessage ?? error.Exception?.Message);
                         }
                     }
@@ -208,37 +208,37 @@ namespace Sky.Editor.Areas.Setup.Pages
             try
             {
                 var config = await setupService.GetCurrentSetupAsync();
-                
+
                 // Use config values if pre-configured, otherwise use form values
-                var publisherUrlToSave = config.PublisherPreConfigured 
-                    ? config.PublisherUrl 
+                var publisherUrlToSave = config.PublisherPreConfigured
+                    ? config.PublisherUrl
                     : PublisherUrl?.TrimEnd('/');
-                    
-                var cosmosRequiresAuthToSave = config.CosmosRequiresAuthenticationPreConfigured 
-                    ? config.CosmosRequiresAuthentication 
+
+                var cosmosRequiresAuthToSave = config.CosmosRequiresAuthenticationPreConfigured
+                    ? config.CosmosRequiresAuthentication
                     : CosmosRequiresAuthentication;
-                    
-                var allowedFileTypesToSave = config.AllowedFileTypesPreConfigured 
-                    ? config.AllowedFileTypes 
+
+                var allowedFileTypesToSave = config.AllowedFileTypesPreConfigured
+                    ? config.AllowedFileTypes
                     : AllowedFileTypes;
-                    
-                var microsoftAppIdToSave = config.MicrosoftAppIdPreConfigured 
-                    ? config.MicrosoftAppId 
+
+                var microsoftAppIdToSave = config.MicrosoftAppIdPreConfigured
+                    ? config.MicrosoftAppId
                     : MicrosoftAppId;
 
                 logger.LogInformation("Step3_Publisher POST - Saving publisher configuration");
                 await setupService.UpdatePublisherConfigAsync(
-                    SetupId, 
-                    publisherUrlToSave, 
-                    true, 
-                    cosmosRequiresAuthToSave, 
+                    SetupId,
+                    publisherUrlToSave,
+                    true,
+                    cosmosRequiresAuthToSave,
                     allowedFileTypesToSave,
                     microsoftAppIdToSave,
                     SiteDesignId,
                     WebsiteTitle);
-                
+
                 await setupService.UpdateStepAsync(SetupId, 3);
-                
+
                 logger.LogInformation("Step3_Publisher POST - Successfully completed Step3, redirecting to Step4");
                 return RedirectToPage("./Step4_Email");
             }

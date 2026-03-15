@@ -1,16 +1,12 @@
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
-using Cosmos.Common.Models;
 using Cosmos.Common.Services.BlogPublishing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Sky.Editor.Services.Publishing;
-using System;
-using System.Threading.Tasks;
 
 namespace Sky.Tests.Services.Publishing
 {
@@ -29,7 +25,7 @@ namespace Sky.Tests.Services.Publishing
         {
             InitializeTestContext(seedLayout: true);
             mockBlogStreamService = new Mock<IBlogStreamRenderingService>();
-            
+
             // Configure default mock behavior
             mockBlogStreamService
                 .Setup(s => s.GenerateBlogStreamWrapperAsync(It.IsAny<Article>(), It.IsAny<string>()))

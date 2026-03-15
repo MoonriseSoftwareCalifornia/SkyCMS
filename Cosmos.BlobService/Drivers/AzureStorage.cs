@@ -9,13 +9,6 @@
 
 namespace Cosmos.BlobService.Drivers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Azure;
     using Azure.Identity;
     using Azure.Storage.Blobs;
@@ -23,6 +16,13 @@ namespace Cosmos.BlobService.Drivers
     using Azure.Storage.Blobs.Specialized;
     using Cosmos.BlobService.Config;
     using Cosmos.BlobService.Models;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     ///     Azure blob storage driver.
@@ -156,7 +156,7 @@ namespace Cosmos.BlobService.Drivers
                 // If it doesn't exist, is the wrong type, or is sealed, create/recreate it
                 var blobExists = await blobClient.ExistsAsync();
                 bool needsRecreation = false;
-                
+
                 if (blobExists)
                 {
                     try
@@ -182,13 +182,13 @@ namespace Cosmos.BlobService.Drivers
                         // If we can't get properties, recreate to be safe
                         needsRecreation = true;
                     }
-                    
+
                     if (needsRecreation)
                     {
                         // Wrong blob type or sealed - delete it and create a new append blob
                         await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
                         await DeleteAppendBlobWithRetryAsync(appendClient);
-                        
+
                         var headers = new BlobHttpHeaders
                         {
                             ContentType = Utilities.GetContentType(fileMetaData),
@@ -377,7 +377,7 @@ namespace Cosmos.BlobService.Drivers
         public async Task DeleteIfExistsAsync(string path)
         {
             var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
-            
+
             // Try to break any existing lease before deletion
             try
             {
@@ -399,7 +399,7 @@ namespace Cosmos.BlobService.Drivers
             {
                 // Ignore errors during lease breaking
             }
-            
+
             await containerClient.DeleteBlobIfExistsAsync(path, DeleteSnapshotsOption.IncludeSnapshots);
             var extension = Path.GetExtension(path);
             if (Utilities.ImageThumbnailTypes.Contains(extension))

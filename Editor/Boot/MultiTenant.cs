@@ -7,9 +7,6 @@
 
 namespace Sky.Editor.Boot
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Azure.Identity;
     using Cosmos.Common.Data;
@@ -20,6 +17,9 @@ namespace Sky.Editor.Boot
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Multi-tenant configuration for the application.
@@ -91,7 +91,7 @@ namespace Sky.Editor.Boot
                 {
                     // Provide helpful error message for common scenarios
                     var errorMessage = "Unable to determine tenant domain for ApplicationDbContext resolution. ";
-                    
+
                     if (httpContextAccessor.HttpContext == null)
                     {
                         errorMessage += "No HTTP context is available (this is expected for background jobs like Hangfire). " +
@@ -103,7 +103,7 @@ namespace Sky.Editor.Boot
                         errorMessage += "HTTP context is available but tenant domain could not be determined from headers or host. " +
                                       "Ensure DomainMiddleware is properly configured and running before this request.";
                     }
-                    
+
                     contextLogger.LogError(errorMessage);
                     throw new InvalidOperationException(errorMessage);
                 }
@@ -155,18 +155,18 @@ namespace Sky.Editor.Boot
             try
             {
                 using var context = new ApplicationDbContext(connectionString);
-                
+
                 // Replace: if (!context.Database.CanConnect())
                 if (!await CanConnectToCosmosAsync(context, logger))
                 {
                     logger.LogWarning("Cannot connect to config database");
                     return;
                 }
-                
+
                 // Cosmos DB automatically creates containers on first access
                 // No explicit schema creation needed like SQL databases
                 await context.Database.EnsureCreatedAsync();
-                
+
                 logger.LogInformation("Config database schema verified");
             }
             catch (NotSupportedException ex)
@@ -190,7 +190,7 @@ namespace Sky.Editor.Boot
             try
             {
                 using var configDbContext = new DynamicConfigDbContext(CosmosDbOptionsBuilder.GetDbOptions<DynamicConfigDbContext>(configConnectionString));
-                
+
                 // Get all tenant configurations from the config database
                 var tenantConfigs = configDbContext.Connections.ToList();
 
@@ -206,12 +206,12 @@ namespace Sky.Editor.Boot
                 {
                     try
                     {
-                        logger.LogInformation("Checking schema for tenant: {TenantName} (ID: {TenantId})", 
+                        logger.LogInformation("Checking schema for tenant: {TenantName} (ID: {TenantId})",
                             tenantConfig.DomainNames, tenantConfig.Id);
-                        
+
                         // Get the tenant's database connection string
                         var tenantConnectionString = tenantConfig.DbConn;
-                        
+
                         if (string.IsNullOrEmpty(tenantConnectionString))
                         {
                             logger.LogWarning("Tenant {TenantName} has no connection string - skipping", tenantConfig.DomainNames);
@@ -220,14 +220,14 @@ namespace Sky.Editor.Boot
 
                         using var tenantDbContext = new ApplicationDbContext(
                             CosmosDbOptionsBuilder.GetDbOptions<ApplicationDbContext>(tenantConnectionString));
-                        
+
                         // Replace: if (!tenantDbContext.Database.CanConnect())
                         if (!await CanConnectToCosmosAsync(tenantDbContext, logger))
                         {
                             logger.LogWarning($"Cannot connect to tenant database: {tenantConfig.DomainNames}");
                             continue;
                         }
-                        
+
                         await tenantDbContext.Database.EnsureCreatedAsync();
                         logger.LogInformation($"Tenant schema verified for {tenantConfig.DomainNames}");
                     }

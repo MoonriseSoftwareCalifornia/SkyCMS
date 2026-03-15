@@ -5,10 +5,6 @@
 
 namespace Sky.Editor.Features.Articles.CreateHomePage
 {
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
@@ -17,6 +13,10 @@ namespace Sky.Editor.Features.Articles.CreateHomePage
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Slugs;
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for CreateHomePageCommand. Reassigns the home page and republishes both old and new.
