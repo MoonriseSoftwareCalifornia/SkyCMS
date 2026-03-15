@@ -29,7 +29,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Unit tests for the <see cref="ContactsController"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class ContactsControllerTests : SkyCmsTestBase
     {

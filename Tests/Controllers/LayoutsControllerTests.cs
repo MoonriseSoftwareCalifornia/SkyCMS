@@ -28,7 +28,6 @@ namespace Sky.Tests.Controllers
     /// Tests for LayoutsController.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class LayoutsControllerTests : SkyCmsTestBase
     {
         private LayoutsController controller = null!;

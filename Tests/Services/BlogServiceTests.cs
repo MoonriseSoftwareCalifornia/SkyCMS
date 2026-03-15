@@ -18,7 +18,6 @@ namespace Sky.Tests.Services
     /// Tests blog post creation, listing, pagination, categories, and RSS feed generation.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class BlogServiceTests : SkyCmsTestBase
     {
         [TestInitialize]

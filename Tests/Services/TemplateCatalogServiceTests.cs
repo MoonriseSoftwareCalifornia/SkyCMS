@@ -22,54 +22,35 @@ namespace Sky.Tests.Services
     /// Tests template CRUD, versioning, seeding, and application to articles.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class TemplateCatalogServiceTests : SkyCmsTestBase
     {
         private Mock<Microsoft.AspNetCore.Hosting.IWebHostEnvironment> environmentMock;
         private Mock<ILogger<TemplateService>> loggerMock;
-        private Mock<IDynamicConfigurationProvider> dynamicConfigProviderMock; // ✅ Add this
+        private Mock<IDynamicConfigurationProvider> dynamicConfigProviderMock;
         private TemplateService templateService;
+        private Guid currentTenantId;
 
         [TestInitialize]
         public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
+            currentTenantId = Guid.NewGuid();
 
             environmentMock = new Mock<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>();
             environmentMock.Setup(e => e.ContentRootPath).Returns(AppDomain.CurrentDomain.BaseDirectory);
             
             loggerMock = new Mock<ILogger<TemplateService>>();
             
-            // Create mock for IDynamicConfigurationProvider
             dynamicConfigProviderMock = new Mock<IDynamicConfigurationProvider>();
+            dynamicConfigProviderMock
+                .Setup(p => p.GetCurrentTenantIdAsync())
+                .ReturnsAsync(currentTenantId);
 
-            // For single-tenant tests, pass null for the dynamic config provider
-            // This enables single-tenant mode which uses Guid.Empty as the tenant sentinel
             templateService = new TemplateService(
                 environmentMock.Object,
                 loggerMock.Object,
                 Db,
-                null); // Single-tenant mode
-            
-            // Clear the static _seededTenants cache between tests to avoid cross-test pollution
-            ClearSeededTenantsCache();
-        }
-        
-        /// <summary>
-        /// Clears the static SeededTenants cache in TemplateService using reflection.
-        /// This ensures tests don't affect each other via shared static state.
-        /// </summary>
-        private void ClearSeededTenantsCache()
-        {
-            var seededTenantsField = typeof(TemplateService).GetField(
-                "SeededTenants", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            
-            if (seededTenantsField != null)
-            {
-                var dictionary = seededTenantsField.GetValue(null) as System.Collections.Concurrent.ConcurrentDictionary<Guid, bool>;
-                dictionary?.Clear();
-            }
+                dynamicConfigProviderMock.Object);
         }
 
         #region Template Retrieval Tests

@@ -18,7 +18,6 @@ namespace Sky.Tests.Services
     /// Tests layout CRUD, versioning, default layout management, and template relationships.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class LayoutManagementTests : SkyCmsTestBase
     {
         [TestInitialize]
