@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Sky.Tests.Services
 {
     [TestClass]
-    [DoNotParallelize]
     public class TitleChangeServiceTests : SkyCmsTestBase
     {
         [TestInitialize]
