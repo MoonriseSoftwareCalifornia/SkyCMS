@@ -35,18 +35,14 @@ namespace Sky.Tests.DynamicConfig
     [TestClass]
     [TestCategory("MultiTenantConfiguration")]
     [TestCategory("IntegrationTest")]
-    [DoNotParallelize]
     public class DynamicConfigurationProviderConfigTests
     {
         private static string TempFilePath(string name) => Path.Combine(Path.GetTempPath(), name);
+        private static string GetTenantDbFilePath(string prefix) => TempFilePath($"{prefix}-{Guid.NewGuid():N}.db");
 
         private static string dns1 = "acme.com";
         private static string dns2 = "perk.net";
         private static string dns3 = "cats.org";
-
-        private static string db1 = "acme.db";
-        private static string db2 = "perk.db";
-        private static string db3 = "cats.db";
 
         private static string storage1 = "DefaultEndpointsProtocol=http;\r\nAccountName=account1;\r\nAccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;\r\nBlobEndpoint=http://127.0.0.1:10000/account1;";
         private static string storage2 = "DefaultEndpointsProtocol=http;\r\nAccountName=account2;\r\nAccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;\r\nBlobEndpoint=http://127.0.0.1:10000/account2;";
@@ -88,9 +84,9 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
-            var tenantB = TempFilePath(db2);
-            var tenantC = TempFilePath(db3);
+            var tenantA = GetTenantDbFilePath("acme");
+            var tenantB = GetTenantDbFilePath("perk");
+            var tenantC = GetTenantDbFilePath("cats");
 
             // remove files if present
             foreach (var f in new[] { configDb, tenantA, tenantB, tenantC })
@@ -150,7 +146,7 @@ namespace Sky.Tests.DynamicConfig
             Assert.AreEqual(connA.StorageConn, storage1);
 
             // cleanup
-            foreach (var f in new[] { configDb, tenantA, tenantB })
+            foreach (var f in new[] { configDb, tenantA, tenantB, tenantC })
             {
                 try { if (File.Exists(f)) File.Delete(f); } catch { }
             }
@@ -161,7 +157,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
+            var tenantA = GetTenantDbFilePath("acme");
 
             foreach (var f in new[] { configDb, tenantA })
             {
@@ -210,7 +206,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
+            var tenantA = GetTenantDbFilePath("acme");
 
             foreach (var f in new[] { configDb, tenantA })
             {
@@ -260,7 +256,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
+            var tenantA = GetTenantDbFilePath("acme");
 
             foreach (var f in new[] { configDb, tenantA })
             {
@@ -310,8 +306,8 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
-            var tenantB = TempFilePath(db2);
+            var tenantA = GetTenantDbFilePath("acme");
+            var tenantB = GetTenantDbFilePath("perk");
 
             foreach (var f in new[] { configDb, tenantA, tenantB })
             {
@@ -375,7 +371,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
+            var tenantA = GetTenantDbFilePath("acme");
 
             foreach (var f in new[] { configDb, tenantA })
             {
@@ -481,7 +477,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
+            var tenantA = GetTenantDbFilePath("acme");
 
             foreach (var f in new[] { configDb, tenantA })
             {
@@ -532,7 +528,7 @@ namespace Sky.Tests.DynamicConfig
         {
             // Arrange
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
+            var tenantA = GetTenantDbFilePath("acme");
 
             foreach (var f in new[] { configDb, tenantA })
             {
