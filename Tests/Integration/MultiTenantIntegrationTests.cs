@@ -19,7 +19,6 @@ namespace Sky.Tests.Integration
     /// Critical for ensuring proper multi-tenant security.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class MultiTenantIntegrationTests : SkyCmsTestBase
     {
         [TestInitialize]

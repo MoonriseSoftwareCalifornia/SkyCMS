@@ -48,7 +48,6 @@ namespace Sky.Tests.Services
     /// Unit tests for <see cref="TenantArticleLogicFactory"/> to ensure proper
     /// tenant-specific ArticleEditLogic instantiation in multi-tenant scenarios.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class TenantArticleLogicFactoryTests
     {
