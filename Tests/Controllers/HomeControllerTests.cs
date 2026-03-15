@@ -35,7 +35,6 @@ namespace Sky.Tests.Controllers
     /// Tests for HomeController.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class HomeControllerTests : SkyCmsTestBase
     {
         private HomeController homeController;

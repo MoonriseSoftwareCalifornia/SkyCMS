@@ -30,7 +30,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Unit tests for the <see cref="HomeControllerBase"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class HomeControllerBaseTests : SkyCmsTestBase
     {
