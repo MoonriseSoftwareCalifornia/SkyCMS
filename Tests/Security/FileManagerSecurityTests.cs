@@ -32,7 +32,6 @@ namespace Sky.Tests.Security
     /// Validates that file management operations enforce tenant boundaries.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class FileManagerSecurityTests : SkyCmsTestBase
     {
         private const string Tenant1Domain = "tenant1.example.com";
@@ -52,26 +51,8 @@ namespace Sky.Tests.Security
         [TestMethod]
         public void FileManagementPolicy_RequiresAuthentication()
         {
-            // Arrange - Create authorization service
-            var services = new ServiceCollection();
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("FileManagement", policy =>
-                {
-                    policy.RequireAuthenticatedUser();
-                    policy.RequireRole("Administrators", "Editors", "Authors", "Team Members");
-                    policy.RequireAssertion(context =>
-                    {
-                        var cookieDomainClaim = context.User.FindFirst("CookieDomain");
-                        return cookieDomainClaim != null;
-                    });
-                });
-            });
-            services.AddLogging();
-            services.AddOptions();
-            var serviceProvider = services.BuildServiceProvider();
-
-            var authService = serviceProvider.GetRequiredService<IAuthorizationService>();
+            // Arrange
+            var authService = CreateFileManagementAuthorizationService();
             
             // Act - Test with unauthenticated user
             var unauthenticatedUser = new ClaimsPrincipal(new ClaimsIdentity()); // No claims
@@ -91,24 +72,7 @@ namespace Sky.Tests.Security
         public void FileManagementPolicy_RequiresCorrectRole()
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("FileManagement", policy =>
-                {
-                    policy.RequireAuthenticatedUser();
-                    policy.RequireRole("Administrators", "Editors", "Authors", "Team Members");
-                    policy.RequireAssertion(context =>
-                    {
-                        var cookieDomainClaim = context.User.FindFirst("CookieDomain");
-                        return cookieDomainClaim != null;
-                    });
-                });
-            });
-            services.AddLogging();
-            services.AddOptions();
-            var serviceProvider = services.BuildServiceProvider();
-            var authService = serviceProvider.GetRequiredService<IAuthorizationService>();
+            var authService = CreateFileManagementAuthorizationService();
 
             // Create authenticated user WITHOUT correct role
             var claims = new[]
@@ -134,24 +98,7 @@ namespace Sky.Tests.Security
         public void FileManagementPolicy_RequiresCookieDomainClaim()
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("FileManagement", policy =>
-                {
-                    policy.RequireAuthenticatedUser();
-                    policy.RequireRole("Administrators", "Editors", "Authors", "Team Members");
-                    policy.RequireAssertion(context =>
-                    {
-                        var cookieDomainClaim = context.User.FindFirst("CookieDomain");
-                        return cookieDomainClaim != null;
-                    });
-                });
-            });
-            services.AddLogging();
-            services.AddOptions();
-            var serviceProvider = services.BuildServiceProvider();
-            var authService = serviceProvider.GetRequiredService<IAuthorizationService>();
+            var authService = CreateFileManagementAuthorizationService();
 
             // Create user with correct role but NO CookieDomain claim
             var claims = new[]
@@ -177,24 +124,7 @@ namespace Sky.Tests.Security
         public void FileManagementPolicy_AllowsAuthorizedUsers()
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("FileManagement", policy =>
-                {
-                    policy.RequireAuthenticatedUser();
-                    policy.RequireRole("Administrators", "Editors", "Authors", "Team Members");
-                    policy.RequireAssertion(context =>
-                    {
-                        var cookieDomainClaim = context.User.FindFirst("CookieDomain");
-                        return cookieDomainClaim != null;
-                    });
-                });
-            });
-            services.AddLogging();
-            services.AddOptions();
-            var serviceProvider = services.BuildServiceProvider();
-            var authService = serviceProvider.GetRequiredService<IAuthorizationService>();
+            var authService = CreateFileManagementAuthorizationService();
 
             // Create properly authorized user
             var claims = new[]
@@ -216,6 +146,23 @@ namespace Sky.Tests.Security
         #endregion
 
         #region StorageContext Tenant Isolation Tests
+
+        private static IAuthorizationService CreateFileManagementAuthorizationService()
+        {
+            var services = new ServiceCollection();
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("FileManagement", policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireRole("Administrators", "Editors", "Authors", "Team Members");
+                    policy.RequireAssertion(context => context.User.FindFirst("CookieDomain") != null);
+                });
+            });
+            services.AddLogging();
+            services.AddOptions();
+            return services.BuildServiceProvider().GetRequiredService<IAuthorizationService>();
+        }
 
         /// <summary>
         /// CRITICAL: Tests that StorageContext resolves correct tenant storage connection.

@@ -23,7 +23,6 @@ namespace Sky.Tests.DynamicConfig
     /// Critical for multi-tenant architecture and data isolation.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class DynamicConfigurationProviderTests : SkyCmsTestBase
     {
         [TestInitialize]

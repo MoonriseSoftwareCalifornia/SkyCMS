@@ -21,7 +21,6 @@ namespace Sky.Tests.Middleware
     /// Tests domain validation, tenant resolution, and security edge cases.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class DomainMiddlewareSecurityTests : SkyCmsTestBase
     {
         private Mock<RequestDelegate> mockNext;

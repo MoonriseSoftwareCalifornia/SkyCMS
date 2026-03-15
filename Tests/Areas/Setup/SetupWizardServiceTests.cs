@@ -44,7 +44,6 @@ namespace Sky.Tests.Areas.Setup
     /// <summary>
     /// Comprehensive unit tests for the Setup Wizard service and pages.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class SetupWizardServiceTests : SkyCmsTestBase
     {
