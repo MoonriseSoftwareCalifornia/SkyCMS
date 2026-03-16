@@ -20,6 +20,8 @@ namespace Cosmos.BlobService
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -100,7 +102,7 @@ namespace Cosmos.BlobService
         /// <returns><see cref="bool"/> indicating existence.</returns>
         public async Task<bool> BlobExistsAsync(string path)
         {
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             return await driver.BlobExistsAsync(path).ConfigureAwait(false);
         }
 
@@ -123,7 +125,7 @@ namespace Cosmos.BlobService
         public async Task DeleteFolderAsync(string path)
         {
             // Ensure leading slash is removed.
-            var driver = GetPrimaryDriver();
+            var driver = await GetPrimaryDriverAsync().ConfigureAwait(false);
             await driver.DeleteFolderAsync(PathUtilities.NormalizePath(path)).ConfigureAwait(false);
         }
 
@@ -137,7 +139,7 @@ namespace Cosmos.BlobService
             // Ensure leading slash is removed.
             path = PathUtilities.NormalizePath(path);
 
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             await driver.DeleteIfExistsAsync(path).ConfigureAwait(false);
         }
 
@@ -161,7 +163,7 @@ namespace Cosmos.BlobService
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task EnableAzureStaticWebsite()
         {
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             if (driver != null && driver.GetType() == typeof(AzureStorage))
             {
                 var azureStorage = (AzureStorage)driver;
@@ -175,7 +177,7 @@ namespace Cosmos.BlobService
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task DisableAzureStaticWebsite()
         {
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             if (driver != null && driver.GetType() == typeof(AzureStorage))
             {
                 var azureStorage = (AzureStorage)driver;
@@ -190,7 +192,7 @@ namespace Cosmos.BlobService
         /// <returns>List of files found including full path.</returns>
         public async Task<List<string>> GetFilesAsync(string path)
         {
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             path = PathUtilities.NormalizePath(path);
             var blobNames = await driver.GetBlobNamesByPath(path).ConfigureAwait(false);
             return blobNames.Where(w => !w.EndsWith(StorageConstants.FolderMarkerFile)).ToList();
@@ -206,7 +208,7 @@ namespace Cosmos.BlobService
             // Ensure leading slash is removed.
             path = PathUtilities.NormalizePath(path);
 
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
 
             // Check if blob exists first to avoid exceptions
             if (!await driver.BlobExistsAsync(path).ConfigureAwait(false))
@@ -262,7 +264,7 @@ namespace Cosmos.BlobService
             path = PathUtilities.NormalizePath(path);
 
             // Get the primary driver based on the configuration.
-            var driver = GetPrimaryDriver();
+            var driver = await GetPrimaryDriverAsync().ConfigureAwait(false);
             return await driver.GetStreamAsync(path).ConfigureAwait(false);
         }
 
@@ -274,7 +276,7 @@ namespace Cosmos.BlobService
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task MoveFileAsync(string sourceFile, string destinationFile)
         {
-            var driver = GetPrimaryDriver();
+            var driver = await GetPrimaryDriverAsync().ConfigureAwait(false);
             await driver.MoveFileAsync(sourceFile, destinationFile).ConfigureAwait(false);
         }
 
@@ -286,7 +288,7 @@ namespace Cosmos.BlobService
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task MoveFolderAsync(string sourceFolder, string destinationFolder)
         {
-            var driver = GetPrimaryDriver();
+            var driver = await GetPrimaryDriverAsync().ConfigureAwait(false);
             await driver.MoveFolderAsync(sourceFolder, destinationFolder).ConfigureAwait(false);
         }
 
@@ -302,7 +304,7 @@ namespace Cosmos.BlobService
             var mark = DateTimeOffset.UtcNow;
 
             // Gets the primary driver based on the configuration.
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
 
             await driver.AppendBlobAsync(stream.ToArray(), fileMetaData, mark, mode).ConfigureAwait(false);
         }
@@ -315,7 +317,7 @@ namespace Cosmos.BlobService
         /// <remarks>Creates the folder if it does not already exist.</remarks>
         public async Task<FileManagerEntry> CreateFolder(string path)
         {
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             var folderMarkerPath = path + "/" + StorageConstants.FolderMarkerFile;
 
             // Check if folder already exists using proper async/await
@@ -349,7 +351,7 @@ namespace Cosmos.BlobService
         /// <returns>Returns metadata for the objects as a <see cref="FileManagerEntry"/> <see cref="List{T}"/>.</returns>
         public async Task<List<FileManagerEntry>> GetFilesAndDirectories(string path)
         {
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
 
             path = PathUtilities.NormalizePath(path);
 
@@ -382,23 +384,21 @@ namespace Cosmos.BlobService
 
             if (string.IsNullOrEmpty(target))
             {
-                throw new Exception("Cannot move the root folder.");
+                throw new StorageException("Cannot move the root folder.");
             }
 
             // Get the blob storage drivers.
-            var driver = this.GetPrimaryDriver();
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             var blobNames = await driver.GetBlobNamesByPath(target).ConfigureAwait(false);
 
             // Work through the list here.
             foreach (var srcBlobName in blobNames)
             {
-                var tasks = new List<Task>();
-
                 var destBlobName = srcBlobName.Replace(target, destination);
 
                 if (await driver.BlobExistsAsync(destBlobName).ConfigureAwait(false))
                 {
-                    throw new Exception($"Could not copy {srcBlobName} as {destBlobName} already exists.");
+                    throw new StorageException($"Could not copy {srcBlobName} as {destBlobName} already exists.");
                 }
 
                 await driver.CopyBlobAsync(srcBlobName, destBlobName).ConfigureAwait(false);
@@ -419,7 +419,7 @@ namespace Cosmos.BlobService
                 {
                     // The copy was NOT successfull, delete any copied files and halt, throw an error.
                     await driver.DeleteIfExistsAsync(destBlobName).ConfigureAwait(false);
-                    throw new Exception($"Could not copy: {srcBlobName} to {destBlobName}");
+                    throw new StorageException($"Could not copy: {srcBlobName} to {destBlobName}");
                 }
             }
         }
@@ -427,15 +427,14 @@ namespace Cosmos.BlobService
         /// <summary>
         /// Gets the primary driver based on the configuration.
         /// </summary>
-        /// <returns>ICosmosStorage.</returns>
-        private ICosmosStorage GetPrimaryDriver()
+        /// <returns>Storage driver.</returns>
+        private async Task<ICosmosStorage> GetPrimaryDriverAsync()
         {
             if (this.isMultiTenant == true)
             {
-                var connectionString = this.dynamicConfigurationProvider
+                var connectionString = await this.dynamicConfigurationProvider
                     .GetStorageConnectionStringAsync()
-                    .GetAwaiter()
-                    .GetResult();
+                    .ConfigureAwait(false);
 
                 if (string.IsNullOrWhiteSpace(connectionString))
                 {
@@ -467,8 +466,7 @@ namespace Cosmos.BlobService
                 throw new InvalidConnectionStringException("Connection string cannot be null or empty.");
             }
 
-            // Create a cache key based on the connection string hash to avoid storing sensitive data as key
-            var cacheKey = StorageConstants.DriverCacheKeyPrefix + connectionString.GetHashCode();
+            var cacheKey = CreateDriverCacheKey(connectionString);
 
             // Try to get the driver from cache
             if (!memoryCache.TryGetValue(cacheKey, out ICosmosStorage driver))
@@ -485,6 +483,14 @@ namespace Cosmos.BlobService
             }
 
             return driver;
+        }
+
+        private string CreateDriverCacheKey(string connectionString)
+        {
+            var bytes = Encoding.UTF8.GetBytes(connectionString);
+            var hashBytes = SHA256.HashData(bytes);
+            var hash = Convert.ToHexString(hashBytes);
+            return StorageConstants.DriverCacheKeyPrefix + hash;
         }
 
         /// <summary>

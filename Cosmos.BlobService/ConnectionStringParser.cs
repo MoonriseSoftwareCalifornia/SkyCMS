@@ -67,14 +67,9 @@ namespace Cosmos.BlobService
                 };
             }
 
-            var parts = connectionString.Split(';');
-            var dict = parts
-                .Where(w => !string.IsNullOrEmpty(w))
-                .Select(part => part.Split('='))
-                .Where(split => split.Length == 2)
-                .ToDictionary(sp => sp[0], sp => sp[1]);
+            var dict = ParseConnectionString(connectionString);
 
-            if (!dict.ContainsKey("AccountName"))
+            if (!dict.TryGetValue("AccountName", out var accountName) || string.IsNullOrWhiteSpace(accountName))
             {
                 throw new InvalidConnectionStringException("Invalid Azure connection string: missing AccountName.")
                 {
@@ -82,7 +77,6 @@ namespace Cosmos.BlobService
                 };
             }
 
-            var accountName = dict["AccountName"];
             var usesAccessToken = dict.TryGetValue("AccountKey", out var accountKey) &&
                                   accountKey.Equals("AccessToken", StringComparison.OrdinalIgnoreCase);
 
@@ -110,17 +104,7 @@ namespace Cosmos.BlobService
                 };
             }
 
-            var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var part in parts)
-            {
-                var split = part.Split('=');
-                if (split.Length == 2)
-                {
-                    dict[split[0].Trim()] = split[1].Trim();
-                }
-            }
+            var dict = ParseConnectionString(connectionString);
 
             if (!dict.TryGetValue("Bucket", out var bucket))
             {
@@ -205,6 +189,37 @@ namespace Cosmos.BlobService
             return connectionString.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
                    connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
                    connectionString.Contains("devstoreaccount1", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static Dictionary<string, string> ParseConnectionString(string connectionString)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var rawPart in parts)
+            {
+                var part = rawPart.Trim();
+                if (string.IsNullOrWhiteSpace(part))
+                {
+                    continue;
+                }
+
+                var separatorIndex = part.IndexOf('=');
+                if (separatorIndex <= 0 || separatorIndex == part.Length - 1)
+                {
+                    continue;
+                }
+
+                var key = part[..separatorIndex].Trim();
+                var value = part.Substring(separatorIndex + 1).Trim();
+
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    dict[key] = value;
+                }
+            }
+
+            return dict;
         }
     }
 

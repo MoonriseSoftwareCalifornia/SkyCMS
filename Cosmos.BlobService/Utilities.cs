@@ -29,10 +29,19 @@ namespace Cosmos.BlobService
         /// <returns>Returns MIME content type as <see cref="string"/>.</returns>
         public static string GetContentType(FileUploadMetaData fileMetaData)
         {
-            if (!string.IsNullOrEmpty(fileMetaData.ContentType.Trim()) ||
-                string.IsNullOrEmpty(fileMetaData.FileName.Trim()))
+            if (fileMetaData == null)
+            {
+                return "application/octet-stream";
+            }
+
+            if (!string.IsNullOrWhiteSpace(fileMetaData.ContentType))
             {
                 return fileMetaData.ContentType;
+            }
+
+            if (string.IsNullOrWhiteSpace(fileMetaData.FileName))
+            {
+                return "application/octet-stream";
             }
 
             return GetContentType(fileMetaData.FileName);
