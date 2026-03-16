@@ -7,10 +7,6 @@
 
 namespace Sky.Tests.Services.EditorSettings
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
@@ -20,13 +16,15 @@ namespace Sky.Tests.Services.EditorSettings
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using Sky.Editor.Models;
     using Sky.Editor.Services.EditorSettings;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Comprehensive unit tests for the <see cref="EditorSettings"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class EditorSettingsTests : SkyCmsTestBase
     {
@@ -426,7 +424,7 @@ namespace Sky.Tests.Services.EditorSettings
 
             // Act
             var result1 = await editorSettings.GetEditorConfigAsync();
-            
+
             // Modify database after first call
             var setting = await Db.Settings.FirstAsync(s => s.Group == "PUBLISHER" && s.Name == "PublisherUrl");
             setting.Value = "https://modified.com";
@@ -475,7 +473,7 @@ namespace Sky.Tests.Services.EditorSettings
 
             // Assert - Should reload from database
             Assert.AreEqual("https://updated.com", result2.PublisherUrl);
-            
+
             newCache.Dispose();
         }
 
@@ -493,7 +491,7 @@ namespace Sky.Tests.Services.EditorSettings
             });
 
             var services = new ServiceCollection().BuildServiceProvider();
-            
+
             var editorSettings1 = new EditorSettings(config, Db, mockHttpContextAccessor.Object, memoryCache, services, "domain1.com");
             var editorSettings2 = new EditorSettings(config, Db, mockHttpContextAccessor.Object, memoryCache, services, "domain2.com");
 

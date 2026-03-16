@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Data
 {
+    using Microsoft.Azure.Cosmos;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Cosmos;
 
     /// <summary>
     /// A service class to interact with Cosmos DB.

@@ -5,13 +5,14 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+#nullable enable
+
 namespace Sky.Tests.Editor.Services.Email;
 
 using Azure.Identity;
 using Cosmos.Common.Services.Email;
 using Cosmos.EmailServices;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using Sky.Editor.Services.Email;
 using System.Net;
@@ -35,7 +36,7 @@ public class TenantAwareEmailSenderTests
         mockLogger = new Mock<ILogger<TenantAwareEmailSender>>();
         mockLoggerFactory = new Mock<ILoggerFactory>();
         mockAzureCredential = new Mock<DefaultAzureCredential>();
-        
+
         sender = new TenantAwareEmailSender(
             mockConfigService.Object,
             mockLogger.Object,
@@ -737,7 +738,7 @@ public class TenantAwareEmailSenderTests
             SenderEmail = "noreply@sendgrid.test"
         };
         mockConfigService.Setup(cs => cs.GetEmailSettingsAsync()).ReturnsAsync(settings);
-        
+
         var mockSendGridLogger = new Mock<ILogger<SendGridEmailSender>>();
         mockLoggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>())).Returns(mockSendGridLogger.Object);
 
@@ -766,7 +767,7 @@ public class TenantAwareEmailSenderTests
             SenderEmail = "noreply@azure.test"
         };
         mockConfigService.Setup(cs => cs.GetEmailSettingsAsync()).ReturnsAsync(settings);
-        
+
         var mockAzureLogger = new Mock<ILogger<AzureCommunicationEmailSender>>();
         mockLoggerFactory.Setup(lf => lf.CreateLogger(It.IsAny<string>())).Returns(mockAzureLogger.Object);
 

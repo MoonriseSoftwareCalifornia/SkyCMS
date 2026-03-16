@@ -7,14 +7,14 @@
 
 namespace Cosmos.Common.Services.BlogPublishing
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Renders blog streams and posts using a client-side orchestration model.
@@ -73,7 +73,7 @@ namespace Cosmos.Common.Services.BlogPublishing
             var now = DateTimeOffset.UtcNow;
 
             var posts = await _db.Pages
-                .Where(p => p.BlogKey == blogKey 
+                .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == (int)ArticleType.BlogPost
                     && p.Published.HasValue
                     && p.Published <= now

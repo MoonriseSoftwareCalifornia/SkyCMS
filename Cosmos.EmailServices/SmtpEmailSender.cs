@@ -7,9 +7,9 @@
 
 namespace Cosmos.EmailServices
 {
+    using Microsoft.Extensions.Options;
     using System.Net;
     using System.Net.Mail;
-    using Microsoft.Extensions.Options;
 
     /// <summary>
     /// SMTP Email sender.

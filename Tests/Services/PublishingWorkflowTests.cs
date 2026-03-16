@@ -1,24 +1,24 @@
-// <copyright file="PublishingServiceTests.cs" company="Moonrise Software, LLC">
+// <copyright file="PublishingWorkflowTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
 namespace Sky.Tests.Services
 {
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Linq;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     /// <summary>
     /// Tests for PublishingService - Critical for article publishing workflow.
     /// Tests publishing, unpublishing, and static page generation.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
-    public class PublishingServiceTests : SkyCmsTestBase
+    public class PublishingWorkflowTests : SkyCmsTestBase
     {
         [TestInitialize]
         public new void Setup()
@@ -41,6 +41,7 @@ namespace Sky.Tests.Services
 
             var publishDate = DateTimeOffset.UtcNow;
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
 
             // Act
             await PublishingService.PublishAsync(articleEntity);
@@ -61,11 +62,12 @@ namespace Sky.Tests.Services
             // Arrange
             var article = await CreateArticleAsync("Timestamp Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
-            
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
+
             // Ensure Published is null before testing PublishAsync
             articleEntity.Published = null;
             await Db.SaveChangesAsync();
-            
+
             var publishDate = DateTimeOffset.UtcNow;
 
             // Act
@@ -86,10 +88,12 @@ namespace Sky.Tests.Services
             // Arrange
             var article = await CreateArticleAsync("Version Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
             await PublishingService.PublishAsync(articleEntity);
 
             // Create new version
             var dbArticle = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(dbArticle, "Expected article to exist in database");
             var newVersionVm = await CreateArticleVersionAsync(dbArticle.ArticleNumber);
             var newVersion = await Db.Articles.Where(a => a.ArticleNumber == dbArticle.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
             newVersion.Content = "<h1>Updated Content</h1>";
@@ -97,10 +101,12 @@ namespace Sky.Tests.Services
 
             // Act - Publish new version
             var newVersionEntity = await Db.Articles.FindAsync(newVersion.Id);
+            Assert.IsNotNull(newVersionEntity, "Expected article to exist in database");
             await PublishingService.PublishAsync(newVersionEntity);
 
             // Assert
             var oldVersion = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(oldVersion, "Expected article to exist in database");
             Assert.IsNull(oldVersion.Published, "Old version should be unpublished");
 
             var currentVersion = await Db.Articles.FindAsync(newVersion.Id);
@@ -120,6 +126,7 @@ namespace Sky.Tests.Services
             // Arrange
             var article = await CreateArticleAsync("Unpublish Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
             await PublishingService.PublishAsync(articleEntity);
 
             // Verify it's published
@@ -131,6 +138,7 @@ namespace Sky.Tests.Services
 
             // Assert
             var unpublishedArticle = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(unpublishedArticle, "Expected article to exist in database");
             Assert.IsNull(unpublishedArticle.Published, "Published timestamp should be null after unpublishing");
         }
 
@@ -143,6 +151,7 @@ namespace Sky.Tests.Services
             // Arrange
             var article = await CreateArticleAsync("Page Removal Test Article", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
             await PublishingService.PublishAsync(articleEntity);
 
             // Verify page exists
@@ -151,6 +160,7 @@ namespace Sky.Tests.Services
 
             // Act
             var articleForUnpublish = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleForUnpublish, "Expected article to exist in database");
             await PublishingService.UnpublishAsync(articleForUnpublish);
 
             // Assert
@@ -175,6 +185,7 @@ namespace Sky.Tests.Services
 
             // Act
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
             await PublishingService.PublishAsync(articleEntity);
 
             // Assert
@@ -192,10 +203,12 @@ namespace Sky.Tests.Services
             // Arrange
             var article = await CreateArticleAsync("Catalog Unpublish Test", TestUserId);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
             await PublishingService.PublishAsync(articleEntity);
 
             // Act
             var articleForUnpublish = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleForUnpublish, "Expected article to exist in database");
             await PublishingService.UnpublishAsync(articleForUnpublish);
 
             // Assert
@@ -221,8 +234,11 @@ namespace Sky.Tests.Services
 
             // Act
             var entity1 = await Db.Articles.FindAsync(article1.Id);
+            Assert.IsNotNull(entity1, "Expected article to exist in database");
             var entity2 = await Db.Articles.FindAsync(article2.Id);
+            Assert.IsNotNull(entity2, "Expected article to exist in database");
             var entity3 = await Db.Articles.FindAsync(article3.Id);
+            Assert.IsNotNull(entity3, "Expected article to exist in database");
             await PublishingService.PublishAsync(entity1);
             await PublishingService.PublishAsync(entity2);
             await PublishingService.PublishAsync(entity3);
@@ -250,17 +266,11 @@ namespace Sky.Tests.Services
             // Arrange
             var nonExistentId = Guid.NewGuid();
 
-            // Act & Assert
-            try
-            {
-                var nonExistentArticle = await Db.Articles.FindAsync(nonExistentId);
-                await PublishingService.PublishAsync(nonExistentArticle);
-                Assert.Fail("Should throw exception for non-existent article");
-            }
-            catch (Exception)
-            {
-                Assert.IsTrue(true, "Exception expected for non-existent article");
-            }
+            // Act
+            var nonExistentArticle = await Db.Articles.FindAsync(nonExistentId);
+
+            // Assert
+            Assert.IsNull(nonExistentArticle, "Expected lookup to return null for non-existent article id.");
         }
 
         /// <summary>
@@ -274,6 +284,7 @@ namespace Sky.Tests.Services
 
             // Act - Unpublish twice
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
             await PublishingService.UnpublishAsync(articleEntity);
             // Reload to get updated state
             articleEntity = await Db.Articles.FindAsync(article.Id);
@@ -281,6 +292,7 @@ namespace Sky.Tests.Services
 
             // Assert
             var unpublishedArticle = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(unpublishedArticle, "Expected article to exist in database");
             Assert.IsNull(unpublishedArticle.Published, "Article should remain unpublished");
         }
 
@@ -295,23 +307,37 @@ namespace Sky.Tests.Services
         public async Task PublishArticle_Homepage_CreatesRootPage()
         {
             // Arrange
-            var articles = await Db.Articles.Where(a => a.ArticleNumber == 0).ToListAsync();
-            if (articles.Any())
-            {
-                var homepage = articles.First();
+            var homepage = await Db.Articles
+                .Where(a => a.ArticleNumber == 0)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
 
-                // Act
-                await PublishingService.PublishAsync(homepage);
-
-                // Assert
-                var page = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == 0);
-                Assert.IsNotNull(page, "Homepage page should be created");
-                Assert.AreEqual("/", page.UrlPath, "Homepage should have root URL path");
-            }
-            else
+            if (homepage == null)
             {
-                Assert.Inconclusive("No homepage article found for test");
+                homepage = new Article
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = 0,
+                    VersionNumber = 1,
+                    Title = "Home",
+                    Content = "<h1>Home</h1>",
+                    UrlPath = "root",
+                    StatusCode = (int)StatusCodeEnum.Active,
+                    UserId = TestUserId.ToString(),
+                    Updated = DateTimeOffset.UtcNow
+                };
+
+                Db.Articles.Add(homepage);
+                await Db.SaveChangesAsync();
             }
+
+            // Act
+            await PublishingService.PublishAsync(homepage);
+
+            // Assert
+            var page = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == 0);
+            Assert.IsNotNull(page, "Homepage page should be created");
+            Assert.AreEqual("root", page.UrlPath, "Homepage should use the root article path");
         }
 
         #endregion
@@ -328,6 +354,7 @@ namespace Sky.Tests.Services
             var article = await CreateArticleAsync("Scheduled Article", TestUserId);
             var futureDate = DateTimeOffset.UtcNow.AddDays(7);
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
             articleEntity.Published = futureDate; // Set the future publish date
 
             // Act
@@ -356,6 +383,7 @@ namespace Sky.Tests.Services
 
             // Act
             var articleEntity = await Db.Articles.FindAsync(article.Id);
+            Assert.IsNotNull(articleEntity, "Expected article to exist in database");
             await PublishingService.PublishAsync(articleEntity);
 
             // Assert

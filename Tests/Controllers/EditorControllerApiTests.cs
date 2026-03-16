@@ -7,21 +7,16 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
-    using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Models;
     using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
-    using Sky.Cms.Models;
     using Sky.Editor.Models.GrapesJs;
+    using System;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for EditorController API endpoints.
@@ -123,7 +118,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             var projectData = (project)jsonResult.Value!;
-            
+
             // The ArticleHtmlService should have processed the content
             Assert.IsNotNull(projectData);
         }
@@ -156,7 +151,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             Assert.IsNotNull(jsonResult.Value);
-            
+
             var returnedTemplate = jsonResult.Value as Template;
             Assert.IsNotNull(returnedTemplate);
             Assert.AreEqual(template.Id, returnedTemplate.Id);
@@ -292,7 +287,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             Assert.IsNotNull(jsonResult.Value);
-            
+
             var keyValue = jsonResult.Value as string;
             Assert.IsNotNull(keyValue);
             Assert.IsTrue(keyValue.Length > 0);

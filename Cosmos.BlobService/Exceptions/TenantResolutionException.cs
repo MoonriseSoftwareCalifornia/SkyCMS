@@ -13,32 +13,32 @@ using System;
 /// Exception thrown when tenant-specific storage configuration cannot be resolved in multi-tenant scenarios.
 /// </summary>
 public class TenantResolutionException : StorageException
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TenantResolutionException"/> class.
+    /// </summary>
+    public TenantResolutionException()
+        : base("Cannot resolve tenant storage connection. Ensure HttpContext is available or provide domain explicitly.")
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TenantResolutionException"/> class.
-        /// </summary>
-        public TenantResolutionException()
-            : base("Cannot resolve tenant storage connection. Ensure HttpContext is available or provide domain explicitly.")
-        {
-        }
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TenantResolutionException"/> class with a specified error message.
-        /// </summary>
-        /// <param name="message">The message that describes the error.</param>
-        public TenantResolutionException(string message)
-            : base(message)
-        {
-        }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TenantResolutionException"/> class with a specified error message.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
+    public TenantResolutionException(string message)
+        : base(message)
+    {
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TenantResolutionException"/> class with a specified error message
-        /// and a reference to the inner exception that is the cause of this exception.
-        /// </summary>
-        /// <param name="message">The message that describes the error.</param>
-        /// <param name="innerException">The exception that is the cause of the current exception.</param>
-        public TenantResolutionException(string message, Exception innerException)
-                    : base(message, innerException)
-                {
-                }
-            }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TenantResolutionException"/> class with a specified error message
+    /// and a reference to the inner exception that is the cause of this exception.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
+    /// <param name="innerException">The exception that is the cause of the current exception.</param>
+    public TenantResolutionException(string message, Exception innerException)
+                : base(message, innerException)
+    {
+    }
+}

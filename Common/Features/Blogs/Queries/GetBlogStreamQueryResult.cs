@@ -8,7 +8,6 @@
 namespace Cosmos.Common.Features.Blogs.Queries
 {
     using System;
-    using System.Collections.Generic;
 
     /// <summary>
     /// Result of retrieving a blog stream query.

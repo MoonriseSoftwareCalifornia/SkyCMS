@@ -7,15 +7,15 @@
 
 namespace Sky.Tests.Features.Blogs
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Blogs.DeleteStream;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for <see cref="DeleteBlogStreamCommand"/> and <see cref="DeleteBlogStreamHandler"/>.
@@ -27,7 +27,7 @@ namespace Sky.Tests.Features.Blogs
         /// Initialize test context.
         /// </summary>
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }

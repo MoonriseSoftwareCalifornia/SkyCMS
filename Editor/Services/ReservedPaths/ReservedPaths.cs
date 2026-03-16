@@ -7,13 +7,13 @@
 
 namespace Sky.Editor.Services.ReservedPaths
 {
+    using Cosmos.Common.Data;
+    using Newtonsoft.Json;
+    using Sky.Cms.Models;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Newtonsoft.Json;
-    using Sky.Cms.Models;
 
     /// <summary>
     /// Manages reserved paths that cannot be used for articles, pages, or other content.

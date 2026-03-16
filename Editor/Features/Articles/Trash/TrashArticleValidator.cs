@@ -5,13 +5,13 @@
 
 namespace Sky.Editor.Features.Articles.Trash
 {
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
+    using Microsoft.EntityFrameworkCore;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
-    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Validates requests to permanently trash an article.

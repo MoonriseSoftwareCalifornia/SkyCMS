@@ -8,7 +8,6 @@
 namespace Sky.Tests.Integration
 {
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -20,7 +19,6 @@ namespace Sky.Tests.Integration
     /// <summary>
     /// Integration tests for the SaveArticle feature workflow.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class SaveArticleIntegrationTests : SkyCmsTestBase
     {
@@ -28,93 +26,71 @@ namespace Sky.Tests.Integration
         public new void Setup() => InitializeTestContext();
 
         /// <summary>
-        /// Tests that FullWorkflow_CreateThenSave_UnpublishedArticle_NoRedirectCreated.
+        /// Tests full workflow redirect behavior for unpublished and published save scenarios.
         /// </summary>
         [TestMethod]
-        public async Task FullWorkflow_CreateThenSave_UnpublishedArticle_NoRedirectCreated()
+        public async Task FullWorkflow_CreateThenSave_RedirectBehaviorMatchesPublishState()
         {
-            // **FIX**: Create root article first so test article doesn't become root
-            await CreateArticleAsync("Root Page", TestUserId);
-            
-            // Create test article (won't be root now)
-            var created = await Mediator.SendAsync(new CreateArticleCommand
+            var scenarios = new[]
             {
-                Title = "Integration Test",
-                UserId = TestUserId
-            });
+                new { Name = "Unpublished", PublishBeforeSave = false, ExpectRedirect = false },
+                new { Name = "Published", PublishBeforeSave = true, ExpectRedirect = true },
+            };
 
-            Assert.IsTrue(created.IsSuccess);
-            Assert.AreEqual(2, await ArticleCountAsync(), "Should have 2 articles: root + test article");
-
-            // Save with title change (unpublished)
-            var saved = await Mediator.SendAsync(new SaveArticleCommand
+            foreach (var scenario in scenarios)
             {
-                ArticleNumber = created.Data!.ArticleNumber,
-                Title = "Updated Title",
-                Content = "<p>Updated</p>",
-                UserId = TestUserId,
-                ArticleType = ArticleType.General
-            });
+                Setup();
 
-            Assert.IsTrue(saved.IsSuccess);
-            Assert.AreEqual("Updated Title", saved.Data!.Model!.Title);
-            
-            var totalArticles = await ArticleCountAsync();
-            var redirectArticles = await Db.Articles.CountAsync(a => a.StatusCode == (int)StatusCodeEnum.Redirect);
-            
-            Assert.AreEqual(2, totalArticles, "Unpublished article: no redirect created (root + content)");
-            Assert.AreEqual(0, redirectArticles, "No redirects for unpublished articles");
-        }
+                await CreateArticleAsync("Root Page", TestUserId);
 
-        /// <summary>
-        /// Tests that FullWorkflow_CreatePublishThenSave_CreatesRedirect.
-        /// </summary>
-        [TestMethod]
-        public async Task FullWorkflow_CreatePublishThenSave_CreatesRedirect()
-        {
-            // **FIX**: Create root article first
-            await CreateArticleAsync("Root Page", TestUserId);
-            
-            // Create test article
-            var created = await Mediator.SendAsync(new CreateArticleCommand
-            {
-                Title = "Integration Test",
-                UserId = TestUserId
-            });
+                var created = await Mediator.SendAsync(new CreateArticleCommand
+                {
+                    Title = "Integration Test",
+                    UserId = TestUserId
+                });
 
-            Assert.IsTrue(created.IsSuccess);
-            Assert.AreEqual(2, await ArticleCountAsync(), "Should have 2 articles: root + test article");
+                Assert.IsTrue(created.IsSuccess, scenario.Name);
+                Assert.AreEqual(2, await ArticleCountAsync(), scenario.Name);
 
-            // Publish the article
-            await Logic.PublishArticle(created.Data!.Id, DateTimeOffset.UtcNow);
+                if (scenario.PublishBeforeSave)
+                {
+                    await Logic.PublishArticle(created.Data!.Id, DateTimeOffset.UtcNow);
+                }
 
-            // Save with title change (published article)
-            var saved = await Mediator.SendAsync(new SaveArticleCommand
-            {
-                ArticleNumber = created.Data!.ArticleNumber,
-                Title = "Updated Title",
-                Content = "<p>Updated</p>",
-                UserId = TestUserId,
-                ArticleType = ArticleType.General,
-                Published = DateTimeOffset.UtcNow
-            });
+                var saved = await Mediator.SendAsync(new SaveArticleCommand
+                {
+                    ArticleNumber = created.Data!.ArticleNumber,
+                    Title = "Updated Title",
+                    Content = "<p>Updated</p>",
+                    UserId = TestUserId,
+                    ArticleType = ArticleType.General,
+                    Published = scenario.PublishBeforeSave ? DateTimeOffset.UtcNow : null,
+                });
 
-            Assert.IsTrue(saved.IsSuccess);
-            Assert.AreEqual("Updated Title", saved.Data!.Model!.Title);
-            
-            var totalArticles = await ArticleCountAsync();
-            var nonRedirectArticles = await Db.Articles.CountAsync(a => a.StatusCode != (int)StatusCodeEnum.Redirect);
-            var redirectArticles = await Db.Articles.CountAsync(a => a.StatusCode == (int)StatusCodeEnum.Redirect);
-            
-            Assert.AreEqual(3, totalArticles, "Should have 3 total articles (root + content + redirect)");
-            Assert.AreEqual(2, nonRedirectArticles, "Should have 2 non-redirect articles (root + content)");
-            Assert.AreEqual(1, redirectArticles, "Should have 1 redirect article");
-            
-            // Verify the redirect points from old slug to new slug
-            var redirect = await Db.Articles.FirstOrDefaultAsync(a => a.StatusCode == (int)StatusCodeEnum.Redirect);
-            Assert.IsNotNull(redirect);
-            Assert.AreEqual("integration-test", redirect.UrlPath, "Redirect should be from old slug");
-            StringAssert.Contains(redirect.Content, "/updated-title", "Redirect should point to new slug");
+                Assert.IsTrue(saved.IsSuccess, scenario.Name);
+                Assert.AreEqual("Updated Title", saved.Data!.Model!.Title, scenario.Name);
+
+                var totalArticles = await ArticleCountAsync();
+                var redirectArticles = await Db.Articles.CountAsync(a => a.StatusCode == (int)StatusCodeEnum.Redirect);
+
+                if (scenario.ExpectRedirect)
+                {
+                    var nonRedirectArticles = await Db.Articles.CountAsync(a => a.StatusCode != (int)StatusCodeEnum.Redirect);
+                    Assert.AreEqual(3, totalArticles, scenario.Name);
+                    Assert.AreEqual(2, nonRedirectArticles, scenario.Name);
+                    Assert.AreEqual(1, redirectArticles, scenario.Name);
+
+                    var redirect = await Db.Articles.FirstOrDefaultAsync(a => a.StatusCode == (int)StatusCodeEnum.Redirect);
+                    Assert.IsNotNull(redirect, scenario.Name);
+                    Assert.AreEqual("integration-test", redirect.UrlPath, scenario.Name);
+                    StringAssert.Contains(redirect.Content, "/updated-title", scenario.Name);
+                }
+                else
+                {
+                    Assert.AreEqual(2, totalArticles, scenario.Name);
+                    Assert.AreEqual(0, redirectArticles, scenario.Name);
+                }
+            }
         }
     }
 }

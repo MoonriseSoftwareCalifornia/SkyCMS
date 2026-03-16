@@ -7,12 +7,6 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
     using Cosmos.BlobService;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
@@ -44,7 +38,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Features.Templates.Get;
     using Sky.Editor.Models;
     using Sky.Editor.Models.GrapesJs;
-    using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
@@ -52,6 +45,12 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.ReservedPaths;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Web;
 
     /// <summary>
     /// Editor controller.
@@ -441,7 +440,7 @@ namespace Sky.Cms.Controllers
 
             var query = new GetTemplateQuery { TemplateId = id.Value };
             var result = await mediator.QueryAsync(query);
-            
+
             if (!result.IsSuccess || result.Data?.Template == null)
             {
                 return NotFound();
@@ -1349,7 +1348,7 @@ namespace Sky.Cms.Controllers
                 };
 
                 var result = await mediator.SendAsync<CommandResult<ArticleViewModel>>(command);
-                
+
                 if (!result.IsSuccess)
                 {
                     return BadRequest(result.ErrorMessage);

@@ -7,7 +7,6 @@
 
 namespace Sky.Tests.Editor.Middleware
 {
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +14,7 @@ namespace Sky.Tests.Editor.Middleware
     using Moq;
     using Sky.Editor.Middleware;
     using Sky.Editor.Services.Setup;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="TenantSetupMiddleware"/> and related functionality.

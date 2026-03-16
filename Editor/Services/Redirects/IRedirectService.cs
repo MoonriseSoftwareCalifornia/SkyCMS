@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Services.Redirects
 {
+    using Cosmos.Common.Data;
     using System;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
 
     /// <summary>
     /// Provides creation and update operations for redirect articles that map an old slug to a new destination.

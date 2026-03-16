@@ -7,12 +7,11 @@
 
 namespace Cosmos.EmailServices
 {
-    using System.Configuration;
-    using System.Linq;
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Options;
+    using System.Linq;
 
     /// <summary>
     /// extension methods for <see cref="IServiceCollection"/>.

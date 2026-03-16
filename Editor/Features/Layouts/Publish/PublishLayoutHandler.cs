@@ -7,17 +7,14 @@
 
 namespace Sky.Editor.Features.Layouts.Publish
 {
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
     using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Cosmos.Common.Constants;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Domain.Events;
 
     /// <summary>
     /// Handles publishing a layout as the default layout.
@@ -26,7 +23,6 @@ namespace Sky.Editor.Features.Layouts.Publish
     {
         private readonly ApplicationDbContext dbContext;
         private readonly ILogger<PublishLayoutHandler> logger;
-        private readonly IDomainEventDispatcher? eventDispatcher;
         private readonly PublishLayoutValidator validator;
 
         /// <summary>
@@ -34,15 +30,12 @@ namespace Sky.Editor.Features.Layouts.Publish
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="logger">Logger.</param>
-        /// <param name="eventDispatcher">Optional domain event dispatcher for publishing layout change events.</param>
         public PublishLayoutHandler(
             ApplicationDbContext dbContext,
-            ILogger<PublishLayoutHandler> logger,
-            IDomainEventDispatcher? eventDispatcher = null)
+            ILogger<PublishLayoutHandler> logger)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.eventDispatcher = eventDispatcher;
             validator = new PublishLayoutValidator();
         }
 
@@ -87,12 +80,6 @@ namespace Sky.Editor.Features.Layouts.Publish
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
-
-                // Publish domain event for cache invalidation
-                if (eventDispatcher != null)
-                {
-                    await eventDispatcher.DispatchAsync(new LayoutPublishedEvent(command.LayoutId), cancellationToken);
-                }
 
                 logger.LogInformation("Published layout {LayoutId} as default", command.LayoutId);
 

@@ -5,13 +5,8 @@
 
 namespace Sky.Tests.Controllers;
 
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
-using Cosmos.Common.Models;
 using Cosmos.Common.Services.Email;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http;
@@ -24,6 +19,9 @@ using Sky.Cms.Api.Shared.Controllers;
 using Sky.Cms.Api.Shared.Features.ContactForm.Submit;
 using Sky.Cms.Api.Shared.Features.ContactForm.ValidateCaptcha;
 using Sky.Cms.Api.Shared.Models;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Extended unit tests for ContactApiController.
@@ -415,7 +413,7 @@ public class ContactApiControllerExtendedTests
         var contentResult = result as ContentResult;
         Assert.IsNotNull(contentResult);
         Assert.AreEqual("application/javascript", contentResult.ContentType);
-        
+
         // Verify the script contains default configuration values
         Assert.IsTrue(contentResult.Content.Contains("maxMessageLength: 5000"));
         Assert.IsTrue(contentResult.Content.Contains("requireCaptcha: false"));

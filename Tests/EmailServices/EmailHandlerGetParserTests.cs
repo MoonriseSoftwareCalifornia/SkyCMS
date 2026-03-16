@@ -4,13 +4,11 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Reflection;
 using Cosmos.EmailServices;
 using Cosmos.EmailServices.Templates;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Reflection;
 
 namespace Sky.Tests.EmailServices
 {

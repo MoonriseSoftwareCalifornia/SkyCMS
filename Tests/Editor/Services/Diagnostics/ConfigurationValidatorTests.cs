@@ -8,16 +8,15 @@
 #nullable enable
 namespace Sky.Tests.Editor.Services.Diagnostics
 {
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
-    using System.IO;
-    using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Services.Diagnostics;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for ConfigurationValidator service.
@@ -29,10 +28,10 @@ namespace Sky.Tests.Editor.Services.Diagnostics
     {
         #region Test Initialization & Helpers
 
-        private Mock<IConfiguration>? configMock;
-        private Mock<ILogger<ConfigurationValidator>>? loggerMock;
+        private Mock<IConfiguration> configMock = null!;
+        private Mock<ILogger<ConfigurationValidator>> loggerMock = null!;
 
-        private ConfigurationValidator validator;
+        private ConfigurationValidator validator = null!;
 
         [TestInitialize]
         public void Setup()
@@ -53,11 +52,11 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             emptySection.Setup(s => s.Path).Returns(string.Empty);
             emptySection.Setup(s => s.Key).Returns(string.Empty);
             emptySection.Setup(s => s.GetChildren()).Returns(Array.Empty<IConfigurationSection>());
-            
+
             configMock
                 .Setup(c => c.GetSection(It.IsAny<string>()))
                 .Returns(emptySection.Object);
-            
+
             // Mock connection strings section (GetConnectionString is an extension method that uses GetSection)
             var connectionStringsSection = new Mock<IConfigurationSection>();
             configMock
@@ -80,7 +79,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 mockSection.Setup(s => s.Value).Returns(value?.ToString());
                 mockSection.Setup(s => s.Path).Returns(key);
                 mockSection.Setup(s => s.Key).Returns(key);
-                
+
                 configMock
                     .Setup(c => c.GetSection(key))
                     .Returns(mockSection.Object);
@@ -128,55 +127,32 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_MissingAdminEmail_ReturnsErrorCheck()
+        public async Task ValidateAsync_MissingOrEmptyAdminEmail_ReturnsErrorCheck()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            foreach (var emailValue in new string?[] { null, string.Empty })
             {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = null
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = emailValue
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
-            Assert.IsNotNull(adminEmailCheck);
-            Assert.AreEqual(CheckStatus.Error, adminEmailCheck.Status);
-            Assert.AreEqual("Not configured or empty", adminEmailCheck.Message);
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_EmptyAdminEmail_ReturnsErrorCheck()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = string.Empty
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
-            Assert.IsNotNull(adminEmailCheck);
-            Assert.AreEqual(CheckStatus.Error, adminEmailCheck.Status);
+                // Assert
+                Assert.IsNotNull(result);
+                var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
+                Assert.IsNotNull(adminEmailCheck);
+                Assert.AreEqual(CheckStatus.Error, adminEmailCheck.Status);
+                Assert.AreEqual("Not configured or empty", adminEmailCheck.Message);
+            }
         }
 
         [TestMethod]
@@ -233,7 +209,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             Assert.IsNotNull(adminEmailCheck);
             Assert.IsNotNull(adminEmailCheck.Details);
             StringAssert.Contains(adminEmailCheck.Details, "***");
-            Assert.IsFalse(adminEmailCheck.Details.Contains("admin@example.com"), 
+            Assert.IsFalse(adminEmailCheck.Details.Contains("admin@example.com"),
                 "Details should not contain the actual admin email value");
         }
 
@@ -255,18 +231,18 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 // Use a fresh mock and setup for each iteration
                 var config = new Mock<IConfiguration>();
                 var logger = new Mock<ILogger<ConfigurationValidator>>();
-                
+
                 // Setup default behavior for GetSection - return an empty section for unknown keys
                 var emptySection = new Mock<IConfigurationSection>();
                 emptySection.Setup(s => s.Value).Returns((string?)null);
                 emptySection.Setup(s => s.Path).Returns(string.Empty);
                 emptySection.Setup(s => s.Key).Returns(string.Empty);
                 emptySection.Setup(s => s.GetChildren()).Returns(Array.Empty<IConfigurationSection>());
-                
+
                 config
                     .Setup(c => c.GetSection(It.IsAny<string>()))
                     .Returns(emptySection.Object);
-                
+
                 // Mock connection strings section
                 var connectionStringsSection = new Mock<IConfigurationSection>();
                 config
@@ -275,7 +251,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 connectionStringsSection
                     .Setup(c => c["ApplicationDbContextConnection"])
                     .Returns("Server=localhost;Database=test;Trusted_Connection=true;");
-                
+
                 // Mock configuration values
                 var multiTenantSection = new Mock<IConfigurationSection>();
                 multiTenantSection.Setup(s => s.Value).Returns("false");
@@ -284,7 +260,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 config
                     .Setup(c => c.GetSection("MultiTenantEditor"))
                     .Returns(multiTenantSection.Object);
-                
+
                 var emailSection = new Mock<IConfigurationSection>();
                 emailSection.Setup(s => s.Value).Returns(email);
                 emailSection.Setup(s => s.Path).Returns("AdminEmail");
@@ -296,6 +272,11 @@ namespace Sky.Tests.Editor.Services.Diagnostics
                 var testValidator = new ConfigurationValidator(config.Object, logger.Object);
                 var result = await testValidator.ValidateAsync();
                 var adminEmailCheck = result.Checks.Find(c => c.Name == "AdminEmail");
+                if (adminEmailCheck is null)
+                {
+                    Assert.Fail("AdminEmail check should be present in validation results.");
+                }
+
                 Assert.AreEqual(CheckStatus.Success, adminEmailCheck.Status, $"Email {email} should be valid");
             }
         }
@@ -306,56 +287,32 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_CosmosAllowSetupTrue_ReturnsSuccessCheck()
+        public async Task ValidateAsync_CosmosAllowSetupBooleanValue_ReturnsSuccessCheck()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            foreach (var cosmosAllowSetup in new[] { true, false })
             {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com",
-                ["CosmosAllowSetup"] = true
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = "admin@example.com",
+                    ["CosmosAllowSetup"] = cosmosAllowSetup
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            var cosmosCheck = result.Checks.Find(c => c.Name == "CosmosAllowSetup");
-            Assert.IsNotNull(cosmosCheck);
-            Assert.AreEqual(CheckStatus.Success, cosmosCheck.Status);
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_CosmosAllowSetupFalse_ReturnsSuccessCheck()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com",
-                ["CosmosAllowSetup"] = false
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var cosmosCheck = result.Checks.Find(c => c.Name == "CosmosAllowSetup");
-            Assert.IsNotNull(cosmosCheck);
-            Assert.AreEqual(CheckStatus.Success, cosmosCheck.Status);
+                // Assert
+                Assert.IsNotNull(result);
+                var cosmosCheck = result.Checks.Find(c => c.Name == "CosmosAllowSetup");
+                Assert.IsNotNull(cosmosCheck);
+                Assert.AreEqual(CheckStatus.Success, cosmosCheck.Status);
+            }
         }
 
         [TestMethod]
@@ -392,134 +349,86 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantMissingDatabaseConnection_ReturnsErrorCheck()
+        public async Task ValidateAsync_SingleTenantMissingOrEmptyDatabaseConnection_ReturnsErrorCheck()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            foreach (var connectionValue in new string?[] { null, string.Empty })
             {
-                ["ApplicationDbContextConnection"] = null
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = connectionValue
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = "admin@example.com"
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual("Single-Tenant", result.Mode);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            Assert.AreEqual(CheckStatus.Error, dbCheck.Status);
-            Assert.AreEqual("Not configured or empty", dbCheck.Message);
+                // Assert
+                Assert.IsNotNull(result);
+                Assert.AreEqual("Single-Tenant", result.Mode);
+                var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
+                Assert.IsNotNull(dbCheck);
+                Assert.AreEqual(CheckStatus.Error, dbCheck.Status);
+                Assert.AreEqual("Not configured or empty", dbCheck.Message);
+            }
         }
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantEmptyDatabaseConnection_ReturnsErrorCheck()
+        public async Task ValidateAsync_SingleTenantConnections_DetectCorrectDatabaseType()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            var scenarios = new[]
             {
-                ["ApplicationDbContextConnection"] = string.Empty
+                new
+                {
+                    ConnectionString = "Server=localhost;Database=test;Trusted_Connection=true;",
+                    ExpectedDatabaseType = "SQL Server",
+                },
+                new
+                {
+                    ConnectionString = "Server=localhost;Port=3306;Database=test;User=root;Password=pass;",
+                    ExpectedDatabaseType = "MySQL",
+                },
+                new
+                {
+                    ConnectionString = "Data Source=test.db",
+                    ExpectedDatabaseType = "SQLite",
+                },
+                new
+                {
+                    ConnectionString = "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=key;",
+                    ExpectedDatabaseType = "Azure Cosmos DB",
+                },
             };
-            var values = new Dictionary<string, object?>
+
+            foreach (var scenario in scenarios)
             {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = scenario.ConnectionString
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = "admin@example.com"
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            Assert.AreEqual(CheckStatus.Error, dbCheck.Status);
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantSqlServerConnection_DetectsCorrectDatabaseType()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            StringAssert.Contains(dbCheck.Message, "SQL Server");
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantMySqlConnection_DetectsCorrectDatabaseType()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Port=3306;Database=test;User=root;Password=pass;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            StringAssert.Contains(dbCheck.Message, "MySQL");
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantSqliteConnection_DetectsCorrectDatabaseType()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Data Source=test.db"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            StringAssert.Contains(dbCheck.Message, "SQLite");
+                // Assert
+                Assert.IsNotNull(result);
+                var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
+                Assert.IsNotNull(dbCheck);
+                StringAssert.Contains(dbCheck.Message, scenario.ExpectedDatabaseType);
+            }
         }
 
         [TestMethod]
@@ -562,32 +471,6 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantCosmosConnection_DetectsCorrectDatabaseType()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=key;"
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
-            Assert.IsNotNull(dbCheck);
-            StringAssert.Contains(dbCheck.Message, "Azure Cosmos DB");
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
         public async Task ValidateAsync_SingleTenantDatabaseConnectionMasked_PasswordNotExposed()
         {
             // Arrange
@@ -610,7 +493,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
             Assert.IsNotNull(dbCheck.Details);
-            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword123"), 
+            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword123"),
                 "Details should not contain the actual database password");
             StringAssert.Contains(dbCheck.Details, "Password=***");
         }
@@ -621,57 +504,33 @@ namespace Sky.Tests.Editor.Services.Diagnostics
 
         [TestMethod]
         [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantMissingStorageConnection_ReturnsErrorCheck()
+        public async Task ValidateAsync_SingleTenantMissingOrEmptyStorageConnection_ReturnsErrorCheck()
         {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
+            foreach (var storageConnectionValue in new string?[] { null, string.Empty })
             {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;",
-                ["StorageConnectionString"] = null
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
+                // Arrange
+                var connectionStrings = new Dictionary<string, string?>
+                {
+                    ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;",
+                    ["StorageConnectionString"] = storageConnectionValue
+                };
+                var values = new Dictionary<string, object?>
+                {
+                    ["MultiTenantEditor"] = false,
+                    ["AdminEmail"] = "admin@example.com"
+                };
+                SetupConfiguration(connectionStrings, values);
 
-            // Act
-            var result = await validator.ValidateAsync();
+                // Act
+                var result = await validator.ValidateAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
-            Assert.IsNotNull(storageCheck);
-            Assert.AreEqual(CheckStatus.Error, storageCheck.Status);
-            Assert.AreEqual("Not configured or empty", storageCheck.Message);
-        }
-
-        [TestMethod]
-        [TestCategory("ConfigurationValidator")]
-        public async Task ValidateAsync_SingleTenantEmptyStorageConnection_ReturnsErrorCheck()
-        {
-            // Arrange
-            var connectionStrings = new Dictionary<string, string?>
-            {
-                ["ApplicationDbContextConnection"] = "Server=localhost;Database=test;Trusted_Connection=true;",
-                ["StorageConnectionString"] = string.Empty
-            };
-            var values = new Dictionary<string, object?>
-            {
-                ["MultiTenantEditor"] = false,
-                ["AdminEmail"] = "admin@example.com"
-            };
-            SetupConfiguration(connectionStrings, values);
-
-            // Act
-            var result = await validator.ValidateAsync();
-
-            // Assert
-            Assert.IsNotNull(result);
-            var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
-            Assert.IsNotNull(storageCheck);
-            Assert.AreEqual(CheckStatus.Error, storageCheck.Status);
+                // Assert
+                Assert.IsNotNull(result);
+                var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
+                Assert.IsNotNull(storageCheck);
+                Assert.AreEqual(CheckStatus.Error, storageCheck.Status);
+                Assert.AreEqual("Not configured or empty", storageCheck.Message);
+            }
         }
 
         [TestMethod]
@@ -781,7 +640,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
             Assert.IsNotNull(storageCheck);
             Assert.IsNotNull(storageCheck.Details);
-            Assert.IsFalse(storageCheck.Details.Contains("MySecretAccountKey123"), 
+            Assert.IsFalse(storageCheck.Details.Contains("MySecretAccountKey123"),
                 "Details should not contain the actual storage account key");
             StringAssert.Contains(storageCheck.Details, "AccountKey=***");
         }
@@ -897,7 +756,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var configDbCheck = result.Checks.Find(c => c.Name == "ConfigDbConnectionString");
             Assert.IsNotNull(configDbCheck);
             Assert.IsNotNull(configDbCheck.Details);
-            Assert.IsFalse(configDbCheck.Details.Contains("ConfigPassword123"), 
+            Assert.IsFalse(configDbCheck.Details.Contains("ConfigPassword123"),
                 "Details should not contain the actual config database password");
         }
 
@@ -926,7 +785,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             var dpCheck = result.Checks.Find(c => c.Name == "DataProtectionStorage");
             Assert.IsNotNull(dpCheck);
             Assert.IsNotNull(dpCheck.Details);
-            Assert.IsFalse(dpCheck.Details.Contains("DataProtectionSecret123"), 
+            Assert.IsFalse(dpCheck.Details.Contains("DataProtectionSecret123"),
                 "Details should not contain the actual data protection secret");
         }
 
@@ -1262,7 +1121,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword"), 
+            Assert.IsFalse(dbCheck.Details.Contains("MySecretPassword"),
                 "Details should not contain the actual database password");
             StringAssert.Contains(dbCheck.Details, "pwd=***");
         }
@@ -1290,7 +1149,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var storageCheck = result.Checks.Find(c => c.Name == "StorageConnectionString");
             Assert.IsNotNull(storageCheck);
-            Assert.IsFalse(storageCheck.Details.Contains("MySecretKey123456789"), 
+            Assert.IsFalse(storageCheck.Details.Contains("MySecretKey123456789"),
                 "Details should not contain the actual storage account key");
             StringAssert.Contains(storageCheck.Details, "AccountKey=***");
         }
@@ -1317,7 +1176,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            Assert.IsFalse(dbCheck.Details.Contains("SuperSecretValue"), 
+            Assert.IsFalse(dbCheck.Details.Contains("SuperSecretValue"),
                 "Details should not contain the actual client secret");
             StringAssert.Contains(dbCheck.Details, "ClientSecret=***");
         }
@@ -1344,7 +1203,7 @@ namespace Sky.Tests.Editor.Services.Diagnostics
             // Assert
             var dbCheck = result.Checks.Find(c => c.Name == "ApplicationDbContextConnection");
             Assert.IsNotNull(dbCheck);
-            Assert.IsFalse(dbCheck.Details.Contains("UltraSecretKeyValue"), 
+            Assert.IsFalse(dbCheck.Details.Contains("UltraSecretKeyValue"),
                 "Details should not contain the actual key value");
             StringAssert.Contains(dbCheck.Details, "Key=***");
         }

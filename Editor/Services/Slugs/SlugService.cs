@@ -7,7 +7,6 @@
 
 namespace Sky.Editor.Services.Slugs
 {
-    using System;
     using System.Globalization;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -37,10 +36,10 @@ namespace Sky.Editor.Services.Slugs
             foreach (var ch in normalized)
             {
                 var category = CharUnicodeInfo.GetUnicodeCategory(ch);
-                
+
                 // Skip combining diacritical marks (the accent marks, not the base character)
-                if (category == UnicodeCategory.NonSpacingMark || 
-                    category == UnicodeCategory.SpacingCombiningMark || 
+                if (category == UnicodeCategory.NonSpacingMark ||
+                    category == UnicodeCategory.SpacingCombiningMark ||
                     category == UnicodeCategory.EnclosingMark)
                 {
                     continue;

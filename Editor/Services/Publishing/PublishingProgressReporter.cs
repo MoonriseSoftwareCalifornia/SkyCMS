@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Services.Publishing
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.SignalR;
     using Sky.Editor.Hubs;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// SignalR-based implementation of publishing progress reporting.
@@ -46,8 +46,8 @@ namespace Sky.Editor.Services.Publishing
                 return; // No user context, skip progress reporting
             }
 
-            var progressPercentage = totalPages > 0 
-                ? (int)Math.Round((double)currentPage / totalPages * 100) 
+            var progressPercentage = totalPages > 0
+                ? (int)Math.Round((double)currentPage / totalPages * 100)
                 : 0;
 
             await hubContext.Clients.User(userId).SendAsync("ReceiveProgress", new

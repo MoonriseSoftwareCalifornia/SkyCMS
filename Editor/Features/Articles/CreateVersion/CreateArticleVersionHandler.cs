@@ -5,19 +5,16 @@
 
 namespace Sky.Editor.Features.Articles.CreateVersion
 {
+    using Cosmos.Cms.Common;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Models;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
     using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Features.Shared;
-    using Cosmos.Common.Models;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.Logging;
-    using Sky.Cms.Models;
 
     /// <summary>
     /// Handler for CreateArticleVersionCommand. Creates a new version of an article.

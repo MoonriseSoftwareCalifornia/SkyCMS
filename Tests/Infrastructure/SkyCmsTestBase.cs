@@ -1,8 +1,9 @@
 using Cosmos.BlobService;
-using Cosmos.Cms.Common.Services.Configurations;
+
+#nullable enable
+
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
-using Cosmos.Common.Features.Articles.EditorQueries;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.DynamicConfig;
@@ -31,11 +32,8 @@ using Sky.Editor.Services.Redirects;
 using Sky.Editor.Services.ReservedPaths;
 using Sky.Editor.Services.Scheduling;
 using Sky.Editor.Services.Slugs;
-using Sky.Editor.Services.StaticFiles;
-using Sky.Editor.Services.TableOfContents;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
-using Sky.Editor.Features.Shared;
 using Sky.Editor.Features.Articles.Create;
 using Sky.Editor.Features.Articles.CreateVersion;
 using Cosmos.Common.Models;
@@ -95,6 +93,7 @@ namespace Sky.Tests
         protected IMediator Mediator = null!;
         protected ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>> CreateArticleHandler = null!;
         protected ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>> SaveArticleHandler = null!;
+        protected ArticleLogic ArticleLogic = null!;
 
         private async Task EnsureBlogStreamTemplateExistsAsync()
         {
@@ -102,7 +101,7 @@ namespace Sky.Tests
                 .FirstOrDefaultAsync(t => t.PageType == "blog-stream");
             if (existingTemplate == null)
             {
-                var defaultLayout = await Mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
+                var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
                 var t = TemplateService.GetTemplateByKeyAsync("blog-stream").Result;
                 var template = new Template
                 {
@@ -124,7 +123,7 @@ namespace Sky.Tests
 
             if (existingTemplate == null)
             {
-                var defaultLayout = await Mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
+                var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
                 var t = TemplateService.GetTemplateByKeyAsync("blog-post").Result;
                 var template = new Template
                 {
@@ -212,7 +211,7 @@ namespace Sky.Tests
 
             // ✅ UPDATED: Configure Azure Blob Storage - use connection string from config or fail
             var storageConnectionString = configuration.GetConnectionString("StorageConnectionString");
-            
+
             // Fail fast if no connection string is provided
             if (string.IsNullOrEmpty(storageConnectionString))
             {
@@ -220,7 +219,7 @@ namespace Sky.Tests
                     "Storage connection string is required. " +
                     "Set CONNECTIONSTRINGS__STORAGECONNECTIONSTRING environment variable or add it to user secrets.");
             }
-            
+
             // Initialize Storage with connection validation
             try
             {
@@ -256,10 +255,8 @@ namespace Sky.Tests
             // PublishingService will be created after Services is built
 
             RedirectService = new RedirectService(Db, SlugService, Clock, null!); // Will set PublishingService later
+            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, null!, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
 
-            var titleChangeContext = new Sky.Editor.Services.Titles.TitleChangeContext(Db, Clock, EventDispatcher);
-            TitleChangeService = new TitleChangeService(titleChangeContext, SlugService, RedirectService, null!, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
-            
             // ❌ REMOVE THIS - Don't create TemplateService here, it needs Mediator which doesn't exist yet
             // TemplateService = new TemplateService(
             //     webHostEnvironment, new LoggerFactory().CreateLogger<TemplateService>(),
@@ -291,14 +288,14 @@ namespace Sky.Tests
                 {
                     var context = HttpContextAccessor.HttpContext;
                     if (context == null) return string.Empty;
-                    
+
                     // Check for x-origin-hostname header first (mimicking real implementation)
                     var xOriginHostname = context.Request.Headers["x-origin-hostname"].ToString();
                     if (!string.IsNullOrWhiteSpace(xOriginHostname))
                     {
                         return xOriginHostname.ToLowerInvariant();
                     }
-                    
+
                     // Fall back to Host header
                     return context.Request.Host.Host.ToLowerInvariant();
                 });
@@ -414,7 +411,7 @@ namespace Sky.Tests
                 .AddSingleton<ICatalogService>(CatalogService)
                 .AddSingleton<IDomainEventDispatcher>(EventDispatcher)
                 .AddSingleton<IClock>(Clock);
-            
+
             serviceCollection
                 .AddSingleton<IBlogStreamRenderingService>(BlogStreamRenderingService)
                 .AddSingleton<IAuthorInfoService>(AuthorInfoService)
@@ -429,19 +426,19 @@ namespace Sky.Tests
                         Db,
                         configuration.GetValue<string>("CosmosPublisherUrl") ?? "https://www.sky-cms.com",
                         configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? "https://www.sky-cms.com"));
-            
+
             // Register blog post command handlers
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandResult>>>(sp =>
                 new Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandHandler(
                     Db,
                     sp.GetRequiredService<IMediator>(),
                     new NullLogger<Sky.Editor.Features.Blogs.CreatePost.CreateBlogPostCommandHandler>()));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommandResult>>>(sp =>
                 new Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommandHandler(
                     Db,
                     new NullLogger<Sky.Editor.Features.Blogs.UpdatePost.UpdateBlogPostCommandHandler>()));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandResult>>>(sp =>
                 new Sky.Editor.Features.Blogs.DeletePost.DeleteBlogPostCommandHandler(
                     Db,
@@ -476,17 +473,17 @@ namespace Sky.Tests
                     ArticleHtmlService,
                     Clock,
                     new NullLogger<Sky.Editor.Features.Templates.Create.CreatePageDesignVersionHandler>()));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.Save.SavePageDesignVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Data.PageDesignVersion>>>(sp =>
                 new Sky.Editor.Features.Templates.Save.SavePageDesignVersionHandler(
                     Db,
                     ArticleHtmlService,
                     Clock,
                     new NullLogger<Sky.Editor.Features.Templates.Save.SavePageDesignVersionHandler>()));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.Delete.DeleteTemplateCommand, Cosmos.Common.Features.Shared.CommandResult<bool>>>(sp =>
                 new Sky.Editor.Features.Templates.Delete.DeleteTemplateHandler(Db));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Templates.UpdateMetadata.UpdateTemplateMetadataCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Data.Template>>>(sp =>
                 new Sky.Editor.Features.Templates.UpdateMetadata.UpdateTemplateMetadataHandler(
                     Db,
@@ -531,48 +528,34 @@ namespace Sky.Tests
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Import.ImportLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<bool>>>(sp =>
                 importLayoutHandlerFactory());
 
-            // Register layout query handlers (Phase 2a - CQRS migration)
-            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery, Cosmos.Common.Models.LayoutViewModel>>(sp =>
-                new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQueryHandler(
-                    Db,
-                    Cache));
-
-            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Layouts.Queries.CheckDefaultLayoutExistsQuery, bool>>(sp =>
-                new Cosmos.Common.Features.Layouts.Queries.CheckDefaultLayoutExistsQueryHandler(Db));
-
-            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Layouts.Queries.GetLayoutByIdQuery, Cosmos.Common.Data.Layout?>>(sp =>
-                new Cosmos.Common.Features.Layouts.Queries.GetLayoutByIdQueryHandler(Db));
-
             // Register template query handlers
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Sky.Editor.Features.Templates.Get.GetTemplateQuery, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Templates.Get.GetTemplateQueryResult>>>(sp =>
                 new Sky.Editor.Features.Templates.Get.GetTemplateQueryHandler(
                     Db,
                     new NullLogger<Sky.Editor.Features.Templates.Get.GetTemplateQueryHandler>()));
-            
+
             // Register article query handlers needed by EditorController
             // ✅ Register with non-nullable ArticleViewModel to match EditorController expectations
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQueryHandler(
-                    Mediator,
                     Db,
                     Cache,
                     configuration));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQueryHandler(
-                    Mediator,
                     Db,
                     Cache,
                     configuration));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQuery, System.Collections.Generic.IEnumerable<Cosmos.Common.Models.RedirectItemViewModel>>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleRedirectsQueryHandler(Db));
-            
+
             // ✅ Register GetArticleCatalogEntryQueryHandler for EditorController.Permissions
             // NOTE: Use non-nullable CatalogEntry because nullable reference types are compile-time only
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQuery, Cosmos.Common.Data.CatalogEntry>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleCatalogEntryQueryHandler(Db));
-            
+
             // ✅ Register GetLastPublishedDateQueryHandler for EditorController.Designer
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQuery, System.DateTimeOffset?>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetLastPublishedDateQueryHandler(Db));
@@ -580,7 +563,6 @@ namespace Sky.Tests
             // ✅ Register GetArticleByUrlQueryHandler for LayoutsController.ExportLayout and EditPreview
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQueryHandler(
-                    Mediator,
                     Db,
                     Cache,
                     configuration));
@@ -592,11 +574,11 @@ namespace Sky.Tests
                     Db,
                     EditorSettings.PublisherUrl.ToString(),
                     configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? string.Empty));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQuery, Cosmos.Common.Models.TableOfContents>>(sp =>
                 new Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQueryHandler(
                     sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
-            
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQuery, System.Collections.Generic.List<Cosmos.Common.Models.TableOfContentsItem>>>(sp =>
                 new Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQueryHandler(
                     sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
@@ -606,24 +588,19 @@ namespace Sky.Tests
             Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Save.SaveArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>>> saveArticleHandlerFactory = null!;
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Save.SaveArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Save.ArticleUpdateResult>>>(sp =>
                 saveArticleHandlerFactory());
-            
+
             // ✅ LAZY FACTORY: Register CreateArticleHandler using a factory that will be populated later
             // CreateArticleHandler depends on TemplateService which is created AFTER this service provider is built
             Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Create.CreateArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Models.ArticleViewModel>>> createArticleHandlerFactory = null!;
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Create.CreateArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Models.ArticleViewModel>>>(sp =>
                 createArticleHandlerFactory());
-            
+
             // ✅ LAZY FACTORY: Register CreateArticleVersionHandler using a factory that will be populated later
             // CreateArticleVersionHandler depends on ArticleLogic which is created AFTER this service provider is built
             Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommandResult>>> createArticleVersionHandlerFactory = null!;
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommandResult>>>(sp =>
                 createArticleVersionHandlerFactory());
 
-            // ✅ LAZY FACTORY: Register PublishArticleHandler using a factory that will be populated later
-            // PublishArticleHandler depends on PublishingService and CatalogService which are created AFTER this service provider is built
-            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Publish.PublishArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Publish.PublishArticleCommandResult>>> publishArticleHandlerFactory = null!;
-            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Publish.PublishArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Publish.PublishArticleCommandResult>>>(sp =>
-                publishArticleHandlerFactory());
 
 
             // Register query handlers
@@ -635,10 +612,6 @@ namespace Sky.Tests
                 new Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQueryHandler(
                     sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
 
-            // Register GetArticleFolderContentsQueryHandler (Phase 4 migration)
-            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetArticleFolderContentsQuery, System.Collections.Generic.List<Cosmos.BlobService.FileManagerEntry>>>(sp =>
-                new Cosmos.Common.Features.Articles.Queries.GetArticleFolderContentsQueryHandler(Storage));
-
             Services = serviceCollection.BuildServiceProvider();
 
             // ✅ CREATE A SCOPE AND GET MEDIATOR FROM IT (scoped services need to be resolved from a scope)
@@ -646,80 +619,30 @@ namespace Sky.Tests
             Mediator = ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
 
             // ✅ NOW CREATE TEMPLATE SERVICE WITH CONFIGURATION AND SERVICE PROVIDER
-            var templateContext = new Sky.Editor.Services.Templates.TemplateContext(Db, DynamicConfigurationProvider);
             TemplateService = new TemplateService(
                 webHostEnvironment,
                 new LoggerFactory().CreateLogger<TemplateService>(),
-                templateContext,
-                Mediator);
-
-            // ✅ CREATE publishing context
-            var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
                 Db,
-                Storage,
-                EditorSettings,
-                HttpContextAccessor,
-                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+                DynamicConfigurationProvider);      // ✅ Pass service provider (already built)
 
-            // ✅ CREATE auxiliary services for publishing
-            var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
-                Db,
-                new LoggerFactory().CreateLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
-                HttpContextAccessor,
-                EditorSettings);
-
-            var tocService = new Sky.Editor.Services.TableOfContents.TocService(
-                Storage,
-                EditorSettings,
-                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                new LoggerFactory().CreateLogger<Sky.Editor.Services.TableOfContents.TocService>());
-
-            var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
-                Storage,
-                EditorSettings,
-                ViewRenderService,
-                Mediator,
-                new LoggerFactory().CreateLogger<Sky.Editor.Services.StaticFiles.StaticFileService>());
-
-            var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
-                Db,
-                Storage,
-                HttpContextAccessor);
-
-            var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
-                blogPublishingContext,
-                BlogStreamRenderingService,
-                ViewRenderService,
-                Mediator,
-                null, // PublishingService reference (circular dependency resolved by DI)
-                new LoggerFactory().CreateLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>());
-
-            // ✅ CREATE composite auxiliary services
-            var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
-                cdnPurgeService,
-                tocService,
-                staticFileService,
-                blogPublishingService);
-
-            // ✅ CREATE static file service factory for parallel processing
-            var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(Services);
-
-            // ✅ CREATE PublishingService WITH factory (8 params total)
+            // ✅ CREATE PublishingService WITH Services as the provider (needed for CreateStaticPages)
             PublishingService = new PublishingService(
-                publishingContext,
+                Db,
+                Storage,
+                EditorSettings,
                 new LoggerFactory().CreateLogger<PublishingService>(),
+                HttpContextAccessor,
                 authorInfoService,
                 Clock,
-                staticFileServiceFactory,
+                BlogStreamRenderingService,
+                ViewRenderService,
+                Services, // ✅ Pass the service provider
                 new NoOpPublishingProgressReporter(),
-                null, // No domain event dispatcher for tests
-                auxiliaryServices);
+                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
 
             // ✅ NOW UPDATE RedirectService and TitleChangeService with the PublishingService
             RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);
-
-            var titleChangeContextWithPublishing = new Sky.Editor.Services.Titles.TitleChangeContext(Db, Clock, EventDispatcher);
-            TitleChangeService = new TitleChangeService(titleChangeContextWithPublishing, SlugService, RedirectService, PublishingService, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
+            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
 
             // ✅ NOW CREATE LOGIC WITH TEMPLATE SERVICE
             Logic = new ArticleEditLogic(
@@ -736,6 +659,14 @@ namespace Sky.Tests
                 TitleChangeService,
                 RedirectService,
                 TemplateService);
+
+            // ✅ CREATE ArticleLogic for handlers that need it
+            ArticleLogic = new Cosmos.Common.Data.Logic.ArticleLogic(
+                Db,
+                Cache,
+                EditorSettings.PublisherUrl.ToString(),
+                configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? string.Empty,
+                isEditor: true);
 
             // ✅ NOW CREATE FEATURE HANDLERS WITH TEMPLATE SERVICE
             CreateArticleHandler = new CreateArticleHandler(
@@ -779,14 +710,6 @@ namespace Sky.Tests
                 Storage,
                 new NullLogger<Sky.Editor.Features.Articles.Trash.TrashArticleHandler>());
 
-            // ✅ CREATE PublishArticleHandler
-            var publishArticleHandler = new Sky.Editor.Features.Articles.Publish.PublishArticleHandler(
-                Db,
-                Clock,
-                PublishingService,
-                CatalogService,
-                new NullLogger<Sky.Editor.Features.Articles.Publish.PublishArticleHandler>());
-
             // ✅ CREATE PublishPageDesignVersionHandler
             var publishPageDesignVersionHandler = new Sky.Editor.Features.Templates.Publishing.PublishPageDesignVersionHandler(
                 Db,
@@ -801,7 +724,6 @@ namespace Sky.Tests
             createArticleVersionHandlerFactory = () => createArticleVersionHandler;
             deleteArticleHandlerFactory = () => deleteArticleHandler;
             trashArticleHandlerFactory = () => trashArticleHandler;
-            publishArticleHandlerFactory = () => publishArticleHandler;
             publishPageDesignVersionHandlerFactory = () => publishPageDesignVersionHandler;
 
             // ✅ ADD THIS - Get the real IHttpClientFactory from DI
@@ -828,7 +750,6 @@ namespace Sky.Tests
             // ✅ CREATE ImportLayoutHandler
             var importLayoutHandler = new Sky.Editor.Features.Layouts.Import.ImportLayoutHandler(
                 Db,
-                Mediator,
                 LayoutImportService,
                 layoutVersioningService,
                 new NullLogger<Sky.Editor.Features.Layouts.Import.ImportLayoutHandler>());
@@ -1130,7 +1051,7 @@ namespace Sky.Tests
                 Mediator,
                 Cache,
                 DynamicConfigurationProvider);
-            
+
             // Setup user context
             var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {

@@ -173,7 +173,7 @@ namespace Sky.Tests.FlexDb
             var providerName = strategy.ProviderName;
 
             // Assert
-            Assert.AreEqual("Cosmos", providerName);
+            Assert.AreEqual("Microsoft.EntityFrameworkCore.Cosmos", providerName);
         }
 
         /// <summary>

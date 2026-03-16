@@ -7,12 +7,6 @@
 
 namespace Sky.Editor.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.IO;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Services.Configurations;
     using CsvHelper;
@@ -21,6 +15,12 @@ namespace Sky.Editor.Controllers
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Models;
+    using System;
+    using System.Collections.Generic;
+    using System.Globalization;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Contact management controller.
@@ -55,7 +55,7 @@ namespace Sky.Editor.Controllers
 
                 ViewData["EnableAlerts"] = alertsEnabled;
                 ViewData["MailChimpIntegrated"] = hasMailChimp;
-                
+
                 return View();
             }
             catch (Exception ex)
@@ -96,7 +96,7 @@ namespace Sky.Editor.Controllers
 
                 await dbContext.SaveChangesAsync();
                 logger.LogInformation("Contact alerts {Status}", enable ? "enabled" : "disabled");
-                
+
                 return Ok(new { enabled = enable });
             }
             catch (Exception ex)
@@ -266,7 +266,7 @@ namespace Sky.Editor.Controllers
                     .ToListAsync();
 
                 await UpsertSettingAsync(settings, ConfigKeys.ApiKey, model.ApiKey, "MailChimp API Key");
-                await UpsertSettingAsync(settings, ConfigKeys.ContactListName, model.ContactListName.Trim(), 
+                await UpsertSettingAsync(settings, ConfigKeys.ContactListName, model.ContactListName.Trim(),
                     "List name that contacts are added to");
 
                 await dbContext.SaveChangesAsync();
@@ -335,7 +335,7 @@ namespace Sky.Editor.Controllers
         /// </summary>
         private class ContactsListResponse
         {
-            public List<Contact> data { get; set; } = new ();
+            public List<Contact> data { get; set; } = new();
         }
     }
 }

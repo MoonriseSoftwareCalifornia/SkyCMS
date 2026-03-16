@@ -7,9 +7,9 @@
 
 namespace Sky.Cms.Models
 {
-    using System.Collections.Generic;
     using Cosmos.Common.Models;
     using Sky.Cms.Models.Interfaces;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Compare code between two pages.

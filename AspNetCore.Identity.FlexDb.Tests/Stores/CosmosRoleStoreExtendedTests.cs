@@ -21,7 +21,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public static IEnumerable<object[]> GetTestProviders()
         {
             var providers = TestUtilities.GetAvailableProviders();
-            
+
             foreach (var provider in providers)
             {
                 yield return new object[] { provider };
@@ -50,7 +50,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var roleName = $"TestRole_{Guid.NewGuid():N}";
             var role = new IdentityRole(roleName)
             {
@@ -63,7 +63,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var retrievedRole = await roleStore.FindByIdAsync(role.Id, CancellationToken.None);
             Assert.IsNotNull(retrievedRole, $"Failed for provider: {provider.DisplayName}");
             Assert.AreEqual(roleName, retrievedRole.Name, $"Failed for provider: {provider.DisplayName}");
@@ -96,7 +96,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var roleName = $"DuplicateRole_{Guid.NewGuid():N}";
             var role1 = new IdentityRole(roleName)
             {
@@ -129,7 +129,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
             var newRoleName = $"UpdatedRole_{Guid.NewGuid():N}";
 
@@ -140,7 +140,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var updatedRole = await roleStore.FindByIdAsync(role.Id, CancellationToken.None);
             Assert.AreEqual(newRoleName, updatedRole.Name, $"Failed for provider: {provider.DisplayName}");
         }
@@ -177,7 +177,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
             var roleId = role.Id;
 
@@ -186,7 +186,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var deletedRole = await roleStore.FindByIdAsync(roleId, CancellationToken.None);
             Assert.IsNull(deletedRole, $"Role should be deleted for provider: {provider.DisplayName}");
         }
@@ -220,11 +220,11 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
             var roleId = role.Id;
             var user = await GetMockRandomUserAsync(userStore);
-            
+
             // Add user to role
             await userStore.AddToRoleAsync(user, role.NormalizedName, CancellationToken.None);
 
@@ -237,7 +237,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var userRoleCountAfterDelete = await dbContext.UserRoles.Where(ur => ur.RoleId == roleId).CountAsync();
             Assert.AreEqual(0, userRoleCountAfterDelete, $"User role associations should be deleted for provider: {provider.DisplayName}");
         }
@@ -250,11 +250,11 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
             var roleId = role.Id;
             var claim = new Claim("TestType", "TestValue");
-            
+
             await roleStore.AddClaimAsync(role, claim, CancellationToken.None);
 
             // Verify claim exists
@@ -266,7 +266,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var claimCountAfterDelete = await dbContext.RoleClaims.Where(rc => rc.RoleId == roleId).CountAsync();
             Assert.AreEqual(0, claimCountAfterDelete, $"Role claims should be deleted for provider: {provider.DisplayName}");
         }
@@ -282,7 +282,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
 
             // Act
@@ -301,7 +301,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
 
             // Act
@@ -322,7 +322,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var nonExistentName = $"NonExistent_{Guid.NewGuid():N}";
 
             // Act
@@ -343,7 +343,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
             var claim = new Claim("Permission", "CanEdit");
 
@@ -364,10 +364,10 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
             var claim = new Claim("Permission", "CanDelete");
-            
+
             await roleStore.AddClaimAsync(role, claim, CancellationToken.None);
             var claimsBeforeRemove = await roleStore.GetClaimsAsync(role, CancellationToken.None);
             Assert.AreEqual(1, claimsBeforeRemove.Count, $"Failed for provider: {provider.DisplayName}");
@@ -387,7 +387,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
 
             // Act
@@ -405,7 +405,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
             var claim1 = new Claim("Permission", "CanRead");
             var claim2 = new Claim("Permission", "CanWrite");
@@ -432,7 +432,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
 
             // Act
@@ -449,7 +449,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
 
             // Act
@@ -466,7 +466,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var role = await GetMockRandomRoleAsync(roleStore);
 
             // Act

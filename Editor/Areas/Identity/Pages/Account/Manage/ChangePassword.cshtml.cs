@@ -7,13 +7,12 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account.Manage
 {
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
-    using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Change password page.

@@ -7,28 +7,24 @@
 
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Moq;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
-    using Sky.Editor.Features.Layouts.Import;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for LayoutsController.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class LayoutsControllerTests : SkyCmsTestBase
     {
         private LayoutsController controller = null!;
@@ -99,7 +95,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as System.Collections.Generic.List<LayoutIndexViewModel>;
             Assert.IsNotNull(model);
             Assert.IsTrue(model.Count > 0, "Should have at least one layout");
@@ -122,7 +118,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
-            Assert.IsTrue((bool)viewResult.ViewData["ShowCreateFirstLayout"], 
+            Assert.IsTrue((bool)viewResult.ViewData["ShowCreateFirstLayout"],
                 "Should show create first layout button");
         }
 
@@ -136,7 +132,7 @@ namespace Sky.Tests.Controllers
             var existingLayouts = await Db.Layouts.ToListAsync();
             Db.Layouts.RemoveRange(existingLayouts);
             await Db.SaveChangesAsync();
-            
+
             var existingLayout = new Layout
             {
                 Id = Guid.NewGuid(),
@@ -195,7 +191,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            
+
             // Verify layout was deleted
             var deletedLayout = await Db.Layouts.FindAsync(layoutToDelete.Id);
             Assert.IsNull(deletedLayout, "Layout should be deleted");
@@ -261,7 +257,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            
+
             // Verify template was deleted
             var deletedTemplate = await Db.Templates.FindAsync(template.Id);
             Assert.IsNull(deletedTemplate, "Associated template should be deleted");
@@ -292,7 +288,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             Assert.IsNotNull(jsonResult.Value);
-            
+
             var layouts = jsonResult.Value as System.Collections.Generic.List<LayoutIndexViewModel>;
             Assert.IsNotNull(layouts);
             Assert.IsTrue(layouts.Count > 0, "Should have at least one layout");
@@ -321,7 +317,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-            
+
             // Verify version was initialized
             var updatedLayout = await Db.Layouts.FindAsync(layoutWithoutVersion.Id);
             Assert.IsTrue(updatedLayout.Version.HasValue, "Version should be initialized");
@@ -361,7 +357,7 @@ namespace Sky.Tests.Controllers
             var viewResult = (ViewResult)result;
             Assert.IsNotNull(viewResult.Model);
             Assert.IsInstanceOfType(viewResult.Model, typeof(LayoutCodeViewModel));
-            
+
             var model = (LayoutCodeViewModel)viewResult.Model;
             Assert.AreEqual(layout.Id, model.Id);
             Assert.AreEqual(layout.Head, model.Head);
@@ -414,7 +410,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-            
+
             // Verify changes were saved
             var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
             Assert.IsNotNull(updatedLayout);
@@ -457,7 +453,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
             Assert.IsNotNull(updatedLayout);
-            Assert.Contains("Encrypted Content", updatedLayout.Head, 
+            Assert.Contains("Encrypted Content", updatedLayout.Head,
                 "Content should be decrypted and saved");
         }
 
@@ -522,7 +518,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            
+
             // Verify notes were saved
             var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
             Assert.IsNotNull(updatedLayout);
@@ -562,7 +558,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            
+
             // Verify notes were saved
             var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
             Assert.Contains("Valid HTML notes", updatedLayout.Notes);
@@ -605,7 +601,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            
+
             // Verify layout2 is now default
             var updatedLayout2 = await Db.Layouts.FindAsync(layout2.Id);
             Assert.IsTrue(updatedLayout2.IsDefault, "Layout should be set as default");
@@ -674,7 +670,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
-            
+
             // Verify new version was created
             var layouts = await Db.Layouts.Where(l => l.LayoutNumber == layout.LayoutNumber).OrderByDescending(l => l.Version).ToListAsync();
             Assert.AreEqual(2, layouts.Count, "Should have 2 versions now");
@@ -706,7 +702,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var layouts = await Db.Layouts.Where(l => l.LayoutNumber == 5).ToListAsync();
             Assert.AreEqual(2, layouts.Count, "Should have 2 versions with same LayoutNumber");
-            Assert.IsTrue(layouts.All(l => l.LayoutNumber == 5), 
+            Assert.IsTrue(layouts.All(l => l.LayoutNumber == 5),
                 "All versions should have LayoutNumber = 5");
         }
 
@@ -798,7 +794,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-            
+
             // Verify changes were saved
             var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
             Assert.Contains("New Header", updatedLayout.HtmlHeader);
@@ -1178,7 +1174,7 @@ namespace Sky.Tests.Controllers
             // Assert - Should still return view but with corrected parameters
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
-            
+
             // Verify corrected pagination
             Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should be corrected to 0");
             Assert.AreEqual(10, viewResult.ViewData["pageSize"], "Invalid pageSize should be corrected to 10");
@@ -1196,62 +1192,52 @@ namespace Sky.Tests.Controllers
             // Assert - Should still return view but with corrected parameters
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
-            
+
             // Verify corrected pagination
             Assert.AreEqual(0, viewResult.ViewData["pageNo"], "Negative pageNo should be corrected to 0");
             Assert.AreEqual(10, viewResult.ViewData["pageSize"], "Invalid pageSize should be corrected to 10");
         }
 
         /// <summary>
-        /// Test that Promote returns BadRequest for empty GUID.
+        /// Test that layout ID actions return BadRequest for empty GUID.
         /// </summary>
         [TestMethod]
-        public async Task Promote_ReturnsBadRequest_ForEmptyGuid()
+        public async Task LayoutIdActions_ReturnBadRequest_ForEmptyGuid()
         {
-            // Act
-            var result = await controller.Promote(Guid.Empty);
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("Delete", () => controller.Delete(Guid.Empty)),
+                ("Promote", () => controller.Promote(Guid.Empty)),
+                ("Publish", () => controller.Publish(Guid.Empty)),
+                ("ExportLayout", () => controller.ExportLayout(Guid.Empty)),
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), $"{scenario.Name} should return BadRequest for empty GUID.");
+            }
         }
 
         /// <summary>
-        /// Test that Promote returns NotFound when layout does not exist.
+        /// Test that Promote, Publish, and ExportLayout return NotFound for missing layouts.
         /// </summary>
         [TestMethod]
-        public async Task Promote_ReturnsNotFound_WhenLayoutDoesNotExist()
+        public async Task LayoutIdActions_ReturnNotFound_WhenLayoutDoesNotExist()
         {
-            // Act
-            var result = await controller.Promote(Guid.NewGuid());
+            var missingId = Guid.NewGuid();
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("Promote", () => controller.Promote(missingId)),
+                ("Publish", () => controller.Publish(missingId)),
+                ("ExportLayout", () => controller.ExportLayout(missingId)),
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
-        }
-
-        /// <summary>
-        /// Test that Publish returns BadRequest for empty GUID.
-        /// </summary>
-        [TestMethod]
-        public async Task Publish_ReturnsBadRequest_ForEmptyGuid()
-        {
-            // Act
-            var result = await controller.Publish(Guid.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Test that Publish returns NotFound when layout does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task Publish_ReturnsNotFound_WhenLayoutDoesNotExist()
-        {
-            // Act
-            var result = await controller.Publish(Guid.NewGuid());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult), $"{scenario.Name} should return NotFound for missing layout.");
+            }
         }
 
         /// <summary>
@@ -1441,19 +1427,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Test that Delete returns BadRequest for empty GUID.
-        /// </summary>
-        [TestMethod]
-        public async Task Delete_ReturnsBadRequest_ForEmptyGuid()
-        {
-            // Act
-            var result = await controller.Delete(Guid.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
         /// Test that DesignerData POST returns BadRequest for empty GUID.
         /// </summary>
         [TestMethod]
@@ -1480,32 +1453,6 @@ namespace Sky.Tests.Controllers
 
             // Act
             var result = await controller.DesignerData(Guid.NewGuid(), "Test", htmlContent, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
-        }
-
-        /// <summary>
-        /// Test that ExportLayout returns BadRequest for null or empty GUID.
-        /// </summary>
-        [TestMethod]
-        public async Task ExportLayout_ReturnsBadRequest_ForEmptyGuid()
-        {
-            // Act
-            var result = await controller.ExportLayout(Guid.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Test that ExportLayout returns NotFound when layout does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task ExportLayout_ReturnsNotFound_WhenLayoutDoesNotExist()
-        {
-            // Act
-            var result = await controller.ExportLayout(Guid.NewGuid());
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
@@ -1542,10 +1489,10 @@ namespace Sky.Tests.Controllers
             var layouts = await Db.Layouts.Where(l => l.LayoutNumber == layout.LayoutNumber)
                 .OrderByDescending(l => l.Version)
                 .ToListAsync();
-            
+
             Assert.AreEqual(2, layouts.Count);
             var newVersion = layouts[0];
-            
+
             Assert.AreEqual(layout.LayoutName, newVersion.LayoutName, "LayoutName should be copied");
             Assert.AreEqual(layout.Head, newVersion.Head, "Head should be copied");
             Assert.AreEqual(layout.HtmlHeader, newVersion.HtmlHeader, "HtmlHeader should be copied");
@@ -1567,7 +1514,7 @@ namespace Sky.Tests.Controllers
             var existingLayouts = await Db.Layouts.ToListAsync();
             Db.Layouts.RemoveRange(existingLayouts);
             await Db.SaveChangesAsync();
-            
+
             var layout1 = new Layout
             {
                 Id = Guid.NewGuid(),
@@ -1628,7 +1575,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             var model = viewResult.Model as System.Collections.Generic.List<LayoutIndexViewModel>;
-            
+
             Assert.IsNotNull(model);
             Assert.AreEqual(5, model.Count, "Page 2 should have 5 layouts (15 total - 10 on page 1)");
             Assert.AreEqual(15, (int)viewResult.ViewData["RowCount"], "RowCount should be 15");

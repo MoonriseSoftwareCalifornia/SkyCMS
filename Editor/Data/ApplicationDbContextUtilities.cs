@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Data
 {
-    using System;
     using Cosmos.Common.Data;
     using Cosmos.DynamicConfig;
     using Microsoft.Extensions.DependencyInjection;
+    using System;
 
     /// <summary>
     /// Utilities for the ApplicationDbContext class.

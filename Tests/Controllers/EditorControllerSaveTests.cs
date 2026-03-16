@@ -8,7 +8,6 @@
 namespace Sky.Tests.Controllers
 {
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Services;
@@ -19,7 +18,6 @@ namespace Sky.Tests.Controllers
     using SendGrid.Helpers.Errors.Model;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
-    using Sky.Editor.Models;
     using System;
     using System.Linq;
     using System.Security.Claims;
@@ -31,7 +29,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Tests for EditorController save operations using SaveArticle feature.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class EditorControllerSaveTests : SkyCmsTestBase
     {
@@ -390,42 +387,51 @@ updatedArticle.Content, "Content should be preserved when EditorId is not specif
         }
 
         /// <summary>
-        /// Tests unified Edit POST returns bad request when model is null.
+        /// Tests unified Edit POST returns bad request for null model and invalid model state.
         /// </summary>
         [TestMethod]
-        public async Task Edit_Post_WithNullModel_ReturnsBadRequest()
+        public async Task Edit_Post_WithInvalidInput_ReturnsBadRequest()
         {
-            // Act
-            var result = await controller.Edit(model: null!);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequest = (BadRequestObjectResult)result;
-            Assert.AreEqual("No data sent.", badRequest.Value);
-        }
-
-        /// <summary>
-        /// Tests unified Edit POST returns bad request when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task Edit_Post_WithInvalidModelState_ReturnsBadRequest()
-        {
-            // Arrange
-            controller.ModelState.AddModelError("ArticleNumber", "ArticleNumber is required.");
-            var model = new EditPostViewModel
+            var scenarios = new[]
             {
-                ArticleNumber = 0,
-                Command = "SaveBody",
-                Payload = CryptoJsDecryption.Encrypt("<p>Ignored</p>")
+                new
+                {
+                    Name = "NullModel",
+                    Setup = (Action)(() => { }),
+                    Model = (EditPostViewModel)null,
+                    AssertBadRequest = (Action<BadRequestObjectResult>)(badRequest =>
+                    {
+                        Assert.AreEqual("No data sent.", badRequest.Value);
+                    }),
+                },
+                new
+                {
+                    Name = "InvalidModelState",
+                    Setup = (Action)(() => controller.ModelState.AddModelError("ArticleNumber", "ArticleNumber is required.")),
+                    Model = new EditPostViewModel
+                    {
+                        ArticleNumber = 0,
+                        Command = "SaveBody",
+                        Payload = CryptoJsDecryption.Encrypt("<p>Ignored</p>")
+                    },
+                    AssertBadRequest = (Action<BadRequestObjectResult>)(badRequest =>
+                    {
+                        Assert.IsNotNull(badRequest.Value);
+                    }),
+                },
             };
 
-            // Act
-            var result = await controller.Edit(model);
+            foreach (var scenario in scenarios)
+            {
+                controller.ModelState.Clear();
+                scenario.Setup();
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequest = (BadRequestObjectResult)result;
-            Assert.IsNotNull(badRequest.Value);
+                var result = await controller.Edit(model: scenario.Model!);
+
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), scenario.Name);
+                var badRequest = (BadRequestObjectResult)result;
+                scenario.AssertBadRequest(badRequest);
+            }
         }
 
         /// <summary>

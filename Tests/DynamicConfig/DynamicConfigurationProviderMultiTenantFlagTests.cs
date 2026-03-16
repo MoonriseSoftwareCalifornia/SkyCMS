@@ -85,5 +85,85 @@ namespace Sky.Tests.DynamicConfig
 
             foreach (var f in new[] { configDb, tenantA, tenantB }) { try { if (File.Exists(f)) File.Delete(f); } catch { } }
         }
+
+        [TestMethod]
+        public async Task GetDatabaseConnectionStringAsync_HeaderUsed_WhenMultiTenantTrueAndTrustedProxy()
+        {
+            var configDb = GetConfigFilePath();
+            var tenantA = TempFilePath("mt-true-a.db");
+            var tenantB = TempFilePath("mt-true-b.db");
+            foreach (var f in new[] { configDb, tenantA, tenantB }) { if (File.Exists(f)) File.Delete(f); }
+
+            var hostA = "tenant-a.test";
+            var hostB = "tenant-b.test";
+
+            var connA = new Connection { DomainNames = new[] { hostA }, DbConn = SqliteConnectionString(tenantA), StorageConn = "s1", WebsiteUrl = $"https://{hostA}", ResourceGroup = "rg" };
+            var connB = new Connection { DomainNames = new[] { hostB }, DbConn = SqliteConnectionString(tenantB), StorageConn = "s2", WebsiteUrl = $"https://{hostB}", ResourceGroup = "rg" };
+            await SeedConfigDatabaseAsync(configDb, new[] { connA, connB });
+
+            var inMemorySettings = new Dictionary<string, string>
+            {
+                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) },
+                { "MultiTenant", "true" }
+            };
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
+
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Host = new HostString(hostA);
+            httpContext.Request.Headers["x-origin-hostname"] = hostB;
+            httpContext.Connection.RemoteIpAddress = IPAddress.Loopback;
+
+            var httpAccessor = new HttpContextAccessor { HttpContext = httpContext };
+            var memoryCache = new MemoryCache(new MemoryCacheOptions());
+            var proxySettings = Options.Create(new ProxySettings { TrustXOriginHostname = true, TrustedProxyIPs = new List<string> { "127.0.0.1", "::1" } });
+
+            var mockLogger = new Mock<ILogger<DynamicConfigurationProvider>>();
+            var provider = new DynamicConfigurationProvider(configuration, httpAccessor, memoryCache, mockLogger.Object, proxySettings);
+
+            var dbConn = await provider.GetDatabaseConnectionStringAsync();
+            Assert.AreEqual(connB.DbConn, dbConn, "Expected x-origin-hostname to be honored for trusted proxies in multi-tenant mode.");
+
+            foreach (var f in new[] { configDb, tenantA, tenantB }) { try { if (File.Exists(f)) File.Delete(f); } catch { } }
+        }
+
+        [TestMethod]
+        public async Task GetDatabaseConnectionStringAsync_HeaderIgnored_WhenProxyNotTrusted()
+        {
+            var configDb = GetConfigFilePath();
+            var tenantA = TempFilePath("mt-untrusted-a.db");
+            var tenantB = TempFilePath("mt-untrusted-b.db");
+            foreach (var f in new[] { configDb, tenantA, tenantB }) { if (File.Exists(f)) File.Delete(f); }
+
+            var hostA = "tenant-a.test";
+            var hostB = "tenant-b.test";
+
+            var connA = new Connection { DomainNames = new[] { hostA }, DbConn = SqliteConnectionString(tenantA), StorageConn = "s1", WebsiteUrl = $"https://{hostA}", ResourceGroup = "rg" };
+            var connB = new Connection { DomainNames = new[] { hostB }, DbConn = SqliteConnectionString(tenantB), StorageConn = "s2", WebsiteUrl = $"https://{hostB}", ResourceGroup = "rg" };
+            await SeedConfigDatabaseAsync(configDb, new[] { connA, connB });
+
+            var inMemorySettings = new Dictionary<string, string>
+            {
+                { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) },
+                { "MultiTenant", "true" }
+            };
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
+
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Host = new HostString(hostA);
+            httpContext.Request.Headers["x-origin-hostname"] = hostB;
+            httpContext.Connection.RemoteIpAddress = IPAddress.Parse("203.0.113.10");
+
+            var httpAccessor = new HttpContextAccessor { HttpContext = httpContext };
+            var memoryCache = new MemoryCache(new MemoryCacheOptions());
+            var proxySettings = Options.Create(new ProxySettings { TrustXOriginHostname = true, TrustedProxyIPs = new List<string> { "127.0.0.1" } });
+
+            var mockLogger = new Mock<ILogger<DynamicConfigurationProvider>>();
+            var provider = new DynamicConfigurationProvider(configuration, httpAccessor, memoryCache, mockLogger.Object, proxySettings);
+
+            var dbConn = await provider.GetDatabaseConnectionStringAsync();
+            Assert.AreEqual(connA.DbConn, dbConn, "Expected untrusted proxy to force fallback to request host.");
+
+            foreach (var f in new[] { configDb, tenantA, tenantB }) { try { if (File.Exists(f)) File.Delete(f); } catch { } }
+        }
     }
 }

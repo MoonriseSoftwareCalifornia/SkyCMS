@@ -7,26 +7,22 @@
 
 namespace Sky.Tests.Features.Blogs
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.AspNetCore.Routing;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Sky.Editor.Controllers;
-    using Sky.Editor.Features.Blogs.CreatePost;
-    using Sky.Editor.Features.Blogs.UpdatePost;
-    using Sky.Editor.Features.Blogs.DeletePost;
-    using Sky.Editor.Models.Blogs;
     using Moq;
+    using Sky.Editor.Controllers;
+    using Sky.Editor.Features.Blogs.UpdatePost;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for BlogController blog post CRUD operations using the new dedicated command handlers.
@@ -41,15 +37,15 @@ namespace Sky.Tests.Features.Blogs
         /// Initialize test context before each test.
         /// </summary>
         [TestInitialize]
-        public async Task Setup()
+        public new async Task Setup()
         {
             InitializeTestContext(seedLayout: true);
-            
+
             // Add a user to the in-memory database so UserManager can find it
             var testUser = new IdentityUser { Id = TestUserId.ToString(), UserName = "testuser" };
             Db.Users.Add(testUser);
             await Db.SaveChangesAsync();
-            
+
             // Ensure templates exist
             await TemplateService.EnsureDefaultTemplatesExistAsync();
 
@@ -92,14 +88,14 @@ namespace Sky.Tests.Features.Blogs
                 new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString())
             }, "test");
             var principal = new System.Security.Claims.ClaimsPrincipal(identity);
-            
+
             var httpContext = new DefaultHttpContext
             {
                 User = principal,
                 RequestServices = Services
             };
             httpContext.Request.Host = new HostString("example.com");
-            
+
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext
@@ -151,7 +147,7 @@ namespace Sky.Tests.Features.Blogs
             var redirect = (RedirectToActionResult)result;
             Assert.AreEqual("Edit", redirect.ActionName);
             Assert.AreEqual("Editor", redirect.ControllerName);
-            
+
             // Verify the post was created in the database
             var articleNumber = (int)redirect.RouteValues["id"];
             var createdPost = await Db.Articles
@@ -214,7 +210,7 @@ namespace Sky.Tests.Features.Blogs
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirect = (RedirectToActionResult)result;
-            
+
             var articleNumber = (int)redirect.RouteValues["id"];
             var createdPost = await Db.Articles
                 .Where(a => a.ArticleNumber == articleNumber)
@@ -276,7 +272,7 @@ namespace Sky.Tests.Features.Blogs
                 .Where(a => a.ArticleNumber == articleNumber)
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
-            
+
             // Create a second version by updating via command
             var updateCommand = new UpdateBlogPostCommand
             {
@@ -292,12 +288,12 @@ namespace Sky.Tests.Features.Blogs
 
             // Assert
             Assert.IsInstanceOfType(deleteResult, typeof(RedirectToActionResult));
-            
+
             // Verify both versions are marked deleted
             var allVersions = await Db.Articles
                 .Where(a => a.ArticleNumber == articleNumber)
                 .ToListAsync();
-            
+
             Assert.IsTrue(allVersions.All(v => v.StatusCode == (int)StatusCodeEnum.Deleted),
                 "All versions should be marked as deleted");
         }
@@ -349,6 +345,6 @@ namespace Sky.Tests.Features.Blogs
         }
 
         #endregion
-       
+
     }
 }

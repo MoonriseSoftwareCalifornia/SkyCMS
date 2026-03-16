@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Services.Migrations.Core
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Defines a database migration that can be applied to multiple database providers.

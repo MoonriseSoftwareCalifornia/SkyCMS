@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Features.Blogs.Queries
 {
-    using System;
     using Cosmos.Common.Features.Shared;
+    using System;
 
     /// <summary>
     /// Query to retrieve navigation information for blog posts within a stream.

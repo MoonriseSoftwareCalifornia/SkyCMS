@@ -7,10 +7,6 @@
 
 namespace Sky.Editor.Services.Scheduling
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
@@ -22,10 +18,12 @@ namespace Sky.Editor.Services.Scheduling
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Options;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.EditorSettings;
-    using Sky.Editor.Services.Setup;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <inheritdoc/>
     /// <remarks>
@@ -136,7 +134,7 @@ namespace Sky.Editor.Services.Scheduling
                     // Single-tenant mode: Try to resolve DbContext from DI first (for tests),
                     // otherwise create manually to avoid DI scope issues with Hangfire
                     var dbContextFromDI = scopedServices.GetService<ApplicationDbContext>();
-                    
+
                     if (dbContextFromDI != null)
                     {
                         // Use the DbContext from DI (typically in test scenarios with in-memory database)
@@ -155,7 +153,7 @@ namespace Sky.Editor.Services.Scheduling
                             CosmosDbOptionsBuilder.GetDbOptions<ApplicationDbContext>(connectionString)))
                         {
                             // Get the storage connection string and create StorageContext manually
-                            var storageConnectionString = configuration.GetConnectionString("StorageConnectionString") 
+                            var storageConnectionString = configuration.GetConnectionString("StorageConnectionString")
                                 ?? configuration.GetValue<string>("StorageConnectionString");
                             var storageContext = new StorageContext(storageConnectionString, memoryCache);
 

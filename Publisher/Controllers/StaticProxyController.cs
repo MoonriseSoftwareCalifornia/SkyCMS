@@ -7,11 +7,6 @@
 
 namespace Cosmos.Cms.Publisher.Controllers;
 
-using System;
-using System.IO;
-using System.Linq;
-using System.Net.Mime;
-using System.Threading.Tasks;
 using Cosmos.BlobService;
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
@@ -19,6 +14,11 @@ using Cosmos.Publisher.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net.Mime;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Static proxy controller with SPA fallback routing support.

@@ -7,18 +7,21 @@
 
 namespace Cosmos.Common
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
+    using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Queries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
     using Microsoft.AspNetCore.Cors;
+    using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.RateLimiting;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Methods common to both the editor and publisher home controllers.
@@ -26,7 +29,10 @@ namespace Cosmos.Common
     public class HomeControllerBase : Controller
     {
         private readonly IMediator mediator;
-        private readonly IApplicationDbContext dbContext;
+        private readonly ApplicationDbContext dbContext;
+        private readonly IStorageContext storageContext;
+        private readonly ILogger<HomeControllerBase> logger;
+        private readonly IEmailSender emailSender;
         private readonly IContactManagementService contactManagementService;
 
         /// <summary>
@@ -34,14 +40,23 @@ namespace Cosmos.Common
         /// </summary>
         /// <param name="mediator">Mediator.</param>
         /// <param name="dbContext">Database context.</param>
+        /// <param name="storageContext">Storage context.</param>
+        /// <param name="logger">Logger service.</param>
+        /// <param name="emailSender">Email sender service.</param>
         /// <param name="contactManagementService">Contact management service.</param>
         public HomeControllerBase(
             IMediator mediator,
-            IApplicationDbContext dbContext,
+            ApplicationDbContext dbContext,
+            IStorageContext storageContext,
+            ILogger<HomeControllerBase> logger,
+            IEmailSender emailSender,
             IContactManagementService contactManagementService)
         {
             this.mediator = mediator;
             this.dbContext = dbContext;
+            this.storageContext = storageContext;
+            this.logger = logger;
+            this.emailSender = emailSender;
             this.contactManagementService = contactManagementService;
         }
 
@@ -64,7 +79,7 @@ namespace Cosmos.Common
                 return NotFound("Page not found.");
             }
 
-            var contents = await mediator.QueryAsync(new GetArticleFolderContentsQuery(articleNumber.Value, path));
+            var contents = await CosmosUtilities.GetArticleFolderContents(storageContext, articleNumber.Value, path);
 
             return Json(contents);
         }

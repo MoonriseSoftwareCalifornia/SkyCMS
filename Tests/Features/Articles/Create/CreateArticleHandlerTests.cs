@@ -5,9 +5,6 @@
 
 namespace Sky.Tests.Features.Articles.Create
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
@@ -16,6 +13,9 @@ namespace Sky.Tests.Features.Articles.Create
     using Moq;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Tests.Editor.Features.Articles;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     [TestClass]
     public class CreateArticleHandlerTests : ArticleTestBase
@@ -251,9 +251,9 @@ namespace Sky.Tests.Features.Articles.Create
             // Verify template content was used
             var article = await DbContext.Articles.FirstOrDefaultAsync();
             Assert.IsNotNull(article, "Article should be created in database");
-            StringAssert.Contains(article.Content, "Template Content", 
+            StringAssert.Contains(article.Content, "Template Content",
                 "Should use template content");
-            Assert.AreEqual(template.Id, article.TemplateId, 
+            Assert.AreEqual(template.Id, article.TemplateId,
                 "TemplateId should be stored");
         }
 
@@ -280,13 +280,13 @@ namespace Sky.Tests.Features.Articles.Create
 
             // Assert
             Assert.IsTrue(result.IsSuccess, "Command should succeed");
-            
+
             // Verify ContentOverride takes precedence over template
             var article = await DbContext.Articles.FirstOrDefaultAsync();
             Assert.IsNotNull(article, "Article should be created");
-            StringAssert.Contains(article.Content, "Custom Content Override", 
+            StringAssert.Contains(article.Content, "Custom Content Override",
                 "Should use content override instead of template");
-            Assert.IsFalse(article.Content.Contains("Template Content"), 
+            Assert.IsFalse(article.Content.Contains("Template Content"),
                 "Should NOT use template content when override is provided");
         }
 
@@ -314,14 +314,14 @@ namespace Sky.Tests.Features.Articles.Create
 
             // Assert
             Assert.IsTrue(result.IsSuccess, "Command should succeed");
-            Assert.AreEqual("custom-special-path", result.Data.UrlPath, 
+            Assert.AreEqual("custom-special-path", result.Data.UrlPath,
                 "Should use URL path override");
 
             // Verify in database
             var article = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == 2);
             Assert.IsNotNull(article, "Article should exist");
-            Assert.AreEqual("custom-special-path", article.UrlPath, 
+            Assert.AreEqual("custom-special-path", article.UrlPath,
                 "Database should have custom URL path");
         }
 
@@ -347,17 +347,17 @@ namespace Sky.Tests.Features.Articles.Create
 
             // Assert
             Assert.IsTrue(result.IsSuccess, "Command should succeed");
-            Assert.AreEqual((int)ArticleType.BlogPost, (int)result.Data.ArticleType, 
+            Assert.AreEqual((int)ArticleType.BlogPost, (int)result.Data.ArticleType,
                 "Should be BlogPost type");
 
             // Verify in database
             var article = await DbContext.Articles.FirstOrDefaultAsync();
             Assert.IsNotNull(article, "Article should be created");
             Assert.AreEqual("tech-blog", article.BlogKey, "BlogKey should be set");
-            Assert.AreEqual((int)ArticleType.BlogPost, article.ArticleType, 
+            Assert.AreEqual((int)ArticleType.BlogPost, article.ArticleType,
                 "Database ArticleType should be BlogPost");
             Assert.AreEqual("Technology", article.Category, "Category should be set");
-            Assert.AreEqual("This is a test blog post", article.Introduction, 
+            Assert.AreEqual("This is a test blog post", article.Introduction,
                 "Introduction should be set");
         }
 
@@ -386,7 +386,7 @@ namespace Sky.Tests.Features.Articles.Create
 
             // Assert
             Assert.IsTrue(result.IsSuccess, "Command should succeed");
-            Assert.AreEqual(publishDate, result.Data.Published, 
+            Assert.AreEqual(publishDate, result.Data.Published,
                 "Should use explicit publish date");
             Assert.AreEqual(2, result.Data.ArticleNumber, "Should be second article");
 
@@ -394,7 +394,7 @@ namespace Sky.Tests.Features.Articles.Create
             var article = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == 2);
             Assert.IsNotNull(article, "Article should exist");
-            Assert.AreEqual(publishDate, article.Published, 
+            Assert.AreEqual(publishDate, article.Published,
                 "Database should have explicit publish date");
 
             // Verify publishing service was called (even for second article when Published is set)
@@ -443,30 +443,30 @@ namespace Sky.Tests.Features.Articles.Create
             // Verify ALL properties were set correctly
             var article = await DbContext.Articles.FirstOrDefaultAsync();
             Assert.IsNotNull(article, "Article should exist in database");
-            
+
             // Basic properties
             Assert.AreEqual("Full Featured Article", article.Title);
             Assert.AreEqual(userId.ToString(), article.UserId);
             Assert.AreEqual((int)ArticleType.General, article.ArticleType);
-            
+
             // Template and content
             Assert.AreEqual(template.Id, article.TemplateId);
-            StringAssert.Contains(article.Content, "Custom Full Content", 
+            StringAssert.Contains(article.Content, "Custom Full Content",
                 "Should use content override");
-            
+
             // Metadata
             Assert.AreEqual("Technology", article.Category);
             Assert.AreEqual("A comprehensive test article", article.Introduction);
             Assert.AreEqual("/images/banner.jpg", article.BannerImage);
-            
+
             // Scripts
             Assert.AreEqual("<script>console.log('head');</script>", article.HeaderJavaScript);
             Assert.AreEqual("<script>console.log('footer');</script>", article.FooterJavaScript);
-            
+
             // Publishing
             Assert.AreEqual(publishDate, article.Published);
             Assert.AreEqual((int)StatusCodeEnum.Active, article.StatusCode);
-            
+
             // URL and blog
             Assert.AreEqual("special-article-path", article.UrlPath);
             Assert.AreEqual("tech-blog", article.BlogKey);

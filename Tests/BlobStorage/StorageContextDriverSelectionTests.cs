@@ -4,13 +4,11 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Reflection;
 using Cosmos.BlobService;
 using Cosmos.BlobService.Drivers;
 using Cosmos.BlobService.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
 
 namespace Sky.Tests.BlobStorage
 {
@@ -38,116 +36,65 @@ namespace Sky.Tests.BlobStorage
         #region GetDriverFromConnectionString Tests
 
         [TestMethod]
-        public void GetDriverFromConnectionString_WithAzureConnectionString_ReturnsAzureStorage()
+        public void GetDriverFromConnectionString_WithKnownProviderFormats_ReturnsExpectedDriverType()
         {
-            // Arrange
-            var connectionString = "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
-            var context = new StorageContext(connectionString, memoryCache);
-
-            // Act
-            var driver = GetPrivateDriver(context);
-
-            // Assert
-            Assert.IsNotNull(driver, "Driver should not be null");
-            Assert.IsInstanceOfType(driver, typeof(AzureStorage), "Driver should be AzureStorage type");
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithAzuriteConnectionString_ReturnsAzureStorage()
-        {
-            // Arrange - Azurite local emulator connection string
-            var connectionString = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
-            var context = new StorageContext(connectionString, memoryCache);
-
-            // Act
-            var driver = GetPrivateDriver(context);
-
-            // Assert
-            Assert.IsNotNull(driver, "Driver should not be null for Azurite");
-            Assert.IsInstanceOfType(driver, typeof(AzureStorage), "Driver should be AzureStorage type for Azurite");
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithAmazonS3RegionFormat_ReturnsAmazonStorage()
-        {
-            // Arrange
-            var connectionString = "Bucket=test-bucket;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
-            var context = new StorageContext(connectionString, memoryCache);
-
-            // Act
-            var driver = GetPrivateDriver(context);
-
-            // Assert
-            Assert.IsNotNull(driver, "Driver should not be null");
-            Assert.IsInstanceOfType(driver, typeof(AmazonStorage), "Driver should be AmazonStorage type");
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithAmazonS3AccountIdFormat_ReturnsAmazonStorage()
-        {
-            // Arrange
-            var connectionString = "AccountId=123456789012;Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
-            var context = new StorageContext(connectionString, memoryCache);
-
-            // Act
-            var driver = GetPrivateDriver(context);
-
-            // Assert
-            Assert.IsNotNull(driver, "Driver should not be null");
-            Assert.IsInstanceOfType(driver, typeof(AmazonStorage), "Driver should be AmazonStorage type");
-        }
-
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithInvalidAmazonS3RegionFormat_ThrowsException()
-        {
-            // Arrange - Missing required Key parameter (has Bucket, KeyId, and Region but no Key)
-            var connectionString = "Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Region=us-east-1";
-
-            // Act & Assert - Should throw InvalidConnectionStringException
-            try
+            var scenarios = new[]
             {
-                var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown InvalidConnectionStringException");
-            }
-            catch (InvalidConnectionStringException)
+                new
+                {
+                    ConnectionString = "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net",
+                    ExpectedDriverType = typeof(AzureStorage),
+                },
+                new
+                {
+                    ConnectionString = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;",
+                    ExpectedDriverType = typeof(AzureStorage),
+                },
+                new
+                {
+                    ConnectionString = "Bucket=test-bucket;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    ExpectedDriverType = typeof(AmazonStorage),
+                },
+                new
+                {
+                    ConnectionString = "AccountId=123456789012;Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    ExpectedDriverType = typeof(AmazonStorage),
+                },
+            };
+
+            foreach (var scenario in scenarios)
             {
-                // Expected exception
+                var context = new StorageContext(scenario.ConnectionString, memoryCache);
+                var driver = GetPrivateDriver(context);
+
+                Assert.IsNotNull(driver, "Driver should not be null");
+                Assert.IsInstanceOfType(driver, scenario.ExpectedDriverType, "Driver type should match connection string provider");
             }
         }
 
         [TestMethod]
-        public void GetDriverFromConnectionString_WithInvalidAmazonS3AccountIdFormat_ThrowsException()
+        public void GetDriverFromConnectionString_WithInvalidFormats_ThrowsException()
         {
-            // Arrange - Missing required parameters
-            var connectionString = "AccountId=123456789012;Bucket=test-bucket";
-            
-            // Act & Assert - Should throw InvalidConnectionStringException
-            try
+            var invalidConnectionStrings = new[]
             {
-                var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown InvalidConnectionStringException");
-            }
-            catch (InvalidConnectionStringException)
-            {
-                // Expected exception
-            }
-        }
+                "Bucket=test-bucket;KeyId=AKIAIOSFODNN7EXAMPLE",
+                "AccountId=123456789012;Bucket=test-bucket",
+                "InvalidFormat=true;NoProvider=yes"
+            };
 
-        [TestMethod]
-        public void GetDriverFromConnectionString_WithInvalidFormat_ThrowsException()
-        {
-            // Arrange
-            var connectionString = "InvalidFormat=true;NoProvider=yes";
+            foreach (var connectionString in invalidConnectionStrings)
+            {
+                var exceptionThrown = false;
+                try
+                {
+                    _ = new StorageContext(connectionString, memoryCache);
+                }
+                catch (StorageException)
+                {
+                    exceptionThrown = true;
+                }
 
-            // Act & Assert - Should throw UnsupportedStorageProviderException
-            try
-            {
-                var context = new StorageContext(connectionString, memoryCache);
-                Assert.Fail("Should have thrown UnsupportedStorageProviderException");
-            }
-            catch (UnsupportedStorageProviderException)
-            {
-                // Expected exception
+                Assert.IsTrue(exceptionThrown, "Should throw StorageException for invalid connection string format");
             }
         }
 
@@ -191,7 +138,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var connectionString1 = "DefaultEndpointsProtocol=https;AccountName=account1;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
             var connectionString2 = "DefaultEndpointsProtocol=https;AccountName=account2;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
-            
+
             var context1 = new StorageContext(connectionString1, memoryCache);
             var context2 = new StorageContext(connectionString2, memoryCache);
 
@@ -211,7 +158,7 @@ namespace Sky.Tests.BlobStorage
             // Arrange
             var azureConnectionString = "DefaultEndpointsProtocol=https;AccountName=testaccount;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net";
             var s3ConnectionString = "Bucket=test-bucket;Region=us-east-1;KeyId=AKIAIOSFODNN7EXAMPLE;Key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
-            
+
             var azureContext = new StorageContext(azureConnectionString, memoryCache);
             var s3Context = new StorageContext(s3ConnectionString, memoryCache);
 

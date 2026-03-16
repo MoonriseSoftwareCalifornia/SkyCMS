@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Data.Logic
 {
-    using System.Collections.Generic;
-    using System.Linq;
     using HtmlAgilityPack;
     using Sky.Editor.Models;
+    using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// Contains utility methods for the designer (GraphsJS) editor.

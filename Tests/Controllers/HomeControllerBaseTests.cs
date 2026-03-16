@@ -10,7 +10,6 @@ namespace Sky.Tests.Controllers
     using Cosmos.BlobService;
     using Cosmos.Common;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
@@ -23,14 +22,11 @@ namespace Sky.Tests.Controllers
     using Moq;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for the <see cref="HomeControllerBase"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class HomeControllerBaseTests : SkyCmsTestBase
     {
@@ -443,29 +439,18 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Search_EmptyQuery_ReturnsBadRequest.
+        /// Tests that Search with null or empty query returns bad request.
         /// </summary>
         [TestMethod]
-        public async Task Search_EmptyQuery_ReturnsBadRequest()
+        public async Task Search_NullOrEmptyQuery_ReturnsBadRequest()
         {
-            // Act
-            var result = await controller.CCMS___SEARCH("");
+            var scenarios = new string[] { string.Empty, null };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Search_NullQuery_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Search_NullQuery_ReturnsBadRequest()
-        {
-            // Act
-            var result = await controller.CCMS___SEARCH(null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            foreach (var query in scenarios)
+            {
+                var result = await controller.CCMS___SEARCH(query);
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            }
         }
 
         /// <summary>

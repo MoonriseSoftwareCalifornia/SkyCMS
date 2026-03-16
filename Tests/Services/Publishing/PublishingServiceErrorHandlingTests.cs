@@ -5,17 +5,10 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+#nullable enable
+
 namespace Sky.Tests.Services.Publishing
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Net;
-    using System.Net.Http;
-    using System.Reflection;
-    using System.Security.Claims;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Cms.Common;
@@ -26,7 +19,6 @@ namespace Sky.Tests.Services.Publishing
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json;
@@ -35,8 +27,15 @@ namespace Sky.Tests.Services.Publishing
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
-    using Sky.Editor.Services.StaticFiles;
-    using Sky.Editor.Services.TableOfContents;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Net;
+    using System.Net.Http;
+    using System.Reflection;
+    using System.Security.Claims;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Error handling and resilience tests for <see cref="PublishingService"/>.
@@ -644,62 +643,19 @@ namespace Sky.Tests.Services.Publishing
                     settings.BlobPublicUrl));
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
-                db,
-                new NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
-                accessor,
-                settings);
-
-            var tocService = new Sky.Editor.Services.TableOfContents.TocService(
-                storage,
-                settings,
-                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                new NullLogger<Sky.Editor.Services.TableOfContents.TocService>());
-
-            var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
-                storage,
-                settings,
-                viewRenderer.Object,
-                null!, // IMediator not needed for error handling tests
-                new NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>());
-
-            var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
-                db,
-                storage,
-                accessor);
-
-            var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
-                blogPublishingContext,
-                blogStreamRenderingService,
-                viewRenderer.Object,
-                null!, // IMediator
-                null, // PublishingService reference (circular dependency)
-                new NullLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>());
-
-            var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
-                cdnPurgeService,
-                tocService,
-                staticFileService,
-                blogPublishingService);
-
-            var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
-                db,
-                storage,
-                settings,
-                accessor,
-                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
-
-            var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(serviceProvider);
-
             return new PublishingService(
-                publishingContext,
+                db,
+                storage,
+                settings,
                 logger,
+                accessor,
                 authors.Object,
                 new SystemClock(),
-                staticFileServiceFactory,
+                blogStreamRenderingService,
+                viewRenderer.Object,
+                serviceProvider,
                 new NoOpPublishingProgressReporter(),
-                null, // No domain event dispatcher for tests
-                auxiliaryServices);
+                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
         }
 
         private static bool InvokeIsTransientException(Exception ex)

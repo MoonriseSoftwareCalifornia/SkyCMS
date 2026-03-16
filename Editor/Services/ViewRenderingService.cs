@@ -7,9 +7,6 @@
 
 namespace Sky.Cms.Services
 {
-    using System;
-    using System.IO;
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -18,6 +15,9 @@ namespace Sky.Cms.Services
     using Microsoft.AspNetCore.Mvc.Rendering;
     using Microsoft.AspNetCore.Mvc.ViewFeatures;
     using Microsoft.AspNetCore.Routing;
+    using System;
+    using System.IO;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// View render service interface.

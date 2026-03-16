@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Services.Html
 {
-    using System;
     using HtmlAgilityPack;
+    using System;
 
     /// <summary>
     /// Concrete implementation of <see cref="IArticleHtmlService"/> using HtmlAgilityPack

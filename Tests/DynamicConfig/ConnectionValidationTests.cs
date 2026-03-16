@@ -7,11 +7,11 @@
 
 namespace Sky.Tests.DynamicConfig
 {
+    using Cosmos.DynamicConfig;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
-    using Cosmos.DynamicConfig;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     /// <summary>
     /// Unit tests for <see cref="Connection"/> entity validation attributes.

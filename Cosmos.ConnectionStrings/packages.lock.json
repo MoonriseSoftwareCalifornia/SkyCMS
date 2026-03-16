@@ -203,22 +203,6 @@
         "resolved": "9.0.10",
         "contentHash": "qCIWxEPt6Y9Z/Vx2R6JsfX7pwxIHC2GYlkcFbTox3MpsiNexyLkvPFTNsfmAaKpjTZ6FhNmvY3BdrwLX4+X0cQ=="
       },
-      "Microsoft.Extensions.FileProviders.Abstractions": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "uK439QzYR0q2emLVtYzwyK3x+T5bTY4yWsd/k/ZUS9LR6Sflp8MIdhGXW8kQCd86dQD4tLqvcbLkku8qHY263Q==",
-        "dependencies": {
-          "Microsoft.Extensions.Primitives": "9.0.0"
-        }
-      },
-      "Microsoft.Extensions.FileProviders.Embedded": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "6Ev1goLIvggLF6uCs6oZvdr9JM+2b1Zj+4FLdBWNW5iw3tm2BymVIb0yMsjnQTBWL7YUmqVWH3u45hSqOfvuqg==",
-        "dependencies": {
-          "Microsoft.Extensions.FileProviders.Abstractions": "9.0.0"
-        }
-      },
       "Microsoft.Extensions.Identity.Core": {
         "type": "Transitive",
         "resolved": "9.0.0",
@@ -1033,7 +1017,6 @@
         "dependencies": {
           "Duende.IdentityServer.EntityFramework.Storage": "[7.4.5, )",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[9.0.0, 10.0.0)",
-          "Microsoft.AspNetCore.Identity.UI": "[9.0.0, 10.0.0)",
           "Microsoft.EntityFrameworkCore.Cosmos": "[9.0.10, 10.0.0)",
           "Microsoft.EntityFrameworkCore.SqlServer": "[9.0.10, 10.0.0)",
           "Microsoft.EntityFrameworkCore.Sqlite.Core": "[9.0.10, 10.0.0)",
@@ -1073,16 +1056,6 @@
         "contentHash": "fwQkBQGaiRKDQWBc7PXxDiDXtsUsRPL88Jp0CqjqoDhd9p5uHSyuv6g3ALq2EbCvKcWk/7pOKsJiDomPvp/ptA==",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Relational": "9.0.0",
-          "Microsoft.Extensions.Identity.Stores": "9.0.0"
-        }
-      },
-      "Microsoft.AspNetCore.Identity.UI": {
-        "type": "CentralTransitive",
-        "requested": "[9.0.0, 10.0.0)",
-        "resolved": "9.0.0",
-        "contentHash": "VCOH8nyG/zU9BXoL77GncmKL3szxWX0oasYVZP3pvWYRxqr9aHnWBu14JBa2SbbvhCA7vsSWfs0byeAwaiV4DA==",
-        "dependencies": {
-          "Microsoft.Extensions.FileProviders.Embedded": "9.0.0",
           "Microsoft.Extensions.Identity.Stores": "9.0.0"
         }
       },

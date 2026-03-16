@@ -7,11 +7,11 @@
 
 namespace Cosmos.Common.Features.Articles.Queries;
 
-using System.Threading;
-using System.Threading.Tasks;
 using Cosmos.Common.Features.Articles.Shared;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using System.Threading;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Handler for retrieving table of contents listings.

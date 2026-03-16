@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AspNetCore.Identity.FlexDb.Contracts
@@ -41,6 +42,6 @@ namespace AspNetCore.Identity.FlexDb.Contracts
 
         void Delete<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class, new();
 
-        Task SaveChangesAsync();
+        Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -1,29 +1,28 @@
-// <copyright file="ArticleLifecycleIntegrationTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="ArticleLifecycleIntegrationTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
 namespace Sky.Tests.Integration
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Articles.Save;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Integration tests for complete article lifecycle workflows.
     /// Tests end-to-end scenarios from article creation through publishing, editing, and deletion.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class ArticleLifecycleIntegrationTests : SkyCmsTestBase
     {
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }
@@ -48,7 +47,7 @@ namespace Sky.Tests.Integration
             Assert.IsTrue(saveResult.IsSuccess);
 
             // Step 3: Publish article
-            var articleEntity = await Db.Articles.FirstAsync(a => a.Id == article.Id); await PublishingService.PublishAsync(articleEntity);
+            await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
             var publishedArticle = await Db.Articles.FindAsync(article.Id);
             Assert.IsNotNull(publishedArticle.Published, "Article should be published");
 
@@ -67,7 +66,7 @@ namespace Sky.Tests.Integration
             await Db.SaveChangesAsync();
 
             // Publish new version
-            var newVersionEntity = await Db.Articles.FirstAsync(a => a.Id == newVersion.Id); await PublishingService.PublishAsync(newVersionEntity);
+            await Logic.PublishArticle(newVersion.Id, DateTimeOffset.UtcNow);
 
             // Verify old version unpublished
             var oldVersion = await Db.Articles.FindAsync(article.Id);
@@ -87,8 +86,8 @@ namespace Sky.Tests.Integration
                 originalArticle.UrlPath = "lifecycle-test-article";
             }
             await Db.SaveChangesAsync();
-            
-            var articleToDelete = await Db.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == article.ArticleNumber); articleToDelete.StatusCode = (int)StatusCodeEnum.Deleted; await Db.SaveChangesAsync();
+
+            await Logic.DeleteArticle(article.ArticleNumber);
             var deletedArticle = await Db.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == article.ArticleNumber);
             Assert.AreEqual((int)StatusCodeEnum.Deleted, deletedArticle.StatusCode);
 
@@ -115,8 +114,8 @@ namespace Sky.Tests.Integration
             var article3 = await CreateArticleAsync("Article 3", TestUserId);
 
             // Publish in reverse order
-            var article3Entity = await Db.Articles.FirstAsync(a => a.Id == article3.Id); await PublishingService.PublishAsync(article3Entity);
-            var article1Entity = await Db.Articles.FirstAsync(a => a.Id == article1.Id); await PublishingService.PublishAsync(article1Entity);
+            await Logic.PublishArticle(article3.Id, DateTimeOffset.UtcNow);
+            await Logic.PublishArticle(article1.Id, DateTimeOffset.UtcNow);
 
             // Leave article 2 unpublished
 
@@ -127,7 +126,7 @@ namespace Sky.Tests.Integration
             Assert.IsFalse(publishedPages.Any(p => p.ArticleNumber == article2.ArticleNumber));
 
             // Publish article 2
-            var article2Entity = await Db.Articles.FirstAsync(a => a.Id == article2.Id); await PublishingService.PublishAsync(article2Entity);
+            await Logic.PublishArticle(article2.Id, DateTimeOffset.UtcNow);
             var article2Page = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == article2.ArticleNumber);
             Assert.IsNotNull(article2Page);
         }
@@ -150,8 +149,8 @@ namespace Sky.Tests.Integration
                 ArticleType = ArticleType.General
             };
             await SaveArticleHandler.HandleAsync(saveCommand);
-            
-            var articleEntity = await Db.Articles.FirstAsync(a => a.Id == article.Id); await PublishingService.PublishAsync(articleEntity);
+
+            await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             var initialPublishedDate = (await Db.Articles.FindAsync(article.Id)).Published;
 
@@ -174,7 +173,7 @@ namespace Sky.Tests.Integration
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstAsync();
 
-            var latestVersionEntity = await Db.Articles.FirstAsync(a => a.Id == latestVersion.Id); await PublishingService.PublishAsync(latestVersionEntity);
+            await Logic.PublishArticle(latestVersion.Id, DateTimeOffset.UtcNow);
 
             // Verify
             var page = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == article.ArticleNumber);
@@ -214,7 +213,7 @@ namespace Sky.Tests.Integration
             Assert.IsTrue(saveResult.IsSuccess);
 
             // Publish
-            var blogPostEntity = await Db.Articles.FirstAsync(a => a.Id == blogPost.Id); await PublishingService.PublishAsync(blogPostEntity);
+            await Logic.PublishArticle(blogPost.Id, DateTimeOffset.UtcNow);
 
             // Verify page
             var page = await Db.Pages.FirstOrDefaultAsync(p => p.ArticleNumber == blogPost.ArticleNumber);
@@ -245,7 +244,7 @@ namespace Sky.Tests.Integration
             for (int i = 1; i <= 10; i++)
             {
                 var post = await CreateArticleAsync($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
-                
+
                 var postCommand = new SaveArticleCommand
                 {
                     ArticleNumber = post.ArticleNumber,
@@ -311,7 +310,7 @@ namespace Sky.Tests.Integration
             await Db.SaveChangesAsync();
 
             // Publish version 2 (not latest)
-            var v2Entity = await Db.Articles.FirstAsync(a => a.Id == v2.Id); await PublishingService.PublishAsync(v2Entity);
+            await Logic.PublishArticle(v2.Id, DateTimeOffset.UtcNow);
 
             // Verify version 2 is published
             var publishedV2 = await Db.Articles.FindAsync(v2.Id);
@@ -342,21 +341,21 @@ namespace Sky.Tests.Integration
             var v3 = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
 
             // Publish v1
-            var v1Entity = await Db.Articles.FirstAsync(a => a.Id == v1.Id); await PublishingService.PublishAsync(v1Entity);
+            await Logic.PublishArticle(v1.Id, DateTimeOffset.UtcNow);
             var published1 = await Db.Articles
                 .Where(a => a.ArticleNumber == article.ArticleNumber && a.Published != null)
                 .CountAsync();
             Assert.AreEqual(1, published1);
 
             // Publish v2 (should unpublish v1)
-            var v2Entity = await Db.Articles.FirstAsync(a => a.Id == v2.Id); await PublishingService.PublishAsync(v2Entity);
+            await Logic.PublishArticle(v2.Id, DateTimeOffset.UtcNow);
             var published2 = await Db.Articles
                 .Where(a => a.ArticleNumber == article.ArticleNumber && a.Published != null)
                 .CountAsync();
             Assert.AreEqual(1, published2);
 
             // Publish v3 (should unpublish v2)
-            var v3Entity = await Db.Articles.FirstAsync(a => a.Id == v3.Id); await PublishingService.PublishAsync(v3Entity);
+            await Logic.PublishArticle(v3.Id, DateTimeOffset.UtcNow);
             var published3 = await Db.Articles
                 .Where(a => a.ArticleNumber == article.ArticleNumber && a.Published != null)
                 .CountAsync();
@@ -380,7 +379,7 @@ namespace Sky.Tests.Integration
         {
             // Create a first article so the test article isn't auto-published
             await CreateArticleAsync("First Article", TestUserId);
-            
+
             // Create article
             var article = await CreateArticleAsync("Catalog Sync Test", TestUserId);
 
@@ -390,7 +389,7 @@ namespace Sky.Tests.Integration
             Assert.IsNull(catalog1.Published, "Catalog entry should not be marked as published yet");
 
             // Publish article
-            var articleEntity = await Db.Articles.FirstAsync(a => a.Id == article.Id); await PublishingService.PublishAsync(articleEntity);
+            await Logic.PublishArticle(article.Id, DateTimeOffset.UtcNow);
 
             // Verify catalog marked as published
             var catalog2 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
@@ -407,7 +406,7 @@ namespace Sky.Tests.Integration
 
             // Delete article (create home first to avoid deleting root)
             var home = await CreateArticleAsync("Temp Home", TestUserId);
-            var articleToDelete = await Db.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == article.ArticleNumber); articleToDelete.StatusCode = (int)StatusCodeEnum.Deleted; await Db.SaveChangesAsync();
+            await Logic.DeleteArticle(article.ArticleNumber);
 
             // Verify catalog removed
             var catalog4 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
@@ -419,24 +418,48 @@ namespace Sky.Tests.Integration
         #region Error Recovery Tests
 
         /// <summary>
-        /// Tests that deleting non-existent article throws appropriate exception.
+        /// Tests that delete operations throw expected exceptions for invalid targets.
         /// </summary>
         [TestMethod]
-        public async Task DeleteNonExistentArticle_ThrowsException()
+        public async Task DeleteArticle_InvalidTargets_ThrowsExpectedException()
         {
-            // Arrange
-            var nonExistentArticleNumber = 99999;
+            var scenarios = new[]
+            {
+                new
+                {
+                    Name = "NonExistentArticle",
+                    GetArticleNumber = (Func<Task<int>>)(() => Task.FromResult(99999)),
+                    ExpectedExceptionType = typeof(KeyNotFoundException),
+                    ExpectedMessageFragment = "99999",
+                },
+                new
+                {
+                    Name = "RootPage",
+                    GetArticleNumber = (Func<Task<int>>)(async () =>
+                    {
+                        var rootArticle = await CreateArticleAsync("Root Page", TestUserId);
+                        Assert.AreEqual("root", rootArticle.UrlPath);
+                        return rootArticle.ArticleNumber;
+                    }),
+                    ExpectedExceptionType = typeof(NotSupportedException),
+                    ExpectedMessageFragment = "Cannot trash the home page",
+                },
+            };
 
-            // Act
-            try
+            foreach (var scenario in scenarios)
             {
-                var articleToDelete = await Db.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == nonExistentArticleNumber); articleToDelete.StatusCode = (int)StatusCodeEnum.Deleted; await Db.SaveChangesAsync();
-                Assert.Fail("Expected KeyNotFoundException was not thrown.");
-            }
-            catch (KeyNotFoundException ex)
-            {
-                // Assert
-                StringAssert.Contains(ex.Message, nonExistentArticleNumber.ToString());
+                var articleNumber = await scenario.GetArticleNumber();
+
+                try
+                {
+                    await Logic.DeleteArticle(articleNumber);
+                    Assert.Fail($"Expected {scenario.ExpectedExceptionType.Name} was not thrown ({scenario.Name}).");
+                }
+                catch (Exception ex)
+                {
+                    Assert.AreEqual(scenario.ExpectedExceptionType, ex.GetType(), scenario.Name);
+                    StringAssert.Contains(ex.Message, scenario.ExpectedMessageFragment, scenario.Name);
+                }
             }
         }
 
@@ -459,27 +482,6 @@ namespace Sky.Tests.Integration
             var secondArticle = await CreateArticleAsync("Second Article", TestUserId);
             Assert.AreNotEqual("root", secondArticle.UrlPath);
             Assert.IsNull(secondArticle.Published, "Second article should not auto-publish");
-        }
-
-        /// <summary>
-        /// Tests that root page cannot be deleted.
-        /// </summary>
-        [TestMethod]
-        public async Task DeleteRootPage_ThrowsNotSupportedException()
-        {
-            // Get root article
-            var rootArticle = await CreateArticleAsync("Root Page", TestUserId);
-            Assert.AreEqual("root", rootArticle.UrlPath);
-
-            try
-            {
-                var articleToDelete = await Db.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == rootArticle.ArticleNumber); articleToDelete.StatusCode = (int)StatusCodeEnum.Deleted; await Db.SaveChangesAsync();
-                Assert.Fail("Expected NotSupportedException was not thrown.");
-            }
-            catch (NotSupportedException ex)
-            {
-                Assert.AreEqual("Cannot trash the home page. Replace it then delete.", ex.Message);
-            }
         }
 
         #endregion

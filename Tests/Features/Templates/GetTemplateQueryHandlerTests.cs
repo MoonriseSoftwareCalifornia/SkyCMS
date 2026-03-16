@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Tests.Features.Templates
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Templates.Get;
     using Sky.Tests;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for GetTemplateQueryHandler.
@@ -30,7 +30,6 @@ namespace Sky.Editor.Tests.Features.Templates
     /// and avoiding provider-specific extensions or syntax.
     /// </remarks>
     [TestClass]
-    [DoNotParallelize]
     public class GetTemplateQueryHandlerTests : SkyCmsTestBase
     {
         private GetTemplateQueryHandler handler = null!;
@@ -188,7 +187,7 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.IsNotNull(result.Data.Versions);
             var versions = result.Data.Versions.ToList();
             Assert.AreEqual(2, versions.Count);
-            
+
             // Verify versions are ordered by descending version number
             Assert.AreEqual(2, versions[0].Version);
             Assert.AreEqual(1, versions[1].Version);
@@ -445,7 +444,7 @@ namespace Sky.Editor.Tests.Features.Templates
             Assert.IsTrue(result.IsSuccess);
             var retrievedVersions = result.Data.Versions.ToList();
             Assert.AreEqual(3, retrievedVersions.Count);
-            
+
             // Verify descending order
             Assert.AreEqual(3, retrievedVersions[0].Version);
             Assert.AreEqual(2, retrievedVersions[1].Version);
@@ -502,7 +501,7 @@ namespace Sky.Editor.Tests.Features.Templates
         public async Task GetTemplate_Should_PreserveSpecialCharactersInContent()
         {
             // Arrange
-            var specialContent = "<script>alert('test');</script><div data-attr=\"value with 'quotes' & special chars\">Content with émojis ??</div>";
+            var specialContent = "<script>alert('test');</script><div data-attr=\"value with 'quotes' & special chars\">Content with ï¿½mojis ??</div>";
             var specialTemplate = new Template
             {
                 Id = Guid.NewGuid(),
@@ -576,7 +575,7 @@ namespace Sky.Editor.Tests.Features.Templates
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-            
+
             // Verify no tracking is active for retrieved entity
             // (This is verified indirectly - if tracking were on, modifications would be tracked)
             var entryState = Db.Entry(result.Data.Template).State;

@@ -7,18 +7,15 @@
 
 namespace Sky.Tests.Features.Articles.Save
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using Sky.Cms.Models;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Tests.Editor.Features.Articles;
+    using System;
+    using System.Threading.Tasks;
 
     [TestClass]
     public class SaveArticleHandlerTests : ArticleTestBase
@@ -81,7 +78,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Verify database was updated
             var updatedArticle = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
-            
+
             Assert.IsNotNull(updatedArticle, "Article should exist");
             Assert.AreEqual("Updated Title", updatedArticle.Title);
             StringAssert.Contains(updatedArticle.Content, "Updated Content");
@@ -101,7 +98,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await SeedArticleAsync("Original Title", 1, urlPath: "original-title", published: true);
-            
+
             // Setup mock to detect title change
             string capturedOldTitle = null;
             string capturedOldUrlPath = null;
@@ -167,7 +164,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Assert
             Assert.IsFalse(result.IsSuccess, "Should fail with invalid article number");
             Assert.IsNotNull(result.ErrorMessage, "Should have error message");
-            StringAssert.Contains(result.ErrorMessage, "not found", 
+            StringAssert.Contains(result.ErrorMessage, "not found",
                 "Error should mention article not found");
         }
 
@@ -199,7 +196,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Verify article was NOT updated
             var unchangedArticle = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
-            Assert.AreEqual("Original", unchangedArticle.Title, 
+            Assert.AreEqual("Original", unchangedArticle.Title,
                 "Title should remain unchanged");
         }
 
@@ -211,7 +208,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await SeedArticleAsync("Test Article", 1, published: false);
-            
+
             var command = new SaveArticleCommand
             {
                 ArticleNumber = 1,
@@ -237,80 +234,75 @@ namespace Sky.Tests.Features.Articles.Save
         }
 
         /// <summary>
-        /// Tests that HandleAsync_PublishedArticle_CallsPublishingService.
+        /// Tests that publish behavior matches published state.
         /// </summary>
         [TestMethod]
-        public async Task HandleAsync_PublishedArticle_CallsPublishingService()
+        public async Task HandleAsync_PublishStateScenarios_TriggerExpectedPublishingBehavior()
         {
-            // Arrange
-            var article = await SeedArticleAsync("Published Article", 1, published: true);
-            
-            var command = new SaveArticleCommand
+            var scenarios = new[]
             {
-                ArticleNumber = 1,
-                Title = "Updated Published Article",
-                Content = "<div>Updated content</div>",
-                Published = article.Published,  // Keep it published
-                UserId = Guid.NewGuid(),
-                ArticleType = ArticleType.General
+                new
+                {
+                    Name = "Published",
+                    InitialPublished = true,
+                    KeepPublished = true,
+                    ExpectedPublishCalls = 1,
+                    ExpectedCdnCount = (int?)null,
+                    ExpectPublishedAfterSave = true,
+                },
+                new
+                {
+                    Name = "Unpublished",
+                    InitialPublished = false,
+                    KeepPublished = false,
+                    ExpectedPublishCalls = 0,
+                    ExpectedCdnCount = (int?)0,
+                    ExpectPublishedAfterSave = false,
+                },
             };
 
-            // Act
-            var result = await _handler.HandleAsync(command);
-
-            // Assert
-            Assert.IsTrue(result.IsSuccess, "Save should succeed");
-            Assert.IsNotNull(result.Data.CdnResults, "Should have CDN results");
-
-            // Verify publishing service was called
-            MockPublishingService.Verify(
-                x => x.PublishAsync(It.IsAny<Cosmos.Common.Data.Article>()),
-                Times.Once,
-                "Should publish when article has Published date");
-
-            // Verify updated article is still published
-            var updatedArticle = await DbContext.Articles
-                .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
-            Assert.IsNotNull(updatedArticle.Published, "Article should remain published");
-        }
-
-        /// <summary>
-        /// Tests that HandleAsync_UnpublishedArticle_DoesNotPublish.
-        /// </summary>
-        [TestMethod]
-        public async Task HandleAsync_UnpublishedArticle_DoesNotPublish()
-        {
-            // Arrange
-            var article = await SeedArticleAsync("Unpublished Article", 1, published: false);
-            
-            var command = new SaveArticleCommand
+            foreach (var scenario in scenarios)
             {
-                ArticleNumber = 1,
-                Title = "Updated Unpublished Article",
-                Content = "<div>Updated content</div>",
-                Published = null,  // Keep it unpublished
-                UserId = Guid.NewGuid(),
-                ArticleType = ArticleType.General
-            };
+                // Reinitialize to reset mocks and in-memory state per scenario.
+                TestInitialize();
 
-            // Act
-            var result = await _handler.HandleAsync(command);
+                var article = await SeedArticleAsync($"{scenario.Name} Article", 1, published: scenario.InitialPublished);
 
-            // Assert
-            Assert.IsTrue(result.IsSuccess, "Save should succeed");
-            Assert.IsNotNull(result.Data.CdnResults, "Should have empty CDN results");
-            Assert.AreEqual(0, result.Data.CdnResults.Count, "CDN results should be empty");
+                var command = new SaveArticleCommand
+                {
+                    ArticleNumber = 1,
+                    Title = $"Updated {scenario.Name} Article",
+                    Content = "<div>Updated content</div>",
+                    Published = scenario.KeepPublished ? article.Published : null,
+                    UserId = Guid.NewGuid(),
+                    ArticleType = ArticleType.General
+                };
 
-            // Verify publishing service was NOT called
-            MockPublishingService.Verify(
-                x => x.PublishAsync(It.IsAny<Cosmos.Common.Data.Article>()),
-                Times.Never,
-                "Should not publish when article has no Published date");
+                var result = await _handler.HandleAsync(command);
 
-            // Verify article remains unpublished
-            var updatedArticle = await DbContext.Articles
-                .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
-            Assert.IsNull(updatedArticle.Published, "Article should remain unpublished");
+                Assert.IsTrue(result.IsSuccess, scenario.Name);
+                Assert.IsNotNull(result.Data.CdnResults, scenario.Name);
+                if (scenario.ExpectedCdnCount.HasValue)
+                {
+                    Assert.AreEqual(scenario.ExpectedCdnCount.Value, result.Data.CdnResults.Count, scenario.Name);
+                }
+
+                MockPublishingService.Verify(
+                    x => x.PublishAsync(It.IsAny<Cosmos.Common.Data.Article>()),
+                    Times.Exactly(scenario.ExpectedPublishCalls),
+                    scenario.Name);
+
+                var updatedArticle = await DbContext.Articles
+                    .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
+                if (scenario.ExpectPublishedAfterSave)
+                {
+                    Assert.IsNotNull(updatedArticle.Published, scenario.Name);
+                }
+                else
+                {
+                    Assert.IsNull(updatedArticle.Published, scenario.Name);
+                }
+            }
         }
 
         /// <summary>
@@ -321,7 +313,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange
             var article = await SeedArticleAsync("Concurrent Test", 1);
-            
+
             // First command
             var command1 = new SaveArticleCommand
             {
@@ -353,7 +345,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Verify final state matches the second update
             var finalArticle = await DbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == 1);
-            Assert.AreEqual("Second Update", finalArticle.Title, 
+            Assert.AreEqual("Second Update", finalArticle.Title,
                 "Last write should win");
             StringAssert.Contains(finalArticle.Content, "Second content",
                 "Content should match last update");

@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
+	<RunConfiguration>
+		<MaxCpuCount>6</MaxCpuCount>
+	</RunConfiguration>
+	<MSTest>
+		<Parallelize>
+			<Workers>6</Workers>
+			<Scope>ClassLevel</Scope>
+		</Parallelize>
+	</MSTest>
 	<DataCollectionRunSettings>
 		<DataCollectors>
 			<DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

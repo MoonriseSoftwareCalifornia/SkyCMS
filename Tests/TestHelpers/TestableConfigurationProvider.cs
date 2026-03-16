@@ -6,7 +6,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Moq;
 
 namespace Sky.Tests.TestHelpers
 {
@@ -16,7 +15,6 @@ namespace Sky.Tests.TestHelpers
     internal class TestableConfigurationProvider : DynamicConfigurationProvider
     {
         private readonly DbContextOptions<DynamicConfigDbContext> _testOptions;
-        private Mock<IOptions<ProxySettings>> proxyOptionsMock;
 
         public TestableConfigurationProvider(
             IConfiguration configuration,

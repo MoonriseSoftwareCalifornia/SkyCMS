@@ -7,17 +7,11 @@
 
 namespace Sky.Tests.Services.Scheduling
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.EmailServices;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
@@ -26,14 +20,16 @@ namespace Sky.Tests.Services.Scheduling
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Scheduling;
-    using Sky.Tests.Services.Setup;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Integration tests for <see cref="ArticleScheduler"/> class.
     /// Tests scheduled publishing workflow and version management.
     /// </summary>
     [TestClass]
-    [DoNotParallelize] // Database isolation required for scheduler tests
     public class ArticleSchedulerTests_Integration : SkyCmsTestBase
     {
         private ArticleScheduler _scheduler;
@@ -54,7 +50,7 @@ namespace Sky.Tests.Services.Scheduling
             InitializeTestContext();
 
             _testNow = new DateTimeOffset(2026, 2, 3, 12, 0, 0, TimeSpan.Zero);
-            
+
             // Setup mocks
             _mockClock = new Mock<IClock>();
             _mockClock.Setup(x => x.UtcNow).Returns(_testNow);
@@ -115,7 +111,7 @@ namespace Sky.Tests.Services.Scheduling
         public void Constructor_NullSettings_ThrowsArgumentNull()
         {
             // Act & Assert
-            Assert.ThrowsExactly<ArgumentNullException>(() => 
+            Assert.ThrowsExactly<ArgumentNullException>(() =>
                 new ArticleScheduler(
                     new Mock<ILogger<ArticleScheduler>>().Object,
                     null, // null settings
@@ -131,7 +127,7 @@ namespace Sky.Tests.Services.Scheduling
         public void Constructor_NullClock_ThrowsArgumentNull()
         {
             // Act & Assert
-            Assert.ThrowsExactly<ArgumentNullException>(() => 
+            Assert.ThrowsExactly<ArgumentNullException>(() =>
                 new ArticleScheduler(
                     new Mock<ILogger<ArticleScheduler>>().Object,
                     _mockSettings.Object,
@@ -147,7 +143,7 @@ namespace Sky.Tests.Services.Scheduling
         public void Constructor_NullServiceProvider_ThrowsArgumentNull()
         {
             // Act & Assert
-            Assert.ThrowsExactly<ArgumentNullException>(() => 
+            Assert.ThrowsExactly<ArgumentNullException>(() =>
                 new ArticleScheduler(
                     new Mock<ILogger<ArticleScheduler>>().Object,
                     _mockSettings.Object,
@@ -199,12 +195,12 @@ namespace Sky.Tests.Services.Scheduling
                 .Where(a => a.ArticleNumber == scheduledArticle.ArticleNumber)
                 .OrderBy(a => a.VersionNumber)
                 .ToListAsync();
-            
+
             Assert.IsTrue(allVersions.Count >= 2, $"Should have at least 2 versions, found {allVersions.Count}");
-            
+
             var activeVersion = allVersions.FirstOrDefault(a => a.Published.HasValue && a.Published <= _testNow);
-            
-            Assert.IsNotNull(activeVersion, 
+
+            Assert.IsNotNull(activeVersion,
                 $"Should have activated past-published version. Versions found: " +
                 $"{string.Join(", ", allVersions.Select(v => $"v{v.VersionNumber} Published={v.Published}"))}");
         }
@@ -315,9 +311,9 @@ namespace Sky.Tests.Services.Scheduling
                 .OrderBy(a => a.VersionNumber)
                 .ToListAsync();
 
-            Assert.IsTrue(versions.Any(v => v.VersionNumber == 2 && v.Published.HasValue), 
+            Assert.IsTrue(versions.Any(v => v.VersionNumber == 2 && v.Published.HasValue),
                 "v2 should remain published");
-            Assert.IsFalse(versions.Any(v => v.VersionNumber == 1 && v.Published.HasValue), 
+            Assert.IsFalse(versions.Any(v => v.VersionNumber == 1 && v.Published.HasValue),
                 "v1 should be unpublished");
         }
 
@@ -356,7 +352,7 @@ namespace Sky.Tests.Services.Scheduling
             // Assert
             var oldVersion = await Db.Articles
                 .FirstAsync(a => a.ArticleNumber == article.ArticleNumber && a.VersionNumber == 1);
-            
+
             Assert.IsNull(oldVersion.Published, "Old version should be unpublished");
         }
 
@@ -403,66 +399,13 @@ namespace Sky.Tests.Services.Scheduling
                 .Where(a => a.ArticleNumber == futureArticle.ArticleNumber && a.Published.HasValue)
                 .CountAsync();
 
-            Assert.AreEqual(publishedCountBefore, publishedCountAfter, 
+            Assert.AreEqual(publishedCountBefore, publishedCountAfter,
                 "Should not activate future-dated publications");
         }
 
         #endregion
 
-        #region Email Notification Tests
-
-        /// <summary>
-        /// Test: ExecuteAsync should send email notification when article is published.
-        /// </summary>
-        [TestMethod]
-        [TestCategory("ArticleScheduler.Notifications")]
-        public async Task ExecuteAsync_SendsEmailNotificationOnPublish()
-        {
-            // Arrange
-            var home = await CreateArticleAsync("Home", TestUserId);
-            var notifyArticle = await CreateArticleAsync("Notify Article", TestUserId);
-
-            notifyArticle.Published = _testNow.AddHours(-1);
-            notifyArticle.VersionNumber = 1;
-            await Db.SaveChangesAsync();
-
-            // Add future version to trigger scheduler
-            var v2 = new Article
-            {
-                ArticleNumber = notifyArticle.ArticleNumber,
-                Title = "v2",
-                VersionNumber = 2,
-                Published = _testNow.AddHours(1),
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString()
-            };
-            Db.Articles.Add(v2);
-            await Db.SaveChangesAsync();
-
-            // Act
-            await _scheduler.ExecuteAsync();
-
-            // Assert - Email sender should be called (if it was mocked correctly)
-            // Note: Real email sending requires UserManager and full services, which is complex
-            // This test verifies the scheduler attempts to send
-        }
-
-        #endregion
-
         #region Error Handling Tests
-
-        /// <summary>
-        /// Test: ExecuteAsync should handle database errors gracefully.
-        /// </summary>
-        [TestMethod]
-        [TestCategory("ArticleScheduler.ErrorHandling")]
-        public async Task ExecuteAsync_HandlesExceptionsGracefully()
-        {
-            // Arrange - Don't create any articles to avoid errors
-            // Act & Assert - Should not throw
-            await _scheduler.ExecuteAsync();
-            Assert.IsTrue(true, "Should handle empty database gracefully");
-        }
 
         #endregion
 

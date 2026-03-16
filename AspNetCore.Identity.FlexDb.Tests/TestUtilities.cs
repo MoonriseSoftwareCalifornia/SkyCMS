@@ -181,7 +181,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// <returns></returns>
         public CosmosIdentityDbContext<IdentityUser, IdentityRole, string> GetDbContext(
             string connectionString, string databaseName, bool backwardCompatibility = false)
-        {                       
+        {
             var dbContext =
                 new CosmosIdentityDbContext<IdentityUser, IdentityRole, string>(GetDbOptions(connectionString, databaseName), backwardCompatibility);
             return dbContext;

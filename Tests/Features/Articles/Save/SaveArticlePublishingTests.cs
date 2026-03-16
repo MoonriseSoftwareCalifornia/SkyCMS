@@ -8,7 +8,6 @@
 namespace Sky.Tests.Features.Articles.Save
 {
     using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -20,7 +19,6 @@ namespace Sky.Tests.Features.Articles.Save
     /// <summary>
     /// Tests for publishing workflow integration during save operations.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class SaveArticlePublishingTests : SkyCmsTestBase
     {
@@ -111,7 +109,7 @@ namespace Sky.Tests.Features.Articles.Save
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-            
+
             var updatedArticle = await Db.Articles
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
                 .OrderByDescending(a => a.VersionNumber)
@@ -177,7 +175,7 @@ namespace Sky.Tests.Features.Articles.Save
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-            
+
             var savedArticle = await Db.Articles
                 .Where(a => a.ArticleNumber == article.ArticleNumber)
                 .OrderByDescending(a => a.VersionNumber)
@@ -238,7 +236,7 @@ namespace Sky.Tests.Features.Articles.Save
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-            
+
             var updated = await Db.Articles
                 .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
                 .OrderByDescending(a => a.VersionNumber)
@@ -286,7 +284,7 @@ namespace Sky.Tests.Features.Articles.Save
                 .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
-    
+
             Assert.IsNotNull(updated);
             Assert.AreEqual("root", updated.UrlPath);
             Assert.AreEqual("Landing Page", updated.Title);
@@ -317,7 +315,7 @@ namespace Sky.Tests.Features.Articles.Save
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-    
+
             var updated = await Db.Articles
                 .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
                 .OrderByDescending(a => a.VersionNumber)
@@ -341,7 +339,7 @@ namespace Sky.Tests.Features.Articles.Save
             // Create a new version
             var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
             var newVersionVm = await CreateArticleVersionAsync(article.ArticleNumber);
-            
+
             Assert.AreEqual("root", article.UrlPath);
             Assert.AreEqual("root", newVersionVm.UrlPath);
 
@@ -359,15 +357,15 @@ namespace Sky.Tests.Features.Articles.Save
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-    
+
             var allVersions = await Db.Articles
                 .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
                 .ToListAsync();
-    
+
             Assert.IsGreaterThanOrEqualTo(2, allVersions.Count, "Should have at least 2 versions");
-            Assert.IsTrue(allVersions.All(v => v.UrlPath == "root"), 
+            Assert.IsTrue(allVersions.All(v => v.UrlPath == "root"),
         "All versions should preserve 'root' URL path");
-}
+        }
 
         /// <summary>
         /// Tests that SaveArticle_NonRootArticle_UrlPathChangesWithTitle.
@@ -377,7 +375,7 @@ namespace Sky.Tests.Features.Articles.Save
         {
             // Arrange - Create root first
             var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
-    
+
             // Create a non-root article
             var nonRootArticle = await CreateArticleAsync("About Us", TestUserId);
             Assert.AreNotEqual("root", nonRootArticle.UrlPath);
@@ -398,24 +396,24 @@ namespace Sky.Tests.Features.Articles.Save
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-    
+
             var updated = await Db.Articles
                 .Where(a => a.ArticleNumber == nonRootArticle.ArticleNumber)
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
-    
+
             Assert.IsNotNull(updated);
-            Assert.AreNotEqual(originalPath, updated.UrlPath, 
+            Assert.AreNotEqual(originalPath, updated.UrlPath,
         "Non-root article URL should change with title");
             Assert.AreEqual("about-our-company", updated.UrlPath);
-    
+
             // Verify root article is unchanged
             var rootCheck = await Db.Articles
                 .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
             Assert.AreEqual("root", rootCheck.UrlPath);
-}
+        }
 
         /// <summary>
         /// Tests that TitleChangeService_RootPageTitleChange_NoRedirectCreated.
@@ -427,7 +425,7 @@ namespace Sky.Tests.Features.Articles.Save
             var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
             rootArticle.Published = Clock.UtcNow;
             await SaveArticleAsync(rootArticle, TestUserId);
-    
+
             var initialRedirectCount = await Db.Articles
                 .CountAsync(a => a.StatusCode == (int)StatusCodeEnum.Redirect);
 
@@ -446,10 +444,10 @@ namespace Sky.Tests.Features.Articles.Save
             // Assert
             var finalRedirectCount = await Db.Articles
                 .CountAsync(a => a.StatusCode == (int)StatusCodeEnum.Redirect);
-    
-            Assert.AreEqual(initialRedirectCount, finalRedirectCount, 
+
+            Assert.AreEqual(initialRedirectCount, finalRedirectCount,
         "No redirect should be created when root page title changes");
-}
+        }
 
         /// <summary>
         /// Tests that TitleChangeService_RootPageTitleChange_EventStillDispatched.
@@ -479,82 +477,60 @@ namespace Sky.Tests.Features.Articles.Save
             Assert.AreEqual(rootArticle.ArticleNumber, titleChangedEvent.ArticleNumber);
             Assert.AreEqual("Home Page", titleChangedEvent.OldTitle);
             Assert.AreEqual("Welcome Page", titleChangedEvent.NewTitle);
-}
+        }
 
         /// <summary>
-        /// Tests that SaveArticle_RootPageWithSpecialCharactersInTitle_PreservesRoot.
+        /// Tests root page URL path preservation across special title and case-insensitive root scenarios.
         /// </summary>
         [TestMethod]
-        public async Task SaveArticle_RootPageWithSpecialCharactersInTitle_PreservesRoot()
+        public async Task SaveArticle_RootPageEdgeCases_PreserveRootPath()
         {
-            // Arrange
-            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
-
-            var command = new SaveArticleCommand
+            var scenarios = new[]
             {
-                ArticleNumber = rootArticle.ArticleNumber,
-                Title = "Home & Welcome! 2024",
-                Content = "<p>Content</p>",
-                UserId = TestUserId,
-                ArticleType = ArticleType.General,
-                Published = Clock.UtcNow
+                new
+                {
+                    Name = "SpecialCharactersInTitle",
+                    InitialUrlPath = "root",
+                    NewTitle = "Home & Welcome! 2024",
+                },
+                new
+                {
+                    Name = "CaseInsensitiveExistingRoot",
+                    InitialUrlPath = "ROOT",
+                    NewTitle = "Updated Title",
+                },
             };
 
-            // Act
-            var result = await SaveArticleHandler.HandleAsync(command);
-
-            // Assert
-            Assert.IsTrue(result.IsSuccess);
-    
-            var updated = await Db.Articles
-                .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstOrDefaultAsync();
-    
-            Assert.IsNotNull(updated);
-            Assert.AreEqual("root", updated.UrlPath);
-            Assert.AreEqual("Home & Welcome! 2024", updated.Title);
-}
-
-        /// <summary>
-        /// Tests that SaveArticle_RootPageCaseInsensitive_PreservesRoot.
-        /// </summary>
-        [TestMethod]
-        public async Task SaveArticle_RootPageCaseInsensitive_PreservesRoot()
-        {
-            // Arrange
-            var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
-    
-            // Manually set UrlPath to different casing (edge case)
-            var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
-            article.UrlPath = "ROOT"; // Uppercase
-            await Db.SaveChangesAsync();
-
-            var command = new SaveArticleCommand
+            foreach (var scenario in scenarios)
             {
-                ArticleNumber = rootArticle.ArticleNumber,
-                Title = "Updated Title",
-                Content = "<p>Content</p>",
-                UserId = TestUserId,
-                ArticleType = ArticleType.General,
-                Published = Clock.UtcNow
-            };
+                var rootArticle = await CreateArticleAsync("Home Page", TestUserId);
+                var article = await Db.Articles.FirstAsync(a => a.ArticleNumber == rootArticle.ArticleNumber);
+                article.UrlPath = scenario.InitialUrlPath;
+                await Db.SaveChangesAsync();
 
-            // Act
-            var result = await SaveArticleHandler.HandleAsync(command);
+                var command = new SaveArticleCommand
+                {
+                    ArticleNumber = rootArticle.ArticleNumber,
+                    Title = scenario.NewTitle,
+                    Content = "<p>Content</p>",
+                    UserId = TestUserId,
+                    ArticleType = ArticleType.General,
+                    Published = Clock.UtcNow
+                };
 
-            // Assert
-            Assert.IsTrue(result.IsSuccess);
-    
-            var updated = await Db.Articles
-                .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstOrDefaultAsync();
-    
-            // Should preserve root (case-insensitive comparison)
-            Assert.IsNotNull(updated);
-            Assert.IsTrue(updated.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase));
-}
+                var result = await SaveArticleHandler.HandleAsync(command);
+                Assert.IsTrue(result.IsSuccess, scenario.Name);
+
+                var updated = await Db.Articles
+                    .Where(a => a.ArticleNumber == rootArticle.ArticleNumber)
+                    .OrderByDescending(a => a.VersionNumber)
+                    .FirstOrDefaultAsync();
+
+                Assert.IsNotNull(updated, scenario.Name);
+                Assert.IsTrue(updated.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase), scenario.Name);
+                Assert.AreEqual(scenario.NewTitle, updated.Title, scenario.Name);
+            }
+        }
     }
 }
 

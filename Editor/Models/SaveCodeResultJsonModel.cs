@@ -7,8 +7,8 @@
 
 namespace Sky.Cms.Models
 {
-    using System.Collections.Generic;
     using Microsoft.AspNetCore.Mvc.ModelBinding;
+    using System.Collections.Generic;
 
     /// <summary>
     ///     Code editor return result model.

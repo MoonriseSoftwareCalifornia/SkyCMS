@@ -7,19 +7,16 @@
 
 namespace Sky.Tests.Services.ReservedPaths
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Models;
     using Sky.Editor.Services.ReservedPaths;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="ReservedPaths"/> service.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class ReservedPathsTests : SkyCmsTestBase
     {
@@ -128,7 +125,7 @@ namespace Sky.Tests.Services.ReservedPaths
             // Assert
             foreach (var path in paths)
             {
-                Assert.IsFalse(string.IsNullOrWhiteSpace(path.Notes), 
+                Assert.IsFalse(string.IsNullOrWhiteSpace(path.Notes),
                     $"Path '{path.Path}' should have notes");
             }
         }
@@ -242,7 +239,7 @@ namespace Sky.Tests.Services.ReservedPaths
             var paths = await reservedPathsService.GetReservedPaths();
 
             // Assert
-            Assert.IsTrue(paths.Any(p => p.Path == "custom-reserved"), 
+            Assert.IsTrue(paths.Any(p => p.Path == "custom-reserved"),
                 "Custom path should be added");
         }
 
@@ -274,7 +271,7 @@ namespace Sky.Tests.Services.ReservedPaths
 
             // Assert
             var savedPath = paths.First(p => p.Path == "custom-path");
-            Assert.AreEqual("Updated notes", savedPath.Notes, 
+            Assert.AreEqual("Updated notes", savedPath.Notes,
                 "Notes should be updated");
         }
 
@@ -325,9 +322,9 @@ namespace Sky.Tests.Services.ReservedPaths
             var paths = await reservedPathsService.GetReservedPaths();
 
             // Assert
-            var matchingPaths = paths.Where(p => 
+            var matchingPaths = paths.Where(p =>
                 p.Path.Equals("MyPath", StringComparison.OrdinalIgnoreCase)).ToList();
-            Assert.AreEqual(1, matchingPaths.Count, 
+            Assert.AreEqual(1, matchingPaths.Count,
                 "Should not create duplicate with different case");
         }
 
@@ -355,7 +352,7 @@ namespace Sky.Tests.Services.ReservedPaths
             var paths = await reservedPathsService.GetReservedPaths();
 
             // Assert
-            Assert.IsFalse(paths.Any(p => p.Path == "removable-path"), 
+            Assert.IsFalse(paths.Any(p => p.Path == "removable-path"),
                 "Path should be removed");
         }
 
@@ -405,8 +402,8 @@ namespace Sky.Tests.Services.ReservedPaths
             var paths = await reservedPathsService.GetReservedPaths();
 
             // Assert
-            Assert.IsFalse(paths.Any(p => 
-                p.Path.Equals("RemovePath", StringComparison.OrdinalIgnoreCase)), 
+            Assert.IsFalse(paths.Any(p =>
+                p.Path.Equals("RemovePath", StringComparison.OrdinalIgnoreCase)),
                 "Should remove path regardless of case");
         }
 
@@ -564,28 +561,28 @@ namespace Sky.Tests.Services.ReservedPaths
             var initialCount = initialPaths.Count;
 
             // Act - Perform multiple operations
-            await reservedPathsService.Upsert(new ReservedPath 
-            { 
-                Path = "temp1", 
-                CosmosRequired = false, 
-                Notes = "Temp" 
+            await reservedPathsService.Upsert(new ReservedPath
+            {
+                Path = "temp1",
+                CosmosRequired = false,
+                Notes = "Temp"
             });
-            await reservedPathsService.Upsert(new ReservedPath 
-            { 
-                Path = "temp2", 
-                CosmosRequired = false, 
-                Notes = "Temp" 
+            await reservedPathsService.Upsert(new ReservedPath
+            {
+                Path = "temp2",
+                CosmosRequired = false,
+                Notes = "Temp"
             });
             await reservedPathsService.Remove("temp1");
 
             var finalPaths = await reservedPathsService.GetReservedPaths();
 
             // Assert
-            Assert.AreEqual(initialCount + 1, finalPaths.Count, 
+            Assert.AreEqual(initialCount + 1, finalPaths.Count,
                 "Should have one more path than initial");
-            Assert.IsTrue(finalPaths.Any(p => p.Path == "temp2"), 
+            Assert.IsTrue(finalPaths.Any(p => p.Path == "temp2"),
                 "temp2 should exist");
-            Assert.IsFalse(finalPaths.Any(p => p.Path == "temp1"), 
+            Assert.IsFalse(finalPaths.Any(p => p.Path == "temp1"),
                 "temp1 should not exist");
         }
 

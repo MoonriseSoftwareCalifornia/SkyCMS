@@ -7,12 +7,12 @@
 
 namespace Cosmos.Common
 {
-    using System;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.DataProtection;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using System;
 
     /// <summary>
     /// Service collection extensions for FlexDb data protection.

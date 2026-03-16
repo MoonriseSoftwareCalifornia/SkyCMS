@@ -1,4 +1,4 @@
-// <copyright file="TenantArticleLogicFactoryTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="TenantArticleLogicFactoryTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -7,14 +7,11 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Shared;
+    using Cosmos.Common.Services.BlogPublishing;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.EntityFrameworkCore;
@@ -23,12 +20,10 @@ namespace Sky.Tests.Services
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
-    using Microsoft.Extensions.Options;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Cms.Services;
     using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.Catalog;
@@ -38,19 +33,18 @@ namespace Sky.Tests.Services
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.ReservedPaths;
     using Sky.Editor.Services.Scheduling;
-    using Sky.Editor.Services.StaticFiles;
-    using Sky.Editor.Services.TableOfContents;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using MediatR;
-    using Cosmos.Common.Services.BlogPublishing;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="TenantArticleLogicFactory"/> to ensure proper
     /// tenant-specific ArticleEditLogic instantiation in multi-tenant scenarios.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class TenantArticleLogicFactoryTests
     {
@@ -88,7 +82,7 @@ namespace Sky.Tests.Services
             _mockEditorSettings.Setup(x => x.BlobPublicUrl).Returns("/");
             _mockEditorSettings.Setup(x => x.StaticWebPages).Returns(false);
             _mockEditorSettings.Setup(x => x.IsMultiTenantEditor).Returns(false);
-            
+
             _mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
 
             // Setup service provider with all required dependencies
@@ -159,7 +153,7 @@ namespace Sky.Tests.Services
             services.AddSingleton(new SiteSettings());
 
             // Register custom IMediator implementation
-            services.AddSingleton<Cosmos.Common.Features.Shared.IMediator>(sp => 
+            services.AddSingleton<Cosmos.Common.Features.Shared.IMediator>(sp =>
                 new Cosmos.Common.Features.Shared.Mediator(sp));
 
             // Register MediatR with handlers from the Editor assembly
@@ -215,62 +209,19 @@ namespace Sky.Tests.Services
                     sp.GetRequiredService<IEditorSettings>().PublisherUrl,
                     sp.GetRequiredService<IEditorSettings>().BlobPublicUrl);
 
-                var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
-                    dbContext,
-                    sp.GetRequiredService<ILogger<Sky.Editor.Services.CDN.CdnPurgeService>>(),
-                    null,  // No HttpContextAccessor in tests
-                    sp.GetRequiredService<IEditorSettings>());
-
-                var tocService = new Sky.Editor.Services.TableOfContents.TocService(
-                    storageContext,
-                    sp.GetRequiredService<IEditorSettings>(),
-                    catalogQueryService,
-                    sp.GetRequiredService<ILogger<Sky.Editor.Services.TableOfContents.TocService>>());
-
-                var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
-                    storageContext,
-                    sp.GetRequiredService<IEditorSettings>(),
-                    sp.GetRequiredService<IViewRenderService>(),
-                    null!, // IMediator
-                    sp.GetRequiredService<ILogger<Sky.Editor.Services.StaticFiles.StaticFileService>>());
-
-                var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
-                    dbContext,
-                    storageContext,
-                    null);  // No HttpContextAccessor in tests
-
-                var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
-                    blogPublishingContext,
-                    mockBlogStreamRenderingService.Object,
-                    sp.GetRequiredService<IViewRenderService>(),
-                    null!, // IMediator
-                    null, // PublishingService reference (circular dependency)
-                    sp.GetRequiredService<ILogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>>());
-
-                var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
-                    cdnPurgeService,
-                    tocService,
-                    staticFileService,
-                    blogPublishingService);
-
-                var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
-                    dbContext,
-                    storageContext,
-                    sp.GetRequiredService<IEditorSettings>(),
-                    null,  // No HttpContextAccessor in tests
-                    catalogQueryService);
-
-                var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(sp);
-
                 return new PublishingService(
-                    publishingContext,
+                    dbContext,
+                    storageContext,
+                    sp.GetRequiredService<IEditorSettings>(),
                     sp.GetRequiredService<ILogger<PublishingService>>(),
+                    null,  // No HttpContextAccessor in tests
                     mockAuthorService.Object,
                     sp.GetRequiredService<IClock>(),
-                    staticFileServiceFactory,
+                    mockBlogStreamRenderingService.Object,
+                    sp.GetRequiredService<IViewRenderService>(),
+                    sp,
                     sp.GetRequiredService<IPublishingProgressReporter>(),
-                    null, // No domain event dispatcher for tests
-                    auxiliaryServices);
+                    catalogQueryService);
             });
 
             services.AddScoped<IRedirectService>(sp =>
@@ -289,15 +240,12 @@ namespace Sky.Tests.Services
                 var mockReservedPaths = new Mock<IReservedPaths>();
                 var mockBlogRenderingService = new Mock<IBlogStreamRenderingService>();
 
-                var titleChangeContext = new Sky.Editor.Services.Titles.TitleChangeContext(
-                    dbContext,
-                    sp.GetRequiredService<IClock>(),
-                    null);  // No event dispatcher in tests
-
                 return new TitleChangeService(
-                    titleChangeContext,
+                    dbContext,
                     sp.GetRequiredService<ISlugService>(),
                     sp.GetRequiredService<IRedirectService>(),
+                    sp.GetRequiredService<IClock>(),
+                    null,
                     sp.GetRequiredService<IPublishingService>(),
                     mockReservedPaths.Object,
                     mockBlogRenderingService.Object,
@@ -717,7 +665,7 @@ namespace Sky.Tests.Services
 
             // Setup mock to handle normalized domain
             _mockConfigProvider.Setup(x => x.GetTenantConnectionAsync(
-                It.Is<string>(s => s.Equals("tenant1.com", StringComparison.OrdinalIgnoreCase)), 
+                It.Is<string>(s => s.Equals("tenant1.com", StringComparison.OrdinalIgnoreCase)),
                 default))
                 .ReturnsAsync(connection);
 
@@ -779,7 +727,7 @@ namespace Sky.Tests.Services
             // Assert
             Assert.IsNotNull(logic);
             Assert.IsInstanceOfType(logic, typeof(ArticleEditLogic));
-            
+
             // Verify logic instance has required dependencies
             // (This validates the factory wired up all dependencies correctly)
             Assert.IsNotNull(logic);

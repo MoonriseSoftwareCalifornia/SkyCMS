@@ -7,13 +7,12 @@
 
 namespace Sky.Tests.Features.Templates
 {
+    using Cosmos.Common.Data;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Sky.Editor.Features.Templates.UpdateMetadata;
     using System;
     using System.Linq;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Sky.Editor.Features.Templates.UpdateMetadata;
 
     /// <summary>
     /// Tests for <see cref="UpdateTemplateMetadataCommand"/> and <see cref="UpdateTemplateMetadataHandler"/>.
@@ -25,7 +24,7 @@ namespace Sky.Tests.Features.Templates
         /// Initialize test context.
         /// </summary>
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }

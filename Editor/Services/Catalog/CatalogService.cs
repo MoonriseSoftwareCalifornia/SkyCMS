@@ -7,16 +7,13 @@
 
 namespace Sky.Editor.Services.Catalog
 {
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cosmos.Common.Constants;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
-    using Sky.Editor.Domain.Events;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Html;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Provides catalog maintenance operations for articles.
@@ -48,7 +45,6 @@ namespace Sky.Editor.Services.Catalog
         private readonly IArticleHtmlService html;
         private readonly IClock clock;
         private readonly ILogger<CatalogService> logger;
-        private readonly IDomainEventDispatcher? eventDispatcher;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CatalogService"/> class.
@@ -57,14 +53,12 @@ namespace Sky.Editor.Services.Catalog
         /// <param name="html">HTML utility service for extracting/normalizing article fragments.</param>
         /// <param name="clock">Clock abstraction (reserved for future timestamp logic or auditing).</param>
         /// <param name="logger">Logger instance for diagnostics (currently unused but reserved for expansion).</param>
-        /// <param name="eventDispatcher">Optional domain event dispatcher for publishing catalog change events.</param>
-        public CatalogService(ApplicationDbContext db, IArticleHtmlService html, IClock clock, ILogger<CatalogService> logger, IDomainEventDispatcher? eventDispatcher = null)
+        public CatalogService(ApplicationDbContext db, IArticleHtmlService html, IClock clock, ILogger<CatalogService> logger)
         {
             this.db = db;
             this.html = html;
             this.clock = clock;
             this.logger = logger;
-            this.eventDispatcher = eventDispatcher;
         }
 
         /// <summary>
@@ -143,13 +137,6 @@ namespace Sky.Editor.Services.Catalog
 
             db.ArticleCatalog.Add(entry);
             await db.SaveChangesAsync(cancellationToken);
-
-            // Publish domain event for cache invalidation
-            if (eventDispatcher != null)
-            {
-                await eventDispatcher.DispatchAsync(new CatalogEntryUpdatedEvent(article.ArticleNumber));
-            }
-
             return entry;
         }
 
@@ -168,12 +155,6 @@ namespace Sky.Editor.Services.Catalog
             {
                 db.ArticleCatalog.Remove(existing);
                 await db.SaveChangesAsync();
-
-                // Publish domain event for cache invalidation
-                if (eventDispatcher != null)
-                {
-                    await eventDispatcher.DispatchAsync(new CatalogEntryDeletedEvent(articleNumber));
-                }
             }
         }
     }

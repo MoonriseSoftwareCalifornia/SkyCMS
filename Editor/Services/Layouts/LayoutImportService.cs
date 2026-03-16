@@ -7,12 +7,6 @@
 
 namespace Sky.Editor.Services.Layouts
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net.Http;
-    using System.Text;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Data.Logic;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -20,6 +14,12 @@ namespace Sky.Editor.Services.Layouts
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net.Http;
+    using System.Text;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for importing layouts and templates from external sources.

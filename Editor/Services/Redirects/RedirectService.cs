@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Services.Redirects
 {
-    using System;
-    using System.Text;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Slugs;
+    using System;
+    using System.Text;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Implements redirect management by storing redirects as special <see cref="Article"/> records (StatusCode = Redirect).
@@ -56,8 +56,8 @@ namespace Sky.Editor.Services.Redirects
 
             // Check if a redirect from this fromSlug already exists
             var existingRedirect = await db.Articles
-                .FirstOrDefaultAsync(a => 
-                    a.UrlPath == fromSlug.TrimEnd('/') && 
+                .FirstOrDefaultAsync(a =>
+                    a.UrlPath == fromSlug.TrimEnd('/') &&
                     a.StatusCode == (int)StatusCodeEnum.Redirect);
 
             if (existingRedirect != null)
@@ -65,7 +65,7 @@ namespace Sky.Editor.Services.Redirects
                 // Update the existing redirect to point to the new target
                 existingRedirect.RedirectTarget = toSlug;
                 existingRedirect.Updated = clock.UtcNow;
-                
+
                 // Update the redirect JavaScript and content
                 var redirectJavaScript = new StringBuilder();
                 redirectJavaScript.AppendLine("<script type=\"text/javascript\">");
@@ -83,7 +83,7 @@ namespace Sky.Editor.Services.Redirects
 
                 existingRedirect.HeaderJavaScript = redirectJavaScript.ToString();
                 existingRedirect.Content = pageBody.ToString();
-                
+
                 await db.SaveChangesAsync();
                 await publishedArtifactService.PublishAsync(existingRedirect);
                 return existingRedirect;
@@ -92,21 +92,21 @@ namespace Sky.Editor.Services.Redirects
             // Allocate a new redirect article (new article number sequence entry).
             // Find the maximum article number from both Articles and ArticleNumbers tables
             var maxArticleNumber = 1; // Start at 1 (root article uses 1 by convention)
-            
+
             // Check the maximum from existing articles
             if (await db.Articles.AnyAsync())
             {
                 var maxFromArticles = await db.Articles.MaxAsync(a => a.ArticleNumber);
                 maxArticleNumber = Math.Max(maxArticleNumber, maxFromArticles);
             }
-            
+
             // Check the maximum from ArticleNumbers tracking table
             if (await db.ArticleNumbers.AnyAsync())
             {
                 var maxFromArticleNumbers = await db.ArticleNumbers.MaxAsync(a => a.LastNumber);
                 maxArticleNumber = Math.Max(maxArticleNumber, maxFromArticleNumbers);
             }
-            
+
             // Increment to get the next available number
             maxArticleNumber++;
 

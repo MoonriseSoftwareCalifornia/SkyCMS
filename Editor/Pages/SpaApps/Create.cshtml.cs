@@ -7,9 +7,6 @@
 
 namespace Sky.Editor.Pages.SpaApps;
 
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
 using BCrypt.Net;
 using Cosmos.Cms.Common;
 using Cosmos.Cms.Common.Models;
@@ -19,6 +16,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Page model for creating SPA applications.

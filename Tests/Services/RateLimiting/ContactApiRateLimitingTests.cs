@@ -4,16 +4,11 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Net;
-using System.Threading;
-using System.Threading.RateLimiting;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Sky.Cms.Api.Shared.Extensions;
+using System.Net;
+using System.Threading.RateLimiting;
 
 namespace Sky.Tests.Services.RateLimiting
 {
@@ -86,6 +81,12 @@ namespace Sky.Tests.Services.RateLimiting
 
             // Assert
             Assert.IsFalse(blockedLease.IsAcquired, "6th request should be blocked as it exceeds the 5 req/min limit");
+
+            // QueueLimit is configured as 0, so rejection should provide metadata immediately.
+            Assert.IsTrue(
+                blockedLease.TryGetMetadata(MetadataName.RetryAfter, out _),
+                "Blocked request should not be queued when queue limit is 0");
+
             blockedLease.Dispose();
         }
 
@@ -119,7 +120,7 @@ namespace Sky.Tests.Services.RateLimiting
             // for 1 minute from that point plus a small buffer
             var elapsed = DateTime.UtcNow - windowStartTime;
             var remainingTime = TimeSpan.FromMinutes(1) - elapsed + TimeSpan.FromMilliseconds(200);
-            
+
             if (remainingTime > TimeSpan.Zero)
             {
                 await Task.Delay(remainingTime);
@@ -185,32 +186,6 @@ namespace Sky.Tests.Services.RateLimiting
         }
 
         [TestMethod]
-        public async Task ContactForm_RateLimit_QueueLimitIsZero()
-        {
-            // Arrange
-            var options = new RateLimiterOptions();
-            ContactApiServiceExtensions.ConfigureContactApiRateLimiting(options);
-
-            var httpContext = CreateHttpContext("192.168.1.106");
-            using var limiter = GetRateLimiterForPolicy(options, "contact-form", httpContext);
-
-            // Act - Fill the limit
-            for (int i = 0; i < 5; i++)
-            {
-                var lease = await limiter.AcquireAsync(httpContext, permitCount: 1);
-                Assert.IsTrue(lease.IsAcquired);
-                lease.Dispose();
-            }
-
-            // Try to acquire one more (should be rejected immediately, not queued)
-            var rejectedLease = await limiter.AcquireAsync(httpContext, permitCount: 1);
-
-            // Assert
-            Assert.IsFalse(rejectedLease.IsAcquired, "Request should be rejected immediately when queue limit is 0");
-            rejectedLease.Dispose();
-        }
-
-        [TestMethod]
         public async Task ContactForm_RateLimit_HandlesUnknownIpAddress()
         {
             // Arrange
@@ -264,7 +239,7 @@ namespace Sky.Tests.Services.RateLimiting
         private static HttpContext CreateHttpContext(string? ipAddress)
         {
             var context = new DefaultHttpContext();
-            
+
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 context.Connection.RemoteIpAddress = IPAddress.Parse(ipAddress);

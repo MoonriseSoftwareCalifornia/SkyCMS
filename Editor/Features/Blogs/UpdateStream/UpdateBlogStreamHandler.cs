@@ -7,11 +7,6 @@
 
 namespace Sky.Editor.Features.Blogs.UpdateStream
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -22,6 +17,11 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for updating blog stream metadata and properties.
@@ -94,9 +94,9 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
                 // Retrieve the article
                 var article = await dbContext.Articles
                     .FirstOrDefaultAsync(
-                        f => f.Id == command.Id && 
+                        f => f.Id == command.Id &&
                              f.ArticleType == (int)ArticleType.BlogStream &&
-                             f.StatusCode != (int)StatusCodeEnum.Deleted, 
+                             f.StatusCode != (int)StatusCodeEnum.Deleted,
                         cancellationToken);
 
                 if (article == null)

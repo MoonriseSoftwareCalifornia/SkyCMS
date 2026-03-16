@@ -7,9 +7,9 @@
 
 namespace Cosmos.Common.Features.Articles.Shared;
 
+using Cosmos.Common.Models;
 using System;
 using System.Threading.Tasks;
-using Cosmos.Common.Models;
 
 /// <summary>
 /// Service for querying published page snapshots from the PublishedPage table.

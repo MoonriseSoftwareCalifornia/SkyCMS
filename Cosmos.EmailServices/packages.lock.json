@@ -1132,7 +1132,6 @@
         "dependencies": {
           "Duende.IdentityServer.EntityFramework.Storage": "[7.4.5, )",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[9.0.0, 10.0.0)",
-          "Microsoft.AspNetCore.Identity.UI": "[9.0.0, 10.0.0)",
           "Microsoft.EntityFrameworkCore.Cosmos": "[9.0.10, 10.0.0)",
           "Microsoft.EntityFrameworkCore.SqlServer": "[9.0.10, 10.0.0)",
           "Microsoft.EntityFrameworkCore.Sqlite.Core": "[9.0.10, 10.0.0)",

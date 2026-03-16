@@ -7,11 +7,6 @@
 
 namespace Sky.Editor.Features.Articles.Save
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -25,6 +20,11 @@ namespace Sky.Editor.Features.Articles.Save
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handles saving (updating) existing articles with full workflow coordination.
@@ -90,7 +90,7 @@ namespace Sky.Editor.Features.Articles.Save
             }
 
             Article? currentArticle = null;
-            
+
             try
             {
                 logger.LogInformation(
@@ -173,7 +173,7 @@ namespace Sky.Editor.Features.Articles.Save
 
                     // TitleChangeService will save changes within its transaction
                     await titleChangeService.HandleTitleChangeAsync(currentArticle, oldTitle, oldUrlPath);
-                    
+
                     // No need for additional SaveChangesAsync - TitleChangeService handles it
                 }
 
@@ -226,7 +226,7 @@ namespace Sky.Editor.Features.Articles.Save
                             }
                         }
                     }
-                    
+
                     throw;
                 }
 

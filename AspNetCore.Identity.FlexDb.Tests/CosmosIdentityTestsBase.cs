@@ -94,7 +94,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
                 dbContext.RoleClaims.RemoveRange(dbContext.RoleClaims);
                 dbContext.Users.RemoveRange(dbContext.Users);
                 dbContext.Roles.RemoveRange(dbContext.Roles);
-                
+
                 dbContext.SaveChanges();
                 Console.WriteLine("  ℹ Cleared existing test data");
             }

@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Authorization;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard summary page.
@@ -50,7 +50,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <summary>
         /// Gets or sets critical settings for display.
         /// </summary>
-        public CriticalSettingsSummary CriticalSettings { get; set; } = new ();
+        public CriticalSettingsSummary CriticalSettings { get; set; } = new();
 
         /// <summary>
         /// Gets or sets the error message.
@@ -170,7 +170,7 @@ namespace Sky.Editor.Areas.Setup.Pages
                 {
                     Name = "Email Provider",
                     Value = DetermineEmailProvider(config),
-                    IsConfigured = !string.IsNullOrEmpty(config.SendGridApiKey) || 
+                    IsConfigured = !string.IsNullOrEmpty(config.SendGridApiKey) ||
                                    !string.IsNullOrEmpty(config.AzureEmailConnectionString) ||
                                    !string.IsNullOrEmpty(config.SmtpHost),
                     Description = "Email delivery mechanism - changes can prevent system notifications"

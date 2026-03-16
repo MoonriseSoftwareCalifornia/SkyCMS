@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Models
 {
+    using Cosmos.Cms.Data;
     using System;
     using System.ComponentModel.DataAnnotations;
-    using Cosmos.Cms.Data;
 
     /// <summary>
     /// GrapesJs designer post data view model.

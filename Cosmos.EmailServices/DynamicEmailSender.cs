@@ -7,11 +7,6 @@
 
 namespace Cosmos.EmailServices
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Azure.Identity;
     using Cosmos.Common.Data;
@@ -19,6 +14,11 @@ namespace Cosmos.EmailServices
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Dynamic email sender that resolves the appropriate email provider at runtime.
@@ -124,7 +124,7 @@ namespace Cosmos.EmailServices
                 else
                 {
                     logger.LogInformation("Single-tenant mode");
-                    
+
                     // Check environment variables first
                     if (HasEnvironmentVariableConfig())
                     {

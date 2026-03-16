@@ -23,7 +23,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public static IEnumerable<object[]> GetTestProviders()
         {
             var providers = TestUtilities.GetAvailableProviders();
-            
+
             foreach (var provider in providers)
             {
                 yield return new object[] { provider };
@@ -52,7 +52,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var uniqueEmail = $"createtest_{Guid.NewGuid():N}@testdomain.com";
             var user = new IdentityUser(uniqueEmail)
             {
@@ -108,7 +108,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = new IdentityUser($"user_{Guid.NewGuid():N}")
             {
                 Email = null, // Invalid - null email
@@ -134,7 +134,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = new IdentityUser
             {
                 UserName = null, // Invalid - null username
@@ -161,7 +161,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var duplicateEmail = $"duplicate_{Guid.NewGuid():N}@testdomain.com";
             var user1 = new IdentityUser(duplicateEmail)
             {
@@ -202,18 +202,18 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var originalEmail = user.Email;
             var newPhoneNumber = "555-1234";
-            
+
             // Act - Update phone number
             await userStore.SetPhoneNumberAsync(user, newPhoneNumber);
             var updateResult = await userStore.UpdateAsync(user);
 
             // Assert
             Assert.IsTrue(updateResult.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             Assert.IsNotNull(updatedUser, $"Failed for provider: {provider.DisplayName}");
             Assert.AreEqual(newPhoneNumber, updatedUser.PhoneNumber, $"Failed for provider: {provider.DisplayName}");
@@ -247,7 +247,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             Assert.IsFalse(user.EmailConfirmed, $"Failed for provider: {provider.DisplayName}");
 
@@ -257,7 +257,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(updateResult.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             Assert.IsTrue(updatedUser.EmailConfirmed, $"Failed for provider: {provider.DisplayName}");
         }
@@ -269,7 +269,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var newSecurityStamp = Guid.NewGuid().ToString();
 
@@ -279,7 +279,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(updateResult.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var updatedUser = await userStore.FindByIdAsync(user.Id);
             Assert.AreEqual(newSecurityStamp, updatedUser.SecurityStamp, $"Failed for provider: {provider.DisplayName}");
         }
@@ -296,7 +296,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var userId = user.Id;
 
@@ -305,10 +305,10 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var deletedUser = await userStore.FindByIdAsync(userId);
             Assert.IsNull(deletedUser, $"User should be deleted for provider: {provider.DisplayName}");
-            
+
             var userCount = await dbContext.Users.Where(u => u.Id == userId).CountAsync();
             Assert.AreEqual(0, userCount, $"Failed for provider: {provider.DisplayName}");
         }
@@ -341,7 +341,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var userId = user.Id;
             var claim = GetMockClaim();
@@ -356,7 +356,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var claimCountAfterDelete = await dbContext.UserClaims.Where(c => c.UserId == userId).CountAsync();
             Assert.AreEqual(0, claimCountAfterDelete, $"Claims should be deleted for provider: {provider.DisplayName}");
         }
@@ -370,7 +370,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var userId = user.Id;
             var role = await GetMockRandomRoleAsync(roleStore);
@@ -385,7 +385,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var roleCountAfterDelete = await dbContext.UserRoles.Where(ur => ur.UserId == userId).CountAsync();
             Assert.AreEqual(0, roleCountAfterDelete, $"User roles should be deleted for provider: {provider.DisplayName}");
         }
@@ -398,7 +398,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var userId = user.Id;
             var login = GetMockLoginInfoAsync();
@@ -413,7 +413,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Assert
             Assert.IsTrue(result.Succeeded, $"Failed for provider: {provider.DisplayName}");
-            
+
             var loginCountAfterDelete = await dbContext.UserLogins.Where(l => l.UserId == userId).CountAsync();
             Assert.AreEqual(0, loginCountAfterDelete, $"User logins should be deleted for provider: {provider.DisplayName}");
         }

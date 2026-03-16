@@ -18,11 +18,10 @@ namespace Sky.Tests.Services
     /// Tests blog post creation, listing, pagination, categories, and RSS feed generation.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class BlogServiceTests : SkyCmsTestBase
     {
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }
@@ -134,17 +133,17 @@ namespace Sky.Tests.Services
         {
             // Arrange
             await CreateArticleAsync("Home", TestUserId);
-            
+
             var post1 = await CreateArticleAsync("Published Post", TestUserId, null, "default", ArticleType.BlogPost);
             await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow);
-            
+
             var post2 = await CreateArticleAsync("Draft Post", TestUserId, null, "default", ArticleType.BlogPost);
             // Don't publish post2
 
             // Act
             var publishedCount = await Db.Articles
-                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
-                    && a.BlogKey == "default" 
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost
+                    && a.BlogKey == "default"
                     && a.Published != null)
                 .CountAsync();
 
@@ -160,19 +159,19 @@ namespace Sky.Tests.Services
         {
             // Arrange
             await CreateArticleAsync("Home", TestUserId);
-            
+
             var post1 = await CreateArticleAsync("Old Post", TestUserId, null, "default", ArticleType.BlogPost);
             await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow.AddDays(-2));
-            
+
             await Task.Delay(100); // Ensure different timestamps
-            
+
             var post2 = await CreateArticleAsync("New Post", TestUserId, null, "default", ArticleType.BlogPost);
             await Logic.PublishArticle(post2.Id, DateTimeOffset.UtcNow);
 
             // Act
             var posts = await Db.Articles
-                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
-                    && a.BlogKey == "default" 
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost
+                    && a.BlogKey == "default"
                     && a.Published != null)
                 .OrderByDescending(a => a.Published)
                 .ToListAsync();
@@ -190,7 +189,7 @@ namespace Sky.Tests.Services
         {
             // Arrange
             await CreateArticleAsync("Home", TestUserId);
-            
+
             for (int i = 1; i <= 15; i++)
             {
                 var post = await CreateArticleAsync($"Post {i}", TestUserId, null, "default", ArticleType.BlogPost);
@@ -202,8 +201,8 @@ namespace Sky.Tests.Services
             var pageSize = 5;
             var pageNumber = 2;
             var page2Posts = await Db.Articles
-                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
-                    && a.BlogKey == "default" 
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost
+                    && a.BlogKey == "default"
                     && a.Published != null)
                 .OrderByDescending(a => a.Published)
                 .Skip((pageNumber - 1) * pageSize)
@@ -226,7 +225,7 @@ namespace Sky.Tests.Services
         {
             // Arrange
             await CreateArticleAsync("Home", TestUserId);
-            
+
             var post1 = await CreateArticleAsync("Tech Post", TestUserId, null, "default", ArticleType.BlogPost);
             var command1 = new SaveArticleCommand
             {
@@ -239,7 +238,7 @@ namespace Sky.Tests.Services
             };
             await SaveArticleHandler.HandleAsync(command1);
             await Logic.PublishArticle(post1.Id, DateTimeOffset.UtcNow);
-            
+
             var post2 = await CreateArticleAsync("Science Post", TestUserId, null, "default", ArticleType.BlogPost);
             var command2 = new SaveArticleCommand
             {
@@ -255,7 +254,7 @@ namespace Sky.Tests.Services
 
             // Act
             var techPosts = await Db.Articles
-                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost
                     && a.Category == "Technology")
                 .CountAsync();
 
@@ -271,7 +270,7 @@ namespace Sky.Tests.Services
         {
             // Arrange
             await CreateArticleAsync("Home", TestUserId);
-            
+
             var categories = new[] { "Tech", "Science", "Tech", "Sports" };
             for (int i = 0; i < categories.Length; i++)
             {
@@ -292,7 +291,7 @@ namespace Sky.Tests.Services
 
             // Act
             var distinctCategories = await Db.Articles
-                .Where(a => a.ArticleType == (int)ArticleType.BlogPost 
+                .Where(a => a.ArticleType == (int)ArticleType.BlogPost
                     && !string.IsNullOrEmpty(a.Category))
                 .Select(a => a.Category)
                 .Distinct()

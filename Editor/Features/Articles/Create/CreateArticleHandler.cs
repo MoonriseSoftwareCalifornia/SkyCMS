@@ -1,10 +1,5 @@
 namespace Sky.Editor.Features.Articles.Create
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
@@ -17,6 +12,11 @@ namespace Sky.Editor.Features.Articles.Create
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handles the creation of new articles.
@@ -112,11 +112,11 @@ namespace Sky.Editor.Features.Articles.Create
                 var now = clock.UtcNow;
 
                 // Determine content: ContentOverride > Template > Default Lorem Ipsum
-                var content = command.ContentOverride 
+                var content = command.ContentOverride
                     ?? htmlService.EnsureEditableMarkers(defaultTemplate);
 
                 // Determine published state: explicit > auto-publish first article > null
-                var published = command.Published 
+                var published = command.Published
                     ?? (isFirstArticle ? now : (DateTimeOffset?)null);
 
                 // Determine status code: explicit > default Active
@@ -135,7 +135,7 @@ namespace Sky.Editor.Features.Articles.Create
                     Published = published,
                     UserId = command.UserId.ToString(),
                     TemplateId = command.TemplateId,
-                    
+
                     // Apply optional overrides (only properties that exist on Article entity)
                     Category = command.Category ?? string.Empty,
                     Introduction = command.Introduction ?? string.Empty,
@@ -145,7 +145,7 @@ namespace Sky.Editor.Features.Articles.Create
                 };
 
                 // Generate URL path: explicit override > "root" for first > generated from title
-                article.UrlPath = command.UrlPathOverride 
+                article.UrlPath = command.UrlPathOverride
                     ?? (isFirstArticle ? "root" : titleChangeService.BuildArticleUrl(article));
 
                 dbContext.Articles.Add(article);

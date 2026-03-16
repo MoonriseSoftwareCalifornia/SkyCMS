@@ -19,7 +19,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
         private static readonly ConcurrentDictionary<string, ServerVersion> ServerVersionCache = new();
 
         /// <inheritdoc/>
-        public string ProviderName => "MySQL";
+        public string ProviderName => ProviderNames.PomeloMySql;
 
         /// <inheritdoc/>
         public int Priority => 30;

@@ -5,23 +5,18 @@
 
 namespace Sky.Tests.Performance
 {
+    using Cosmos.Cms.Common;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.EditorQueries;
+    using Cosmos.Common.Models;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Sky.Editor.Features.Articles.Save;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
     using System.Threading.Tasks;
-    using Cosmos.Cms.Common;
-    using Cosmos.Common;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Models;
-    using Cosmos.Common.Features.Articles.EditorQueries;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Logging.Abstractions;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Articles.Save;
 
 
 
@@ -30,11 +25,10 @@ namespace Sky.Tests.Performance
     /// Tests system behavior under load, concurrent operations, and with large datasets.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class PerformanceAndConcurrencyTests : SkyCmsTestBase
     {
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }
@@ -45,6 +39,7 @@ namespace Sky.Tests.Performance
         /// Tests creating and querying large number of articles.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CreateManyArticles_PerformsEfficiently()
         {
             // Arrange
@@ -63,7 +58,7 @@ namespace Sky.Tests.Performance
             Assert.IsTrue(totalArticles >= articleCount, $"Should have at least {articleCount} articles");
 
             // Performance assertion (should complete in reasonable time)
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 30000, 
+            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 30000,
                 $"Creating {articleCount} articles took {stopwatch.ElapsedMilliseconds}ms (should be < 30s)");
         }
 
@@ -71,6 +66,7 @@ namespace Sky.Tests.Performance
         /// Tests pagination performance with large dataset.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task Pagination_WithLargeDataset_PerformsEfficiently()
         {
             // Arrange - Create 50 articles
@@ -97,7 +93,7 @@ namespace Sky.Tests.Performance
             // Assert
             Assert.AreEqual(10, page1.Count);
             Assert.AreEqual(10, page2.Count);
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 1000, 
+            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 1000,
                 $"Pagination queries took {stopwatch.ElapsedMilliseconds}ms (should be < 1s)");
         }
 
@@ -105,17 +101,18 @@ namespace Sky.Tests.Performance
         /// Tests that catalog queries perform well with many entries.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CatalogQuery_WithManyEntries_PerformsEfficiently()
         {
             // Arrange - Create 30 articles and catalog entries
             for (int i = 1; i <= 30; i++)
             {
                 var article = await CreateArticleAsync($"Catalog Test {i}", TestUserId);
-                
+
                 // Check if catalog entry already exists (first article auto-publishes)
                 var existingEntry = await Db.ArticleCatalog
                     .FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-                    
+
                 if (existingEntry == null)
                 {
                     // Directly create catalog entry without publishing to Azure storage
@@ -146,7 +143,7 @@ namespace Sky.Tests.Performance
 
             // Assert
             Assert.IsTrue(catalog.Count >= 30);
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 500, 
+            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 500,
                 $"Catalog query took {stopwatch.ElapsedMilliseconds}ms (should be < 500ms)");
         }
 
@@ -194,7 +191,7 @@ namespace Sky.Tests.Performance
 
             // Verify all have unique article numbers
             var articleNumbers = articles.Select(a => a.ArticleNumber).ToList();
-            Assert.AreEqual(concurrentCount, articleNumbers.Distinct().Count(), 
+            Assert.AreEqual(concurrentCount, articleNumbers.Distinct().Count(),
                 "All articles should have unique article numbers");
         }
 
@@ -216,7 +213,7 @@ namespace Sky.Tests.Performance
             var semaphore = new System.Threading.SemaphoreSlim(1, 1); // Serialize DbContext access
 
             // Act - Publish concurrently
-            var publishTasks = articles.Select(a => 
+            var publishTasks = articles.Select(a =>
                 Task.Run(async () =>
                 {
                     await semaphore.WaitAsync();
@@ -272,7 +269,7 @@ namespace Sky.Tests.Performance
                     try
                     {
                         var localArticle = await Mediator.QueryAsync(new GetArticleByIdQuery { Id = article.Id });
-                        
+
                         var command = new SaveArticleCommand
                         {
                             ArticleNumber = localArticle.ArticleNumber,
@@ -307,27 +304,36 @@ namespace Sky.Tests.Performance
         #region Version Management Performance Tests
 
         /// <summary>
-        /// Tests creating many versions of same article.
+        /// Tests creating and querying many versions of the same article.
         /// </summary>
         [TestMethod]
-        public async Task CreateManyVersions_PerformsEfficiently()
+        [DoNotParallelize]
+        public async Task CreateAndQueryManyVersions_PerformsEfficiently()
         {
             // Arrange
             var article = await CreateArticleAsync("Version Test", TestUserId);
             const int versionCount = 20;
 
-            // Act
-            var stopwatch = Stopwatch.StartNew();
+            // Act - Create versions
+            var creationStopwatch = Stopwatch.StartNew();
             var currentArticle = await Db.Articles.FindAsync(article.Id);
-            
+
             for (int i = 2; i <= versionCount; i++)
             {
-                var newVersionVm = await CreateArticleVersionAsync(article.ArticleNumber);
+                _ = await CreateArticleVersionAsync(article.ArticleNumber);
                 currentArticle = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
                 currentArticle.Content = $"<p>Version {i}</p>";
                 await Db.SaveChangesAsync();
             }
-            stopwatch.Stop();
+            creationStopwatch.Stop();
+
+            // Act - Query latest version
+            var queryStopwatch = Stopwatch.StartNew();
+            var latest = await Db.Articles
+                .Where(a => a.ArticleNumber == article.ArticleNumber)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstAsync();
+            queryStopwatch.Stop();
 
             // Assert
             var versions = await Db.Articles
@@ -335,38 +341,11 @@ namespace Sky.Tests.Performance
                 .ToListAsync();
 
             Assert.AreEqual(versionCount, versions.Count);
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 5000, 
-                $"Creating {versionCount} versions took {stopwatch.ElapsedMilliseconds}ms (should be < 5s)");
-        }
-
-        /// <summary>
-        /// Tests querying article with many versions.
-        /// </summary>
-        [TestMethod]
-        public async Task QueryArticle_WithManyVersions_PerformsEfficiently()
-        {
-            // Arrange - Create article with 15 versions
-            var article = await CreateArticleAsync("Multi-Version Test", TestUserId);
-            var currentArticle = await Db.Articles.FindAsync(article.Id);
-            
-            for (int i = 2; i <= 15; i++)
-            {
-                var newVersionVm = await CreateArticleVersionAsync(article.ArticleNumber);
-                currentArticle = await Db.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync();
-            }
-
-            // Act - Query latest version
-            var stopwatch = Stopwatch.StartNew();
-            var latest = await Db.Articles
-                .Where(a => a.ArticleNumber == article.ArticleNumber)
-                .OrderByDescending(a => a.VersionNumber)
-                .FirstAsync();
-            stopwatch.Stop();
-
-            // Assert
-            Assert.AreEqual(15, latest.VersionNumber);
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 100, 
-                $"Query took {stopwatch.ElapsedMilliseconds}ms (should be < 100ms)");
+            Assert.AreEqual(versionCount, latest.VersionNumber);
+            Assert.IsTrue(creationStopwatch.ElapsedMilliseconds < 5000,
+                $"Creating {versionCount} versions took {creationStopwatch.ElapsedMilliseconds}ms (should be < 5s)");
+            Assert.IsTrue(queryStopwatch.ElapsedMilliseconds < 100,
+                $"Query took {queryStopwatch.ElapsedMilliseconds}ms (should be < 100ms)");
         }
 
         #endregion
@@ -377,6 +356,7 @@ namespace Sky.Tests.Performance
         /// Tests querying blog posts with filtering and pagination.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task BlogPostQuery_WithFilteringAndPagination_PerformsEfficiently()
         {
             // Arrange - Create home page
@@ -403,7 +383,7 @@ namespace Sky.Tests.Performance
 
             // Assert
             Assert.IsTrue(techPosts.Count >= 5, "Should have multiple technology posts");
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 500, 
+            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 500,
                 $"Filtered query took {stopwatch.ElapsedMilliseconds}ms (should be < 500ms)");
         }
 
@@ -451,6 +431,7 @@ namespace Sky.Tests.Performance
         /// Tests catalog synchronization performance.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CatalogSynchronization_WithManyArticles_PerformsEfficiently()
         {
             // Arrange - Create 20 articles and catalog entries
@@ -458,11 +439,11 @@ namespace Sky.Tests.Performance
             for (int i = 1; i <= 20; i++)
             {
                 var article = await CreateArticleAsync($"Catalog Sync {i}", TestUserId);
-                
+
                 // Check if catalog entry already exists (first article auto-publishes)
                 var existingEntry = await Db.ArticleCatalog
                     .FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-                    
+
                 if (existingEntry == null)
                 {
                     // Directly create catalog entry without publishing to Azure storage
@@ -492,7 +473,7 @@ namespace Sky.Tests.Performance
             Assert.IsTrue(catalogCount >= 20);
 
             // Performance assertion - catalog synchronization (without Azure operations)
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 5000, 
+            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 5000,
                 $"Catalog sync for 20 articles took {stopwatch.ElapsedMilliseconds}ms (should be < 5s)");
         }
 
@@ -504,6 +485,7 @@ namespace Sky.Tests.Performance
         /// Tests that creating many articles doesn't cause memory issues.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task CreateManyArticles_DoesNotExhaustMemory()
         {
             // Arrange
@@ -514,7 +496,7 @@ namespace Sky.Tests.Performance
             for (int i = 1; i <= articleCount; i++)
             {
                 await CreateArticleAsync($"Memory Test {i}", TestUserId);
-                
+
                 // Periodically force garbage collection to prevent accumulation
                 if (i % 10 == 0)
                 {
@@ -527,7 +509,7 @@ namespace Sky.Tests.Performance
             var memoryIncrease = (endMemory - startMemory) / 1024 / 1024; // MB
 
             // Assert
-            Assert.IsTrue(memoryIncrease < 100, 
+            Assert.IsTrue(memoryIncrease < 100,
                 $"Memory increased by {memoryIncrease}MB (should be < 100MB for {articleCount} articles)");
         }
 
@@ -539,6 +521,7 @@ namespace Sky.Tests.Performance
         /// Tests that published page queries use efficient indexes.
         /// </summary>
         [TestMethod]
+        [DoNotParallelize]
         public async Task PublishedPageQuery_UsesEfficientIndexing()
         {
             // Arrange - Create and publish 25 articles
@@ -559,7 +542,7 @@ namespace Sky.Tests.Performance
 
             // Assert
             Assert.AreEqual(10, recentPages.Count);
-            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 200, 
+            Assert.IsTrue(stopwatch.ElapsedMilliseconds < 200,
                 $"Query took {stopwatch.ElapsedMilliseconds}ms (should be < 200ms with proper indexing)");
         }
 

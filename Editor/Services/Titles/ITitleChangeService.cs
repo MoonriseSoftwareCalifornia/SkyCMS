@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Services.Titles
 {
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handles side effects that must occur when an article title changes (e.g., slug updates, redirects, events).

@@ -116,8 +116,8 @@ namespace AspNetCore.Identity.FlexDb.Extensions
             // Hosting doesn't add IHttpContextAccessor by default
             services.AddHttpContextAccessor();
 
-            // Add repository service (Connects to Cosmos DB)
-            services.AddTransient<IRepository, CosmosIdentityRepository<TDbContext, TUser, TRole, TKey>>();
+            // Add repository service (Connects to configured provider)
+            services.TryAddScoped<IRepository, CosmosIdentityRepository<TDbContext, TUser, TRole, TKey>>();
 
             // Data stores
             services.TryAddScoped<IUserStore<TUser>, CosmosUserStore<TUser, TRole, TKey>>();

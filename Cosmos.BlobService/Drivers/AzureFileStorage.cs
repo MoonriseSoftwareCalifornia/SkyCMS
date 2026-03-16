@@ -7,14 +7,14 @@
 
 namespace Cosmos.BlobService.Drivers
 {
+    using Azure.Storage.Files.Shares;
+    using Azure.Storage.Files.Shares.Models;
+    using Cosmos.BlobService.Models;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
-    using Azure.Storage.Files.Shares;
-    using Azure.Storage.Files.Shares.Models;
-    using Cosmos.BlobService.Models;
 
     /// <summary>
     /// Driver for Azure File Share service.

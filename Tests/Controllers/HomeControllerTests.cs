@@ -5,17 +5,14 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+#nullable enable
+
 namespace Sky.Tests.Controllers
 {
-    using System;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Models;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Identity.UI.Services;
@@ -28,12 +25,16 @@ namespace Sky.Tests.Controllers
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
+    using System;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Tests for HomeController.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class HomeControllerTests : SkyCmsTestBase
     {
         private HomeController homeController;
@@ -43,7 +44,7 @@ namespace Sky.Tests.Controllers
         /// Initialize test - create HomeController instance.
         /// </summary>
         [TestInitialize]
-        public new void InitializeTest()
+        public void InitializeTest()
         {
             InitializeTestContext(seedLayout: true);
 
@@ -186,8 +187,8 @@ namespace Sky.Tests.Controllers
                 new Claim(ClaimTypes.Role, "Administrators")
             }, "TestAuth"));
 
-            var httpContext = new DefaultHttpContext 
-            { 
+            var httpContext = new DefaultHttpContext
+            {
                 User = claimsPrincipal,
                 RequestServices = mockServiceProvider.Object
             };
@@ -199,10 +200,10 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Test that Index action returns a view.
+        /// Test that Index action returns a view for default and language-specific requests.
         /// </summary>
         [TestMethod]
-        public async Task Index_ReturnsView()
+        public async Task Index_ReturnsView_ForDefaultAndLanguage()
         {
             // Arrange - Create a root page article so Index can return a ViewResult
             var rootArticle = new Article
@@ -218,40 +219,18 @@ namespace Sky.Tests.Controllers
             Db.Articles.Add(rootArticle);
             await Db.SaveChangesAsync();
 
-            // Act
-            var result = await homeController.Index();
-
-            // Assert
-            Assert.IsNotNull(result, "Index should return a result");
-            Assert.IsInstanceOfType(result, typeof(ViewResult), "Index should return a ViewResult");
-        }
-
-        /// <summary>
-        /// Test that Index action with language parameter works.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_WithLanguage_ReturnsView()
-        {
-            // Arrange - Create a root page article so Index can return a ViewResult
-            var rootArticle = new Article
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
             {
-                Id = Guid.NewGuid(),
-                Title = "Home Page",
-                UrlPath = "root",  // "root" is the canonical path for the home page
-                Published = DateTime.UtcNow,
-                Updated = DateTime.UtcNow,
-                ArticleNumber = 1,
-                Content = "<p>Welcome to the home page</p>"
+                ("Default", () => homeController.Index()),
+                ("LanguageEn", () => homeController.Index(lang: "en")),
             };
-            Db.Articles.Add(rootArticle);
-            await Db.SaveChangesAsync();
 
-            // Act
-            var result = await homeController.Index(lang: "en");
-
-            // Assert
-            Assert.IsNotNull(result, "Index should return a result");
-            Assert.IsInstanceOfType(result, typeof(ViewResult), "Index should return a ViewResult");
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsNotNull(result, $"{scenario.Name} should return a result");
+                Assert.IsInstanceOfType(result, typeof(ViewResult), $"{scenario.Name} should return a ViewResult");
+            }
         }
 
         /// <summary>
@@ -279,8 +258,8 @@ namespace Sky.Tests.Controllers
 
             // Override the mock to return null for non-existent articles
             articleQueryMediatorMock
-                .Setup(m => m.QueryAsync(It.Is<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(q => 
-                    q is GetArticleByUrlQuery && ((GetArticleByUrlQuery)q).UrlPath == nonExistentUrl), 
+                .Setup(m => m.QueryAsync(It.Is<Cosmos.Common.Features.Shared.IQuery<ArticleViewModel?>>(q =>
+                    q is GetArticleByUrlQuery && ((GetArticleByUrlQuery)q).UrlPath == nonExistentUrl),
                     It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync((ArticleViewModel?)null);
 
@@ -374,7 +353,7 @@ namespace Sky.Tests.Controllers
             var article = await CreateArticleAsync("Test Page", TestUserId);
             article.Content = "<p>Test content</p>";
             await SaveArticleAsync(article, TestUserId);
-            
+
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             dbArticle.Published = DateTimeOffset.UtcNow;
             await Db.SaveChangesAsync();
@@ -449,7 +428,7 @@ namespace Sky.Tests.Controllers
             var article = await CreateArticleAsync("Preview Article", TestUserId);
             article.Content = "<p>Preview content</p>";
             await SaveArticleAsync(article, TestUserId);
-            
+
             var dbArticle = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
 
             // Act
@@ -601,7 +580,7 @@ namespace Sky.Tests.Controllers
             {
                 await RoleManager.CreateAsync(new IdentityRole("Administrators"));
             }
-            
+
             // Create a root article for the index to load
             var rootArticle = new Article
             {
@@ -623,7 +602,7 @@ namespace Sky.Tests.Controllers
             // Verify user is not initially an admin
             var user = await UserManager.FindByIdAsync(TestUserId.ToString());
             var isAdmin = await UserManager.IsInRoleAsync(user, "Administrators");
-            
+
             if (isAdmin)
             {
                 // Remove the role to test auto-promotion
@@ -717,7 +696,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Wrapper", viewResult.ViewName);
-            
+
             // Should load the article (either unpublished or not_found fallback)
             Assert.IsNotNull(viewResult.ViewData["RenderedView"]);
         }
@@ -738,7 +717,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsNotNull(result, "AccessPending should return a ViewResult");
             Assert.IsInstanceOfType(result.Model, typeof(ArticleViewModel), "Model should be ArticleViewModel");
-            
+
             var model = (ArticleViewModel)result.Model;
             Assert.AreEqual("Access Pending", model.Title);
             Assert.IsFalse(model.ReadWriteMode);
@@ -751,93 +730,38 @@ namespace Sky.Tests.Controllers
         #region Preview Error Handling Tests
 
         /// <summary>
-        /// Test that Index throws exception when previewing non-existent layout.
+        /// Test that Index throws ArgumentNullException when previewing layouts or templates with null IDs.
         /// </summary>
         [TestMethod]
-        public async Task Index_ThrowsException_WhenPreviewingNonExistentLayout()
+        public async Task Index_ThrowsArgumentNullException_WhenPreviewingWithNullId()
         {
-            // Arrange - Use a non-existent layout ID
-            var nonExistentLayoutId = Guid.NewGuid();
-
-            // Act & Assert - Should throw InvalidOperationException
-            var exceptionThrown = false;
-            try
+            foreach (var previewType in new[] { "layouts", "templates" })
             {
-                await homeController.Index(previewType: "layouts", itemId: nonExistentLayoutId);
-            }
-            catch (InvalidOperationException ex)
-            {
-                exceptionThrown = true;
-                Assert.IsTrue(ex.Message.Contains("not found"), "Exception message should indicate layout not found");
-            }
+                var ex = await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
+                {
+                    await homeController.Index(previewType: previewType, itemId: null);
+                });
 
-            Assert.IsTrue(exceptionThrown, "InvalidOperationException should be thrown");
+                Assert.AreEqual("itemId", ex.ParamName, $"{previewType} preview should fail on itemId parameter");
+            }
         }
 
         /// <summary>
-        /// Test that Index throws exception when previewing layout with null ID.
+        /// Test that Index throws InvalidOperationException when previewing missing layouts or templates.
         /// </summary>
         [TestMethod]
-        public async Task Index_ThrowsException_WhenPreviewingLayoutWithNullId()
+        public async Task Index_ThrowsInvalidOperationException_WhenPreviewingMissingEntities()
         {
-            // Act & Assert - Should throw ArgumentNullException
-            var exceptionThrown = false;
-            try
+            foreach (var previewType in new[] { "layouts", "templates" })
             {
-                await homeController.Index(previewType: "layouts", itemId: null);
-            }
-            catch (ArgumentNullException ex)
-            {
-                exceptionThrown = true;
-                Assert.IsTrue(ex.ParamName == "itemId", "Parameter name should be itemId");
-            }
+                var missingId = Guid.NewGuid();
+                var ex = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
+                {
+                    await homeController.Index(previewType: previewType, itemId: missingId);
+                });
 
-            Assert.IsTrue(exceptionThrown, "ArgumentNullException should be thrown");
-        }
-
-        /// <summary>
-        /// Test that Index throws exception when previewing non-existent template.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_ThrowsException_WhenPreviewingNonExistentTemplate()
-        {
-            // Arrange - Use a non-existent template ID
-            var nonExistentTemplateId = Guid.NewGuid();
-
-            // Act & Assert - Should throw InvalidOperationException
-            var exceptionThrown = false;
-            try
-            {
-                await homeController.Index(previewType: "templates", itemId: nonExistentTemplateId);
+                Assert.IsTrue(ex.Message.Contains("not found"), $"{previewType} preview should indicate missing entity");
             }
-            catch (InvalidOperationException ex)
-            {
-                exceptionThrown = true;
-                Assert.IsTrue(ex.Message.Contains("not found"), "Exception message should indicate template not found");
-            }
-
-            Assert.IsTrue(exceptionThrown, "InvalidOperationException should be thrown");
-        }
-
-        /// <summary>
-        /// Test that Index throws exception when previewing template with null ID.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_ThrowsException_WhenPreviewingTemplateWithNullId()
-        {
-            // Act & Assert - Should throw ArgumentNullException
-            var exceptionThrown = false;
-            try
-            {
-                await homeController.Index(previewType: "templates", itemId: null);
-            }
-            catch (ArgumentNullException ex)
-            {
-                exceptionThrown = true;
-                Assert.IsTrue(ex.ParamName == "itemId", "Parameter name should be itemId");
-            }
-
-            Assert.IsTrue(exceptionThrown, "ArgumentNullException should be thrown");
         }
 
         #endregion

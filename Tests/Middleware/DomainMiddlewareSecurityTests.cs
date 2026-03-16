@@ -1,28 +1,27 @@
-// <copyright file="DomainMiddlewareTests.cs" company="Moonrise Software, LLC">
+// <copyright file="DomainMiddlewareSecurityTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
 namespace Sky.Tests.Middleware
 {
-    using System;
-    using System.IO;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using System;
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for DomainMiddleware - Critical for multi-tenant security and tenant isolation.
     /// Tests domain validation, tenant resolution, and security edge cases.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
-    public class DomainMiddlewareTests : SkyCmsTestBase
+    public class DomainMiddlewareSecurityTests : SkyCmsTestBase
     {
         private Mock<RequestDelegate> mockNext;
         private Mock<ILogger<DomainMiddleware>> mockLogger;
@@ -88,10 +87,10 @@ namespace Sky.Tests.Middleware
             await middleware.InvokeAsync(context);
 
             // Assert
-            Assert.AreEqual(expectedDomain, context.Items["Domain"], 
+            Assert.AreEqual(expectedDomain, context.Items["Domain"],
                 $"Domain should be normalized to lowercase: {expectedDomain}");
             mockConfigProvider.Verify(
-                x => x.GetDatabaseConnectionStringAsync(expectedDomain, It.IsAny<CancellationToken>()), 
+                x => x.GetDatabaseConnectionStringAsync(expectedDomain, It.IsAny<CancellationToken>()),
                 Times.Once,
                 "Configuration provider should be called with lowercase domain");
         }
@@ -175,7 +174,7 @@ namespace Sky.Tests.Middleware
             await middleware.InvokeAsync(context);
 
             // Assert - Should fail open (continue processing) for availability
-            mockNext.Verify(x => x(context), Times.Once, 
+            mockNext.Verify(x => x(context), Times.Once,
                 "Middleware should fail open and continue processing despite errors");
             Assert.AreEqual("error.com", context.Items["Domain"], "Domain should still be set");
         }
@@ -195,7 +194,7 @@ namespace Sky.Tests.Middleware
             await middleware.InvokeAsync(context);
 
             // Assert
-            mockNext.Verify(x => x(context), Times.Once, 
+            mockNext.Verify(x => x(context), Times.Once,
                 "Middleware should continue without validation when no config provider exists");
             Assert.AreEqual("anydomain.com", context.Items["Domain"]);
         }
@@ -215,7 +214,7 @@ namespace Sky.Tests.Middleware
         {
             // Arrange
             var middleware = new DomainMiddleware(mockNext.Object, mockLogger.Object);
-            
+
             // Note: ASP.NET Core's HostString handles validation, but we test our layer
             try
             {

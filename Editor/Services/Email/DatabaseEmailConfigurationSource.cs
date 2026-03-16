@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Services.Email
 {
-    using System;
-    using System.Linq;
     using Cosmos.Common.Data;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Linq;
 
     /// <summary>
     /// Configuration source that loads email settings from the database Settings table.

@@ -5,16 +5,10 @@
 
 namespace Sky.Tests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Reflection;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
-    using Cosmos.Common;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
@@ -23,23 +17,23 @@ namespace Sky.Tests
     using Microsoft.Extensions.Logging.Abstractions;
     using Moq;
     using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Create;
+    using Sky.Editor.Features.Articles.CreateVersion;
+    using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Publishing;
-    using Sky.Editor.Services.StaticFiles;
-    using Sky.Editor.Services.TableOfContents;
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using Sky.Editor.Features.Shared;
-    using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Articles.CreateVersion;
-    using Sky.Editor.Features.Articles.Save;
-    using Cosmos.Common.Models;
-    using Microsoft.Extensions.Caching.Memory;
+    using System;
+    using System.Collections.Generic;
+    using System.Reflection;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Represents a complete isolated test context for a single tenant.
@@ -140,7 +134,7 @@ namespace Sky.Tests
             HttpContext = new DefaultHttpContext();
             HttpContext.Request.Host = new HostString(tenantDomain);
             HttpContext.Request.Headers["x-origin-hostname"] = tenantDomain;
-            
+
             // Set up a minimal service provider for the HttpContext (will be populated later in InitializeAsync)
             var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             HttpContext.RequestServices = services.BuildServiceProvider();
@@ -243,10 +237,6 @@ namespace Sky.Tests
                 var viewRenderService = (Sky.Cms.Services.IViewRenderService)viewRenderServiceField?.GetValue(baseTestContext);
                 var httpContextAccessor = (IHttpContextAccessor)httpContextAccessorField?.GetValue(baseTestContext);
 
-                // Get Mediator from base test context
-                var mediatorField = typeof(SkyCmsTestBase).GetField("Mediator", BindingFlags.NonPublic | BindingFlags.Instance);
-                var mediator = (Cosmos.Common.Features.Shared.IMediator)mediatorField?.GetValue(baseTestContext);
-
                 // Build a minimal service provider for this tenant's PublishingService
                 var tenantServiceCollection = new ServiceCollection();
                 tenantServiceCollection.AddSingleton(DbContext); // Use THIS tenant's DbContext
@@ -257,75 +247,22 @@ namespace Sky.Tests
                         DbContext,
                         editorSettings.PublisherUrl,
                         editorSettings.BlobPublicUrl));
-                tenantServiceCollection.AddSingleton<Sky.Editor.Services.CDN.ICdnPurgeService>(sp =>
-                    new Sky.Editor.Services.CDN.CdnPurgeService(
-                        DbContext,
-                        new NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
-                        httpContextAccessor,
-                        editorSettings));
-                tenantServiceCollection.AddSingleton<Sky.Editor.Services.TableOfContents.ITocService>(sp =>
-                    new Sky.Editor.Services.TableOfContents.TocService(
-                        storage,
-                        editorSettings,
-                        sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                        new NullLogger<Sky.Editor.Services.TableOfContents.TocService>()));
-                tenantServiceCollection.AddSingleton<Sky.Editor.Services.StaticFiles.IStaticFileService>(sp =>
-                    new Sky.Editor.Services.StaticFiles.StaticFileService(
-                        storage,
-                        editorSettings,
-                        viewRenderService,
-                        mediator,
-                        new NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>()));
-
-                // Register BlogPublishingContext
-                tenantServiceCollection.AddSingleton<Sky.Editor.Services.BlogPublishing.IBlogPublishingContext>(sp =>
-                    new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
-                        DbContext,
-                        storage,
-                        httpContextAccessor));
-
-                // Register BlogPublishingService
-                tenantServiceCollection.AddSingleton<Sky.Editor.Services.BlogPublishing.IBlogPublishingService>(sp =>
-                    new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
-                        sp.GetRequiredService<Sky.Editor.Services.BlogPublishing.IBlogPublishingContext>(),
-                        blogStreamRenderingService,
-                        viewRenderService,
-                        mediator,
-                        null, // PublishingService reference (circular dependency resolved later)
-                        new NullLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>()));
-
-                // Register PublishingAuxiliaryServices composite
-                tenantServiceCollection.AddSingleton<Sky.Editor.Services.Publishing.IPublishingAuxiliaryServices>(sp =>
-                    new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
-                        sp.GetRequiredService<Sky.Editor.Services.CDN.ICdnPurgeService>(),
-                        sp.GetRequiredService<Sky.Editor.Services.TableOfContents.ITocService>(),
-                        sp.GetRequiredService<Sky.Editor.Services.StaticFiles.IStaticFileService>(),
-                        sp.GetRequiredService<Sky.Editor.Services.BlogPublishing.IBlogPublishingService>()));
-
-                // Register PublishingContext composite
-                tenantServiceCollection.AddSingleton<Sky.Editor.Services.Publishing.IPublishingContext>(sp =>
-                    new Sky.Editor.Services.Publishing.PublishingContext(
-                        DbContext,
-                        storage,
-                        editorSettings,
-                        httpContextAccessor,
-                        sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
-
-                // Register StaticFileServiceFactory for parallel processing
-                tenantServiceCollection.AddSingleton<Sky.Editor.Services.StaticFiles.IStaticFileServiceFactory, Sky.Editor.Services.StaticFiles.StaticFileServiceFactory>();
-
                 var tenantServiceProvider = tenantServiceCollection.BuildServiceProvider();
 
                 PublishingService = new Sky.Editor.Services.Publishing.PublishingService(
-                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.Publishing.IPublishingContext>(),
+                    DbContext, // ? CRITICAL: Use THIS tenant's DbContext, not the shared one
+                    storage,
+                    editorSettings,
                     new NullLogger<Sky.Editor.Services.Publishing.PublishingService>(),
+                    httpContextAccessor,
                     authorInfoService,
                     clock,
-                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.StaticFiles.IStaticFileServiceFactory>(),
+                    blogStreamRenderingService,
+                    viewRenderService,
+                    tenantServiceProvider,
                     new Sky.Editor.Services.Publishing.NoOpPublishingProgressReporter(),
-                    null, // No domain event dispatcher for tests
-                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.Publishing.IPublishingAuxiliaryServices>());
-               
+                    tenantServiceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+
                 // Create tenant-scoped catalog service
                 var catalogService = new CatalogService(DbContext, articleHtmlService, clock, new NullLogger<CatalogService>());
 
@@ -348,10 +285,10 @@ namespace Sky.Tests
                 // BUILD A PROPER SERVICE PROVIDER WITH COMMAND HANDLERS
                 // This is required for Mediator to resolve handlers
                 var serviceCollection = new ServiceCollection();
-                
+
                 // Register DbContext (tenant-specific)
                 serviceCollection.AddSingleton(DbContext);
-                
+
                 // Register shared services
                 serviceCollection.AddSingleton(articleHtmlService);
                 serviceCollection.AddSingleton(catalogService);
@@ -359,10 +296,10 @@ namespace Sky.Tests
                 serviceCollection.AddSingleton(titleChangeService);
                 serviceCollection.AddSingleton(templateService);
                 serviceCollection.AddSingleton(clock);
-                
+
                 // Register mediator (following the pattern in Program.cs)
                 serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IMediator, Cosmos.Common.Features.Shared.Mediator>();
-                
+
                 // Register command handlers (following the pattern in Program.cs line 521-522)
                 serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>>(sp =>
                     new CreateArticleHandler(
@@ -374,7 +311,7 @@ namespace Sky.Tests
                         templateService,
                         clock,
                         new NullLogger<CreateArticleHandler>()));
-                
+
                 serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>>>(sp =>
                     new SaveArticleHandler(
                         DbContext,
@@ -384,7 +321,7 @@ namespace Sky.Tests
                         titleChangeService,
                         clock,
                         new NullLogger<SaveArticleHandler>()));
-                
+
                 // Build and assign to HttpContext
                 HttpContext.RequestServices = serviceCollection.BuildServiceProvider();
 
@@ -400,7 +337,7 @@ namespace Sky.Tests
                 };
                 DbContext.Settings.Add(tenantDomainSetting);
                 await DbContext.SaveChangesAsync();
-                
+
                 // Auto-create a test user for this tenant
                 var testUserId = Guid.NewGuid();
                 await CreateTestUserAsync(testUserId, $"testuser@{TenantDomain}");
@@ -416,10 +353,10 @@ namespace Sky.Tests
         public async Task CreateTestUserAsync(Guid userId, string email = null)
         {
             email ??= $"user-{userId}@{TenantDomain}";
-            
+
             // Store the test user ID
             TestUserId = userId;
-            
+
             var user = new Microsoft.AspNetCore.Identity.IdentityUser
             {
                 Id = userId.ToString(),
@@ -561,7 +498,7 @@ namespace Sky.Tests
             int articleNumber)
         {
             var mediator = (IMediator)HttpContext.RequestServices.GetService(typeof(IMediator));
-            
+
             var command = new CreateArticleVersionCommand
             {
                 ArticleNumber = articleNumber

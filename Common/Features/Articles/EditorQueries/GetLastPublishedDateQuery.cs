@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Features.Articles.EditorQueries;
 
-using System;
 using Cosmos.Common.Features.Shared;
+using System;
 
 /// <summary>
 /// Query to retrieve the last published date for an article.

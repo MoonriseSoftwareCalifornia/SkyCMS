@@ -7,10 +7,6 @@
 
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
@@ -37,6 +33,10 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Templates;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Templates controller.
@@ -372,9 +372,9 @@ namespace Sky.Cms.Controllers
                         {
                             // Rollback both the Template creation and any partial version creation
                             await transaction.RollbackAsync();
-                            
+
                             // Return user-friendly error message
-                            ModelState.AddModelError("", 
+                            ModelState.AddModelError("",
                                 $"Failed to create template version: {versionResult.ErrorMessage}");
                             return BadRequest(ModelState);
                         }
@@ -391,9 +391,9 @@ namespace Sky.Cms.Controllers
                         // If any unexpected exception occurs, rollback the transaction
                         // This could be a database error, timeout, or any other issue
                         await transaction.RollbackAsync();
-                        
+
                         // Log the error and return to user
-                        ModelState.AddModelError("", 
+                        ModelState.AddModelError("",
                             $"Error creating template: {ex.Message}");
                         return BadRequest(ModelState);
                     }
@@ -686,7 +686,7 @@ namespace Sky.Cms.Controllers
             // Use GetTemplateQuery to retrieve the template
             var query = new GetTemplateQuery { TemplateId = templateId };
             var queryResult = await mediator.QueryAsync(query);
-            
+
             if (!queryResult.IsSuccess || queryResult.Data?.Template == null)
             {
                 return NotFound($"Template with ID '{templateId}' was not found.");
@@ -956,94 +956,94 @@ namespace Sky.Cms.Controllers
             switch (model.Command)
             {
                 case "SavePageProperties":
-                {
-                    var description = string.IsNullOrEmpty(model.Payload)
-                        ? string.Empty
-                        : CryptoJsDecryption.Decrypt(model.Payload);
-
-                    var command = new UpdateTemplateMetadataCommand
                     {
-                        TemplateId = model.Id,
-                        Title = model.Title,
-                        Description = description
-                    };
+                        var description = string.IsNullOrEmpty(model.Payload)
+                            ? string.Empty
+                            : CryptoJsDecryption.Decrypt(model.Payload);
 
-                    var result = await mediator.SendAsync(command);
+                        var command = new UpdateTemplateMetadataCommand
+                        {
+                            TemplateId = model.Id,
+                            Title = model.Title,
+                            Description = description
+                        };
 
-                    if (!result.IsSuccess)
-                    {
+                        var result = await mediator.SendAsync(command);
+
+                        if (!result.IsSuccess)
+                        {
+                            return Json(new
+                            {
+                                ServerSideSuccess = false,
+                                Errors = result.Errors ?? new Dictionary<string, string[]>
+                                {
+                                    ["general"] = new[] { result.ErrorMessage ?? "Failed to update template metadata." }
+                                }
+                            });
+                        }
+
                         return Json(new
                         {
-                            ServerSideSuccess = false,
-                            Errors = result.Errors ?? new Dictionary<string, string[]>
+                            ServerSideSuccess = true,
+                            Model = new
                             {
-                                ["general"] = new[] { result.ErrorMessage ?? "Failed to update template metadata." }
+                                Title = model.Title
                             }
                         });
                     }
-
-                    return Json(new
-                    {
-                        ServerSideSuccess = true,
-                        Model = new
-                        {
-                            Title = model.Title
-                        }
-                    });
-                }
 
                 case "SaveCode":
-                {
-                    var content = CryptoJsDecryption.Decrypt(model.Payload);
-
-                    if (!NestedEditableRegionValidation.Validate(content))
                     {
-                        return Json(new
-                        {
-                            ServerSideSuccess = false,
-                            Errors = new Dictionary<string, string[]>
-                            {
-                                ["Payload"] = new[] { "Cannot have nested editable regions." }
-                            }
-                        });
-                    }
+                        var content = CryptoJsDecryption.Decrypt(model.Payload);
 
-                    return await SaveTemplateVersionAsync(model.Id, model.Title, content);
-                }
+                        if (!NestedEditableRegionValidation.Validate(content))
+                        {
+                            return Json(new
+                            {
+                                ServerSideSuccess = false,
+                                Errors = new Dictionary<string, string[]>
+                                {
+                                    ["Payload"] = new[] { "Cannot have nested editable regions." }
+                                }
+                            });
+                        }
+
+                        return await SaveTemplateVersionAsync(model.Id, model.Title, content);
+                    }
 
                 case "SaveDesigner":
-                {
-                    var htmlContent = string.IsNullOrEmpty(model.Payload)
-                        ? string.Empty
-                        : CryptoJsDecryption.Decrypt(model.Payload);
-                    var cssContent = string.IsNullOrEmpty(model.CssContent)
-                        ? string.Empty
-                        : CryptoJsDecryption.Decrypt(model.CssContent);
-
-                    if (!NestedEditableRegionValidation.Validate(htmlContent))
                     {
-                        return Json(new
+                        var htmlContent = string.IsNullOrEmpty(model.Payload)
+                            ? string.Empty
+                            : CryptoJsDecryption.Decrypt(model.Payload);
+                        var cssContent = string.IsNullOrEmpty(model.CssContent)
+                            ? string.Empty
+                            : CryptoJsDecryption.Decrypt(model.CssContent);
+
+                        if (!NestedEditableRegionValidation.Validate(htmlContent))
                         {
-                            ServerSideSuccess = false,
-                            Errors = new Dictionary<string, string[]>
+                            return Json(new
                             {
-                                ["Payload"] = new[] { "Cannot have nested editable regions." }
-                            }
+                                ServerSideSuccess = false,
+                                Errors = new Dictionary<string, string[]>
+                                {
+                                    ["Payload"] = new[] { "Cannot have nested editable regions." }
+                                }
+                            });
+                        }
+
+                        htmlContent = htmlService.EnsureEditableMarkers(htmlContent);
+
+                        var assembledContent = new DesignerUtilities().AssembleDesignerOutput(new DesignerDataViewModel
+                        {
+                            Id = model.Id,
+                            Title = model.Title,
+                            HtmlContent = htmlContent,
+                            CssContent = cssContent
                         });
+
+                        return await SaveTemplateVersionAsync(model.Id, model.Title, assembledContent);
                     }
-
-                    htmlContent = htmlService.EnsureEditableMarkers(htmlContent);
-
-                    var assembledContent = new DesignerUtilities().AssembleDesignerOutput(new DesignerDataViewModel
-                    {
-                        Id = model.Id,
-                        Title = model.Title,
-                        HtmlContent = htmlContent,
-                        CssContent = cssContent
-                    });
-
-                    return await SaveTemplateVersionAsync(model.Id, model.Title, assembledContent);
-                }
 
                 default:
                     return Json(new

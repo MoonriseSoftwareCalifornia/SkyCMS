@@ -7,6 +7,8 @@
 
 namespace Sky.Editor.Services.CDN
 {
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -15,8 +17,6 @@ namespace Sky.Editor.Services.CDN
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-    using Newtonsoft.Json;
 
     /// <summary>
     /// Amazon CloudFront CDN Service for cache invalidation management.

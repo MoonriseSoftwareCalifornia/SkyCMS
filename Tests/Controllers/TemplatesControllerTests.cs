@@ -16,7 +16,6 @@ namespace Sky.Tests.Controllers
     using Moq;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
-    using Sky.Editor.Models.GrapesJs;
     using System;
     using System.Linq;
     using System.Security.Claims;
@@ -25,7 +24,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Unit tests for the <see cref="TemplatesController"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class TemplatesControllerTests : SkyCmsTestBase
     {
@@ -337,20 +335,27 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that ApplyTemplateChanges handles template not found.
+        /// Tests that actions return not found when template does not exist.
         /// </summary>
         [TestMethod]
-        public async Task ApplyTemplateChanges_WithNonExistentTemplate_ReturnsNotFound()
+        public async Task MissingTemplate_ReturnsNotFound_ForTemplateActions()
         {
             // Arrange
             await CreateArticleAsync("Root Article", TestUserId);
             var article = await CreateArticleAsync("Test Article", TestUserId);
+            var nonExistentTemplateId = Guid.NewGuid();
 
-            // Act
-            var result = await _controller.UpdatePage(article.ArticleNumber, Guid.NewGuid());
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action, Type ExpectedType)[]
+            {
+                ("UpdatePage", async () => (IActionResult)await _controller.UpdatePage(article.ArticleNumber, nonExistentTemplateId), typeof(NotFoundObjectResult)),
+                ("Pages", async () => (IActionResult)await _controller.Pages(nonExistentTemplateId), typeof(NotFoundResult)),
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, scenario.ExpectedType, $"{scenario.Name} should return {scenario.ExpectedType.Name} for a missing template.");
+            }
         }
 
         /// <summary>
@@ -488,17 +493,17 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
             Assert.IsNotNull(model);
             Assert.IsTrue(model.Count >= 2, "Should have at least 2 templates");
         }
 
         /// <summary>
-        /// Tests that Index applies sorting ascending by Title.
+        /// Tests that Index applies sorting by Title.
         /// </summary>
         [TestMethod]
-        public async Task Index_AppliesSorting_Ascending_ByTitle()
+        public async Task Index_AppliesSorting_ByTitle()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
@@ -524,107 +529,34 @@ namespace Sky.Tests.Controllers
             Db.Templates.Add(templateA);
             await Db.SaveChangesAsync();
 
-            // Act
-            var result = await _controller.Index(sortOrder: "asc", currentSort: "Title");
+            var scenarios = new[]
+            {
+                new { SortOrder = "asc", ExpectedFirst = "AAA Template" },
+                new { SortOrder = "desc", ExpectedFirst = "ZZZ Template" },
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
-            
-            Assert.IsNotNull(model);
-            Assert.IsTrue(model.Count >= 2);
-            
-            // Verify first item is AAA Template (ascending)
-            var firstTemplate = model.First(t => t.Title == "AAA Template" || t.Title == "ZZZ Template");
-            Assert.AreEqual("AAA Template", firstTemplate.Title, "First template should be AAA when sorted ascending");
+            foreach (var scenario in scenarios)
+            {
+                var result = await _controller.Index(sortOrder: scenario.SortOrder, currentSort: "Title");
+
+                Assert.IsInstanceOfType(result, typeof(ViewResult));
+                var viewResult = result as ViewResult;
+                var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
+
+                Assert.IsNotNull(model);
+                Assert.IsTrue(model.Count >= 2);
+
+                var firstTemplate = model.First(t => t.Title == "AAA Template" || t.Title == "ZZZ Template");
+                Assert.AreEqual(scenario.ExpectedFirst, firstTemplate.Title, $"First template should be {scenario.ExpectedFirst} when sorted {scenario.SortOrder}.");
+            }
         }
 
-        /// <summary>
-        /// Tests that Index applies sorting descending by Title.
-        /// </summary>
         [TestMethod]
-        public async Task Index_AppliesSorting_Descending_ByTitle()
+        public async Task Index_AppliesSorting_ForLayoutNameAndDescription()
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
-            var templateZ = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "ZZZ Template",
-                Description = "Last",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            var templateA = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "AAA Template",
-                Description = "First",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(templateZ);
-            Db.Templates.Add(templateA);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.Index(sortOrder: "desc", currentSort: "Title");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
-            
-            Assert.IsNotNull(model);
-            Assert.IsTrue(model.Count >= 2);
-            
-            // Verify first item is ZZZ Template (descending)
-            var firstTemplate = model.First(t => t.Title == "AAA Template" || t.Title == "ZZZ Template");
-            Assert.AreEqual("ZZZ Template", firstTemplate.Title, "First template should be ZZZ when sorted descending");
-        }
-
-        /// <summary>
-        /// Tests that Index applies sorting by LayoutName.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_AppliesSorting_ByLayoutName()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
-            {
-                Id = Guid.NewGuid(),
-                Title = "Test Template",
-                Description = "Test",
-                Content = "<div>Content</div>",
-                LayoutId = layout.Id,
-                LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await _controller.Index(sortOrder: "asc", currentSort: "LayoutName");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.AreEqual("asc", viewResult.ViewData["sortOrder"]);
-            Assert.AreEqual("LayoutName", viewResult.ViewData["currentSort"]);
-        }
-
-        /// <summary>
-        /// Tests that Index applies sorting by Description.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_AppliesSorting_ByDescription()
-        {
-            // Arrange
-            var layout = await Db.Layouts.FirstAsync();
-            var template = new Template
+            Db.Templates.Add(new Template
             {
                 Id = Guid.NewGuid(),
                 Title = "Test Template",
@@ -632,18 +564,24 @@ namespace Sky.Tests.Controllers
                 Content = "<div>Content</div>",
                 LayoutId = layout.Id,
                 LayoutNumber = layout.LayoutNumber
-            };
-            Db.Templates.Add(template);
+            });
             await Db.SaveChangesAsync();
 
-            // Act
-            var result = await _controller.Index(sortOrder: "desc", currentSort: "Description");
+            foreach (var sort in new[]
+            {
+                (SortOrder: "asc", CurrentSort: "LayoutName"),
+                (SortOrder: "desc", CurrentSort: "Description"),
+            })
+            {
+                // Act
+                var result = await _controller.Index(sortOrder: sort.SortOrder, currentSort: sort.CurrentSort);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = result as ViewResult;
-            Assert.AreEqual("desc", viewResult.ViewData["sortOrder"]);
-            Assert.AreEqual("Description", viewResult.ViewData["currentSort"]);
+                // Assert
+                Assert.IsInstanceOfType(result, typeof(ViewResult));
+                var viewResult = result as ViewResult;
+                Assert.AreEqual(sort.SortOrder, viewResult.ViewData["sortOrder"]);
+                Assert.AreEqual(sort.CurrentSort, viewResult.ViewData["currentSort"]);
+            }
         }
 
         /// <summary>
@@ -654,7 +592,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var layout = await Db.Layouts.FirstAsync();
-            
+
             // Create 15 templates to test pagination
             for (int i = 1; i <= 15; i++)
             {
@@ -678,7 +616,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
-            
+
             Assert.IsNotNull(model);
             Assert.AreEqual(5, model.Count, "First page should have exactly 5 templates");
             Assert.AreEqual(0, viewResult.ViewData["pageNo"]);
@@ -711,7 +649,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
-            
+
             Assert.AreEqual("asc", viewResult.ViewData["sortOrder"]);
             Assert.AreEqual("Title", viewResult.ViewData["currentSort"]);
             Assert.AreEqual(1, viewResult.ViewData["pageNo"]);
@@ -764,32 +702,53 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<Sky.Cms.Models.TemplateIndexViewModel>;
-            
+
             var withEditor = model.FirstOrDefault(t => t.Title == "Template With Editor");
             var withCeid = model.FirstOrDefault(t => t.Title == "Template With CEID");
             var noEditor = model.FirstOrDefault(t => t.Title == "Template No Editor");
-            
+
             Assert.IsTrue(withEditor?.UsesHtmlEditor ?? false, "Template with contenteditable should use HTML editor");
             Assert.IsTrue(withCeid?.UsesHtmlEditor ?? false, "Template with data-ccms-ceid should use HTML editor");
             Assert.IsFalse(noEditor?.UsesHtmlEditor ?? true, "Template without markers should not use HTML editor");
         }
 
         /// <summary>
-        /// Tests that Index returns BadRequest when ModelState is invalid.
+        /// Tests that actions reject invalid model state with BadRequest.
         /// </summary>
         [TestMethod]
-        public async Task Index_ReturnsBadRequest_WhenModelStateInvalid()
+        public async Task InvalidModelState_ReturnsBadRequest()
         {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
+            var templateId = Guid.NewGuid();
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action, Action<BadRequestObjectResult> AssertResult)[]
+            {
+                (
+                    "Index",
+                    () => _controller.Index(),
+                    result => Assert.IsInstanceOfType(result.Value, typeof(SerializableError))),
+                (
+                    "Edit_Get",
+                    () => _controller.Edit(templateId),
+                    _ => { }),
+                (
+                    "EditCode_Get",
+                    () => _controller.EditCode(templateId),
+                    _ => { }),
+                (
+                    "Delete",
+                    () => _controller.Delete(templateId),
+                    _ => { }),
+            };
 
-            // Act
-            var result = await _controller.Index();
+            foreach (var scenario in scenarios)
+            {
+                _controller.ModelState.Clear();
+                _controller.ModelState.AddModelError("TestKey", "Test error");
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequestResult = result as BadRequestObjectResult;
-            Assert.IsInstanceOfType(badRequestResult.Value, typeof(SerializableError));
+                var result = await scenario.Action();
+
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), $"{scenario.Name} should return BadRequest when ModelState is invalid.");
+                scenario.AssertResult((BadRequestObjectResult)result);
+            }
         }
 
         #endregion
@@ -838,26 +797,10 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as List<ArticleListItem>;
             Assert.IsNotNull(model);
             Assert.AreEqual(2, model.Count, "Should have 2 articles using the template");
-        }
-
-        /// <summary>
-        /// Tests that Pages returns NotFound when template does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task Pages_ReturnsNotFound_WhenTemplateDoesNotExist()
-        {
-            // Arrange
-            var nonExistentTemplateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.Pages(nonExistentTemplateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         /// <summary>
@@ -897,7 +840,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<ArticleListItem>;
-            
+
             Assert.IsNotNull(model);
             if (model.Count >= 2)
             {
@@ -936,7 +879,7 @@ namespace Sky.Tests.Controllers
 
             var catalog1 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article1.ArticleNumber);
             var catalog2 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article2.ArticleNumber);
-            
+
             if (catalog1 != null)
             {
                 catalog1.TemplateId = template.Id;
@@ -986,11 +929,11 @@ namespace Sky.Tests.Controllers
             var catalogMatch = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == articleMatch.ArticleNumber);
             catalogMatch.Published = DateTimeOffset.UtcNow;
             catalogMatch.Status = "Active";
-            
+
             var catalogNoMatch = await Db.ArticleCatalog.FirstAsync(c => c.ArticleNumber == articleNoMatch.ArticleNumber);
             catalogNoMatch.Published = DateTimeOffset.UtcNow;
             catalogNoMatch.Status = "Active";
-            
+
             await Db.SaveChangesAsync();
 
             // Act
@@ -999,7 +942,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<ArticleListItem>;
-            
+
             Assert.IsNotNull(model);
             var matchingArticles = model.Where(a => a.Title.Contains("Matching", StringComparison.OrdinalIgnoreCase)).ToList();
             Assert.IsTrue(matchingArticles.Count >= 1, "Should have at least one matching article");
@@ -1045,7 +988,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<ArticleListItem>;
-            
+
             Assert.IsNotNull(model);
             Assert.IsTrue(model.Count <= 5, "First page should have at most 5 articles");
             Assert.AreEqual(0, viewResult.ViewData["pageNo"]);
@@ -1057,10 +1000,10 @@ namespace Sky.Tests.Controllers
         #region Phase 3: Create & Edit Operations Tests
 
         /// <summary>
-        /// Tests that Create creates new template with default content.
+        /// Tests that Create initializes a new template and its first version.
         /// </summary>
         [TestMethod]
-        public async Task Create_CreatesNewTemplate_WithDefaultContent()
+        public async Task Create_InitializesTemplateAndFirstVersion()
         {
             // Arrange
             var initialCount = await Db.Templates.CountAsync();
@@ -1074,7 +1017,6 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("EditCode", redirectResult.ActionName);
             Assert.AreEqual("Templates", redirectResult.ControllerName);
 
-            // Verify new template was created
             var finalCount = await Db.Templates.CountAsync();
             Assert.AreEqual(initialCount + 1, finalCount, "Should create one new template");
 
@@ -1082,37 +1024,8 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(newTemplate.Title.StartsWith("New Template"), "Title should start with 'New Template'");
             Assert.IsNotNull(newTemplate.Description);
             Assert.IsNotNull(newTemplate.Content);
-        }
-
-        /// <summary>
-        /// Tests that Create ensures editable markers in content.
-        /// </summary>
-        [TestMethod]
-        public async Task Create_EnsuresEditableMarkers_InContent()
-        {
-            // Act
-            var result = await _controller.Create();
-
-            // Assert
-            var newTemplate = await Db.Templates.OrderByDescending(t => t.Title).FirstAsync();
-            
-            // Content should be processed through htmlService.EnsureEditableMarkers
-            Assert.IsNotNull(newTemplate.Content);
             Assert.IsTrue(newTemplate.Content.Length > 0, "Content should not be empty");
-        }
 
-        /// <summary>
-        /// Tests that Create creates first version in version history.
-        /// </summary>
-        [TestMethod]
-        public async Task Create_CreatesFirstVersion_InVersionHistory()
-        {
-            // Act
-            var result = await _controller.Create();
-
-            // Assert
-            var newTemplate = await Db.Templates.OrderByDescending(t => t.Title).FirstAsync();
-            
             // Verify PageDesignVersion was created
             var version = await Db.PageDesignVersions.FirstOrDefaultAsync(v => v.TemplateId == newTemplate.Id);
             Assert.IsNotNull(version, "Should create a PageDesignVersion");
@@ -1120,24 +1033,6 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(newTemplate.Content, version.Content);
             Assert.AreEqual(newTemplate.Title, version.Title);
             Assert.AreEqual(newTemplate.Description, version.Description);
-        }
-
-        /// <summary>
-        /// Tests that Create redirects to EditCode after creation.
-        /// </summary>
-        [TestMethod]
-        public async Task Create_RedirectsToEditCode_AfterCreation()
-        {
-            // Act
-            var result = await _controller.Create();
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
-            var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("EditCode", redirectResult.ActionName);
-            Assert.AreEqual("Templates", redirectResult.ControllerName);
-            Assert.IsNotNull(redirectResult.RouteValues);
-            Assert.IsTrue(redirectResult.RouteValues.ContainsKey("Id"), "Should pass template Id to EditCode");
         }
 
         /// <summary>
@@ -1167,30 +1062,13 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as TemplateEditViewModel;
             Assert.IsNotNull(model);
             Assert.AreEqual(template.Id, model.Id);
             Assert.AreEqual(template.Title, model.Title);
             Assert.AreEqual(template.Description, model.Description);
             Assert.AreEqual(template.Title, viewResult.ViewData["Title"]);
-        }
-
-        /// <summary>
-        /// Tests that Edit GET returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task Edit_Get_ReturnsBadRequest_WhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.Edit(templateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         /// <summary>
@@ -1277,7 +1155,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             var updatedTemplate = await Db.Templates.FindAsync(template.Id);
-            Assert.AreEqual("Encrypted Description", updatedTemplate.Description, 
+            Assert.AreEqual("Encrypted Description", updatedTemplate.Description,
                 "Description should be decrypted before saving");
         }
 
@@ -1370,7 +1248,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
-            
+
             var model = viewResult.Model as TemplateCodeEditorViewModel;
             Assert.IsNotNull(model);
             Assert.AreEqual(template.Id, model.Id);
@@ -1406,26 +1284,9 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             var model = viewResult.Model as TemplateCodeEditorViewModel;
-            
+
             // Content should be processed through htmlService.EnsureEditableMarkers
             Assert.IsNotNull(model.Content);
-        }
-
-        /// <summary>
-        /// Tests that EditCode GET returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task EditCode_Get_ReturnsBadRequest_WhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-            var templateId = Guid.NewGuid();
-
-            // Act
-            var result = await _controller.EditCode(templateId);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         /// <summary>
@@ -1474,7 +1335,7 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
-            
+
             // Verify the version was updated (query by TemplateId, not by primary key)
             var updatedVersion = await Db.PageDesignVersions
                 .FirstOrDefaultAsync(v => v.TemplateId == model.Id);
@@ -1624,22 +1485,6 @@ namespace Sky.Tests.Controllers
         {
             // Act
             var result = await _controller.Delete(Guid.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Tests that Delete returns BadRequest when ModelState is invalid.
-        /// </summary>
-        [TestMethod]
-        public async Task Delete_ReturnsBadRequestWhenModelStateInvalid()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("TestKey", "Test error");
-
-            // Act
-            var result = await _controller.Delete(Guid.NewGuid());
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));

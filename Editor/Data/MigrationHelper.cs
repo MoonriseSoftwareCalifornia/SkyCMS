@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Data
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using AspNetCore.Identity.FlexDb.Strategies;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Helper service for applying database migrations across different providers.
@@ -47,7 +47,7 @@ namespace Sky.Editor.Data
             // Use custom strategies that include migrations assembly
             var migrationsAssembly = typeof(MigrationHelper).Assembly.FullName;
             var strategies = CreateMigrationStrategies(migrationsAssembly);
-            
+
             CosmosDbOptionsBuilder.ConfigureDbOptions(optionsBuilder, connectionString, strategies);
 
             switch (provider)
@@ -100,7 +100,7 @@ namespace Sky.Editor.Data
             // Use custom strategies that include migrations assembly
             var migrationsAssembly = typeof(MigrationHelper).Assembly.FullName;
             var strategies = CreateMigrationStrategies(migrationsAssembly);
-            
+
             CosmosDbOptionsBuilder.ConfigureDbOptions(optionsBuilder, connectionString, strategies);
 
             if (provider == DatabaseProvider.CosmosDb)
@@ -145,7 +145,7 @@ namespace Sky.Editor.Data
             // Use custom strategies that include migrations assembly
             var migrationsAssembly = typeof(MigrationHelper).Assembly.FullName;
             var strategies = CreateMigrationStrategies(migrationsAssembly);
-            
+
             CosmosDbOptionsBuilder.ConfigureDbOptions(optionsBuilder, connectionString, strategies);
 
             using var context = new ApplicationDbContext(optionsBuilder.Options);
@@ -161,7 +161,7 @@ namespace Sky.Editor.Data
 
                 // Check if migrations history table exists
                 var appliedMigrations = await context.Database.GetAppliedMigrationsAsync();
-                
+
                 // If no migrations applied but database exists, it was created without migrations
                 return !appliedMigrations.Any();
             }
@@ -197,7 +197,7 @@ namespace Sky.Editor.Data
         /// <param name="logger">Logger for diagnostic output.</param>
         /// <param name="provider">The database provider type.</param>
         private static async Task ApplyRelationalMigrationsAsync(
-            DbContextOptions<ApplicationDbContext> options, 
+            DbContextOptions<ApplicationDbContext> options,
             ILogger logger,
             DatabaseProvider provider)
         {
@@ -207,7 +207,7 @@ namespace Sky.Editor.Data
             {
                 // Check if database exists and can be connected to
                 var canConnect = await context.Database.CanConnectAsync();
-                
+
                 if (!canConnect)
                 {
                     // Database doesn't exist - use EnsureCreated for new databases
@@ -215,14 +215,14 @@ namespace Sky.Editor.Data
                     logger.LogInformation("Database does not exist. Creating new database with EnsureCreated()...");
                     await context.Database.EnsureCreatedAsync();
                     logger.LogInformation("✅ Database created successfully.");
-                    
+
                     // Mark all migrations as applied for proper migration tracking
                     var migrations = context.Database.GetMigrations().ToList();
-                    
+
                     if (migrations.Any())
                     {
                         logger.LogInformation("📋 Marking {Count} migration(s) as applied for tracking...", migrations.Count);
-                        
+
                         var providerName = provider switch
                         {
                             DatabaseProvider.SqlServer => "SQL Server",
@@ -230,39 +230,39 @@ namespace Sky.Editor.Data
                             DatabaseProvider.Sqlite => "SQLite",
                             _ => provider.ToString()
                         };
-                        
+
                         foreach (var migration in migrations.OrderBy(m => m))
                         {
                             logger.LogInformation("  - {Migration}", migration);
                             await MarkMigrationAsAppliedInternalAsync(options, migration, logger, providerName);
                         }
-                        
+
                         logger.LogInformation("✅ All migrations marked as applied.");
                     }
-                    
+
                     return;
                 }
-                
+
                 // Database exists - check migration history
                 var appliedMigrations = await context.Database.GetAppliedMigrationsAsync();
                 var appliedList = appliedMigrations.ToList();
-                
+
                 // Get all migrations defined in code
                 var allMigrations = context.Database.GetMigrations().ToList();
-                
+
                 // SCENARIO 1: Database exists but NO migration history
                 if (!appliedList.Any() && allMigrations.Any())
                 {
                     logger.LogWarning("⚠️ Database exists without migration history. This appears to be an existing database.");
                     logger.LogInformation("🔄 Automatically marking all migrations as applied to prevent schema conflicts...");
-                    
+
                     // Get ALL migrations for this provider
                     var providerSuffix = $"_{provider}";
                     var providerMigrations = allMigrations
                         .Where(m => m.EndsWith(providerSuffix, StringComparison.OrdinalIgnoreCase))
                         .OrderBy(m => m)
                         .ToList();
-                    
+
                     var providerName = provider switch
                     {
                         DatabaseProvider.SqlServer => "SQL Server",
@@ -270,37 +270,37 @@ namespace Sky.Editor.Data
                         DatabaseProvider.Sqlite => "SQLite",
                         _ => provider.ToString()
                     };
-                    
+
                     if (providerMigrations.Any())
                     {
-                        logger.LogInformation("📋 Marking {Count} migration(s) for {Provider} as applied:", 
+                        logger.LogInformation("📋 Marking {Count} migration(s) for {Provider} as applied:",
                             providerMigrations.Count, provider);
-                        
+
                         // Mark all provider-specific migrations as applied
                         foreach (var migration in providerMigrations)
                         {
                             logger.LogInformation("  - {Migration}", migration);
                             await MarkMigrationAsAppliedInternalAsync(options, migration, logger, providerName);
                         }
-                        
+
                         logger.LogInformation("✅ All {Provider} migrations marked as applied.", provider);
                     }
                     else
                     {
                         logger.LogWarning("⚠️ No migrations found for {Provider}. Database state may be inconsistent.", provider);
                     }
-                    
+
                     // Also mark migrations for other providers as applied
                     var otherProviderMigrations = allMigrations
                         .Where(m => !m.EndsWith(providerSuffix, StringComparison.OrdinalIgnoreCase))
                         .OrderBy(m => m)
                         .ToList();
-                    
+
                     if (otherProviderMigrations.Any())
                     {
-                        logger.LogInformation("ℹ️ Marking {Count} migration(s) for other providers as applied:", 
+                        logger.LogInformation("ℹ️ Marking {Count} migration(s) for other providers as applied:",
                             otherProviderMigrations.Count);
-                        
+
                         foreach (var migration in otherProviderMigrations)
                         {
                             logger.LogInformation("  - {Migration}", migration);
@@ -326,9 +326,9 @@ namespace Sky.Editor.Data
                     var otherProviderMigrations = pendingList.Except(providerSpecificMigrations).ToList();
                     if (otherProviderMigrations.Any())
                     {
-                        logger.LogInformation("ℹ️ Marking {Count} migration(s) for other providers as applied (not applicable to {Provider}):", 
+                        logger.LogInformation("ℹ️ Marking {Count} migration(s) for other providers as applied (not applicable to {Provider}):",
                             otherProviderMigrations.Count, provider);
-                        
+
                         var providerName = provider switch
                         {
                             DatabaseProvider.SqlServer => "SQL Server",
@@ -336,7 +336,7 @@ namespace Sky.Editor.Data
                             DatabaseProvider.Sqlite => "SQLite",
                             _ => provider.ToString()
                         };
-                        
+
                         foreach (var migration in otherProviderMigrations)
                         {
                             logger.LogInformation("  - {Migration} (marking as applied, not executing)", migration);
@@ -398,7 +398,7 @@ namespace Sky.Editor.Data
 
                 // Use provider-specific SQL syntax
                 string sql;
-                
+
                 switch (providerName)
                 {
                     case "SQL Server":
@@ -508,7 +508,7 @@ namespace Sky.Editor.Data
             // Check for SQL Server named instances (e.g., "Data Source=SERVER\INSTANCE")
             // Be more specific: check if backslash appears in the Data Source value itself
             // by looking for pattern like "Data Source=...\" but NOT file paths ending with .db
-            if (connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) && 
+            if (connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) &&
                 connectionString.Contains("\\", StringComparison.OrdinalIgnoreCase) &&
                 !connectionString.Contains(".db", StringComparison.OrdinalIgnoreCase) &&
                 !connectionString.Contains(".sqlite", StringComparison.OrdinalIgnoreCase))

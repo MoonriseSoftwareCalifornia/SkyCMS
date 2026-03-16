@@ -7,10 +7,6 @@
 
 namespace Sky.Editor.Features.Blogs.DeleteStream
 {
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -18,7 +14,10 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Shared;
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for deleting blog streams with cascade deletion of all associated blog entries.
@@ -74,7 +73,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                 var article = await dbContext.Articles
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
-                        b => b.Id == command.Id && 
+                        b => b.Id == command.Id &&
                              b.ArticleType == (int)ArticleType.BlogStream &&
                              b.StatusCode != (int)StatusCodeEnum.Deleted,
                         cancellationToken);
@@ -96,7 +95,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
 
                 // Find all blog entries (excluding the stream article itself)
                 var entryArticleNumbers = await dbContext.Articles
-                    .Where(c => c.BlogKey == blogKey && 
+                    .Where(c => c.BlogKey == blogKey &&
                                 c.ArticleNumber != streamArticleNumber &&
                                 c.StatusCode != (int)StatusCodeEnum.Deleted)
                     .Select(c => c.ArticleNumber)
@@ -116,7 +115,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                     {
                         await articleLogic.DeleteArticle(entryNumber);
                         deletedEntries++;
-                        
+
                         logger.LogDebug(
                             "Deleted blog entry {ArticleNumber} from stream {BlogKey}",
                             entryNumber,

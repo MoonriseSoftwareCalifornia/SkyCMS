@@ -7,13 +7,12 @@
 
 namespace Cosmos.Editor.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Data;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Azure.Cosmos.Linq;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Creates a new administrator.

@@ -7,13 +7,13 @@
 
 namespace Sky.Cms.Services
 {
+    using Sky.Cms.Models;
     using System;
     using System.Collections.Generic;
     using System.Drawing;
     using System.Drawing.Drawing2D;
     using System.Drawing.Imaging;
     using System.IO;
-    using Sky.Cms.Models;
 
     /// <summary>
     /// Image thumbnail creator.

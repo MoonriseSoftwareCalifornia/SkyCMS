@@ -7,19 +7,19 @@
 
 namespace Sky.Tests.Services.Publishing
 {
+    using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+    using Sky.Cms.Services;
     using Sky.Editor.Services.Publishing;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Microsoft.Extensions.DependencyInjection;
-    using Moq;
-    using Sky.Cms.Services;
-    using Cosmos.BlobService;
 
     /// <summary>
     /// Unit tests for the <see cref="PublishingService"/> class.
@@ -48,7 +48,7 @@ namespace Sky.Tests.Services.Publishing
             services.AddScoped<IViewRenderService>(_ => _mockViewRenderService.Object);
             services.AddScoped<StorageContext>(_ => Storage);
             services.AddLogging();
-            
+
             _serviceProvider = services.BuildServiceProvider();
         }
 

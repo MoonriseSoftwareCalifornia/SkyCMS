@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Layouts.Delete
 {
-    using System;
     using Cosmos.Common.Features.Shared;
+    using System;
 
     /// <summary>
     /// Command to delete a non-default layout.

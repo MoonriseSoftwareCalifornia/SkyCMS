@@ -5,9 +5,6 @@
 
 namespace Sky.Tests.Features.Articles.Trash
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -17,6 +14,8 @@ namespace Sky.Tests.Features.Articles.Trash
     using Moq;
     using Sky.Editor.Features.Articles.Trash;
     using Sky.Editor.Services.Publishing;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for <see cref="TrashArticleHandler"/>.
@@ -154,6 +153,52 @@ namespace Sky.Tests.Features.Articles.Trash
             Assert.IsFalse(result.IsSuccess);
             Assert.IsTrue(result.ErrorMessage.Contains("deleted state", StringComparison.OrdinalIgnoreCase));
             this.mockStorageContext.Verify(s => s.DeleteFolderAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [TestMethod]
+        public async Task HandleAsync_ArticleNotFound_ReturnsValidationError()
+        {
+            // Act
+            var result = await this.handler.HandleAsync(new TrashArticleCommand { ArticleNumber = 404 });
+
+            // Assert
+            Assert.IsFalse(result.IsSuccess);
+            Assert.IsTrue(result.ErrorMessage.Contains("not found", StringComparison.OrdinalIgnoreCase));
+            this.mockStorageContext.Verify(s => s.DeleteFolderAsync(It.IsAny<string>()), Times.Never);
+            this.mockPublishingService.Verify(p => p.WriteTocAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [TestMethod]
+        public async Task HandleAsync_DeletedArticle_WhenStorageDeleteFails_ReturnsFailureAfterDbCleanup()
+        {
+            // Arrange
+            var articleId = Guid.NewGuid();
+            this.dbContext.Articles.Add(new Article
+            {
+                Id = articleId,
+                ArticleNumber = 22,
+                Title = "Deleted and failing storage",
+                UrlPath = "deleted-fail-storage",
+                VersionNumber = 1,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                Updated = DateTimeOffset.UtcNow,
+                Content = "<p>Deleted</p>"
+            });
+            await this.dbContext.SaveChangesAsync();
+
+            this.mockStorageContext
+                .Setup(s => s.DeleteFolderAsync("/pub/articles/22"))
+                .ThrowsAsync(new InvalidOperationException("Storage unavailable"));
+
+            // Act
+            var result = await this.handler.HandleAsync(new TrashArticleCommand { ArticleNumber = 22 });
+
+            // Assert
+            Assert.IsFalse(result.IsSuccess);
+            Assert.IsTrue(result.ErrorMessage.Contains("Error permanently trashing article", StringComparison.OrdinalIgnoreCase));
+            Assert.AreEqual(0, await this.dbContext.Articles.CountAsync(a => a.ArticleNumber == 22), "DB cleanup happens before artifact cleanup call.");
+            this.mockPublishingService.Verify(p => p.WriteTocAsync(It.IsAny<string>()), Times.Never);
         }
     }
 }

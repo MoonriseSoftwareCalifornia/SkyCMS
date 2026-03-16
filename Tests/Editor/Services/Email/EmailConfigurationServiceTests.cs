@@ -8,7 +8,6 @@
 namespace Sky.Tests.Editor.Services.Email;
 
 using Cosmos.Common.Data;
-using Cosmos.Common.Services.Email;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -218,12 +217,12 @@ public class EmailConfigurationServiceTests
         // Arrange
         var dbSettings = new List<Setting>
         {
-            new Setting 
-            { 
-                Id = Guid.NewGuid(), 
-                Group = "EMAIL", 
-                Name = "AzureEmailConnectionString", 
-                Value = "endpoint=https://db.communication.azure.com/;accesskey=dbkey" 
+            new Setting
+            {
+                Id = Guid.NewGuid(),
+                Group = "EMAIL",
+                Name = "AzureEmailConnectionString",
+                Value = "endpoint=https://db.communication.azure.com/;accesskey=dbkey"
             }
         };
         SeedDatabaseSettings(dbSettings);

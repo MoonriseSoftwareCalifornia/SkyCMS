@@ -126,23 +126,10 @@ namespace AspNetCore.Identity.FlexDb.Containers
             if (!partitionKeyPath.StartsWith('/'))
                 throw new ArgumentException(nameof(partitionKeyPath), "Path must begin with /");
 
-            try
-            {
-                Container container = await _client.GetDatabase(_databaseName).CreateContainerIfNotExistsAsync(
-                        id: containerName,
-                        partitionKeyPath: partitionKeyPath, throughput);
-                return container;
-            }
-            catch (Microsoft.Azure.Cosmos.CosmosException c)
-            {
-                var d = c;
-                throw;
-            }
-            catch (Exception e)
-            {
-                var t = e;
-                throw;
-            }
+            Container container = await _client.GetDatabase(_databaseName).CreateContainerIfNotExistsAsync(
+                    id: containerName,
+                    partitionKeyPath: partitionKeyPath, throughput);
+            return container;
         }
 
         /// <summary>

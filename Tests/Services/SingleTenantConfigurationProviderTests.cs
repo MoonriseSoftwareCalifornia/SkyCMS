@@ -7,12 +7,12 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using Cosmos.DynamicConfig;
     using Microsoft.Extensions.Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for <see cref="SingleTenantConfigurationProvider"/>.

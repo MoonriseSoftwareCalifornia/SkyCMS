@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Blogs.GetStream
 {
-    using System;
     using Cosmos.Common.Data;
+    using System;
 
     /// <summary>
     /// Result data transfer object for blog stream retrieval queries.

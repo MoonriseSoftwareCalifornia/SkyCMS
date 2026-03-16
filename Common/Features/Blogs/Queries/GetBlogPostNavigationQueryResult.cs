@@ -7,9 +7,7 @@
 
 namespace Cosmos.Common.Features.Blogs.Queries
 {
-    using System;
     using System.Collections.Generic;
-    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Result of the blog post navigation query.
@@ -38,7 +36,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
         /// Gets or sets all posts in the stream (if requested).
         /// Useful for breadcrumbs or complete navigation menus.
         /// </summary>
-        public List<BlogPostNavigationItem> AllPosts { get; set; } = new ();
+        public List<BlogPostNavigationItem> AllPosts { get; set; } = new();
 
         /// <summary>
         /// Gets or sets the current post position in the stream (1-based index).

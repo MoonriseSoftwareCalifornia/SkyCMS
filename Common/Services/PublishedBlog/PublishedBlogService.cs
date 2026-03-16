@@ -7,13 +7,13 @@
 
 namespace Cosmos.Common.Services.PublishedBlog
 {
+    using Cosmos.Cms.Common;
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Service for accessing published blog content from the database.

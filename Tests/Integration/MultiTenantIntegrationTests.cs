@@ -5,13 +5,13 @@
 
 namespace Sky.Tests.Integration
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Integration tests for multi-tenant functionality.
@@ -19,7 +19,6 @@ namespace Sky.Tests.Integration
     /// Critical for ensuring proper multi-tenant security.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class MultiTenantIntegrationTests : SkyCmsTestBase
     {
         [TestInitialize]
@@ -42,7 +41,7 @@ namespace Sky.Tests.Integration
 
             // Act - Create article in tenant1
             var article1 = await tenant1.CreateArticleAsync("Tenant 1 Article", tenant1.TestUserId);
-            
+
             // Act - Create article in tenant2
             var article2 = await tenant2.CreateArticleAsync("Tenant 2 Article", tenant2.TestUserId);
 
@@ -50,7 +49,7 @@ namespace Sky.Tests.Integration
             var tenant1Articles = await tenant1.Db.Articles
                 .Where(a => a.Title.Contains("Tenant"))
                 .ToListAsync();
-            
+
             var tenant2Articles = await tenant2.Db.Articles
                 .Where(a => a.Title.Contains("Tenant"))
                 .ToListAsync();
@@ -115,7 +114,7 @@ namespace Sky.Tests.Integration
             // Act - Cache data in each tenant
             var key1 = $"test-key-{tenant1.TenantDomain}";
             var key2 = $"test-key-{tenant2.TenantDomain}";
-            
+
             tenant1.Cache.Set(key1, "Tenant 1 Data");
             tenant2.Cache.Set(key2, "Tenant 2 Data");
 
@@ -316,12 +315,12 @@ namespace Sky.Tests.Integration
                 var article = await ctx.CreateArticleAsync($"Concurrent Article {index}", ctx.TestUserId);
                 var articleEntity = await ctx.Db.Articles.FindAsync(article.Id);
                 await ctx.PublishingService.PublishAsync(articleEntity);
-                
+
                 // ? RELOAD the article from the database to get the updated Published property
                 // The articleEntity has been modified by PublishAsync, so we need to refresh it from DB
                 var publishedArticle = await ctx.Db.Articles.FindAsync(article.Id);
                 article.Published = publishedArticle.Published;
-                
+
                 return article;
             }).ToArray();
 

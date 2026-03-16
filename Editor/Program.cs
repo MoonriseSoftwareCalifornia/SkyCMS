@@ -5,13 +5,6 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-using System;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Threading.RateLimiting;
-using System.Threading.Tasks;
-using System.Web;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
 using Cosmos.BlobService;
@@ -71,6 +64,13 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading.RateLimiting;
+using System.Threading.Tasks;
+using System.Web;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
 
@@ -304,15 +304,10 @@ builder.Services.AddCosmosEmailServices(builder.Configuration);
 // STEP 7: Register Application Services
 // ---------------------------------------------------------------
 // Scoped services (per-request lifecycle, can access HttpContext)
-// Setup context (scoped to match ApplicationDbContext lifetime)
-builder.Services.AddScoped<Sky.Editor.Services.Setup.ISetupContext>(sp =>
-    new Sky.Editor.Services.Setup.SetupContext(
-        sp.GetRequiredService<IConfiguration>(),
-        sp.GetRequiredService<IMemoryCache>(),
-        sp.GetRequiredService<UserManager<IdentityUser>>(),
-        sp.GetRequiredService<RoleManager<IdentityRole>>(),
-        sp.GetRequiredService<ApplicationDbContext>()));
-
+builder.Services.AddTransient<IDatabaseConnectionTester, DatabaseConnectionTester>();
+builder.Services.AddScoped<IStorageConnectionTester>(sp => new StorageConnectionTester(sp.GetRequiredService<IMemoryCache>()));
+builder.Services.AddTransient<ISendGridEmailTester, SendGridEmailTester>();
+builder.Services.AddTransient<ISmtpEmailTester, SmtpEmailTester>();
 builder.Services.AddScoped<ISetupService, SetupService>();
 builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 builder.Services.AddScoped<IStorageContext, StorageContext>();
@@ -342,7 +337,6 @@ builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
 
 builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
     new ArticleViewModelBuilder(
-        sp.GetRequiredService<Cosmos.Common.Features.Shared.IMediator>(),
         sp.GetRequiredService<ApplicationDbContext>(),
         sp.GetRequiredService<IMemoryCache>(),
         builder.Configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty,
@@ -350,36 +344,6 @@ builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
 
 // Transient services (stateless operations, created each time)
 builder.Services.AddTransient<ICdnServiceFactory, CdnServiceFactory>();
-builder.Services.AddTransient<ICdnPurgeService, CdnPurgeService>();
-builder.Services.AddTransient<Sky.Editor.Services.TableOfContents.ITocService, Sky.Editor.Services.TableOfContents.TocService>();
-builder.Services.AddTransient<Sky.Editor.Services.StaticFiles.IStaticFileService, Sky.Editor.Services.StaticFiles.StaticFileService>();
-builder.Services.AddSingleton<Sky.Editor.Services.StaticFiles.IStaticFileServiceFactory, Sky.Editor.Services.StaticFiles.StaticFileServiceFactory>();
-
-// Blog publishing context (scoped to match ApplicationDbContext lifetime)
-builder.Services.AddScoped<Sky.Editor.Services.BlogPublishing.IBlogPublishingContext>(sp =>
-    new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
-        sp.GetRequiredService<ApplicationDbContext>(),
-        sp.GetRequiredService<IStorageContext>(),
-        sp.GetRequiredService<IHttpContextAccessor>()));
-
-builder.Services.AddTransient<Sky.Editor.Services.BlogPublishing.IBlogPublishingService, Sky.Editor.Services.BlogPublishing.BlogPublishingService>();
-builder.Services.AddTransient<Sky.Editor.Services.Publishing.IPublishingAuxiliaryServices, Sky.Editor.Services.Publishing.PublishingAuxiliaryServices>();
-
-// Publishing context (scoped to match ApplicationDbContext lifetime)
-builder.Services.AddScoped<Sky.Editor.Services.Publishing.IPublishingContext>(sp =>
-    new Sky.Editor.Services.Publishing.PublishingContext(
-        sp.GetRequiredService<ApplicationDbContext>(),
-        sp.GetRequiredService<IStorageContext>(),
-        sp.GetRequiredService<IEditorSettings>(),
-        sp.GetRequiredService<IHttpContextAccessor>(),
-        sp.GetRequiredService<IArticleCatalogQueryService>()));
-
-// Template context (scoped to match ApplicationDbContext lifetime)
-builder.Services.AddScoped<Sky.Editor.Services.Templates.ITemplateContext>(sp =>
-    new Sky.Editor.Services.Templates.TemplateContext(
-        sp.GetRequiredService<ApplicationDbContext>(),
-        sp.GetService<IDynamicConfigurationProvider>()));
-
 builder.Services.AddTransient<ITemplateService, TemplateService>();
 builder.Services.AddTransient<IArticleHtmlService, ArticleHtmlService>();
 builder.Services.AddTransient<IAuthorInfoService, AuthorInfoService>();
@@ -390,14 +354,6 @@ builder.Services.AddTransient<IPublishingService, PublishingService>();
 builder.Services.AddTransient<IRedirectService, RedirectService>();
 builder.Services.AddTransient<IReservedPaths, ReservedPaths>();
 builder.Services.AddTransient<ISlugService, SlugService>();
-
-// Title change context (scoped to match ApplicationDbContext lifetime)
-builder.Services.AddScoped<Sky.Editor.Services.Titles.ITitleChangeContext>(sp =>
-    new Sky.Editor.Services.Titles.TitleChangeContext(
-        sp.GetRequiredService<ApplicationDbContext>(),
-        sp.GetRequiredService<IClock>(),
-        sp.GetRequiredService<IDomainEventDispatcher>()));
-
 builder.Services.AddTransient<ITitleChangeService, TitleChangeService>();
 builder.Services.AddTransient<IBlogStreamRenderingService, BlogStreamRenderingService>();
 builder.Services.AddTransient<IEmailConfigurationService, EmailConfigurationService>();

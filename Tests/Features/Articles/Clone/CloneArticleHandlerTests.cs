@@ -7,16 +7,16 @@ using Sky.Tests.Editor.Features.Articles;
 
 namespace Sky.Tests.Features.Articles.Clone
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Common.Models;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Features.Articles.Clone;
     using Sky.Editor.Features.Articles.Create;
+    using System;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     [TestClass]
     public class CloneArticleHandlerTests : ArticleTestBase
@@ -30,7 +30,7 @@ namespace Sky.Tests.Features.Articles.Clone
             base.TestInitialize();
 
             _mockMediator = new Mock<CommonMediator>();
-            
+
             _handler = new CloneArticleHandler(
                 DbContext,
                 MockTitleChangeService.Object,
@@ -78,7 +78,7 @@ namespace Sky.Tests.Features.Articles.Clone
             Assert.AreEqual("Cloned Article", result.Data.Title, "Should have new title");
 
             _mockMediator.Verify(
-                x => x.SendAsync(It.Is<CreateArticleCommand>(cmd => 
+                x => x.SendAsync(It.Is<CreateArticleCommand>(cmd =>
                     cmd.Title == "Cloned Article" &&
                     cmd.ContentOverride == sourceArticle.Content)),
                 Times.Once,
@@ -133,7 +133,7 @@ namespace Sky.Tests.Features.Articles.Clone
 
             // Assert
             Assert.IsFalse(result.IsSuccess, "Should fail when source not found");
-            StringAssert.Contains(result.ErrorMessage, "not found", 
+            StringAssert.Contains(result.ErrorMessage, "not found",
                 "Error should mention source not found");
         }
 
@@ -179,7 +179,7 @@ namespace Sky.Tests.Features.Articles.Clone
             // Assert
             Assert.IsTrue(result.IsSuccess, "Clone should succeed");
             Assert.IsNotNull(capturedCommand, "Should have captured CreateArticleCommand");
-            
+
             Assert.AreEqual("Technology", capturedCommand.Category, "Should copy category");
             Assert.AreEqual("Test intro", capturedCommand.Introduction, "Should copy introduction");
             Assert.AreEqual("/banner.jpg", capturedCommand.BannerImage, "Should copy banner image");
@@ -222,7 +222,7 @@ namespace Sky.Tests.Features.Articles.Clone
 
             // Assert
             Assert.IsTrue(result.IsSuccess, "Clone should succeed");
-            Assert.AreEqual(newPublishDate, capturedCommand.Published, 
+            Assert.AreEqual(newPublishDate, capturedCommand.Published,
                 "Should use new publish date from clone command");
         }
     }

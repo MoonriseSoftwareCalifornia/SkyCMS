@@ -7,13 +7,7 @@
 
 namespace Sky.Tests.Services.Setup
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Data.Sqlite;
     using Microsoft.EntityFrameworkCore;
@@ -23,6 +17,9 @@ namespace Sky.Tests.Services.Setup
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Services.Setup;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Unit tests for refactored SetupService with draft/committed state management.

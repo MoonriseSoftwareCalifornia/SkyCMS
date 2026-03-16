@@ -7,12 +7,12 @@
 
 namespace Cosmos.BlobService
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Azure.Identity;
     using Azure.Storage.Blobs;
     using Cosmos.BlobService.Exceptions;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// Provides utility methods for parsing cloud storage connection strings.
@@ -83,7 +83,7 @@ namespace Cosmos.BlobService
             }
 
             var accountName = dict["AccountName"];
-            var usesAccessToken = dict.TryGetValue("AccountKey", out var accountKey) && 
+            var usesAccessToken = dict.TryGetValue("AccountKey", out var accountKey) &&
                                   accountKey.Equals("AccessToken", StringComparison.OrdinalIgnoreCase);
 
             return new AzureConnectionStringComponents

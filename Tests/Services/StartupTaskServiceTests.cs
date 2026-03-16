@@ -7,19 +7,18 @@
 
 namespace Sky.Tests.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Azure;
     using Cosmos.DynamicConfig;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Comprehensive unit tests for the <see cref="StartupTaskService"/> class.
@@ -56,7 +55,7 @@ namespace Sky.Tests.Services
                     ["ConnectionStrings:ConfigDbConnectionString"] = "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=testkey;",
                     ["MultiTenantEditor"] = "false"
                 });
-            
+
             var configuration = configurationBuilder.Build();
 
             // Create mock with real configuration
@@ -91,35 +90,21 @@ namespace Sky.Tests.Services
         }
 
         /// <summary>
-        /// Constructor throws <see cref="ArgumentNullException"/> when the
-        /// <see cref="IWebHostEnvironment"/> parameter is null.
+        /// Constructor throws <see cref="ArgumentNullException"/> when required dependencies are null.
         /// </summary>
         [TestMethod]
-        public void Constructor_WithNullWebHostEnvironment_ThrowsArgumentNullException()
+        public void Constructor_WithNullDependencies_ThrowsArgumentNullException()
         {
-            // Act & Assert
-            Assert.ThrowsExactly<ArgumentNullException>(() =>
+            var scenarios = new Action[]
             {
-                var service = new StartupTaskService(
-                    null!,
-                    mockManagementUtilities.Object);
-            });
-        }
+                () => _ = new StartupTaskService(null!, mockManagementUtilities.Object),
+                () => _ = new StartupTaskService(mockWebHostEnvironment.Object, null!),
+            };
 
-        /// <summary>
-        /// Constructor throws <see cref="ArgumentNullException"/> when the
-        /// management utilities parameter is null.
-        /// </summary>
-        [TestMethod]
-        public void Constructor_WithNullManagementUtilities_ThrowsArgumentNullException()
-        {
-            // Act & Assert
-            Assert.ThrowsExactly<ArgumentNullException>(() =>
+            foreach (var scenario in scenarios)
             {
-                var service = new StartupTaskService(
-                    mockWebHostEnvironment.Object,
-                    null!);
-            });
+                Assert.ThrowsExactly<ArgumentNullException>(scenario);
+            }
         }
 
         #endregion
@@ -294,65 +279,45 @@ namespace Sky.Tests.Services
         }
 
         /// <summary>
-        /// RunAsync throws <see cref="ArgumentNullException"/> when a connection
-        /// contains a null storage connection string.
+        /// RunAsync throws for null or empty storage connection strings.
         /// </summary>
         [TestMethod]
-        public async Task RunAsync_WithNullStorageConnection_ThrowsException()
+        public async Task RunAsync_WithInvalidStorageConnection_ThrowsExpectedException()
         {
-            // Arrange
-            var connection = new Connection
+            var scenarios = new[]
             {
-                Id = Guid.NewGuid(),
-                StorageConn = null!,
-                DbConn = "Server=test",
-                WebsiteUrl = "https://test.example.com",
-                ResourceGroup = "test-rg"
+                new { StorageConn = (string)null, ExpectedException = typeof(ArgumentNullException) },
+                new { StorageConn = string.Empty, ExpectedException = typeof(ArgumentException) },
             };
 
-            mockManagementUtilities.Setup(m => m.GetConnections())
-                .ReturnsAsync(new List<Connection> { connection });
-
-            var service = new StartupTaskService(
-                mockWebHostEnvironment.Object,
-                mockManagementUtilities.Object);
-
-            // Act & Assert
-            await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
+            foreach (var scenario in scenarios)
             {
-                await service.RunAsync();
-            });
-        }
+                var connection = new Connection
+                {
+                    Id = Guid.NewGuid(),
+                    StorageConn = scenario.StorageConn!,
+                    DbConn = "Server=test",
+                    WebsiteUrl = "https://test.example.com",
+                    ResourceGroup = "test-rg"
+                };
 
-        /// <summary>
-        /// RunAsync throws <see cref="ArgumentException"/> when a connection
-        /// contains an empty storage connection string.
-        /// </summary>
-        [TestMethod]
-        public async Task RunAsync_WithEmptyStorageConnection_ThrowsException()
-        {
-            // Arrange
-            var connection = new Connection
-            {
-                Id = Guid.NewGuid(),
-                StorageConn = string.Empty,
-                DbConn = "Server=test",
-                WebsiteUrl = "https://test.example.com",
-                ResourceGroup = "test-rg"
-            };
+                mockManagementUtilities.Setup(m => m.GetConnections())
+                    .ReturnsAsync(new List<Connection> { connection });
 
-            mockManagementUtilities.Setup(m => m.GetConnections())
-                .ReturnsAsync(new List<Connection> { connection });
+                var service = new StartupTaskService(
+                    mockWebHostEnvironment.Object,
+                    mockManagementUtilities.Object);
 
-            var service = new StartupTaskService(
-                mockWebHostEnvironment.Object,
-                mockManagementUtilities.Object);
-
-            // Act & Assert
-            await Assert.ThrowsExactlyAsync<ArgumentException>(async () =>
-            {
-                await service.RunAsync();
-            });
+                try
+                {
+                    await service.RunAsync();
+                    Assert.Fail($"Expected {scenario.ExpectedException.Name} to be thrown.");
+                }
+                catch (Exception ex)
+                {
+                    Assert.AreEqual(scenario.ExpectedException, ex.GetType());
+                }
+            }
         }
 
         #endregion

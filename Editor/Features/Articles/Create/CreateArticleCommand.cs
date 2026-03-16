@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Features.Articles.Create
 {
-    using System;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using System;
 
     /// <summary>
     /// Command to create a new article.

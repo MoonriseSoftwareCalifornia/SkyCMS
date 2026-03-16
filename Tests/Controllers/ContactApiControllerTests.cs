@@ -9,7 +9,6 @@ namespace Sky.Tests.Controllers;
 
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
-using Cosmos.Common.Models;
 using Cosmos.Common.Services.Email;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http;
@@ -371,7 +370,7 @@ public class ContactApiControllerTests
 
         // Assert
         Assert.IsTrue(rateLimitAttr.Length > 0, "Submit method should have EnableRateLimiting attribute");
-        
+
         // Verify the policy name is "contact-form"
         var attr = rateLimitAttr[0] as Microsoft.AspNetCore.RateLimiting.EnableRateLimitingAttribute;
         Assert.IsNotNull(attr);
@@ -424,7 +423,7 @@ public class ContactApiControllerTests
         Assert.IsInstanceOfType(result, typeof(ObjectResult));
         var objectResult = result as ObjectResult;
         Assert.AreEqual(500, objectResult.StatusCode);
-        
+
         var response = objectResult.Value as ContactFormResponse;
         Assert.IsFalse(response.Success);
         Assert.IsTrue(response.Message.Contains("unexpected error"));
@@ -526,7 +525,7 @@ public class ContactApiControllerTests
 
         // Assert
         Assert.IsInstanceOfType(result, typeof(OkObjectResult));
-        
+
         // Verify email config service was called for fallback
         emailConfigServiceMock.Verify(x => x.GetEmailSettingsAsync(), Times.AtLeastOnce);
     }

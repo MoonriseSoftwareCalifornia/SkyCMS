@@ -7,10 +7,6 @@
 
 namespace Sky.Tests.Services.Migrations
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.Data.Sqlite;
     using Microsoft.EntityFrameworkCore;
@@ -19,6 +15,10 @@ namespace Sky.Tests.Services.Migrations
     using Moq;
     using Sky.Editor.Services.Migrations;
     using Sky.Editor.Services.Migrations.Core;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for the MigrationService class.
@@ -88,7 +88,7 @@ namespace Sky.Tests.Services.Migrations
             var migration000 = await context.Set<MigrationHistory>()
                 .FirstOrDefaultAsync(m => m.MigrationId == "000");
             Assert.IsNotNull(migration000, "Migration 000 should be recorded");
-            Assert.AreEqual("Initial schema created via EnsureCreated (includes all schema up to current DbContext model)", 
+            Assert.AreEqual("Initial schema created via EnsureCreated (includes all schema up to current DbContext model)",
                 migration000.Description);
             Assert.AreEqual("Sqlite", migration000.Provider);
 
@@ -108,7 +108,7 @@ namespace Sky.Tests.Services.Migrations
             // Arrange - Create database with schema but no migrations applied
             using var setupContext = new ApplicationDbContext(_options);
             await setupContext.Database.EnsureCreatedAsync();
-            
+
             // Manually create MigrationHistory table
             await setupContext.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS MigrationHistory (
@@ -137,7 +137,7 @@ namespace Sky.Tests.Services.Migrations
             var appliedMigrations = await setupContext.Set<MigrationHistory>()
                 .Where(m => m.Provider == "Sqlite")
                 .ToListAsync();
-            
+
             Assert.IsTrue(appliedMigrations.Count > 0, "Migrations should be applied");
         }
 
@@ -169,7 +169,7 @@ namespace Sky.Tests.Services.Migrations
                 ConnectionString = "DataSource=:memory:",
                 Logger = _loggerMock.Object
             };
-            
+
             await migrationService.RunMigrationsAsync(migrationContext);
 
             // Assert - Verify logged as up-to-date
@@ -191,10 +191,10 @@ namespace Sky.Tests.Services.Migrations
         public void RunMigrationsAsync_ReservedMigrationId_ThrowsException()
         {
             // Test the IsReservedMigrationId validation logic directly
-            
+
             // Reserved ID (should return true)
             Assert.IsTrue(MigrationService.IsReservedMigrationId("000"), "000 should be reserved");
-            
+
             // Non-reserved IDs (should return false)
             Assert.IsFalse(MigrationService.IsReservedMigrationId("001"), "001 should not be strictly reserved");
             Assert.IsFalse(MigrationService.IsReservedMigrationId("005"), "005 should not be strictly reserved");
@@ -215,7 +215,7 @@ namespace Sky.Tests.Services.Migrations
             // Arrange - Create database with schema
             using var context = new ApplicationDbContext(_options);
             await context.Database.EnsureCreatedAsync();
-            
+
             // Manually create MigrationHistory table
             await context.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS MigrationHistory (
@@ -239,7 +239,7 @@ namespace Sky.Tests.Services.Migrations
                 ApplicationVersion = "1.0.0"
             };
             context.Set<MigrationHistory>().Add(migration001);
-            
+
             // Add a migration record for a non-existent migration to force normal flow
             var fakeRecord = new MigrationHistory
             {
@@ -263,7 +263,7 @@ namespace Sky.Tests.Services.Migrations
 
             // Note: Since all real migrations are marked as applied, this should complete successfully
             // This test verifies that migrations already applied are properly detected and skipped
-            
+
             // Act - This should not throw since all migrations are either applied or skipped
             await migrationService.RunMigrationsAsync(migrationContext);
 
@@ -304,7 +304,7 @@ namespace Sky.Tests.Services.Migrations
             // Act & Assert
             Assert.Throws<ArgumentNullException>(
                 () => MigrationService.DetermineProvider(null));
-            
+
             Assert.Throws<ArgumentNullException>(
                 () => MigrationService.DetermineProvider(string.Empty));
         }
@@ -381,7 +381,7 @@ namespace Sky.Tests.Services.Migrations
             // Arrange
             using var context = new ApplicationDbContext(_options);
             await context.Database.EnsureCreatedAsync();
-            
+
             var migrationService = new MigrationService(_loggerMock.Object);
             var migrationContext = new MigrationContext
             {
@@ -398,7 +398,7 @@ namespace Sky.Tests.Services.Migrations
             try
             {
                 // Use reflection to call private RecordMigrationAsync method
-                var method = typeof(MigrationService).GetMethod("RecordMigrationAsync", 
+                var method = typeof(MigrationService).GetMethod("RecordMigrationAsync",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 var task = (Task)method.Invoke(migrationService, new object[] { migrationContext, invalidMigration });
                 await task;
@@ -408,7 +408,7 @@ namespace Sky.Tests.Services.Migrations
                 exceptionThrown = true;
                 Assert.IsTrue(ex.Message.Contains("MigrationId"));
             }
-            
+
             Assert.IsTrue(exceptionThrown, "Expected ArgumentException was not thrown");
         }
 
@@ -421,7 +421,7 @@ namespace Sky.Tests.Services.Migrations
             // Arrange
             using var context = new ApplicationDbContext(_options);
             await context.Database.EnsureCreatedAsync();
-            
+
             var migrationService = new MigrationService(_loggerMock.Object);
             var migrationContext = new MigrationContext
             {
@@ -438,7 +438,7 @@ namespace Sky.Tests.Services.Migrations
             try
             {
                 // Use reflection to call private RecordMigrationAsync method
-                var method = typeof(MigrationService).GetMethod("RecordMigrationAsync", 
+                var method = typeof(MigrationService).GetMethod("RecordMigrationAsync",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 var task = (Task)method.Invoke(migrationService, new object[] { migrationContext, invalidMigration });
                 await task;
@@ -448,7 +448,7 @@ namespace Sky.Tests.Services.Migrations
                 exceptionThrown = true;
                 Assert.IsTrue(ex.Message.Contains("Version"));
             }
-            
+
             Assert.IsTrue(exceptionThrown, "Expected ArgumentException was not thrown");
         }
 
@@ -461,7 +461,7 @@ namespace Sky.Tests.Services.Migrations
             // Arrange
             using var context = new ApplicationDbContext(_options);
             await context.Database.EnsureCreatedAsync();
-            
+
             // Manually create MigrationHistory table
             await context.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS MigrationHistory (
@@ -488,11 +488,11 @@ namespace Sky.Tests.Services.Migrations
             // Act & Assert
             var exceptionThrown = false;
             InvalidOperationException capturedException = null;
-            
+
             try
             {
                 // Use reflection to call private ApplyMigrationAsync method
-                var method = typeof(MigrationService).GetMethod("ApplyMigrationAsync", 
+                var method = typeof(MigrationService).GetMethod("ApplyMigrationAsync",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 var task = (Task)method.Invoke(migrationService, new object[] { migrationContext, failingMigration });
                 await task;
@@ -502,10 +502,10 @@ namespace Sky.Tests.Services.Migrations
                 exceptionThrown = true;
                 capturedException = ex;
             }
-            
+
             Assert.IsTrue(exceptionThrown, "Expected InvalidOperationException was not thrown");
             Assert.IsNotNull(capturedException);
-            
+
             // Assert the exception message contains migration details
             Assert.IsTrue(capturedException.Message.Contains("FAIL001"));
             Assert.IsTrue(capturedException.Message.Contains("Test migration that fails"));
@@ -522,7 +522,7 @@ namespace Sky.Tests.Services.Migrations
             // Arrange
             using var context = new ApplicationDbContext(_options);
             await context.Database.EnsureCreatedAsync();
-            
+
             // Manually create MigrationHistory table
             await context.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS MigrationHistory (
@@ -547,14 +547,14 @@ namespace Sky.Tests.Services.Migrations
             var migrationWithNullDescription = new TestMigrationWithNullDescription();
 
             // Act - Use reflection to call private RecordMigrationAsync method
-            var method = typeof(MigrationService).GetMethod("RecordMigrationAsync", 
+            var method = typeof(MigrationService).GetMethod("RecordMigrationAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             await (Task)method.Invoke(migrationService, new object[] { migrationContext, migrationWithNullDescription });
 
             // Assert - Verify the migration was recorded with empty description
             var recorded = await context.Set<MigrationHistory>()
                 .FirstOrDefaultAsync(m => m.MigrationId == "NULLDESC001");
-            
+
             Assert.IsNotNull(recorded);
             Assert.IsNotNull(recorded.Description); // Should be empty string, not null
         }
@@ -593,7 +593,7 @@ namespace Sky.Tests.Services.Migrations
 
             // Create instance of VirtualMigration
             var virtualMigration = Activator.CreateInstance(virtualMigrationType);
-            
+
             // Set properties
             virtualMigrationType.GetProperty("MigrationId").SetValue(virtualMigration, "000");
             virtualMigrationType.GetProperty("Version").SetValue(virtualMigration, "1.0.0");
@@ -606,7 +606,7 @@ namespace Sky.Tests.Services.Migrations
             // When calling async methods through reflection, the exception is NOT wrapped in TargetInvocationException
             var exceptionThrown = false;
             NotSupportedException capturedException = null;
-            
+
             try
             {
                 // For async methods, we need to await the task returned by Invoke
@@ -626,10 +626,10 @@ namespace Sky.Tests.Services.Migrations
                 exceptionThrown = true;
                 capturedException = ex.InnerException as NotSupportedException;
             }
-            
+
             Assert.IsTrue(exceptionThrown, "Expected NotSupportedException was not thrown");
             Assert.IsNotNull(capturedException);
-            
+
             // Verify exception message
             Assert.IsTrue(capturedException.Message.Contains("Virtual migration 000"));
             Assert.IsTrue(capturedException.Message.Contains("cannot be rolled back"));
@@ -642,7 +642,7 @@ namespace Sky.Tests.Services.Migrations
         {
             var connection = context.Database.GetDbConnection();
             var wasOpen = connection.State == System.Data.ConnectionState.Open;
-            
+
             if (!wasOpen)
             {
                 await connection.OpenAsync();

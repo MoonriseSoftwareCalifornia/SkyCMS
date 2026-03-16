@@ -29,7 +29,6 @@ namespace Sky.Tests.Controllers
     /// Unit tests for the <see cref="PubControllerBase"/> class.
     /// Tests logging integration, file serving, authentication, and error handling.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class PubControllerBaseTests : SkyCmsTestBase
     {
@@ -224,7 +223,7 @@ namespace Sky.Tests.Controllers
                 requiresAuthentication: true);
 
             var httpContext = new DefaultHttpContext();
-            
+
             // Create a DIFFERENT user (not the article owner)
             var differentUserId = Guid.NewGuid();
             httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
@@ -258,7 +257,7 @@ namespace Sky.Tests.Controllers
             // ? ALTERNATIVE FIX: Delete and recreate the catalog entry with permissions
             var oldCatalogEntry = await Db.ArticleCatalog
                 .FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-            
+
             if (oldCatalogEntry != null)
             {
                 Db.ArticleCatalog.Remove(oldCatalogEntry);
@@ -299,11 +298,11 @@ namespace Sky.Tests.Controllers
                 requiresAuthentication: true);
 
             var httpContext = new DefaultHttpContext();
-            
+
             // Use the SAME user who created the article
             httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
-                new[] 
-                { 
+                new[]
+                {
                     new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()),
                     new Claim(ClaimTypes.Name, "test@example.com")
                 },
@@ -357,8 +356,8 @@ namespace Sky.Tests.Controllers
             await testController.Index();
 
             // Assert
-            Assert.IsTrue(logger.LogEntries.Any(e => 
-                e.LogLevel == LogLevel.Warning && 
+            Assert.IsTrue(logger.LogEntries.Any(e =>
+                e.LogLevel == LogLevel.Warning &&
                 e.Message.Contains("Unauthorized access attempt")));
         }
 
@@ -387,8 +386,8 @@ namespace Sky.Tests.Controllers
             await testController.Index();
 
             // Assert
-            Assert.IsTrue(logger.LogEntries.Any(e => 
-                e.LogLevel == LogLevel.Warning && 
+            Assert.IsTrue(logger.LogEntries.Any(e =>
+                e.LogLevel == LogLevel.Warning &&
                 e.Message.Contains("File not found")));
         }
 
@@ -418,10 +417,10 @@ namespace Sky.Tests.Controllers
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-            
+
             // Storage returns null for missing files, which triggers warning log, not error
-            Assert.IsTrue(logger.LogEntries.Any(e => 
-                e.LogLevel == LogLevel.Warning && 
+            Assert.IsTrue(logger.LogEntries.Any(e =>
+                e.LogLevel == LogLevel.Warning &&
                 e.Message.Contains("File not found")));
         }
 

@@ -7,12 +7,12 @@
 
 namespace Sky.Tests.Features.Templates
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Editor.Features.Templates.GetList;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Tests for <see cref="GetTemplateListQuery"/> and <see cref="GetTemplateListQueryHandler"/>.
@@ -24,7 +24,7 @@ namespace Sky.Tests.Features.Templates
         /// Initialize test context.
         /// </summary>
         [TestInitialize]
-        public void Setup()
+        public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
         }
@@ -210,7 +210,7 @@ namespace Sky.Tests.Features.Templates
             Assert.IsTrue(result.IsSuccess);
             var htmlEditorTemplate = result.Data.Templates.First(t => t.Title == "HTML Editor Template");
             var regularTemplate = result.Data.Templates.First(t => t.Title == "Regular Template");
-            
+
             Assert.IsTrue(htmlEditorTemplate.UsesHtmlEditor, "Template with data-ccms-ceid should use HTML editor");
             Assert.IsFalse(regularTemplate.UsesHtmlEditor, "Regular template should not use HTML editor");
         }

@@ -5,9 +5,9 @@
 
 namespace Sky.Editor.Hubs
 {
-    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.SignalR;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// SignalR hub for broadcasting static page generation progress to connected clients.

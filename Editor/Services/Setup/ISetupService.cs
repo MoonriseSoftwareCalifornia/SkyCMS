@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Services.Setup
 {
+    using Cosmos.Common.Data;
     using System;
     using System.Threading.Tasks;
-    using Cosmos.Common.Data;
 
     /// <summary>
     /// Service interface for setup wizard operations.

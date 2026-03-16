@@ -1,10 +1,8 @@
+using Cosmos.EmailServices;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Cosmos.EmailServices;
-using System.Collections.Generic;
 
 namespace Sky.Tests
 {

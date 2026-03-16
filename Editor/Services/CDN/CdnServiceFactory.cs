@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Services.CDN
 {
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.Logging;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Factory for creating CDN service instances.

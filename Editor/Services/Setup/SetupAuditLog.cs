@@ -43,7 +43,7 @@ namespace Sky.Editor.Services.Setup
         /// Gets or sets the changes made (property name -> (old value, new value)).
         /// Sensitive fields are masked as "(masked)" in the audit log.
         /// </summary>
-        public Dictionary<string, (string OldValue, string NewValue)> Changes { get; set; } = new ();
+        public Dictionary<string, (string OldValue, string NewValue)> Changes { get; set; } = new();
 
         /// <summary>
         /// Gets or sets a value indicating whether this was the initial setup or a post-setup change.

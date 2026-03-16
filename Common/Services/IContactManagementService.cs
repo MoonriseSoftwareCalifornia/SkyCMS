@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Services
 {
-    using System.Threading.Tasks;
     using Cosmos.Common.Models;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for managing contacts, including adding and updating contact information, and integrating with MailChimp for email marketing.

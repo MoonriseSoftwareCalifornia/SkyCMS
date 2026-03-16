@@ -89,7 +89,7 @@ namespace Sky.Editor.Domain.Events
         /// Cache mapping event CLR types to compiled invocation delegates for each handler.
         /// Each dispatcher instance has its own cache to prevent cross-instance contamination.
         /// </summary>
-        private readonly ConcurrentDictionary<Type, List<Func<IDomainEvent, CancellationToken, Task>>> delegateCache = new ();
+        private readonly ConcurrentDictionary<Type, List<Func<IDomainEvent, CancellationToken, Task>>> delegateCache = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DomainEventDispatcher"/> class
@@ -306,7 +306,7 @@ namespace Sky.Editor.Domain.Events
                         return parameters.Length == 1 &&
                                parameters[0].ParameterType.IsAssignableFrom(eventType);
                     });
-                    
+
                     if (method != null)
                     {
                         supportsCancellation = false;

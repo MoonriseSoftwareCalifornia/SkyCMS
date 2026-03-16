@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Services.Migrations.Definitions
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Migrations.Core;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Adds LayoutNumber column to Layouts and Templates tables to support layout versioning.
@@ -67,7 +67,7 @@ namespace Sky.Editor.Services.Migrations.Definitions
         public async Task ApplyAsync(MigrationContext context)
         {
             context.Logger.LogInformation(
-                "Applying migration {MigrationId}: {Description} for provider {Provider}", 
+                "Applying migration {MigrationId}: {Description} for provider {Provider}",
                 MigrationId, Description, context.Provider);
 
             switch (context.Provider)
@@ -75,32 +75,32 @@ namespace Sky.Editor.Services.Migrations.Definitions
                 case DatabaseProvider.CosmosDb:
                     await ApplyCosmosDbAsync(context);
                     break;
-                
+
                 case DatabaseProvider.MySql:
                     await ApplyMySqlAsync(context);
                     break;
-                
+
                 case DatabaseProvider.SqlServer:
                     await ApplySqlServerAsync(context);
                     break;
-                
+
                 case DatabaseProvider.Sqlite:
                     await ApplySqliteAsync(context);
                     break;
-                
+
                 default:
                     throw new NotSupportedException($"Provider {context.Provider} is not supported by this migration");
             }
 
             context.Logger.LogInformation(
-                "✅ Migration {MigrationId} applied successfully to {Provider}", 
+                "✅ Migration {MigrationId} applied successfully to {Provider}",
                 MigrationId, context.Provider);
         }
 
         /// <inheritdoc/>
         public async Task RollbackAsync(MigrationContext context)
         {
-            context.Logger.LogWarning("Rolling back migration {MigrationId} for {Provider}", 
+            context.Logger.LogWarning("Rolling back migration {MigrationId} for {Provider}",
                 MigrationId, context.Provider);
 
             switch (context.Provider)
@@ -108,7 +108,7 @@ namespace Sky.Editor.Services.Migrations.Definitions
                 case DatabaseProvider.CosmosDb:
                     throw new NotSupportedException(
                         "Cosmos DB doesn't support schema rollback. Manual data cleanup required.");
-                
+
                 case DatabaseProvider.MySql:
                 case DatabaseProvider.Sqlite:
                     await context.DbContext.Database.ExecuteSqlRawAsync(
@@ -116,7 +116,7 @@ namespace Sky.Editor.Services.Migrations.Definitions
                     await context.DbContext.Database.ExecuteSqlRawAsync(
                         "ALTER TABLE Templates DROP COLUMN LayoutNumber");
                     break;
-                
+
                 case DatabaseProvider.SqlServer:
                     await context.DbContext.Database.ExecuteSqlRawAsync(
                         "ALTER TABLE [Layouts] DROP COLUMN [LayoutNumber]");
@@ -156,23 +156,23 @@ namespace Sky.Editor.Services.Migrations.Definitions
                 ADD COLUMN LayoutNumber INT NOT NULL DEFAULT 0");
 
             context.Logger.LogDebug("Creating indexes for LayoutNumber");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Layout_LayoutNumber 
                 ON Layouts(LayoutNumber)");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Layout_LayoutNumber_Version 
                 ON Layouts(LayoutNumber, Version)");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Layout_LayoutNumber_IsDefault_Published 
                 ON Layouts(LayoutNumber, IsDefault, Published)");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Template_LayoutNumber 
                 ON Templates(LayoutNumber)");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Template_LayoutNumber_LayoutId 
                 ON Templates(LayoutNumber, LayoutId)");
@@ -196,23 +196,23 @@ namespace Sky.Editor.Services.Migrations.Definitions
                 ADD [LayoutNumber] INT NOT NULL DEFAULT 0");
 
             context.Logger.LogDebug("Creating indexes for LayoutNumber");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX [IX_Layout_LayoutNumber] 
                 ON [Layouts]([LayoutNumber])");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX [IX_Layout_LayoutNumber_Version] 
                 ON [Layouts]([LayoutNumber], [Version])");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX [IX_Layout_LayoutNumber_IsDefault_Published] 
                 ON [Layouts]([LayoutNumber], [IsDefault], [Published])");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX [IX_Template_LayoutNumber] 
                 ON [Templates]([LayoutNumber])");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX [IX_Template_LayoutNumber_LayoutId] 
                 ON [Templates]([LayoutNumber], [LayoutId])");
@@ -237,23 +237,23 @@ namespace Sky.Editor.Services.Migrations.Definitions
                 ADD COLUMN LayoutNumber INTEGER NOT NULL DEFAULT 0");
 
             context.Logger.LogDebug("Creating indexes for LayoutNumber");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Layout_LayoutNumber 
                 ON Layouts(LayoutNumber)");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Layout_LayoutNumber_Version 
                 ON Layouts(LayoutNumber, Version)");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Layout_LayoutNumber_IsDefault_Published 
                 ON Layouts(LayoutNumber, IsDefault, Published)");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Template_LayoutNumber 
                 ON Templates(LayoutNumber)");
-            
+
             await context.DbContext.Database.ExecuteSqlRawAsync(@"
                 CREATE INDEX IX_Template_LayoutNumber_LayoutId 
                 ON Templates(LayoutNumber, LayoutId)");

@@ -7,24 +7,17 @@
 
 namespace Sky.Tests.Controllers
 {
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Services;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using SendGrid.Helpers.Errors.Model;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
-    using Sky.Editor.Models;
     using Sky.Tests;
     using System;
-    using System.Linq;
     using System.Security.Claims;
-    using System.Text;
     using System.Text.Json;
     using System.Threading.Tasks;
 
@@ -32,7 +25,6 @@ namespace Sky.Tests.Controllers
     /// Comprehensive tests for the unified /Editor/Edit endpoint.
     /// Tests command routing, encryption, validation, error handling, and response formats.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class EditorUnifiedEndpointTests : SkyCmsTestBase
     {
@@ -218,48 +210,52 @@ namespace Sky.Tests.Controllers
         // ============================================================================
 
         /// <summary>
-        /// Test that CryptoContextToken is validated when provided.
+        /// Tests that invalid requests (null model or invalid crypto token) return bad request.
         /// </summary>
         [TestMethod]
-        public async Task Edit_WithInvalidCryptoContextToken_ReturnsBadRequest()
+        public async Task Edit_WithInvalidRequests_ReturnsBadRequest()
         {
-            // Arrange
-            var article = await CreateArticleAsync("Test Article", TestUserId);
-            await SaveArticleAsync(article, TestUserId);
-
-            var model = new EditPostViewModel
+            var scenarios = new[]
             {
-                ArticleNumber = article.ArticleNumber,
-                Command = "SaveBody",
-                Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
-                CryptoContextToken = "invalid-token-12345",
-                Title = article.Title,
-                VersionNumber = article.VersionNumber
+                new
+                {
+                    Name = "NullModel",
+                    BuildModel = (Func<Task<EditPostViewModel>>)(() =>
+                        Task.FromResult<EditPostViewModel>(null)),
+                },
+                new
+                {
+                    Name = "InvalidCryptoContextToken",
+                    BuildModel = (Func<Task<EditPostViewModel>>)(async () =>
+                    {
+                        var article = await CreateArticleAsync("Test Article", TestUserId);
+                        await SaveArticleAsync(article, TestUserId);
+
+                        return new EditPostViewModel
+                        {
+                            ArticleNumber = article.ArticleNumber,
+                            Command = "SaveBody",
+                            Payload = CryptoJsDecryption.Encrypt("<p>Content</p>"),
+                            CryptoContextToken = "invalid-token-12345",
+                            Title = article.Title,
+                            VersionNumber = article.VersionNumber
+                        };
+                    }),
+                },
             };
 
-            // Act
-            var result = await controller.Edit(model);
-
-            // Assert - Invalid token returns BadRequest
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult),
-                "Invalid CryptoContextToken should return BadRequest");
+            foreach (var scenario in scenarios)
+            {
+                var model = await scenario.BuildModel();
+                var result = await controller.Edit(model!);
+                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult),
+                    $"{scenario.Name} should return BadRequest");
+            }
         }
 
         // ============================================================================
         // VALIDATION TESTS
         // ============================================================================
-
-        /// <summary>
-        /// Test that null model returns BadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Edit_WithNullModel_ReturnsBadRequest()
-        {
-            // Act & Assert
-            var result = await controller.Edit(null!);
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult), 
-                "Null model should return BadRequest");
-        }
 
         /// <summary>
         /// Test that SaveCode validates against nested editable regions.
@@ -448,7 +444,7 @@ namespace Sky.Tests.Controllers
             var updated1 = await Mediator.QueryAsync(
                 new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
             Assert.IsNotNull(updated1.Content, "Content should not be null after first save");
-            Assert.IsTrue(updated1.Content.Contains("First save"), 
+            Assert.IsTrue(updated1.Content.Contains("First save"),
                 $"Expected content to contain 'First save', but got: {updated1.Content}");
 
             // Second save
@@ -551,7 +547,7 @@ namespace Sky.Tests.Controllers
             // Verify content unchanged when region not found
             var updated = await Mediator.QueryAsync(
                 new GetArticleByArticleNumberQuery { ArticleNumber = article.ArticleNumber });
-            Assert.AreEqual(originalContent, updated.Content, 
+            Assert.AreEqual(originalContent, updated.Content,
                 "Content should remain unchanged when EditorId doesn't exist");
         }
 
@@ -580,9 +576,9 @@ namespace Sky.Tests.Controllers
             // Assert - Should return error for invalid/empty command
             Assert.IsNotNull(result);
             Assert.IsTrue(
-                result is BadRequestObjectResult || 
+                result is BadRequestObjectResult ||
                 (result is JsonResult jr && JsonDocument.Parse(
-                    JsonSerializer.Serialize(jr.Value)).RootElement.TryGetProperty("ServerSideSuccess", out var success) 
+                    JsonSerializer.Serialize(jr.Value)).RootElement.TryGetProperty("ServerSideSuccess", out var success)
                     && !success.GetBoolean()),
                 "Empty command should result in error");
         }
@@ -617,7 +613,7 @@ namespace Sky.Tests.Controllers
             var response = JsonDocument.Parse(JsonSerializer.Serialize(jsonResult.Value)).RootElement;
 
             // Verify response contains Model
-            Assert.IsTrue(response.TryGetProperty("Model", out var modelElement), 
+            Assert.IsTrue(response.TryGetProperty("Model", out var modelElement),
                 "Response should contain Model property");
             Assert.IsTrue(response.GetProperty("ServerSideSuccess").GetBoolean(),
                 "Save should be successful");

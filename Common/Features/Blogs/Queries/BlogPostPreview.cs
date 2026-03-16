@@ -8,7 +8,6 @@
 namespace Cosmos.Common.Features.Blogs.Queries
 {
     using System;
-    using System.Collections.Generic;
 
     /// <summary>
     /// A preview/summary of a blog post, typically used in lists or stream views.

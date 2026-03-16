@@ -8,16 +8,12 @@
 namespace Sky.Tests.Services.Templates;
 
 using Cosmos.Common.Data;
-using Cosmos.Common.Models;
 using Cosmos.DynamicConfig;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Sky.Editor.Data.Logic;
-using Sky.Editor.Services.Html;
 using Sky.Editor.Services.Templates;
-using Sky.Editor.Services.Templates.Models;
 
 /// <summary>
 /// Unit tests for TemplateService template application functionality.
@@ -56,7 +52,7 @@ public class TemplateServiceTests
         _mockLogger = new Mock<ILogger<TemplateService>>();
         _mockEnvironment = new Mock<IWebHostEnvironment>();
         _mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
-        
+
         // Setup mock to return a test tenant ID
         _mockConfigProvider
             .Setup(x => x.GetCurrentTenantIdAsync())
@@ -595,17 +591,17 @@ public class TemplateServiceTests
     {
         Console.WriteLine("Test started");
         var templateId = Guid.NewGuid();
-        
+
         Console.WriteLine("Seeding data...");
         await SeedTemplateAndArticlesAsync(templateId, articleCount: 1);
-        
+
         // Clear EF Core change tracker to avoid contamination
         _dbContext!.ChangeTracker.Clear();  // ← ADD THIS
 
         Console.WriteLine("Calling ApplyTemplateToArticleAsync...");
         var nonExistentArticleNumber = 99999;
         var result = await _templateService!.ApplyTemplateToArticleAsync(nonExistentArticleNumber, templateId);
-        
+
         Console.WriteLine($"Result received: Success={result.Success}");
         Assert.IsFalse(result.Success);
     }
@@ -1661,7 +1657,7 @@ public class TemplateServiceTests
         {
             // Detach all tracked entities to ensure fresh query from database
             _dbContext!.ChangeTracker.Clear();
-            
+
             var v2 = await _dbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == articleNumber && a.VersionNumber == 2);
 
@@ -1704,7 +1700,7 @@ public class TemplateServiceTests
         {
             // Detach all tracked entities to ensure fresh query from database
             _dbContext!.ChangeTracker.Clear();
-            
+
             var v2 = await _dbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == articleNumber && a.VersionNumber == 2);
             Assert.IsNotNull(v2!.Published, $"Selected article {articleNumber} v2 should be published");
@@ -1716,7 +1712,7 @@ public class TemplateServiceTests
         {
             // Detach all tracked entities to ensure fresh query from database
             _dbContext!.ChangeTracker.Clear();
-            
+
             var v2 = await _dbContext.Articles
                 .FirstOrDefaultAsync(a => a.ArticleNumber == articleNumber && a.VersionNumber == 2);
             Assert.IsNull(v2!.Published, $"Non-selected article {articleNumber} v2 should remain draft");

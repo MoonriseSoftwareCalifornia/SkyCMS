@@ -3,11 +3,6 @@
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Threading.Tasks;
 using Cosmos.DynamicConfig;
 using Cosmos.DynamicConfig.Configurations;
 using Microsoft.AspNetCore.Http;
@@ -15,31 +10,27 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Net;
 
 namespace Sky.Tests.DynamicConfig
 {
     [TestClass]
-    [DoNotParallelize]
     public class DynamicConfigurationProviderRangeTests
     {
         private static string TempFilePath(string name) => Path.Combine(Path.GetTempPath(), name);
 
         private static string dns1 = "acme-range.test";
         private static string dns2 = "range-target.test";
-        private static string db1 = "acme-range.db";
-        private static string db2 = "range-target.db";
 
         private static string SqliteConnectionString(string filePath)
         {
             return $"Data Source={filePath};";
         }
 
-        private static string GetConfigFilePath()
-        {
-            return TempFilePath($"skycms-config-{Guid.NewGuid()}.db");
-        }
+        private static string GetConfigFilePath() => TempFilePath($"skycms-config-{Guid.NewGuid():N}.db");
+
+        private static string GetTenantDbFilePath(string prefix) => TempFilePath($"{prefix}-{Guid.NewGuid():N}.db");
 
         private static IHttpContextAccessor CreateHttpContextAccessor(string host)
         {
@@ -71,8 +62,8 @@ namespace Sky.Tests.DynamicConfig
         public async Task GetDatabaseConnectionStringAsync_TrustedProxy_CidrEntry_AllowsXOrigin()
         {
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
-            var tenantB = TempFilePath(db2);
+            var tenantA = GetTenantDbFilePath("acme-range");
+            var tenantB = GetTenantDbFilePath("range-target");
             foreach (var f in new[] { configDb, tenantA, tenantB }) { if (File.Exists(f)) File.Delete(f); }
 
             var connA = new Connection { DomainNames = new[] { dns1 }, DbConn = SqliteConnectionString(tenantA), StorageConn = "s1", WebsiteUrl = $"https://{dns1}", ResourceGroup = "rg" };
@@ -107,8 +98,8 @@ namespace Sky.Tests.DynamicConfig
         public async Task GetDatabaseConnectionStringAsync_TrustedProxy_RangeEntry_AllowsXOrigin()
         {
             var configDb = GetConfigFilePath();
-            var tenantA = TempFilePath(db1);
-            var tenantB = TempFilePath(db2);
+            var tenantA = GetTenantDbFilePath("acme-range");
+            var tenantB = GetTenantDbFilePath("range-target");
             foreach (var f in new[] { configDb, tenantA, tenantB }) { if (File.Exists(f)) File.Delete(f); }
 
             var connA = new Connection { DomainNames = new[] { dns1 }, DbConn = SqliteConnectionString(tenantA), StorageConn = "s1", WebsiteUrl = $"https://{dns1}", ResourceGroup = "rg" };

@@ -5,8 +5,6 @@
 
 namespace Sky.Tests.Editor.Features.Articles
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
@@ -18,6 +16,8 @@ namespace Sky.Tests.Editor.Features.Articles
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Base class for article-related unit tests with shared setup and teardown.
@@ -69,18 +69,18 @@ namespace Sky.Tests.Editor.Features.Articles
                 .Setup(x => x.ValidateTitle(It.IsAny<string>(), It.IsAny<int?>()))
                 .ReturnsAsync(true);
 
-        MockTitleChangeService
-            .Setup(x => x.BuildArticleUrl(It.IsAny<Article>()))
-            .Returns<Article>(a => a.Title.ToLower().Replace(" ", "-"));
+            MockTitleChangeService
+                .Setup(x => x.BuildArticleUrl(It.IsAny<Article>()))
+                .Returns<Article>(a => a.Title.ToLower().Replace(" ", "-"));
 
-        MockCatalogService
-            .Setup(x => x.UpsertAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Article a, CancellationToken ct) => new CatalogEntry());
+            MockCatalogService
+                .Setup(x => x.UpsertAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Article a, CancellationToken ct) => new CatalogEntry());
 
-        MockPublishingService
-            .Setup(x => x.PublishAsync(It.IsAny<Article>()))
-            .ReturnsAsync(new List<Sky.Editor.Services.CDN.CdnResult>());
-    }
+            MockPublishingService
+                .Setup(x => x.PublishAsync(It.IsAny<Article>()))
+                .ReturnsAsync(new List<Sky.Editor.Services.CDN.CdnResult>());
+        }
 
         [TestCleanup]
         public void TestCleanup()

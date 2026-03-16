@@ -51,15 +51,15 @@ public class EmailConfigurationService : IEmailConfigurationService
             // Try environment variables first (highest priority)
             settings.SendGridApiKey = configuration["CosmosSendGridApiKey"];
             settings.AzureEmailConnectionString = configuration.GetConnectionString("AzureCommunicationConnection");
-            settings.SmtpHost = configuration["SmtpEmailProviderOptions:Host"] 
+            settings.SmtpHost = configuration["SmtpEmailProviderOptions:Host"]
                 ?? configuration["SmtpEmailProviderOptions__Host"];
             settings.SmtpPort = int.TryParse(
-                configuration["SmtpEmailProviderOptions:Port"] 
-                ?? configuration["SmtpEmailProviderOptions__Port"], 
+                configuration["SmtpEmailProviderOptions:Port"]
+                ?? configuration["SmtpEmailProviderOptions__Port"],
                 out var port) ? port : 587;
-            settings.SmtpUsername = configuration["SmtpEmailProviderOptions:UserName"] 
+            settings.SmtpUsername = configuration["SmtpEmailProviderOptions:UserName"]
                 ?? configuration["SmtpEmailProviderOptions__UserName"];
-            settings.SmtpPassword = configuration["SmtpEmailProviderOptions:Password"] 
+            settings.SmtpPassword = configuration["SmtpEmailProviderOptions:Password"]
                 ?? configuration["SmtpEmailProviderOptions__Password"];
             settings.SenderEmail = configuration["AdminEmail"];
 
@@ -69,7 +69,7 @@ public class EmailConfigurationService : IEmailConfigurationService
                 string.IsNullOrEmpty(settings.SmtpHost))
             {
                 logger.LogInformation("Email settings not found in environment variables, checking database");
-                
+
                 var dbSettings = await dbContext.Settings
                     .Where(s => s.Group == "EMAIL")
                     .ToListAsync();

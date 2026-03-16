@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Templates.GetEditable
 {
-    using System;
     using Cosmos.Common.Features.Shared;
+    using System;
 
     /// <summary>
     /// Command to get the latest editable page design version for a template.

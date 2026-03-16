@@ -4,9 +4,6 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-
 namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 {
     /// <summary>
@@ -20,7 +17,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         public static IEnumerable<object[]> GetTestProviders()
         {
             var providers = TestUtilities.GetAvailableProviders();
-            
+
             foreach (var provider in providers)
             {
                 yield return new object[] { provider };
@@ -49,7 +46,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -68,7 +65,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act - Search with lowercase email (should still find via normalized email)
@@ -86,7 +83,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var nonExistentEmail = $"nonexistent_{Guid.NewGuid():N}@testdomain.com";
 
             // Act
@@ -122,7 +119,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -141,7 +138,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act - Search with different casing
@@ -162,7 +159,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var nonExistentUsername = $"nonexistent_{Guid.NewGuid():N}";
 
             // Act
@@ -183,7 +180,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var passwordHash = "AQAAAAIAAYagAAAAEDummyHashForTestingPurposes12345";
 
@@ -203,7 +200,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -220,7 +217,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var passwordHash = "AQAAAAIAAYagAAAAETestHash123456";
             await userStore.SetPasswordHashAsync(user, passwordHash, CancellationToken.None);
@@ -240,7 +237,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -261,7 +258,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -278,7 +275,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             Assert.IsFalse(user.EmailConfirmed, $"Failed for provider: {provider.DisplayName}");
 
@@ -300,7 +297,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             await userStore.SetEmailConfirmedAsync(user, true, CancellationToken.None);
             await userStore.UpdateAsync(user);
@@ -322,7 +319,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var newEmail = $"newemail_{Guid.NewGuid():N}@testdomain.com";
 
@@ -343,7 +340,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
@@ -361,7 +358,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             // Arrange
             InitializeForProvider(provider);
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            
+
             var user = await GetMockRandomUserAsync(userStore);
             var newNormalizedEmail = $"NEWEMAIL_{Guid.NewGuid():N}@TESTDOMAIN.COM";
 

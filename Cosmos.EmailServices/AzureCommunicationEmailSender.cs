@@ -7,14 +7,11 @@
 
 namespace Cosmos.EmailServices
 {
-    using System.Diagnostics.CodeAnalysis;
-    using System.Net;
     using Azure.Communication.Email;
-    using Azure.Core;
     using Azure.Identity;
-    using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Options;
+    using System.Net;
 
     /// <summary>
     /// Email sender for Azure Communications.

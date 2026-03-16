@@ -7,10 +7,6 @@
 
 namespace Sky.Editor.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -32,7 +28,10 @@ namespace Sky.Editor.Controllers
     using Sky.Editor.Models.Blogs;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
-    using Sky.Editor.Services.Titles;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Editor-facing controller for managing blog streams (multi-blog support) and their entries (blog posts).
@@ -133,8 +132,7 @@ namespace Sky.Editor.Controllers
             // Normalize blog key from title
             model.BlogKey = slugService.Normalize(model.Title);
 
-            var defaultLayoutViewModel = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
-            var defaultLayout = defaultLayoutViewModel != null ? await db.Layouts.FirstOrDefaultAsync(l => l.Id == defaultLayoutViewModel.Id) : null;
+            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
 
             var blogStreamTemplate = await db.Templates.FirstOrDefaultAsync(t => t.LayoutId == defaultLayout.Id && t.PageType == "blog-stream");
 
@@ -148,7 +146,7 @@ namespace Sky.Editor.Controllers
             if (!string.IsNullOrWhiteSpace(heroImage) && Uri.IsWellFormedUriString(heroImage, UriKind.Absolute))
             {
                 var uri = new Uri(heroImage);
-                
+
                 // Only convert if it's from the current host
                 if (uri.Host.Equals(Request.Host.Host, StringComparison.OrdinalIgnoreCase))
                 {
@@ -197,14 +195,14 @@ namespace Sky.Editor.Controllers
         [HttpGet("{id:guid}/edit")]
         public async Task<IActionResult> Edit(Guid id)
         {
-            var query = new GetBlogStreamQuery 
-            { 
-                Id = id, 
-                UserId = Guid.Parse(await GetUserId()) 
+            var query = new GetBlogStreamQuery
+            {
+                Id = id,
+                UserId = Guid.Parse(await GetUserId())
             };
-            
+
             var result = await mediator.QueryAsync(query);
-            
+
             if (!result.IsSuccess || result.Data == null)
             {
                 return NotFound();
@@ -282,7 +280,7 @@ namespace Sky.Editor.Controllers
         {
             var query = new GetBlogStreamQuery { Id = id };
             var result = await mediator.QueryAsync(query);
-            
+
             if (!result.IsSuccess || result.Data == null)
             {
                 return NotFound();
@@ -392,7 +390,7 @@ namespace Sky.Editor.Controllers
         {
             var blogStreamType = (int)ArticleType.BlogStream;
             var blog = await db.Articles.FirstOrDefaultAsync(b => b.BlogKey == blogKey && b.ArticleType == blogStreamType);
-            
+
             if (blog == null)
             {
                 return NotFound("Blog not found.");
@@ -403,8 +401,7 @@ namespace Sky.Editor.Controllers
                 return BadRequest("Title is required.");
             }
 
-            var defaultLayoutViewModel = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
-            var defaultLayout = defaultLayoutViewModel != null ? await db.Layouts.FirstOrDefaultAsync(l => l.Id == defaultLayoutViewModel.Id) : null;
+            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
 
             var userId = Guid.Parse(await GetUserId());
 

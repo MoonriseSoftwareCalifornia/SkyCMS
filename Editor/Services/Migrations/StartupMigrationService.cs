@@ -7,20 +7,18 @@
 
 namespace Sky.Editor.Services.Migrations
 {
-    using System;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
-    using Cosmos.Common;
     using Cosmos.Common.Data;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Layout;
     using Sky.Editor.Services.Migrations.Core;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for running database migrations during application startup.

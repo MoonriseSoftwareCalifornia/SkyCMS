@@ -7,16 +7,8 @@
 
 namespace Sky.Editor.Services.Setup
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net.Mail;
-    using System.Threading.Tasks;
-    using Cosmos.BlobService;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
@@ -24,10 +16,13 @@ namespace Sky.Editor.Services.Setup
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
-    using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Services.Layouts;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
     /// Service for setup wizard operations.
@@ -56,28 +51,97 @@ namespace Sky.Editor.Services.Setup
         private const string AuditLogName = "SettingChange";
         private const string AuditLogGroup = "SETUP";
 
-        private readonly ISetupContext context;
+        private readonly IConfiguration configuration;
+        private readonly ILogger<SetupService> logger;
+        private readonly IMemoryCache memoryCache;
         private readonly ILayoutImportService layoutImportService;
         private readonly CommonMediator mediator;
-        private readonly ILogger<SetupService> logger;
+
+        private readonly UserManager<IdentityUser> userManager;
+        private readonly RoleManager<IdentityRole> roleManager;
+        private readonly ApplicationDbContext applicationDbContext;
+        private readonly IDatabaseConnectionTester databaseConnectionTester;
+        private readonly IStorageConnectionTester storageConnectionTester;
+        private readonly ISendGridEmailTester sendGridEmailTester;
+        private readonly ISmtpEmailTester smtpEmailTester;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SetupService"/> class.
         /// </summary>
-        /// <param name="context">Setup context providing configuration, cache, identity, and database.</param>
+        /// <param name="configuration">Configuration.</param>
         /// <param name="logger">Logger.</param>
+        /// <param name="memoryCache">Memory cache.</param>
+        /// <param name="userManager">User manager.</param>
+        /// <param name="roleManager">Role manager.</param>
+        /// <param name="applicationDbContext">Database context.</param>
         /// <param name="layoutImportService">Layout import service.</param>
         /// <param name="mediator">Mediator.</param>
         public SetupService(
-            ISetupContext context,
+            IConfiguration configuration,
             ILogger<SetupService> logger,
+            IMemoryCache memoryCache,
+            UserManager<IdentityUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext applicationDbContext,
             ILayoutImportService layoutImportService,
             CommonMediator mediator)
+            : this(
+                configuration,
+                logger,
+                memoryCache,
+                userManager,
+                roleManager,
+                applicationDbContext,
+                layoutImportService,
+                mediator,
+                new DatabaseConnectionTester(),
+                new StorageConnectionTester(memoryCache),
+                new SendGridEmailTester(),
+                new SmtpEmailTester())
         {
-            this.context = context;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SetupService"/> class.
+        /// </summary>
+        /// <param name="configuration">Configuration.</param>
+        /// <param name="logger">Logger.</param>
+        /// <param name="memoryCache">Memory cache.</param>
+        /// <param name="userManager">User manager.</param>
+        /// <param name="roleManager">Role manager.</param>
+        /// <param name="applicationDbContext">Database context.</param>
+        /// <param name="layoutImportService">Layout import service.</param>
+        /// <param name="mediator">Mediator.</param>
+        /// <param name="databaseConnectionTester">Database connection tester.</param>
+        /// <param name="storageConnectionTester">Storage connection tester.</param>
+        /// <param name="sendGridEmailTester">SendGrid tester.</param>
+        /// <param name="smtpEmailTester">SMTP tester.</param>
+        public SetupService(
+            IConfiguration configuration,
+            ILogger<SetupService> logger,
+            IMemoryCache memoryCache,
+            UserManager<IdentityUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext applicationDbContext,
+            ILayoutImportService layoutImportService,
+            CommonMediator mediator,
+            IDatabaseConnectionTester databaseConnectionTester,
+            IStorageConnectionTester storageConnectionTester,
+            ISendGridEmailTester sendGridEmailTester,
+            ISmtpEmailTester smtpEmailTester)
+        {
+            this.configuration = configuration;
             this.logger = logger;
+            this.memoryCache = memoryCache;
+            this.userManager = userManager;
+            this.roleManager = roleManager;
+            this.applicationDbContext = applicationDbContext;
             this.layoutImportService = layoutImportService;
             this.mediator = mediator;
+            this.databaseConnectionTester = databaseConnectionTester;
+            this.storageConnectionTester = storageConnectionTester;
+            this.sendGridEmailTester = sendGridEmailTester;
+            this.smtpEmailTester = smtpEmailTester;
         }
 
         /// <inheritdoc/>
@@ -177,27 +241,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                // Test connection by creating a temporary context
-                using var tempContext = new ApplicationDbContext(connectionString);
-                var canConnect = await tempContext.Database.CanConnectAsync();
-
-                if (!canConnect)
-                {
-                    return new TestResult
-                    {
-                        Success = false,
-                        Message = "Unable to connect to database"
-                    };
-                }
-
-                var dbStatus = ApplicationDbContext.EnsureDatabaseExists(connectionString);
-
-                return new TestResult
-                {
-                    Success = dbStatus == DbStatus.ExistsWithNoUsers,
-                    Message = $"Database connection successful. Status: {dbStatus}",
-                    Status = dbStatus
-                };
+                return await databaseConnectionTester.TestConnectionAsync(connectionString);
             }
             catch (Exception ex)
             {
@@ -238,28 +282,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var storageContext = new StorageContext(connectionString, context.MemoryCache);
-
-                // Enable static website to ensure proper configuration for Azure, AWS S3, etc.
-                await storageContext.EnableAzureStaticWebsite();
-
-                // Test by listing root directory
-                var result = await storageContext.GetFilesAndDirectories("/");
-
-                if (result == null)
-                {
-                    return new TestResult
-                    {
-                        Success = false,
-                        Message = "Unable to connect to storage"
-                    };
-                }
-
-                return new TestResult
-                {
-                    Success = true,
-                    Message = $"Storage connection successful. Found {result.Count} items in root."
-                };
+                return await storageConnectionTester.TestConnectionAsync(connectionString);
             }
             catch (Exception ex)
             {
@@ -366,7 +389,7 @@ namespace Sky.Editor.Services.Setup
         }
 
         /// <summary>
-        /// Populates setup configuration from environment variables and context.Configuration.
+        /// Populates setup configuration from environment variables and configuration.
         /// </summary>
         /// <param name="config">Setup configuration to populate.</param>
         private void GetEnvironmentVariables(SetupConfiguration config)
@@ -377,8 +400,8 @@ namespace Sky.Editor.Services.Setup
             }
 
             // Storage Configuration
-            var storageConnectionString = context.Configuration.GetConnectionString("StorageConnectionString");
-            var blobPublicUrl = context.Configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? context.Configuration.GetValue<string>("BlobPublicUrl");
+            var storageConnectionString = configuration.GetConnectionString("StorageConnectionString");
+            var blobPublicUrl = configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? configuration.GetValue<string>("BlobPublicUrl");
 
             if (!string.IsNullOrEmpty(storageConnectionString))
             {
@@ -393,11 +416,11 @@ namespace Sky.Editor.Services.Setup
             }
 
             // Publisher Configuration
-            var publisherUrl = context.Configuration["CosmosPublisherUrl"];
-            var staticWebPages = context.Configuration["CosmosStaticWebPages"];
-            var cosmosRequiresAuth = context.Configuration["CosmosRequiresAuthentication"];
-            var microsoftAppId = context.Configuration["MicrosoftAppId"];
-            var allowedFileTypes = context.Configuration["AllowedFileTypes"];
+            var publisherUrl = configuration["CosmosPublisherUrl"];
+            var staticWebPages = configuration["CosmosStaticWebPages"];
+            var cosmosRequiresAuth = configuration["CosmosRequiresAuthentication"];
+            var microsoftAppId = configuration["MicrosoftAppId"];
+            var allowedFileTypes = configuration["AllowedFileTypes"];
 
             if (!string.IsNullOrEmpty(publisherUrl))
             {
@@ -435,7 +458,7 @@ namespace Sky.Editor.Services.Setup
             }
 
             // Admin Configuration
-            var senderEmail = context.Configuration["AdminEmail"] ?? context.Configuration["SenderEmail"];
+            var senderEmail = configuration["AdminEmail"] ?? configuration["SenderEmail"];
             if (!string.IsNullOrEmpty(senderEmail))
             {
                 config.SenderEmail = senderEmail;
@@ -443,48 +466,48 @@ namespace Sky.Editor.Services.Setup
             }
 
             // Database Configuration (optional - usually in appsettings.json)
-            var dbConnectionString = context.Configuration.GetConnectionString("ApplicationDbContextConnection");
+            var dbConnectionString = configuration.GetConnectionString("ApplicationDbContextConnection");
             if (!string.IsNullOrEmpty(dbConnectionString) && string.IsNullOrEmpty(config.DatabaseConnectionString))
             {
                 config.DatabaseConnectionString = dbConnectionString;
             }
 
             // Email Provider Configuration
-            var sendGridApiKey = context.Configuration["CosmosSendGridApiKey"];
+            var sendGridApiKey = configuration["CosmosSendGridApiKey"];
             if (!string.IsNullOrEmpty(sendGridApiKey))
             {
                 config.SendGridApiKey = sendGridApiKey;
             }
 
-            var smtpHost = context.Configuration["SmtpEmailProviderOptions:Host"]
-                  ?? context.Configuration["SmtpEmailProviderOptions__Host"];
+            var smtpHost = configuration["SmtpEmailProviderOptions:Host"]
+                  ?? configuration["SmtpEmailProviderOptions__Host"];
             if (!string.IsNullOrEmpty(smtpHost))
             {
                 config.SmtpHost = smtpHost;
             }
 
-            var smtpPort = context.Configuration["SmtpEmailProviderOptions:Port"]
-                  ?? context.Configuration["SmtpEmailProviderOptions__Port"];
+            var smtpPort = configuration["SmtpEmailProviderOptions:Port"]
+                  ?? configuration["SmtpEmailProviderOptions__Port"];
             if (!string.IsNullOrEmpty(smtpPort))
             {
                 config.SmtpPort = smtpPort;
             }
 
-            var smtpUsername = context.Configuration["SmtpEmailProviderOptions:UserName"]
-                  ?? context.Configuration["SmtpEmailProviderOptions__UserName"];
+            var smtpUsername = configuration["SmtpEmailProviderOptions:UserName"]
+                  ?? configuration["SmtpEmailProviderOptions__UserName"];
             if (!string.IsNullOrEmpty(smtpUsername))
             {
                 config.SmtpUsername = smtpUsername;
             }
 
-            var smtpPassword = context.Configuration["SmtpEmailProviderOptions:Password"]
-                  ?? context.Configuration["SmtpEmailProviderOptions__Password"];
+            var smtpPassword = configuration["SmtpEmailProviderOptions:Password"]
+                  ?? configuration["SmtpEmailProviderOptions__Password"];
             if (!string.IsNullOrEmpty(smtpPassword))
             {
                 config.SmtpPassword = smtpPassword;
             }
 
-            var azureEmailConnectionString = context.Configuration.GetConnectionString("AzureCommunicationConnection");
+            var azureEmailConnectionString = configuration.GetConnectionString("AzureCommunicationConnection");
 
             if (!string.IsNullOrEmpty(sendGridApiKey)
                 || !string.IsNullOrEmpty(smtpHost)
@@ -495,7 +518,7 @@ namespace Sky.Editor.Services.Setup
             }
 
             // CloudFront Configuration
-            var cloudFrontData = context.Configuration["CloudFrontConfig"];
+            var cloudFrontData = configuration["CloudFrontConfig"];
             if (!string.IsNullOrEmpty(cloudFrontData))
             {
                 try
@@ -527,7 +550,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var setting = await context.Database.Settings
+                var setting = await applicationDbContext.Settings
                     .FirstOrDefaultAsync(s => s.Group == DraftStateGroup && s.Name == DraftStateKey);
 
                 if (setting == null || string.IsNullOrWhiteSpace(setting.Value))
@@ -552,7 +575,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var setting = await context.Database.Settings
+                var setting = await applicationDbContext.Settings
                     .FirstOrDefaultAsync(s => s.Group == DraftStateGroup && s.Name == DraftStateKey);
 
                 var json = JsonConvert.SerializeObject(config);
@@ -567,7 +590,7 @@ namespace Sky.Editor.Services.Setup
                         Description = "Temporary draft state for setup wizard session",
                         IsRequired = false
                     };
-                    context.Database.Settings.Add(setting);
+                    applicationDbContext.Settings.Add(setting);
                 }
                 else
                 {
@@ -575,7 +598,7 @@ namespace Sky.Editor.Services.Setup
                     setting.Description = "Temporary draft state for setup wizard session";
                 }
 
-                await context.Database.SaveChangesAsync();
+                await applicationDbContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -592,13 +615,13 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var setting = await context.Database.Settings
+                var setting = await applicationDbContext.Settings
                     .FirstOrDefaultAsync(s => s.Group == DraftStateGroup && s.Name == DraftStateKey);
 
                 if (setting != null)
                 {
-                    context.Database.Settings.Remove(setting);
-                    await context.Database.SaveChangesAsync();
+                    applicationDbContext.Settings.Remove(setting);
+                    await applicationDbContext.SaveChangesAsync();
                     logger.LogInformation("Deleted draft setup state from settings");
                 }
             }
@@ -616,7 +639,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var setting = await context.Database.Settings
+                var setting = await applicationDbContext.Settings
                     .FirstOrDefaultAsync(s => s.Group == CommittedStateGroup && s.Name == CommittedStateKey);
 
                 if (setting == null || string.IsNullOrWhiteSpace(setting.Value))
@@ -635,13 +658,13 @@ namespace Sky.Editor.Services.Setup
 
         /// <summary>
         /// Saves committed setup state to Settings table.
-        /// Called at the end of setup completion to persist final context.Configuration.
+        /// Called at the end of setup completion to persist final configuration.
         /// </summary>
         private async Task SaveCommittedStateAsync(SetupConfiguration config)
         {
             try
             {
-                var setting = await context.Database.Settings
+                var setting = await applicationDbContext.Settings
                     .FirstOrDefaultAsync(s => s.Group == CommittedStateGroup && s.Name == CommittedStateKey);
 
                 var json = JsonConvert.SerializeObject(config);
@@ -656,7 +679,7 @@ namespace Sky.Editor.Services.Setup
                         Description = "Final setup wizard configuration",
                         IsRequired = false
                     };
-                    context.Database.Settings.Add(setting);
+                    applicationDbContext.Settings.Add(setting);
                 }
                 else
                 {
@@ -664,7 +687,7 @@ namespace Sky.Editor.Services.Setup
                     setting.Description = "Final setup wizard configuration";
                 }
 
-                await context.Database.SaveChangesAsync();
+                await applicationDbContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -715,8 +738,8 @@ namespace Sky.Editor.Services.Setup
                     IsRequired = false
                 };
 
-                context.Database.Settings.Add(setting);
-                await context.Database.SaveChangesAsync();
+                applicationDbContext.Settings.Add(setting);
+                await applicationDbContext.SaveChangesAsync();
 
                 logger.LogInformation(
                     "Audit log recorded for setup session {SessionId}: {ChangeCount} changes by {User}",
@@ -855,39 +878,13 @@ namespace Sky.Editor.Services.Setup
         }
 
         /// <summary>
-        /// Tests SendGrid context.Configuration.
+        /// Tests SendGrid configuration.
         /// </summary>
         private async Task<TestResult> TestSendGridAsync(string apiKey, string senderEmail, string recipient)
         {
             try
             {
-                var client = new SendGrid.SendGridClient(apiKey);
-                var from = new SendGrid.Helpers.Mail.EmailAddress(senderEmail, "SkyCMS Setup");
-                var to = new SendGrid.Helpers.Mail.EmailAddress(recipient);
-                var msg = SendGrid.Helpers.Mail.MailHelper.CreateSingleEmail(
-                    from,
-                    to,
-                    "SkyCMS Setup Test Email",
-                    "This is a test email from SkyCMS setup wizard.",
-                    "<p>This is a test email from SkyCMS setup wizard.</p>");
-
-                var response = await client.SendEmailAsync(msg);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return new TestResult
-                    {
-                        Success = true,
-                        Message = $"Test email sent successfully to {recipient}"
-                    };
-                }
-
-                var body = await response.Body.ReadAsStringAsync();
-                return new TestResult
-                {
-                    Success = false,
-                    Message = $"SendGrid returned status {response.StatusCode}: {body}"
-                };
+                return await sendGridEmailTester.TestAsync(apiKey, senderEmail, recipient);
             }
             catch (Exception ex)
             {
@@ -923,7 +920,7 @@ namespace Sky.Editor.Services.Setup
         }
 
         /// <summary>
-        /// Tests SMTP context.Configuration.
+        /// Tests SMTP configuration.
         /// </summary>
         private async Task<TestResult> TestSmtpAsync(
             string host,
@@ -935,25 +932,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                using var client = new SmtpClient(host, int.Parse(port));
-                client.EnableSsl = port == "587" || port == "465";
-                client.UseDefaultCredentials = false;
-                client.Credentials = new System.Net.NetworkCredential(username, password);
-
-                var message = new MailMessage(senderEmail, recipient)
-                {
-                    Subject = "SkyCMS Setup Test Email",
-                    Body = "This is a test email from SkyCMS setup wizard.",
-                    IsBodyHtml = false
-                };
-
-                await client.SendMailAsync(message);
-
-                return new TestResult
-                {
-                    Success = true,
-                    Message = $"Test email sent successfully to {recipient}"
-                };
+                return await smtpEmailTester.TestAsync(host, port, username, password, senderEmail, recipient);
             }
             catch (Exception ex)
             {
@@ -1022,7 +1001,7 @@ namespace Sky.Editor.Services.Setup
             {
                 logger.LogInformation("Starting setup completion for {SetupId}", setupId);
 
-                logger.LogInformation("Retrieving setup context.Configuration...");
+                logger.LogInformation("Retrieving setup configuration...");
                 var config = await GetDraftStateAsync();
 
                 if (config?.Id != setupId)
@@ -1038,7 +1017,7 @@ namespace Sky.Editor.Services.Setup
 
                 // Get the main database connection string
                 logger.LogInformation("Retrieving main database connection string...");
-                var mainDbConnectionString = context.Configuration.GetConnectionString("ApplicationDbContextConnection");
+                var mainDbConnectionString = configuration.GetConnectionString("ApplicationDbContextConnection");
                 if (string.IsNullOrEmpty(mainDbConnectionString))
                 {
                     return new SetupCompletionResult
@@ -1052,7 +1031,7 @@ namespace Sky.Editor.Services.Setup
                 logger.LogInformation("✓ Database context created");
 
                 // Validate all required fields
-                logger.LogInformation("Validating setup context.Configuration...");
+                logger.LogInformation("Validating setup configuration...");
                 var validationResult = ValidateSetupConfiguration(config);
                 if (!validationResult.Success)
                 {
@@ -1062,7 +1041,7 @@ namespace Sky.Editor.Services.Setup
                 logger.LogInformation("✓ Configuration validated");
 
                 // Step 1: Create administrator account if none exists
-                var adminAccounts = await context.UserManager.GetUsersInRoleAsync(RequiredIdentityRoles.Administrators);
+                var adminAccounts = await userManager.GetUsersInRoleAsync(RequiredIdentityRoles.Administrators);
 
                 if (!adminAccounts.Any())
                 {
@@ -1218,7 +1197,7 @@ namespace Sky.Editor.Services.Setup
         {
             try
             {
-                var adminAccounts = context.UserManager.GetUsersInRoleAsync(RequiredIdentityRoles.Administrators).Result;
+                var adminAccounts = userManager.GetUsersInRoleAsync(RequiredIdentityRoles.Administrators).Result;
                 return adminAccounts.Any();
             }
             catch
@@ -1256,7 +1235,7 @@ namespace Sky.Editor.Services.Setup
             try
             {
                 // Check if AllowSetup is false (setup is complete)
-                var allowSetupSetting = await context.Database.Settings
+                var allowSetupSetting = await applicationDbContext.Settings
                     .FirstOrDefaultAsync(s => s.Group == "SYSTEM" && s.Name == "AllowSetup");
 
                 if (allowSetupSetting != null && bool.TryParse(allowSetupSetting.Value, out var allowSetup))
@@ -1272,9 +1251,9 @@ namespace Sky.Editor.Services.Setup
                 }
 
                 // Legacy check: Verify key setup indicators exist
-                var adminUserExists = await context.UserManager.GetUsersInRoleAsync("Administrators");
-                var layoutExists = await context.Database.Layouts.CountAsync() > 0;
-                var homePageExists = await context.Database.Articles
+                var adminUserExists = await userManager.GetUsersInRoleAsync("Administrators");
+                var layoutExists = await applicationDbContext.Layouts.CountAsync() > 0;
+                var homePageExists = await applicationDbContext.Articles
                     .AnyAsync(a => a.UrlPath == "root");
 
                 if (adminUserExists.Count > 0 && layoutExists && homePageExists)
@@ -1307,7 +1286,7 @@ namespace Sky.Editor.Services.Setup
         }
 
         /// <summary>
-        /// Validates setup context.Configuration.
+        /// Validates setup configuration.
         /// </summary>
         private SetupCompletionResult ValidateSetupConfiguration(SetupConfiguration config)
         {
@@ -1364,7 +1343,7 @@ namespace Sky.Editor.Services.Setup
                     EmailConfirmed = true
                 };
 
-                var result = await context.UserManager.CreateAsync(user, config.AdminPassword);
+                var result = await userManager.CreateAsync(user, config.AdminPassword);
 
                 if (!result.Succeeded)
                 {
@@ -1376,7 +1355,7 @@ namespace Sky.Editor.Services.Setup
                     };
                 }
 
-                var addToRoleResult = await SetupNewAdministrator.Ensure_RolesAndAdmin_Exists(context.RoleManager, context.UserManager, user);
+                var addToRoleResult = await SetupNewAdministrator.Ensure_RolesAndAdmin_Exists(roleManager, userManager, user);
 
                 if (!addToRoleResult)
                 {
@@ -1387,7 +1366,7 @@ namespace Sky.Editor.Services.Setup
                     };
                 }
 
-                var roleResult = await context.UserManager.AddToRoleAsync(user, "Administrators");
+                var roleResult = await userManager.AddToRoleAsync(user, "Administrators");
 
                 if (!roleResult.Succeeded)
                 {
@@ -1708,7 +1687,7 @@ namespace Sky.Editor.Services.Setup
                     var communityPages = await layoutImportService.GetCommunityTemplatePagesAsync(layoutId);
                     var userId = await dbContext.Users.Select(u => u.Id).FirstOrDefaultAsync();
 
-                    if (!await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.CheckDefaultLayoutExistsQuery()))
+                    if (!await Cosmos.Common.Data.Logic.LayoutHelper.HasDefaultLayoutAsync(dbContext))
                     {
                         layout.Version = 1;
                         layout.IsDefault = true;

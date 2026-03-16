@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
-    using System;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Configuration;
     using Sky.Editor.Authorization;
     using Sky.Editor.Services.Setup;
+    using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard welcome page.
@@ -88,7 +88,7 @@ namespace Sky.Editor.Areas.Setup.Pages
             // IMPORTANT: Do NOT delete existing draft state on page load
             // This preserves the SetupId when users navigate between steps
             var config = await setupService.GetCurrentSetupAsync();
-            
+
             // If no setup in progress, create a new one
             if (config == null)
             {
@@ -132,7 +132,7 @@ namespace Sky.Editor.Areas.Setup.Pages
 
             // Check if setup is allowed
             var allowSetup = configuration.GetValue<bool?>("CosmosAllowSetup") ?? false;
-            
+
             if (!allowSetup)
             {
                 return RedirectToPage("/Index", new { area = "" });
@@ -173,7 +173,7 @@ namespace Sky.Editor.Areas.Setup.Pages
 
                 // Initialize a new setup session
                 await setupService.InitializeSetupAsync();
-                
+
                 return RedirectToPage("./Step1_Storage");
             }
             catch (Exception ex)

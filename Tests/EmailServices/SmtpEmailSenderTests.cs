@@ -4,12 +4,8 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Net;
-using System.Threading.Tasks;
 using Cosmos.EmailServices;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Sky.Tests.EmailServices
 {
@@ -189,7 +185,7 @@ namespace Sky.Tests.EmailServices
             }
             catch (InvalidOperationException ex)
             {
-                Assert.IsTrue(ex.Message.Contains("SmtpEmailProviderOptions"), 
+                Assert.IsTrue(ex.Message.Contains("SmtpEmailProviderOptions"),
                     "Exception message should mention SmtpEmailProviderOptions");
             }
         }

@@ -4,16 +4,14 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
+#nullable enable
+
 using Cosmos.DynamicConfig;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Net;
 
 namespace Sky.Tests.DynamicConfig
 {
@@ -288,14 +286,14 @@ namespace Sky.Tests.DynamicConfig
         {
             var context = new DefaultHttpContext();
             context.Request.Host = new HostString(host);
-            
+
             var serviceCollection = new ServiceCollection();
             if (registerProvider)
             {
                 serviceCollection.AddSingleton(_configProviderMock.Object);
             }
             context.RequestServices = serviceCollection.BuildServiceProvider();
-            
+
             return context;
         }
     }

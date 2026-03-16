@@ -7,12 +7,6 @@
 
 namespace Sky.Editor.Services.CDN
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Threading.Tasks;
     using Azure;
     using Azure.Identity;
     using Azure.ResourceManager;
@@ -20,6 +14,12 @@ namespace Sky.Editor.Services.CDN
     using Azure.ResourceManager.Cdn.Models;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// The Azure CDN driver.

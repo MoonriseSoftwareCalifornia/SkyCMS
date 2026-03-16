@@ -16,7 +16,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
     public class SqlServerConfigurationStrategy : IDatabaseConfigurationStrategy
     {
         /// <inheritdoc/>
-        public string ProviderName => "SQL Server";
+        public string ProviderName => ProviderNames.SqlServer;
 
         /// <inheritdoc/>
         public int Priority => 20;
@@ -58,7 +58,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
                     maxRetryCount: 5,
                     maxRetryDelay: TimeSpan.FromSeconds(30),
                     errorNumbersToAdd: null);
-                
+
                 // Set command timeout (optional, but recommended for CI/CD)
                 sqlServerOptions.CommandTimeout(60); // 60 seconds
             });

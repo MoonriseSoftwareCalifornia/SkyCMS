@@ -5,10 +5,6 @@
 
 namespace Sky.Tests.Services;
 
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Cosmos.EmailServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,6 +12,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Sky.Cms.Api.Shared.Models;
 using Sky.Cms.Api.Shared.Services;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Unit tests for <see cref="ContactService"/>.

@@ -59,7 +59,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         public async Task Consolidated_ClaimsAsync_Tests(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
             var role = await GetTestRole(roleManager);
@@ -181,7 +181,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         public async Task GetClaimsAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
             var role = await GetTestRole(roleManager);
@@ -331,7 +331,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         public async Task UpdateNormalizedRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
-            
+
             // Arrange
             using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
             var role = await GetTestRole(roleManager);

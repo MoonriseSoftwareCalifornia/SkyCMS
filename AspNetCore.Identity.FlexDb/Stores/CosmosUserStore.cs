@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -121,7 +120,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             try
             {
                 _repo.Add(user);
-                await _repo.SaveChangesAsync();
+                await _repo.SaveChangesAsync(cancellationToken);
             }
             catch (Exception e)
             {
@@ -174,7 +173,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 }
 
                 _repo.Delete(user);
-                await _repo.SaveChangesAsync();
+                await _repo.SaveChangesAsync(cancellationToken);
             }
             catch (Exception e)
             {
@@ -217,14 +216,6 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 // Cosmos DB requires partition key to be specified for lookups.
                 var user = await _repo.Table<TUserEntity>().WithPartitionKey(userId).SingleOrDefaultAsync(cancellationToken);
                 return user;
-            }
-
-            if (ProviderNames.IsMySql(_repo.ProviderName))
-            {
-                var user = await _repo.Table<IdentityUser>()
-                    .FirstOrDefaultAsync(_ => _.Id == userId, cancellationToken: cancellationToken);
-
-                return (TUserEntity?)(object?)user;
             }
 
             return await _repo.Table<TUserEntity>()
@@ -283,6 +274,9 @@ namespace AspNetCore.Identity.FlexDb.Stores
         // <inheritdoc />
         public Task<string?> GetNormalizedUserNameAsync(TUserEntity user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
             return Task.FromResult(
                 GetUserProperty(user, user => user.NormalizedUserName, cancellationToken));
         }
@@ -475,7 +469,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             {
                 _repo.Update(user);
 
-                await _repo.SaveChangesAsync();
+                await _repo.SaveChangesAsync(cancellationToken);
             }
             catch (Exception e)
             {
@@ -519,24 +513,16 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (user == null) throw new ArgumentNullException(nameof(user));
             if (login == null) throw new ArgumentNullException(nameof(login));
 
-            try
+            IdentityUserLogin<TKey> loginEntity = new IdentityUserLogin<TKey>
             {
-                IdentityUserLogin<TKey> loginEntity = new IdentityUserLogin<TKey>
-                {
-                    UserId = user.Id,
-                    LoginProvider = login.LoginProvider,
-                    ProviderKey = login.ProviderKey,
-                    ProviderDisplayName = login.ProviderDisplayName
-                };
+                UserId = user.Id,
+                LoginProvider = login.LoginProvider,
+                ProviderKey = login.ProviderKey,
+                ProviderDisplayName = login.ProviderDisplayName
+            };
 
-                _repo.Add(loginEntity);
-                await _repo.SaveChangesAsync();
-            }
-            catch
-            {
-                // Debugging purposes.
-                throw;
-            }
+            _repo.Add(loginEntity);
+            await _repo.SaveChangesAsync(cancellationToken);
         }
 
         // <inheritdoc />
@@ -550,28 +536,22 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (loginProvider == null) throw new ArgumentNullException(nameof(loginProvider));
             if (providerKey == null) throw new ArgumentNullException(nameof(providerKey));
 
-            try
-            {
-                var login = await _repo.Table<IdentityUserLogin<TKey>>()
-                    .SingleOrDefaultAsync(l =>
-                        l.UserId.Equals(user.Id) &&
-                        l.LoginProvider == loginProvider &&
-                        l.ProviderKey == providerKey
-                    );
+            var login = await _repo.Table<IdentityUserLogin<TKey>>()
+                .SingleOrDefaultAsync(l =>
+                    l.UserId.Equals(user.Id) &&
+                    l.LoginProvider == loginProvider &&
+                    l.ProviderKey == providerKey,
+                    cancellationToken);
 
-                if (login != null)
-                {
-                    _repo.Delete(login);
-                    await _repo.SaveChangesAsync();
-                }
-            }
-            catch
+            if (login != null)
             {
+                _repo.Delete(login);
+                await _repo.SaveChangesAsync(cancellationToken);
             }
         }
 
         // <inheritdoc />
-        public Task<IList<UserLoginInfo>> GetLoginsAsync(TUserEntity user,
+        public async Task<IList<UserLoginInfo>> GetLoginsAsync(TUserEntity user,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -580,16 +560,16 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (user == null)
                 throw new ArgumentNullException(nameof(user));
 
-            IList<UserLoginInfo> res = _repo
+            IList<UserLoginInfo> res = await _repo
                 .Table<IdentityUserLogin<TKey>>()
                 .Where(l => l.UserId.Equals(user.Id))
                 .Select(l => new UserLoginInfo(l.LoginProvider, l.ProviderKey, user.UserName)
                 {
                     ProviderDisplayName = l.ProviderDisplayName
                 })
-                .ToListAsync().Result;
+                .ToListAsync(cancellationToken);
 
-            return Task.FromResult(res);
+            return res;
         }
 
         // <inheritdoc />
@@ -631,20 +611,14 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
             if (role == null) throw new InvalidOperationException("Role not found.");
 
-            try
+            IdentityUserRole<TKey> userRole = new IdentityUserRole<TKey>
             {
-                IdentityUserRole<TKey> userRole = new IdentityUserRole<TKey>
-                {
-                    RoleId = role.Id,
-                    UserId = user.Id
-                };
+                RoleId = role.Id,
+                UserId = user.Id
+            };
 
-                _repo.Add(userRole);
-                await _repo.SaveChangesAsync();
-            }
-            catch
-            {
-            }
+            _repo.Add(userRole);
+            await _repo.SaveChangesAsync(cancellationToken);
         }
 
         /// <inheritdoc/>>
@@ -667,7 +641,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 if (userRole != null)
                 {
                     _repo.Delete(userRole);
-                    await _repo.SaveChangesAsync();
+                    await _repo.SaveChangesAsync(cancellationToken);
                 }
             }
         }
@@ -687,13 +661,16 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 .Select(m => m.RoleId)
                 .ToListAsync(cancellationToken);
 
-            IList<string> res = await _repo
+            var roleNames = await _repo
                 .Table<TRoleEntity>()
                 .Where(m => roleIds.Contains(m.Id))
                 .Select(m => m.Name)
+                .ToListAsync(cancellationToken);
+
+            IList<string> res = roleNames
                 .Where(n => !string.IsNullOrWhiteSpace(n))
                 .Select(n => n!)
-                .ToListAsync(cancellationToken);
+                .ToList();
 
             return res;
         }
@@ -708,8 +685,10 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (user == null) throw new ArgumentNullException(nameof(user));
             if (string.IsNullOrWhiteSpace(roleName)) throw new ArgumentNullException(nameof(roleName));
 
-            var role = await _repo.Table<IdentityRole>()
-                .SingleOrDefaultAsync(_ => _.NormalizedName == roleName, cancellationToken: cancellationToken);
+            var normalizedRoleName = _normalizer.NormalizeName(roleName) ?? roleName;
+
+            var role = await _repo.Table<TRoleEntity>()
+                .SingleOrDefaultAsync(_ => _.NormalizedName == normalizedRoleName, cancellationToken: cancellationToken);
 
             if (role != null)
             {
@@ -731,8 +710,10 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
             if (string.IsNullOrWhiteSpace(roleName)) throw new ArgumentNullException(nameof(roleName));
 
-            var role = await _repo.Table<IdentityRole>()
-                .SingleOrDefaultAsync(_ => _.NormalizedName == roleName, cancellationToken: cancellationToken);
+            var normalizedRoleName = _normalizer.NormalizeName(roleName) ?? roleName;
+
+            var role = await _repo.Table<TRoleEntity>()
+                .SingleOrDefaultAsync(_ => _.NormalizedName == normalizedRoleName, cancellationToken: cancellationToken);
 
             if (role != null)
             {
@@ -813,11 +794,6 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (user == null)
                 throw new ArgumentNullException(nameof(user));
 
-            cancellationToken.ThrowIfCancellationRequested();
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException(nameof(user));
-
             SetUserProperty(user, 0, (u, v) => user.AccessFailedCount = v, cancellationToken);
 
             return Task.CompletedTask;
@@ -893,7 +869,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             {
                 // Since the IdentityUserClaim requires an integer ID, we need to get the last ID used and increment by one.
                 // This means that if this fails, because of a concurrency issue, we need to retry.
-                await Retry.Do(async () => await InternalAddClaimAsync(user, claim, cancellationToken), TimeSpan.FromSeconds(1));
+                await Retry.DoAsync(() => InternalAddClaimAsync(user, claim, cancellationToken), TimeSpan.FromSeconds(1), cancellationToken: cancellationToken);
             }
         }
 
@@ -921,7 +897,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 _repo.Add(identityUserClaim);
             }
 
-            await _repo.SaveChangesAsync().WaitAsync(cancellationToken);
+            await _repo.SaveChangesAsync(cancellationToken);
         }
 
         // <inheritdoc />
@@ -941,7 +917,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             await RemoveClaimsAsync(user, new[] { claim }, cancellationToken);
 
             // Add the new claim
-            await AddClaimsAsync(user, new[] { newClaim }, cancellationToken).WaitAsync(cancellationToken);
+            await AddClaimsAsync(user, new[] { newClaim }, cancellationToken);
         }
 
         // <inheritdoc />
@@ -966,7 +942,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                     _repo.Delete<IdentityUserClaim<TKey>>(doomed);
             }
 
-            await _repo.SaveChangesAsync().WaitAsync(cancellationToken);
+            await _repo.SaveChangesAsync(cancellationToken);
         }
 
         // <inheritdoc />
@@ -1074,17 +1050,14 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (string.IsNullOrEmpty(value))
-            {
-                value = GenerateNewAuthenticatorKey();
-            }
+            value ??= GenerateNewAuthenticatorKey();
 
             var queryable = (IQueryable<IdentityUserToken<TKey>>)_repo.UserTokens;
 
             var token = await queryable.FirstOrDefaultAsync(t =>
-                t.UserId.Equals(user.Id) && t.LoginProvider == loginProvider && t.Name == name);
+                t.UserId.Equals(user.Id) && t.LoginProvider == loginProvider && t.Name == name,
+                cancellationToken: cancellationToken);
 
-            //var token = await FindTokenAsync(user, loginProvider, name, cancellationToken).ConfigureAwait(false);
             if (token == null)
             {
                 token = new IdentityUserToken<TKey>()
@@ -1092,23 +1065,17 @@ namespace AspNetCore.Identity.FlexDb.Stores
                     LoginProvider = loginProvider,
                     Name = name,
                     UserId = user.Id,
-                    Value = GenerateNewAuthenticatorKey()
+                    Value = value
                 };
-                try
-                {
-                    _repo.Add(token);
-                    await _repo.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    ProcessExceptions(e);
-                }
-                //await AddUserTokenAsync(CreateUserToken(user, loginProvider, name, value)).ConfigureAwait(false);
+
+                _repo.Add(token);
             }
             else
             {
                 token.Value = value;
             }
+
+            await _repo.SaveChangesAsync(cancellationToken);
         }
 
         /// <summary>

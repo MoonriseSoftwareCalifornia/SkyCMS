@@ -7,11 +7,10 @@
 
 namespace Sky.Cms.Api.Shared.Extensions;
 
-using Microsoft.AspNetCore.Builder;
+using Cosmos.Common.Features.Shared;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Cosmos.Common.Features.Shared;
 using Sky.Cms.Api.Shared.Features.ContactForm.Submit;
 using Sky.Cms.Api.Shared.Features.ContactForm.ValidateCaptcha;
 using Sky.Cms.Api.Shared.Models;

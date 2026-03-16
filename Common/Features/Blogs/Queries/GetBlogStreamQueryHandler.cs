@@ -7,22 +7,21 @@
 
 namespace Cosmos.Common.Features.Blogs.Queries
 {
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Cosmos.Common.Constants;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for retrieving a blog stream by its key, including the latest post preview.
     /// </summary>
     public class GetBlogStreamQueryHandler : IQueryHandler<GetBlogStreamQuery, GetBlogStreamQueryResult>
     {
-        private readonly IApplicationDbContext dbContext;
+        private readonly ApplicationDbContext dbContext;
         private readonly IMemoryCache memoryCache;
 
         /// <summary>
@@ -30,7 +29,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="memoryCache">Memory cache for caching results.</param>
-        public GetBlogStreamQueryHandler(IApplicationDbContext dbContext, IMemoryCache memoryCache)
+        public GetBlogStreamQueryHandler(ApplicationDbContext dbContext, IMemoryCache memoryCache)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
@@ -60,7 +59,8 @@ namespace Cosmos.Common.Features.Blogs.Queries
             var normalizedBlogKey = NormalizeBlogKey(query.BlogKey);
 
             // Try cache first
-            if (memoryCache.TryGetValue(CacheKeys.BlogStream(normalizedBlogKey), out GetBlogStreamQueryResult? cachedResult))
+            var cacheKey = $"blog-stream-{normalizedBlogKey}";
+            if (memoryCache.TryGetValue(cacheKey, out GetBlogStreamQueryResult? cachedResult))
             {
                 return cachedResult;
             }
@@ -131,7 +131,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
             // Cache the result
             if (query.CacheDuration.HasValue)
             {
-                memoryCache.Set(CacheKeys.BlogStream(normalizedBlogKey), result, query.CacheDuration.Value);
+                memoryCache.Set(cacheKey, result, query.CacheDuration.Value);
             }
 
             return result;

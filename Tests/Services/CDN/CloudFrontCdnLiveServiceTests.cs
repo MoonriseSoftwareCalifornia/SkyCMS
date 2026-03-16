@@ -7,11 +7,6 @@
 
 namespace Sky.Tests.Services.CDN
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Cosmos.Cms.Common.Models;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
@@ -20,6 +15,10 @@ namespace Sky.Tests.Services.CDN
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Newtonsoft.Json;
     using Sky.Editor.Services.CDN;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Integration tests for CloudFront CDN using an actual live service.
@@ -35,7 +34,6 @@ namespace Sky.Tests.Services.CDN
     /// </remarks>
     [Ignore("Requires live AWS CloudFront credentials - run CloudFrontTestSetup\\deploy.ps1 and remove this attribute")]
     [TestClass]
-    [DoNotParallelize]
     public class CloudFrontCdnLiveServiceTests
     {
         private ApplicationDbContext dbContext;

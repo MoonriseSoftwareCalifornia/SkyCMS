@@ -16,8 +16,6 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace Cosmos.DynamicConfig
 {
@@ -271,7 +269,7 @@ namespace Cosmos.DynamicConfig
                 {
                     // Attempt to parse as URI, fallback to basic hostname validation
                     string? safeHost = null;
-                    
+
                     // First try to parse the header value as-is (in case it's already a full URI)
                     if (Uri.TryCreate(xhostHeader, UriKind.Absolute, out var uri))
                     {
@@ -552,22 +550,22 @@ namespace Cosmos.DynamicConfig
         {
             // Get domain name from the current request
             var domainName = GetTenantDomainNameFromRequest();
-            
+
             if (string.IsNullOrWhiteSpace(domainName))
             {
                 _logger?.LogWarning("Could not determine tenant domain from request - HttpContext may be unavailable");
                 return null;
             }
-            
+
             // Get the connection entity (leverages existing caching for performance)
             var connection = await GetTenantConnectionAsync(domainName);
-            
+
             if (connection == null)
             {
                 _logger?.LogWarning("No tenant connection found for domain: {Domain}", domainName);
                 return null;
             }
-            
+
             _logger?.LogDebug("Resolved tenant ID {TenantId} for domain {Domain}", connection.Id, domainName);
             return connection.Id;
         }

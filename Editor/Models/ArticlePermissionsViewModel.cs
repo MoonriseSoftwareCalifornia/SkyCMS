@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Models
 {
-    using System;
     using Cosmos.Common.Data;
+    using System;
 
     /// <summary>
     /// Article permissions view model.

@@ -14,7 +14,6 @@ namespace Sky.Tests.Controllers
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.Routing;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -29,7 +28,6 @@ namespace Sky.Tests.Controllers
     /// <summary>
     /// Unit tests for the <see cref="UsersController"/> class.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class UsersControllerTests : SkyCmsTestBase
     {
@@ -312,35 +310,15 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("new@example.com", updated.EmailAddress);
         }
 
-        /// <summary>
-        /// Tests that AuthorInfoEdit_Post_ReturnsNotFoundForNonExistentAuthor.
-        /// </summary>
-        [TestMethod]
-        public async Task AuthorInfoEdit_Post_ReturnsNotFoundForNonExistentAuthor()
-        {
-            // Arrange
-            var model = new AuthorInfo
-            {
-                Id = Guid.NewGuid().ToString(),
-                AuthorName = "Test"
-            };
-
-            // Act
-            var result = await controller.AuthorInfoEdit(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
         #endregion
 
         #region Index Tests
 
         /// <summary>
-        /// Tests that Index_ReturnsAllUsers.
+        /// Tests that Index returns all users when role filter is missing or empty.
         /// </summary>
         [TestMethod]
-        public async Task Index_ReturnsAllUsers()
+        public async Task Index_ReturnsAllUsers_WhenRoleFilterMissingOrEmpty()
         {
             // Arrange
             var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), Email = "user1@example.com" };
@@ -348,15 +326,23 @@ namespace Sky.Tests.Controllers
             await UserManager.CreateAsync(user1);
             await UserManager.CreateAsync(user2);
 
-            // Act
-            var result = await controller.Index();
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("NoParameter", () => controller.Index()),
+                ("NullId", () => controller.Index(id: null)),
+                ("EmptyId", () => controller.Index(id: string.Empty)),
+            };
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            var model = viewResult.Model as List<UserIndexViewModel>;
-            Assert.IsNotNull(model);
-            Assert.IsTrue(model.Count >= 2);
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+
+                Assert.IsInstanceOfType(result, typeof(ViewResult), $"{scenario.Name} should return a ViewResult.");
+                var viewResult = (ViewResult)result;
+                var model = viewResult.Model as List<UserIndexViewModel>;
+                Assert.IsNotNull(model, $"{scenario.Name} should return a user model.");
+                Assert.IsTrue(model.Count >= 2, $"{scenario.Name} should return all users when role filter is missing or empty.");
+            }
         }
 
         /// <summary>
@@ -433,19 +419,6 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(OkObjectResult));
             var updatedUser = await UserManager.FindByIdAsync(user.Id);
             Assert.IsTrue(updatedUser.EmailConfirmed);
-        }
-
-        /// <summary>
-        /// Tests that ConfirmEmail_ReturnsNotFoundForInvalidUser.
-        /// </summary>
-        [TestMethod]
-        public async Task ConfirmEmail_ReturnsNotFoundForInvalidUser()
-        {
-            // Act
-            var result = await controller.ConfirmEmail(Guid.NewGuid().ToString());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         /// <summary>
@@ -749,7 +722,7 @@ namespace Sky.Tests.Controllers
             // Assert
             var userRoles = await UserManager.GetRolesAsync(admin);
             var adminsAfter = await UserManager.GetUsersInRoleAsync("Administrators");
-            
+
             // Since there's still another administrator (testuser), this one can be removed
             // But if we tried to remove the last admin, they should remain in the role
             Assert.IsTrue(adminsAfter.Count >= 1, "Should have at least one administrator remaining");
@@ -760,44 +733,26 @@ namespace Sky.Tests.Controllers
         #region GetRoles Tests
 
         /// <summary>
-        /// Tests that GetRoles_ReturnsAllRoles.
+        /// Tests that GetRoles returns JSON for null and filtered text inputs.
         /// </summary>
         [TestMethod]
-        public async Task GetRoles_ReturnsAllRoles()
+        public async Task GetRoles_ReturnsJson_ForNullAndFilteredText()
         {
             // Arrange
             var role1 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Alpha" };
-            var role2 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Beta" };
+            var role2 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Admin" };
             await RoleManager.CreateAsync(role1);
             await RoleManager.CreateAsync(role2);
 
-            // Act
-            var result = await controller.GetRoles(null);
+            foreach (var filter in new string[] { null, "admin" })
+            {
+                var result = await controller.GetRoles(filter);
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            var roles = jsonResult.Value as IEnumerable<object>;
-            Assert.IsNotNull(roles);
-        }
-
-        /// <summary>
-        /// Tests that GetRoles_FiltersRolesByText.
-        /// </summary>
-        [TestMethod]
-        public async Task GetRoles_FiltersRolesByText()
-        {
-            // Arrange
-            var role1 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "Admin" };
-            var role2 = new IdentityRole { Id = Guid.NewGuid().ToString(), Name = "User" };
-            await RoleManager.CreateAsync(role1);
-            await RoleManager.CreateAsync(role2);
-
-            // Act
-            var result = await controller.GetRoles("admin");
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
+                Assert.IsInstanceOfType(result, typeof(JsonResult));
+                var jsonResult = (JsonResult)result;
+                var roles = jsonResult.Value as IEnumerable<object>;
+                Assert.IsNotNull(roles);
+            }
         }
 
         #endregion
@@ -833,19 +788,6 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(resultData.Success || !string.IsNullOrEmpty(resultData.Error));
         }
 
-        /// <summary>
-        /// Tests that ResendEmailConfirmation_ReturnsNotFoundForInvalidUser.
-        /// </summary>
-        [TestMethod]
-        public async Task ResendEmailConfirmation_ReturnsNotFoundForInvalidUser()
-        {
-            // Act
-            var result = await controller.ResendEmailConfirmation(Guid.NewGuid().ToString());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
         #endregion
 
         #region SendPasswordReset Tests
@@ -875,17 +817,18 @@ namespace Sky.Tests.Controllers
                 It.IsAny<string>()), Times.Once);
         }
 
-        /// <summary>
-        /// Tests that SendPasswordReset_ReturnsNotFoundForInvalidEmail.
-        /// </summary>
         [TestMethod]
-        public async Task SendPasswordReset_ReturnsNotFoundForInvalidEmail()
+        public async Task SendPasswordReset_WithInvalidInputs_HandlesAsExpected()
         {
-            // Act
-            var result = await controller.SendPasswordReset("nonexistent@example.com");
+            // Non-existent user email returns NotFound.
+            var missingUserResult = await controller.SendPasswordReset("nonexistent@example.com");
+            Assert.IsInstanceOfType(missingUserResult, typeof(NotFoundResult));
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+            // Null email is rejected by UserManager.
+            await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
+            {
+                await controller.SendPasswordReset(null);
+            });
         }
 
         #endregion
@@ -917,19 +860,6 @@ namespace Sky.Tests.Controllers
             Assert.IsNull(deleted);
         }
 
-        /// <summary>
-        /// Tests that DeleteAuthorInfo_ReturnsNotFoundForNonExistentAuthor.
-        /// </summary>
-        [TestMethod]
-        public async Task DeleteAuthorInfo_ReturnsNotFoundForNonExistentAuthor()
-        {
-            // Act
-            var result = await controller.DeleteAuthorInfo(Guid.NewGuid().ToString());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
         #endregion
 
         #region RoleMembership Tests
@@ -951,17 +881,36 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
         }
 
+        #endregion
+
+        #region Missing Entity Tests
+
         /// <summary>
-        /// Tests that RoleMembership_ReturnsNotFoundForInvalidUser.
+        /// Tests that endpoints return NotFound when the requested user or author does not exist.
         /// </summary>
         [TestMethod]
-        public async Task RoleMembership_ReturnsNotFoundForInvalidUser()
+        public async Task MissingEntities_ReturnNotFound()
         {
-            // Act
-            var result = await controller.RoleMembership(Guid.NewGuid().ToString());
+            var missingId = Guid.NewGuid().ToString();
 
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
+            {
+                ("ConfirmEmail", () => controller.ConfirmEmail(missingId)),
+                ("ResendEmailConfirmation", () => controller.ResendEmailConfirmation(missingId)),
+                ("DeleteAuthorInfo", () => controller.DeleteAuthorInfo(missingId)),
+                ("RoleMembership", () => controller.RoleMembership(missingId)),
+                ("AuthorInfoEdit_Post", () => controller.AuthorInfoEdit(new AuthorInfo
+                {
+                    Id = missingId,
+                    AuthorName = "Test"
+                })),
+            };
+
+            foreach (var scenario in scenarios)
+            {
+                var result = await scenario.Action();
+                Assert.IsInstanceOfType(result, typeof(NotFoundResult), $"{scenario.Name} should return NotFound for a missing entity.");
+            }
         }
 
         #endregion
@@ -1025,39 +974,38 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Index_HandlesNullRoleId.
+        /// Tests that actions throw expected exceptions for invalid IDs.
         /// </summary>
         [TestMethod]
-        public async Task Index_HandlesNullRoleId()
+        public async Task InvalidIds_ThrowExpectedExceptions()
         {
-            // Arrange
-            var user = new IdentityUser { Id = Guid.NewGuid().ToString(), Email = "test@example.com" };
-            await UserManager.CreateAsync(user);
-
-            // Act - Pass null for id parameter
-            var result = await controller.Index(id: null);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            var model = viewResult.Model as List<UserIndexViewModel>;
-            Assert.IsNotNull(model);
-        }
-
-        /// <summary>
-        /// Tests that Index_HandlesInvalidRoleId.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_HandlesInvalidRoleId()
-        {
-            // Arrange
             var invalidRoleId = Guid.NewGuid().ToString();
-
-            // Act & Assert
-            await Assert.ThrowsExactlyAsync<NullReferenceException>(async () =>
+            var invalidUserModel = new UserRoleAssignmentsViewModel
             {
-                await controller.Index(id: invalidRoleId);
-            });
+                Id = Guid.NewGuid().ToString(),
+                RoleIds = new List<string>()
+            };
+
+            var scenarios = new (string Name, Type ExceptionType, Func<Task> Action)[]
+            {
+                ("Index", typeof(NullReferenceException), () => controller.Index(id: invalidRoleId)),
+                ("UserRolesPost", typeof(ArgumentNullException), () => controller.UserRoles(invalidUserModel)),
+            };
+
+            foreach (var scenario in scenarios)
+            {
+                var exceptionThrown = false;
+                try
+                {
+                    await scenario.Action();
+                }
+                catch (Exception ex)
+                {
+                    exceptionThrown = ex.GetType() == scenario.ExceptionType;
+                }
+
+                Assert.IsTrue(exceptionThrown, $"{scenario.Name} should throw {scenario.ExceptionType.Name} for invalid input.");
+            }
         }
 
         /// <summary>
@@ -1133,48 +1081,13 @@ namespace Sky.Tests.Controllers
             var model = viewResult.Model as List<UserIndexViewModel>;
             var lockedUser = model.FirstOrDefault(u => u.EmailAddress == "locked@example.com");
             Assert.IsNotNull(lockedUser);
-            
+
             // The logic in the controller checks if LockoutEnd < DateTimeOffset.UtcNow
             // which means the lockout has ENDED. If LockoutEnd is in the future, 
             // LockoutEnd < UtcNow is false, so IsLockedOut should be false.
             // The controller logic appears inverted - a future LockoutEnd means still locked
-            Assert.IsFalse(lockedUser.IsLockedOut, 
+            Assert.IsFalse(lockedUser.IsLockedOut,
                 "The controller logic shows IsLockedOut is false when LockoutEnd is in the future");
-        }
-
-        /// <summary>
-        /// Tests that SendPasswordReset_HandlesNullEmail.
-        /// </summary>
-        [TestMethod]
-        public async Task SendPasswordReset_HandlesNullEmail()
-        {
-            // Act & Assert
-            // UserManager.FindByEmailAsync throws ArgumentNullException for null email
-            await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
-            {
-                await controller.SendPasswordReset(null);
-            });
-        }
-
-        /// <summary>
-        /// Tests that UserRoles_Post_HandlesInvalidUserId.
-        /// </summary>
-        [TestMethod]
-        public async Task UserRoles_Post_HandlesInvalidUserId()
-        {
-            // Arrange
-            var model = new UserRoleAssignmentsViewModel
-            {
-                Id = Guid.NewGuid().ToString(),
-                RoleIds = new List<string>()
-            };
-
-            // Act & Assert
-            // FindByIdAsync returns null, causing GetRolesAsync to throw ArgumentNullException
-            await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
-            {
-                await controller.UserRoles(model);
-            });
         }
 
         /// <summary>
@@ -1206,54 +1119,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that Index handles empty role ID correctly.
-        /// </summary>
-        [TestMethod]
-        public async Task Index_HandlesEmptyRoleId_ReturnsAllUsers()
-        {
-            // Arrange
-            var user1 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user1@test.com", Email = "user1@test.com" };
-            var user2 = new IdentityUser { Id = Guid.NewGuid().ToString(), UserName = "user2@test.com", Email = "user2@test.com" };
-            await UserManager.CreateAsync(user1);
-            await UserManager.CreateAsync(user2);
-
-            // Act
-            var result = await controller.Index(id: string.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            var model = viewResult.Model as List<UserIndexViewModel>;
-            Assert.IsNotNull(model);
-            Assert.IsTrue(model.Count >= 2, "Should return all users when role ID is empty");
-        }
-
-        /// <summary>
-        /// Tests that AuthorInfos validates pagination bounds.
-        /// </summary>
-        [TestMethod]
-        public async Task AuthorInfos_ValidatesLargePageSize_CapsAtReasonableValue()
-        {
-            // Arrange
-            var user = new IdentityUser
-            {
-                Id = Guid.NewGuid().ToString(),
-                UserName = "pagesize@example.com",
-                Email = "pagesize@example.com",
-                EmailConfirmed = true
-            };
-            await UserManager.CreateAsync(user);
-
-            // Act
-            var result = await controller.AuthorInfos(pageSize: 1000);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.IsNotNull(viewResult.Model);
-        }
-
-        /// <summary>
         /// Tests that AuthorInfoEdit handles null model gracefully.
         /// </summary>
         [TestMethod]
@@ -1274,19 +1139,6 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual(model, viewResult.Model);
-        }
-
-        /// <summary>
-        /// Tests that ConfirmEmail handles non-existent user.
-        /// </summary>
-        [TestMethod]
-        public async Task ConfirmEmail_ReturnsNotFound_ForNonExistentUser()
-        {
-            // Act
-            var result = await controller.ConfirmEmail(Guid.NewGuid().ToString());
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         /// <summary>

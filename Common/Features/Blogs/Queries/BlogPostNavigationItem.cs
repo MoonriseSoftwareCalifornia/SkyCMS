@@ -8,8 +8,6 @@
 namespace Cosmos.Common.Features.Blogs.Queries
 {
     using System;
-    using System.Collections.Generic;
-    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// A navigation item representing a blog post.

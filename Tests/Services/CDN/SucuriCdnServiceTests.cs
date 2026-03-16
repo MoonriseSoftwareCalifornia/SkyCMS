@@ -7,21 +7,18 @@
 
 namespace Sky.Tests.Services.CDN
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Net.Http;
-    using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json;
     using Sky.Editor.Services.CDN;
+    using System.Collections.Generic;
+    using System.Net.Http;
 
     /// <summary>
     /// Unit tests for <see cref="SucuriCdnService"/> class.
     /// </summary>
     [TestClass]
-    [DoNotParallelize]
     public class SucuriCdnServiceTests
     {
         private Mock<ILogger> mockLogger;

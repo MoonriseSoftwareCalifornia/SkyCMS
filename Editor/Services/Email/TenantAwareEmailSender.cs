@@ -147,7 +147,7 @@ public class TenantAwareEmailSender : ICosmosEmailSender
             logErrors: true));
 
         var sendGridLogger = loggerFactory.CreateLogger<SendGridEmailSender>();
-        
+
         return new SendGridEmailSender(options, sendGridLogger);
     }
 

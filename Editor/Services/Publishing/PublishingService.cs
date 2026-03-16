@@ -7,6 +7,24 @@
 
 namespace Sky.Editor.Services.Publishing
 {
+    using Cosmos.BlobService;
+    using Cosmos.BlobService.Models;
+    using Cosmos.Cms.Common;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Articles.Shared;
+    using Cosmos.Common.Models;
+    using Cosmos.Common.Services.BlogPublishing;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
+    using Sky.Cms.Services;
+    using Sky.Editor.Infrastructure.Time;
+    using Sky.Editor.Services.Authors;
+    using Sky.Editor.Services.CDN;
+    using Sky.Editor.Services.EditorSettings;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -15,29 +33,6 @@ namespace Sky.Editor.Services.Publishing
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Cosmos.BlobService;
-    using Cosmos.BlobService.Models;
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Constants;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
-    using Cosmos.Common.Features.Articles.Shared;
-    using Cosmos.Common.Models;
-    using Cosmos.Common.Services.BlogPublishing;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-    using Newtonsoft.Json;
-    using Sky.Cms.Services;
-    using Sky.Editor.Domain.Events;
-    using Sky.Editor.Infrastructure.Time;
-    using Sky.Editor.Services.Authors;
-    using Sky.Editor.Services.CDN;
-    using Sky.Editor.Services.EditorSettings;
-    using Sky.Editor.Services.StaticFiles;
-    using Sky.Editor.Services.TableOfContents;
 
     /// <summary>
     /// Orchestrates publishing of articles and blog content.
@@ -45,51 +40,72 @@ namespace Sky.Editor.Services.Publishing
     /// <remarks>
     /// This service persists published page records, generates optional static HTML files,
     /// updates the site table of contents, and coordinates CDN cache purges so new content
-    /// becomes visible immediately. Blog-specific publishing is delegated to <see cref="IBlogPublishingService"/>.
+    /// becomes visible immediately. Blog streams and blog posts receive special rendering
+    /// via the injected <see cref="IBlogStreamRenderingService"/>.
     /// </remarks>
     public class PublishingService : IPublishingService
     {
-        private readonly IPublishingContext context;
+        private readonly ApplicationDbContext db;
+        private readonly IStorageContext storage;
+        private readonly IEditorSettings settings;
         private readonly ILogger<PublishingService> logger;
+        private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IAuthorInfoService authors;
         private readonly IClock systemClock;
-        private readonly IStaticFileServiceFactory staticFileServiceFactory;
+        private readonly IBlogStreamRenderingService blogStreamRenderingService;
+        private readonly IViewRenderService viewRenderService;
+        private readonly IServiceProvider serviceProvider;
         private readonly IPublishingProgressReporter progressReporter;
-        private readonly IDomainEventDispatcher? eventDispatcher;
-        private readonly IPublishingAuxiliaryServices auxiliaryServices;
+        private readonly IArticleCatalogQueryService articleCatalogQueryService;
+        private readonly SemaphoreSlim writeTocSemaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim layoutLock = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PublishingService"/> class.
         /// </summary>
-        /// <param name="context">Publishing context providing database, storage, settings, HTTP context, and catalog query service.</param>
+        /// <param name="db">The database context.</param>
+        /// <param name="storage">The storage context.</param>
+        /// <param name="settings">The editor settings.</param>
         /// <param name="logger">The logger.</param>
+        /// <param name="accessor">The HTTP context accessor.</param>
         /// <param name="authors">The author information service.</param>
         /// <param name="systemClock">The system clock.</param>
-        /// <param name="staticFileServiceFactory">Factory for creating scoped static file service instances during parallel processing.</param>
+        /// <param name="blogStreamRenderingService">The blog stream rendering service.</param>
+        /// <param name="viewRenderService">View rendering service.</param>
+        /// <param name="serviceProvider">Service provider for creating scoped dependencies.</param>
         /// <param name="progressReporter">The publishing progress reporter.</param>
-        /// <param name="eventDispatcher">Optional domain event dispatcher for publishing cache invalidation events.</param>
-        /// <param name="auxiliaryServices">Composite service providing CDN, TOC, static file, and blog publishing services.</param>
+        /// <param name="articleCatalogQueryService">Article catalog service.</param>
         public PublishingService(
-            IPublishingContext context,
+            ApplicationDbContext db,
+            IStorageContext storage,
+            IEditorSettings settings,
             ILogger<PublishingService> logger,
+            IHttpContextAccessor accessor,
             Authors.IAuthorInfoService authors,
             IClock systemClock,
-            IStaticFileServiceFactory staticFileServiceFactory,
+            IBlogStreamRenderingService blogStreamRenderingService,
+            IViewRenderService viewRenderService,
+            IServiceProvider serviceProvider,
             IPublishingProgressReporter progressReporter,
-            IDomainEventDispatcher? eventDispatcher,
-            IPublishingAuxiliaryServices auxiliaryServices)
+            IArticleCatalogQueryService articleCatalogQueryService)
         {
-            this.context = context;
+            this.db = db;
+            this.storage = storage;
+            this.settings = settings;
             this.logger = logger;
+            httpContextAccessor = accessor;
             this.authors = authors;
             this.systemClock = systemClock;
-            this.staticFileServiceFactory = staticFileServiceFactory;
+            this.blogStreamRenderingService = blogStreamRenderingService;
+            this.viewRenderService = viewRenderService;
+            this.serviceProvider = serviceProvider;
             this.progressReporter = progressReporter;
-            this.eventDispatcher = eventDispatcher;
-            this.auxiliaryServices = auxiliaryServices;
+            this.articleCatalogQueryService = articleCatalogQueryService;
         }
 
-        private Guid userId => Guid.Parse(context.HttpContextAccessor.HttpContext.User.Claims
+        private LayoutViewModel defaultLayout;
+
+        private Guid userId => Guid.Parse(httpContextAccessor.HttpContext.User.Claims
             .FirstOrDefault(f => f.Type == "sub")?.Value ?? Guid.Empty.ToString());
 
         /// <summary>
@@ -106,9 +122,86 @@ namespace Sky.Editor.Services.Publishing
         /// delegates to <see cref="PublishAsync(Article, CancellationToken)"/> to create the published page, write
         /// optional static files, update the TOC, and purge the CDN.
         /// </remarks>
-        public Task<List<CdnResult>> PublishBlogStreamAsync(Article blog, CancellationToken cancellationToken = default)
+        public async Task<List<CdnResult>> PublishBlogStreamAsync(Article blog, CancellationToken cancellationToken = default)
         {
-            return auxiliaryServices.BlogPublishingService.PublishBlogStreamAsync(blog, cancellationToken);
+            var article = await db.Articles
+                .Where(a => a.BlogKey == blog.BlogKey && a.ArticleType == (int)ArticleType.BlogStream)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
+
+            if (article == null)
+            {
+                var articleNumber = (await db.Articles.AnyAsync()) ?
+                    (await db.Articles.Select(s => s.ArticleNumber).MaxAsync()) + 1 : 1;
+
+                article = new Article
+                {
+                    ArticleNumber = articleNumber,
+                    UrlPath = blog.BlogKey,
+                    VersionNumber = 1,
+                    Published = DateTimeOffset.UtcNow,
+                    Expires = null,
+                    Title = blog.Title,
+                    Content = string.Empty,
+                    Updated = blog.Updated,
+                    BannerImage = blog.BannerImage,
+                    HeaderJavaScript = string.Empty,
+                    FooterJavaScript = string.Empty,
+                    UserId = userId.ToString(),
+                    StatusCode = (int)StatusCodeEnum.Active,
+                    ArticleType = (int)ArticleType.BlogStream,
+                    Category = "blog-stream",
+                    Introduction = blog.Introduction,
+                    BlogKey = blog.BlogKey
+                };
+
+                db.Articles.Add(article);
+            }
+            else
+            {
+                article.UrlPath = blog.BlogKey;
+                article.Published = DateTimeOffset.UtcNow;
+                article.Title = blog.Title;
+                article.Updated = blog.Updated;
+                article.BannerImage = blog.BannerImage;
+                article.Introduction = blog.Introduction;
+                article.UserId = userId.ToString();
+                article.StatusCode = (int)StatusCodeEnum.Active;
+                article.VersionNumber += 1;
+            }
+
+            // Generate wrapper HTML with embedded JSON metadata
+            article.Content = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(article, blog.BlogKey);
+
+            // Publish the blog stream article
+            var cdnResults = await PublishAsync(article);
+
+            // Additionally publish the versioned wrapper as a static file for direct access
+            var wrapperPath = GetWrapperVersionedPath(blog.BlogKey);
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(article.Content));
+            await storage.AppendBlob(ms, new FileUploadMetaData
+            {
+                ChunkIndex = 0,
+                ContentType = "text/html",
+                FileName = Path.GetFileName(wrapperPath),
+                RelativePath = wrapperPath,
+                TotalChunks = 1,
+                TotalFileSize = ms.Length,
+                UploadUid = Guid.NewGuid().ToString()
+            });
+
+            return cdnResults;
+        }
+
+        /// <summary>
+        /// Gets a versioned wrapper filename using UTC ticks for cache busting.
+        /// </summary>
+        /// <param name="blogKey">The blog stream key.</param>
+        /// <returns>Relative file path for the versioned wrapper (e.g., /blog/painting/blog-stream-wrapper-638708432156789123.html).</returns>
+        private string GetWrapperVersionedPath(string blogKey)
+        {
+            var ticks = DateTimeOffset.UtcNow.Ticks;
+            return $"/{blogKey.TrimStart('/')}/blog-stream-wrapper-{ticks}.html";
         }
 
         /// <inheritdoc/>
@@ -134,21 +227,21 @@ namespace Sky.Editor.Services.Publishing
             await UnpublishEalierVersions(article);
 
             // Remove prior published (non-redirect) pages for this article number
-            var prior = await context.Database.Pages
+            var prior = await db.Pages
                 .Where(p => p.ArticleNumber == article.ArticleNumber && p.StatusCode != (int)StatusCodeEnum.Redirect)
                 .ToListAsync();
 
             if (prior.Any())
             {
-                context.Database.Pages.RemoveRange(prior);
-                await context.Database.SaveChangesAsync();
+                db.Pages.RemoveRange(prior);
+                await db.SaveChangesAsync();
 
-                auxiliaryServices.StaticFileService.DeleteStaticFiles(prior);
+                DeleteStatic(prior);
             }
 
             // ✅ BUGFIX: Save the Article entity with its Published property
             // This ensures the Published timestamp persists to the database
-            await context.Database.SaveChangesAsync();
+            await db.SaveChangesAsync();
 
             var authorInfo = await authors.GetOrCreateAsync(userId);
 
@@ -156,10 +249,61 @@ namespace Sky.Editor.Services.Publishing
 
             if (article.ArticleType == (int)ArticleType.BlogPost)
             {
-                // Delegate blog post rendering to the blog publishing service
-                page = await auxiliaryServices.BlogPublishingService.RenderBlogPostPageAsync(
-                    article,
-                    authorInfo == null ? string.Empty : JsonConvert.SerializeObject(authorInfo).Replace("\"", "'"));
+                // For blog posts, generate full page content (for direct access to individual posts)
+                // The snippet version can be generated on-demand via blogStreamRenderingService.GenerateBlogPostSnippetAsync()
+                var layout = await GetDefaultLayoutAsync();
+
+                var model = new ArticleViewModel()
+                {
+                    ArticleNumber = article.ArticleNumber,
+                    Title = article.Title,
+                    Content = article.Content,
+                    HeadJavaScript = article.HeaderJavaScript,
+                    FooterJavaScript = article.FooterJavaScript,
+                    Updated = article.Updated,
+                    Published = article.Published,
+                    Expires = article.Expires,
+                    BannerImage = article.BannerImage,
+                    UrlPath = article.UrlPath,
+                    ArticleType = (ArticleType)(article.ArticleType ?? 0),
+                    Category = article.Category,
+                    Introduction = article.Introduction,
+                    Id = article.Id,
+                    EditModeOn = false,
+                    PreviewMode = false,
+                    ReadWriteMode = false,
+                    VersionNumber = article.VersionNumber,
+                    CacheDuration = 0,
+                    Layout = layout
+                };
+
+                var blogContent = await viewRenderService.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
+
+                page = new PublishedPage
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = article.ArticleNumber,
+                    StatusCode = article.StatusCode,
+                    UrlPath = article.UrlPath,
+                    VersionNumber = article.VersionNumber,
+                    Published = article.Published,
+                    Expires = article.Expires,
+                    Title = article.Title,
+                    Content = blogContent,
+                    Updated = article.Updated,
+                    BannerImage = article.BannerImage,
+                    HeaderJavaScript = article.HeaderJavaScript,
+                    FooterJavaScript = article.FooterJavaScript,
+                    ParentUrlPath = article.UrlPath.Contains('/')
+                        ? article.UrlPath[..article.UrlPath.LastIndexOf('/')]
+                        : string.Empty,
+                    AuthorInfo = authorInfo == null ? string.Empty :
+                        JsonConvert.SerializeObject(authorInfo).Replace("\"", "'"),
+                    ArticleType = article.ArticleType,
+                    Category = article.Category,
+                    Introduction = article.Introduction,
+                    BlogKey = article.BlogKey
+                };
             }
             else
             {
@@ -189,22 +333,16 @@ namespace Sky.Editor.Services.Publishing
                 };
             }
 
-            context.Database.Pages.Add(page);
-            await context.Database.SaveChangesAsync();
+            db.Pages.Add(page);
+            await db.SaveChangesAsync();
 
-            await auxiliaryServices.StaticFileService.CreateStaticFileAsync(page);
+            await CreateStaticFile(page);
             await WriteTocAsync("/");
 
             // If this is a blog post, also update the TOC for the blog stream
             if (article.ArticleType == (int)ArticleType.BlogPost || article.ArticleType == (int)ArticleType.BlogStream)
             {
                 await WriteTocAsync($"/{article.BlogKey}");
-            }
-
-            // Publish domain event for cache invalidation after successful publish
-            if (eventDispatcher != null)
-            {
-                await eventDispatcher.DispatchAsync(new ArticlePublishedEvent(article.ArticleNumber, article.Id));
             }
 
             return await PurgeCdnAsync(page);
@@ -239,16 +377,19 @@ namespace Sky.Editor.Services.Publishing
 
             // If no IDs provided, publish all pages
             var pageIds = (ids == null || !ids.Any())
-                ? await context.Database.Pages.Select(p => p.Id).ToListAsync()
+                ? await db.Pages.Select(p => p.Id).ToListAsync()
                 : ids.ToList();
 
             await progressReporter.ReportProgressAsync(0, pageIds.Count, "Preparing to generate static pages...");
 
+            // Pre-load layout once
+            var layout = await GetDefaultLayoutAsync();
+
             // Determine optimal parallelism based on storage backend
             var parallelism = StorageParallelismHelper.GetOptimalParallelism(
-                context.Storage,
+                storage,
                 logger,
-                context.Settings.StaticPageParallelism);
+                settings.StaticPageParallelism);
 
             logger.LogInformation(
                 "Starting static page generation for {PageCount} page(s) with parallelism: {Parallelism}",
@@ -267,7 +408,7 @@ namespace Sky.Editor.Services.Publishing
             for (int i = 0; i < pageIds.Count; i += batchSize)
             {
                 var batchIds = pageIds.Skip(i).Take(batchSize);
-                var pages = await context.Database.Pages.Where(w => batchIds.Contains(w.Id)).ToListAsync();
+                var pages = await db.Pages.Where(w => batchIds.Contains(w.Id)).ToListAsync();
 
                 // Process this batch with adaptive parallelism
                 var options = new ParallelOptions
@@ -279,16 +420,18 @@ namespace Sky.Editor.Services.Publishing
 
                 await Parallel.ForEachAsync(pages, options, async (page, cancellationToken) =>
                 {
-                    var scopedStaticFileService = staticFileServiceFactory.CreateScoped();
+                    await using var scope = serviceProvider.CreateAsyncScope();
+                    var scopedStorage = scope.ServiceProvider.GetRequiredService<IStorageContext>();
+                    var scopedLogger = scope.ServiceProvider.GetRequiredService<ILogger<PublishingService>>();
+                    var scopedViewRenderer = scope.ServiceProvider.GetRequiredService<IViewRenderService>();
 
-                    try
-                    {
-                        await scopedStaticFileService.CreateStaticFileAsync(page);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Failed to create static file for page {PageId} ({UrlPath}). Skipping this page.", page.Id, page.UrlPath);
-                    }
+                    await CreateStaticFileWithRetrySafeAsync(
+                        page,
+                        layout,
+                        scopedStorage,
+                        scopedViewRenderer,
+                        scopedLogger,
+                        cancellationToken);
 
                     // Thread-safe increment and progress reporting
                     int currentCount;
@@ -336,7 +479,7 @@ namespace Sky.Editor.Services.Publishing
                 pageIds.Count,
                 "Purging CDN cache...");
 
-            var cdnService = await CdnService.GetCdnServiceAsync(context.Database, logger, context.HttpContextAccessor.HttpContext);
+            var cdnService = await CdnService.GetCdnServiceAsync(db, logger, httpContextAccessor.HttpContext);
             if (cdnService != null)
             {
                 await cdnService.PurgeCdn();
@@ -348,12 +491,203 @@ namespace Sky.Editor.Services.Publishing
                 "Static page generation completed successfully!");
         }
 
+        /// <summary>
+        /// Creates a static file with retry logic and exponential backoff (thread-safe version).
+        /// </summary>
+        /// <param name="page">The published page to generate a static file for.</param>
+        /// <param name="layout">Pre-loaded layout to avoid thread-safety issues.</param>
+        /// <param name="storage">Scoped storage context for this operation.</param>
+        /// <param name="viewRenderer">Scoped view renderer for this operation.</param>
+        /// <param name="logger">Scoped logger for this operation.</param>
+        /// <param name="cancellationToken">Cancellation token for the operation.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <remarks>
+        /// <para>
+        /// Wraps <see cref="CreateStaticFileSafeAsync"/> with resilience logic:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><description>Maximum 3 retry attempts (4 total attempts including initial)</description></item>
+        ///   <item><description>Initial delay: 500ms, doubled on each retry (500ms, 1s, 2s)</description></item>
+        ///   <item><description>Retries on transient storage exceptions (IO, timeout, HTTP 5xx, throttling)</description></item>
+        ///   <item><description>Logs warnings on retries, errors on final failure</description></item>
+        /// </list>
+        /// <para>
+        /// After all retries exhausted, the exception is logged but not rethrown to avoid
+        /// failing the entire batch operation.
+        /// </para>
+        /// </remarks>
+        private async Task CreateStaticFileWithRetrySafeAsync(
+            PublishedPage page,
+            LayoutViewModel layout,
+            IStorageContext storage,
+            IViewRenderService viewRenderer,
+            ILogger<PublishingService> logger,
+            CancellationToken cancellationToken = default)
+        {
+            const int maxRetries = 3;
+            const int initialDelayMs = 500;
+            var currentDelay = initialDelayMs;
+
+            for (int attempt = 0; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    await CreateStaticFileSafeAsync(page, layout, storage, viewRenderer);
+
+                    if (attempt > 0)
+                    {
+                        logger.LogInformation(
+                            "Successfully created static file for page {PageId} ({UrlPath}) after {Attempts} attempt(s)",
+                            page.Id, page.UrlPath, attempt + 1);
+                    }
+
+                    return;
+                }
+                catch (Exception ex) when (attempt < maxRetries && IsTransientException(ex))
+                {
+                    logger.LogWarning(ex,
+                        "Transient error creating static file for page {PageId} ({UrlPath}). Attempt {Attempt} of {MaxAttempts}. Retrying in {Delay}ms...",
+                        page.Id, page.UrlPath, attempt + 1, maxRetries + 1, currentDelay);
+
+                    await Task.Delay(currentDelay, cancellationToken);
+                    currentDelay *= 2;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex,
+                        "Failed to create static file for page {PageId} ({UrlPath}) after {Attempts} attempt(s). Skipping this page.",
+                        page.Id, page.UrlPath, attempt + 1);
+
+                    return; // Don't throw - allow other pages to continue
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the default layout lazily from the database with thread-safe initialization.
+        /// </summary>
+        /// <returns>The default layout view model.</returns>
+        private async Task<LayoutViewModel> GetDefaultLayoutAsync()
+        {
+            if (defaultLayout == null)
+            {
+                await layoutLock.WaitAsync();
+                try
+                {
+                    if (defaultLayout == null) // Double-check after acquiring lock
+                    {
+                        var layout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
+                        defaultLayout = new LayoutViewModel(layout);
+                    }
+                }
+                finally
+                {
+                    layoutLock.Release();
+                }
+            }
+
+            return defaultLayout;
+        }
+
+        /// <summary>
+        /// Creates a static file (thread-safe version with explicit dependencies).
+        /// </summary>
+        /// <param name="page">The published page to generate a static file for.</param>
+        /// <param name="layout">Pre-loaded layout to use.</param>
+        /// <param name="storage">Storage context to use for upload.</param>
+        /// <param name="viewRenderer">View renderer to use for HTML generation.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        private async Task CreateStaticFileSafeAsync(
+            PublishedPage page,
+            LayoutViewModel layout,
+            IStorageContext storage,
+            IViewRenderService viewRenderer)
+        {
+            if (!settings.StaticWebPages)
+            {
+                return;
+            }
+
+            var rel = page.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase)
+                ? "/index.html"
+                : "/" + page.UrlPath.TrimStart('/');
+
+            var model = new ArticleViewModel()
+            {
+                ArticleNumber = page.ArticleNumber,
+                Title = page.Title,
+                Content = page.Content,
+                HeadJavaScript = page.HeaderJavaScript,
+                FooterJavaScript = page.FooterJavaScript,
+                Updated = page.Updated,
+                AuthorInfo = page.AuthorInfo,
+                Published = page.Published,
+                Expires = page.Expires,
+                BannerImage = page.BannerImage,
+                UrlPath = page.UrlPath,
+                ArticleType = (ArticleType)(page.ArticleType ?? 0),
+                Category = page.Category,
+                Introduction = page.Introduction,
+                Id = page.Id,
+                EditModeOn = false,
+                PreviewMode = false,
+                ReadWriteMode = false,
+                VersionNumber = page.VersionNumber,
+                CacheDuration = 0,
+                Layout = layout // Use pre-loaded layout
+            };
+
+            var html = await viewRenderer.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
+
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(html));
+            await storage.AppendBlob(ms, new FileUploadMetaData
+            {
+                ChunkIndex = 0,
+                ContentType = "text/html",
+                FileName = Path.GetFileName(rel),
+                RelativePath = rel,
+                TotalChunks = 1,
+                TotalFileSize = ms.Length,
+                UploadUid = Guid.NewGuid().ToString()
+            });
+        }
+
+        /// <summary>
+        /// Determines if an exception represents a transient storage failure that should trigger a retry.
+        /// </summary>
+        /// <param name="ex">The exception to evaluate.</param>
+        /// <returns>True if the exception is likely transient and the operation should be retried; otherwise false.</returns>
+        /// <remarks>
+        /// <para>
+        /// Transient failures include:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><description>IO exceptions (network interruptions, disk errors)</description></item>
+        ///   <item><description>Timeout exceptions</description></item>
+        ///   <item><description>HTTP request exceptions with 5xx status codes (server errors) or 429 (throttling)</description></item>
+        /// </list>
+        /// <para>
+        /// Non-transient failures (e.g., authentication errors, malformed requests) return false.
+        /// </para>
+        /// </remarks>
+        private static bool IsTransientException(Exception ex)
+        {
+            return ex switch
+            {
+                IOException => true,
+                TimeoutException => true,
+                HttpRequestException httpEx => httpEx.StatusCode >= System.Net.HttpStatusCode.InternalServerError ||
+                                               httpEx.StatusCode == System.Net.HttpStatusCode.TooManyRequests,
+                _ => false
+            };
+        }
+
         /// <inheritdoc/>
         public async Task UnpublishAsync(Article article)
         {
             var articleNumber = article.ArticleNumber;
 
-            var versions = await context.Database.Articles.Where(a => a.ArticleNumber == articleNumber && a.Published != null).ToListAsync();
+            var versions = await db.Articles.Where(a => a.ArticleNumber == articleNumber && a.Published != null).ToListAsync();
             if (!versions.Any())
             {
                 return;
@@ -364,13 +698,13 @@ namespace Sky.Editor.Services.Publishing
                 v.Published = null;
             }
 
-            var pages = await context.Database.Pages
+            var pages = await db.Pages
                 .Where(p => p.ArticleNumber == articleNumber && p.StatusCode != (int)StatusCodeEnum.Redirect)
                 .ToListAsync();
 
-            context.Database.Pages.RemoveRange(pages);
-            await context.Database.SaveChangesAsync();
-            auxiliaryServices.StaticFileService.DeleteStaticFiles(pages);
+            db.Pages.RemoveRange(pages);
+            await db.SaveChangesAsync();
+            DeleteStatic(pages);
 
             foreach (var page in pages)
             {
@@ -378,26 +712,54 @@ namespace Sky.Editor.Services.Publishing
             }
 
             // Update catalog entry to reflect unpublished state
-            var catalogEntry = await context.Database.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == articleNumber);
+            var catalogEntry = await db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == articleNumber);
             if (catalogEntry != null)
             {
                 catalogEntry.Published = null;
-                await context.Database.SaveChangesAsync();
-            }
-
-            // Publish domain event for cache invalidation after successful unpublish
-            if (eventDispatcher != null)
-            {
-                await eventDispatcher.DispatchAsync(new ArticleUnpublishedEvent(articleNumber));
+                await db.SaveChangesAsync();
             }
 
             await WriteTocAsync("/");
         }
 
         /// <inheritdoc/>
-        public Task WriteTocAsync(string prefix = "/")
+        public async Task WriteTocAsync(string prefix = "/")
         {
-            return auxiliaryServices.TocService.WriteTocAsync(prefix);
+            if (!settings.StaticWebPages)
+            {
+                return;
+            }
+
+            // ✅ ADD THREAD-SAFETY: Ensure only one operation writes TOC at a time
+            // This prevents "DbContext concurrent operation" exceptions when multiple tenants publish simultaneously
+            await writeTocSemaphore.WaitAsync();
+            try
+            {
+                var toc = await articleCatalogQueryService.GetTableOfContentsAsync(prefix, 0, 500, false);
+
+                if (toc == null)
+                {
+                    return;
+                }
+
+                var json = JsonConvert.SerializeObject(toc);
+                var target = string.IsNullOrEmpty(prefix) || prefix == "/" ? "/toc.json" : $"/pub/---toc/{prefix}/toc.json";
+                using var ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
+                await storage.AppendBlob(ms, new FileUploadMetaData
+                {
+                    ChunkIndex = 0,
+                    ContentType = "application/json",
+                    FileName = Path.GetFileName(target),
+                    RelativePath = target,
+                    TotalChunks = 1,
+                    TotalFileSize = ms.Length,
+                    UploadUid = Guid.NewGuid().ToString()
+                });
+            }
+            finally
+            {
+                writeTocSemaphore.Release();
+            }
         }
 
         /// <summary>
@@ -436,7 +798,7 @@ namespace Sky.Editor.Services.Publishing
             var versionNumber = article.VersionNumber;
 
             // Find previous versions of this article number that are published before this one.
-            var others = await context.Database.Articles.Where(a =>
+            var others = await db.Articles.Where(a =>
                 a.ArticleNumber == article.ArticleNumber &&
                 a.Published != null &&
                 a.VersionNumber < versionNumber).ToListAsync();
@@ -455,18 +817,144 @@ namespace Sky.Editor.Services.Publishing
                 o.Published = null;
             }
 
-            await context.Database.SaveChangesAsync();
+            await db.SaveChangesAsync();
 
             // Remove their published pages.
-            var doomedPages = await context.Database.Pages
+            var doomedPages = await db.Pages
                 .Where(p => ids.Contains(p.Id))
                 .ToListAsync();
 
-            context.Database.Pages.RemoveRange(doomedPages);
-            await context.Database.SaveChangesAsync();
+            db.Pages.RemoveRange(doomedPages);
+            await db.SaveChangesAsync();
 
             // Remove their static files.
-            auxiliaryServices.StaticFileService.DeleteStaticFiles(doomedPages);
+            DeleteStatic(doomedPages);
+        }
+
+        /// <summary>
+        /// Deletes static HTML files from blob storage for the specified published pages.
+        /// </summary>
+        /// <param name="pages">Collection of published pages whose static files should be removed.</param>
+        /// <remarks>
+        /// <para>
+        /// This method is called during unpublish operations to clean up static artifacts.
+        /// File deletion failures are silently ignored to ensure the unpublish workflow continues
+        /// even if storage is temporarily unavailable or files have already been removed.
+        /// </para>
+        /// <para>
+        /// Each page's <see cref="PublishedPage.UrlPath"/> is converted to a storage-relative path:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><description>"root" → "/index.html"</description></item>
+        ///   <item><description>Any other path → "/{urlPath}" (normalized with leading slash)</description></item>
+        /// </list>
+        /// <para>
+        /// Only executes if <see cref="IEditorSettings.StaticWebPages"/> is enabled.
+        /// </para>
+        /// </remarks>
+        private void DeleteStatic(IEnumerable<PublishedPage> pages)
+        {
+            if (!settings.StaticWebPages)
+            {
+                return;
+            }
+
+            foreach (var page in pages)
+            {
+                var rel = page.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase)
+                ? "/index.html"
+                : "/" + page.UrlPath.TrimStart('/');
+                try
+                {
+                    storage.DeleteFile(rel);
+                }
+                catch
+                {
+                    /* ignore */
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generates and uploads a static HTML file to blob storage for the specified published page.
+        /// </summary>
+        /// <param name="page">The published page to generate a static file for. Must have valid <see cref="PublishedPage.UrlPath"/>, <see cref="PublishedPage.Title"/>, and <see cref="PublishedPage.Content"/>.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous upload operation.</returns>
+        /// <remarks>
+        /// <para>
+        /// Constructs a complete, minimal HTML5 document from the page metadata and content.
+        /// The generated HTML structure includes:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><description>HTML5 doctype and language attribute</description></item>
+        ///   <item><description>UTF-8 character encoding declaration</description></item>
+        ///   <item><description>HTML-encoded page title from <see cref="PublishedPage.Title"/></description></item>
+        ///   <item><description>Optional header scripts from <see cref="PublishedPage.HeaderJavaScript"/></description></item>
+        ///   <item><description>Page body content from <see cref="PublishedPage.Content"/></description></item>
+        ///   <item><description>Optional footer scripts from <see cref="PublishedPage.FooterJavaScript"/></description></item>
+        /// </list>
+        /// <para>
+        /// The file is uploaded to blob storage with MIME type "text/html" at a path determined by the page's URL:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><description>"root" → "/index.html"</description></item>
+        ///   <item><description>Other paths → "/{urlPath}" (normalized with leading slash)</description></item>
+        /// </list>
+        /// <para>
+        /// Only executes if <see cref="IEditorSettings.StaticWebPages"/> is enabled.
+        /// </para>
+        /// </remarks>
+        private async Task CreateStaticFile(PublishedPage page)
+        {
+            if (!settings.StaticWebPages)
+            {
+                return;
+            }
+
+            var rel = page.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase)
+                ? "/index.html"
+                : "/" + page.UrlPath.TrimStart('/');
+
+            var layout = await GetDefaultLayoutAsync();
+
+            var model = new ArticleViewModel()
+            {
+                ArticleNumber = page.ArticleNumber,
+                Title = page.Title,
+                Content = page.Content,
+                HeadJavaScript = page.HeaderJavaScript,
+                FooterJavaScript = page.FooterJavaScript,
+                Updated = page.Updated,
+                AuthorInfo = page.AuthorInfo,
+                Published = page.Published,
+                Expires = page.Expires,
+                BannerImage = page.BannerImage,
+                UrlPath = page.UrlPath,
+                ArticleType = (ArticleType)(page.ArticleType ?? 0),
+                Category = page.Category,
+                Introduction = page.Introduction,
+                Id = page.Id,
+                EditModeOn = false,
+                PreviewMode = false,
+                ReadWriteMode = false,
+                VersionNumber = page.VersionNumber,
+                CacheDuration = 0,
+                Layout = layout
+            };
+
+            var html = await viewRenderService.RenderToStringAsync("~/Views/Home/Index.cshtml", model);
+
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(html));
+            await storage.AppendBlob(ms, new FileUploadMetaData
+            {
+                ChunkIndex = 0,
+                ContentType = "text/html",
+                FileName = Path.GetFileName(rel),
+                RelativePath = rel,
+                TotalChunks = 1,
+                TotalFileSize = ms.Length,
+                UploadUid = Guid.NewGuid().ToString()
+            });
         }
 
         /// <summary>
@@ -478,11 +966,47 @@ namespace Sky.Editor.Services.Publishing
         /// Returns an empty list if no CDN service is configured or if the operation fails.
         /// </returns>
         /// <remarks>
-        /// Delegates to <see cref="ICdnPurgeService"/> for CDN cache invalidation.
+        /// <para>
+        /// This method coordinates cache invalidation with configured CDN providers (e.g., Azure CDN, Cloudflare)
+        /// to ensure updated content is served immediately rather than after cache expiration.
+        /// </para>
+        /// <para>
+        /// The purge path is constructed from the page's URL:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><description>"root" → "/" (site homepage)</description></item>
+        ///   <item><description>Other paths → "{PublisherUrl}/{urlPath}" (fully qualified URL)</description></item>
+        /// </list>
+        /// <para>
+        /// CDN purge failures are logged as warnings but do not throw exceptions, allowing publish operations
+        /// to complete successfully even when CDN communication fails. Callers should inspect the returned
+        /// <see cref="CdnResult"/> collection to determine success/failure status for each provider.
+        /// </para>
         /// </remarks>
-        private Task<List<CdnResult>> PurgeCdnAsync(PublishedPage page)
+        private async Task<List<CdnResult>> PurgeCdnAsync(PublishedPage page)
         {
-            return auxiliaryServices.CdnPurgeService.PurgePageCacheAsync(page);
+            var results = new List<CdnResult>();
+            try
+            {
+                var cdnService = await CdnService.GetCdnServiceAsync(db, logger, httpContextAccessor.HttpContext);
+                if (cdnService == null)
+                {
+                    return results;
+                }
+
+                var path = page.UrlPath.Equals("root", StringComparison.OrdinalIgnoreCase)
+                    ? "/"
+                    : $"{settings.PublisherUrl.TrimEnd('/')}/{page.UrlPath.TrimStart('/')}";
+                var paths = new List<string> { path };
+
+                results = await cdnService.PurgeCdn(paths);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "CDN purge failed");
+            }
+
+            return results;
         }
     }
 }

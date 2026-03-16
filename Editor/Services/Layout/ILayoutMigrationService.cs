@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Services.Layout
 {
-    using System.Threading.Tasks;
     using Sky.Editor.Services.Migrations.Core;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for migrating existing layouts to use LayoutNumber versioning.

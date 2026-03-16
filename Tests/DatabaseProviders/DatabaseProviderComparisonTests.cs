@@ -7,20 +7,17 @@
 
 namespace Sky.Tests.DatabaseProviders
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Data.Common;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
-    using AspNetCore.Identity.FlexDb.Strategies;
-    using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Data.Sqlite;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System;
+    using System.Collections.Generic;
+    using System.Data.Common;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Comprehensive tests comparing performance and functionality across all four database providers.
@@ -44,19 +41,19 @@ namespace Sky.Tests.DatabaseProviders
                 .Build();
 
             // Setup SQLite in-memory connection (must stay open)
-            var sqliteConnectionString = _configuration.GetConnectionString("SQLite") 
+            var sqliteConnectionString = _configuration.GetConnectionString("SQLite")
                 ?? "Data Source=:memory:;Mode=Memory;Cache=Shared;";
-            
+
             _sqliteConnection = new SqliteConnection(sqliteConnectionString);
             _sqliteConnection.Open();
 
             _connectionStrings = new Dictionary<string, string>
             {
-                ["CosmosDB"] = _configuration.GetConnectionString("CosmosDB") 
+                ["CosmosDB"] = _configuration.GetConnectionString("CosmosDB")
                     ?? "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;Database=TestDb",
-                ["SqlServer"] = _configuration.GetConnectionString("SqlServer") 
+                ["SqlServer"] = _configuration.GetConnectionString("SqlServer")
                     ?? $"Server=(localdb)\\mssqllocaldb;Database=TestDb_{Guid.NewGuid()};Trusted_Connection=True;MultipleActiveResultSets=true",
-                ["MySQL"] = _configuration.GetConnectionString("MySQL") 
+                ["MySQL"] = _configuration.GetConnectionString("MySQL")
                     ?? "Server=localhost;Port=3306;Database=testdb;uid=test;pwd=test;",
                 ["SQLite"] = _sqliteConnection.ConnectionString
             };
@@ -101,19 +98,19 @@ namespace Sky.Tests.DatabaseProviders
             // Act & Assert
             var cosmosStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["CosmosDB"]));
             Assert.IsNotNull(cosmosStrategy, "CosmosDB strategy should be found");
-            Assert.AreEqual("Cosmos", cosmosStrategy.ProviderName);
+            Assert.AreEqual("Microsoft.EntityFrameworkCore.Cosmos", cosmosStrategy.ProviderName);
 
             var sqlServerStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["SqlServer"]));
             Assert.IsNotNull(sqlServerStrategy, "SqlServer strategy should be found");
-            Assert.AreEqual("SQL Server", sqlServerStrategy.ProviderName);
+            Assert.AreEqual("Microsoft.EntityFrameworkCore.SqlServer", sqlServerStrategy.ProviderName);
 
             var mySqlStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["MySQL"]));
             Assert.IsNotNull(mySqlStrategy, "MySQL strategy should be found");
-            Assert.AreEqual("MySQL", mySqlStrategy.ProviderName);
+            Assert.AreEqual("Pomelo.EntityFrameworkCore.MySql", mySqlStrategy.ProviderName);
 
             var sqliteStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["SQLite"]));
             Assert.IsNotNull(sqliteStrategy, "SQLite strategy should be found");
-            Assert.AreEqual("SQLite", sqliteStrategy.ProviderName);
+            Assert.AreEqual("Microsoft.EntityFrameworkCore.Sqlite", sqliteStrategy.ProviderName);
         }
 
         /// <summary>
@@ -129,10 +126,10 @@ namespace Sky.Tests.DatabaseProviders
             var orderedStrategies = strategies.OrderBy(s => s.Priority).ToList();
 
             // Assert
-            Assert.AreEqual("Cosmos", orderedStrategies[0].ProviderName);
-            Assert.AreEqual("SQL Server", orderedStrategies[1].ProviderName);
-            Assert.AreEqual("MySQL", orderedStrategies[2].ProviderName);
-            Assert.AreEqual("SQLite", orderedStrategies[3].ProviderName);
+            Assert.AreEqual("Microsoft.EntityFrameworkCore.Cosmos", orderedStrategies[0].ProviderName);
+            Assert.AreEqual("Microsoft.EntityFrameworkCore.SqlServer", orderedStrategies[1].ProviderName);
+            Assert.AreEqual("Pomelo.EntityFrameworkCore.MySql", orderedStrategies[2].ProviderName);
+            Assert.AreEqual("Microsoft.EntityFrameworkCore.Sqlite", orderedStrategies[3].ProviderName);
         }
 
         #endregion

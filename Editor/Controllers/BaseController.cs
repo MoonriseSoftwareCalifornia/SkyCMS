@@ -217,7 +217,7 @@ namespace Sky.Cms.Controllers
         protected async Task<IQueryable<Template>> GetTemplatesForCurrentLayoutAsync()
         {
             var layout = await GetCurrentLayoutAsync();
-            
+
             if (layout == null)
             {
                 // Return empty queryable if no default layout exists
@@ -225,7 +225,7 @@ namespace Sky.Cms.Controllers
             }
 
             return dbContext.Templates
-                .Where(t => t.LayoutNumber == layout.LayoutNumber || 
+                .Where(t => t.LayoutNumber == layout.LayoutNumber ||
                             (t.LayoutNumber == 0 && t.LayoutId == layout.Id)); // Handles unmigrated data
         }
 
@@ -263,7 +263,7 @@ namespace Sky.Cms.Controllers
 
             var query = new GetTemplateQuery { TemplateId = id };
             var result = await mediator.QueryAsync(query);
-            
+
             if (!result.IsSuccess || result.Data?.Template == null)
             {
                 return NotFound();

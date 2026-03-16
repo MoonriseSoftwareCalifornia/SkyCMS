@@ -5,12 +5,9 @@
 
 namespace Sky.Editor.Features.Articles.CreateVersion
 {
-    using System;
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
-    using Sky.Cms.Models;
+    using System;
 
     /// <summary>
     /// Command to create a new version of an existing article.

@@ -3,9 +3,8 @@
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
-using System.Net;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Cosmos.DynamicConfig;
+using System.Net;
 
 namespace Sky.Tests.DynamicConfig
 {

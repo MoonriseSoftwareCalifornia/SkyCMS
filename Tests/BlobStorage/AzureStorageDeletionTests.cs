@@ -4,12 +4,8 @@
 // See https://github.com/CWALabs/SkyCMS
 // </copyright>
 
-using System;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using Cosmos.BlobService.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text;
 
 namespace Sky.Tests.BlobStorage
 {
@@ -28,7 +24,7 @@ namespace Sky.Tests.BlobStorage
         {
             // Arrange
             var path = $"test/{Guid.NewGuid()}/file.txt";
-            
+
             // Upload a test blob first using AppendBlob
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes("test content"));
             var metadata = new FileUploadMetaData
@@ -103,7 +99,7 @@ namespace Sky.Tests.BlobStorage
             // Assert
             var imageExists = await Storage.BlobExistsAsync(imagePath);
             var thumbnailExists = await Storage.BlobExistsAsync(thumbnailPath);
-            
+
             Assert.IsFalse(imageExists, "Image should be deleted");
             Assert.IsFalse(thumbnailExists, "Thumbnail should be deleted");
         }
@@ -150,7 +146,7 @@ namespace Sky.Tests.BlobStorage
             // Assert
             var imageExists = await Storage.BlobExistsAsync(imagePath);
             var thumbnailExists = await Storage.BlobExistsAsync(thumbnailPath);
-            
+
             Assert.IsFalse(imageExists, "PNG should be deleted");
             Assert.IsFalse(thumbnailExists, "Thumbnail should be deleted");
         }
@@ -197,7 +193,7 @@ namespace Sky.Tests.BlobStorage
             // Assert
             var imageExists = await Storage.BlobExistsAsync(imagePath);
             var thumbnailExists = await Storage.BlobExistsAsync(thumbnailPath);
-            
+
             Assert.IsFalse(imageExists, "GIF should be deleted");
             Assert.IsFalse(thumbnailExists, "Thumbnail should be deleted");
         }
@@ -272,7 +268,7 @@ namespace Sky.Tests.BlobStorage
             // Assert
             var file1Exists = await Storage.BlobExistsAsync(file1Path);
             var file2Exists = await Storage.BlobExistsAsync(file2Path);
-            
+
             Assert.IsFalse(file1Exists, "File 1 should be deleted");
             Assert.IsFalse(file2Exists, "File 2 should be deleted");
         }

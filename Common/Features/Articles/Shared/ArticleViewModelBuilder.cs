@@ -7,9 +7,6 @@
 
 namespace Cosmos.Common.Features.Articles.Shared;
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
@@ -19,6 +16,8 @@ using Cosmos.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
+using System;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Service for building ArticleViewModel instances from Article and PublishedPage entities.

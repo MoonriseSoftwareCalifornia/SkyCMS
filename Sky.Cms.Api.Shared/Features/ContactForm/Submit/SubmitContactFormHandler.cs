@@ -7,10 +7,10 @@
 
 namespace Sky.Cms.Api.Shared.Features.ContactForm.Submit;
 
-using Cosmos.EmailServices;
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Services.Email;
+using Cosmos.EmailServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Sky.Cms.Api.Shared.Models;

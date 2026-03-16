@@ -1,18 +1,12 @@
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
-using Cosmos.Common.Models;
 using Cosmos.Common.Services.BlogPublishing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Sky.Editor.Services.Publishing;
-using Sky.Editor.Services.StaticFiles;
-using Sky.Editor.Services.TableOfContents;
-using System;
-using System.Threading.Tasks;
 
 namespace Sky.Tests.Services.Publishing
 {
@@ -20,7 +14,6 @@ namespace Sky.Tests.Services.Publishing
     /// Unit tests for <see cref="PublishingService"/> blog stream functionality.
     /// Tests the new client-side orchestration model with versioned wrappers.
     /// </summary>
-    [DoNotParallelize]
     [TestClass]
     public class PublishingServiceBlogStreamTests : SkyCmsTestBase
     {
@@ -38,64 +31,19 @@ namespace Sky.Tests.Services.Publishing
                 .Setup(s => s.GenerateBlogStreamWrapperAsync(It.IsAny<Article>(), It.IsAny<string>()))
                 .ReturnsAsync((Article a, string b) => $"<html><body>Mock wrapper for {a.Title}</body></html>");
 
-            // Create publishing context
-            var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
-                Db,
-                Storage,
-                EditorSettings,
-                HttpContextAccessor,
-                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
-
-            // Create auxiliary services
-            var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
-                Db,
-                new Mock<ILogger<Sky.Editor.Services.CDN.CdnPurgeService>>().Object,
-                HttpContextAccessor,
-                EditorSettings);
-
-            var tocService = new Sky.Editor.Services.TableOfContents.TocService(
-                Storage,
-                EditorSettings,
-                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                new Mock<ILogger<Sky.Editor.Services.TableOfContents.TocService>>().Object);
-
-            var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
-                Storage,
-                EditorSettings,
-                ViewRenderService,
-                null!, // IMediator not needed for this test
-                new Mock<ILogger<Sky.Editor.Services.StaticFiles.StaticFileService>>().Object);
-
-            var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
-                Db,
-                Storage,
-                HttpContextAccessor);
-
-            var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
-                blogPublishingContext,
-                mockBlogStreamService.Object,
-                ViewRenderService,
-                null!, // IMediator
-                null, // PublishingService reference (circular dependency)
-                new Mock<ILogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>>().Object);
-
-            var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
-                cdnPurgeService,
-                tocService,
-                staticFileService,
-                blogPublishingService);
-
-            var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(Services);
-
             publishingService = new PublishingService(
-                publishingContext,
+                Db,
+                Storage,
+                EditorSettings,
                 new Mock<ILogger<PublishingService>>().Object,
+                HttpContextAccessor,
                 AuthorInfoService,
                 Clock,
-                staticFileServiceFactory,
+                mockBlogStreamService.Object,
+                ViewRenderService,
+                Services,
                 Mock.Of<IPublishingProgressReporter>(),
-                null, // No domain event dispatcher for tests
-                auxiliaryServices);
+                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
         }
 
         [TestCleanup]

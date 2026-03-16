@@ -7,22 +7,20 @@
 
 namespace Sky.Editor.Features.Articles.Clone
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
-    using Sky.Editor.Features.Shared;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Titles;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Handles cloning of existing articles with new titles.
@@ -114,7 +112,7 @@ namespace Sky.Editor.Features.Articles.Clone
                     TemplateId = sourceArticle.TemplateId,
                     BlogKey = sourceArticle.BlogKey ?? string.Empty,
                     ArticleType = (Cosmos.Cms.Common.ArticleType)sourceArticle.ArticleType,
-                    
+
                     // Copy all properties from source article
                     Category = sourceArticle.Category,
                     Introduction = sourceArticle.Introduction,
