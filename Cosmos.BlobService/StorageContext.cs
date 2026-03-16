@@ -52,7 +52,11 @@ namespace Cosmos.BlobService
         /// </summary>
         private bool isMultiTenant;
 
+        private readonly object tenantDriverLock = new();
+
         private ICosmosStorage primaryDriver;
+        private string cachedTenantDomain = string.Empty;
+        private ICosmosStorage cachedTenantDriver;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageContext"/> class for multitenant instances.
@@ -432,8 +436,22 @@ namespace Cosmos.BlobService
         {
             if (this.isMultiTenant == true)
             {
+                var tenantDomain = this.dynamicConfigurationProvider.GetTenantDomainNameFromRequest();
+
+                if (!string.IsNullOrWhiteSpace(tenantDomain))
+                {
+                    lock (tenantDriverLock)
+                    {
+                        if (cachedTenantDriver != null &&
+                            tenantDomain.Equals(cachedTenantDomain, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return cachedTenantDriver;
+                        }
+                    }
+                }
+
                 var connectionString = await this.dynamicConfigurationProvider
-                    .GetStorageConnectionStringAsync()
+                    .GetStorageConnectionStringAsync(tenantDomain)
                     .ConfigureAwait(false);
 
                 if (string.IsNullOrWhiteSpace(connectionString))
@@ -443,8 +461,18 @@ namespace Cosmos.BlobService
                         "For background jobs, consider storing domain context before invoking storage operations.");
                 }
 
-                // Use cached driver to avoid creating new instances on every call
-                return GetOrCreateCachedDriver(connectionString);
+                var driver = GetOrCreateCachedDriver(connectionString);
+
+                if (!string.IsNullOrWhiteSpace(tenantDomain))
+                {
+                    lock (tenantDriverLock)
+                    {
+                        cachedTenantDomain = tenantDomain;
+                        cachedTenantDriver = driver;
+                    }
+                }
+
+                return driver;
             }
 
             return primaryDriver;
