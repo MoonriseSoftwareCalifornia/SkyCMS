@@ -9,6 +9,7 @@ namespace Cosmos.BlobService.Drivers
 {
     using Azure.Storage.Files.Shares;
     using Azure.Storage.Files.Shares.Models;
+    using Cosmos.BlobService.Exceptions;
     using Cosmos.BlobService.Models;
     using System;
     using System.Collections.Generic;
@@ -33,7 +34,7 @@ namespace Cosmos.BlobService.Drivers
         public AzureFileStorage(string connectionString, string fileShare)
         {
             this.shareClient = new ShareClient(connectionString, fileShare);
-            _ = this.shareClient.CreateIfNotExistsAsync().Result;
+            this.shareClient.CreateIfNotExists();
         }
 
         /// <inheritdoc/>
@@ -107,8 +108,6 @@ namespace Cosmos.BlobService.Drivers
             // Work through the list here.
             foreach (var srcBlobName in blobs)
             {
-                var tasks = new List<Task>();
-
                 var fileName = Path.GetFileName(srcBlobName);
                 var destBlobName = destinationFolder.TrimEnd('/') + "/" + fileName.TrimStart('/');
 
@@ -127,7 +126,7 @@ namespace Cosmos.BlobService.Drivers
 
             if (sourcePath.Equals(destDirectoryPath, StringComparison.InvariantCultureIgnoreCase))
             {
-                throw new Exception("Source and destination cannot be the same.");
+                throw new StorageException("Source and destination cannot be the same.");
             }
 
             var sourceItem = await this.GetObjectAsync(sourcePath);
@@ -136,7 +135,7 @@ namespace Cosmos.BlobService.Drivers
 
             if (destinationItem == null || destinationItem.IsDirectory == false)
             {
-                throw new Exception($"Must be an existing directory: {destDirectoryPath}");
+                throw new StorageException($"Must be an existing directory: {destDirectoryPath}");
             }
 
             if (sourceItem.IsDirectory)
@@ -311,7 +310,7 @@ namespace Cosmos.BlobService.Drivers
         /// <inheritdoc/>
         public Task<List<FileMetadata>> GetInventory()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Inventory enumeration is not supported by AzureFileStorage.");
         }
 
         /// <summary>
@@ -610,14 +609,14 @@ namespace Cosmos.BlobService.Drivers
 
             if (sourcePath.Equals(destinationFolderPath, StringComparison.InvariantCultureIgnoreCase))
             {
-                throw new Exception("The source and destination cannot be the same.");
+                throw new StorageException("The source and destination cannot be the same.");
             }
 
             var destObject = await this.GetObjectAsync(destinationFolderPath);
 
             if (!destObject.IsDirectory)
             {
-                throw new Exception("Destination needs to be a folder");
+                throw new StorageException("Destination needs to be a folder");
             }
 
             var sourceObject = await this.GetObjectAsync(sourcePath);
@@ -639,7 +638,7 @@ namespace Cosmos.BlobService.Drivers
         /// <inheritdoc/>
         public Task<long> GetBytesConsumed()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Byte consumption reporting is not supported by AzureFileStorage.");
         }
 
         /// <summary>
@@ -649,7 +648,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Stream.</returns>
         public Task<Stream> GetImageThumbnailStreamAsync(string target)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Thumbnail stream retrieval is not supported by AzureFileStorage.");
         }
 
         /// <summary>
@@ -659,7 +658,7 @@ namespace Cosmos.BlobService.Drivers
         /// <exception cref="NotImplementedException">Not yet implemented.</exception>
         public Task<long> GetStorageConsumption()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Storage consumption reporting is not supported by AzureFileStorage.");
         }
 
         /// <inheritdoc/>

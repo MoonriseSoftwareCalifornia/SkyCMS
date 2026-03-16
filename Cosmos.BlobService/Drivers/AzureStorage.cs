@@ -540,7 +540,7 @@ namespace Cosmos.BlobService.Drivers
         /// <inheritdoc/>
         public Task<List<FileMetadata>> GetInventory()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Inventory enumeration is not supported by AzureStorage.");
         }
 
         /// <summary>
@@ -729,7 +729,7 @@ namespace Cosmos.BlobService.Drivers
         public async Task UpsertMetadata(string path, IEnumerable<BlobMetadataItem> data)
         {
             var blobClient = await this.GetBlobAsync(path);
-            if (blobClient != null && data != null & data.Count() > 0)
+            if (blobClient != null && data != null && data.Any())
             {
                 await UpsertMetadata(blobClient, data);
             }
@@ -743,21 +743,21 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Task.</returns>
         public async Task UpsertMetadata(BlobClient blobClient, IEnumerable<BlobMetadataItem> data)
         {
-            if (blobClient != null && data != null & data.Count() > 0)
+            if (blobClient != null && data != null && data.Any())
             {
                 var properties = await blobClient.GetPropertiesAsync();
                 var metadata = properties.Value.Metadata;
 
-                foreach (var item in data)
+                foreach (var item in data.Where(i => !string.IsNullOrWhiteSpace(i?.Key)))
                 {
-                    var dataItem = data.FirstOrDefault(d => d.Key.Equals(item.Key, StringComparison.OrdinalIgnoreCase));
-                    if (dataItem != null)
+                    var existingKey = metadata.Keys.FirstOrDefault(k => k.Equals(item.Key, StringComparison.OrdinalIgnoreCase));
+                    if (existingKey != null)
                     {
-                        item.Value = dataItem.Value;
+                        metadata[existingKey] = item.Value ?? string.Empty;
                     }
                     else
                     {
-                        metadata.Add(dataItem.Key, dataItem.Value);
+                        metadata.Add(item.Key, item.Value ?? string.Empty);
                     }
                 }
 
@@ -876,8 +876,6 @@ namespace Cosmos.BlobService.Drivers
             // Work through the list here.
             foreach (var srcBlobName in blobs)
             {
-                var tasks = new List<Task>();
-
                 var fileName = Path.GetFileName(srcBlobName);
                 var destBlobName = destinationFolder.TrimEnd('/') + "/" + fileName.TrimStart('/');
 
@@ -895,7 +893,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Returns the thumbnail stream as a <see cref="Stream"/>.</returns>
         public Task<Stream> GetImageThumbnailStreamAsync(string target)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Thumbnail stream retrieval is not supported by AzureStorage.");
         }
 
         /// <summary>

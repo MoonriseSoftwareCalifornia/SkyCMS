@@ -15,7 +15,6 @@ namespace Cosmos.BlobService
     using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Options;
     using System;
 
     /// <summary>
@@ -23,6 +22,8 @@ namespace Cosmos.BlobService
     /// </summary>
     public static class ServiceCollectionExtensions
     {
+        private const string DefaultDataProtectionApplicationName = "SkyCMS";
+
         /// <summary>
         /// Adds the storage context to the services collection.
         /// </summary>
@@ -54,6 +55,7 @@ namespace Cosmos.BlobService
             var blobClient = GetDataProtectionBlobClient(connectionString, defaultAzureCredential);
 
             services.AddDataProtection()
+                .SetApplicationName(GetDataProtectionApplicationName(config))
                 .UseCryptographicAlgorithms(
                 new AuthenticatedEncryptorConfiguration
                 {
@@ -78,23 +80,13 @@ namespace Cosmos.BlobService
         }
 
         /// <summary>
-        /// Sets the application discriminator for the data protection keys based on the domain name.
+        /// Deprecated middleware hook retained for backward compatibility.
         /// </summary>
         /// <param name="app">Application builder.</param>
         /// <returns>IApplicationBuilder.</returns>
+        [Obsolete("Per-request data protection discriminator mutation is not supported. This method is now a no-op and will be removed in a future version.")]
         public static IApplicationBuilder UseCosmosCmsDataProtection(this IApplicationBuilder app)
         {
-            app.Use(async (context, next) =>
-            {
-                var dataProtectionOptions = context.RequestServices.GetRequiredService<IOptions<DataProtectionOptions>>().Value;
-
-                // Set the ApplicationDiscriminator based on the domain name
-                var domainName = context.Request.Host.Host;
-                dataProtectionOptions.ApplicationDiscriminator = domainName;
-
-                await next();
-            });
-
             return app;
         }
 
@@ -114,8 +106,18 @@ namespace Cosmos.BlobService
             var isMultiTenant = config.GetValue<bool?>("MultiTenantEditor") ?? false;
 
             return isMultiTenant
-                ? config.GetConnectionString("DataProtectionStorage")
+                ? config.GetConnectionString(StorageConstants.ConnectionStringKey_DataProtection)
                 : GetConnectionString(config);
+        }
+
+        /// <summary>
+        /// Gets a stable application name used to scope data protection keys.
+        /// </summary>
+        /// <param name="config">Configuration.</param>
+        /// <returns>Data protection application name.</returns>
+        private static string GetDataProtectionApplicationName(IConfiguration config)
+        {
+            return config.GetValue<string>("DataProtection:ApplicationName") ?? DefaultDataProtectionApplicationName;
         }
 
         /// <summary>

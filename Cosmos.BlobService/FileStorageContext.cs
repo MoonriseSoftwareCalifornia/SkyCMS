@@ -134,10 +134,10 @@ namespace Cosmos.BlobService
         /// This method is not implemented for Azure File Shares.
         /// Use <see cref="GetFilesAndDirectories"/> instead.
         /// </remarks>
-        /// <exception cref="NotImplementedException">Use GetFilesAndDirectories for Azure File Shares.</exception>
+        /// <exception cref="NotSupportedException">Use GetFilesAndDirectories for Azure File Shares.</exception>
         public Task<List<string>> GetFilesAsync(string path)
         {
-            throw new NotImplementedException("Use GetFilesAndDirectories method for Azure File Shares.");
+            throw new NotSupportedException("Use GetFilesAndDirectories method for Azure File Shares.");
         }
 
         /// <inheritdoc/>

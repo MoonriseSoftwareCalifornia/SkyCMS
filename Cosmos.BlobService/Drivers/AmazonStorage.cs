@@ -574,7 +574,7 @@ namespace Cosmos.BlobService.Drivers
         /// <inheritdoc/>
         public Task<List<FileMetadata>> GetInventory()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Inventory enumeration is not supported by AmazonStorage.");
         }
 
         /// <summary>
@@ -614,8 +614,6 @@ namespace Cosmos.BlobService.Drivers
             // Work through the list here.
             foreach (var srcBlobName in blobs)
             {
-                var tasks = new List<Task>();
-
                 var fileName = Path.GetFileName(srcBlobName);
                 var destBlobName = destinationFolder.TrimEnd('/') + "/" + fileName.TrimStart('/');
 
@@ -681,7 +679,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Returns the thumbnail stream as a <see cref="Stream"/>.</returns>
         public Task<Stream> GetImageThumbnailStreamAsync(string target)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("Thumbnail stream retrieval is not supported by AmazonStorage.");
         }
 
         /// <summary>
@@ -759,11 +757,7 @@ namespace Cosmos.BlobService.Drivers
                     ForcePathStyle = true
                 };
                 var credentials = new BasicAWSCredentials(config.KeyId, config.Key);
-                var client = new AmazonS3Client(credentials, r2Config);
-
-                var response = client.ListBucketsAsync().Result;
-
-                return client;
+                return new AmazonS3Client(credentials, r2Config);
             }
 
             return new AmazonS3Client(config.KeyId, config.Key, new AmazonS3Config()
