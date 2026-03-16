@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace AspNetCore.Identity.FlexDb
 {
@@ -68,6 +69,44 @@ namespace AspNetCore.Identity.FlexDb
                 {
                     exceptions.Add(ex);
                 }
+
+            throw new AggregateException(exceptions);
+        }
+
+        /// <summary>
+        /// Do async action.
+        /// </summary>
+        /// <param name="action">Async action to execute.</param>
+        /// <param name="retryInterval">Delay between retries.</param>
+        /// <param name="maxAttemptCount">Maximum attempts.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public static async Task DoAsync(
+            Func<Task> action,
+            TimeSpan retryInterval,
+            int maxAttemptCount = 5,
+            CancellationToken cancellationToken = default)
+        {
+            var exceptions = new List<Exception>();
+
+            for (var attempted = 0; attempted < maxAttemptCount; attempted++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    if (attempted > 0)
+                    {
+                        await Task.Delay(retryInterval, cancellationToken);
+                    }
+
+                    await action();
+                    return;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    exceptions.Add(ex);
+                }
+            }
 
             throw new AggregateException(exceptions);
         }

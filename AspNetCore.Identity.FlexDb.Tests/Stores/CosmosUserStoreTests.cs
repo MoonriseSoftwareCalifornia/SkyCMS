@@ -951,24 +951,29 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         /// <summary>
-        /// Sets and retrieves the authenticator key for a user (used by authenticator apps) and asserts it's persisted.
+        /// Sets and updates the authenticator key for a user and verifies the latest value is persisted.
         /// </summary>
         [TestMethod]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task SetAndGetAuthenticatorKeyAsyncTest(TestDatabaseProvider provider)
         {
+            InitializeForProvider(provider);
+
             // Arrange
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             var user = await GetMockRandomUserAsync(userStore);
 
             // Act
-            var loginInfo = GetMockLoginInfoAsync();
-            await userStore.AddLoginAsync(user, loginInfo);
-            await userStore.SetAuthenticatorKeyAsync(user, "AuthenticatorKey", default);
-            var code = await userStore.GetAuthenticatorKeyAsync(user, default);
+            await userStore.SetAuthenticatorKeyAsync(user, "AuthenticatorKey_1", default);
+            var firstCode = await userStore.GetAuthenticatorKeyAsync(user, default);
+
+            await userStore.SetAuthenticatorKeyAsync(user, "AuthenticatorKey_2", default);
+            var updatedCode = await userStore.GetAuthenticatorKeyAsync(user, default);
 
             // Assert
-            Assert.IsNotNull(code);
+            Assert.IsNotNull(firstCode, $"Failed for provider: {provider.DisplayName}");
+            Assert.AreEqual("AuthenticatorKey_1", firstCode, $"Failed for provider: {provider.DisplayName}");
+            Assert.AreEqual("AuthenticatorKey_2", updatedCode, $"Failed for provider: {provider.DisplayName}");
         }
     }
 }

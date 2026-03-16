@@ -97,7 +97,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 }
 
                 _repo.Add(role);
-                await _repo.SaveChangesAsync();
+                await _repo.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -133,7 +133,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 }
 
                 _repo.Delete(role);
-                await _repo.SaveChangesAsync();
+                await _repo.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -149,11 +149,11 @@ namespace AspNetCore.Identity.FlexDb.Stores
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
-            if (string.IsNullOrEmpty(roleId) || string.IsNullOrWhiteSpace(roleId))
+            if (string.IsNullOrWhiteSpace(roleId))
                 throw new ArgumentNullException(nameof(roleId));
 
             var role = await _repo.Table<TRoleEntity>()
-                .SingleOrDefaultAsync(_ => _.Id.Equals(roleId), cancellationToken: cancellationToken);
+                .SingleOrDefaultAsync(_ => _.Id.ToString() == roleId, cancellationToken: cancellationToken);
 
             return role;
         }
@@ -165,7 +165,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
-            if (string.IsNullOrEmpty(normalizedName) || string.IsNullOrWhiteSpace(normalizedName))
+            if (string.IsNullOrWhiteSpace(normalizedName))
                 throw new ArgumentNullException(nameof(normalizedName));
 
             // Normalize the input to ensure case-insensitive comparison
@@ -264,7 +264,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
             try
             {
                 _repo.Update(role);
-                await _repo.SaveChangesAsync();
+                await _repo.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -274,16 +274,16 @@ namespace AspNetCore.Identity.FlexDb.Stores
             return IdentityResult.Success;
         }
 
-        private void SetRoleProperty<T>(TRoleEntity user, T value, Action<TRoleEntity, T> setter,
+        private void SetRoleProperty<T>(TRoleEntity role, T value, Action<TRoleEntity, T> setter,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
-            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (role == null) throw new ArgumentNullException(nameof(role));
             if (object.Equals(value, default(T))) throw new ArgumentNullException(nameof(value));
 
-            setter(user, value);
+            setter(role, value);
         }
 
         // <inheritdoc />
@@ -313,7 +313,7 @@ namespace AspNetCore.Identity.FlexDb.Stores
         {
             // Since the IdentityRoleClaim requires an integer ID, we need to get the last ID used and increment by one.
             // This means that if this fails, because of a concurrency issue, we need to retry.
-            await Retry.Do(async () => await InternalAddClaimAsync(role, claim, cancellationToken), TimeSpan.FromSeconds(1)).WaitAsync(cancellationToken);
+            await Retry.DoAsync(() => InternalAddClaimAsync(role, claim, cancellationToken), TimeSpan.FromSeconds(1), cancellationToken: cancellationToken);
         }
 
         private async Task InternalAddClaimAsync(TRoleEntity role, Claim claim, CancellationToken cancellationToken = default)
@@ -347,7 +347,8 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 };
                 _repo.Add(identityRoleClaim);
             }
-            await _repo.SaveChangesAsync().WaitAsync(cancellationToken);
+
+            await _repo.SaveChangesAsync(cancellationToken);
         }
 
         // <inheritdoc />
@@ -362,12 +363,12 @@ namespace AspNetCore.Identity.FlexDb.Stores
 
             var doomed = await _repo.Table<IdentityRoleClaim<TKey>>()
                 .FirstOrDefaultAsync(c => c.RoleId.Equals(role.Id) &&
-                                          c.ClaimValue == claim.Value && c.ClaimType == c.ClaimType, cancellationToken);
+                                          c.ClaimValue == claim.Value && c.ClaimType == claim.Type, cancellationToken);
 
             if (doomed != null)
             {
                 _repo.Delete(doomed);
-                await _repo.SaveChangesAsync().WaitAsync(cancellationToken);
+                await _repo.SaveChangesAsync(cancellationToken);
             }
         }
 

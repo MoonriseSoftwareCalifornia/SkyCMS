@@ -9,7 +9,7 @@
 		<Authors>toiyabe62</Authors>
 		<Nullable>enable</Nullable>
 		<RepositoryType>git</RepositoryType>
-		<PackageTags>Cosmos, CosmosDB, Identity, Provider, AspNetCore, Membership, Roles, AspNetCore.Identity, AspNetCore.Identity.CosmosDb, Microsoft.AspNetCore.Identity, aspnet, efcore, Azure Cosmos DB</PackageTags>
+		<PackageTags>Cosmos,CosmosDB,MySQL,SQL Server,SQLite,Identity,Provider,AspNetCore,Membership,Roles,AspNetCore.Identity,Microsoft.AspNetCore.Identity,aspnet,efcore,Azure Cosmos DB</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AspNetCore.Identity.FlexDb</PackageId>
 		<RepositoryUrl>https://github.com/CosmosSoftware/AspNetCore.Identity.FlexDb</RepositoryUrl>
@@ -17,14 +17,14 @@
 		<PackageIcon>B2C_BrandIcon_Black.png</PackageIcon>
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<Description>A Cosmos DB, MySQL and MS SQL implementation of ASP.NET Core Identity. The choice of DB provider is automatically chosen by the connection string.</Description>
+		<Description>An ASP.NET Core Identity provider for Azure Cosmos DB, MySQL, SQL Server, and SQLite with automatic provider selection from the connection string.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<Company>Cosmos Software LLC</Company>
 		<Copyright>Moonrise Software LLC</Copyright>
-		<PackageReleaseNotes>Dependencies update.</PackageReleaseNotes>
+		<PackageReleaseNotes>Correctness fixes, async cleanup, and package metadata updates.</PackageReleaseNotes>
 		<NoWin32Manifest>true</NoWin32Manifest>
-		<Title>ASP.NET Core Identity Provider for Azure Cosmos DB</Title>
+		<Title>ASP.NET Core Identity Provider for Cosmos DB, MySQL, SQL Server, and SQLite</Title>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -36,8 +36,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
-        <PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" />
 		<PackageReference Include="Roslynator.Analyzers">
 		  <PrivateAssets>all</PrivateAssets>

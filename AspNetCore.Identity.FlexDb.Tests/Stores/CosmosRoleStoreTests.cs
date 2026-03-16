@@ -352,12 +352,40 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         /// <summary>
+        /// Removes only the exact matching claim when multiple claims share the same value.
+        /// </summary>
+        [TestMethod()]
+        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        public async Task RemoveClaimAsync_RemovesOnlyMatchingClaimTypeAndValue(TestDatabaseProvider provider)
+        {
+            InitializeForProvider(provider);
+
+            using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
+            var role = await GetMockRandomRoleAsync(provider.ConnectionString, provider.DatabaseName);
+
+            var claimA = new Claim("PermissionA", "SharedValue");
+            var claimB = new Claim("PermissionB", "SharedValue");
+
+            await roleStore.AddClaimAsync(role, claimA, default);
+            await roleStore.AddClaimAsync(role, claimB, default);
+
+            await roleStore.RemoveClaimAsync(role, claimA, default);
+
+            var remainingClaims = await roleStore.GetClaimsAsync(role, default);
+
+            Assert.AreEqual(1, remainingClaims.Count, $"Failed for provider: {provider.DisplayName}");
+            Assert.AreEqual(claimB.Type, remainingClaims[0].Type, $"Failed for provider: {provider.DisplayName}");
+            Assert.AreEqual(claimB.Value, remainingClaims[0].Value, $"Failed for provider: {provider.DisplayName}");
+        }
+
+        /// <summary>
         /// Queries the role set and asserts that at least one role exists.
         /// </summary>
         [TestMethod]
         [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
         public async Task QueryRolesTest(TestDatabaseProvider provider)
         {
+
             InitializeForProvider(provider);
 
             // Arrange

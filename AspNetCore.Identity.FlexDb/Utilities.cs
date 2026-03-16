@@ -1,5 +1,5 @@
 using System;
-using System.Threading;
+using System.Security.Cryptography;
 
 namespace AspNetCore.Identity.FlexDb
 {
@@ -31,9 +31,7 @@ namespace AspNetCore.Identity.FlexDb
         /// <returns></returns>
         internal static int GenerateRandomInt()
         {
-            Thread.Sleep(20); // Ensure that the seed changes.
-            var rand = new Random();
-            return rand.Next(1, int.MaxValue);
+            return RandomNumberGenerator.GetInt32(1, int.MaxValue);
         }
 
         /// <summary>

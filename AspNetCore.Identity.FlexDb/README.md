@@ -1,7 +1,7 @@
 # AspNetCore.Identity.FlexDb — Developer README
 
 Purpose
-- Identity store implementation and related tests using Cosmos-backed storage.
+- Identity store implementation and related tests for Azure Cosmos DB, MySQL, SQL Server, and SQLite.
 
 Quick start
 ```powershell
@@ -15,13 +15,14 @@ Where to look
 
 Notes
 - Identity changes are sensitive; add tests and check for compatibility with ASP.NET Identity abstractions.
+
 # AspNetCore.Identity.FlexDb - Flexible Database Provider for ASP.NET Core Identity
 
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
-[![License](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![NuGet](https://img.shields.io/nuget/v/AspNetCore.Identity.FlexDb.svg)](https://www.nuget.org/packages/AspNetCore.Identity.FlexDb/)
 
-A flexible, multi-database implementation of ASP.NET Core Identity that **automatically selects the appropriate database provider** based on your connection string. Supports Azure Cosmos DB, SQL Server, and MySQL with seamless switching between providers.
+A flexible, multi-database implementation of ASP.NET Core Identity that **automatically selects the appropriate database provider** based on your connection string. Supports Azure Cosmos DB, SQL Server, MySQL, and SQLite with seamless switching between providers.
 
 ---
 
@@ -115,6 +116,18 @@ AspNetCore.Identity.FlexDb **eliminates the need to choose a specific database p
 | **Features** | Full ACID compliance, advanced indexing, enterprise features |
 | **Connection String** | `Server=server;Initial Catalog=database;User ID=user;Password=password;` |
 | **Use Cases** | Enterprise apps, complex reporting, existing SQL Server infrastructure |
+
+### MySQL
+
+**Best for:** Open-source projects, cost-effective hosting, LAMP stack integration
+
+| Aspect | Details |
+|--------|---------|
+| **Provider Priority** | 30 |
+| **Detection Pattern** | `uid=` or `user id=` (with `server=`) |
+| **Features** | Open source, wide hosting support, good performance |
+| **Connection String** | `Server=server;Port=3306;uid=user;pwd=password;database=dbname;` |
+| **Use Cases** | Linux hosting, open-source projects, budget-conscious deployments |
 
 ### Provider Strategy Selection
 
@@ -412,17 +425,17 @@ public async Task<Dictionary<string, string>> ExportPersonalDataAsync(string use
 - Optimized indexes on email and username
 - Retry policies for transient failures
 
-### MySQL
+### SQLite
 
-**Best for:** Open-source projects, cost-effective hosting, LAMP stack integration
+**Best for:** Lightweight, file-based storage for testing or small applications
 
 | Aspect | Details |
 |--------|---------|
-| **Provider Priority** | 30 |
-| **Detection Pattern** | `uid=` or `user id=` (with `server=`) |
-| **Features** | Open source, wide hosting support, good performance |
-| **Connection String** | `Server=server;Port=3306;uid=user;pwd=password;database=dbname;` |
-| **Use Cases** | Linux hosting, open-source projects, budget-conscious deployments |
+| **Provider Priority** | 40 (lowest) |
+| **Detection Pattern** | `Data Source=` |
+| **Features** | Simple file-based storage, no server required |
+| **Connection String** | `Data Source=app.db;` |
+| **Use Cases** | Testing, development, small standalone apps |
 
 ---
 
@@ -518,7 +531,8 @@ public class ApplicationDbContext : CosmosIdentityDbContext<IdentityUser, Identi
   "ConnectionStrings": {
     "CosmosDb": "AccountEndpoint=https://myaccount.documents.azure.com:443/;AccountKey=mykey;Database=MyDatabase;",
     "SqlServer": "Server=tcp:myserver.database.windows.net,1433;Initial Catalog=MyDatabase;User ID=myuser;Password=mypassword;",
-    "MySQL": "Server=myserver;Port=3306;uid=myuser;pwd=mypassword;database=MyDatabase;"
+    "MySQL": "Server=myserver;Port=3306;uid=myuser;pwd=mypassword;database=MyDatabase;",
+    "SQLite": "Data Source=app.db;"
   }
 }
 ```
@@ -562,6 +576,7 @@ public static class CosmosDbOptionsBuilder
 - **Cosmos DB**: Detects `AccountEndpoint=` pattern
 - **SQL Server**: Detects `User ID` pattern
 - **MySQL**: Detects `uid=` pattern
+- **SQLite**: Detects `Data Source=` pattern
 
 #### Identity Stores
 
@@ -797,6 +812,7 @@ public class MultiTenantDbContext : CosmosIdentityDbContext<IdentityUser, Identi
 // Cosmos DB: Must include "AccountEndpoint="
 // SQL Server: Must include "User ID"
 // MySQL: Must include "uid="
+// SQLite: Must include "Data Source="
 ```
 
 #### Cosmos DB Container Creation
