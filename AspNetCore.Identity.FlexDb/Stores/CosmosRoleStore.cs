@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
@@ -152,8 +153,23 @@ namespace AspNetCore.Identity.FlexDb.Stores
             if (string.IsNullOrWhiteSpace(roleId))
                 throw new ArgumentNullException(nameof(roleId));
 
+            TKey roleKey;
+
+            if (typeof(TKey) == typeof(string))
+            {
+                roleKey = (TKey)(object)roleId;
+            }
+            else if (typeof(TKey) == typeof(Guid))
+            {
+                roleKey = (TKey)(object)Guid.Parse(roleId);
+            }
+            else
+            {
+                roleKey = (TKey)Convert.ChangeType(roleId, typeof(TKey), CultureInfo.InvariantCulture);
+            }
+
             var role = await _repo.Table<TRoleEntity>()
-                .SingleOrDefaultAsync(_ => _.Id.ToString() == roleId, cancellationToken: cancellationToken);
+                .SingleOrDefaultAsync(_ => _.Id.Equals(roleKey), cancellationToken: cancellationToken);
 
             return role;
         }

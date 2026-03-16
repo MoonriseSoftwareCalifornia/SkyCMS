@@ -661,13 +661,16 @@ namespace AspNetCore.Identity.FlexDb.Stores
                 .Select(m => m.RoleId)
                 .ToListAsync(cancellationToken);
 
-            IList<string> res = await _repo
+            var roleNames = await _repo
                 .Table<TRoleEntity>()
                 .Where(m => roleIds.Contains(m.Id))
                 .Select(m => m.Name)
+                .ToListAsync(cancellationToken);
+
+            IList<string> res = roleNames
                 .Where(n => !string.IsNullOrWhiteSpace(n))
                 .Select(n => n!)
-                .ToListAsync(cancellationToken);
+                .ToList();
 
             return res;
         }
