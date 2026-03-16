@@ -78,10 +78,10 @@ namespace Sky.Editor.Services.Migrations
             // Map strategy ProviderName to DatabaseProvider enum
             return strategy.ProviderName switch
             {
-                "Cosmos" => DatabaseProvider.CosmosDb,
-                "SQL Server" => DatabaseProvider.SqlServer,
-                "MySQL" => DatabaseProvider.MySql,
-                "SQLite" => DatabaseProvider.Sqlite,
+                "Microsoft.EntityFrameworkCore.Cosmos" => DatabaseProvider.CosmosDb,
+                "Microsoft.EntityFrameworkCore.SqlServer" => DatabaseProvider.SqlServer,
+                "Pomelo.EntityFrameworkCore.MySql" => DatabaseProvider.MySql,
+                "Microsoft.EntityFrameworkCore.Sqlite" => DatabaseProvider.Sqlite,
                 _ => throw new NotSupportedException(
                     $"Provider '{strategy.ProviderName}' is recognized but not supported by migration service")
             };
