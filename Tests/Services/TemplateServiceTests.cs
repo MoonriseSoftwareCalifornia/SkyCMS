@@ -46,12 +46,12 @@ namespace Sky.Tests.Services
 
             // For single-tenant tests, pass null for the dynamic config provider
             // This enables single-tenant mode which uses Guid.Empty as the tenant sentinel
+            var templateContext = new Sky.Editor.Services.Templates.TemplateContext(Db, null);
             templateService = new TemplateService(
                 environmentMock.Object,
                 loggerMock.Object,
-                Db,
-                Mediator, // Use the Mediator from SkyCmsTestBase
-                null); // Single-tenant mode
+                templateContext,
+                Mediator); // Use the Mediator from SkyCmsTestBase
             
             // Clear the static _seededTenants cache between tests to avoid cross-test pollution
             ClearSeededTenantsCache();

@@ -886,37 +886,62 @@ namespace Sky.Tests.Services.Publishing
 
             var blogStreamRenderingMock = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
 
-            var service = new PublishingService(
+            var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
+                Db,
+                NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
+                HttpContextAccessor,
+                EditorSettings);
+
+            var tocService = new Sky.Editor.Services.TableOfContents.TocService(
+                Storage,
+                EditorSettings,
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance);
+
+            var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
+                Storage,
+                EditorSettings,
+                _mockViewRenderService.Object,
+                null!,
+                NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance);
+
+            var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
+                Db,
+                Storage,
+                HttpContextAccessor);
+
+            var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
+                blogPublishingContext,
+                blogStreamRenderingMock.Object,
+                _mockViewRenderService.Object,
+                null!, // IMediator
+                null, // PublishingService reference (circular dependency)
+                NullLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>.Instance);
+
+            var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
+                cdnPurgeService,
+                tocService,
+                staticFileService,
+                blogPublishingService);
+
+            var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
                 Db,
                 Storage,
                 EditorSettings,
-                NullLogger<PublishingService>.Instance,
                 HttpContextAccessor,
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+
+            var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(_serviceProvider);
+
+            var service = new PublishingService(
+                publishingContext,
+                NullLogger<PublishingService>.Instance,
                 AuthorInfoService,
                 Clock,
-                null!, // IMediator
-                blogStreamRenderingMock.Object,
-                _mockViewRenderService.Object,
-                _serviceProvider,
+                staticFileServiceFactory,
                 new NoOpPublishingProgressReporter(),
-                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
                 null, // No domain event dispatcher for tests
-                new Sky.Editor.Services.CDN.CdnPurgeService(
-                    Db,
-                    NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
-                    HttpContextAccessor,
-                    EditorSettings),
-                new Sky.Editor.Services.TableOfContents.TocService(
-                    Storage,
-                    EditorSettings,
-                    _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                    NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance),
-                new Sky.Editor.Services.StaticFiles.StaticFileService(
-                    Storage,
-                    EditorSettings,
-                    _mockViewRenderService.Object,
-                    null!,
-                    NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance));
+                auxiliaryServices);
 
             // Act
             await service.PublishAsync(article);
@@ -933,73 +958,125 @@ namespace Sky.Tests.Services.Publishing
         private PublishingService CreatePublishingServiceWithProgressReporter(IPublishingProgressReporter progressReporter)
         {
             var mockBlogStreamService = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
-            return new PublishingService(
+
+            var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
+                Db,
+                NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
+                HttpContextAccessor,
+                EditorSettings);
+
+            var tocService = new Sky.Editor.Services.TableOfContents.TocService(
+                Storage,
+                EditorSettings,
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance);
+
+            var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
+                Storage,
+                EditorSettings,
+                _mockViewRenderService.Object,
+                null!,
+                NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance);
+
+            var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
+                Db,
+                Storage,
+                HttpContextAccessor);
+
+            var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
+                blogPublishingContext,
+                mockBlogStreamService.Object,
+                _mockViewRenderService.Object,
+                null!, // IMediator
+                null, // PublishingService reference (circular dependency)
+                NullLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>.Instance);
+
+            var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
+                cdnPurgeService,
+                tocService,
+                staticFileService,
+                blogPublishingService);
+
+            var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
                 Db,
                 Storage,
                 EditorSettings,
-                NullLogger<PublishingService>.Instance,
                 HttpContextAccessor,
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+
+            var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(_serviceProvider);
+
+            return new PublishingService(
+                publishingContext,
+                NullLogger<PublishingService>.Instance,
                 AuthorInfoService,
                 Clock,
-                null!, // IMediator
-                mockBlogStreamService.Object,
-                _mockViewRenderService.Object,
-                _serviceProvider,
+                staticFileServiceFactory,
                 progressReporter,
-                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
                 null, // No domain event dispatcher for tests
-                new Sky.Editor.Services.CDN.CdnPurgeService(
-                    Db,
-                    NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
-                    HttpContextAccessor,
-                    EditorSettings),
-                new Sky.Editor.Services.TableOfContents.TocService(
-                    Storage,
-                    EditorSettings,
-                    _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                    NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance),
-                new Sky.Editor.Services.StaticFiles.StaticFileService(
-                    Storage,
-                    EditorSettings,
-                    _mockViewRenderService.Object,
-                    null!,
-                    NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance));
+                auxiliaryServices);
         }
 
         private PublishingService CreatePublishingServiceWithLogger(ILogger<PublishingService> logger)
         {
             var mockBlogStreamService = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
-            return new PublishingService(
+
+            var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
+                Db,
+                NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
+                HttpContextAccessor,
+                EditorSettings);
+
+            var tocService = new Sky.Editor.Services.TableOfContents.TocService(
+                Storage,
+                EditorSettings,
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance);
+
+            var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
+                Storage,
+                EditorSettings,
+                _mockViewRenderService.Object,
+                null!,
+                NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance);
+
+            var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
+                Db,
+                Storage,
+                HttpContextAccessor);
+
+            var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
+                blogPublishingContext,
+                mockBlogStreamService.Object,
+                _mockViewRenderService.Object,
+                null!, // IMediator
+                null, // PublishingService reference (circular dependency)
+                NullLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>.Instance);
+
+            var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
+                cdnPurgeService,
+                tocService,
+                staticFileService,
+                blogPublishingService);
+
+            var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
                 Db,
                 Storage,
                 EditorSettings,
-                logger,
                 HttpContextAccessor,
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+
+            var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(_serviceProvider);
+
+            return new PublishingService(
+                publishingContext,
+                logger,
                 AuthorInfoService,
                 Clock,
-                null!, // IMediator
-                mockBlogStreamService.Object,
-                _mockViewRenderService.Object,
-                _serviceProvider,
+                staticFileServiceFactory,
                 new NoOpPublishingProgressReporter(),
-                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
                 null, // No domain event dispatcher for tests
-                new Sky.Editor.Services.CDN.CdnPurgeService(
-                    Db,
-                    NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
-                    HttpContextAccessor,
-                    EditorSettings),
-                new Sky.Editor.Services.TableOfContents.TocService(
-                    Storage,
-                    EditorSettings,
-                    _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                    NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance),
-                new Sky.Editor.Services.StaticFiles.StaticFileService(
-                    Storage,
-                    EditorSettings,
-                    _mockViewRenderService.Object,
-                    null!,
-                    NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance));
+                auxiliaryServices);
         }
 
         private PublishedPage CreatePublishedPage(string urlPath)

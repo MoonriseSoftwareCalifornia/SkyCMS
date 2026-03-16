@@ -53,11 +53,9 @@ namespace Sky.Editor.Services.Titles
     /// </remarks>
     public sealed class TitleChangeService : ITitleChangeService
     {
-        private readonly ApplicationDbContext db;
+        private readonly ITitleChangeContext context;
         private readonly ISlugService slugs;
         private readonly IRedirectService redirects;
-        private readonly IClock clock;
-        private readonly IDomainEventDispatcher dispatcher;
         private readonly IPublishingService publishingService;
         private readonly IReservedPaths reservedPaths;
         private readonly IBlogStreamRenderingService blogStreamRenderingService;
@@ -66,31 +64,25 @@ namespace Sky.Editor.Services.Titles
         /// <summary>
         /// Initializes a new instance of the <see cref="TitleChangeService"/> class.
         /// </summary>
-        /// <param name="db">EF Core database context used for querying and persisting title/slug changes.</param>
+        /// <param name="context">Title change context providing database, clock, and event context.Dispatcher.</param>
         /// <param name="slugs">Slug normalization service for converting titles to URL-safe segments.</param>
         /// <param name="redirects">Redirect management service for creating permanent redirects from old to new URLs.</param>
-        /// <param name="clock">Clock abstraction for obtaining testable, deterministic timestamps.</param>
-        /// <param name="dispatcher">Domain event dispatcher for publishing title change events to subscribers.</param>
         /// <param name="publishingService">Publishing service for regenerating static content after title changes.</param>
         /// <param name="reservedPaths">Reserved paths service for validating that new titles don't conflict with system routes.</param>
         /// <param name="blogStreamRenderingService">Blog stream rendering service for regenerating blog stream HTML content with client-side orchestration.</param>
         /// <param name="logger">Logger for diagnostic and error events.</param>
         public TitleChangeService(
-            ApplicationDbContext db,
+            ITitleChangeContext context,
             ISlugService slugs,
             IRedirectService redirects,
-            IClock clock,
-            IDomainEventDispatcher dispatcher,
             IPublishingService publishingService,
             IReservedPaths reservedPaths,
             IBlogStreamRenderingService blogStreamRenderingService,
             ILogger<TitleChangeService> logger)
         {
-            this.db = db;
+            this.context = context;
             this.slugs = slugs;
             this.redirects = redirects;
-            this.clock = clock;
-            this.dispatcher = dispatcher;
             this.publishingService = publishingService;
             this.reservedPaths = reservedPaths;
             this.blogStreamRenderingService = blogStreamRenderingService;
@@ -114,7 +106,7 @@ namespace Sky.Editor.Services.Titles
             // Use a database transaction to ensure atomicity (if supported by the database provider)
             // If any critical operation fails, all changes will be rolled back
             // Note: In-memory databases may not support transactions
-            var transaction = await db.Database.BeginTransactionAsync();
+            var transaction = await context.Database.Database.BeginTransactionAsync();
             
             try
             {
@@ -125,7 +117,7 @@ namespace Sky.Editor.Services.Titles
                 var newSlug = BuildArticleUrl(article);
 
                 // ✅ FIX: Capture the published status BEFORE UpdateVersionsAsync (which may modify it via EF Core tracking)
-                var wasPublished = article.Published.HasValue && article.Published <= clock.UtcNow;
+                var wasPublished = article.Published.HasValue && article.Published <= context.Clock.UtcNow;
 
                 // **PRESERVE ROOT PAGE URL PATH**
                 // The root page must always remain at "root" regardless of title changes
@@ -143,7 +135,7 @@ namespace Sky.Editor.Services.Titles
                     await UpdateVersionsForRootPageAsync(article);
 
                     // Save the main article entity changes (title, etc.)
-                    await db.SaveChangesAsync();
+                    await context.Database.SaveChangesAsync();
 
                     // Republish if the article is currently published
                     if (wasPublished)
@@ -155,13 +147,13 @@ namespace Sky.Editor.Services.Titles
                     await transaction.CommitAsync();
 
                     // ✅ FIX: Dispatch event with the actual old title, not the URL path
-                    await dispatcher.DispatchAsync(new TitleChangedEvent(article.ArticleNumber, oldTitle, article.Title));
+                    await context.Dispatcher.DispatchAsync(new TitleChangedEvent(article.ArticleNumber, oldTitle, article.Title));
 
                     return;
                 }
 
                 // Validate that the new slug doesn't conflict with existing articles
-                var slugConflict = await db.Articles
+                var slugConflict = await context.Database.Articles
                     .AnyAsync(a =>
                         a.ArticleNumber != article.ArticleNumber &&
                         a.UrlPath == newSlug &&
@@ -209,7 +201,7 @@ namespace Sky.Editor.Services.Titles
                 await UpdateVersionsAsync(article, newSlug, oldSlug);
 
                 // Save the main article entity changes (title, URL, etc.)
-                await db.SaveChangesAsync();
+                await context.Database.SaveChangesAsync();
 
                 // Republish if the article is currently published
                 if (wasPublished)
@@ -276,7 +268,7 @@ namespace Sky.Editor.Services.Titles
                 }
 
                 // ✅ FIX: Dispatch event with the actual old title AFTER successful commit
-                await dispatcher.DispatchAsync(new TitleChangedEvent(article.ArticleNumber, oldTitle, article.Title));
+                await context.Dispatcher.DispatchAsync(new TitleChangedEvent(article.ArticleNumber, oldTitle, article.Title));
             }
             catch (Exception ex)
             {
@@ -335,11 +327,11 @@ namespace Sky.Editor.Services.Titles
 
             // Check for title conflicts with other existing articles
             Article existingArticle = articleNumber.HasValue
-                ? await db.Articles.FirstOrDefaultAsync(a =>
+                ? await context.Database.Articles.FirstOrDefaultAsync(a =>
                     a.ArticleNumber != articleNumber &&
                     a.Title.ToLower() == normalizedTitle.ToLower() &&
                     a.StatusCode != (int)StatusCodeEnum.Deleted)
-                : await db.Articles.FirstOrDefaultAsync(a =>
+                : await context.Database.Articles.FirstOrDefaultAsync(a =>
                     a.Title.ToLower() == normalizedTitle.ToLower() &&
                     a.StatusCode != (int)StatusCodeEnum.Deleted);
 
@@ -392,7 +384,7 @@ namespace Sky.Editor.Services.Titles
             List<UrlChange> changedUrls)
         {
             // Find all blog posts associated with the old blog key
-            var blogEntries = await db.Articles
+            var blogEntries = await context.Database.Articles
                 .Where(a => a.BlogKey == oldBlogKey && a.ArticleType == (int)ArticleType.BlogPost)
                 .ToListAsync();
 
@@ -408,7 +400,7 @@ namespace Sky.Editor.Services.Titles
                 // Track URL change if paths differ, with published status for this specific blog entry
                 if (!oldPath.Equals(newPath, StringComparison.OrdinalIgnoreCase))
                 {
-                    var isEntryPublished = entry.Published.HasValue && entry.Published <= clock.UtcNow;
+                    var isEntryPublished = entry.Published.HasValue && entry.Published <= context.Clock.UtcNow;
                     changedUrls.Add(new UrlChange
                     {
                         OldUrl = oldPath,
@@ -422,14 +414,14 @@ namespace Sky.Editor.Services.Titles
                 await UpdateVersionsAsync(entry, newBlogKey, oldPath);
 
                 // If published, republish at new URL
-                if (entry.Published != null && entry.Published <= clock.UtcNow)
+                if (entry.Published != null && entry.Published <= context.Clock.UtcNow)
                 {
                     await publishingService.PublishAsync(entry);
                 }
             }
 
             // Save all blog entry changes in a single transaction
-            await db.SaveChangesAsync();
+            await context.Database.SaveChangesAsync();
 
             // Regenerate the blog stream's HTML content with updated links using modern client-side architecture
             var generatedHtml = await blogStreamRenderingService.GenerateBlogStreamWrapperAsync(blogStreamArticle, newBlogKey);
@@ -445,10 +437,10 @@ namespace Sky.Editor.Services.Titles
                 blogStreamArticle.Content = generatedHtml;
             }
 
-            await db.SaveChangesAsync();
+            await context.Database.SaveChangesAsync();
 
             // ✅ FIX: Use the actual old title, not the old slug
-            await dispatcher.DispatchAsync(new TitleChangedEvent(
+            await context.Dispatcher.DispatchAsync(new TitleChangedEvent(
                 blogStreamArticle.ArticleNumber,
                 oldTitle,  // ✅ Changed from oldBlogKey to oldTitle
                 blogStreamArticle.Title));
@@ -485,7 +477,7 @@ namespace Sky.Editor.Services.Titles
             var id = article.Id;
 
             // Find all other versions of this article
-            var versions = await db.Articles
+            var versions = await context.Database.Articles
                 .Where(av => av.ArticleNumber == articleNumber && av.Id != id)
                 .ToListAsync();
 
@@ -526,9 +518,9 @@ namespace Sky.Editor.Services.Titles
                 }
 
                 // Republish if this version is currently published
-                if (version.Published.HasValue && version.Published <= clock.UtcNow)
+                if (version.Published.HasValue && version.Published <= context.Clock.UtcNow)
                 {
-                    await db.SaveChangesAsync();
+                    await context.Database.SaveChangesAsync();
                     count = 0;
                     await publishingService.PublishAsync(version);
                 }
@@ -536,7 +528,7 @@ namespace Sky.Editor.Services.Titles
                 // Batch save every 20 records to optimize performance
                 if (++count >= 20)
                 {
-                    await db.SaveChangesAsync();
+                    await context.Database.SaveChangesAsync();
                     count = 0;
                 }
             }
@@ -544,7 +536,7 @@ namespace Sky.Editor.Services.Titles
             // Save any remaining changes
             if (count > 0)
             {
-                await db.SaveChangesAsync();
+                await context.Database.SaveChangesAsync();
             }
         }
 
@@ -637,7 +629,7 @@ namespace Sky.Editor.Services.Titles
 
                     // Update any existing redirects that point TO the old URL to point to the final destination
                     // This prevents redirect chains when an article's title changes multiple times
-                    var incomingRedirects = await db.Articles
+                    var incomingRedirects = await context.Database.Articles
                         .Where(a => a.StatusCode == (int)StatusCodeEnum.Redirect &&
                                    a.RedirectTarget == change.OldUrl)
                         .ToListAsync();
@@ -661,7 +653,7 @@ namespace Sky.Editor.Services.Titles
                                 finalDestination);
                         }
 
-                        await db.SaveChangesAsync();
+                        await context.Database.SaveChangesAsync();
                     }
 
                     result.SuccessCount++;
@@ -722,7 +714,7 @@ namespace Sky.Editor.Services.Titles
         private async Task HandleTitleChangesForChildren(Article article, string oldSlug, string newSlug, List<UrlChange> changedUrls)
         {
             // Find all articles that have the old slug as a parent (URL path starts with old slug)
-            var childArticles = await db.Articles
+            var childArticles = await context.Database.Articles
                 .Where(a => a.UrlPath.StartsWith(oldSlug + "/") && a.StatusCode != (int)StatusCodeEnum.Deleted)
                 .ToListAsync();
 
@@ -752,7 +744,7 @@ namespace Sky.Editor.Services.Titles
                 // Track URL change if paths differ, with published status for this specific child
                 if (!oldChildPath.Equals(newChildPath, StringComparison.OrdinalIgnoreCase))
                 {
-                    var isChildPublished = child.Published.HasValue && child.Published <= clock.UtcNow;
+                    var isChildPublished = child.Published.HasValue && child.Published <= context.Clock.UtcNow;
                     changedUrls.Add(new UrlChange
                     {
                         OldUrl = oldChildPath,
@@ -767,9 +759,9 @@ namespace Sky.Editor.Services.Titles
                 await UpdateVersionsAsync(child, newChildPath, oldChildPath);
 
                 // Republish if the child article is currently published
-                if (child.Published != null && child.Published <= clock.UtcNow)
+                if (child.Published != null && child.Published <= context.Clock.UtcNow)
                 {
-                    await db.SaveChangesAsync();
+                    await context.Database.SaveChangesAsync();
                     count = 0;
                     await publishingService.PublishAsync(child);
                 }
@@ -777,7 +769,7 @@ namespace Sky.Editor.Services.Titles
                 // Batch save every 20 records to optimize performance
                 if (++count >= 20)
                 {
-                    await db.SaveChangesAsync();
+                    await context.Database.SaveChangesAsync();
                     count = 0;
                 }
             }
@@ -785,7 +777,7 @@ namespace Sky.Editor.Services.Titles
             // Save any remaining changes
             if (count > 0)
             {
-                await db.SaveChangesAsync();
+                await context.Database.SaveChangesAsync();
             }
         }
 
@@ -804,7 +796,7 @@ namespace Sky.Editor.Services.Titles
             var id = article.Id;
 
             // Find all other versions of this article
-            var versions = await db.Articles
+            var versions = await context.Database.Articles
                 .Where(av => av.ArticleNumber == articleNumber && av.Id != id)
                 .ToListAsync();
 
@@ -828,9 +820,9 @@ namespace Sky.Editor.Services.Titles
                 version.UrlPath = "root";
 
                 // Republish if this version is currently published
-                if (version.Published.HasValue && version.Published <= clock.UtcNow)
+                if (version.Published.HasValue && version.Published <= context.Clock.UtcNow)
                 {
-                    await db.SaveChangesAsync();
+                    await context.Database.SaveChangesAsync();
                     count = 0;
                     await publishingService.PublishAsync(version);
                 }
@@ -838,7 +830,7 @@ namespace Sky.Editor.Services.Titles
                 // Batch save every 20 records to optimize performance
                 if (++count >= 20)
                 {
-                    await db.SaveChangesAsync();
+                    await context.Database.SaveChangesAsync();
                     count = 0;
                 }
             }
@@ -846,7 +838,7 @@ namespace Sky.Editor.Services.Titles
             // Save any remaining changes
             if (count > 0)
             {
-                await db.SaveChangesAsync();
+                await context.Database.SaveChangesAsync();
             }
         }
 
@@ -874,7 +866,7 @@ namespace Sky.Editor.Services.Titles
 
             while (visited.Add(current) && visited.Count <= maxDepth)
             {
-                var redirect = await db.Articles
+                var redirect = await context.Database.Articles
                     .Where(a => a.UrlPath == current &&
                                a.StatusCode == (int)StatusCodeEnum.Redirect)
                     .FirstOrDefaultAsync();

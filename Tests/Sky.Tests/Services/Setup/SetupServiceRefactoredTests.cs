@@ -105,14 +105,18 @@ namespace Sky.Tests.Services.Setup
             _roleManagerMock = new Mock<RoleManager<IdentityRole>>(
                 roleStore.Object, null, null, null, null);
 
-            // Create service
-            _setupService = new SetupService(
+            // Create setup context
+            var setupContext = new Sky.Editor.Services.Setup.SetupContext(
                 _configurationMock.Object,
-                _loggerMock.Object,
                 _cacheMock.Object,
                 _userManagerMock.Object,
                 _roleManagerMock.Object,
-                _dbContext,
+                _dbContext);
+
+            // Create service
+            _setupService = new SetupService(
+                setupContext,
+                _loggerMock.Object,
                 null, // ILayoutImportService not needed for basic tests
                 _mediatorMock.Object);
         }

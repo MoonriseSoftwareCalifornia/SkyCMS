@@ -644,37 +644,62 @@ namespace Sky.Tests.Services.Publishing
                     settings.BlobPublicUrl));
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            return new PublishingService(
+            var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
+                db,
+                new NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
+                accessor,
+                settings);
+
+            var tocService = new Sky.Editor.Services.TableOfContents.TocService(
+                storage,
+                settings,
+                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                new NullLogger<Sky.Editor.Services.TableOfContents.TocService>());
+
+            var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
+                storage,
+                settings,
+                viewRenderer.Object,
+                null!, // IMediator not needed for error handling tests
+                new NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>());
+
+            var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
+                db,
+                storage,
+                accessor);
+
+            var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
+                blogPublishingContext,
+                blogStreamRenderingService,
+                viewRenderer.Object,
+                null!, // IMediator
+                null, // PublishingService reference (circular dependency)
+                new NullLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>());
+
+            var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
+                cdnPurgeService,
+                tocService,
+                staticFileService,
+                blogPublishingService);
+
+            var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
                 db,
                 storage,
                 settings,
-                logger,
                 accessor,
+                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+
+            var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(serviceProvider);
+
+            return new PublishingService(
+                publishingContext,
+                logger,
                 authors.Object,
                 new SystemClock(),
-                null!, // IMediator
-                blogStreamRenderingService,
-                viewRenderer.Object,
-                serviceProvider,
+                staticFileServiceFactory,
                 new NoOpPublishingProgressReporter(),
-                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
                 null, // No domain event dispatcher for tests
-                new Sky.Editor.Services.CDN.CdnPurgeService(
-                    db,
-                    new NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
-                    accessor,
-                    settings),
-                new Sky.Editor.Services.TableOfContents.TocService(
-                    storage,
-                    settings,
-                    serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                    new NullLogger<Sky.Editor.Services.TableOfContents.TocService>()),
-                new Sky.Editor.Services.StaticFiles.StaticFileService(
-                    storage,
-                    settings,
-                    viewRenderer.Object,
-                    null!, // IMediator not needed for error handling tests
-                    new NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>()));
+                auxiliaryServices);
         }
 
         private static bool InvokeIsTransientException(Exception ex)

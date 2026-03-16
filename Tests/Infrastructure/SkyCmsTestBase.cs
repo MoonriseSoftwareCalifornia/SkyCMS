@@ -256,7 +256,9 @@ namespace Sky.Tests
             // PublishingService will be created after Services is built
 
             RedirectService = new RedirectService(Db, SlugService, Clock, null!); // Will set PublishingService later
-            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, null!, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
+
+            var titleChangeContext = new Sky.Editor.Services.Titles.TitleChangeContext(Db, Clock, EventDispatcher);
+            TitleChangeService = new TitleChangeService(titleChangeContext, SlugService, RedirectService, null!, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>()); // Will set PublishingService later
             
             // ❌ REMOVE THIS - Don't create TemplateService here, it needs Mediator which doesn't exist yet
             // TemplateService = new TemplateService(
@@ -644,49 +646,80 @@ namespace Sky.Tests
             Mediator = ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
 
             // ✅ NOW CREATE TEMPLATE SERVICE WITH CONFIGURATION AND SERVICE PROVIDER
+            var templateContext = new Sky.Editor.Services.Templates.TemplateContext(Db, DynamicConfigurationProvider);
             TemplateService = new TemplateService(
                 webHostEnvironment,
                 new LoggerFactory().CreateLogger<TemplateService>(),
-                Db,
-                Mediator,
-                DynamicConfigurationProvider);      // ✅ Pass service provider (already built)
+                templateContext,
+                Mediator);
 
-            // ✅ CREATE PublishingService WITH Services as the provider (needed for CreateStaticPages)
-            PublishingService = new PublishingService(
+            // ✅ CREATE publishing context
+            var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
                 Db,
                 Storage,
                 EditorSettings,
-                new LoggerFactory().CreateLogger<PublishingService>(),
                 HttpContextAccessor,
-                authorInfoService,
-                Clock,
+                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+
+            // ✅ CREATE auxiliary services for publishing
+            var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
+                Db,
+                new LoggerFactory().CreateLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
+                HttpContextAccessor,
+                EditorSettings);
+
+            var tocService = new Sky.Editor.Services.TableOfContents.TocService(
+                Storage,
+                EditorSettings,
+                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                new LoggerFactory().CreateLogger<Sky.Editor.Services.TableOfContents.TocService>());
+
+            var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
+                Storage,
+                EditorSettings,
+                ViewRenderService,
                 Mediator,
+                new LoggerFactory().CreateLogger<Sky.Editor.Services.StaticFiles.StaticFileService>());
+
+            var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
+                Db,
+                Storage,
+                HttpContextAccessor);
+
+            var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
+                blogPublishingContext,
                 BlogStreamRenderingService,
                 ViewRenderService,
-                Services, // ✅ Pass the service provider
+                Mediator,
+                null, // PublishingService reference (circular dependency resolved by DI)
+                new LoggerFactory().CreateLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>());
+
+            // ✅ CREATE composite auxiliary services
+            var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
+                cdnPurgeService,
+                tocService,
+                staticFileService,
+                blogPublishingService);
+
+            // ✅ CREATE static file service factory for parallel processing
+            var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(Services);
+
+            // ✅ CREATE PublishingService WITH factory (8 params total)
+            PublishingService = new PublishingService(
+                publishingContext,
+                new LoggerFactory().CreateLogger<PublishingService>(),
+                authorInfoService,
+                Clock,
+                staticFileServiceFactory,
                 new NoOpPublishingProgressReporter(),
-                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
                 null, // No domain event dispatcher for tests
-                new Sky.Editor.Services.CDN.CdnPurgeService(
-                    Db,
-                    new LoggerFactory().CreateLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
-                    HttpContextAccessor,
-                    EditorSettings),
-                new Sky.Editor.Services.TableOfContents.TocService(
-                    Storage,
-                    EditorSettings,
-                    Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
-                    new LoggerFactory().CreateLogger<Sky.Editor.Services.TableOfContents.TocService>()),
-                new Sky.Editor.Services.StaticFiles.StaticFileService(
-                    Storage,
-                    EditorSettings,
-                    ViewRenderService,
-                    Mediator,
-                    new LoggerFactory().CreateLogger<Sky.Editor.Services.StaticFiles.StaticFileService>()));
+                auxiliaryServices);
 
             // ✅ NOW UPDATE RedirectService and TitleChangeService with the PublishingService
             RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);
-            TitleChangeService = new TitleChangeService(Db, SlugService, RedirectService, Clock, EventDispatcher, PublishingService, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
+
+            var titleChangeContextWithPublishing = new Sky.Editor.Services.Titles.TitleChangeContext(Db, Clock, EventDispatcher);
+            TitleChangeService = new TitleChangeService(titleChangeContextWithPublishing, SlugService, RedirectService, PublishingService, ReservedPaths, BlogStreamRenderingService, new LoggerFactory().CreateLogger<TitleChangeService>());
 
             // ✅ NOW CREATE LOGIC WITH TEMPLATE SERVICE
             Logic = new ArticleEditLogic(

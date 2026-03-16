@@ -110,14 +110,18 @@ namespace Sky.Tests.Services.Setup
                 // ArticleEditLogic is injected but never used in SetupService - pass null
                 ArticleEditLogicMock = null;
 
-                // Create service (8 parameters - no ArticleEditLogic)
-                Service = new SetupService(
+                // Create setup context (5 infrastructure dependencies)
+                var setupContext = new Sky.Editor.Services.Setup.SetupContext(
                     Configuration,
-                    LoggerMock.Object,
                     MemoryCache,
                     UserManagerMock.Object,
                     RoleManagerMock.Object,
-                    DbContext,
+                    DbContext);
+
+                // Create service (4 parameters)
+                Service = new SetupService(
+                    setupContext,
+                    LoggerMock.Object,
                     LayoutImportServiceMock.Object,
                     MediatorMock.Object);
             }

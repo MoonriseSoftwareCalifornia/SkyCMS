@@ -108,27 +108,9 @@ namespace Sky.Editor.Services.Scheduling
             // Create no-op progress reporter for background jobs (no HTTP context)
             var progressReporter = new NoOpPublishingProgressReporter();
 
-            // Use the locally created instance instead of trying to get from DI
-            var blogStreamRenderingService = blogRenderingService;
-
-            var publishingService = new PublishingService(
-                dbContext,
-                storageContext,
-                editorSettings,
-                scopedServices.GetRequiredService<ILogger<PublishingService>>(),
-                null,  // No HttpContextAccessor in background jobs
-                authorService,
-                scopedServices.GetRequiredService<IClock>(),
-                scopedServices.GetRequiredService<Cosmos.Common.Features.Shared.IMediator>(),
-                blogStreamRenderingService,
-                scopedServices.GetRequiredService<IViewRenderService>(),
-                scopedServices,
-                progressReporter,
-                scopedServices.GetRequiredService<IArticleCatalogQueryService>(),
-                null,  // No domain event dispatcher needed for background jobs
-                scopedServices.GetRequiredService<ICdnPurgeService>(),
-                scopedServices.GetRequiredService<ITocService>(),
-                scopedServices.GetRequiredService<IStaticFileService>());
+            // For PublishingService and BlogPublishingService, use the service provider to avoid circular dependency issues
+            // These services are already registered in DI and can resolve their dependencies properly
+            var publishingService = scopedServices.GetRequiredService<IPublishingService>();
 
             var redirectService = new RedirectService(
                 dbContext,
@@ -136,26 +118,32 @@ namespace Sky.Editor.Services.Scheduling
                 scopedServices.GetRequiredService<IClock>(),
                 publishingService);
 
+            var templateContext = new Sky.Editor.Services.Templates.TemplateContext(
+                dbContext,
+                scopedServices.GetRequiredService<IDynamicConfigurationProvider>());
+
             var templateService = new TemplateService(
                 scopedServices.GetRequiredService<IWebHostEnvironment>(),
                 scopedServices.GetRequiredService<ILogger<TemplateService>>(),
-                dbContext,
-                scopedServices.GetRequiredService<Cosmos.Common.Features.Shared.IMediator>(),
-                scopedServices.GetRequiredService<IDynamicConfigurationProvider>());
+                templateContext,
+                scopedServices.GetRequiredService<Cosmos.Common.Features.Shared.IMediator>());
 
             var layoutPreviewService = new LayoutTemplateService(
                 scopedServices.GetRequiredService<IWebHostEnvironment>(),
                 scopedServices.GetRequiredService<ILogger<LayoutTemplateService>>());
 
-            var titleChangeService = new TitleChangeService(
+            var titleChangeContext = new TitleChangeContext(
                 dbContext,
+                scopedServices.GetRequiredService<IClock>(),
+                null);  // No event dispatcher in background jobs
+
+            var titleChangeService = new TitleChangeService(
+                titleChangeContext,
                 scopedServices.GetRequiredService<ISlugService>(),
                 redirectService,
-                scopedServices.GetRequiredService<IClock>(),
-                null,
                 publishingService,
                 reservedPaths,
-                null,
+                null,  // No blog stream rendering service in background jobs
                 scopedServices.GetRequiredService<ILogger<TitleChangeService>>());
 
             return new ArticleEditLogic(

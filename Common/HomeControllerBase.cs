@@ -16,11 +16,9 @@ namespace Cosmos.Common
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
     using Microsoft.AspNetCore.Cors;
-    using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.RateLimiting;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Methods common to both the editor and publisher home controllers.
@@ -29,8 +27,6 @@ namespace Cosmos.Common
     {
         private readonly IMediator mediator;
         private readonly IApplicationDbContext dbContext;
-        private readonly ILogger<HomeControllerBase> logger;
-        private readonly IEmailSender emailSender;
         private readonly IContactManagementService contactManagementService;
 
         /// <summary>
@@ -38,20 +34,14 @@ namespace Cosmos.Common
         /// </summary>
         /// <param name="mediator">Mediator.</param>
         /// <param name="dbContext">Database context.</param>
-        /// <param name="logger">Logger service.</param>
-        /// <param name="emailSender">Email sender service.</param>
         /// <param name="contactManagementService">Contact management service.</param>
         public HomeControllerBase(
             IMediator mediator,
             IApplicationDbContext dbContext,
-            ILogger<HomeControllerBase> logger,
-            IEmailSender emailSender,
             IContactManagementService contactManagementService)
         {
             this.mediator = mediator;
             this.dbContext = dbContext;
-            this.logger = logger;
-            this.emailSender = emailSender;
             this.contactManagementService = contactManagementService;
         }
 

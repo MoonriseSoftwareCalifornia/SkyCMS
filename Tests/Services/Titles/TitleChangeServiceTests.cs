@@ -65,12 +65,15 @@ namespace Sky.Tests.Services.Titles
                 .Setup(x => x.IsReserved(It.IsAny<string>()))
                 .ReturnsAsync(false);
 
-            _service = new TitleChangeService(
+            var titleChangeContext = new Sky.Editor.Services.Titles.TitleChangeContext(
                 DbContext,
+                MockClock.Object,
+                _mockEventDispatcher.Object);
+
+            _service = new TitleChangeService(
+                titleChangeContext,
                 _slugService,
                 _mockRedirectService.Object,
-                MockClock.Object,
-                _mockEventDispatcher.Object,
                 MockPublishingService.Object,
                 _mockReservedPaths.Object,
                 _mockBlogRenderingService.Object,

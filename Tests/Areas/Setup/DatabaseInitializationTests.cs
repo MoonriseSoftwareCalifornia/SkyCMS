@@ -513,13 +513,16 @@ namespace Sky.Tests.Areas.Setup
 
             _sqliteUserManager = testUserManager; // Store it
 
-            return new SetupService(
+            var setupContext = new Sky.Editor.Services.Setup.SetupContext(
                 config,
-                new NullLogger<SetupService>(),
                 Cache,
                 testUserManager,      // Use the SQLite-based UserManager
                 testRoleManager,      // Use the SQLite-based RoleManager
-                dbContext,            // Use the SQLite database context
+                dbContext);           // Use the SQLite database context
+
+            return new SetupService(
+                setupContext,
+                new NullLogger<SetupService>(),
                 layoutImportService,
                 Mediator);
         }

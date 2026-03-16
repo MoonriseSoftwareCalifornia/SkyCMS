@@ -607,7 +607,7 @@ namespace Sky.Tests.Controllers
                 ILogger<HomeControllerBase> logger,
                 IEmailSender emailSender,
                 IContactManagementService contactManagementService)
-                : base(mediator, dbContext, logger, emailSender, contactManagementService)
+                : base(mediator, dbContext, contactManagementService)
             {
             }
         }

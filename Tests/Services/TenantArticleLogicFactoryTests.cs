@@ -215,37 +215,62 @@ namespace Sky.Tests.Services
                     sp.GetRequiredService<IEditorSettings>().PublisherUrl,
                     sp.GetRequiredService<IEditorSettings>().BlobPublicUrl);
 
-                return new PublishingService(
+                var cdnPurgeService = new Sky.Editor.Services.CDN.CdnPurgeService(
+                    dbContext,
+                    sp.GetRequiredService<ILogger<Sky.Editor.Services.CDN.CdnPurgeService>>(),
+                    null,  // No HttpContextAccessor in tests
+                    sp.GetRequiredService<IEditorSettings>());
+
+                var tocService = new Sky.Editor.Services.TableOfContents.TocService(
+                    storageContext,
+                    sp.GetRequiredService<IEditorSettings>(),
+                    catalogQueryService,
+                    sp.GetRequiredService<ILogger<Sky.Editor.Services.TableOfContents.TocService>>());
+
+                var staticFileService = new Sky.Editor.Services.StaticFiles.StaticFileService(
+                    storageContext,
+                    sp.GetRequiredService<IEditorSettings>(),
+                    sp.GetRequiredService<IViewRenderService>(),
+                    null!, // IMediator
+                    sp.GetRequiredService<ILogger<Sky.Editor.Services.StaticFiles.StaticFileService>>());
+
+                var blogPublishingContext = new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
+                    dbContext,
+                    storageContext,
+                    null);  // No HttpContextAccessor in tests
+
+                var blogPublishingService = new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
+                    blogPublishingContext,
+                    mockBlogStreamRenderingService.Object,
+                    sp.GetRequiredService<IViewRenderService>(),
+                    null!, // IMediator
+                    null, // PublishingService reference (circular dependency)
+                    sp.GetRequiredService<ILogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>>());
+
+                var auxiliaryServices = new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
+                    cdnPurgeService,
+                    tocService,
+                    staticFileService,
+                    blogPublishingService);
+
+                var publishingContext = new Sky.Editor.Services.Publishing.PublishingContext(
                     dbContext,
                     storageContext,
                     sp.GetRequiredService<IEditorSettings>(),
-                    sp.GetRequiredService<ILogger<PublishingService>>(),
                     null,  // No HttpContextAccessor in tests
+                    catalogQueryService);
+
+                var staticFileServiceFactory = new Sky.Editor.Services.StaticFiles.StaticFileServiceFactory(sp);
+
+                return new PublishingService(
+                    publishingContext,
+                    sp.GetRequiredService<ILogger<PublishingService>>(),
                     mockAuthorService.Object,
                     sp.GetRequiredService<IClock>(),
-                    null!, // IMediator
-                    mockBlogStreamRenderingService.Object,
-                    sp.GetRequiredService<IViewRenderService>(),
-                    sp,
+                    staticFileServiceFactory,
                     sp.GetRequiredService<IPublishingProgressReporter>(),
-                    catalogQueryService,
                     null, // No domain event dispatcher for tests
-                    new Sky.Editor.Services.CDN.CdnPurgeService(
-                        dbContext,
-                        sp.GetRequiredService<ILogger<Sky.Editor.Services.CDN.CdnPurgeService>>(),
-                        null,  // No HttpContextAccessor in tests
-                        sp.GetRequiredService<IEditorSettings>()),
-                    new Sky.Editor.Services.TableOfContents.TocService(
-                        storageContext,
-                        sp.GetRequiredService<IEditorSettings>(),
-                        catalogQueryService,
-                        sp.GetRequiredService<ILogger<Sky.Editor.Services.TableOfContents.TocService>>()),
-                    new Sky.Editor.Services.StaticFiles.StaticFileService(
-                        storageContext,
-                        sp.GetRequiredService<IEditorSettings>(),
-                        sp.GetRequiredService<IViewRenderService>(),
-                        null!, // IMediator
-                        sp.GetRequiredService<ILogger<Sky.Editor.Services.StaticFiles.StaticFileService>>()));
+                    auxiliaryServices);
             });
 
             services.AddScoped<IRedirectService>(sp =>
@@ -263,13 +288,16 @@ namespace Sky.Tests.Services
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
                 var mockReservedPaths = new Mock<IReservedPaths>();
                 var mockBlogRenderingService = new Mock<IBlogStreamRenderingService>();
-                
-                return new TitleChangeService(
+
+                var titleChangeContext = new Sky.Editor.Services.Titles.TitleChangeContext(
                     dbContext,
+                    sp.GetRequiredService<IClock>(),
+                    null);  // No event dispatcher in tests
+
+                return new TitleChangeService(
+                    titleChangeContext,
                     sp.GetRequiredService<ISlugService>(),
                     sp.GetRequiredService<IRedirectService>(),
-                    sp.GetRequiredService<IClock>(),
-                    null,
                     sp.GetRequiredService<IPublishingService>(),
                     mockReservedPaths.Object,
                     mockBlogRenderingService.Object,

@@ -109,14 +109,17 @@ namespace Sky.Tests.Areas.Setup
 
             testConfiguration = configBuilder.Build();
 
-            // ✅ SetupService constructor with 8 parameters (removed ArticleEditLogic)
-            setupService = new SetupService(
+            // ✅ SetupService constructor with 4 parameters (using SetupContext composite)
+            var setupContext = new Sky.Editor.Services.Setup.SetupContext(
                 testConfiguration,
-                new NullLogger<SetupService>(),
                 Cache,
                 UserManager,
                 RoleManager,
-                Db,
+                Db);
+
+            setupService = new SetupService(
+                setupContext,
+                new NullLogger<SetupService>(),
                 layoutImportService,
                 Mediator);
 

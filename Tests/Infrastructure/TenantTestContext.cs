@@ -276,26 +276,55 @@ namespace Sky.Tests
                         viewRenderService,
                         mediator,
                         new NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>()));
+
+                // Register BlogPublishingContext
+                tenantServiceCollection.AddSingleton<Sky.Editor.Services.BlogPublishing.IBlogPublishingContext>(sp =>
+                    new Sky.Editor.Services.BlogPublishing.BlogPublishingContext(
+                        DbContext,
+                        storage,
+                        httpContextAccessor));
+
+                // Register BlogPublishingService
+                tenantServiceCollection.AddSingleton<Sky.Editor.Services.BlogPublishing.IBlogPublishingService>(sp =>
+                    new Sky.Editor.Services.BlogPublishing.BlogPublishingService(
+                        sp.GetRequiredService<Sky.Editor.Services.BlogPublishing.IBlogPublishingContext>(),
+                        blogStreamRenderingService,
+                        viewRenderService,
+                        mediator,
+                        null, // PublishingService reference (circular dependency resolved later)
+                        new NullLogger<Sky.Editor.Services.BlogPublishing.BlogPublishingService>()));
+
+                // Register PublishingAuxiliaryServices composite
+                tenantServiceCollection.AddSingleton<Sky.Editor.Services.Publishing.IPublishingAuxiliaryServices>(sp =>
+                    new Sky.Editor.Services.Publishing.PublishingAuxiliaryServices(
+                        sp.GetRequiredService<Sky.Editor.Services.CDN.ICdnPurgeService>(),
+                        sp.GetRequiredService<Sky.Editor.Services.TableOfContents.ITocService>(),
+                        sp.GetRequiredService<Sky.Editor.Services.StaticFiles.IStaticFileService>(),
+                        sp.GetRequiredService<Sky.Editor.Services.BlogPublishing.IBlogPublishingService>()));
+
+                // Register PublishingContext composite
+                tenantServiceCollection.AddSingleton<Sky.Editor.Services.Publishing.IPublishingContext>(sp =>
+                    new Sky.Editor.Services.Publishing.PublishingContext(
+                        DbContext,
+                        storage,
+                        editorSettings,
+                        httpContextAccessor,
+                        sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
+
+                // Register StaticFileServiceFactory for parallel processing
+                tenantServiceCollection.AddSingleton<Sky.Editor.Services.StaticFiles.IStaticFileServiceFactory, Sky.Editor.Services.StaticFiles.StaticFileServiceFactory>();
+
                 var tenantServiceProvider = tenantServiceCollection.BuildServiceProvider();
 
                 PublishingService = new Sky.Editor.Services.Publishing.PublishingService(
-                    DbContext, // ✅ CRITICAL: Use THIS tenant's DbContext, not the shared one
-                    storage,
-                    editorSettings,
+                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.Publishing.IPublishingContext>(),
                     new NullLogger<Sky.Editor.Services.Publishing.PublishingService>(),
-                    httpContextAccessor,
                     authorInfoService,
                     clock,
-                    mediator,
-                    blogStreamRenderingService,
-                    viewRenderService,
-                    tenantServiceProvider,
+                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.StaticFiles.IStaticFileServiceFactory>(),
                     new Sky.Editor.Services.Publishing.NoOpPublishingProgressReporter(),
-                    tenantServiceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
                     null, // No domain event dispatcher for tests
-                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.CDN.ICdnPurgeService>(),
-                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.TableOfContents.ITocService>(),
-                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.StaticFiles.IStaticFileService>());
+                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.Publishing.IPublishingAuxiliaryServices>());
                
                 // Create tenant-scoped catalog service
                 var catalogService = new CatalogService(DbContext, articleHtmlService, clock, new NullLogger<CatalogService>());
