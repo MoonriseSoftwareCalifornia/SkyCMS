@@ -6,6 +6,7 @@
 
 using Cosmos.BlobService;
 using Cosmos.BlobService.Drivers;
+using Cosmos.BlobService.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
 using System.Reflection;
 
@@ -88,12 +89,12 @@ namespace Sky.Tests.BlobStorage
                 {
                     _ = new StorageContext(connectionString, memoryCache);
                 }
-                catch (InvalidOperationException)
+                catch (StorageException)
                 {
                     exceptionThrown = true;
                 }
 
-                Assert.IsTrue(exceptionThrown, "Should throw InvalidOperationException for invalid connection string format");
+                Assert.IsTrue(exceptionThrown, "Should throw StorageException for invalid connection string format");
             }
         }
 
