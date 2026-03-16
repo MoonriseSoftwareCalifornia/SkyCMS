@@ -3,6 +3,7 @@
 ## General Guidelines
 - Follow existing project patterns and be concise in changes.
 - Preserve compatibility across MS SQL, MySQL, SQLite, and Azure Cosmos DB for AspNetCore.Identity.FlexDb changes; avoid provider-specific EF behavior unless guarded by provider-aware strategies and tests.
+- Provide clear in-chat progress updates in small steps while working so the user can tell the task is still active.
 
 ## Architecture Overview
 - The SkyCMS multi-tenant architecture utilizes the following components:

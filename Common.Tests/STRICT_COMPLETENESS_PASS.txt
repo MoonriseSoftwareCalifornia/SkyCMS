@@ -1,0 +1,122 @@
+STRICT COMPLETENESS PASS
+Generated: 2026-03-16T13:59:54.9778295-05:00
+Total Common files scanned: 150
+Unique tested basenames: 177
+Untested basenames: 108
+
+Counts by Kind:
+ - Constants: 10
+ - Interface: 15
+ - ModelLike: 20
+ - Other: 38
+ - QueryType: 25
+
+Untested entries:
+Constants | CloudProviderConstants | Common\Constants\CloudProviderConstants.cs
+Constants | ConfigurationConstants | Common\Constants\ConfigurationConstants.cs
+Constants | ContentTypeConstants | Common\Constants\ContentTypeConstants.cs
+Constants | DatabaseConstants | Common\Constants\DatabaseConstants.cs
+Constants | EmailConstants | Common\Constants\EmailConstants.cs
+Constants | ErrorMessageConstants | Common\Constants\ErrorMessageConstants.cs
+Constants | FileTypeConstants | Common\Constants\FileTypeConstants.cs
+Constants | RoleConstants | Common\Constants\RoleConstants.cs
+Constants | TenantConstants | Common\Constants\TenantConstants.cs
+Constants | ValidationConstants | Common\Constants\ValidationConstants.cs
+Interface | IApplicationDbContext | Common\Data\IApplicationDbContext.cs
+Interface | IArticleCatalogQueryService | Common\Features\Articles\Shared\IArticleCatalogQueryService.cs
+Interface | IArticleViewModelBuilder | Common\Features\Articles\Shared\IArticleViewModelBuilder.cs
+Interface | IBlogNavigationService | Common\Features\Articles\Shared\IBlogNavigationService.cs
+Interface | IBlogStreamRenderingService | Common\Services\BlogPublishing\IBlogStreamRenderingService.cs
+Interface | ICommand | Common\Features\Shared\ICommand.cs
+Interface | ICommandHandler | Common\Features\Shared\ICommandHandler.cs
+Interface | IContactManagementService | Common\Services\IContactManagementService.cs
+Interface | IEmailConfigurationService | Common\Services\Email\IEmailConfigurationService.cs
+Interface | IMediator | Common\Features\Shared\IMediator.cs
+Interface | IOneTimeTokenProvider | Common\Services\IOneTimeTokenProvider.cs
+Interface | IPublishedBlogService | Common\Services\PublishedBlog\IPublishedBlogService.cs
+Interface | IPublishedPageQueryService | Common\Features\Articles\Shared\IPublishedPageQueryService.cs
+Interface | IQuery | Common\Features\Shared\IQuery.cs
+Interface | IQueryHandler | Common\Features\Shared\IQueryHandler.cs
+ModelLike | ArticleNumber | Common\Data\ArticleNumber.cs
+ModelLike | ArticleViewModel | Common\Models\ArticleViewModel.cs
+ModelLike | AzureStorageConfig | Common\Services\Configurations\Storage\AzureStorageConfig.cs
+ModelLike | BlobServiceConfig | Common\Services\Configurations\BlobServiceConfig.cs
+ModelLike | BlogIndexViewModel | Common\Models\Blog\BlogIndexViewModel.cs
+ModelLike | ContactViewModel | Common\Models\ContactViewModel.cs
+ModelLike | DateTimeUtcKindAttribute | Common\Models\DateTimeUtcKindAttribute.cs
+ModelLike | DbStatus | Common\Data\DbStatus.cs
+ModelLike | EmailMessageViewModel | Common\Models\EmailMessageViewModel.cs
+ModelLike | EmailSettings | Common\Services\Email\EmailSettings.cs
+ModelLike | LangItemViewModel | Common\Models\LangItemViewModel.cs
+ModelLike | LayoutViewModel | Common\Models\LayoutViewModel.cs
+ModelLike | MailChimpConfig | Common\Services\Configurations\MailChimpConfig.cs
+ModelLike | RedirectItemViewModel | Common\Models\RedirectItemViewModel.cs
+ModelLike | RedirectUrlAttribute | Common\Models\RedirectUrlAttribute.cs
+ModelLike | SetupConfiguration | Common\Data\SetupConfiguration.cs
+ModelLike | SiteSettings | Common\Services\Configurations\SiteSettings.cs
+ModelLike | SpaMetadata | Common\Models\SpaMetadata.cs
+ModelLike | StatusCodeEnum | Common\Data\Logic\StatusCodeEnum.cs
+ModelLike | StorageConfig | Common\Services\Configurations\StorageConfig.cs
+Other | ApplicationDbContext | Common\Data\ApplicationDbContext.cs
+Other | Article | Common\Data\Article.cs
+Other | ArticleLock | Common\Data\ArticleLock.cs
+Other | ArticleLog | Common\Data\ArticleLog.cs
+Other | ArticlePermission | Common\Data\ArticlePermission.cs
+Other | ArticleType | Common\ArticleType.cs
+Other | AssociatedApplication | Common\Models\AssociatedApplication.cs
+Other | AuthorInfo | Common\Data\AuthorInfo.cs
+Other | AzureAD | Common\Services\Configurations\AzureAD.cs
+Other | BlogListItem | Common\Models\Blog\BlogListItem.cs
+Other | BlogPostLink | Common\Features\Blogs\Queries\BlogPostLink.cs
+Other | BlogPostNavigationItem | Common\Features\Blogs\Queries\BlogPostNavigationItem.cs
+Other | BlogPostPreview | Common\Features\Blogs\Queries\BlogPostPreview.cs
+Other | CacheKeys | Common\Constants\CacheKeys.cs
+Other | CatalogEntry | Common\Data\CatalogEntry.cs
+Other | CommandResult | Common\Features\Shared\CommandResult.cs
+Other | Contact | Common\Data\Contact.cs
+Other | DataProtectionDbContext | Common\Data\DataProtectionDbContext.cs
+Other | Extensions | Common\Extensions.cs
+Other | GlobalSuppressions | Common\GlobalSuppressions.cs
+Other | Layout | Common\Data\Layout.cs
+Other | LayoutDefaults | Common\Models\LayoutDefaults.cs
+Other | LoremIpsum | Common\Models\LoremIpsum.cs
+Other | Metric | Common\Data\Metric.cs
+Other | MicrosoftValidationObject | Common\Models\MicrosoftValidationObject.cs
+Other | MigrationHistory | Common\Data\MigrationHistory.cs
+Other | OAuth | Common\Services\Configurations\OAuth.cs
+Other | PageDesignVersion | Common\Data\PageDesignVersion.cs
+Other | PublishedPage | Common\Data\PublishedPage.cs
+Other | Setting | Common\Data\Setting.cs
+Other | SQLiteUtils | Common\Data\SQlite\SQLiteUtils.cs
+Other | TableOfContents | Common\Models\TableOfContents.cs
+Other | TableOfContentsItem | Common\Models\TableOfContentsItem.cs
+Other | Template | Common\Data\Template.cs
+Other | TokenVerificationResult | Common\Services\TokenVerificationResult.cs
+Other | TotpToken | Common\Data\TotpToken.cs
+Other | Unit | Common\Features\Shared\Unit.cs
+Other | WebsiteAuthor | Common\Data\WebsiteAuthor.cs
+QueryType | AuthorizeUserForArticleQuery | Common\Features\Articles\Queries\AuthorizeUserForArticleQuery.cs
+QueryType | BuildArticleViewModelQuery | Common\Features\Articles\Queries\BuildArticleViewModelQuery.cs
+QueryType | BuildPublishedPageViewModelQuery | Common\Features\Articles\Queries\BuildPublishedPageViewModelQuery.cs
+QueryType | CheckDefaultLayoutExistsQuery | Common\Features\Layouts\Queries\CheckDefaultLayoutExistsQuery.cs
+QueryType | GetArticleByArticleNumberQuery | Common\Features\Articles\EditorQueries\GetArticleByArticleNumberQuery.cs
+QueryType | GetArticleByIdQuery | Common\Features\Articles\EditorQueries\GetArticleByIdQuery.cs
+QueryType | GetArticleByUrlQuery | Common\Features\Articles\EditorQueries\GetArticleByUrlQuery.cs
+QueryType | GetArticleCatalogEntryQuery | Common\Features\Articles\EditorQueries\GetArticleCatalogEntryQuery.cs
+QueryType | GetArticleFolderContentsQuery | Common\Features\Articles\Queries\GetArticleFolderContentsQuery.cs
+QueryType | GetArticleRedirectsQuery | Common\Features\Articles\EditorQueries\GetArticleRedirectsQuery.cs
+QueryType | GetArticlesForUserQuery | Common\Features\Articles\Queries\GetArticlesForUserQuery.cs
+QueryType | GetBlogPostNavigationQuery | Common\Features\Blogs\EditorQueries\GetBlogPostNavigationQuery.cs
+QueryType | GetBlogPostNavigationQuery | Common\Features\Blogs\Queries\GetBlogPostNavigationQuery.cs
+QueryType | GetBlogPostNavigationQueryResult | Common\Features\Blogs\Queries\GetBlogPostNavigationQueryResult.cs
+QueryType | GetBlogPostQuery | Common\Features\Blogs\Queries\GetBlogPostQuery.cs
+QueryType | GetBlogPostQueryResult | Common\Features\Blogs\Queries\GetBlogPostQueryResult.cs
+QueryType | GetBlogStreamQueryResult | Common\Features\Blogs\Queries\GetBlogStreamQueryResult.cs
+QueryType | GetDefaultLayoutQuery | Common\Features\Layouts\Queries\GetDefaultLayoutQuery.cs
+QueryType | GetLastPublishedDateQuery | Common\Features\Articles\EditorQueries\GetLastPublishedDateQuery.cs
+QueryType | GetLayoutByIdQuery | Common\Features\Layouts\Queries\GetLayoutByIdQuery.cs
+QueryType | GetPublishedPageByUrlQuery | Common\Features\Articles\Queries\GetPublishedPageByUrlQuery.cs
+QueryType | GetPublishedPageHeaderByUrlQuery | Common\Features\Articles\Queries\GetPublishedPageHeaderByUrlQuery.cs
+QueryType | GetSitemapQuery | Common\Features\Sitemap\Queries\GetSitemapQuery.cs
+QueryType | GetTableOfContentsQuery | Common\Features\Articles\Queries\GetTableOfContentsQuery.cs
+QueryType | SearchPublishedArticlesQuery | Common\Features\Articles\Queries\SearchPublishedArticlesQuery.cs
