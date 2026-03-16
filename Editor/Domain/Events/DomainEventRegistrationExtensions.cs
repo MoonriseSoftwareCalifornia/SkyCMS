@@ -34,6 +34,13 @@ namespace Sky.Editor.Domain.Events
             services.AddScoped<IDomainEventHandler<RedirectCreatedEvent>, Handlers.RedirectCreatedEventHandler>();
             services.AddScoped<IDomainEventHandler<CatalogUpdatedEvent>, Handlers.CatalogUpdatedEventHandler>();
 
+            // Cache invalidation handler (responds to publish/unpublish/layout events)
+            services.AddScoped<IDomainEventHandler<ArticlePublishedEvent>, Handlers.CacheInvalidationHandler>();
+            services.AddScoped<IDomainEventHandler<ArticleUnpublishedEvent>, Handlers.CacheInvalidationHandler>();
+            services.AddScoped<IDomainEventHandler<LayoutPublishedEvent>, Handlers.CacheInvalidationHandler>();
+            services.AddScoped<IDomainEventHandler<CatalogEntryUpdatedEvent>, Handlers.CacheInvalidationHandler>();
+            services.AddScoped<IDomainEventHandler<CatalogEntryDeletedEvent>, Handlers.CacheInvalidationHandler>();
+
             // Optional open generic logging handler (lowest priority).
             services.AddScoped(typeof(IDomainEventHandler<>), typeof(Handlers.CompositeLoggingEventHandler<>));
 

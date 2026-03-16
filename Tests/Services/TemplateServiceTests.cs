@@ -50,7 +50,7 @@ namespace Sky.Tests.Services
                 environmentMock.Object,
                 loggerMock.Object,
                 Db,
-                null!, // IMediator
+                Mediator, // Use the Mediator from SkyCmsTestBase
                 null); // Single-tenant mode
             
             // Clear the static _seededTenants cache between tests to avoid cross-test pollution

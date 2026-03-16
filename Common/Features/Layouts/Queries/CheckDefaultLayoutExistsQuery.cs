@@ -7,10 +7,22 @@
 
 namespace Cosmos.Common.Features.Layouts.Queries;
 
+using System;
 using Cosmos.Common.Features.Shared;
 
 /// <summary>
 /// Query to check if any default layout exists in the database.
 /// Replaces LayoutHelper.HasDefaultLayoutAsync() method.
 /// </summary>
-public record CheckDefaultLayoutExistsQuery : IQuery<bool>;
+public record CheckDefaultLayoutExistsQuery : IQuery<bool>
+{
+    /// <summary>
+    /// Gets or sets the optional cache duration for the layout existence check.
+    /// </summary>
+    /// <remarks>
+    /// When set, the result will be cached for the specified duration.
+    /// Recommended: 5-10 minutes since default layout existence rarely changes.
+    /// Cache is automatically invalidated when layouts are published.
+    /// </remarks>
+    public TimeSpan? CacheDuration { get; init; }
+}

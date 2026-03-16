@@ -38,6 +38,8 @@ namespace Sky.Tests.Services
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.ReservedPaths;
     using Sky.Editor.Services.Scheduling;
+    using Sky.Editor.Services.StaticFiles;
+    using Sky.Editor.Services.TableOfContents;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
@@ -212,7 +214,7 @@ namespace Sky.Tests.Services
                     dbContext,
                     sp.GetRequiredService<IEditorSettings>().PublisherUrl,
                     sp.GetRequiredService<IEditorSettings>().BlobPublicUrl);
-                
+
                 return new PublishingService(
                     dbContext,
                     storageContext,
@@ -226,7 +228,24 @@ namespace Sky.Tests.Services
                     sp.GetRequiredService<IViewRenderService>(),
                     sp,
                     sp.GetRequiredService<IPublishingProgressReporter>(),
-                    catalogQueryService);
+                    catalogQueryService,
+                    null, // No domain event dispatcher for tests
+                    new Sky.Editor.Services.CDN.CdnPurgeService(
+                        dbContext,
+                        sp.GetRequiredService<ILogger<Sky.Editor.Services.CDN.CdnPurgeService>>(),
+                        null,  // No HttpContextAccessor in tests
+                        sp.GetRequiredService<IEditorSettings>()),
+                    new Sky.Editor.Services.TableOfContents.TocService(
+                        storageContext,
+                        sp.GetRequiredService<IEditorSettings>(),
+                        catalogQueryService,
+                        sp.GetRequiredService<ILogger<Sky.Editor.Services.TableOfContents.TocService>>()),
+                    new Sky.Editor.Services.StaticFiles.StaticFileService(
+                        storageContext,
+                        sp.GetRequiredService<IEditorSettings>(),
+                        sp.GetRequiredService<IViewRenderService>(),
+                        null!, // IMediator
+                        sp.GetRequiredService<ILogger<Sky.Editor.Services.StaticFiles.StaticFileService>>()));
             });
 
             services.AddScoped<IRedirectService>(sp =>

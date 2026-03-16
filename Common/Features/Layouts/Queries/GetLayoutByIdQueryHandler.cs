@@ -10,17 +10,21 @@ namespace Cosmos.Common.Features.Layouts.Queries;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Cosmos.Common.Constants;
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 /// <summary>
 /// Handler for retrieving a layout by its unique identifier.
 /// </summary>
 /// <param name="dbContext">Database context for layout queries.</param>
-public class GetLayoutByIdQueryHandler(IApplicationDbContext dbContext) : IQueryHandler<GetLayoutByIdQuery, Layout?>
+/// <param name="memoryCache">Optional memory cache for caching layout results.</param>
+public class GetLayoutByIdQueryHandler(IApplicationDbContext dbContext, IMemoryCache? memoryCache = null) : IQueryHandler<GetLayoutByIdQuery, Layout?>
 {
     private readonly IApplicationDbContext dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+    private readonly IMemoryCache? memoryCache = memoryCache;
 
     /// <inheritdoc />
     public async Task<Layout?> HandleAsync(GetLayoutByIdQuery query, CancellationToken cancellationToken = default)
@@ -35,6 +39,27 @@ public class GetLayoutByIdQueryHandler(IApplicationDbContext dbContext) : IQuery
             return null;
         }
 
-        return await dbContext.Layouts.FirstOrDefaultAsync(l => l.Id == query.LayoutId, cancellationToken);
+        // Check cache first if caching is enabled
+        if (memoryCache != null && query.CacheDuration.HasValue)
+        {
+            if (memoryCache.TryGetValue<Layout?>(CacheKeys.Layout(query.LayoutId), out var cachedLayout))
+            {
+                return cachedLayout;
+            }
+
+            var layout = await dbContext.Layouts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Id == query.LayoutId, cancellationToken);
+
+            // Cache the result (including null to avoid repeated queries for non-existent layouts)
+            memoryCache.Set(CacheKeys.Layout(query.LayoutId), layout, query.CacheDuration.Value);
+
+            return layout;
+        }
+
+        // No caching - direct query
+        return await dbContext.Layouts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Id == query.LayoutId, cancellationToken);
     }
 }

@@ -7,6 +7,7 @@
 
 namespace Cosmos.Common.Features.Sitemap.Queries;
 
+using System;
 using Cosmos.Common.Features.Shared;
 using X.Web.Sitemap;
 
@@ -18,4 +19,15 @@ using X.Web.Sitemap;
 /// Uses basic priority heuristics (root=1.0, others=0.5).
 /// Banner images are attached when present.
 /// </remarks>
-public record GetSitemapQuery : IQuery<Sitemap>;
+public record GetSitemapQuery : IQuery<Sitemap>
+{
+    /// <summary>
+    /// Gets or sets the optional cache duration for the sitemap.
+    /// </summary>
+    /// <remarks>
+    /// When set, the sitemap will be cached for the specified duration.
+    /// Recommended: 30-60 minutes since sitemaps rarely change.
+    /// Cache is automatically invalidated when articles are published/unpublished.
+    /// </remarks>
+    public TimeSpan? CacheDuration { get; init; }
+}

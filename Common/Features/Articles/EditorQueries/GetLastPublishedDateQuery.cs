@@ -19,4 +19,15 @@ public class GetLastPublishedDateQuery : IQuery<DateTimeOffset?>
     /// Gets or sets the article number.
     /// </summary>
     public int ArticleNumber { get; set; }
+
+    /// <summary>
+    /// Gets or initializes the optional cache duration for the last published date.
+    /// </summary>
+    /// <remarks>
+    /// When set, the handler will cache the last published date for the specified duration.
+    /// Recommended: 5-10 minutes for production, null (no caching) during active publishing.
+    /// Cache key: "LastPublished_{ArticleNumber}"
+    /// Cache is automatically invalidated when the article is published/unpublished.
+    /// </remarks>
+    public TimeSpan? CacheDuration { get; init; }
 }

@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Sky.Editor.Services.Publishing;
+using Sky.Editor.Services.StaticFiles;
+using Sky.Editor.Services.TableOfContents;
 using System;
 using System.Threading.Tasks;
 
@@ -49,7 +51,24 @@ namespace Sky.Tests.Services.Publishing
                 ViewRenderService,
                 Services,
                 Mock.Of<IPublishingProgressReporter>(),
-                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                null, // No domain event dispatcher for tests
+                new Sky.Editor.Services.CDN.CdnPurgeService(
+                    Db,
+                    new Mock<ILogger<Sky.Editor.Services.CDN.CdnPurgeService>>().Object,
+                    HttpContextAccessor,
+                    EditorSettings),
+                new Sky.Editor.Services.TableOfContents.TocService(
+                    Storage,
+                    EditorSettings,
+                    Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                    new Mock<ILogger<Sky.Editor.Services.TableOfContents.TocService>>().Object),
+                new Sky.Editor.Services.StaticFiles.StaticFileService(
+                    Storage,
+                    EditorSettings,
+                    ViewRenderService,
+                    null!, // IMediator not needed for this test
+                    new Mock<ILogger<Sky.Editor.Services.StaticFiles.StaticFileService>>().Object));
         }
 
         [TestCleanup]

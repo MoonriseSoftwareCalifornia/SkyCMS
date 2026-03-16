@@ -26,12 +26,15 @@ namespace Sky.Editor.Services.Scheduling
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.Catalog;
+    using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.Slugs;
+    using Sky.Editor.Services.StaticFiles;
+    using Sky.Editor.Services.TableOfContents;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
 
@@ -121,7 +124,11 @@ namespace Sky.Editor.Services.Scheduling
                 scopedServices.GetRequiredService<IViewRenderService>(),
                 scopedServices,
                 progressReporter,
-                scopedServices.GetRequiredService<IArticleCatalogQueryService>());  // ✅ Add no-op progress reporter
+                scopedServices.GetRequiredService<IArticleCatalogQueryService>(),
+                null,  // No domain event dispatcher needed for background jobs
+                scopedServices.GetRequiredService<ICdnPurgeService>(),
+                scopedServices.GetRequiredService<ITocService>(),
+                scopedServices.GetRequiredService<IStaticFileService>());
 
             var redirectService = new RedirectService(
                 dbContext,

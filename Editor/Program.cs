@@ -341,6 +341,9 @@ builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
 
 // Transient services (stateless operations, created each time)
 builder.Services.AddTransient<ICdnServiceFactory, CdnServiceFactory>();
+builder.Services.AddTransient<ICdnPurgeService, CdnPurgeService>();
+builder.Services.AddTransient<Sky.Editor.Services.TableOfContents.ITocService, Sky.Editor.Services.TableOfContents.TocService>();
+builder.Services.AddTransient<Sky.Editor.Services.StaticFiles.IStaticFileService, Sky.Editor.Services.StaticFiles.StaticFileService>();
 builder.Services.AddTransient<ITemplateService, TemplateService>();
 builder.Services.AddTransient<IArticleHtmlService, ArticleHtmlService>();
 builder.Services.AddTransient<IAuthorInfoService, AuthorInfoService>();

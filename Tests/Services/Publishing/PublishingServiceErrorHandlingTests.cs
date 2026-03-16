@@ -26,6 +26,7 @@ namespace Sky.Tests.Services.Publishing
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json;
@@ -34,6 +35,8 @@ namespace Sky.Tests.Services.Publishing
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
+    using Sky.Editor.Services.StaticFiles;
+    using Sky.Editor.Services.TableOfContents;
 
     /// <summary>
     /// Error handling and resilience tests for <see cref="PublishingService"/>.
@@ -654,7 +657,24 @@ namespace Sky.Tests.Services.Publishing
                 viewRenderer.Object,
                 serviceProvider,
                 new NoOpPublishingProgressReporter(),
-                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+                serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                null, // No domain event dispatcher for tests
+                new Sky.Editor.Services.CDN.CdnPurgeService(
+                    db,
+                    new NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
+                    accessor,
+                    settings),
+                new Sky.Editor.Services.TableOfContents.TocService(
+                    storage,
+                    settings,
+                    serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                    new NullLogger<Sky.Editor.Services.TableOfContents.TocService>()),
+                new Sky.Editor.Services.StaticFiles.StaticFileService(
+                    storage,
+                    settings,
+                    viewRenderer.Object,
+                    null!, // IMediator not needed for error handling tests
+                    new NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>()));
         }
 
         private static bool InvokeIsTransientException(Exception ex)

@@ -166,8 +166,27 @@ namespace Sky.Tests.Controllers
             var entity1 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page1.ArticleNumber);
             var entity2 = await Db.Articles.FirstAsync(a => a.ArticleNumber == page2.ArticleNumber);
 
-            await PublishingService.PublishAsync(entity1);
-            await PublishingService.PublishAsync(entity2);
+            // Ensure both articles have content for Introduction extraction
+            entity1.Content = "<p>This is the content for Page 1.</p>";
+            entity2.Content = "<p>This is the content for Page 2.</p>";
+            await Db.SaveChangesAsync();
+
+            // Publish using PublishArticleCommand to ensure catalog is properly updated
+            var publishCommand1 = new Sky.Editor.Features.Articles.Publish.PublishArticleCommand
+            {
+                ArticleId = entity1.Id
+            };
+            await Mediator.SendAsync(publishCommand1);
+
+            var publishCommand2 = new Sky.Editor.Features.Articles.Publish.PublishArticleCommand
+            {
+                ArticleId = entity2.Id
+            };
+            await Mediator.SendAsync(publishCommand2);
+
+            // Verify catalog entries were created
+            var catalogCount = await Db.ArticleCatalog.CountAsync(c => c.Published.HasValue);
+            Assert.IsTrue(catalogCount >= 2, $"Expected at least 2 published catalog entries, but found {catalogCount}");
 
             // Act
             var result = await controller.GetTOC("", false, 0, 10);
@@ -394,8 +413,21 @@ namespace Sky.Tests.Controllers
             var article = await CreateArticleAsync("Searchable Content", TestUserId);
             var entity = await Db.Articles.FirstAsync(a => a.ArticleNumber == article.ArticleNumber);
             entity.Content = "<p>This is searchable content with unique terms.</p>";
+            entity.Introduction = "This article contains searchable information for testing.";
             await Db.SaveChangesAsync();
-            await PublishingService.PublishAsync(entity);
+
+            // Publish using PublishArticleCommand to ensure catalog is properly updated
+            var publishCommand = new Sky.Editor.Features.Articles.Publish.PublishArticleCommand
+            {
+                ArticleId = entity.Id
+            };
+            var publishResult = await Mediator.SendAsync(publishCommand);
+            Assert.IsTrue(publishResult.IsSuccess, "Publishing should succeed");
+
+            // Verify catalog entry was created
+            var catalogEntry = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
+            Assert.IsNotNull(catalogEntry, "Catalog entry should be created after publishing");
+            Assert.IsTrue(catalogEntry.Published.HasValue, "Catalog entry should have Published date");
 
             // Act
             var result = await controller.CCMS___SEARCH("searchable");

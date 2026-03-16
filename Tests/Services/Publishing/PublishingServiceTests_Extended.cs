@@ -27,6 +27,8 @@ namespace Sky.Tests.Services.Publishing
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
     using Sky.Editor.Services.CDN;
+    using Sky.Editor.Services.StaticFiles;
+    using Sky.Editor.Services.TableOfContents;
 
     /// <summary>
     /// Extended unit tests for <see cref="PublishingService"/> covering gap areas:
@@ -897,7 +899,24 @@ namespace Sky.Tests.Services.Publishing
                 _mockViewRenderService.Object,
                 _serviceProvider,
                 new NoOpPublishingProgressReporter(),
-                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                null, // No domain event dispatcher for tests
+                new Sky.Editor.Services.CDN.CdnPurgeService(
+                    Db,
+                    NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
+                    HttpContextAccessor,
+                    EditorSettings),
+                new Sky.Editor.Services.TableOfContents.TocService(
+                    Storage,
+                    EditorSettings,
+                    _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                    NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance),
+                new Sky.Editor.Services.StaticFiles.StaticFileService(
+                    Storage,
+                    EditorSettings,
+                    _mockViewRenderService.Object,
+                    null!,
+                    NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance));
 
             // Act
             await service.PublishAsync(article);
@@ -927,7 +946,24 @@ namespace Sky.Tests.Services.Publishing
                 _mockViewRenderService.Object,
                 _serviceProvider,
                 progressReporter,
-                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                null, // No domain event dispatcher for tests
+                new Sky.Editor.Services.CDN.CdnPurgeService(
+                    Db,
+                    NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
+                    HttpContextAccessor,
+                    EditorSettings),
+                new Sky.Editor.Services.TableOfContents.TocService(
+                    Storage,
+                    EditorSettings,
+                    _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                    NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance),
+                new Sky.Editor.Services.StaticFiles.StaticFileService(
+                    Storage,
+                    EditorSettings,
+                    _mockViewRenderService.Object,
+                    null!,
+                    NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance));
         }
 
         private PublishingService CreatePublishingServiceWithLogger(ILogger<PublishingService> logger)
@@ -946,7 +982,24 @@ namespace Sky.Tests.Services.Publishing
                 _mockViewRenderService.Object,
                 _serviceProvider,
                 new NoOpPublishingProgressReporter(),
-                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                null, // No domain event dispatcher for tests
+                new Sky.Editor.Services.CDN.CdnPurgeService(
+                    Db,
+                    NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>.Instance,
+                    HttpContextAccessor,
+                    EditorSettings),
+                new Sky.Editor.Services.TableOfContents.TocService(
+                    Storage,
+                    EditorSettings,
+                    _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                    NullLogger<Sky.Editor.Services.TableOfContents.TocService>.Instance),
+                new Sky.Editor.Services.StaticFiles.StaticFileService(
+                    Storage,
+                    EditorSettings,
+                    _mockViewRenderService.Object,
+                    null!,
+                    NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>.Instance));
         }
 
         private PublishedPage CreatePublishedPage(string urlPath)

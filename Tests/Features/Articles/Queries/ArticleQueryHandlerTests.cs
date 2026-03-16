@@ -10,10 +10,12 @@ namespace Sky.Tests.Features.Articles.Queries
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Queries;
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
@@ -22,6 +24,7 @@ namespace Sky.Tests.Features.Articles.Queries
         private ApplicationDbContext dbContext = null!;
         private IMemoryCache memoryCache = null!;
         private IConfiguration configuration = null!;
+        private IMediator mediator = null!;
         private DateTimeOffset now;
 
         [TestInitialize]
@@ -42,6 +45,10 @@ namespace Sky.Tests.Features.Articles.Queries
                 })
                 .Build();
 
+            // Create a minimal mediator for ArticleViewModelBuilder
+            var services = new ServiceCollection();
+            mediator = new Mediator(services.BuildServiceProvider());
+
             now = DateTimeOffset.UtcNow;
         }
 
@@ -57,7 +64,7 @@ namespace Sky.Tests.Features.Articles.Queries
         {
             await SeedPublishedPageAsync("blog/test", "Test Title", "Hello world");
 
-            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(null!, dbContext, memoryCache, "https://publisher.test", isEditor: false);
+            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(mediator, dbContext, memoryCache, "https://publisher.test", isEditor: false);
             var publishedPageService = new Cosmos.Common.Features.Articles.Shared.PublishedPageQueryService(dbContext, memoryCache, viewModelBuilder);
             var handler = new GetPublishedPageByUrlQueryHandler(publishedPageService);
 
@@ -81,7 +88,7 @@ namespace Sky.Tests.Features.Articles.Queries
         {
             var page = await SeedPublishedPageAsync("about", "About", "Header content");
 
-            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(null!, dbContext, memoryCache, "https://publisher.test", isEditor: false);
+            var viewModelBuilder = new Cosmos.Common.Features.Articles.Shared.ArticleViewModelBuilder(mediator, dbContext, memoryCache, "https://publisher.test", isEditor: false);
             var publishedPageService = new Cosmos.Common.Features.Articles.Shared.PublishedPageQueryService(dbContext, memoryCache, viewModelBuilder);
             var handler = new GetPublishedPageHeaderByUrlQueryHandler(publishedPageService);
 

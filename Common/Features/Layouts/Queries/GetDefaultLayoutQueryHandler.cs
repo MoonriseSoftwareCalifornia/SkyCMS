@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Cosmos.Common.Constants;
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
@@ -26,7 +27,6 @@ public class GetDefaultLayoutQueryHandler(
     IApplicationDbContext dbContext,
     IMemoryCache? memoryCache = null) : IQueryHandler<GetDefaultLayoutQuery, LayoutViewModel>
 {
-    private const string CacheKey = "defLayout";
     private readonly IApplicationDbContext dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     private readonly IMemoryCache? memoryCache = memoryCache;
 
@@ -38,7 +38,7 @@ public class GetDefaultLayoutQueryHandler(
         // Try cache first if caching is enabled
         if (memoryCache != null && query.CacheDuration != null)
         {
-            if (memoryCache.TryGetValue(CacheKey, out LayoutViewModel? cachedLayout) && cachedLayout != null)
+            if (memoryCache.TryGetValue(CacheKeys.DefaultLayout, out LayoutViewModel? cachedLayout) && cachedLayout != null)
             {
                 return cachedLayout;
             }
@@ -54,7 +54,8 @@ public class GetDefaultLayoutQueryHandler(
 
         if (entity == null)
         {
-            throw new InvalidOperationException("No default layout found. Please ensure a default layout is published.");
+            // Return null instead of throwing - let calling code decide how to handle
+            return null!;
         }
 
         var viewModel = new LayoutViewModel(entity);
@@ -62,7 +63,7 @@ public class GetDefaultLayoutQueryHandler(
         // Cache if caching is enabled
         if (memoryCache != null && query.CacheDuration != null)
         {
-            memoryCache.Set(CacheKey, viewModel, query.CacheDuration.Value);
+            memoryCache.Set(CacheKeys.DefaultLayout, viewModel, query.CacheDuration.Value);
         }
 
         return viewModel;

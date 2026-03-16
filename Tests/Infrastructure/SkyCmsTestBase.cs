@@ -31,6 +31,8 @@ using Sky.Editor.Services.Redirects;
 using Sky.Editor.Services.ReservedPaths;
 using Sky.Editor.Services.Scheduling;
 using Sky.Editor.Services.Slugs;
+using Sky.Editor.Services.StaticFiles;
+using Sky.Editor.Services.TableOfContents;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
 using Sky.Editor.Features.Shared;
@@ -614,8 +616,13 @@ namespace Sky.Tests
             Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommandResult>>> createArticleVersionHandlerFactory = null!;
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommandResult>>>(sp =>
                 createArticleVersionHandlerFactory());
-            
-            
+
+            // ✅ LAZY FACTORY: Register PublishArticleHandler using a factory that will be populated later
+            // PublishArticleHandler depends on PublishingService and CatalogService which are created AFTER this service provider is built
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Publish.PublishArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Publish.PublishArticleCommandResult>>> publishArticleHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Publish.PublishArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Publish.PublishArticleCommandResult>>>(sp =>
+                publishArticleHandlerFactory());
+
 
             // Register query handlers
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetTableOfContentsQuery, Cosmos.Common.Models.TableOfContents>>(sp =>
@@ -625,6 +632,10 @@ namespace Sky.Tests
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQuery, System.Collections.Generic.List<Cosmos.Common.Models.TableOfContentsItem>>>(sp =>
                 new Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQueryHandler(
                     sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
+
+            // Register GetArticleFolderContentsQueryHandler (Phase 4 migration)
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetArticleFolderContentsQuery, System.Collections.Generic.List<Cosmos.BlobService.FileManagerEntry>>>(sp =>
+                new Cosmos.Common.Features.Articles.Queries.GetArticleFolderContentsQueryHandler(Storage));
 
             Services = serviceCollection.BuildServiceProvider();
 
@@ -654,7 +665,24 @@ namespace Sky.Tests
                 ViewRenderService,
                 Services, // ✅ Pass the service provider
                 new NoOpPublishingProgressReporter(),
-                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+                Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                null, // No domain event dispatcher for tests
+                new Sky.Editor.Services.CDN.CdnPurgeService(
+                    Db,
+                    new LoggerFactory().CreateLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
+                    HttpContextAccessor,
+                    EditorSettings),
+                new Sky.Editor.Services.TableOfContents.TocService(
+                    Storage,
+                    EditorSettings,
+                    Services.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                    new LoggerFactory().CreateLogger<Sky.Editor.Services.TableOfContents.TocService>()),
+                new Sky.Editor.Services.StaticFiles.StaticFileService(
+                    Storage,
+                    EditorSettings,
+                    ViewRenderService,
+                    Mediator,
+                    new LoggerFactory().CreateLogger<Sky.Editor.Services.StaticFiles.StaticFileService>()));
 
             // ✅ NOW UPDATE RedirectService and TitleChangeService with the PublishingService
             RedirectService = new RedirectService(Db, SlugService, Clock, PublishingService);
@@ -718,6 +746,14 @@ namespace Sky.Tests
                 Storage,
                 new NullLogger<Sky.Editor.Features.Articles.Trash.TrashArticleHandler>());
 
+            // ✅ CREATE PublishArticleHandler
+            var publishArticleHandler = new Sky.Editor.Features.Articles.Publish.PublishArticleHandler(
+                Db,
+                Clock,
+                PublishingService,
+                CatalogService,
+                new NullLogger<Sky.Editor.Features.Articles.Publish.PublishArticleHandler>());
+
             // ✅ CREATE PublishPageDesignVersionHandler
             var publishPageDesignVersionHandler = new Sky.Editor.Features.Templates.Publishing.PublishPageDesignVersionHandler(
                 Db,
@@ -732,6 +768,7 @@ namespace Sky.Tests
             createArticleVersionHandlerFactory = () => createArticleVersionHandler;
             deleteArticleHandlerFactory = () => deleteArticleHandler;
             trashArticleHandlerFactory = () => trashArticleHandler;
+            publishArticleHandlerFactory = () => publishArticleHandler;
             publishPageDesignVersionHandlerFactory = () => publishPageDesignVersionHandler;
 
             // ✅ ADD THIS - Get the real IHttpClientFactory from DI

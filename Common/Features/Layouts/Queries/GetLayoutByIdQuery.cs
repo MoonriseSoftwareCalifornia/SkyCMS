@@ -16,4 +16,15 @@ using Cosmos.Common.Features.Shared;
 /// Replaces LayoutHelper.GetLayoutByIdAsync() method.
 /// </summary>
 /// <param name="LayoutId">The layout ID to find.</param>
-public record GetLayoutByIdQuery(Guid LayoutId) : IQuery<Layout?>;
+public record GetLayoutByIdQuery(Guid LayoutId) : IQuery<Layout?>
+{
+    /// <summary>
+    /// Gets or sets the optional cache duration for the layout.
+    /// </summary>
+    /// <remarks>
+    /// When set, the layout will be cached for the specified duration.
+    /// Recommended: 10-30 minutes since layouts rarely change.
+    /// Cache is automatically invalidated when layouts are published.
+    /// </remarks>
+    public TimeSpan? CacheDuration { get; init; }
+}

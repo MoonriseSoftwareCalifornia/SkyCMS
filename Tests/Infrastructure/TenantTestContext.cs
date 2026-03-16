@@ -28,6 +28,8 @@ namespace Sky.Tests
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Publishing;
+    using Sky.Editor.Services.StaticFiles;
+    using Sky.Editor.Services.TableOfContents;
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
@@ -255,10 +257,29 @@ namespace Sky.Tests
                         DbContext,
                         editorSettings.PublisherUrl,
                         editorSettings.BlobPublicUrl));
+                tenantServiceCollection.AddSingleton<Sky.Editor.Services.CDN.ICdnPurgeService>(sp =>
+                    new Sky.Editor.Services.CDN.CdnPurgeService(
+                        DbContext,
+                        new NullLogger<Sky.Editor.Services.CDN.CdnPurgeService>(),
+                        httpContextAccessor,
+                        editorSettings));
+                tenantServiceCollection.AddSingleton<Sky.Editor.Services.TableOfContents.ITocService>(sp =>
+                    new Sky.Editor.Services.TableOfContents.TocService(
+                        storage,
+                        editorSettings,
+                        sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                        new NullLogger<Sky.Editor.Services.TableOfContents.TocService>()));
+                tenantServiceCollection.AddSingleton<Sky.Editor.Services.StaticFiles.IStaticFileService>(sp =>
+                    new Sky.Editor.Services.StaticFiles.StaticFileService(
+                        storage,
+                        editorSettings,
+                        viewRenderService,
+                        mediator,
+                        new NullLogger<Sky.Editor.Services.StaticFiles.StaticFileService>()));
                 var tenantServiceProvider = tenantServiceCollection.BuildServiceProvider();
-                
+
                 PublishingService = new Sky.Editor.Services.Publishing.PublishingService(
-                    DbContext, // ? CRITICAL: Use THIS tenant's DbContext, not the shared one
+                    DbContext, // ✅ CRITICAL: Use THIS tenant's DbContext, not the shared one
                     storage,
                     editorSettings,
                     new NullLogger<Sky.Editor.Services.Publishing.PublishingService>(),
@@ -270,7 +291,11 @@ namespace Sky.Tests
                     viewRenderService,
                     tenantServiceProvider,
                     new Sky.Editor.Services.Publishing.NoOpPublishingProgressReporter(),
-                    tenantServiceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+                    tenantServiceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>(),
+                    null, // No domain event dispatcher for tests
+                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.CDN.ICdnPurgeService>(),
+                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.TableOfContents.ITocService>(),
+                    tenantServiceProvider.GetRequiredService<Sky.Editor.Services.StaticFiles.IStaticFileService>());
                
                 // Create tenant-scoped catalog service
                 var catalogService = new CatalogService(DbContext, articleHtmlService, clock, new NullLogger<CatalogService>());
