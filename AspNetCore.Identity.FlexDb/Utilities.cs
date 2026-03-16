@@ -68,13 +68,24 @@ namespace AspNetCore.Identity.FlexDb
                 if (strategy.CanHandle(connectionString))
                 {
                     if (ProviderNames.IsCosmos(strategy.ProviderName))
-                    { return "Cosmos"; }
-                    else if (strategy.ProviderName.Contains("SqlServer"))
-                    { return "SQL Server"; }
-                    else if (ProviderNames.IsMySql(strategy.ProviderName))
-                    { return "MySQL"; }
-                    else if (strategy.ProviderName.Contains("PostgreSql"))
-                    { return "PostgreSQL"; }
+                    {
+                        return "Cosmos";
+                    }
+
+                    if (string.Equals(strategy.ProviderName, ProviderNames.SqlServer, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return "SQL Server";
+                    }
+
+                    if (ProviderNames.IsMySql(strategy.ProviderName))
+                    {
+                        return "MySQL";
+                    }
+
+                    if (string.Equals(strategy.ProviderName, ProviderNames.Sqlite, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return "SQLite";
+                    }
                 }
             }
 

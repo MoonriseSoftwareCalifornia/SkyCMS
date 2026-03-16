@@ -17,7 +17,7 @@ namespace AspNetCore.Identity.FlexDb.Strategies
     public class SqliteConfigurationStrategy : IDatabaseConfigurationStrategy
     {
         /// <inheritdoc/>
-        public string ProviderName => "SQLite";
+        public string ProviderName => ProviderNames.Sqlite;
 
         /// <inheritdoc/>
         public int Priority => 40;
