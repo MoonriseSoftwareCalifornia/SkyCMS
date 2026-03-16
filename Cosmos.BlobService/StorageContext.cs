@@ -46,13 +46,12 @@ namespace Cosmos.BlobService
         /// cref="IDynamicConfigurationProvider"/>. It is used to access configuration settings that can change at
         /// runtime.</remarks>
         private readonly IDynamicConfigurationProvider dynamicConfigurationProvider;
+        private readonly object tenantDriverLock = new object();
 
         /// <summary>
         /// Multi-tenant editor flag.
         /// </summary>
         private bool isMultiTenant;
-
-        private readonly object tenantDriverLock = new();
 
         private ICosmosStorage primaryDriver;
         private string cachedTenantDomain = string.Empty;
@@ -378,8 +377,8 @@ namespace Cosmos.BlobService
         /// <param name="deleteSource">A boolean value indicating whether to delete the source objects after a successful copy. If <see
         /// langword="true"/>, the source objects will be deleted; otherwise, they will be retained.</param>
         /// <returns>Task.</returns>
-        /// <exception cref="Exception">Thrown if the <paramref name="target"/> is null or empty, if the root folder is specified as the target, or
-        /// if a destination object already exists.</exception>
+        /// <exception cref="StorageException">Thrown if the <paramref name="target"/> is null or empty, if the root folder is specified as the target, or
+/// if a destination object already exists.</exception>
         private async Task CopyObjectsAsync(string target, string destination, bool deleteSource)
         {
             // Make sure leading slashes are removed.

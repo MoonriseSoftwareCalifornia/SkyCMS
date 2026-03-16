@@ -12,7 +12,6 @@ namespace Cosmos.BlobService
     using Cosmos.BlobService.Exceptions;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
 
     /// <summary>
     /// Provides utility methods for parsing cloud storage connection strings.
@@ -89,62 +88,6 @@ namespace Cosmos.BlobService
         }
 
         /// <summary>
-        /// Parses an Amazon S3 connection string into its components.
-        /// </summary>
-        /// <param name="connectionString">The Amazon S3 connection string.</param>
-        /// <returns>Parsed Amazon S3 connection string components.</returns>
-        /// <exception cref="InvalidConnectionStringException">Thrown when the connection string format is invalid.</exception>
-        public static AmazonConnectionStringComponents ParseAmazonConnectionString(string connectionString)
-        {
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                throw new InvalidConnectionStringException("Connection string cannot be null or empty.")
-                {
-                    AttemptedProvider = CloudStorageProvider.AmazonS3
-                };
-            }
-
-            var dict = ParseConnectionString(connectionString);
-
-            if (!dict.TryGetValue("Bucket", out var bucket))
-            {
-                throw new InvalidConnectionStringException("Invalid Amazon connection string: missing Bucket parameter.")
-                {
-                    AttemptedProvider = CloudStorageProvider.AmazonS3
-                };
-            }
-
-            if (!dict.TryGetValue("KeyId", out var keyId))
-            {
-                throw new InvalidConnectionStringException("Invalid Amazon connection string: missing KeyId parameter.")
-                {
-                    AttemptedProvider = CloudStorageProvider.AmazonS3
-                };
-            }
-
-            if (!dict.TryGetValue("Key", out var key))
-            {
-                throw new InvalidConnectionStringException("Invalid Amazon connection string: missing Key parameter.")
-                {
-                    AttemptedProvider = CloudStorageProvider.AmazonS3
-                };
-            }
-
-            // Region is optional for Cloudflare R2
-            dict.TryGetValue("Region", out var region);
-            dict.TryGetValue("AccountId", out var accountId);
-
-            return new AmazonConnectionStringComponents
-            {
-                BucketName = bucket,
-                Region = region,
-                KeyId = keyId,
-                Key = key,
-                AccountId = accountId
-            };
-        }
-
-        /// <summary>
         /// Creates a BlobServiceClient from an Azure connection string.
         /// </summary>
         /// <param name="connectionString">The Azure connection string.</param>
@@ -191,6 +134,61 @@ namespace Cosmos.BlobService
                    connectionString.Contains("devstoreaccount1", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Parses an Amazon S3 connection string into its components.
+        /// </summary>
+        /// <param name="connectionString">The Amazon S3 connection string.</param>
+        /// <returns>Parsed Amazon S3 connection string components.</returns>
+        /// <exception cref="InvalidConnectionStringException">Thrown when the connection string format is invalid.</exception>
+        public static AmazonConnectionStringComponents ParseAmazonConnectionString(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidConnectionStringException("Connection string cannot be null or empty.")
+                {
+                    AttemptedProvider = CloudStorageProvider.AmazonS3
+                };
+            }
+
+            var dict = ParseConnectionString(connectionString);
+
+            if (!dict.TryGetValue("Bucket", out var bucket))
+            {
+                throw new InvalidConnectionStringException("Invalid Amazon connection string: missing Bucket parameter.")
+                {
+                    AttemptedProvider = CloudStorageProvider.AmazonS3
+                };
+            }
+
+            if (!dict.TryGetValue("KeyId", out var keyId))
+            {
+                throw new InvalidConnectionStringException("Invalid Amazon connection string: missing KeyId parameter.")
+                {
+                    AttemptedProvider = CloudStorageProvider.AmazonS3
+                };
+            }
+
+            if (!dict.TryGetValue("Key", out var key))
+            {
+                throw new InvalidConnectionStringException("Invalid Amazon connection string: missing Key parameter.")
+                {
+                    AttemptedProvider = CloudStorageProvider.AmazonS3
+                };
+            }
+
+            dict.TryGetValue("Region", out var region);
+            dict.TryGetValue("AccountId", out var accountId);
+
+            return new AmazonConnectionStringComponents
+            {
+                BucketName = bucket,
+                Region = region,
+                KeyId = keyId,
+                Key = key,
+                AccountId = accountId
+            };
+        }
+
         private static Dictionary<string, string> ParseConnectionString(string connectionString)
         {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -221,83 +219,5 @@ namespace Cosmos.BlobService
 
             return dict;
         }
-    }
-
-    /// <summary>
-    /// Represents the type of cloud storage provider.
-    /// </summary>
-    public enum CloudStorageProvider
-    {
-        /// <summary>
-        /// Unknown or unsupported provider.
-        /// </summary>
-        Unknown,
-
-        /// <summary>
-        /// Microsoft Azure Blob Storage.
-        /// </summary>
-        Azure,
-
-        /// <summary>
-        /// Amazon S3.
-        /// </summary>
-        AmazonS3,
-
-        /// <summary>
-        /// Cloudflare R2 (S3-compatible).
-        /// </summary>
-        CloudflareR2
-    }
-
-    /// <summary>
-    /// Contains parsed components of an Azure Blob Storage connection string.
-    /// </summary>
-    public class AzureConnectionStringComponents
-    {
-        /// <summary>
-        /// Gets or sets the storage account name.
-        /// </summary>
-        public required string AccountName { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the connection uses Azure AD access tokens.
-        /// </summary>
-        public bool UsesAccessToken { get; set; }
-
-        /// <summary>
-        /// Gets or sets the full connection string.
-        /// </summary>
-        public required string FullConnectionString { get; set; }
-    }
-
-    /// <summary>
-    /// Contains parsed components of an Amazon S3/Cloudflare R2 connection string.
-    /// </summary>
-    public class AmazonConnectionStringComponents
-    {
-        /// <summary>
-        /// Gets or sets the bucket name.
-        /// </summary>
-        public required string BucketName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the AWS region (optional for Cloudflare R2).
-        /// </summary>
-        public string? Region { get; set; }
-
-        /// <summary>
-        /// Gets or sets the access key ID.
-        /// </summary>
-        public required string KeyId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the secret access key.
-        /// </summary>
-        public required string Key { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Cloudflare account ID (for R2 only).
-        /// </summary>
-        public string? AccountId { get; set; }
     }
 }
