@@ -8,6 +8,7 @@
 namespace Sky.Editor.Services.Templates
 {
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.EntityFrameworkCore;

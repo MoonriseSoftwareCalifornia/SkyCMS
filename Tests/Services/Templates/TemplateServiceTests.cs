@@ -59,12 +59,11 @@ public class TemplateServiceTests
             .ReturnsAsync(Guid.NewGuid());
 
         // Create service under test
-        var templateContext = new TemplateContext(_dbContext, _mockConfigProvider.Object);
         _templateService = new TemplateService(
             _mockEnvironment.Object,
             _mockLogger.Object,
-            templateContext,
-            null!); // IMediator
+            _dbContext,
+            _mockConfigProvider.Object);
     }
 
     /// <summary>

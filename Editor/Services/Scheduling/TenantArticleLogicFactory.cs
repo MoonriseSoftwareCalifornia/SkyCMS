@@ -116,15 +116,11 @@ namespace Sky.Editor.Services.Scheduling
                 scopedServices.GetRequiredService<IClock>(),
                 publishingService);
 
-            var templateContext = new Sky.Editor.Services.Templates.TemplateContext(
-                dbContext,
-                scopedServices.GetRequiredService<IDynamicConfigurationProvider>());
-
             var templateService = new TemplateService(
                 scopedServices.GetRequiredService<IWebHostEnvironment>(),
                 scopedServices.GetRequiredService<ILogger<TemplateService>>(),
-                templateContext,
-                scopedServices.GetRequiredService<Cosmos.Common.Features.Shared.IMediator>());
+                dbContext,
+                scopedServices.GetRequiredService<IDynamicConfigurationProvider>());
 
             var layoutPreviewService = new LayoutTemplateService(
                 scopedServices.GetRequiredService<IWebHostEnvironment>(),
@@ -136,12 +132,14 @@ namespace Sky.Editor.Services.Scheduling
                 null);  // No event dispatcher in background jobs
 
             var titleChangeService = new TitleChangeService(
-                titleChangeContext,
+                dbContext,
                 scopedServices.GetRequiredService<ISlugService>(),
                 redirectService,
+                scopedServices.GetRequiredService<IClock>(),
+                null,  // No domain event dispatcher in background jobs
                 publishingService,
                 reservedPaths,
-                null,  // No blog stream rendering service in background jobs
+                blogRenderingService,
                 scopedServices.GetRequiredService<ILogger<TitleChangeService>>());
 
             return new ArticleEditLogic(

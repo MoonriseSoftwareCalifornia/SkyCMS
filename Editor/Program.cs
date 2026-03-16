@@ -12,6 +12,7 @@ using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common;
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Articles.Shared;
+using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Services;
 using Cosmos.Common.Services.BlogPublishing;
 using Cosmos.Common.Services.Configurations;
@@ -337,6 +338,7 @@ builder.Services.AddScoped<ILayoutImportService, LayoutImportService>();
 
 builder.Services.AddScoped<IArticleViewModelBuilder>(sp =>
     new ArticleViewModelBuilder(
+        sp.GetRequiredService<IMediator>(),
         sp.GetRequiredService<ApplicationDbContext>(),
         sp.GetRequiredService<IMemoryCache>(),
         builder.Configuration.GetValue<string>("CosmosPublisherUrl") ?? string.Empty,

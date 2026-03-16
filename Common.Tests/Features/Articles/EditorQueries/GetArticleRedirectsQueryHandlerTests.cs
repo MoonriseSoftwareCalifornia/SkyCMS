@@ -47,7 +47,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             using var context = GetIsolatedContext();
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
 
-            var handler = new GetArticleRedirectsQueryHandler(context, memoryCache);
+            var handler = new GetArticleRedirectsQueryHandler(context);
 
             Assert.IsNotNull(handler);
         }
@@ -138,11 +138,8 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             await context.SaveChangesAsync();
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var handler = new GetArticleRedirectsQueryHandler(context, memoryCache);
-            var query = new GetArticleRedirectsQuery 
-            { 
-                CacheDuration = TimeSpan.FromMinutes(5)
-            };
+            var handler = new GetArticleRedirectsQueryHandler(context);
+            var query = new GetArticleRedirectsQuery();
 
             // First call - cache miss
             var result1 = await handler.HandleAsync(query);

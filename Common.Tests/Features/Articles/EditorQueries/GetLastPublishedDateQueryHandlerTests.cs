@@ -46,7 +46,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             using var context = GetIsolatedContext();
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
 
-            var handler = new GetLastPublishedDateQueryHandler(context, memoryCache);
+            var handler = new GetLastPublishedDateQueryHandler(context);
 
             Assert.IsNotNull(handler);
         }
@@ -145,7 +145,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             await context.SaveChangesAsync();
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var handler = new GetLastPublishedDateQueryHandler(context, memoryCache);
+            var handler = new GetLastPublishedDateQueryHandler(context);
             var query = new GetLastPublishedDateQuery 
             { 
                 ArticleNumber = 12345,

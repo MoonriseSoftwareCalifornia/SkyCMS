@@ -100,10 +100,18 @@ namespace Sky.Tests.Areas.Setup
                 Db);
 
             setupService = new SetupService(
-                setupContext,
+                testConfiguration,
                 new NullLogger<SetupService>(),
+                Cache,
+                UserManager,
+                RoleManager,
+                Db,
                 layoutImportService,
-                Mediator);
+                Mediator,
+                new Sky.Editor.Services.Setup.DatabaseConnectionTester(),
+                new Sky.Editor.Services.Setup.StorageConnectionTester(Cache),
+                new Sky.Editor.Services.Setup.SendGridEmailTester(),
+                new Sky.Editor.Services.Setup.SmtpEmailTester());
 
             foreach (var role in RequiredIdentityRoles.Roles)
             {

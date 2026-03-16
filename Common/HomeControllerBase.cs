@@ -79,7 +79,7 @@ namespace Cosmos.Common
                 return NotFound("Page not found.");
             }
 
-            var contents = await CosmosUtilities.GetArticleFolderContents(storageContext, articleNumber.Value, path);
+            var contents = await mediator.QueryAsync(new GetArticleFolderContentsQuery(articleNumber.Value, path));
 
             return Json(contents);
         }

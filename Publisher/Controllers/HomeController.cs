@@ -57,9 +57,10 @@ namespace Cosmos.Cms.Publisher.Controllers
             IMediator mediator,
             IOptions<SiteSettings> options,
             ApplicationDbContext dbContext,
+            IStorageContext storageContext,
             IEmailSender emailSender,
             IContactManagementService contactManagementService)
-            : base(mediator, dbContext, contactManagementService)
+            : base(mediator, dbContext, storageContext, logger, emailSender, contactManagementService)
         {
             this.configuration = configuration;
             this.logger = logger;

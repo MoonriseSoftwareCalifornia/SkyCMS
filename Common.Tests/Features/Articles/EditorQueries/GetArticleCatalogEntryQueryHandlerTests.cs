@@ -46,7 +46,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             using var context = GetIsolatedContext();
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
 
-            var handler = new GetArticleCatalogEntryQueryHandler(context, memoryCache);
+            var handler = new GetArticleCatalogEntryQueryHandler(context);
 
             Assert.IsNotNull(handler);
         }
@@ -56,7 +56,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
         {
             using var context = GetIsolatedContext();
 
-            var handler = new GetArticleCatalogEntryQueryHandler(context, null);
+            var handler = new GetArticleCatalogEntryQueryHandler(context);
 
             Assert.IsNotNull(handler);
         }
@@ -100,7 +100,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             await context.SaveChangesAsync();
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var handler = new GetArticleCatalogEntryQueryHandler(context, memoryCache);
+            var handler = new GetArticleCatalogEntryQueryHandler(context);
             var query = new GetArticleCatalogEntryQuery 
             { 
                 ArticleNumber = 12345,
@@ -132,7 +132,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             await context.SaveChangesAsync();
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var handler = new GetArticleCatalogEntryQueryHandler(context, memoryCache);
+            var handler = new GetArticleCatalogEntryQueryHandler(context);
             var query = new GetArticleCatalogEntryQuery 
             { 
                 ArticleNumber = 12345,
@@ -163,7 +163,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             context.ArticleCatalog.Add(catalog);
             await context.SaveChangesAsync();
 
-            var handler = new GetArticleCatalogEntryQueryHandler(context, null);
+            var handler = new GetArticleCatalogEntryQueryHandler(context);
             var query = new GetArticleCatalogEntryQuery 
             { 
                 ArticleNumber = 12345,
@@ -191,7 +191,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
         {
             using var context = GetIsolatedContext();
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var handler = new GetArticleCatalogEntryQueryHandler(context, memoryCache);
+            var handler = new GetArticleCatalogEntryQueryHandler(context);
             var query = new GetArticleCatalogEntryQuery 
             { 
                 ArticleNumber = 999999,

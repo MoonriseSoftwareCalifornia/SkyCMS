@@ -174,10 +174,14 @@ namespace Sky.Tests.Services.Setup
                     RoleManagerMock.Object,
                     DbContext);
 
-                // Create service (4 parameters)
+                // Create service
                 Service = new SetupService(
-                    setupContext,
+                    Configuration,
                     LoggerMock.Object,
+                    MemoryCache,
+                    UserManagerMock.Object,
+                    RoleManagerMock.Object,
+                    DbContext,
                     LayoutImportServiceMock.Object,
                     MediatorMock.Object,
                     DatabaseConnectionTesterMock.Object,

@@ -16,8 +16,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Remove="Configuration\**" />
 		<Compile Remove="Sky.Tests\**" />
+		<EmbeddedResource Remove="Configuration\**" />
 		<EmbeddedResource Remove="Sky.Tests\**" />
+		<None Remove="Configuration\**" />
 		<None Remove="Sky.Tests\**" />
 	</ItemGroup>
 
@@ -50,7 +53,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Configuration\" />
 	  <Folder Include="Features\Articles\CreateVersion\" />
 	  <Folder Include="Services\Migrations\TestMigrations\" />
 	</ItemGroup>

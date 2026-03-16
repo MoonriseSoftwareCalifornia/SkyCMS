@@ -93,7 +93,7 @@ namespace Sky.Tests
         protected IMediator Mediator = null!;
         protected ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>> CreateArticleHandler = null!;
         protected ICommandHandler<SaveArticleCommand, CommandResult<ArticleUpdateResult>> SaveArticleHandler = null!;
-        protected ArticleLogic ArticleLogic = null!;
+        protected ArticleEditLogic ArticleEditLogic = null!;
 
         private async Task EnsureBlogStreamTemplateExistsAsync()
         {
@@ -538,12 +538,14 @@ namespace Sky.Tests
             // ✅ Register with non-nullable ArticleViewModel to match EditorController expectations
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByIdQueryHandler(
+                    Mediator,
                     Db,
                     Cache,
                     configuration));
 
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQuery, Cosmos.Common.Models.ArticleViewModel>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByArticleNumberQueryHandler(
+                    Mediator,
                     Db,
                     Cache,
                     configuration));
@@ -563,6 +565,7 @@ namespace Sky.Tests
             // ✅ Register GetArticleByUrlQueryHandler for LayoutsController.ExportLayout and EditPreview
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQuery, Cosmos.Common.Models.ArticleViewModel?>>(sp =>
                 new Cosmos.Common.Features.Articles.EditorQueries.GetArticleByUrlQueryHandler(
+                    Mediator,
                     Db,
                     Cache,
                     configuration));
@@ -660,13 +663,21 @@ namespace Sky.Tests
                 RedirectService,
                 TemplateService);
 
-            // ✅ CREATE ArticleLogic for handlers that need it
-            ArticleLogic = new Cosmos.Common.Data.Logic.ArticleLogic(
+            // ✅ CREATE ArticleEditLogic for handlers that need it
+            ArticleEditLogic = new Sky.Editor.Data.Logic.ArticleEditLogic(
                 Db,
                 Cache,
-                EditorSettings.PublisherUrl.ToString(),
-                configuration.GetValue<string>("AzureBlobStorageEndPoint") ?? string.Empty,
-                isEditor: true);
+                Storage,
+                new NullLogger<Sky.Editor.Data.Logic.ArticleEditLogic>(),
+                EditorSettings,
+                Clock,
+                SlugService,
+                ArticleHtmlService,
+                CatalogService,
+                PublishingService,
+                TitleChangeService,
+                RedirectService,
+                TemplateService);
 
             // ✅ NOW CREATE FEATURE HANDLERS WITH TEMPLATE SERVICE
             CreateArticleHandler = new CreateArticleHandler(
@@ -750,6 +761,7 @@ namespace Sky.Tests
             // ✅ CREATE ImportLayoutHandler
             var importLayoutHandler = new Sky.Editor.Features.Layouts.Import.ImportLayoutHandler(
                 Db,
+                Mediator,
                 LayoutImportService,
                 layoutVersioningService,
                 new NullLogger<Sky.Editor.Features.Layouts.Import.ImportLayoutHandler>());

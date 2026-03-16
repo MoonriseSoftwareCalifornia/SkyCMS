@@ -48,6 +48,7 @@ namespace Sky.Tests.Controllers
             controller = new TestHomeController(
                 Mediator,
                 Db,
+                Storage,
                 loggerMock.Object,
                 emailSenderMock.Object,
                 contactManagementServiceMock.Object);
@@ -589,10 +590,11 @@ namespace Sky.Tests.Controllers
             public TestHomeController(
                 IMediator mediator,
                 ApplicationDbContext dbContext,
+                IStorageContext storageContext,
                 ILogger<HomeControllerBase> logger,
                 IEmailSender emailSender,
                 IContactManagementService contactManagementService)
-                : base(mediator, dbContext, contactManagementService)
+                : base(mediator, dbContext, storageContext, logger, emailSender, contactManagementService)
             {
             }
         }

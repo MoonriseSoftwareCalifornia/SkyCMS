@@ -110,12 +110,20 @@ namespace Sky.Tests.Services.Setup
                 _roleManagerMock.Object,
                 _dbContext);
 
-            // Create service
+            // Create service with all required parameters
             _setupService = new SetupService(
-                setupContext,
+                _configurationMock.Object,
                 _loggerMock.Object,
-                null, // ILayoutImportService not needed for basic tests
-                _mediatorMock.Object);
+                _cacheMock.Object,
+                _userManagerMock.Object,
+                _roleManagerMock.Object,
+                _dbContext,
+                null!, // ILayoutImportService not needed for basic tests
+                _mediatorMock.Object,
+                new Sky.Editor.Services.Setup.DatabaseConnectionTester(),
+                new Sky.Editor.Services.Setup.StorageConnectionTester(_cacheMock.Object),
+                new Sky.Editor.Services.Setup.SendGridEmailTester(),
+                new Sky.Editor.Services.Setup.SmtpEmailTester());
         }
 
         [TestCleanup]

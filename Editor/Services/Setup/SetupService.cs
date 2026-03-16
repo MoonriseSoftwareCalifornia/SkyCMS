@@ -9,6 +9,7 @@ namespace Sky.Editor.Services.Setup
 {
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
