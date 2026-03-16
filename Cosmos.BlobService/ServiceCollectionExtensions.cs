@@ -32,6 +32,7 @@ namespace Cosmos.BlobService
         public static void AddCosmosStorageContext(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<StorageContext>();
+            services.AddTransient<IStorageContext>(provider => provider.GetRequiredService<StorageContext>());
         }
 
         /// <summary>
