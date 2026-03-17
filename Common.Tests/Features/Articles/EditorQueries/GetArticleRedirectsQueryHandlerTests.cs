@@ -138,8 +138,8 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             await context.SaveChangesAsync();
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var handler = new GetArticleRedirectsQueryHandler(context);
-            var query = new GetArticleRedirectsQuery();
+            var handler = new GetArticleRedirectsQueryHandler(context, memoryCache);
+            var query = new GetArticleRedirectsQuery { CacheDuration = TimeSpan.FromMinutes(5) };
 
             // First call - cache miss
             var result1 = await handler.HandleAsync(query);

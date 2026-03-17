@@ -100,7 +100,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             await context.SaveChangesAsync();
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var handler = new GetArticleCatalogEntryQueryHandler(context);
+            var handler = new GetArticleCatalogEntryQueryHandler(context, memoryCache);
             var query = new GetArticleCatalogEntryQuery 
             { 
                 ArticleNumber = 12345,
@@ -191,7 +191,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
         {
             using var context = GetIsolatedContext();
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var handler = new GetArticleCatalogEntryQueryHandler(context);
+            var handler = new GetArticleCatalogEntryQueryHandler(context, memoryCache);
             var query = new GetArticleCatalogEntryQuery 
             { 
                 ArticleNumber = 999999,

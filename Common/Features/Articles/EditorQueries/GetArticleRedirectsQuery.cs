@@ -9,6 +9,7 @@ namespace Cosmos.Common.Features.Articles.EditorQueries;
 
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using System;
 using System.Collections.Generic;
 
 /// <summary>
@@ -16,4 +17,12 @@ using System.Collections.Generic;
 /// </summary>
 public class GetArticleRedirectsQuery : IQuery<IEnumerable<RedirectItemViewModel>>
 {
+    /// <summary>
+    /// Gets or sets the optional cache duration. If null, no caching is applied.
+    /// </summary>
+    /// <remarks>
+    /// Recommended duration: 5-10 minutes for redirects that change infrequently.
+    /// Cache is automatically invalidated when articles are published/unpublished.
+    /// </remarks>
+    public TimeSpan? CacheDuration { get; set; }
 }
