@@ -16,6 +16,11 @@ namespace Cosmos.Publisher.Services
     public interface IGraphIntegrationService
     {
         /// <summary>
+        /// Gets a value indicating whether the Graph service is available/configured.
+        /// </summary>
+        bool IsAvailable { get; }
+
+        /// <summary>
         /// Checks if a user belongs to any of the specified groups.
         /// </summary>
         /// <param name="emailAddress">The user's email address.</param>
@@ -29,11 +34,6 @@ namespace Cosmos.Publisher.Services
         /// <param name="emailAddress">The user's email address.</param>
         /// <returns>List of groups the user belongs to, or empty list if Graph service is unavailable.</returns>
         Task<List<GroupInfo>> GetUserGroupsAsync(string emailAddress);
-
-        /// <summary>
-        /// Gets a value indicating whether the Graph service is available/configured.
-        /// </summary>
-        bool IsAvailable { get; }
     }
 
     /// <summary>

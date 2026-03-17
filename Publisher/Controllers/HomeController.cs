@@ -4,6 +4,10 @@
 // See https://github.com/CWALabs/SkyCMS
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
+using System.Diagnostics;
+using System.Net;
+using System.Text;
+using System.Web;
 using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Cms.Publisher.Models;
@@ -20,10 +24,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.Diagnostics;
-using System.Net;
-using System.Text;
-using System.Web;
 
 namespace Cosmos.Cms.Publisher.Controllers
 {

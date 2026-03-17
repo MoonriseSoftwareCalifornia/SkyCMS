@@ -84,14 +84,14 @@ namespace Cosmos.Publisher.Configuration
             public const int DefaultPermitLimit = 4;
 
             /// <summary>
-            /// Default window duration for rate limiter (8 seconds).
-            /// </summary>
-            public static readonly TimeSpan DefaultWindow = TimeSpan.FromSeconds(8);
-
-            /// <summary>
             /// Default queue limit for rate limiter (2 requests).
             /// </summary>
             public const int DefaultQueueLimit = 2;
+
+            /// <summary>
+            /// Default window duration for rate limiter (8 seconds).
+            /// </summary>
+            public static readonly TimeSpan DefaultWindow = TimeSpan.FromSeconds(8);
         }
 
         /// <summary>
@@ -116,6 +116,16 @@ namespace Cosmos.Publisher.Configuration
         public static class FileCache
         {
             /// <summary>
+            /// Cache control header value for public files.
+            /// </summary>
+            public const string PublicCacheControl = "public, max-age=3600";
+
+            /// <summary>
+            /// Cache control header value for private/authenticated files.
+            /// </summary>
+            public const string PrivateCacheControl = "private, no-cache, no-store, must-revalidate";
+
+            /// <summary>
             /// Cache duration for index.html files (10 seconds).
             /// </summary>
             public static readonly TimeSpan IndexHtmlExpiration = TimeSpan.FromSeconds(10);
@@ -134,16 +144,6 @@ namespace Cosmos.Publisher.Configuration
             /// Cache duration for published page files (4 minutes with sliding expiration).
             /// </summary>
             public static readonly TimeSpan PublicFileExpiration = TimeSpan.FromMinutes(4);
-
-            /// <summary>
-            /// Cache control header value for public files.
-            /// </summary>
-            public const string PublicCacheControl = "public, max-age=3600";
-
-            /// <summary>
-            /// Cache control header value for private/authenticated files.
-            /// </summary>
-            public const string PrivateCacheControl = "private, no-cache, no-store, must-revalidate";
         }
 
         /// <summary>
@@ -173,11 +173,6 @@ namespace Cosmos.Publisher.Configuration
             public const string CookieName = "CosmosAuthCookie";
 
             /// <summary>
-            /// Default authentication cookie expiration (5 days).
-            /// </summary>
-            public static readonly TimeSpan DefaultExpireTimeSpan = TimeSpan.FromDays(5);
-
-            /// <summary>
             /// Whether sliding expiration is enabled for authentication cookies.
             /// </summary>
             public const bool SlidingExpirationEnabled = true;
@@ -186,6 +181,11 @@ namespace Cosmos.Publisher.Configuration
             /// Whether confirmed account is required.
             /// </summary>
             public const bool RequireConfirmedAccount = true;
+
+            /// <summary>
+            /// Default authentication cookie expiration (5 days).
+            /// </summary>
+            public static readonly TimeSpan DefaultExpireTimeSpan = TimeSpan.FromDays(5);
         }
 
         /// <summary>

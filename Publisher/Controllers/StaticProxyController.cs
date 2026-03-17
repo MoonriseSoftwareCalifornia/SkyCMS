@@ -188,28 +188,6 @@ public class StaticProxyController : Controller
     }
 
     /// <summary>
-    /// Determines if a content type is text-based.
-    /// </summary>
-    /// <param name="contentType">The content type to check.</param>
-    /// <returns>True if the content type is text-based; otherwise false.</returns>
-    private static bool IsTextContent(string contentType)
-    {
-        var textTypes = new[]
-        {
-            MediaTypeNames.Text.Plain,
-            MediaTypeNames.Text.Html,
-            MediaTypeNames.Text.Xml,
-            MediaTypeNames.Application.Json,
-            "application/javascript",
-            "application/xml",
-            "text/css",
-            "image/svg+xml",
-        };
-
-        return textTypes.Contains(contentType);
-    }
-
-    /// <summary>
     /// Determines if the requested path belongs to a SPA and returns the index.html path.
     /// </summary>
     /// <param name="requestedPath">The requested path.</param>
@@ -264,11 +242,34 @@ public class StaticProxyController : Controller
             catch (Exception ex)
             {
                 this.logger.LogError(ex, "Error checking SPA status for article URL: {ArticleUrl}", potentialArticleUrl);
+
                 // Continue to next iteration instead of failing
                 continue;
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Determines if a content type is text-based.
+    /// </summary>
+    /// <param name="contentType">The content type to check.</param>
+    /// <returns>True if the content type is text-based; otherwise false.</returns>
+    private static bool IsTextContent(string contentType)
+    {
+        var textTypes = new[]
+        {
+            MediaTypeNames.Text.Plain,
+            MediaTypeNames.Text.Html,
+            MediaTypeNames.Text.Xml,
+            MediaTypeNames.Application.Json,
+            "application/javascript",
+            "application/xml",
+            "text/css",
+            "image/svg+xml",
+        };
+
+        return textTypes.Contains(contentType);
     }
 }

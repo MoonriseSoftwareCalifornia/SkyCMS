@@ -18,16 +18,19 @@ namespace Cosmos.Publisher.Services
         /// <summary>
         /// Gets the current request path.
         /// </summary>
+        /// <returns>The current request path as a string.</returns>
         string GetPath();
 
         /// <summary>
         /// Gets the current request path value (Microsoft.AspNetCore.Http.PathString).
         /// </summary>
+        /// <returns>The current request path value.</returns>
         Microsoft.AspNetCore.Http.PathString GetPathValue();
 
         /// <summary>
         /// Gets the current authenticated user principal.
         /// </summary>
+        /// <returns>The current user principal.</returns>
         ClaimsPrincipal GetUser();
 
         /// <summary>
@@ -47,21 +50,25 @@ namespace Cosmos.Publisher.Services
         /// <summary>
         /// Gets the request host name.
         /// </summary>
+        /// <returns>The current request host name.</returns>
         string GetHostName();
 
         /// <summary>
         /// Gets a value indicating whether the user is authenticated.
         /// </summary>
+        /// <returns><see langword="true"/> if the current user is authenticated; otherwise, <see langword="false"/>.</returns>
         bool IsUserAuthenticated();
 
         /// <summary>
         /// Gets the authenticated user's name.
         /// </summary>
+        /// <returns>The authenticated user's name, or null if unavailable.</returns>
         string GetUserName();
 
         /// <summary>
         /// Gets the authenticated user's email address.
         /// </summary>
+        /// <returns>The authenticated user's email address, or null if unavailable.</returns>
         string GetUserEmail();
 
         /// <summary>
@@ -74,6 +81,7 @@ namespace Cosmos.Publisher.Services
         /// <summary>
         /// Gets the HttpContext directly (useful when abstraction is insufficient).
         /// </summary>
+        /// <returns>The current HttpContext instance.</returns>
         HttpContext GetHttpContext();
     }
 }
