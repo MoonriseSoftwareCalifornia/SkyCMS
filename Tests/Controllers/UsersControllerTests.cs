@@ -1203,6 +1203,40 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(model);
         }
 
+        /// <summary>
+        /// Tests that Privacy returns the default view.
+        /// </summary>
+        [TestMethod]
+        public void Privacy_ReturnsView()
+        {
+            // Act
+            var result = controller.Privacy();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+        }
+
+        /// <summary>
+        /// Tests that Error returns ErrorViewModel with request id.
+        /// </summary>
+        [TestMethod]
+        public void Error_ReturnsViewWithRequestId()
+        {
+            // Arrange
+            controller.ControllerContext.HttpContext.TraceIdentifier = "users-controller-error-trace";
+
+            // Act
+            var result = controller.Error();
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            var model = viewResult.Model as ErrorViewModel;
+            Assert.IsNotNull(model);
+            Assert.AreEqual("users-controller-error-trace", model.RequestId);
+            Assert.IsTrue(model.ShowRequestId);
+        }
+
         #endregion
     }
 }

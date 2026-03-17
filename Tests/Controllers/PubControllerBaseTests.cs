@@ -144,7 +144,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var testController = new TestPubController(
-                null!,
+                Mediator,
                 Db,
                 Storage,
                 testLogger,
@@ -175,7 +175,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var testController = new TestPubController(
-                null!,
+                Mediator,
                 Db,
                 Storage,
                 testLogger,
@@ -214,7 +214,7 @@ namespace Sky.Tests.Controllers
                 DateTimeOffset.UtcNow);
 
             var testController = new TestPubController(
-                null!,
+                Mediator,
                 Db,
                 Storage,
                 testLogger,
@@ -289,7 +289,7 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             var testController = new TestPubController(
-                null!,
+                Mediator,
                 Db,
                 Storage,
                 testLogger,
@@ -335,7 +335,7 @@ namespace Sky.Tests.Controllers
             var logger = new TestLogger<TestPubController>();
 
             var testController = new TestPubController(
-                null!,
+                Mediator,
                 Db,
                 Storage,
                 logger,
@@ -462,7 +462,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             var testController = new TestPubController(
-                null!,
+                Mediator,
                 Db,
                 Storage,
                 testLogger,

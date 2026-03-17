@@ -1410,6 +1410,153 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
+        #region Missing Endpoint Coverage Tests
+
+        /// <summary>
+        /// Tests that Create rejects targets outside /pub.
+        /// </summary>
+        [TestMethod]
+        public async Task Create_ReturnsUnauthorized_WhenTargetOutsidePub()
+        {
+            // Arrange
+            var entry = new FileManagerEntry { Name = "new-folder" };
+
+            // Act
+            var result = await controller.Create("/private", entry);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that GetImageAssets returns JSON payload.
+        /// </summary>
+        [TestMethod]
+        public async Task GetImageAssets_ReturnsJsonResult()
+        {
+            // Act
+            var result = await controller.GetImageAssets("/pub");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+        }
+
+        /// <summary>
+        /// Tests that Process POST returns upload uid payload.
+        /// </summary>
+        [TestMethod]
+        public void Process_Post_ReturnsOkUidPayload()
+        {
+            // Arrange
+            var payload = JsonConvert.SerializeObject(new FilePondMetadata
+            {
+                FileName = "image.jpg",
+                RelativePath = "image.jpg",
+                Path = "/pub/images",
+                ImageWidth = "100",
+                ImageHeight = "100"
+            });
+
+            // Act
+            var result = controller.Process(payload);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+            var ok = (OkObjectResult)result;
+            Assert.IsInstanceOfType(ok.Value, typeof(string));
+            Assert.IsTrue(((string)ok.Value).Contains("/pub/images", StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Tests that PATCH Process returns bad request when model state is invalid.
+        /// </summary>
+        [TestMethod]
+        public async Task Process_Patch_ReturnsBadRequest_WhenModelStateInvalid()
+        {
+            // Arrange
+            controller.ModelState.AddModelError("patch", "invalid");
+
+            // Act
+            var result = await controller.Process("/pub|file.txt|uid|image/png|100|100", string.Empty);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        /// <summary>
+        /// Tests that EditCode GET rejects unsupported file types.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Get_ReturnsUnsupportedMediaType_ForDisallowedExtension()
+        {
+            // Act
+            var result = await controller.EditCode("/pub/test/disallowed.exe");
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnsupportedMediaTypeResult));
+        }
+
+        /// <summary>
+        /// Tests that EditCode POST rejects unsupported file types.
+        /// </summary>
+        [TestMethod]
+        public async Task EditCode_Post_ReturnsUnsupportedMediaType_ForDisallowedExtension()
+        {
+            // Arrange
+            var model = new FileManagerEditCodeViewModel
+            {
+                Path = "/pub/test/disallowed.exe",
+                Content = Cosmos.Common.Services.CryptoJsDecryption.Encrypt("content")
+            };
+
+            // Act
+            var result = await controller.EditCode(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(UnsupportedMediaTypeResult));
+        }
+
+        /// <summary>
+        /// Tests that ImportPage GET returns view when id is provided.
+        /// </summary>
+        [TestMethod]
+        public void ImportPage_Get_ReturnsView_WhenIdProvided()
+        {
+            // Act
+            var result = controller.ImportPage(10);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+        }
+
+        /// <summary>
+        /// Tests that ImportPage GET returns not found when id is missing.
+        /// </summary>
+        [TestMethod]
+        public void ImportPage_Get_ReturnsNotFound_WhenIdMissing()
+        {
+            // Act
+            var result = controller.ImportPage(null);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        /// <summary>
+        /// Tests that ImportPage POST returns null for invalid input.
+        /// </summary>
+        [TestMethod]
+        public async Task ImportPage_Post_ReturnsNull_WhenInputsInvalid()
+        {
+            // Act
+            var result = await controller.ImportPage(Array.Empty<IFormFile>(), string.Empty, "not-a-guid");
+
+            // Assert
+            Assert.IsNull(result);
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private async Task CreateTestFile(string path, string content = "Test Content")

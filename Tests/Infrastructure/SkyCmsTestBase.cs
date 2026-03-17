@@ -518,6 +518,12 @@ namespace Sky.Tests
                     Db,
                     new NullLogger<Sky.Editor.Features.Layouts.Publish.PublishLayoutHandler>()));
 
+            // Register layout query handlers
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery, Cosmos.Common.Models.LayoutViewModel>>(sp =>
+                new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQueryHandler(
+                    Db,
+                    Cache));
+
             // PromoteLayoutHandler and ImportLayoutHandler need LayoutVersioningService which will be created later
             // We'll register these using lazy factories like we did for article handlers
             Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Promote.PromoteLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<int>>> promoteLayoutHandlerFactory = null!;
@@ -604,6 +610,12 @@ namespace Sky.Tests
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommandResult>>>(sp =>
                 createArticleVersionHandlerFactory());
 
+            // ✅ LAZY FACTORY: Register PublishArticleHandler using a factory that will be populated later
+            // PublishArticleHandler depends on PublishingService and CatalogService which are created AFTER this service provider is built
+            Func<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Publish.PublishArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Publish.PublishArticleCommandResult>>> publishArticleHandlerFactory = null!;
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Publish.PublishArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Articles.Publish.PublishArticleCommandResult>>>(sp =>
+                publishArticleHandlerFactory());
+
 
 
             // Register query handlers
@@ -614,6 +626,16 @@ namespace Sky.Tests
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQuery, System.Collections.Generic.List<Cosmos.Common.Models.TableOfContentsItem>>>(sp =>
                 new Cosmos.Common.Features.Articles.Queries.SearchPublishedArticlesQueryHandler(
                     sp.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>()));
+
+            // ✅ Register GetArticleFolderContentsQueryHandler for HomeControllerBase.CCMS_GetArticleFolderContents
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.GetArticleFolderContentsQuery, System.Collections.Generic.List<Cosmos.BlobService.FileManagerEntry>>>(sp =>
+                new Cosmos.Common.Features.Articles.Queries.GetArticleFolderContentsQueryHandler(
+                    Storage));
+
+            // ✅ Register AuthorizeUserForArticleQueryHandler for PubControllerBase authorization checks
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<Cosmos.Common.Features.Articles.Queries.AuthorizeUserForArticleQuery, bool>>(sp =>
+                new Cosmos.Common.Features.Articles.Queries.AuthorizeUserForArticleQueryHandler(
+                    Db));
 
             Services = serviceCollection.BuildServiceProvider();
 
@@ -706,6 +728,14 @@ namespace Sky.Tests
                 Db,
                 new NullLogger<Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionHandler>());
 
+            // ✅ CREATE PublishArticleHandler
+            var publishArticleHandler = new Sky.Editor.Features.Articles.Publish.PublishArticleHandler(
+                Db,
+                Clock,
+                PublishingService,
+                CatalogService,
+                new NullLogger<Sky.Editor.Features.Articles.Publish.PublishArticleHandler>());
+
             // ✅ CREATE DeleteArticleHandler
             var deleteArticleHandler = new Sky.Editor.Features.Articles.Delete.DeleteArticleHandler(
                 Db,
@@ -733,6 +763,7 @@ namespace Sky.Tests
             saveArticleHandlerFactory = () => SaveArticleHandler;
             createArticleHandlerFactory = () => CreateArticleHandler;
             createArticleVersionHandlerFactory = () => createArticleVersionHandler;
+            publishArticleHandlerFactory = () => publishArticleHandler;
             deleteArticleHandlerFactory = () => deleteArticleHandler;
             trashArticleHandlerFactory = () => trashArticleHandler;
             publishPageDesignVersionHandlerFactory = () => publishPageDesignVersionHandler;

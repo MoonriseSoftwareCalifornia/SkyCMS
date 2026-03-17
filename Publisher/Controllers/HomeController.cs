@@ -14,14 +14,14 @@ using Cosmos.Common.Features.Articles.Queries;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
 using Cosmos.Common.Services;
-using Cosmos.MicrosoftGraph;
+using Cosmos.Publisher.Configuration;
+using Cosmos.Publisher.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Net;
-using System.Security.Claims;
 using System.Text;
 using System.Web;
 
@@ -37,21 +37,23 @@ namespace Cosmos.Cms.Publisher.Controllers
         private readonly IMediator mediator;
         private readonly IOptions<SiteSettings> options;
         private readonly ApplicationDbContext dbContext;
-        private readonly MsGraphService graphService;
+        private readonly IGraphIntegrationService graphIntegrationService;
+        private readonly IRequestContextProvider requestContextProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeController"/> class.
         /// </summary>
-        /// <param name="services">Services provider.</param>
         /// <param name="configuration">Configuration.</param>
         /// <param name="logger">Logger.</param>
         /// <param name="mediator">Mediator.</param>
         /// <param name="options">Cosmos options.</param>
         /// <param name="dbContext">Database Context.</param>
+        /// <param name="storageContext">Storage context.</param>
         /// <param name="emailSender">Email services.</param>
         /// <param name="contactManagementService">Contact management service.</param>
+        /// <param name="graphIntegrationService">Graph integration service.</param>
+        /// <param name="requestContextProvider">Request context provider.</param>
         public HomeController(
-            IServiceProvider services,
             IConfiguration configuration,
             ILogger<HomeController> logger,
             IMediator mediator,
@@ -59,22 +61,18 @@ namespace Cosmos.Cms.Publisher.Controllers
             ApplicationDbContext dbContext,
             IStorageContext storageContext,
             IEmailSender emailSender,
-            IContactManagementService contactManagementService)
+            IContactManagementService contactManagementService,
+            IGraphIntegrationService graphIntegrationService,
+            IRequestContextProvider requestContextProvider)
             : base(mediator, dbContext, storageContext, logger, emailSender, contactManagementService)
         {
-            this.configuration = configuration;
-            this.logger = logger;
-            this.mediator = mediator;
-            this.options = options;
-            this.dbContext = dbContext;
-            try
-            {
-                this.graphService = services.GetRequiredService<MsGraphService>();
-            }
-            catch
-            {
-                // Ignore if the service is not registered.
-            }
+            this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
+            this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.graphIntegrationService = graphIntegrationService ?? throw new ArgumentNullException(nameof(graphIntegrationService));
+            this.requestContextProvider = requestContextProvider ?? throw new ArgumentNullException(nameof(requestContextProvider));
         }
 
         /// <summary>
@@ -85,29 +83,23 @@ namespace Cosmos.Cms.Publisher.Controllers
         [ActionName("Index")]
         public async Task<IActionResult> CCMS___Head()
         {
-            if (!options.Value.CosmosRequiresAuthentication)
+            if (!this.options.Value.CosmosRequiresAuthentication)
             {
-                var article = await mediator.QueryAsync(new GetPublishedPageHeaderByUrlQuery
+                var article = await this.mediator.QueryAsync(new GetPublishedPageHeaderByUrlQuery
                 {
-                    UrlPath = HttpContext.Request.Path
+                    UrlPath = this.requestContextProvider.GetPathValue()
                 });
 
                 if (article == null)
                 {
-                    return NotFound();
+                    return this.NotFound();
                 }
 
-                Response.Headers.Expires = article.Expires.HasValue ?
-                    article.Expires.Value.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'") :
-                    DateTimeOffset.UtcNow.AddMinutes(1).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
-                Response.Headers.ETag = article.Id.ToString();
-                Response.Headers.LastModified = article.Updated.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
-                ControllerContext.HttpContext.Response.Headers.CacheControl = "max-age=60, stale-while-revalidate=59";
-
-                return Ok("Ok");
+                this.SetResponseCacheHeaders(article, isAuthenticated: false);
+                return this.Ok("Ok");
             }
 
-            return Unauthorized();
+            return this.Unauthorized();
         }
 
         /// <summary>
@@ -119,16 +111,16 @@ namespace Cosmos.Cms.Publisher.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string lang = "", string mode = "")
         {
-            if (!ModelState.IsValid)
+            if (!this.ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return this.BadRequest(this.ModelState);
             }
 
             try
             {
-                var article = await mediator.QueryAsync(new GetPublishedPageByUrlQuery
+                var article = await this.mediator.QueryAsync(new GetPublishedPageByUrlQuery
                 {
-                    UrlPath = HttpContext.Request.Path,
+                    UrlPath = this.requestContextProvider.GetPathValue(),
                     Lang = lang,
                     CacheSpan = TimeSpan.FromSeconds(5),
                     LayoutCache = TimeSpan.FromSeconds(20),
@@ -137,82 +129,33 @@ namespace Cosmos.Cms.Publisher.Controllers
 
                 if (article == null)
                 {
-                    if (!await dbContext.Pages.CosmosAnyAsync())
-                    {
-                        // No pages published yet
-                        return View("__UnderConstruction");
-                    }
-
-                    Response.StatusCode = (int)HttpStatusCode.NotFound;
-                    return View("__NotFound");
+                    return await this.HandleArticleNotFoundAsync();
                 }
 
-                if (options.Value.CosmosRequiresAuthentication)
+                if (this.options.Value.CosmosRequiresAuthentication)
                 {
-                    if (!User.Identity.IsAuthenticated)
+                    var authResult = await this.AuthorizeUserForArticleAsync(article);
+                    if (authResult != null)
                     {
-                        return Redirect("~/Identity/Account/Login?returnUrl=" + HttpUtility.UrlEncode(Request.Path));
+                        return authResult;
                     }
 
-                    // Look for group membership
-                    var validGroups = configuration.GetValue<string>("EntraIdValidUserGroups");
-
-                    if (!string.IsNullOrWhiteSpace(validGroups))
-                    {
-                        var groupArray = validGroups.Split(';');
-
-                        if (graphService != null)
-                        {
-                            var principal = User as ClaimsPrincipal;
-                            var emailAdress = principal.FindFirstValue(ClaimTypes.Email);
-
-                            var graphUser = await graphService.GetGraphUserByEmailAddress(emailAdress);
-                            var groups = await graphService.GetGraphApiUserMemberGroups(graphUser.FirstOrDefault().Id);
-                            if (groups.Any(a => groupArray.Contains(a.DisplayName)))
-                            {
-                                return View(article);
-                            }
-                            else
-                            {
-                                return View("__NeedPermission");
-                            }
-                        }
-
-                        if (!await mediator.QueryAsync(new Cosmos.Common.Features.Articles.Queries.AuthorizeUserForArticleQuery(User, article.ArticleNumber)))
-                        {
-                            if (User.Identity.IsAuthenticated)
-                            {
-                                return View("__NeedPermission");
-                            }
-
-                            return Redirect("~/Identity/Account/Login?returnUrl=" + HttpUtility.UrlEncode(Request.Path));
-                        }
-                    }
-
-                    Response.Headers.Expires = DateTimeOffset.UtcNow.AddMinutes(-30).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
-                    Response.Headers.ETag = Guid.NewGuid().ToString();
-                    Response.Headers.LastModified = DateTimeOffset.UtcNow.AddMinutes(-30).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
-                    Response.Headers.CacheControl = new Microsoft.Extensions.Primitives.StringValues("no -store,no-cache");
+                    this.SetResponseCacheHeaders(article, isAuthenticated: true);
                 }
                 else
                 {
-                    Response.Headers.Expires = article.Expires.HasValue ?
-                        article.Expires.Value.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'") :
-                        DateTimeOffset.UtcNow.AddMinutes(1).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
-                    Response.Headers.ETag = article.Id.ToString();
-                    Response.Headers.LastModified = article.Updated.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
-                    ControllerContext.HttpContext.Response.Headers.CacheControl = "max-age=20, stale-while-revalidate=119";
+                    this.SetResponseCacheHeaders(article, isAuthenticated: false);
                 }
 
                 if (mode == "json")
                 {
                     article.Layout = null;
-                    return Json(article);
+                    return this.Json(article);
                 }
 
                 if (article.StatusCode == StatusCodeEnum.Redirect)
                 {
-                    return View("~/Views/Home/Redirect.cshtml", new RedirectItemViewModel()
+                    return this.View("~/Views/Home/Redirect.cshtml", new RedirectItemViewModel()
                     {
                         FromUrl = article.UrlPath,
                         ToUrl = article.Content,
@@ -220,44 +163,28 @@ namespace Cosmos.Cms.Publisher.Controllers
                     });
                 }
 
-                return View(article);
+                return this.View(article);
             }
-            catch (Microsoft.Azure.Cosmos.CosmosException e)
+            catch (Microsoft.Azure.Cosmos.CosmosException ex)
             {
-                string message = e.Message;
-                logger.LogError(e, message);
-
-                if (mode == "json")
-                {
-                    return NotFound();
-                }
-
-                Response.StatusCode = (int)HttpStatusCode.NotFound;
-                return View("__NotFound");
+                this.logger.LogError(ex, "Cosmos exception while retrieving page");
+                return this.HandlePageError(mode);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                string message = e.Message;
-                logger.LogError(e, message);
-
-                if (mode == "json")
-                {
-                    return NotFound();
-                }
-
-                Response.StatusCode = (int)HttpStatusCode.NotFound;
-                return View("__NotFound");
+                this.logger.LogError(ex, "Unexpected exception while retrieving page");
+                return this.HandlePageError(mode);
             }
         }
 
         /// <summary>
-        /// Returns and error page.
+        /// Returns an error page.
         /// </summary>
         /// <returns>Returns an <see cref="IActionResult"/> with an <see cref="ErrorViewModel"/>.</returns>
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return this.View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? this.HttpContext.TraceIdentifier });
         }
 
         /// <summary>
@@ -268,11 +195,123 @@ namespace Cosmos.Cms.Publisher.Controllers
         public IActionResult GetMicrosoftIdentityAssociation()
         {
             var model = new MicrosoftValidationObject();
-            model.associatedApplications.Add(new AssociatedApplication() { applicationId = options.Value.MicrosoftAppId });
+            model.associatedApplications.Add(new AssociatedApplication() { applicationId = this.options.Value.MicrosoftAppId });
 
             var data = Newtonsoft.Json.JsonConvert.SerializeObject(model);
 
-            return File(Encoding.UTF8.GetBytes(data), "application/json", fileDownloadName: "microsoft-identity-association.json");
+            return this.File(Encoding.UTF8.GetBytes(data), "application/json", fileDownloadName: "microsoft-identity-association.json");
+        }
+
+        /// <summary>
+        /// Sets appropriate response cache headers based on authentication status.
+        /// </summary>
+        /// <param name="article">The article being served.</param>
+        /// <param name="isAuthenticated">Whether the user is authenticated.</param>
+        private void SetResponseCacheHeaders(Cosmos.Common.Models.ArticleViewModel article, bool isAuthenticated)
+        {
+            if (isAuthenticated)
+            {
+                this.Response.Headers.Expires = DateTimeOffset.UtcNow.AddMinutes(-30).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
+                this.Response.Headers.ETag = Guid.NewGuid().ToString();
+                this.Response.Headers.LastModified = DateTimeOffset.UtcNow.AddMinutes(-30).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
+                this.Response.Headers.CacheControl = PublisherConfigurationKeys.FileCache.PrivateCacheControl;
+            }
+            else
+            {
+                this.Response.Headers.Expires = article.Expires.HasValue ?
+                    article.Expires.Value.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'") :
+                    DateTimeOffset.UtcNow.AddMinutes(1).ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
+                this.Response.Headers.ETag = article.Id.ToString();
+                this.Response.Headers.LastModified = article.Updated.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
+                this.Response.Headers.CacheControl = "max-age=20, stale-while-revalidate=119";
+            }
+        }
+
+        /// <summary>
+        /// Handles the case where an article is not found.
+        /// </summary>
+        /// <returns>An IActionResult representing the appropriate response.</returns>
+        private async Task<IActionResult> HandleArticleNotFoundAsync()
+        {
+            if (!await this.dbContext.Pages.CosmosAnyAsync())
+            {
+                return this.View("__UnderConstruction");
+            }
+
+            this.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            return this.View("__NotFound");
+        }
+
+        /// <summary>
+        /// Authorizes the user for the requested article.
+        /// </summary>
+        /// <param name="article">The article being requested.</param>
+        /// <returns>An IActionResult if authorization fails (redirect or permission denied), null if authorized.</returns>
+        private async Task<IActionResult> AuthorizeUserForArticleAsync(Cosmos.Common.Models.ArticleViewModel article)
+        {
+            if (!this.requestContextProvider.IsUserAuthenticated())
+            {
+                var returnUrl = WebUtility.UrlEncode(this.requestContextProvider.GetPath());
+                return this.Redirect($"~/Identity/Account/Login?returnUrl={returnUrl}");
+            }
+
+            var validGroups = this.configuration.GetValue<string>(PublisherConfigurationKeys.EntraIdValidUserGroups);
+
+            if (string.IsNullOrWhiteSpace(validGroups))
+            {
+                // No group restrictions, user is authorized
+                return null;
+            }
+
+            var groupArray = validGroups.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            if (groupArray.Length == 0)
+            {
+                return null;
+            }
+
+            var userEmail = this.requestContextProvider.GetUserEmail();
+            if (string.IsNullOrWhiteSpace(userEmail))
+            {
+                return this.View("__NeedPermission");
+            }
+
+            // Check Graph API first if available
+            if (this.graphIntegrationService.IsAvailable)
+            {
+                var isInGroup = await this.graphIntegrationService.IsUserInGroupsAsync(userEmail, groupArray);
+                if (isInGroup)
+                {
+                    return null; // Authorized
+                }
+                else
+                {
+                    return this.View("__NeedPermission");
+                }
+            }
+
+            // Fallback to database authorization check
+            if (!await this.mediator.QueryAsync(new Cosmos.Common.Features.Articles.Queries.AuthorizeUserForArticleQuery(this.requestContextProvider.GetUser(), article.ArticleNumber)))
+            {
+                return this.View("__NeedPermission");
+            }
+
+            return null; // Authorized
+        }
+
+        /// <summary>
+        /// Handles errors during page retrieval.
+        /// </summary>
+        /// <param name="mode">The request mode (e.g., "json").</param>
+        /// <returns>An IActionResult representing the error response.</returns>
+        private IActionResult HandlePageError(string mode)
+        {
+            if (mode == "json")
+            {
+                return this.NotFound();
+            }
+
+            this.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            return this.View("__NotFound");
         }
     }
 }

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sky.Cms.Controllers;
 using Sky.Cms.Models;
+using Sky.Editor.Models;
 
 namespace Sky.Tests.Controllers
 {
@@ -273,6 +274,33 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(v1, "Version 1 should exist");
             Assert.IsNotNull(v2, "Version 2 should exist");
             Assert.AreNotEqual(v1.Content, v2.Content, "Versions should have different content");
+        }
+
+        [TestMethod]
+        public async Task Designer_ReturnsViewModel_WhenArticleExists()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Designer Article", TestUserId);
+            await SaveArticleAsync(article, TestUserId);
+
+            // Act
+            var result = await controller.Designer(article.ArticleNumber);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = (ViewResult)result;
+            Assert.IsNotNull(viewResult.Model);
+            Assert.IsInstanceOfType(viewResult.Model, typeof(ArticleDesignerDataViewModel));
+        }
+
+        [TestMethod]
+        public async Task Designer_ReturnsNotFound_WhenArticleDoesNotExist()
+        {
+            // Act
+            var result = await controller.Designer(int.MaxValue);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         #region Trash and Restore Tests

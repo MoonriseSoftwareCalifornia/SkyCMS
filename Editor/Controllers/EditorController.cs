@@ -776,7 +776,10 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                var entry = await GetArticleCatalogEntryAsync(id);
+                // Load with tracking to enable change detection
+                var entry = await dbContext.ArticleCatalog
+                    .Include(c => c.ArticlePermissions)
+                    .FirstOrDefaultAsync(a => a.ArticleNumber == id);
                 if (entry == null)
                 {
                     return NotFound();
