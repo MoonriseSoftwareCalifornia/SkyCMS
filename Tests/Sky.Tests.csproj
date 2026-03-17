@@ -46,6 +46,7 @@
 		<ProjectReference Include="..\Cosmos.ConnectionStrings\Cosmos.DynamicConfig.csproj" />
 		<ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
 		<ProjectReference Include="..\Editor\Sky.Editor.csproj" />
+		<ProjectReference Include="..\Publisher\Sky.Publisher.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
