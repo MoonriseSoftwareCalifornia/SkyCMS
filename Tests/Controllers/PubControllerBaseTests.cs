@@ -10,6 +10,7 @@ namespace Sky.Tests.Controllers
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Services;
     using Cosmos.Publisher.Controllers;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
@@ -35,7 +36,8 @@ namespace Sky.Tests.Controllers
         private TestPubController controller;
         private Mock<IEmailSender<IdentityUser>> emailSenderMock;
         private TestLogger<TestPubController> testLogger;
-        private IMemoryCache memoryCacheMock;
+        private ICacheService<PubControllerBase.CachedFile> cacheService;
+        private ICacheKeyProvider cacheKeyProvider;
 
         [TestInitialize]
         public new void Setup()
@@ -44,7 +46,9 @@ namespace Sky.Tests.Controllers
 
             emailSenderMock = new Mock<IEmailSender<IdentityUser>>();
             testLogger = new TestLogger<TestPubController>();
-            memoryCacheMock = new MemoryCache(new MemoryCacheOptions());
+            var memoryCache = new MemoryCache(new MemoryCacheOptions());
+            cacheService = new CacheService<PubControllerBase.CachedFile>(memoryCache, new Mock<ILogger<CacheService<PubControllerBase.CachedFile>>>().Object);
+            cacheKeyProvider = new CacheKeyProvider();
 
             controller = new TestPubController(
                 Mediator,
@@ -52,7 +56,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 testLogger,
                 emailSenderMock.Object,
-                memoryCacheMock);
+                cacheService,
+                cacheKeyProvider);
 
             // Setup HTTP context
             var httpContext = new DefaultHttpContext();
@@ -86,7 +91,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 null!,
                 emailSenderMock.Object,
-                memoryCacheMock);
+                cacheService,
+                cacheKeyProvider);
 
             // Assert
             Assert.IsNotNull(testController);
@@ -119,7 +125,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 testLogger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: false);
 
             testController.ControllerContext = controller.ControllerContext;
@@ -149,7 +156,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 testLogger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: true);
 
             var httpContext = new DefaultHttpContext();
@@ -180,7 +188,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 testLogger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: true);
 
             var httpContext = new DefaultHttpContext();
@@ -219,7 +228,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 testLogger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: true);
 
             var httpContext = new DefaultHttpContext();
@@ -294,7 +304,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 testLogger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: true);
 
             var httpContext = new DefaultHttpContext();
@@ -340,7 +351,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 logger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: true);
 
             var httpContext = new DefaultHttpContext();
@@ -376,7 +388,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 logger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: false);
 
             testController.ControllerContext = controller.ControllerContext;
@@ -406,7 +419,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 logger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: false);
 
             testController.ControllerContext = controller.ControllerContext;
@@ -441,7 +455,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 testLogger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: false);
 
             testController.ControllerContext = controller.ControllerContext;
@@ -467,7 +482,8 @@ namespace Sky.Tests.Controllers
                 Storage,
                 testLogger,
                 emailSenderMock.Object,
-                memoryCacheMock,
+                cacheService,
+                cacheKeyProvider,
                 requiresAuthentication: true);
 
             var httpContext = new DefaultHttpContext();
@@ -504,9 +520,10 @@ namespace Sky.Tests.Controllers
                 StorageContext storageContext,
                 ILogger<TestPubController> logger,
                 IEmailSender<IdentityUser> emailSender,
-                IMemoryCache memoryCache,
+                ICacheService<CachedFile> cacheService,
+                ICacheKeyProvider cacheKeyProvider,
                 bool requiresAuthentication = false)
-                : base(mediator, dbContext, storageContext, requiresAuthentication, logger, memoryCache)
+                : base(mediator, dbContext, storageContext, requiresAuthentication, logger, cacheService, cacheKeyProvider)
             {
             }
         }

@@ -12,8 +12,8 @@ namespace Cosmos.Publisher.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Queries;
     using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Services;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using System;
     using System.IO;
@@ -29,7 +29,8 @@ namespace Cosmos.Publisher.Controllers
         private readonly IStorageContext storageContext;
         private readonly bool requiresAuthentication;
         private readonly ILogger<PubControllerBase> logger;
-        private readonly IMemoryCache memoryCache;
+        private readonly ICacheService<CachedFile> cacheService;
+        private readonly ICacheKeyProvider cacheKeyProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PubControllerBase"/> class.
@@ -40,21 +41,24 @@ namespace Cosmos.Publisher.Controllers
         /// <param name="storageContext">Storage context.</param>
         /// <param name="requiresAuthentication">Indicates if authentication is required for the publisher.</param>
         /// <param name="logger">Logger instance.</param>
-        /// <param name="memoryCache">Memory cache instance.</param>
+        /// <param name="cacheService">Cache service for file caching.</param>
+        /// <param name="cacheKeyProvider">Cache key provider.</param>
         public PubControllerBase(
             IMediator mediator,
             ApplicationDbContext dbContext,
             IStorageContext storageContext,
             bool requiresAuthentication,
             ILogger<PubControllerBase> logger,
-            IMemoryCache memoryCache)
+            ICacheService<CachedFile> cacheService,
+            ICacheKeyProvider cacheKeyProvider)
         {
             this.mediator = mediator;
             this.requiresAuthentication = requiresAuthentication;
-            this.dbContext = dbContext;
-            this.storageContext = storageContext;
+            this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext));
             this.logger = logger;
-            this.memoryCache = memoryCache;
+            this.cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
+            this.cacheKeyProvider = cacheKeyProvider ?? throw new ArgumentNullException(nameof(cacheKeyProvider));
         }
 
         /// <summary>
@@ -63,102 +67,160 @@ namespace Cosmos.Publisher.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public virtual async Task<IActionResult> Index()
         {
-            var path = HttpContext.Request.Path.ToString();
+            var path = this.HttpContext.Request.Path.ToString();
 
-            if (requiresAuthentication)
+            // Handle authentication and set cache headers
+            this.SetCacheHeaders(path);
+
+            if (this.requiresAuthentication)
             {
-                // If the user is not logged in, have them login first.
-                if (User.Identity == null || !User.Identity.IsAuthenticated)
+                var authResult = await this.AuthorizeRequestAsync(path);
+                if (authResult != null)
                 {
-                    logger.LogWarning("Unauthorized access attempt to {Path} - User not authenticated", path);
-                    return Unauthorized();
+                    return authResult;
                 }
-
-                // See if the article is in protected storage.
-                if (path.StartsWith("/pub/articles/", StringComparison.OrdinalIgnoreCase))
-                {
-                    var pathParts = path.TrimStart('/').Split('/');
-                    if (pathParts.Length > 2 && int.TryParse(pathParts[2], out var articleNumber))
-                    {
-                        // Check for user authorization.
-                        if (!await mediator.QueryAsync(new AuthorizeUserForArticleQuery(User, articleNumber)))
-                        {
-                            logger.LogWarning(
-                                "Unauthorized access attempt to {Path} - User {UserName} not authorized for article {ArticleNumber}",
-                                path,
-                                User.Identity.Name,
-                                articleNumber);
-                            return Unauthorized();
-                        }
-                    }
-                }
-
-                Response.Headers.CacheControl = "private, no-cache, no-store, must-revalidate";
-                Response.Headers.Expires = DateTimeOffset.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
-            }
-            else
-            {
-                // Public files could be cached
-                Response.Headers.CacheControl = "public, max-age=3600";
             }
 
             try
             {
-                var cacheKey = $"{HttpContext.Request.Host.Host}-{HttpContext.Request.Path}";
-
-                if (memoryCache.TryGetValue(cacheKey, out CachedFile cachedFile))
-                {
-                    return File(
-                        fileContents: cachedFile.Data,
-                        contentType: cachedFile.Metadata.ContentType,
-                        lastModified: cachedFile.Metadata.ModifiedUtc,
-                        entityTag: cachedFile.ETag);
-                }
-
-                // Try to get from cache first
-                var properties = await storageContext.GetFileAsync(HttpContext.Request.Path);
-
-                if (properties == null)
-                {
-                    logger.LogWarning("File not found: {Path}", path);
-                    return NotFound();
-                }
-
-                var fileStream = await storageContext.GetStreamAsync(HttpContext.Request.Path);
-                var contentType = properties.ContentType ?? Utilities.GetContentType(properties.Name);
-
-                // Read to byte array for caching
-                byte[] fileData;
-                using (var memoryStream = new MemoryStream())
-                {
-                    await fileStream.CopyToAsync(memoryStream);
-                    fileData = memoryStream.ToArray();
-                }
-
-                cachedFile = new CachedFile()
-                {
-                    Data = fileData,
-                    Metadata = properties,
-                    ETag = CreateETag(properties.ETag)
-                };
-
-                memoryCache.CreateEntry(cacheKey)
-                    .SetValue(cachedFile)
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(4));
-
-                return File(
-                    fileContents: cachedFile.Data,
-                    contentType: cachedFile.Metadata.ContentType,
-                    lastModified: cachedFile.Metadata.ModifiedUtc,
-                    entityTag: cachedFile.ETag);
+                return await this.ServeFileAsync(path);
+            }
+            catch (FileNotFoundException ex)
+            {
+                this.logger?.LogWarning(ex, "File not found: {Path}", path);
+                return this.NotFound();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                this.logger?.LogWarning(ex, "Unauthorized access to file: {Path}", path);
+                return this.Unauthorized();
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error serving file {Path}", path);
-                return NotFound();
+                this.logger?.LogError(ex, "Unexpected error serving file {Path}", path);
+                return this.NotFound();
             }
         }
 
+        /// <summary>
+        /// Sets appropriate cache headers based on authentication status.
+        /// </summary>
+        /// <param name="path">The request path.</param>
+        private void SetCacheHeaders(string path)
+        {
+            if (this.requiresAuthentication)
+            {
+                this.Response.Headers.CacheControl = "private, no-cache, no-store, must-revalidate";
+                this.Response.Headers.Expires = DateTimeOffset.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'");
+            }
+            else
+            {
+                // Public files could be cached
+                this.Response.Headers.CacheControl = "public, max-age=3600";
+            }
+        }
+
+        /// <summary>
+        /// Authorizes the request asynchronously if authentication is required.
+        /// </summary>
+        /// <param name="path">The request path.</param>
+        /// <returns>An unauthorized result if authorization fails; otherwise null.</returns>
+        private async Task<IActionResult> AuthorizeRequestAsync(string path)
+        {
+            // If the user is not logged in, have them login first.
+            if (this.User?.Identity?.IsAuthenticated != true)
+            {
+                this.logger?.LogWarning("Unauthorized access attempt to {Path} - User not authenticated", path);
+                return this.Unauthorized();
+            }
+
+            // See if the article is in protected storage.
+            if (path.StartsWith("/pub/articles/", StringComparison.OrdinalIgnoreCase))
+            {
+                var pathParts = path.TrimStart('/').Split('/');
+                if (pathParts.Length > 2 && int.TryParse(pathParts[2], out var articleNumber))
+                {
+                    if (!await this.mediator.QueryAsync(new AuthorizeUserForArticleQuery(this.User, articleNumber)))
+                    {
+                        this.logger?.LogWarning(
+                            "Unauthorized access attempt to {Path} - User {UserName} not authorized for article {ArticleNumber}",
+                            path,
+                            this.User?.Identity?.Name,
+                            articleNumber);
+                        return this.Unauthorized();
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Serves a file from blob storage with caching.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <returns>A file action result.</returns>
+        private async Task<IActionResult> ServeFileAsync(string path)
+        {
+            var cacheKey = this.cacheKeyProvider.GenerateFileKey(this.HttpContext.Request.Host.Host, path);
+
+            // Try cache first
+            if (this.cacheService.TryGet(cacheKey, out var cachedFile))
+            {
+                return this.CreateFileResult(cachedFile);
+            }
+
+            // Get file from storage
+            var properties = await this.storageContext.GetFileAsync(path);
+            if (properties == null)
+            {
+                throw new FileNotFoundException($"File not found: {path}");
+            }
+
+            var fileStream = await this.storageContext.GetStreamAsync(path);
+            var contentType = properties.ContentType ?? Utilities.GetContentType(properties.Name);
+
+            // Read file to byte array
+            byte[] fileData;
+            using (var memoryStream = new MemoryStream())
+            {
+                await fileStream.CopyToAsync(memoryStream);
+                fileData = memoryStream.ToArray();
+            }
+
+            // Create cache entry
+            var cachedFileEntry = new CachedFile
+            {
+                Data = fileData,
+                Metadata = properties,
+                ETag = PubControllerBase.CreateETag(properties.ETag)
+            };
+
+            // Cache with sliding expiration
+            this.cacheService.Set(cacheKey, cachedFileEntry, null, TimeSpan.FromMinutes(4));
+
+            return this.CreateFileResult(cachedFileEntry);
+        }
+
+        /// <summary>
+        /// Creates a file action result from a cached file entry.
+        /// </summary>
+        /// <param name="cachedFile">The cached file entry.</param>
+        /// <returns>A file action result.</returns>
+        private IActionResult CreateFileResult(CachedFile cachedFile)
+        {
+            return this.File(
+                fileContents: cachedFile.Data,
+                contentType: cachedFile.Metadata.ContentType,
+                lastModified: cachedFile.Metadata.ModifiedUtc,
+                entityTag: cachedFile.ETag);
+        }
+
+        /// <summary>
+        /// Creates an ETag header value from the storage ETag.
+        /// </summary>
+        /// <param name="etag">The storage ETag string.</param>
+        /// <returns>An EntityTagHeaderValue for HTTP responses.</returns>
         private static Microsoft.Net.Http.Headers.EntityTagHeaderValue CreateETag(string etag)
         {
             if (string.IsNullOrWhiteSpace(etag))
@@ -178,7 +240,7 @@ namespace Cosmos.Publisher.Controllers
             {
                 return new Microsoft.Net.Http.Headers.EntityTagHeaderValue(quotedETag);
             }
-            catch (FormatException)
+            catch (FormatException ex)
             {
                 // If the ETag is still invalid, create a weak ETag from hash
                 var validETag = $"\"{Math.Abs(etag.GetHashCode())}\"";
@@ -186,12 +248,24 @@ namespace Cosmos.Publisher.Controllers
             }
         }
 
-        private class CachedFile
+        /// <summary>
+        /// Represents a cached file with metadata.
+        /// </summary>
+        public class CachedFile
         {
+            /// <summary>
+            /// Gets or sets the file data.
+            /// </summary>
             public byte[] Data { get; set; }
 
+            /// <summary>
+            /// Gets or sets the file metadata.
+            /// </summary>
             public FileManagerEntry Metadata { get; set; }
 
+            /// <summary>
+            /// Gets or sets the ETag for cache validation.
+            /// </summary>
             public Microsoft.Net.Http.Headers.EntityTagHeaderValue ETag { get; set; }
         }
     }

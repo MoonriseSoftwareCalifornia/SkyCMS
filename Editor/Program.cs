@@ -37,6 +37,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Cosmos.Common.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -246,6 +247,8 @@ if (allowSetup)
 // STEP 2: Register Core Infrastructure (Common to Both Modes)
 // ---------------------------------------------------------------
 builder.Services.AddMemoryCache();
+builder.Services.AddScoped(typeof(ICacheService<>), typeof(CacheService<>));
+builder.Services.AddScoped<ICacheKeyProvider, CacheKeyProvider>();
 var defaultAzureCredential = new DefaultAzureCredential();
 builder.Services.AddSingleton(defaultAzureCredential);
 

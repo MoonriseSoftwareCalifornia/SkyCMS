@@ -262,5 +262,18 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services;
         }
+
+        /// <summary>
+        /// Adds caching services to the dependency injection container.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <returns>The service collection for chaining.</returns>
+        public static IServiceCollection AddPublisherCaching(this IServiceCollection services)
+        {
+            services.AddScoped(typeof(ICacheService<>), typeof(CacheService<>));
+            services.AddScoped<ICacheKeyProvider, CacheKeyProvider>();
+
+            return services;
+        }
     }
 }

@@ -9,8 +9,8 @@ using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
+using Cosmos.Common.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -30,15 +30,17 @@ namespace Cosmos.Publisher.Controllers
         /// <param name="dbContext">Database context.</param>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="logger">Logger instance.</param>
-        /// <param name="memoryCache">Memory cache.</param>
+        /// <param name="cacheService">Cache service for file caching.</param>
+        /// <param name="cacheKeyProvider">Cache key provider.</param>
         public PubController(
             IMediator mediator,
             IOptions<SiteSettings> options,
             ApplicationDbContext dbContext,
             IStorageContext storageContext,
             ILogger<PubController> logger,
-            IMemoryCache memoryCache)
-            : base(mediator, dbContext, storageContext, options.Value.CosmosRequiresAuthentication, logger, memoryCache)
+            ICacheService<CachedFile> cacheService,
+            ICacheKeyProvider cacheKeyProvider)
+            : base(mediator, dbContext, storageContext, options.Value.CosmosRequiresAuthentication, logger, cacheService, cacheKeyProvider)
         {
         }
     }

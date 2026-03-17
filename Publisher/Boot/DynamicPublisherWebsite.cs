@@ -57,6 +57,7 @@ namespace Cosmos.Publisher.Boot
             builder.Services.AddPublisherForwardedHeaders();
             builder.Services.AddPublisherOptions(builder.Configuration);
             builder.Services.AddPublisherGraphIntegration();
+            builder.Services.AddPublisherCaching();
 
             // Create one instance of the DefaultAzureCredential to be used throughout the application.
             var defaultAzureCredential = new DefaultAzureCredential();
