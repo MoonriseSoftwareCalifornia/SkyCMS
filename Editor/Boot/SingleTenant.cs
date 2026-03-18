@@ -63,6 +63,9 @@ namespace Sky.Editor.Boot
             {
                 CosmosDbOptionsBuilder.ConfigureDbOptions(options, connectionString);
             });
+
+            // Register the IApplicationDbContext interface
+            builder.Services.AddScoped(typeof(IApplicationDbContext), sp => sp.GetRequiredService<ApplicationDbContext>());
         }
 
         /// <summary>

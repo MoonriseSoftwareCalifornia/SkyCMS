@@ -128,6 +128,9 @@ namespace Sky.Editor.Boot
                 return new ApplicationDbContext(options);
             });
 
+            // Register the IApplicationDbContext interface
+            builder.Services.AddScoped(typeof(IApplicationDbContext), sp => sp.GetRequiredService<ApplicationDbContext>());
+
             // Ensure all tenant database schemas exist if setup is allowed
             if (allowSetup)
             {
