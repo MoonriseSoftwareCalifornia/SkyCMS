@@ -18,6 +18,7 @@ namespace Sky.Tests.Features.Blogs
     using Moq;
     using Sky.Editor.Controllers;
     using Sky.Editor.Features.Blogs.UpdatePost;
+    using Sky.Editor.Models.Blogs;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -127,6 +128,41 @@ namespace Sky.Tests.Features.Blogs
         {
             await DisposeAsync();
         }
+
+        #region Create Blog Stream Tests
+
+        /// <summary>
+        /// Tests that Create creates a blog stream article in the database.
+        /// </summary>
+        [TestMethod]
+        public async Task Create_BlogStream_SucceedsWithValidData()
+        {
+            // Arrange
+            var model = new BlogStreamViewModel
+            {
+                Title = "New Tech Blog",
+                Description = "A blog about technology",
+                HeroImage = "/images/hero.jpg"
+            };
+
+            // Act
+            var result = await controller.Create(model);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
+            var redirect = (RedirectToActionResult)result;
+            Assert.AreEqual(nameof(BlogController.Index), redirect.ActionName);
+
+            var createdStream = await Db.Articles
+                .Where(a => a.Title == model.Title)
+                .OrderByDescending(a => a.VersionNumber)
+                .FirstOrDefaultAsync();
+
+            Assert.IsNotNull(createdStream, "Blog stream article should be created in the database");
+            Assert.AreEqual((int)ArticleType.BlogStream, createdStream.ArticleType, "Created article should be a blog stream");
+        }
+
+        #endregion
 
         #region CreateEntry Tests
 

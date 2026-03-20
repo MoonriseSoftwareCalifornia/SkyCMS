@@ -116,7 +116,13 @@ namespace Sky.Tests.Controllers
                 .FirstOrDefaultAsync();
 
             Assert.IsNotNull(createdArticle, "Article should be created in database");
-            Assert.AreEqual((int)ArticleType.BlogStream, createdArticle.ArticleType, "Created article should be BlogStream");
+            Assert.AreEqual((int)ArticleType.General, createdArticle.ArticleType, "Created article should be a 'general' type.)");
+
+            var catalogEntry = await Db.ArticleCatalog
+                .FirstOrDefaultAsync(c => c.ArticleNumber == createdArticle.ArticleNumber);
+
+            Assert.IsNotNull(catalogEntry, "Catalog entry should be created for the new article");
+            Assert.AreEqual(createdArticle.Title, catalogEntry.Title, "Catalog entry title should match the created article");
         }
 
         [TestMethod]
