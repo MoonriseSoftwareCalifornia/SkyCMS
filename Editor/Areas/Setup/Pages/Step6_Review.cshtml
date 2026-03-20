@@ -7,76 +7,79 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         @await Html.PartialAsync("_SetupStepIndicator", 6)
+        <h2>Confirm Settings</h2>
+        <div class="card bg-secondary text-light mb-3">
+            <div class="card-body">
+                <p>Please review your settings before completing the setup</p>
 
-        <h2>Review Configuration</h2>
-        <p>Please review your settings before completing the setup</p>
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> @Model.ErrorMessage
+                    </div>
+                }
 
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <div class="alert alert-danger">
-                <strong>Error:</strong> @Model.ErrorMessage
+                <h5>Administrator Account</h5>
+                <ul>
+                    <li class="list-checked">Admin email: @Model.Config.AdminEmail</li>
+                    <li class="list-checked">Admin password: ********************</li>
+                </ul>
+                <h5>Website Setup</h5>
+                <ul>
+                    <li class="list-checked">Website address: @Model.Config.PublisherUrl</li>
+
+                    @if (string.IsNullOrWhiteSpace(Model.Config.SiteDesignId))
+                    {
+                        <li class="list-unchecked">
+                            Site theme: Not setup
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="list-checked">
+                            Site theme: @Model.SiteDesignName
+                        </li>
+                    }
+
+                    <li class="list-checked">
+                        Publishing mode: @(Model.Config.StaticWebPages ? "Static Pages" : "Dynamic rendering")
+                    </li>
+                </ul>
+                <h5>Service Connections</h5>
+                <ul>
+                    <li class="list-checked">
+                        Database: @Model.DatabaseType
+                    </li>
+                    <li class="list-checked">
+                        Storage: @Model.StorageType
+                    </li>
+                    @if (Model.EmailProvider == "None")
+                    {
+                        <li class="list-unchecked">
+                            Email provider: Not configured
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="list-checked">
+                            Email provider: @Model.EmailProvider
+                        </li>
+                    }
+                    @if (Model.CdnProvider == "None")
+                    {
+                        <li class="list-unchecked">
+                            CDN Provider: Not configured
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="list-checked">
+                            CDN Provider: @Model.CdnProvider
+                        </li>
+                    }
+                </ul>
             </div>
-        }
-
-        <h5>Administrator Account</h5>
-        <ul>
-            <li class="list-checked">Admin email: @Model.Config.AdminEmail</li>
-            <li class="list-checked">Admin password: ********************</li>
-        </ul>
-        <h5>Website Setup</h5>
-        <ul>
-            <li class="list-checked">Website address: @Model.Config.PublisherUrl</li>
-
-            @if (string.IsNullOrWhiteSpace(Model.Config.SiteDesignId))
-            {
-                <li class="list-unchecked">
-                    Site theme: Not setup
-                </li>
-            }
-            else
-            {
-                <li class="list-checked">
-                    Site theme: @Model.SiteDesignName
-                </li>
-            }
-
-            <li class="list-checked">
-                Publishing mode: @(Model.Config.StaticWebPages ? "Static Pages" : "Dynamic rendering")
-            </li>
-        </ul>
-        <h5>Service Connections</h5>
-        <ul>
-            <li class="list-checked">
-                Database: @Model.DatabaseType
-            </li>
-            <li class="list-checked">
-                Storage: @Model.StorageType
-            </li>
-            @if (Model.EmailProvider == "None")
-            {
-                <li class="list-unchecked">
-                    Email provider: Not configured
-                </li>
-            }
-            else
-            {
-                <li class="list-checked">
-                    Email provider: @Model.EmailProvider
-                </li>
-            }
-            @if (Model.CdnProvider == "None")
-            {
-                <li class="list-unchecked">
-                    CDN Provider: Not configured
-                </li>
-            }
-            else
-            {
-                <li class="list-checked">
-                    CDN Provider: @Model.CdnProvider
-                </li>
-            }
-        </ul>
+        </div>
 
         <!-- Action Buttons -->
         <form method="post" id="reviewForm">
@@ -92,8 +95,6 @@
 
             <input type="hidden" asp-for="SetupId" />
         </form>
-
-
     </div>
 </div>
 

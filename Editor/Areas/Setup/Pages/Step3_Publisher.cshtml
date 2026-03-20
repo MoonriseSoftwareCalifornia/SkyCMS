@@ -12,7 +12,6 @@
         @await Html.PartialAsync("_SetupStepIndicator", 3)
 
         <h2>Website Configuration</h2>
-        <p class="text-muted">Configure your website's public-facing settings</p>
 
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
@@ -28,24 +27,23 @@
             @Html.HiddenFor(m => m.SetupId)
 
             <div class="card mb-4 bg-secondary text-light">
-                <div class="card-header">
-                    <h5>Website Settings</h5>
-                </div>
                 <div class="card-body">
                     <div class="form-group mb-3">
-                        <div id="publisherUrlAlert" class="alert alert-primary" role="alert" style="display:none;">
-                            Publisher URL is already set and cannot be changed.
-                        </div>
                         <label asp-for="PublisherUrl" class="form-label">Website URL <span class="text-danger">*</span></label>
-                        <input asp-for="PublisherUrl" type="url" class="form-control" placeholder="https://www.example.com" required />
-                        <span asp-validation-for="PublisherUrl" class="text-danger"></span>
-                        <small class="form-text text-muted text-light">
-                            The public URL where your website will be accessible (without trailing slash)
-                        </small>
+                        @if (Model.IsPreConfigured)
+                        {
+                            @Html.HiddenFor(m => m.PublisherUrl)
+                            <div class="form-control d-flex justify-content-between align-items-center">@Model.PublisherUrl <span class="ms-auto"><i class="fa-solid fa-circle-check"></i> Pre-configured</span></div>
+                        }
+                        else
+                        {
+                            <input asp-for="PublisherUrl" type="url" class="form-control" placeholder="https://www.example.com" required />
+                            <span asp-validation-for="PublisherUrl" class="text-danger"></span>
+                        }
                     </div>
                     <div class="form-group mb-3">
                         <label asp-for="SiteDesignId" class="form-label">Choose a site design</label>
-                        <select asp-for="SiteDesignId" class="form-select" required="true">
+                        <select asp-for="SiteDesignId" class="form-select" required>
                             <option value="">Select a design</option>
                             @foreach (var layout in layouts)
                             {
@@ -54,61 +52,20 @@
                         </select>
                         <span asp-validation-for="SiteDesignId" class="text-danger"></span>
                         <small class="form-text text-light">
-                            Please choose a design now, you can change or edit it later. The current list of
-                            starter designs can be found <a target="_blank" href="https://cwalabs.github.io/Cosmos.Starter.Designs/">here</a>.
+                            Please choose a design now, you can change or edit it later. <a title="Information about all starter designs." target="_blank" href="https://cwalabs.github.io/Cosmos.Starter.Designs/"><i class="fa-solid fa-circle-info"></i></a>
                         </small>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label asp-for="WebsiteTitle" class="form-label">Website Title <span class="text-danger">*</span></label>
+                        <label asp-for="WebsiteTitle" class="form-label">Website title or name<span class="text-danger">*</span></label>
                         <input asp-for="WebsiteTitle" type="text" class="form-control" placeholder="My Awesome Website" required />
                         <span asp-validation-for="WebsiteTitle" class="text-danger"></span>
                     </div>
+                    <button type="button" class="btn btn-sm btn-secondary mb-3 mt-1" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                        Click to view example website titles/names <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </button>
 
-                    <h5 class="text-light">Website name examples:</h5>
-                    <div class="card-group">
-                        <div class="card text-bg-secondary">
-                            <div class="card-header">
-                                <p class="card-title">Company website names:</p>
-                            </div>
-                            <div class="card-body">
-                                <ul>
-                                    <li>ACME, Corp.</li>
-                                    <li>Central Perk Coffee</li>
-                                    <li>Gotham Press</li>
-                                    <li>Dunder Mifflin Paper Company</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="card text-bg-secondary">
-                            <div class="card-header">
-                                <p class="card-title">Personal website names:</p>
-                            </div>
-                            <div class="card-body">
-                                <ul>
-                                    <li>Biography of James Bond</li>
-                                    <li>Peter Parker's Blog</li>
-                                    <li>Incantations by Harry Potter</li>
-                                    <li>The Matrix Explained by Neo</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="card text-bg-secondary">
-                            <div class="card-header">
-                                <p class="card-title">Topical website names:</p>
-                            </div>
-                            <div class="card-body">
-                                <ul>
-                                    <li>Baking for Everyone</li>
-                                    <li>Bike Repair 101</li>
-                                    <li>Travel on a Budget</li>
-                                    <li>Zoos and Wildlife Parks</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-check mb-3">
+                    <div class="form-check mb-3" style="display">
                         <input asp-for="StaticWebPages" type="checkbox" class="form-check-input" id="staticWebPages" checked disabled />
                         <label class="form-check-label" for="staticWebPages">
                             <strong>Static Website Mode</strong>
@@ -132,7 +89,7 @@
                         </small>
                     </div>
 
-                    <div class="form-group mb-3">
+                    <div class="form-group mb-3" style="display:none;">
                         <div id="allowedFileTypesAlert" class="alert alert-primary" role="alert" style="display:none;">
                             Allowed file types are already set and cannot be changed.
                         </div>
@@ -179,7 +136,7 @@
             </div>
 
             <div class="d-flex justify-content-between mt-4">
-                <a href="@Url.Page("./Step2_AdminAccount")" class="btn btn-secondary">
+                <a href="@Url.Page("./Step2_AdminAccount")" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
                 <button type="submit" class="btn btn-primary">
@@ -188,6 +145,64 @@
             </div>
 
         </form>
+    </div>
+</div>
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-secondary text-light">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Name Examples</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Here are some examples of website titles or names to inspire you:</p>
+                <div class="card-group">
+                    <div class="card text-bg-secondary">
+                        <div class="card-header">
+                            <p class="card-title">Companies:</p>
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li>ACME, Corp.</li>
+                                <li>Central Perk Coffee</li>
+                                <li>Gotham Press</li>
+                                <li>Dunder Mifflin Paper Company</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card text-bg-secondary">
+                        <div class="card-header">
+                            <p class="card-title">Personal:</p>
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li>Biography of James Bond</li>
+                                <li>Peter Parker's Blog</li>
+                                <li>Incantations by Harry Potter</li>
+                                <li>The Matrix Explained by Neo</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card text-bg-secondary">
+                        <div class="card-header">
+                            <p class="card-title">Topics:</p>
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li>Baking for Everyone</li>
+                                <li>Bike Repair 101</li>
+                                <li>Travel on a Budget</li>
+                                <li>Zoos and Wildlife Parks</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <p class="mt-3">Note: Choose a name that search engines can use to help people find your website.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 @section Scripts {

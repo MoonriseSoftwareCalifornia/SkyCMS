@@ -483,7 +483,7 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        ///     Uses <see cref="CreateArticleCommand"/> via mediator to create an <see cref="ArticleViewModel"/> (BlogStream) ready for editing.
+        ///     Uses <see cref="CreateArticleCommand"/> via mediator to create a <see cref="ArticleViewModel"/> general article ready for editing.
         /// </summary>
         /// <param name="model">Create page view model.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -510,7 +510,7 @@ namespace Sky.Cms.Controllers
                 Title = model.Title,
                 TemplateId = model.TemplateId,
                 UserId = Guid.Parse(await GetUserId()),
-                ArticleType = ArticleType.BlogStream,
+                ArticleType = ArticleType.General,
                 BlogKey = string.Empty,
                 Category = model.Category,
                 Introduction = model.Introduction
@@ -524,7 +524,7 @@ namespace Sky.Cms.Controllers
                 return View(viewName: "__NewHomePage", model: model);
             }
 
-            return RedirectToAction("Versions", new { id = result.Data.Id });
+            return RedirectToAction("Versions", new { id = result.Data.ArticleNumber });
         }
 
         /// <summary>

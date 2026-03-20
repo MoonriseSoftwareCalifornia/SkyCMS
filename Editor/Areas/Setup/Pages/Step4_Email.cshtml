@@ -10,7 +10,7 @@
         @await Html.PartialAsync("_SetupStepIndicator", 4)
 
         <h2>Email Configuration</h2>
-        <p class="text-muted">Configure email services for notifications and user management (optional)</p>
+
 
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
@@ -26,10 +26,9 @@
             </div>
         }
 
-        <div class="alert alert-info mb-4">
-            <strong><i class="fas fa-info-circle"></i> Optional Step:</strong>
-            Email configuration is not required to complete setup. You can skip this step and configure email later.
-        </div>
+        <p id="optStepAlert">
+            Optional if installing for test or development purposes.
+        </p>
 
         <form method="post" id="emailForm">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
@@ -43,26 +42,37 @@
                 <div class="card-body">
 
                     <div class="form-group mb-3">
-                        <div id="senderEmailAlert" class="alert alert-primary" role="alert" style="display:none;">
-                            The email address used to send system emails is already set and cannot be changed.
-                        </div>
                         <label asp-for="SenderEmail" class="form-label">Sender Email Address <span class="text-danger provider-required">*</span></label>
-                        <input asp-for="SenderEmail" type="email" class="form-control" />
+                        @if (Model.SystemEmailPreConfigured)
+                        {
+                            @Html.HiddenFor(m => m.SenderEmail)
+                            <div class="form-control d-flex justify-content-between align-items-center">@Model.SenderEmail <span class="ms-auto"><i class="fa-solid fa-circle-check"></i> Pre-configured</span></div>
+                        }
+                        else
+                        {
+                            <input asp-for="SenderEmail" type="email" class="form-control" />
+                        }
                         <span asp-validation-for="SenderEmail" class="text-danger"></span>
                     </div>
                     <div class="form-group mb-3">
-                        <div id="emailProviderAlert" class="alert alert-primary" role="alert" style="display:none;">
-                            Email provider settings already set and cannot be changed.
-                        </div>
-                    </div>
-                    <div class="form-group mb-3">
                         <label class="form-label">Select Email Provider</label>
-                        <select asp-for="EmailProvider" class="form-select" id="emailProviderSelect">
-                            <option value="none">-- Skip Email Configuration (not for production) --</option>
-                            <option value="SendGrid">SendGrid</option>
-                            <option value="AzureCommunication">Azure Communication Services</option>
-                            <option value="SMTP">SMTP Server</option>
-                        </select>
+                        @if (Model.IsPreConfigured)
+                        {
+                            @Html.HiddenFor(m => m.EmailProvider)
+                            <div class="form-control d-flex justify-content-between align-items-center">@Model.EmailProvider <span class="ms-auto"><i class="fa-solid fa-circle-check"></i> Pre-configured</span></div>
+                        }
+                        else
+                        {
+                            <p class="alert alert-warning">
+                                Sender email is required for production, not for dev/test.
+                            </p>
+                            <select asp-for="EmailProvider" class="form-select" id="emailProviderSelect">
+                                <option value="none">-- Skip configuration --</option>
+                                <option value="SendGrid">SendGrid</option>
+                                <option value="AzureCommunication">Azure Communication Services</option>
+                                <option value="SMTP">SMTP Server</option>
+                            </select>
+                        }
                     </div>
 
                     <!-- SendGrid Options -->
@@ -146,7 +156,7 @@
             </div>
 
             <div class="d-flex justify-content-between mt-4">
-                <a href="@Url.Page("./Step4_Publisher")" class="btn btn-secondary">
+                <a href="@Url.Page("./Step4_Publisher")" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
                 <button type="submit" class="btn btn-primary">
@@ -168,13 +178,13 @@
 
             if (isPreConfigured) {
                 $('#sendGridOptions input, #sendGridOptions textarea, #azureCommOptions input, #azureCommOptions textarea, #smtpOptions input, #smtpOptions textarea, #emailProviderSelect').prop('readonly', true);
-                $('#emailProviderAlert').show();
-                // Disable all inputs
+                $('#emailProviderSelect).prop('disabled', 'true')
             }
 
             if (isSenderEmailPreConfigured) {
                 $('#SenderEmail').prop('readonly', true);
                 $('#senderEmailAlert').show();
+                $('#optStepAlert').hide();
             } else {
                 $('#SenderEmail').prop('readonly', false);
             }
@@ -201,6 +211,12 @@
                 $('#sendGridOptions, #azureCommOptions, #smtpOptions').addClass('d-none');
                 $('#testEmailButton').hide();
                 $('input, textarea', '#sendGridOptions, #azureCommOptions, #smtpOptions').removeAttr('required');
+                $('input[name="SenderEmail"]').attr('required', 'required');
+
+                if (isPreConfigured) {
+                    $('#emailProviderSelect').prop('disabled', true);
+                    $('#testEmailButton').false();
+                }
 
                 switch(provider) {
                     case '':
@@ -210,17 +226,21 @@
                     case 'SendGrid':
                         $('#sendGridOptions').removeClass('d-none');
                         if (isPreConfigured) {
-                            $('#testEmailButton').show();
-                            $('input[name="SendGridApiKey"]').attr('required', 'required');
-                            $('input[name="SenderEmail"]').attr('required', 'required');
+                            $('input[name="SendGridApiKey"]').removeAttr('required');
+                            $('input[name="SendGridApiKey"]').prop('disabled', true).val('').attr('placeholder', '*****************').show();
                             break;
+                        } else {
+                            $('input[name="SendGridApiKey"]').attr('required', 'required');
                         }
+
                         break;
                     case 'AzureCommunication':
                         $('#azureCommOptions').removeClass('d-none');
+                        if (isPreConfigured) {
                         $('#testEmailButton').show();
                         $('textarea[name="AzureEmailConnectionString"]').attr('required', 'required');
                         $('input[name="SenderEmail"]').attr('required', 'required');
+                        }
                         break;
                     case 'SMTP':
                         $('#smtpOptions').removeClass('d-none');

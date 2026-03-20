@@ -9,7 +9,17 @@
         @await Html.PartialAsync("_SetupStepIndicator", 1)
 
         <h2>Storage Configuration</h2>
-        <p class="text-muted">Configure your cloud storage for static assets</p>
+
+        @if (Model.IsPreConfigured)
+        {
+            <p id="storageConnectionStringAlert" style="display:none;">
+                <i class="fa-solid fa-circle-check"></i> Pre-configured
+            </p>
+        }
+        else
+        {
+            <p class="text-muted">Configure your cloud storage for static assets here.</p>
+        }
 
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
@@ -48,9 +58,6 @@
                     </div>
 
                     <div class="form-group mb-3">
-                        <div id="storageConnectionStringAlert" class="alert alert-primary" role="alert" style="display:none;">
-                            Connection string already set and cannot be changed.
-                        </div>
                         <label asp-for="StorageConnectionString" class="form-label">Connection String <span class="text-danger">*</span></label>
                         <input asp-for="StorageConnectionString" class="form-control font-monospace" required />
                         <span asp-validation-for="StorageConnectionString" class="text-danger"></span>
@@ -99,7 +106,7 @@
             </div>
 
             <div class="d-flex justify-content-between mt-4">
-                <a href="@Url.Page("./Step1_Mode")" class="btn btn-secondary">
+                <a href="@Url.Page("./Step1_Mode")" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
                 <button type="submit" class="btn btn-primary">
