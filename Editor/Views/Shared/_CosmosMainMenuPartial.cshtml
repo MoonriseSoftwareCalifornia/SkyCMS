@@ -184,11 +184,11 @@
                 const items = [];
                 data.forEach((element) => {
                     if (element.UsesHtmlEditor === true) {
-                        items.push(`<li><a class='dropdown-item' href='/Editor/Edit/${element.ArticleNumber}'><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a></li>`);
+                        items.push(`<li><a title='Visual editor for rich content' class='dropdown-item' href='/Editor/Edit/${element.ArticleNumber}'><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a></li>`);
                     }
 
-                    items.push(`<li><a class='dropdown-item' title='Designer editor' href='/Editor/Designer/${element.ArticleNumber}'><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a></li>`);
-                    items.push(`<li><a class='dropdown-item' title='Code editor' href='/Editor/EditCode/${element.ArticleNumber}'><i class='fa-solid fa-code me-2'></i> Code Editor</a></li>`);
+                    items.push(`<li><a title='Drag-and-drop page layout builder' class='dropdown-item' href='/Editor/Designer/${element.ArticleNumber}'><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a></li>`);
+                    items.push(`<li><a title='Edit HTML and template markup' class='dropdown-item' href='/Editor/EditCode/${element.ArticleNumber}'><i class='fa-solid fa-code me-2'></i> Code Editor</a></li>`);
                 });
 
                 ddMenu.innerHTML = items.join("");

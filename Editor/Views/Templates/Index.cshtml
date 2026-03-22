@@ -15,7 +15,7 @@
         <div class="row">
             <div class="col">
                 <h3 class="text-light">@ViewData["Title"]</h3>
-                <p><a target="_blank" class="text-light" title="Enable for use with the live editor" href="https://www.moonrise.net/cosmos/documentation/creating_content/live_editor#enable-the-live-editor-for-a-template-or-page">Learn how to enable live editor for a template <i class="fa-solid fa-circle-arrow-right"></i></a></p>
+                <p><a target="_blank" class="text-light" title="Enable for use with the Visual Editor" href="https://www.moonrise.net/cosmos/documentation/creating_content/live_editor#enable-the-live-editor-for-a-template-or-page">Learn how to enable Visual Editor for a template <i class="fa-solid fa-circle-arrow-right"></i></a></p>
             </div>
         </div>
 
@@ -52,15 +52,15 @@
                                 <tr scope="row">
                                     <td scope="row" style="width: 30%;">
                                         <div class="btn-group" role="group" aria-label="Actions for this template">
-                                            <a class="btn btn-sm btn-secondary" href="@Url.Action("Designer", "Templates", new { Id = row.Id })" title="Drag and drop objects to build page."><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a>
-                                            <a class="btn btn-sm btn-secondary" href="@Url.Action("EditCode", "Templates", new { Id = row.Id })" title="Code editor"><i class='fa-solid fa-code me-2'></i> Code Editor</a>
+                                            <a class="btn btn-sm btn-secondary" href="@Url.Action("Designer", "Templates", new { Id = row.Id })" title="Drag-and-drop page layout builder"><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a>
+                                            <a class="btn btn-sm btn-secondary" href="@Url.Action("EditCode", "Templates", new { Id = row.Id })" title="Edit HTML and template markup"><i class='fa-solid fa-code me-2'></i> Code Editor</a>
                                             <a class="btn btn-sm btn-secondary" asp-action="Pages" asp-route-id="@row.Id" title="View pages that use this template">Pages</a>
                                         </div>
                                     </td>
                                     <td scope="row">
                                         @if (row.UsesHtmlEditor)
                                         {
-                                            <span class="fs-6" title="Creates a page that is editable with the live (WYSIWYG) editor">Live editor enabled</span>
+                                            <span class="fs-6" title="Creates a page that is editable with the Visual Editor">Visual Editor enabled</span>
                                         }
                                     </td>
                                     <td scope="row">

@@ -44,11 +44,15 @@ import {
     Underline
 } from 'ckeditor5';
 
-import FileLink from "filelink";
-import InsertImage from "insertimage";
-import PageLink from "pagelink";
-import VsCodeEditor from "vscodeeditor";
-import SignalR from "signalr";
+import {
+    FileLink,
+    InsertImage,
+    PageLink,
+    SignalR,
+    VSCodeEditor,
+    getEditorProfile,
+    resolveEditorProfileName
+} from 'skycmsplugins';
 
 // Shared GUID generator with fallbacks if the shared helper is not loaded yet.
 const ccmsGenerateGuid = (typeof window !== 'undefined' && window.ccmsGenerateGuid)
@@ -150,10 +154,10 @@ const EditorConfig = {
         FileLink,
         InsertImage,
         PageLink,
-        VsCodeEditor,
+        VSCodeEditor,
         SignalR,
     ],
-    balloonToolbar: ['bold', 'italic', 'underline', '|', 'bookmark', 'pageLink', 'link',  'insertImage', '|', 'bulletedList', 'numberedList'],
+    balloonToolbar: ['bold', 'italic', 'underline', '|', 'bookmark', 'pageLink', 'link', 'skyCmsInsertImage', '|', 'bulletedList', 'numberedList'],
     placeholder: 'Add your content here.',
     licenseKey: LICENSE_KEY,
     toolbar: {
@@ -162,7 +166,7 @@ const EditorConfig = {
             '|',
             'pageLink',
             'imageInsert',
-            'insertImage',
+            'skyCmsInsertImage',
             'mediaEmbed',
             'insertTable',
             'blockQuote',
@@ -375,19 +379,27 @@ function ccms___createEditor(editorElement) {
         editorElement.removeAttribute("data-ccms-new");
     }
 
-    // Determine which configuration to use
-    let config = EditorConfig;
+    // Determine which profile and configuration to use.
+    // Unknown values intentionally fall back to standard for a safer authoring baseline.
     const tagName = editorElement.tagName.toLowerCase();
     const editorType = editorElement.hasAttribute('data-editor-config') 
         ? editorElement.getAttribute('data-editor-config').toLowerCase() 
         : null;
+    const resolvedProfileName = resolveEditorProfileName(editorType, {
+        tagName,
+        fallbackProfile: 'standard'
+    });
+    const resolvedProfile = getEditorProfile(resolvedProfileName);
 
-    // Use minimal config for title elements
-    if (editorType === 'title' || editorType === 'heading' || 
-        tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || 
-        tagName === 'h4' || tagName === 'h5' || tagName === 'h6') {
-        config = TitleEditorConfig;
-    }
+    const baseConfig = resolvedProfileName === 'title' ? TitleEditorConfig : EditorConfig;
+    const config = {
+        ...baseConfig,
+        toolbar: {
+            ...(baseConfig.toolbar || {}),
+            items: [ ...resolvedProfile.toolbar ]
+        },
+        balloonToolbar: [ ...resolvedProfile.balloonToolbar ]
+    };
 
     InlineEditor
         .create(editorElement, config)

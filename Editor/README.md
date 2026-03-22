@@ -18,6 +18,7 @@ Developer tips
 - Respect `Editor/stylecop.json` and the repository `Directory.Packages.props` versions.
 - Prefer using existing frontend libraries present under `Editor/wwwroot/lib` rather than adding new frameworks.
 - When making server-side changes, add unit tests in the matching `Tests` project and run `dotnet test`.
+- To refresh the checked-in CKEditor 5 assets from the sibling `ckeditor5` repository, use the workflow in `Editor/CKEDITOR_SYNC.md` and the script `Scripts/sync-ckeditor5-to-editor.ps1`.
 # SkyCMS Editor
 
 The SkyCMS Editor is the authoring & administration application of the SkyCMS platform. It provides multiple authoring modes (visual, rich‑text, and code), asset & permission management, versioning, and publishing workflows targeting the SkyCMS Publisher (dynamic, static, headless, or decoupled modes).
