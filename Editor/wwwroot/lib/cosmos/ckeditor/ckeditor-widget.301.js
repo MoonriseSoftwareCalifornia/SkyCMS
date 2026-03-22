@@ -49,6 +49,7 @@ import {
     InsertImage,
     PageLink,
     SignalR,
+    TitleModeIndicator,
     VSCodeEditor,
     getEditorProfile,
     resolveEditorProfileName
@@ -79,6 +80,31 @@ function getDistanceFromTop() {
         element = element.offsetParent;
     }
     return distance;
+}
+
+const AUTO_ADVANCED_MIN_WIDTH = 780;
+const AUTO_ADVANCED_MIN_AREA = 240000;
+
+function getEditorElementMetrics(editorElement) {
+    if (!editorElement) {
+        return { width: 0, height: 0 };
+    }
+
+    const width = Number(editorElement.clientWidth) || Number(editorElement.offsetWidth) || Number(editorElement.getBoundingClientRect?.().width) || 0;
+    const height = Number(editorElement.clientHeight) || Number(editorElement.offsetHeight) || Number(editorElement.getBoundingClientRect?.().height) || 0;
+
+    return { width, height };
+}
+
+function getAutomaticProfileName(editorElement) {
+    const { width, height } = getEditorElementMetrics(editorElement);
+    const area = width * height;
+
+    if (width >= AUTO_ADVANCED_MIN_WIDTH || area >= AUTO_ADVANCED_MIN_AREA) {
+        return 'advanced';
+    }
+
+    return 'standard';
 }
 
 async function ccms___destroyAllEditors() {
@@ -329,6 +355,7 @@ const TitleEditorConfig = {
         Italic,
         Paragraph,
         SignalR,
+        TitleModeIndicator,
     ],
     balloonToolbar: ['bold', 'italic'],
     placeholder: 'Enter title...',
@@ -382,9 +409,10 @@ function ccms___createEditor(editorElement) {
     // Determine which profile and configuration to use.
     // Unknown values intentionally fall back to standard for a safer authoring baseline.
     const tagName = editorElement.tagName.toLowerCase();
-    const editorType = editorElement.hasAttribute('data-editor-config') 
-        ? editorElement.getAttribute('data-editor-config').toLowerCase() 
-        : null;
+    const hasExplicitEditorType = editorElement.hasAttribute('data-editor-config');
+    const editorType = hasExplicitEditorType
+        ? editorElement.getAttribute('data-editor-config').toLowerCase()
+        : getAutomaticProfileName(editorElement);
     const resolvedProfileName = resolveEditorProfileName(editorType, {
         tagName,
         fallbackProfile: 'standard'
