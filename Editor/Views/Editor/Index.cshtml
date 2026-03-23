@@ -120,6 +120,15 @@
     const menuBar = function(cell, formatterParams){
         data = cell.getRow().getData();
         let html = "<div class='btn-group btn-group-sm' role='group' aria-label='Page actions.'>";
+
+        html += "<a class='btn btn-sm btn-secondary' title='Drag-and-drop page layout builder' href='/Editor/Designer/" + data.ArticleNumber + "'><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a>";
+        html += "<a class='btn btn-sm btn-secondary' title='Edit HTML and template markup' href='/Editor/EditCode/" + data.ArticleNumber + "'><i class='fa-solid fa-code me-2'></i> Code Editor</a>";
+
+        if (data.HtmlEditorEnabled === true)
+        {
+            html += "<a class='btn btn-sm btn-secondary' title='Visual editor for rich content' href='/Editor/Edit/" + data.ArticleNumber + "'><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a>";
+        }
+
         html += html += "<a href='/Editor/Versions/" + data.ArticleNumber + "' title='Click to edit page.' class='btn btn-sm btn-success'><i class='fa-solid fa-pen-to-square'></i></a>";
         let url = data.UrlPath;
         if (url === "root") {
@@ -185,7 +194,7 @@
             {title:"UrlPath", field:"UrlPath", visible: false },
             {title:"No.", field:"ArticleNumber", visible: false },
 
-            {title:"Actions", field:"IsDefault", formatter:menuBar, width:176, headerSort:false },
+            {title:"Actions", field:"IsDefault", formatter:menuBar, width:300, headerSort:false },
 
             {title:"Published",
                 field:"LastPublished",

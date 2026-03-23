@@ -15,6 +15,8 @@ namespace Sky.Tests.Controllers
     using Sky.Cms.Controllers;
     using Sky.Editor.Models.GrapesJs;
     using System;
+    using System.Collections;
+    using System.Linq;
     using System.Security.Claims;
     using System.Threading.Tasks;
 
@@ -246,6 +248,56 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(jsonResult.Value);
         }
 
+        /// <summary>
+        /// Tests that GetArticleList sets HtmlEditorEnabled to true when content has editable markers.
+        /// </summary>
+        [TestMethod]
+        public async Task GetArticleList_SetsHtmlEditorEnabledTrue_WhenContentHasEditableMarkers()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Editable Marker Article", TestUserId);
+            var entity = await Db.Articles.FirstAsync(a => a.Id == article.Id);
+            entity.Content = "<div data-ccms-ceid='region-1'>Editable content</div>";
+            entity.Published = DateTimeOffset.UtcNow;
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetArticleList(term: "Editable Marker Article", publishedOnly: true);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var items = ((IEnumerable)jsonResult.Value!).Cast<object>().ToList();
+            var target = items.Single(i => string.Equals(GetPropertyValue<string>(i, "Title"), "Editable Marker Article", StringComparison.Ordinal));
+
+            Assert.IsTrue(GetPropertyValue<bool>(target, "HtmlEditorEnabled"));
+        }
+
+        /// <summary>
+        /// Tests that GetArticleList sets HtmlEditorEnabled to false when content has no editable markers.
+        /// </summary>
+        [TestMethod]
+        public async Task GetArticleList_SetsHtmlEditorEnabledFalse_WhenContentHasNoEditableMarkers()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Non Editable Marker Article", TestUserId);
+            var entity = await Db.Articles.FirstAsync(a => a.Id == article.Id);
+            entity.Content = "<div>Static content</div>";
+            entity.Published = DateTimeOffset.UtcNow;
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetArticleList(term: "Non Editable Marker Article", publishedOnly: true);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var items = ((IEnumerable)jsonResult.Value!).Cast<object>().ToList();
+            var target = items.Single(i => string.Equals(GetPropertyValue<string>(i, "Title"), "Non Editable Marker Article", StringComparison.Ordinal));
+
+            Assert.IsFalse(GetPropertyValue<bool>(target, "HtmlEditorEnabled"));
+        }
+
         #endregion
 
         #region GetEncryptionKey Tests
@@ -300,5 +352,16 @@ namespace Sky.Tests.Controllers
         }
 
         #endregion
+
+        private static T GetPropertyValue<T>(object item, string propertyName)
+        {
+            var property = item.GetType().GetProperty(propertyName);
+            Assert.IsNotNull(property, $"Expected property '{propertyName}' was not found on JSON result item.");
+
+            var value = property.GetValue(item);
+            Assert.IsNotNull(value, $"Property '{propertyName}' value is null.");
+
+            return (T)value;
+        }
     }
 }

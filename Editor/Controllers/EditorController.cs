@@ -7,6 +7,12 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Web;
     using Cosmos.BlobService;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
@@ -45,12 +51,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.ReservedPaths;
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
 
     /// <summary>
     /// Editor controller.
@@ -1440,7 +1440,12 @@ namespace Sky.Cms.Controllers
                     whereClause += $"AND LOWER(c.Title) LIKE '%{term.ToLower()}%' ";
                 }
 
-                var query = $"SELECT c.ArticleNumber, c.ArticleType, c.Title, c.UrlPath, MAX(c.Published) as Published, MAX(c.Updated) as Updated FROM Articles c {whereClause} GROUP BY c.ArticleNumber, c.ArticleType, c.Title, c.UrlPath";
+                var query = $"SELECT c.ArticleNumber, c.ArticleType, c.Title, c.UrlPath, " +
+                    "MAX(c.Published) as Published, " +
+                    "MAX(c.Updated) as Updated, " +
+                    "MAX(IIF(IS_DEFINED(c.Content) AND (CONTAINS(LOWER(c.Content), ' contenteditable=') OR CONTAINS(LOWER(c.Content), ' data-ccms-ceid=')), 1, 0)) as EditableRegionCount " +
+                    $"FROM Articles c {whereClause} GROUP BY c.ArticleNumber, c.ArticleType, c.Title, c.UrlPath";
+
                 var client = dbContext.Database.GetCosmosClient();
                 var queryService = new CosmosDbService(client, dbContext.Database.GetCosmosDatabaseId(), "Articles");
 
@@ -1454,7 +1459,8 @@ namespace Sky.Cms.Controllers
                     IsDefault = s.UrlPath == "root",
                     LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
                     UrlPath = HttpUtility.UrlEncode(s.UrlPath).Replace("%2f", "/"),
-                    Updated = s.Updated.UtcDateTime.ToString("o")
+                    Updated = s.Updated.UtcDateTime.ToString("o"),
+                    HtmlEditorEnabled = (s.EditableRegionCount ?? 0) > 0,
                 }).OrderBy(o => o.Title).ToList();
 
                 return Json(model);
@@ -1479,7 +1485,11 @@ namespace Sky.Cms.Controllers
                     Title = g.Key.Title,
                     UrlPath = g.Key.UrlPath,
                     Published = g.Max(x => x.Published),
-                    Updated = g.Max(x => x.Updated)
+                    Updated = g.Max(x => x.Updated),
+                    EditableRegionCount = g.Count(x =>
+                        x.Content != null &&
+                        (x.Content.ToLower().Contains(" contenteditable=") ||
+                         x.Content.ToLower().Contains(" data-ccms-ceid=")))
                 })
                 .OrderBy(o => o.Title)
                 .ToListAsync();
@@ -1491,7 +1501,8 @@ namespace Sky.Cms.Controllers
                     IsDefault = s.UrlPath == "root",
                     LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
                     UrlPath = HttpUtility.UrlEncode(s.UrlPath).Replace("%2f", "/"),
-                    Updated = s.Updated
+                    Updated = s.Updated,
+                    HtmlEditorEnabled = s.EditableRegionCount > 0,
                 }).ToList();
 
                 return Json(model);

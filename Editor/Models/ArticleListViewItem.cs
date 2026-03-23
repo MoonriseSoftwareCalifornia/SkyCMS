@@ -43,5 +43,15 @@ namespace Sky.Editor.Models
         /// Gets or sets the article updated date.
         /// </summary>
         public DateTimeOffset Updated { get; set; }
+
+        /// <summary>
+        /// Gets or sets the count of versions in the group that contain page-editor markers.
+        /// </summary>
+        public int? EditableRegionCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets if an article has editable regions.
+        /// </summary>
+        public bool? HasEditableRegions { get; set; }
     }
 }
