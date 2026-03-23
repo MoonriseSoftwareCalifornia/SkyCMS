@@ -46,6 +46,7 @@
 	  <Content Remove="C:\Users\toiya\.nuget\packages\cosmos.cms.common\7.0.0.10\contentFiles\any\net6.0\Views\CCMS_Examples\_CosmosLayout.cshtml" />
 	  <Content Remove="wwwroot\js\blog-stream-loader.js" />
 	  <Content Remove="wwwroot\js\ccms-author-widget.js" />
+	  <Content Remove="wwwroot\lib\cosmos\editDropDownBuilder.js" />
 	</ItemGroup>
 
 	<ItemGroup>

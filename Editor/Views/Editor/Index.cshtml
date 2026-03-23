@@ -16,9 +16,34 @@
 <script src="~/lib/luxon/luxon.min.js"></script>
 <script src="~/lib/tabulator-tables/dist/js/tabulator.min.js"></script>
 <script src="~/js/clipboard.min.js"></script>
+<script src="~/lib/cosmos/editDropDownBuilder.js"></script>
 <style>
     .fs-small {
         font-size: 0.8em;
+    }
+
+    /* Keep Tabulator rows from clipping Bootstrap dropdowns in action cells. */
+    #pagelist-table .tabulator-row,
+    #pagelist-table .tabulator-cell {
+        overflow: visible;
+    }
+
+    /* Ensure dropdown menu stacks above table content. */
+    #pagelist-table .dropdown-menu {
+        z-index: 3000;
+    }
+
+    /* Raise the actions cell/dropdown stacking context above neighboring rows. */
+    #pagelist-table .btn-group,
+    #pagelist-table .dropdown {
+        position: relative;
+        z-index: 2000;
+    }
+
+    /* Only the row with an open dropdown should float above sibling rows. */
+    #pagelist-table .tabulator-row.dropdown-open {
+        position: relative;
+        z-index: 2500;
     }
 </style>
 
@@ -29,11 +54,11 @@
                 <h3 class="text-light">@ViewData["Title"]</h3>
                 @if (showFirstPageBtn)
                 {
-                    <a class="btn btn-sm btn-primary" title="Create website home page" href="/Editor/Create">Create Home Page <i class="fa-solid fa-circle-arrow-right"></i></a>
+                    <p><a class="text-light" title="Recommendation: Create website home page" href="/Editor/Create">Recommendation: Create Home Page <i class="fa-solid fa-circle-arrow-right"></i></a></p>
                 }
-                @if (showFirstPageBtn == false && showFirstPageBtn)
+                @if (showFirstPageBtn == false && showNotFoundBtn)
                 {
-                    <a class="btn btn-sm btn-primary" title="Create a custom page when a user makes a request that cannot be found." href="/Editor/Create?title=Not%20Found">Create Not Found Page<i class="fa-solid fa-circle-arrow-right"></i></a>
+                    <p><a class="text-light" title="Recommendation: Create a custom 'not found' page." href="/Editor/Create?title=Not%20Found">Recommendation: Create a custom 'not found' page <i class="fa-solid fa-circle-arrow-right"></i></a></p>
                 }
             </div>
         </div>
@@ -69,6 +94,8 @@
         </div>
     </div>
 </div>
+
+<div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
 <script>
 
@@ -110,26 +137,49 @@
     }
 
     const trashBtn = function(cell, formatterParams){
-        data = cell.getRow().getData();
+        const data = cell.getRow().getData();
         if (data.IsDefault === true){
             return "";
         }
         return "<button type='button' title='Send page to trash' onclick='sendToTrash(" + data.ArticleNumber + ", \"" + data.Title + "\")' class='btn btn-sm btn-secondary'><i class='fa-solid fa-trash'></i></button>";
     };
 
-    const menuBar = function(cell, formatterParams){
-        data = cell.getRow().getData();
-        let html = "<div class='btn-group btn-group-sm' role='group' aria-label='Page actions.'>";
+    function buildEditorDropDownMarkup(articleNumber, usesPageEditor) {
+        if (typeof ccms___buildEditDropDownMenu !== "function") {
+            let fallback = "<a class='btn btn-sm btn-secondary' title='Drag-and-drop page layout builder' href='/Editor/Designer/" + articleNumber + "'><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a>";
+            fallback += "<a class='btn btn-sm btn-secondary' title='Edit HTML and template markup' href='/Editor/EditCode/" + articleNumber + "'><i class='fa-solid fa-code me-2'></i> Code Editor</a>";
+            if (usesPageEditor) {
+                fallback += "<a class='btn btn-sm btn-secondary' title='Visual editor for rich content' href='/Editor/Edit/" + articleNumber + "'><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a>";
+            }
 
-        html += "<a class='btn btn-sm btn-secondary' title='Drag-and-drop page layout builder' href='/Editor/Designer/" + data.ArticleNumber + "'><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a>";
-        html += "<a class='btn btn-sm btn-secondary' title='Edit HTML and template markup' href='/Editor/EditCode/" + data.ArticleNumber + "'><i class='fa-solid fa-code me-2'></i> Code Editor</a>";
-
-        if (data.HtmlEditorEnabled === true)
-        {
-            html += "<a class='btn btn-sm btn-secondary' title='Visual editor for rich content' href='/Editor/Edit/" + data.ArticleNumber + "'><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a>";
+            return fallback;
         }
 
-        html += html += "<a href='/Editor/Versions/" + data.ArticleNumber + "' title='Click to edit page.' class='btn btn-sm btn-success'><i class='fa-solid fa-pen-to-square'></i></a>";
+        const dropdown = ccms___buildEditDropDownMenu(articleNumber, usesPageEditor, "Edit");
+        dropdown.classList.add("btn-group", "btn-group-sm");
+
+        const button = dropdown.querySelector("button");
+        if (button) {
+            button.classList.add("btn-sm");
+            button.title = "Choose an editor";
+        }
+
+        const dropdownMenu = dropdown.querySelector(".dropdown-menu");
+        if (dropdownMenu) {
+            dropdownMenu.classList.add("dropdown-menu-dark");
+        }
+
+        return dropdown.outerHTML;
+    }
+
+    const menuBar = function(cell, formatterParams){
+        const data = cell.getRow().getData();
+
+        let html = "<div class='btn-group btn-group-sm' role='group' aria-label='Page actions.'>";
+
+        html += buildEditorDropDownMarkup(data.ArticleNumber, data.UsesHtmlEditor === true);
+
+        // html += "<a href='/Editor/Versions/" + data.ArticleNumber + "' title='Click to edit page.' class='btn btn-sm btn-success'><i class='fa-solid fa-pen-to-square'></i></a>";
         let url = data.UrlPath;
         if (url === "root") {
             url = "";
@@ -159,7 +209,8 @@
         if (data.LastPublished !== null && canEdit && data.IsDefault === false)
         {
             html += "<button onclick='unpublish(" + data.ArticleNumber + ")' title='Unpublishes a this item, and makes it no longer accessible except for editing.' class='btn btn-sm btn-secondary'><i class='fa-solid fa-calendar-xmark'></i></button>";
-        }html += "</div>";
+        }
+        html += "</div>";
         return html;
     };
 
@@ -263,6 +314,21 @@
 
         $(".toLocalTimeZone").each(function (index, element) {
             $(element).html(getLocalTime($(element).html()));
+        });
+
+        // Keep the active row above adjacent rows while its dropdown is open.
+        document.addEventListener("show.bs.dropdown", function (event) {
+            const row = event.target?.closest(".tabulator-row");
+            if (row) {
+                row.classList.add("dropdown-open");
+            }
+        });
+
+        document.addEventListener("hide.bs.dropdown", function (event) {
+            const row = event.target?.closest(".tabulator-row");
+            if (row) {
+                row.classList.remove("dropdown-open");
+            }
         });
 
         $("#btnCreate").hide();

@@ -120,6 +120,7 @@
         </div>
     </div>
 </nav>
+<script src="~/lib/cosmos/editDropDownBuilder.js"></script>
 <script>
     const isAuthor = @(isAuthor.ToString().ToLower());
     const isReviewer = @(isReviewer.ToString().ToLower());
@@ -181,17 +182,35 @@
                     return;
                 }
 
-                const items = [];
-                data.forEach((element) => {
-                    if (element.UsesHtmlEditor === true) {
-                        items.push(`<li><a title='Visual editor for rich content' class='dropdown-item' href='/Editor/Edit/${element.ArticleNumber}'><i class='fa-regular fa-pen-to-square me-2'></i> Visual Editor</a></li>`);
+                if (typeof ccms___buildEditDropDownMenu !== "function") {
+                    throw new Error("Edit dropdown builder library is not loaded.");
+                }
+
+                ddMenu.innerHTML = "";
+
+                data.forEach((element, index) => {
+                    const builtDropDown = ccms___buildEditDropDownMenu(
+                        element.ArticleNumber,
+                        element.UsesHtmlEditor === true,
+                        `Edit ${element.ArticleNumber}`);
+
+                    const builtMenu = builtDropDown.querySelector(".dropdown-menu");
+                    if (!builtMenu) {
+                        return;
                     }
 
-                    items.push(`<li><a title='Drag-and-drop page layout builder' class='dropdown-item' href='/Editor/Designer/${element.ArticleNumber}'><i class='fa-solid fa-table-cells me-2'></i> Page Builder</a></li>`);
-                    items.push(`<li><a title='Edit HTML and template markup' class='dropdown-item' href='/Editor/EditCode/${element.ArticleNumber}'><i class='fa-solid fa-code me-2'></i> Code Editor</a></li>`);
+                    // Reuse standardized builder items in this existing menu container.
+                    Array.from(builtMenu.children).forEach((item) => {
+                        ddMenu.appendChild(item);
+                    });
+
+                    if (index < data.length - 1) {
+                        const divider = document.createElement("li");
+                        divider.innerHTML = "<hr class='dropdown-divider'>";
+                        ddMenu.appendChild(divider);
+                    }
                 });
 
-                ddMenu.innerHTML = items.join("");
                 ddMenu.dataset.loaded = "true";
             })
             .catch((error) => {

@@ -1460,7 +1460,7 @@ namespace Sky.Cms.Controllers
                     LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
                     UrlPath = HttpUtility.UrlEncode(s.UrlPath).Replace("%2f", "/"),
                     Updated = s.Updated.UtcDateTime.ToString("o"),
-                    HtmlEditorEnabled = (s.EditableRegionCount ?? 0) > 0,
+                    UsesHtmlEditor = (s.EditableRegionCount ?? 0) > 0,
                 }).OrderBy(o => o.Title).ToList();
 
                 return Json(model);
@@ -1502,7 +1502,7 @@ namespace Sky.Cms.Controllers
                     LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
                     UrlPath = HttpUtility.UrlEncode(s.UrlPath).Replace("%2f", "/"),
                     Updated = s.Updated,
-                    HtmlEditorEnabled = s.EditableRegionCount > 0,
+                    UsesHtmlEditor = s.EditableRegionCount > 0,
                 }).ToList();
 
                 return Json(model);
