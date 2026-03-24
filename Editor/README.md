@@ -104,6 +104,13 @@ The main controller handling content editing operations:
 - Component-based design
 - CSS editing and styling tools
 
+###### Maintainer note: GrapesJS asset flow
+
+- Runtime scripts in the editor should load `~/lib/grapesjs/grapes.min.js` and `~/lib/grapesjs/skycms-grapes-plugins.js` (see `Views/Shared/_GrapesJsEditor.cshtml`).
+- Do not reintroduce per-plugin script tags or legacy `~/lib/cosmos/grapesjs/*` includes in runtime views.
+- Custom SkyCMS GrapesJS plugin source lives in the sibling integration workspace under `SkyCMS.grapesjs/grapesjs/integrations/skycms/src`.
+- The integration deploy script (`SkyCMS.grapesjs/grapesjs/integrations/skycms/scripts/deploy-skycms.mjs`) copies built artifacts into `Editor/wwwroot/lib/grapesjs`.
+
 ##### Monaco Editor (VS Code)
 
 - Advanced code editing with syntax highlighting
