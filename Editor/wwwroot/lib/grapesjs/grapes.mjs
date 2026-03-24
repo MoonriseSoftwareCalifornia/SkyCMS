@@ -853,7 +853,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Backbone.
 
   // Set up Backbone appropriately for the environment. Start with AMD.
   if (true) {
-    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(5706), __webpack_require__(6411), exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function(_, $, exports) {
+    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(5706), __webpack_require__(7774), exports], __WEBPACK_AMD_DEFINE_RESULT__ = (function(_, $, exports) {
       // Export global even in AMD case in case this script is loaded with
       // others that may still expect a global Backbone.
       root.Backbone = factory(root, exports, _, $);
@@ -15313,13 +15313,13 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 /***/ }),
 
-/***/ 3023:
+/***/ 7058:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1749);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9156);
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -15371,14 +15371,14 @@ var ModuleModel = /** @class */ (function (_super) {
 
 /***/ }),
 
-/***/ 2820:
+/***/ 179:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__),
 /* harmony export */   F: () => (/* binding */ CanvasSpotBuiltInTypes)
 /* harmony export */ });
-/* harmony import */ var _abstract__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3023);
+/* harmony import */ var _abstract__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7058);
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -15524,7 +15524,161 @@ var CanvasSpot = /** @class */ (function (_super) {
 
 /***/ }),
 
-/***/ 8351:
+/***/ 9064:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__),
+/* harmony export */   M: () => (/* binding */ CanvasEvents)
+/* harmony export */ });
+/**{START_EVENTS}*/
+var CanvasEvents;
+(function (CanvasEvents) {
+    /**
+     * @event `canvas:dragenter` Something is dragged inside the canvas. `DataTransfer` instance and dragged content are passed as arguments.
+     */
+    CanvasEvents["dragEnter"] = "canvas:dragenter";
+    /**
+     * @event `canvas:dragover` Something is dragging on the canvas. Triggering event is passed as an argument.
+     */
+    CanvasEvents["dragOver"] = "canvas:dragover";
+    /**
+     * @event `canvas:dragend` When a drag operation is ended, triggering event is passed as an argument.
+     */
+    CanvasEvents["dragEnd"] = "canvas:dragend";
+    /**
+     * @event `canvas:dragdata` On any dataTransfer parse, `DataTransfer` instance and the `result` are passed as arguments. By changing `result.content` you're able to customize what is dropped.
+     */
+    CanvasEvents["dragData"] = "canvas:dragdata";
+    /**
+     * @event `canvas:drop` Something is dropped in canvas, `DataTransfer` instance and the dropped model are passed as arguments.
+     */
+    CanvasEvents["drop"] = "canvas:drop";
+    /**
+     * @event `canvas:spot` Spots updated.
+     * @example
+     * editor.on('canvas:spot', () => {
+     *  console.log('Spots', editor.Canvas.getSpots());
+     * });
+     */
+    CanvasEvents["spot"] = "canvas:spot";
+    /**
+     * @event `canvas:spot:add` New canvas spot added.
+     * @example
+     * editor.on('canvas:spot:add', ({ spot }) => {
+     *  console.log('Spot added', spot);
+     * });
+     */
+    CanvasEvents["spotAdd"] = "canvas:spot:add";
+    /**
+     * @event `canvas:spot:update` Canvas spot updated.
+     * @example
+     * editor.on('canvas:spot:update', ({ spot }) => {
+     *  console.log('Spot updated', spot);
+     * });
+     */
+    CanvasEvents["spotUpdate"] = "canvas:spot:update";
+    /**
+     * @event `canvas:spot:remove` Canvas spot removed.
+     * @example
+     * editor.on('canvas:spot:remove', ({ spot }) => {
+     *  console.log('Spot removed', spot);
+     * });
+     */
+    CanvasEvents["spotRemove"] = "canvas:spot:remove";
+    /**
+     * @event `canvas:coords` Canvas coordinates updated.
+     * @example
+     * editor.on('canvas:coords', () => {
+     *  console.log('Canvas coordinates updated:', editor.Canvas.getCoords());
+     * });
+     */
+    CanvasEvents["coords"] = "canvas:coords";
+    /**
+     * @event `canvas:zoom` Canvas zoom updated.
+     * @example
+     * editor.on('canvas:zoom', () => {
+     *  console.log('Canvas zoom updated:', editor.Canvas.getZoom());
+     * });
+     */
+    CanvasEvents["zoom"] = "canvas:zoom";
+    /**
+     * @event `canvas:pointer` Canvas pointer updated.
+     * @example
+     * editor.on('canvas:pointer', () => {
+     *  console.log('Canvas pointer updated:', editor.Canvas.getPointer());
+     * });
+     */
+    CanvasEvents["pointer"] = "canvas:pointer";
+    /**
+     * @event `canvas:refresh` Canvas was refreshed to update elements on top, like spots/tools (eg. via `editor.Canvas.refresh()` or on frame resize).
+     * @example
+     * editor.on('canvas:refresh', (canvasRefreshOptions) => {
+     *  console.log('Canvas refreshed with options:', canvasRefreshOptions);
+     * });
+     */
+    CanvasEvents["refresh"] = "canvas:refresh";
+    /**
+     * @event `canvas:update` Canvas was updated.
+     */
+    CanvasEvents["update"] = "canvas:update";
+    CanvasEvents["updateTools"] = "canvas:updateTools";
+    /**
+     * @event `canvas:tools:update` Canvas tools were updated.
+     */
+    CanvasEvents["toolsUpdate"] = "canvas:tools:update";
+    /**
+     * @event `canvas:move:start` Canvas move started.
+     */
+    CanvasEvents["moveStart"] = "canvas:move:start";
+    /**
+     * @event `canvas:move` Canvas is moving.
+     */
+    CanvasEvents["move"] = "canvas:move";
+    /**
+     * @event `canvas:move:end` Canvas move ended.
+     */
+    CanvasEvents["moveEnd"] = "canvas:move:end";
+    /**
+     * @event `canvas:frame:load` Frame loaded in canvas. The event is triggered right after iframe's `onload`.
+     * @example
+     * editor.on('canvas:frame:load', ({ window }) => {
+     *  console.log('Frame loaded', window);
+     * });
+     */
+    CanvasEvents["frameLoad"] = "canvas:frame:load";
+    /**
+     * @event `canvas:frame:load:head` Frame head loaded in canvas. The event is triggered right after iframe's finished to load the head elements (eg. scripts)
+     * @example
+     * editor.on('canvas:frame:load:head', ({ window }) => {
+     *  console.log('Frame head loaded', window);
+     * });
+     */
+    CanvasEvents["frameLoadHead"] = "canvas:frame:load:head";
+    /**
+     * @event `canvas:frame:load:body` Frame body loaded in canvas. The event is triggered when the body is rendered with components.
+     * @example
+     * editor.on('canvas:frame:load:body', ({ window }) => {
+     *  console.log('Frame completed the body render', window);
+     * });
+     */
+    CanvasEvents["frameLoadBody"] = "canvas:frame:load:body";
+    /**
+     * @event `canvas:frame:unload` Frame is unloading from the canvas.
+     * @example
+     * editor.on('canvas:frame:unload', ({ frame }) => {
+     *  console.log('Unloading frame', frame);
+     * });
+     */
+    CanvasEvents["frameUnload"] = "canvas:frame:unload";
+})(CanvasEvents || (CanvasEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (CanvasEvents);
+
+
+/***/ }),
+
+/***/ 1738:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
@@ -15542,14 +15696,12 @@ var CommandsEvents;
      * });
      */
     CommandsEvents["run"] = "command:run";
-    CommandsEvents["_run"] = "run";
     /**
      * @event `command:run:COMMAND-ID` Triggered on run of a specific command.
      * @example
      * editor.on('command:run:my-command', ({ result, options }) => { ... });
      */
     CommandsEvents["runCommand"] = "command:run:";
-    CommandsEvents["_runCommand"] = "run:";
     /**
      * @event `command:run:before:COMMAND-ID` Triggered before the command is called.
      * @example
@@ -15569,7 +15721,6 @@ var CommandsEvents;
      * });
      */
     CommandsEvents["abort"] = "command:abort:";
-    CommandsEvents["_abort"] = "abort:";
     /**
      * @event `command:stop` Triggered on stop of any command.
      * @example
@@ -15578,29 +15729,40 @@ var CommandsEvents;
      * });
      */
     CommandsEvents["stop"] = "command:stop";
-    CommandsEvents["_stop"] = "stop";
     /**
      * @event `command:stop:COMMAND-ID` Triggered on stop of a specific command.
      * @example
      * editor.on('command:run:my-command', ({ result, options }) => { ... });
      */
     CommandsEvents["stopCommand"] = "command:stop:";
-    CommandsEvents["_stopCommand"] = "stop:";
     /**
      * @event `command:stop:before:COMMAND-ID` Triggered before the command is called to stop.
      * @example
      * editor.on('command:stop:before:my-command', ({ options }) => { ... });
      */
     CommandsEvents["stopBeforeCommand"] = "command:stop:before:";
+    /**
+     * @event `command:call` Triggered on run or stop of a command.
+     * @example
+     * editor.on('command:call', ({ id, result, options, type }) => {
+     *  console.log('Command id', id, 'command result', result, 'call type', type);
+     * });
+     */
+    CommandsEvents["call"] = "command:call";
+    /**
+     * @event `command:call:COMMAND-ID` Triggered on run or stop of a specific command.
+     * @example
+     * editor.on('command:call:my-command', ({ result, options, type }) => { ... });
+     */
+    CommandsEvents["callCommand"] = "command:call:";
 })(CommandsEvents || (CommandsEvents = {}));
-/**{END_EVENTS}*/
 // need this to avoid the TS documentation generator to break
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (CommandsEvents);
 
 
 /***/ }),
 
-/***/ 371:
+/***/ 9484:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -15617,7 +15779,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 6301:
+/***/ 9516:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -15625,8 +15787,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _utils_Dragger__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5633);
-/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2097);
+/* harmony import */ var _canvas_types__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9064);
+/* harmony import */ var _utils_Dragger__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9966);
+/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6294);
+
 
 
 
@@ -15670,13 +15834,13 @@ __webpack_require__.r(__webpack_exports__);
                     canvasModel.set({ x: x, y: y });
                 },
                 onStart: function (ev, dragger) {
-                    em.trigger('canvas:move:start', dragger);
+                    em.trigger(_canvas_types__WEBPACK_IMPORTED_MODULE_3__/* .CanvasEvents */ .M.moveStart, dragger);
                 },
                 onDrag: function (ev, dragger) {
-                    em.trigger('canvas:move', dragger);
+                    em.trigger(_canvas_types__WEBPACK_IMPORTED_MODULE_3__/* .CanvasEvents */ .M.move, dragger);
                 },
                 onEnd: function (ev, dragger) {
-                    em.trigger('canvas:move:end', dragger);
+                    em.trigger(_canvas_types__WEBPACK_IMPORTED_MODULE_3__/* .CanvasEvents */ .M.moveEnd, dragger);
                 },
             });
             this.dragger = dragger;
@@ -15701,7 +15865,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 5301:
+/***/ 9946:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -15709,8 +15873,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__),
 /* harmony export */   defineCommand: () => (/* binding */ defineCommand)
 /* harmony export */ });
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1749);
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8351);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9156);
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1738);
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -15726,6 +15890,17 @@ var __extends = (undefined && undefined.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __assign = (undefined && undefined.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 
 
 function defineCommand(def) {
@@ -15803,20 +15978,21 @@ var CommandAbstract = /** @class */ (function (_super) {
         if (options === void 0) { options = {}; }
         var id = this.id;
         editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.runBeforeCommand).concat(id), { options: options });
-        editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A._runCommand).concat(id, ":before"), options);
         if (options.abort) {
             editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.abort).concat(id), { options: options });
-            editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A._abort).concat(id), options);
             return;
         }
         var sender = options.sender || editor;
         var result = this.run(editor, sender, options);
         var data = { id: id, result: result, options: options };
+        var dataCall = __assign(__assign({}, data), { type: 'run' });
+        if (!this.noStop) {
+            editor.Commands.active[id] = result;
+        }
         editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.runCommand).concat(id), data);
+        editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.callCommand).concat(id), dataCall);
         editor.trigger(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.run, data);
-        // deprecated
-        editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A._runCommand).concat(id), result, options);
-        editor.trigger(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A._run, id, result, options);
+        editor.trigger(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.call, dataCall);
         return result;
     };
     /**
@@ -15830,14 +16006,14 @@ var CommandAbstract = /** @class */ (function (_super) {
         var id = this.id;
         var sender = options.sender || editor;
         editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.stopBeforeCommand).concat(id), { options: options });
-        editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A._stopCommand).concat(id, ":before"), options);
         var result = this.stop(editor, sender, options);
         var data = { id: id, result: result, options: options };
+        var dataCall = __assign(__assign({}, data), { type: 'stop' });
+        delete editor.Commands.active[id];
         editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.stopCommand).concat(id), data);
+        editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.callCommand).concat(id), dataCall);
         editor.trigger(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.stop, data);
-        // deprecated
-        editor.trigger("".concat(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A._stopCommand).concat(id), result, options);
-        editor.trigger(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A._stop, id, result, options);
+        editor.trigger(_types__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .A.call, dataCall);
         return result;
     };
     /**
@@ -15867,7 +16043,7 @@ var CommandAbstract = /** @class */ (function (_super) {
 
 /***/ }),
 
-/***/ 8542:
+/***/ 7801:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -15912,7 +16088,7 @@ var command = {
 
 /***/ }),
 
-/***/ 1319:
+/***/ 4864:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -15920,7 +16096,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _utils_Dragger__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5633);
+/* harmony import */ var _canvas_types__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9064);
+/* harmony import */ var _utils_Dragger__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9966);
+/* harmony import */ var _utils_mixins__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(1166);
 var __assign = (undefined && undefined.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -15934,21 +16112,24 @@ var __assign = (undefined && undefined.__assign) || function () {
 };
 
 
+
+
 var evName = 'dmode';
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-    run: function (editor, sender, opts) {
+    run: function (editor, _sender, opts) {
         var _this = this;
+        var _a, _b;
         if (opts === void 0) { opts = {}; }
         (0,underscore__WEBPACK_IMPORTED_MODULE_0__.bindAll)(this, 'setPosition', 'onStart', 'onDrag', 'onEnd', 'getPosition', 'getGuidesStatic', 'renderGuide', 'getGuidesTarget');
-        var target = opts.target, event = opts.event, mode = opts.mode, _a = opts.dragger, dragger = _a === void 0 ? {} : _a;
-        var el = target.getEl();
-        var config = __assign({ doc: el.ownerDocument, onStart: this.onStart, onEnd: this.onEnd, onDrag: this.onDrag, getPosition: this.getPosition, setPosition: this.setPosition, guidesStatic: function () { return _this.guidesStatic; }, guidesTarget: function () { return _this.guidesTarget; } }, dragger);
+        if (!opts.target)
+            throw new Error('Target option is required');
+        var config = __assign({ doc: (_a = opts.target.getEl()) === null || _a === void 0 ? void 0 : _a.ownerDocument, onStart: this.onStart, onEnd: this.onEnd, onDrag: this.onDrag, getPosition: this.getPosition, setPosition: this.setPosition, guidesStatic: function () { var _a; return (_a = _this.guidesStatic) !== null && _a !== void 0 ? _a : []; }, guidesTarget: function () { var _a; return (_a = _this.guidesTarget) !== null && _a !== void 0 ? _a : []; } }, ((_b = opts.dragger) !== null && _b !== void 0 ? _b : {}));
         this.setupGuides();
         this.opts = opts;
         this.editor = editor;
         this.em = editor.getModel();
-        this.target = target;
-        this.isTran = mode == 'translate';
+        this.target = opts.target;
+        this.isTran = opts.mode == 'translate';
         this.guidesContainer = this.getGuidesContainer();
         this.guidesTarget = this.getGuidesTarget();
         this.guidesStatic = this.getGuidesStatic();
@@ -15960,35 +16141,43 @@ var evName = 'dmode';
         else {
             drg.setOptions(config);
         }
-        event && drg.start(event);
-        this.toggleDrag(1);
+        opts.event && drg.start(opts.event);
+        this.toggleDrag(true);
         this.em.trigger("".concat(evName, ":start"), this.getEventOpts());
         return drg;
     },
     getEventOpts: function () {
+        var _a, _b;
+        var guidesActive = (_b = (_a = this.guidesTarget) === null || _a === void 0 ? void 0 : _a.filter(function (item) { return item.active; })) !== null && _b !== void 0 ? _b : [];
         return {
             mode: this.opts.mode,
+            component: this.target,
             target: this.target,
             guidesTarget: this.guidesTarget,
             guidesStatic: this.guidesStatic,
+            guidesMatched: this.getGuidesMatched(guidesActive),
+            command: this,
         };
     },
     stop: function () {
         this.toggleDrag();
     },
     setupGuides: function () {
-        (this.guides || []).forEach(function (item) {
+        var _a;
+        ((_a = this.guides) !== null && _a !== void 0 ? _a : []).forEach(function (item) {
+            var _a;
             var guide = item.guide;
-            guide && guide.parentNode.removeChild(guide);
+            (_a = guide === null || guide === void 0 ? void 0 : guide.parentNode) === null || _a === void 0 ? void 0 : _a.removeChild(guide);
         });
         this.guides = [];
     },
     getGuidesContainer: function () {
         var _this = this;
+        var _a, _b, _c, _d;
         var guidesEl = this.guidesEl;
         if (!guidesEl) {
-            var _a = this, editor = _a.editor, em = _a.em, opts_1 = _a.opts;
-            var pfx = editor.getConfig().stylePrefix;
+            var _e = this, editor = _e.editor, em = _e.em, opts_1 = _e.opts;
+            var pfx = (_a = editor.getConfig().stylePrefix) !== null && _a !== void 0 ? _a : '';
             var elInfoX = document.createElement('div');
             var elInfoY = document.createElement('div');
             var guideContent = "<div class=\"".concat(pfx, "guide-info__line ").concat(pfx, "danger-bg\">\n        <div class=\"").concat(pfx, "guide-info__content ").concat(pfx, "danger-color\"></div>\n      </div>");
@@ -16000,13 +16189,13 @@ var evName = 'dmode';
             elInfoY.innerHTML = guideContent;
             guidesEl.appendChild(elInfoX);
             guidesEl.appendChild(elInfoY);
-            editor.Canvas.getGlobalToolsEl().appendChild(guidesEl);
+            (_b = editor.Canvas.getGlobalToolsEl()) === null || _b === void 0 ? void 0 : _b.appendChild(guidesEl);
             this.guidesEl = guidesEl;
             this.elGuideInfoX = elInfoX;
             this.elGuideInfoY = elInfoY;
-            this.elGuideInfoContentX = elInfoX.querySelector(".".concat(pfx, "guide-info__content"));
-            this.elGuideInfoContentY = elInfoY.querySelector(".".concat(pfx, "guide-info__content"));
-            em.on('canvas:update frame:scroll', (0,underscore__WEBPACK_IMPORTED_MODULE_0__.debounce)(function () {
+            this.elGuideInfoContentX = (_c = elInfoX.querySelector(".".concat(pfx, "guide-info__content"))) !== null && _c !== void 0 ? _c : undefined;
+            this.elGuideInfoContentY = (_d = elInfoY.querySelector(".".concat(pfx, "guide-info__content"))) !== null && _d !== void 0 ? _d : undefined;
+            em.on("".concat(_canvas_types__WEBPACK_IMPORTED_MODULE_2__/* .CanvasEvents */ .M.update, " frame:scroll"), (0,underscore__WEBPACK_IMPORTED_MODULE_0__.debounce)(function () {
                 var _a;
                 _this.updateGuides();
                 opts_1.debug && ((_a = _this.guides) === null || _a === void 0 ? void 0 : _a.forEach(function (item) { return _this.renderGuide(item); }));
@@ -16018,7 +16207,9 @@ var evName = 'dmode';
         var _this = this;
         var result = [];
         var el = this.target.getEl();
-        var _a = el.parentNode, parentNode = _a === void 0 ? {} : _a;
+        var parentNode = el === null || el === void 0 ? void 0 : el.parentElement;
+        if (!parentNode)
+            return [];
         (0,underscore__WEBPACK_IMPORTED_MODULE_0__.each)(parentNode.children, function (item) { return (result = result.concat(el !== item ? _this.getElementGuides(item) : [])); });
         return result.concat(this.getElementGuides(parentNode));
     },
@@ -16027,14 +16218,18 @@ var evName = 'dmode';
     },
     updateGuides: function (guides) {
         var _this = this;
+        var _a;
         var lastEl;
         var lastPos;
-        (guides || this.guides).forEach(function (item) {
+        var guidesToUpdate = (_a = guides !== null && guides !== void 0 ? guides : this.guides) !== null && _a !== void 0 ? _a : [];
+        guidesToUpdate.forEach(function (item) {
             var origin = item.origin;
             var pos = lastEl === origin ? lastPos : _this.getElementPos(origin);
             lastEl = origin;
             lastPos = pos;
-            (0,underscore__WEBPACK_IMPORTED_MODULE_0__.each)(_this.getGuidePosUpdate(item, pos), function (val, key) { return (item[key] = val); });
+            (0,underscore__WEBPACK_IMPORTED_MODULE_0__.each)(_this.getGuidePosUpdate(item, pos), function (val, key) {
+                item[key] = val;
+            });
             item.originRect = pos;
         });
     },
@@ -16064,22 +16259,23 @@ var evName = 'dmode';
         return result;
     },
     renderGuide: function (item) {
-        if (item === void 0) { item = {}; }
-        var el = item.guide || document.createElement('div');
+        var _a, _b;
+        if (this.opts.skipGuidesRender)
+            return;
+        var el = (_a = item.guide) !== null && _a !== void 0 ? _a : document.createElement('div');
         var un = 'px';
         var guideSize = item.active ? 2 : 1;
-        var numEl = el.children[0];
-        el.style = "position: absolute; background-color: ".concat(item.active ? 'green' : 'red', ";");
+        el.style.cssText = "position: absolute; background-color: ".concat(item.active ? 'green' : 'red', ";");
         if (!el.children.length) {
-            numEl = document.createElement('div');
-            numEl.style = 'position: absolute; color: red; padding: 5px; top: 0; left: 0;';
+            var numEl = document.createElement('div');
+            numEl.style.cssText = 'position: absolute; color: red; padding: 5px; top: 0; left: 0;';
             el.appendChild(numEl);
         }
         if (item.y) {
             el.style.width = '100%';
             el.style.height = "".concat(guideSize).concat(un);
             el.style.top = "".concat(item.y).concat(un);
-            el.style.left = 0;
+            el.style.left = '0';
         }
         else {
             el.style.width = "".concat(guideSize).concat(un);
@@ -16087,7 +16283,7 @@ var evName = 'dmode';
             el.style.left = "".concat(item.x).concat(un);
             el.style.top = "0".concat(un);
         }
-        !item.guide && this.guidesContainer.appendChild(el);
+        !item.guide && ((_b = this.guidesContainer) === null || _b === void 0 ? void 0 : _b.appendChild(el));
         return el;
     },
     getElementPos: function (el) {
@@ -16096,18 +16292,24 @@ var evName = 'dmode';
     getElementGuides: function (el) {
         var _this = this;
         var opts = this.opts;
+        var origin = el;
         var originRect = this.getElementPos(el);
+        var component = (0,_utils_mixins__WEBPACK_IMPORTED_MODULE_3__.getComponentModel)(el);
+        var componentView = (0,_utils_mixins__WEBPACK_IMPORTED_MODULE_3__.getComponentView)(el);
         var top = originRect.top, height = originRect.height, left = originRect.left, width = originRect.width;
-        // @ts-ignore
-        var guides = [
+        var guidePoints = [
             { type: 't', y: top }, // Top
             { type: 'b', y: top + height }, // Bottom
             { type: 'l', x: left }, // Left
             { type: 'r', x: left + width }, // Right
             { type: 'x', x: left + width / 2 }, // Mid x
             { type: 'y', y: top + height / 2 }, // Mid y
-        ].map(function (item) { return (__assign(__assign({}, item), { origin: el, originRect: originRect, guide: opts.debug && _this.renderGuide(item) })); });
-        guides.forEach(function (item) { var _a; return (_a = _this.guides) === null || _a === void 0 ? void 0 : _a.push(item); });
+        ];
+        var guides = guidePoints.map(function (guidePoint) {
+            var guide = opts.debug ? _this.renderGuide(guidePoint) : undefined;
+            return __assign(__assign({}, guidePoint), { component: component, componentView: componentView, componentEl: origin, origin: origin, componentElRect: originRect, originRect: originRect, guideEl: guide, guide: guide });
+        });
+        guides.forEach(function (guidePoint) { var _a; return (_a = _this.guides) === null || _a === void 0 ? void 0 : _a.push(guidePoint); });
         return guides;
     },
     getTranslate: function (transform, axis) {
@@ -16139,33 +16341,36 @@ var evName = 'dmode';
     },
     getPosition: function () {
         var _a = this, target = _a.target, isTran = _a.isTran;
-        var _b = target.getStyle(), left = _b.left, top = _b.top, transform = _b.transform;
+        var targetStyle = target.getStyle();
+        var transform = targetStyle.transform;
+        var left = targetStyle.left;
+        var top = targetStyle.top;
         var x = 0;
         var y = 0;
-        if (isTran) {
+        if (isTran && transform) {
             x = this.getTranslate(transform);
             y = this.getTranslate(transform, 'y');
         }
         else {
-            x = parseFloat(left || 0);
-            y = parseFloat(top || 0);
+            x = parseFloat(left !== null && left !== void 0 ? left : '0');
+            y = parseFloat(top !== null && top !== void 0 ? top : '0');
         }
         return { x: x, y: y };
     },
     setPosition: function (_a) {
+        var _b, _c;
         var x = _a.x, y = _a.y, end = _a.end, position = _a.position, width = _a.width, height = _a.height;
-        var _b = this, target = _b.target, isTran = _b.isTran, em = _b.em;
+        var _d = this, target = _d.target, isTran = _d.isTran, em = _d.em, opts = _d.opts;
         var unit = 'px';
         var __p = !end; // Indicate if partial change
-        var left = "".concat(parseInt(x, 10)).concat(unit);
-        var top = "".concat(parseInt(y, 10)).concat(unit);
+        var left = "".concat(parseInt("".concat(x), 10)).concat(unit);
+        var top = "".concat(parseInt("".concat(y), 10)).concat(unit);
         var styleUp = {};
         if (isTran) {
-            var transform = target.getStyle()['transform'] || '';
+            var transform = ((_c = (_b = target.getStyle()) === null || _b === void 0 ? void 0 : _b.transform) !== null && _c !== void 0 ? _c : '');
             transform = this.setTranslate(transform, 'x', left);
             transform = this.setTranslate(transform, 'y', top);
             styleUp = { transform: transform, __p: __p };
-            target.addStyle(styleUp, { avoidStore: !end });
         }
         else {
             var adds_1 = { position: position, width: width, height: height };
@@ -16176,9 +16381,14 @@ var evName = 'dmode';
                     style_1[add] = prop;
             });
             styleUp = style_1;
+        }
+        if (opts.addStyle) {
+            opts.addStyle({ component: target, styles: styleUp, partial: !end });
+        }
+        else {
             target.addStyle(styleUp, { avoidStore: !end });
         }
-        em === null || em === void 0 ? void 0 : em.Styles.__emitCmpStyleUpdate(styleUp, { components: em.getSelected() });
+        em.Styles.__emitCmpStyleUpdate(styleUp, { components: em.getSelected() });
     },
     _getDragData: function () {
         var target = this.target;
@@ -16189,28 +16399,31 @@ var evName = 'dmode';
         };
     },
     onStart: function (event) {
-        var _a = this, target = _a.target, editor = _a.editor, isTran = _a.isTran, opts = _a.opts;
-        var center = opts.center, onStart = opts.onStart;
+        var _a;
+        var _b = this, target = _b.target, editor = _b.editor, isTran = _b.isTran, opts = _b.opts;
         var Canvas = editor.Canvas;
         var style = target.getStyle();
         var position = 'absolute';
         var relPos = [position, 'relative'];
-        onStart && onStart(this._getDragData());
+        (_a = opts.onStart) === null || _a === void 0 ? void 0 : _a.call(opts, this._getDragData());
         if (isTran)
             return;
         if (style.position !== position) {
-            var _b = Canvas.offset(target.getEl()), left = _b.left, top_1 = _b.top, width = _b.width, height = _b.height;
+            var _c = Canvas.offset(target.getEl()), left = _c.left, top_1 = _c.top, width = _c.width, height = _c.height;
             var parent_1 = target.parent();
-            var parentRel = void 0;
+            var parentRel = null;
             // Check for the relative parent
             do {
-                var pStyle = parent_1.getStyle();
-                parentRel = relPos.indexOf(pStyle.position) >= 0 ? parent_1 : null;
-                parent_1 = parent_1.parent();
+                var pStyle = parent_1 === null || parent_1 === void 0 ? void 0 : parent_1.getStyle();
+                var position_1 = pStyle === null || pStyle === void 0 ? void 0 : pStyle.position;
+                if (position_1) {
+                    parentRel = relPos.indexOf(position_1) >= 0 ? parent_1 : null;
+                }
+                parent_1 = parent_1 === null || parent_1 === void 0 ? void 0 : parent_1.parent();
             } while (parent_1 && !parentRel);
             // Center the target to the pointer position (used in Droppable for Blocks)
-            if (center) {
-                var _c = Canvas.getMouseRelativeCanvas(event), x = _c.x, y = _c.y;
+            if (opts.center) {
+                var _d = Canvas.getMouseRelativeCanvas(event), x = _d.x, y = _d.y;
                 left = x;
                 top_1 = y;
             }
@@ -16227,26 +16440,25 @@ var evName = 'dmode';
                 position: position,
             });
         }
+        // Recalculate guides to avoid issues with the new position durin the first drag
+        this.guidesStatic = this.getGuidesStatic();
     },
-    onDrag: function () {
+    onDrag: function (event) {
         var _this = this;
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        var _a = this, guidesTarget = _a.guidesTarget, opts = _a.opts;
-        var onDrag = opts.onDrag;
+        var _a, _b;
+        var _c = this, guidesTarget = _c.guidesTarget, opts = _c.opts;
         this.updateGuides(guidesTarget);
-        opts.debug && guidesTarget.forEach(function (item) { return _this.renderGuide(item); });
-        opts.guidesInfo && this.renderGuideInfo(guidesTarget.filter(function (item) { return item.active; }));
-        onDrag && onDrag(this._getDragData());
+        opts.debug && (guidesTarget === null || guidesTarget === void 0 ? void 0 : guidesTarget.forEach(function (item) { return _this.renderGuide(item); }));
+        opts.guidesInfo && this.renderGuideInfo((_a = guidesTarget === null || guidesTarget === void 0 ? void 0 : guidesTarget.filter(function (item) { return item.active; })) !== null && _a !== void 0 ? _a : []);
+        (_b = opts.onDrag) === null || _b === void 0 ? void 0 : _b.call(opts, this._getDragData());
+        this.opts.event = event;
+        this.em.trigger("".concat(evName, ":move"), this.getEventOpts());
     },
-    onEnd: function (ev, dragger, opt) {
-        if (opt === void 0) { opt = {}; }
-        var _a = this, editor = _a.editor, opts = _a.opts, id = _a.id;
-        var onEnd = opts.onEnd;
-        onEnd && onEnd(ev, opt, __assign(__assign({ event: ev }, opt), this._getDragData()));
-        editor.stopCommand(id);
+    onEnd: function (ev, _dragger, opt) {
+        var _a;
+        var _b = this, editor = _b.editor, opts = _b.opts, id = _b.id;
+        (_a = opts.onEnd) === null || _a === void 0 ? void 0 : _a.call(opts, ev, opt, __assign(__assign({ event: ev }, opt), this._getDragData()));
+        editor.stopCommand("".concat(id));
         this.hideGuidesInfo();
         this.em.trigger("".concat(evName, ":end"), this.getEventOpts());
     },
@@ -16258,56 +16470,119 @@ var evName = 'dmode';
                 guide.style.display = 'none';
         });
     },
-    /**
-     * Render guides with spacing information
-     */
     renderGuideInfo: function (guides) {
         var _this = this;
         if (guides === void 0) { guides = []; }
-        var guidesStatic = this.guidesStatic;
         this.hideGuidesInfo();
-        guides.forEach(function (item) {
-            var origin = item.origin, x = item.x;
+        var guidesMatched = this.getGuidesMatched(guides);
+        guidesMatched.forEach(function (guideMatched) {
+            if (!_this.opts.skipGuidesRender) {
+                _this.renderSingleGuideInfo(guideMatched);
+            }
+            _this.em.trigger("".concat(evName, ":active"), __assign(__assign({}, _this.getEventOpts()), guideMatched));
+        });
+    },
+    renderSingleGuideInfo: function (guideMatched) {
+        var posFirst = guideMatched.posFirst, posSecond = guideMatched.posSecond, size = guideMatched.size, sizeRaw = guideMatched.sizeRaw, guide = guideMatched.guide, elGuideInfo = guideMatched.elGuideInfo, elGuideInfoCnt = guideMatched.elGuideInfoCnt;
+        var axis = (0,underscore__WEBPACK_IMPORTED_MODULE_0__.isUndefined)(guide.x) ? 'y' : 'x';
+        var isY = axis === 'y';
+        var guideInfoStyle = elGuideInfo.style;
+        guideInfoStyle.display = '';
+        guideInfoStyle[isY ? 'top' : 'left'] = "".concat(posFirst, "px");
+        guideInfoStyle[isY ? 'left' : 'top'] = "".concat(posSecond, "px");
+        guideInfoStyle[isY ? 'width' : 'height'] = "".concat(size, "px");
+        elGuideInfoCnt.innerHTML = "".concat(Math.round(sizeRaw), "px");
+    },
+    getGuidesMatched: function (guides) {
+        var _this = this;
+        if (guides === void 0) { guides = []; }
+        var _a = this.guidesStatic, guidesStatic = _a === void 0 ? [] : _a;
+        return guides
+            .map(function (guide) {
+            var origin = guide.origin, x = guide.x;
             var rectOrigin = _this.getElementPos(origin);
             var axis = (0,underscore__WEBPACK_IMPORTED_MODULE_0__.isUndefined)(x) ? 'y' : 'x';
             var isY = axis === 'y';
+            // Calculate the edges of the element
             var origEdge1 = rectOrigin[isY ? 'left' : 'top'];
             var origEdge1Raw = rectOrigin.rect[isY ? 'left' : 'top'];
             var origEdge2 = isY ? origEdge1 + rectOrigin.width : origEdge1 + rectOrigin.height;
             var origEdge2Raw = isY ? origEdge1Raw + rectOrigin.rect.width : origEdge1Raw + rectOrigin.rect.height;
-            var elGuideInfo = _this["elGuideInfo".concat(axis.toUpperCase())];
-            var elGuideInfoCnt = _this["elGuideInfoContent".concat(axis.toUpperCase())];
-            var guideInfoStyle = elGuideInfo.style;
             // Find the nearest element
-            var res = guidesStatic === null || guidesStatic === void 0 ? void 0 : guidesStatic.filter(function (stat) { return stat.type === item.type; }).map(function (stat) {
-                var _a = stat.originRect, left = _a.left, width = _a.width, top = _a.top, height = _a.height;
+            var guidesMatched = guidesStatic
+                .filter(function (guideStatic) {
+                var _a;
+                // Define complementary guide types
+                var complementaryTypes = {
+                    l: ['r', 'x'], // Left can match with Right or Middle (horizontal)
+                    r: ['l', 'x'], // Right can match with Left or Middle (horizontal)
+                    x: ['l', 'r'], // Middle (horizontal) can match with Left or Right
+                    t: ['b', 'y'], // Top can match with Bottom or Middle (vertical)
+                    b: ['t', 'y'], // Bottom can match with Top or Middle (vertical)
+                    y: ['t', 'b'], // Middle (vertical) can match with Top or Bottom
+                };
+                // Check if the guide type matches or is complementary
+                return guideStatic.type === guide.type || ((_a = complementaryTypes[guide.type]) === null || _a === void 0 ? void 0 : _a.includes(guideStatic.type));
+            })
+                .map(function (guideStatic) {
+                var _a = guideStatic.originRect, left = _a.left, width = _a.width, top = _a.top, height = _a.height;
                 var statEdge1 = isY ? left : top;
                 var statEdge2 = isY ? left + width : top + height;
                 return {
                     gap: statEdge2 < origEdge1 ? origEdge1 - statEdge2 : statEdge1 - origEdge2,
-                    guide: stat,
+                    guide: guideStatic,
                 };
-            }).filter(function (item) { return item.gap > 0; }).sort(function (a, b) { return a.gap - b.gap; }).map(function (item) { return item.guide; })[0];
-            if (res) {
-                var _a = res.originRect, left = _a.left, width = _a.width, top_2 = _a.top, height = _a.height, rect = _a.rect;
+            })
+                .filter(function (item) { return item.gap > 0; })
+                .sort(function (a, b) { return a.gap - b.gap; })
+                .map(function (item) { return item.guide; })
+                // Filter the guides that don't match the position of the dragged element
+                .filter(function (item) {
+                switch (guide.type) {
+                    case 'l':
+                    case 'r':
+                    case 'x':
+                        return Math.abs(item.x - guide.x) < 1;
+                    case 't':
+                    case 'b':
+                    case 'y':
+                        return Math.abs(item.y - guide.y) < 1;
+                    default:
+                        return false;
+                }
+            });
+            // TODO: consider supporting multiple guides
+            var firstGuideMatched = guidesMatched[0];
+            if (firstGuideMatched) {
+                var _a = firstGuideMatched.originRect, left = _a.left, width = _a.width, top_2 = _a.top, height = _a.height, rect = _a.rect;
                 var isEdge1 = isY ? left < rectOrigin.left : top_2 < rectOrigin.top;
                 var statEdge1 = isY ? left : top_2;
                 var statEdge1Raw = isY ? rect.left : rect.top;
                 var statEdge2 = isY ? left + width : top_2 + height;
                 var statEdge2Raw = isY ? rect.left + rect.width : rect.top + rect.height;
-                var posFirst = isY ? item.y : item.x;
+                var posFirst = isY ? guide.y : guide.x;
                 var posSecond = isEdge1 ? statEdge2 : origEdge2;
-                var pos2 = "".concat(posFirst, "px");
                 var size = isEdge1 ? origEdge1 - statEdge2 : statEdge1 - origEdge2;
                 var sizeRaw = isEdge1 ? origEdge1Raw - statEdge2Raw : statEdge1Raw - origEdge2Raw;
-                guideInfoStyle.display = '';
-                guideInfoStyle[isY ? 'top' : 'left'] = pos2;
-                guideInfoStyle[isY ? 'left' : 'top'] = "".concat(posSecond, "px");
-                guideInfoStyle[isY ? 'width' : 'height'] = "".concat(size, "px");
-                elGuideInfoCnt.innerHTML = "".concat(Math.round(sizeRaw), "px");
-                _this.em.trigger("".concat(evName, ":active"), __assign(__assign({}, _this.getEventOpts()), { guide: item, guidesStatic: guidesStatic, matched: res, posFirst: posFirst, posSecond: posSecond, size: size, sizeRaw: sizeRaw, elGuideInfo: elGuideInfo, elGuideInfoCnt: elGuideInfoCnt }));
+                var elGuideInfo = _this["elGuideInfo".concat(axis.toUpperCase())];
+                var elGuideInfoCnt = _this["elGuideInfoContent".concat(axis.toUpperCase())];
+                return {
+                    guide: guide,
+                    guidesStatic: guidesStatic,
+                    matched: firstGuideMatched,
+                    posFirst: posFirst,
+                    posSecond: posSecond,
+                    size: size,
+                    sizeRaw: sizeRaw,
+                    elGuideInfo: elGuideInfo,
+                    elGuideInfoCnt: elGuideInfoCnt,
+                };
             }
-        });
+            else {
+                return null;
+            }
+        })
+            .filter(Boolean);
     },
     toggleDrag: function (enable) {
         var _a = this, ppfx = _a.ppfx, editor = _a.editor;
@@ -16318,12 +16593,17 @@ var evName = 'dmode';
         classes.forEach(function (cls) { return body.classList[methodCls](cls); });
         Canvas[enable ? 'startAutoscroll' : 'stopAutoscroll']();
     },
+    // These properties values are set in the run method, they need to be initialized here to avoid TS errors
+    editor: undefined,
+    em: undefined,
+    opts: undefined,
+    target: undefined,
 });
 
 
 /***/ }),
 
-/***/ 1859:
+/***/ 6134:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16347,7 +16627,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 3709:
+/***/ 914:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16375,7 +16655,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 2860:
+/***/ 5547:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16410,7 +16690,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 4944:
+/***/ 8655:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16444,7 +16724,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 767:
+/***/ 7640:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16478,7 +16758,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 2126:
+/***/ 5837:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16505,14 +16785,14 @@ var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from
 
 /***/ }),
 
-/***/ 4860:
+/***/ 6477:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2097);
+/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6294);
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
     run: function (editor, sender, opts) {
@@ -16565,7 +16845,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 1085:
+/***/ 1772:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16657,7 +16937,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 9622:
+/***/ 741:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16665,10 +16945,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6411);
-/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(2097);
-/* harmony import */ var _SelectComponent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4596);
-/* harmony import */ var _SelectPosition__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2983);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7774);
+/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(6294);
+/* harmony import */ var _SelectComponent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9317);
+/* harmony import */ var _SelectPosition__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1406);
 
 
 
@@ -16835,7 +17115,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 8481:
+/***/ 2924:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16843,7 +17123,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2097);
+/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6294);
 
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
@@ -16915,7 +17195,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 3666:
+/***/ 3963:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -16923,7 +17203,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2097);
+/* harmony import */ var _utils_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6294);
 
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
@@ -16977,7 +17257,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 5838:
+/***/ 1479:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -17016,14 +17296,14 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 8692:
+/***/ 3473:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6411);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7774);
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
     run: function (editor, sender) {
@@ -17105,14 +17385,16 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 9163:
+/***/ 5054:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6411);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7774);
+/* harmony import */ var _dom_components_types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2225);
+
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
     run: function (editor, sender) {
@@ -17148,7 +17430,7 @@ __webpack_require__.r(__webpack_exports__);
             }
             panelC === null || panelC === void 0 ? void 0 : panelC.set('appendContent', this.$cn.get(0)).trigger('change:appendContent');
             this.target = editor.getModel();
-            this.listenTo(this.target, 'component:toggled', this.toggleTm);
+            this.listenTo(this.target, _dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.toggled, this.toggleTm);
         }
         this.toggleTm();
     },
@@ -17178,7 +17460,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 9298:
+/***/ 6979:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -17186,6 +17468,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
+/* harmony import */ var _dom_components_types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2225);
+
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
     run: function (ed, s, opts) {
@@ -17217,7 +17501,7 @@ __webpack_require__.r(__webpack_exports__);
                     added = doAdd(ed, clp, pageBody, addOpts);
                 }
                 added = (0,underscore__WEBPACK_IMPORTED_MODULE_0__.isArray)(added) ? added : [added];
-                added.forEach(function (add) { return ed.trigger('component:paste', add); });
+                added.forEach(function (add) { return ed.trigger(_dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.paste, add); });
             });
             lastSelected.emitUpdate();
         }
@@ -17232,7 +17516,7 @@ function doAdd(ed, clp, parent, addOpts) {
 
 /***/ }),
 
-/***/ 8594:
+/***/ 4457:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -17332,13 +17616,16 @@ var cmdOutline = 'core:component-outline';
 
 /***/ }),
 
-/***/ 7604:
+/***/ 5493:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ConvertUnitsToPx: () => (/* binding */ ConvertUnitsToPx),
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
+/* harmony import */ var _dom_components_types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2225);
+/* harmony import */ var _utils_mixins__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1166);
 var __assign = (undefined && undefined.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -17350,33 +17637,252 @@ var __assign = (undefined && undefined.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
+var __rest = (undefined && undefined.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+
+
+var ConvertUnitsToPx;
+(function (ConvertUnitsToPx) {
+    ConvertUnitsToPx["pt"] = "pt";
+    ConvertUnitsToPx["pc"] = "pc";
+    ConvertUnitsToPx["in"] = "in";
+    ConvertUnitsToPx["cm"] = "cm";
+    ConvertUnitsToPx["mm"] = "mm";
+    ConvertUnitsToPx["vw"] = "vw";
+    ConvertUnitsToPx["vh"] = "vh";
+    ConvertUnitsToPx["vmin"] = "vmin";
+    ConvertUnitsToPx["vmax"] = "vmax";
+    ConvertUnitsToPx["svw"] = "svw";
+    ConvertUnitsToPx["lvw"] = "lvw";
+    ConvertUnitsToPx["dvw"] = "dvw";
+    ConvertUnitsToPx["svh"] = "svh";
+    ConvertUnitsToPx["lvh"] = "lvh";
+    ConvertUnitsToPx["dvh"] = "dvh";
+    ConvertUnitsToPx["perc"] = "%";
+})(ConvertUnitsToPx || (ConvertUnitsToPx = {}));
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-    run: function (editor, sender, opts) {
-        var opt = opts || {};
-        var canvas = editor.Canvas;
-        var canvasView = canvas.getCanvasView();
-        var options = __assign({ appendTo: canvas.getResizerEl(), prefix: editor.getConfig().stylePrefix, posFetcher: canvasView.getElementPos.bind(canvasView), mousePosFetcher: canvas.getMouseRelativePos.bind(canvas) }, (opt.options || {}));
+    run: function (editor, _, options) {
+        var _this = this;
+        var Canvas = editor.Canvas, Utils = editor.Utils, em = editor.em;
+        var canvasView = Canvas.getCanvasView();
+        var pfx = em.config.stylePrefix || '';
+        var resizeClass = "".concat(pfx, "resizing");
+        var _a = options.onStart, onStart = _a === void 0 ? function () { } : _a, _b = options.onMove, onMove = _b === void 0 ? function () { } : _b, _c = options.onEnd, onEnd = _c === void 0 ? function () { } : _c, _d = options.updateTarget, updateTarget = _d === void 0 ? function () { } : _d, elOpts = options.el, componentView = options.componentView, component = options.component, skipPositionUpdate = options.skipPositionUpdate, resizableOpts = __rest(options, ["onStart", "onMove", "onEnd", "updateTarget", "el", "componentView", "component", "skipPositionUpdate"]);
+        var el = elOpts || (componentView === null || componentView === void 0 ? void 0 : componentView.el) || component.getEl();
+        var resizeEventOpts = { component: component, el: el };
+        var modelToStyle;
+        var elComputedStyle;
+        var toggleBodyClass = function (method, e, opts) {
+            var docs = opts.docs;
+            docs &&
+                docs.forEach(function (doc) {
+                    var body = doc.body;
+                    var cls = body.className || '';
+                    body.className = (method == 'add' ? "".concat(cls, " ").concat(resizeClass) : cls.replace(resizeClass, '')).trim();
+                });
+        };
+        var resizeOptions = __assign(__assign({ appendTo: Canvas.getResizerEl(), prefix: editor.getConfig().stylePrefix, posFetcher: canvasView.getElementPos.bind(canvasView), mousePosFetcher: Canvas.getMouseRelativePos.bind(Canvas), docs: [document], updateOnMove: true, skipUnitAdjustments: true, onStart: function (ev, opts) {
+                var _a;
+                onStart(ev, opts);
+                var el = opts.el, config = opts.config, resizer = opts.resizer;
+                var keyHeight = config.keyHeight, keyWidth = config.keyWidth, currentUnit = config.currentUnit, keepAutoHeight = config.keepAutoHeight, keepAutoWidth = config.keepAutoWidth;
+                toggleBodyClass('add', ev, opts);
+                modelToStyle = em.Styles.getModelToStyle(component);
+                elComputedStyle = getComputedStyle(el);
+                var modelStyle = modelToStyle.getStyle();
+                var rectStart = __assign({}, resizer.startDim);
+                var currentWidth = modelStyle[keyWidth];
+                config.autoWidth = keepAutoWidth && currentWidth === 'auto';
+                if (isNaN(parseFloat(currentWidth))) {
+                    currentWidth = elComputedStyle[keyWidth];
+                }
+                var currentHeight = modelStyle[keyHeight];
+                config.autoHeight = keepAutoHeight && currentHeight === 'auto';
+                if (isNaN(parseFloat(currentHeight))) {
+                    currentHeight = elComputedStyle[keyHeight];
+                }
+                var valueWidth = parseFloat(currentWidth);
+                var valueHeight = parseFloat(currentHeight);
+                var unitWidth = (0,_utils_mixins__WEBPACK_IMPORTED_MODULE_0__.getUnitFromValue)(currentWidth);
+                var unitHeight = (0,_utils_mixins__WEBPACK_IMPORTED_MODULE_0__.getUnitFromValue)(currentHeight);
+                if (currentUnit) {
+                    config.unitWidth = unitWidth;
+                    config.unitHeight = unitHeight;
+                }
+                var eventProps = __assign(__assign({}, resizeEventOpts), { event: ev, rect: rectStart, model: modelToStyle, modelWidth: {
+                        value: currentWidth,
+                        property: keyWidth,
+                        number: valueWidth,
+                        unit: unitWidth,
+                    }, modelHeight: {
+                        value: currentHeight,
+                        property: keyHeight,
+                        number: valueHeight,
+                        unit: unitHeight,
+                    } });
+                editor.trigger(_dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.resizeStart, eventProps);
+                editor.trigger(_dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.resize, __assign(__assign({}, eventProps), { type: 'start' }));
+                (_a = options.afterStart) === null || _a === void 0 ? void 0 : _a.call(options);
+            }, onMove: function (event, opts) {
+                onMove(event, opts);
+                var resizer = opts.resizer;
+                var eventProps = __assign(__assign({}, resizeEventOpts), { event: event, delta: resizer.delta, pointer: resizer.currentPos, rect: resizer.rectDim });
+                editor.trigger(_dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.resizeStart, eventProps);
+                editor.trigger(_dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.resize, __assign(__assign({}, eventProps), { type: 'move' }));
+            }, onEnd: function (event, opts) {
+                var _a;
+                onEnd(event, opts);
+                toggleBodyClass('remove', event, opts);
+                var resizer = opts.resizer;
+                var eventProps = __assign(__assign({}, resizeEventOpts), { event: event, rect: resizer.rectDim, moved: resizer.moved });
+                editor.trigger(_dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.resizeEnd, eventProps);
+                editor.trigger(_dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.resize, __assign(__assign({}, resizeEventOpts), { type: 'end' }));
+                (_a = options.afterEnd) === null || _a === void 0 ? void 0 : _a.call(options);
+            }, updateTarget: function (_el, rect, options) {
+                var _a;
+                updateTarget(_el, rect, options);
+                if (!modelToStyle) {
+                    return;
+                }
+                var store = options.store, selectedHandler = options.selectedHandler, config = options.config, resizer = options.resizer, event = options.event;
+                var keyHeight = config.keyHeight, keyWidth = config.keyWidth, autoHeight = config.autoHeight, autoWidth = config.autoWidth, unitWidth = config.unitWidth, unitHeight = config.unitHeight;
+                var onlyHeight = ['tc', 'bc'].indexOf(selectedHandler) >= 0;
+                var onlyWidth = ['cl', 'cr'].indexOf(selectedHandler) >= 0;
+                var partial = !store;
+                var style = {};
+                if (!onlyHeight) {
+                    var bodyw = ((_a = Canvas.getBody()) === null || _a === void 0 ? void 0 : _a.offsetWidth) || 0;
+                    var width = rect.w < bodyw ? rect.w : bodyw;
+                    style[keyWidth] = autoWidth
+                        ? 'auto'
+                        : _this.convertPxToUnit({
+                            el: el,
+                            elComputedStyle: elComputedStyle,
+                            valuePx: width,
+                            unit: unitWidth,
+                        });
+                }
+                if (!onlyWidth) {
+                    style[keyHeight] = autoHeight
+                        ? 'auto'
+                        : _this.convertPxToUnit({
+                            el: el,
+                            elComputedStyle: elComputedStyle,
+                            valuePx: rect.h,
+                            unit: unitHeight,
+                            isHeight: true,
+                        });
+                }
+                if (!skipPositionUpdate && em.getDragMode(component)) {
+                    style.top = "".concat(rect.t, "px");
+                    style.left = "".concat(rect.l, "px");
+                }
+                var styleUpdated = false;
+                var updateStyle = function (customStyle) {
+                    styleUpdated = true;
+                    var finalStyle = __assign(__assign({}, (customStyle || style)), { __p: partial });
+                    modelToStyle.addStyle(finalStyle, { avoidStore: partial });
+                    em.Styles.__emitCmpStyleUpdate(finalStyle, { components: component });
+                };
+                var eventProps = __assign(__assign({}, resizeEventOpts), { rect: rect, partial: partial, event: event, style: style, updateStyle: updateStyle, convertPxToUnit: function (props) {
+                        return _this.convertPxToUnit(__assign({ el: el, elComputedStyle: elComputedStyle }, props));
+                    }, delta: resizer.delta, pointer: resizer.currentPos });
+                editor.trigger(_dom_components_types__WEBPACK_IMPORTED_MODULE_1__/* .ComponentsEvents */ .IT.resizeUpdate, eventProps);
+                !styleUpdated && updateStyle();
+            } }, resizableOpts), options.options);
         var canvasResizer = this.canvasResizer;
         // Create the resizer for the canvas if not yet created
-        if (!canvasResizer || opt.forceNew) {
-            this.canvasResizer = new editor.Utils.Resizer(options);
+        if (!canvasResizer) {
+            this.canvasResizer = new Utils.Resizer(resizeOptions);
             canvasResizer = this.canvasResizer;
         }
-        canvasResizer.setOptions(options, true);
+        canvasResizer.setOptions(resizeOptions, true);
         canvasResizer.blur();
-        canvasResizer.focus(opt.el);
+        canvasResizer.focus(el);
         return canvasResizer;
     },
     stop: function () {
         var _a;
         (_a = this.canvasResizer) === null || _a === void 0 ? void 0 : _a.blur();
     },
+    convertPxToUnit: function (props) {
+        var el = props.el, valuePx = props.valuePx, unit = props.unit, _a = props.dpi, dpi = _a === void 0 ? 96 : _a, _b = props.roundDecimals, roundDecimals = _b === void 0 ? 3 : _b, isHeight = props.isHeight, elComputedStyle = props.elComputedStyle;
+        var win = el.ownerDocument.defaultView;
+        var winWidth = (win === null || win === void 0 ? void 0 : win.innerWidth) || 1;
+        var winHeight = window.innerHeight || 1;
+        var valueResult = valuePx;
+        var untiResult = unit;
+        switch (unit) {
+            case ConvertUnitsToPx.pt:
+                valueResult = valuePx * (72 / dpi);
+                break;
+            case ConvertUnitsToPx.pc:
+                valueResult = valuePx * (6 / dpi);
+                break;
+            case ConvertUnitsToPx.in:
+                valueResult = valuePx / dpi;
+                break;
+            case ConvertUnitsToPx.cm:
+                valueResult = valuePx / (dpi / 2.54);
+                break;
+            case ConvertUnitsToPx.mm:
+                valueResult = valuePx / (dpi / 25.4);
+                break;
+            case ConvertUnitsToPx.vw:
+                valueResult = (valuePx / winWidth) * 100;
+                break;
+            case ConvertUnitsToPx.vh:
+                valueResult = (valuePx / winHeight) * 100;
+                break;
+            case ConvertUnitsToPx.vmin: {
+                var vmin = Math.min(winWidth, winHeight);
+                valueResult = (valuePx / vmin) * 100;
+                break;
+            }
+            case ConvertUnitsToPx.vmax: {
+                var vmax = Math.max(winWidth, winHeight);
+                valueResult = (valuePx / vmax) * 100;
+                break;
+            }
+            case ConvertUnitsToPx.perc: {
+                var parentElement = el.parentElement, offsetParent = el.offsetParent;
+                var parentEl = (elComputedStyle === null || elComputedStyle === void 0 ? void 0 : elComputedStyle.position) === 'absolute' ? offsetParent : parentElement;
+                var parentWidth = (parentEl === null || parentEl === void 0 ? void 0 : parentEl.offsetWidth) || 1;
+                var parentHeight = (parentEl === null || parentEl === void 0 ? void 0 : parentEl.offsetHeight) || 1;
+                var parentSize = isHeight ? parentHeight : parentWidth;
+                valueResult = (valuePx / parentSize) * 100;
+                break;
+            }
+            case ConvertUnitsToPx.svw:
+            case ConvertUnitsToPx.lvw:
+            case ConvertUnitsToPx.dvw:
+                valueResult = (valuePx / winWidth) * 100;
+                break;
+            case ConvertUnitsToPx.svh:
+            case ConvertUnitsToPx.lvh:
+            case ConvertUnitsToPx.dvh:
+                valueResult = (valuePx / winHeight) * 100;
+                break;
+            default:
+                untiResult = 'px';
+        }
+        return "".concat(+valueResult.toFixed(roundDecimals)).concat(untiResult);
+    },
 });
 
 
 /***/ }),
 
-/***/ 4596:
+/***/ 9317:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 // ESM COMPAT FLAG
@@ -17389,8 +17895,12 @@ __webpack_require__.d(__webpack_exports__, {
 
 // EXTERNAL MODULE: ../../node_modules/.pnpm/underscore@1.13.1/node_modules/underscore/modules/index-all.js + 160 modules
 var index_all = __webpack_require__(5706);
+// EXTERNAL MODULE: ./src/canvas/model/CanvasSpot.ts
+var CanvasSpot = __webpack_require__(179);
+// EXTERNAL MODULE: ./src/canvas/types.ts
+var types = __webpack_require__(9064);
 // EXTERNAL MODULE: ./src/common/index.ts
-var common = __webpack_require__(1749);
+var common = __webpack_require__(9156);
 ;// CONCATENATED MODULE: ./src/dom_components/model/ToolbarButton.ts
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17451,8 +17961,10 @@ var Toolbar = /** @class */ (function (_super) {
 /* harmony default export */ const model_Toolbar = (Toolbar);
 Toolbar.prototype.model = model_ToolbarButton;
 
+// EXTERNAL MODULE: ./src/dom_components/types.ts
+var dom_components_types = __webpack_require__(2225);
 // EXTERNAL MODULE: ./src/domain_abstract/view/DomainViews.ts
-var DomainViews = __webpack_require__(91);
+var DomainViews = __webpack_require__(8242);
 ;// CONCATENATED MODULE: ./src/dom_components/view/ToolbarButtonView.ts
 var ToolbarButtonView_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -17585,13 +18097,9 @@ var ToolbarView = /** @class */ (function (_super) {
 ToolbarView.prototype.itemView = view_ToolbarButtonView;
 
 // EXTERNAL MODULE: ./src/utils/dom.ts
-var dom = __webpack_require__(2097);
+var dom = __webpack_require__(6294);
 // EXTERNAL MODULE: ./src/utils/mixins.ts
-var mixins = __webpack_require__(9195);
-// EXTERNAL MODULE: ./src/canvas/model/CanvasSpot.ts
-var CanvasSpot = __webpack_require__(2820);
-// EXTERNAL MODULE: ./src/dom_components/types.ts
-var types = __webpack_require__(3172);
+var mixins = __webpack_require__(1166);
 ;// CONCATENATED MODULE: ./src/commands/view/SelectComponent.ts
 var SelectComponent_assign = (undefined && undefined.__assign) || function () {
     SelectComponent_assign = Object.assign || function(t) {
@@ -17604,17 +18112,7 @@ var SelectComponent_assign = (undefined && undefined.__assign) || function () {
     };
     return SelectComponent_assign.apply(this, arguments);
 };
-var __rest = (undefined && undefined.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
+
 
 
 
@@ -17647,7 +18145,7 @@ var showOffsets;
     activeResizer: false,
     init: function () {
         this.onSelect = (0,index_all.debounce)(this.onSelect, 0);
-        (0,index_all.bindAll)(this, 'onHover', 'onOut', 'onClick', 'onFrameScroll', 'onFrameResize', 'onFrameUpdated', 'onContainerChange');
+        (0,index_all.bindAll)(this, 'onHover', 'onOut', 'onClick', 'onCanvasScroll', 'onFrameScroll', 'onFrameResize', 'onFrameUpdated', 'onContainerChange');
     },
     enable: function () {
         this.frameOff = this.canvasOff = this.adjScroll = null;
@@ -17675,14 +18173,16 @@ var showOffsets;
      * */
     toggleSelectComponent: function (enable) {
         var _this = this;
-        var em = this.em;
+        var _a = this, em = _a.em, canvas = _a.canvas;
+        var canvasEl = canvas.getCanvasView().el;
         var listenToEl = em.getConfig().listenToEl;
         var parentNode = em.getContainer().parentNode;
         var method = enable ? 'on' : 'off';
         var methods = { on: dom.on, off: dom/* off */.AU };
-        var eventCmpUpdate = types/* ComponentsEvents */.I.update;
+        var eventCmpUpdate = dom_components_types/* ComponentsEvents */.IT.update;
         !listenToEl.length && parentNode && listenToEl.push(parentNode);
-        var trigger = function (win, body) {
+        var trigger = function (win, body, canvasEl) {
+            methods[method](canvasEl, 'scroll', _this.onCanvasScroll, true);
             methods[method](body, 'mouseover', _this.onHover);
             methods[method](body, 'mouseleave', _this.onOut);
             methods[method](body, 'click', _this.onClick);
@@ -17691,17 +18191,17 @@ var showOffsets;
         };
         methods[method](window, 'resize', this.onFrameUpdated);
         methods[method](listenToEl, 'scroll', this.onContainerChange);
-        em[method]("component:toggled ".concat(eventCmpUpdate, " undo redo"), this.onSelect, this);
+        em[method]("".concat(dom_components_types/* ComponentsEvents */.IT.toggled, " ").concat(eventCmpUpdate, " undo redo"), this.onSelect, this);
         em[method]('change:componentHovered', this.onHovered, this);
-        em[method]('component:resize styleable:change component:input', this.updateGlobalPos, this);
+        em[method]("".concat(dom_components_types/* ComponentsEvents */.IT.resize, " styleable:change ").concat(dom_components_types/* ComponentsEvents */.IT.input), this.updateGlobalPos, this);
         em[method]("".concat(eventCmpUpdate, ":toolbar"), this._upToolbar, this);
         em[method]('frame:updated', this.onFrameUpdated, this);
-        em[method]('canvas:updateTools', this.onFrameUpdated, this);
+        em[method](types/* CanvasEvents */.M.updateTools, this.onFrameUpdated, this);
         em[method](em.Canvas.events.refresh, this.updateAttached, this);
         em.Canvas.getFrames().forEach(function (frame) {
             var view = frame.view;
             var win = view === null || view === void 0 ? void 0 : view.getWindow();
-            win && trigger(win, view === null || view === void 0 ? void 0 : view.getBody());
+            win && trigger(win, view === null || view === void 0 ? void 0 : view.getBody(), canvasEl);
         });
     },
     /**
@@ -17740,7 +18240,7 @@ var showOffsets;
             (_a = component.views) === null || _a === void 0 ? void 0 : _a.forEach(function (view) {
                 var el = view.el;
                 var pos = _this.getElementPos(el);
-                result = { el: el, pos: pos, component: component, view: (0,mixins.getViewEl)(el) };
+                result = { el: el, pos: pos, component: component, view: view };
                 if (el.ownerDocument === _this.currentDoc) {
                     _this.elHovered = result;
                 }
@@ -17769,11 +18269,11 @@ var showOffsets;
         var component = em.getSelected();
         var currentFrame = em.getCurrentFrame();
         var view = component && component.getView(currentFrame === null || currentFrame === void 0 ? void 0 : currentFrame.model);
-        var el = view && view.el;
+        var el = view === null || view === void 0 ? void 0 : view.el;
         var result = {};
         if (el && (0,dom/* isVisible */.zN)(el)) {
             var pos = this.getElementPos(el);
-            result = { el: el, pos: pos, component: component, view: (0,mixins.getViewEl)(el) };
+            result = { el: el, pos: pos, component: component, view: view };
         }
         this.elSelected = result;
         this.updateToolsGlobal();
@@ -17903,7 +18403,6 @@ var showOffsets;
      * @param  {Event} event
      */
     select: function (model, event) {
-        if (event === void 0) { event = {}; }
         if (!model)
             return;
         var em = this.em;
@@ -17961,108 +18460,35 @@ var showOffsets;
      * @private
      */
     initResize: function (elem) {
-        var _a = this, em = _a.em, canvas = _a.canvas;
+        var _this = this;
+        var _a;
+        var _b = this, em = _b.em, canvas = _b.canvas;
         var editor = em.Editor;
-        var model = !(0,index_all.isElement)(elem) && (0,dom/* isTaggableNode */.GW)(elem) ? elem : em.getSelected();
-        var resizable = model === null || model === void 0 ? void 0 : model.get('resizable');
+        var component = !(0,index_all.isElement)(elem) && (0,dom/* isTaggableNode */.GW)(elem) ? elem : em.getSelected();
+        var resizable = (_a = component === null || component === void 0 ? void 0 : component.get) === null || _a === void 0 ? void 0 : _a.call(component, 'resizable');
         var spotTypeResize = CanvasSpot/* CanvasSpotBuiltInTypes */.F.Resize;
         var hasCustomResize = canvas.hasCustomSpot(spotTypeResize);
         canvas.removeSpots({ type: spotTypeResize });
-        if (model && resizable) {
-            canvas.addSpot({ type: spotTypeResize, component: model });
-            var el = (0,index_all.isElement)(elem) ? elem : model.getEl();
-            var _b = (0,mixins.isObject)(resizable) ? resizable : {}, _c = _b.onStart, onStart_1 = _c === void 0 ? function () { } : _c, _d = _b.onMove, onMove_1 = _d === void 0 ? function () { } : _d, _e = _b.onEnd, onEnd_1 = _e === void 0 ? function () { } : _e, _f = _b.updateTarget, updateTarget_1 = _f === void 0 ? function () { } : _f, resizableOpts = __rest(_b, ["onStart", "onMove", "onEnd", "updateTarget"]);
+        var initEventOpts = {
+            component: component,
+            hasCustomResize: hasCustomResize,
+            resizable: resizable,
+        };
+        component && em.trigger(dom_components_types/* ComponentsEvents */.IT.resizeInit, initEventOpts);
+        var resizableResult = initEventOpts.resizable;
+        if (component && resizableResult) {
+            canvas.addSpot({ type: spotTypeResize, component: component });
+            var el = (0,index_all.isElement)(elem) ? elem : component.getEl();
+            var resizableOpts = (0,mixins.isObject)(resizableResult) ? resizableResult : {};
             if (hasCustomResize || !el || this.activeResizer)
                 return;
-            var modelToStyle_1;
-            var config = em.config;
-            var pfx = config.stylePrefix || '';
-            var resizeClass_1 = "".concat(pfx, "resizing");
-            var self_1 = this;
-            var resizeEventOpts_1 = {
-                component: model,
-                el: el,
-            };
-            var toggleBodyClass_1 = function (method, e, opts) {
-                var docs = opts.docs;
-                docs &&
-                    docs.forEach(function (doc) {
-                        var body = doc.body;
-                        var cls = body.className || '';
-                        body.className = (method == 'add' ? "".concat(cls, " ").concat(resizeClass_1) : cls.replace(resizeClass_1, '')).trim();
-                    });
-            };
-            var options = SelectComponent_assign({ 
-                // Here the resizer is updated with the current element height and width
-                onStart: function (ev, opts) {
-                    onStart_1(ev, opts);
-                    var el = opts.el, config = opts.config, resizer = opts.resizer;
-                    var keyHeight = config.keyHeight, keyWidth = config.keyWidth, currentUnit = config.currentUnit, keepAutoHeight = config.keepAutoHeight, keepAutoWidth = config.keepAutoWidth;
-                    toggleBodyClass_1('add', ev, opts);
-                    modelToStyle_1 = em.Styles.getModelToStyle(model);
-                    canvas.toggleFramesEvents(false);
-                    var computedStyle = getComputedStyle(el);
-                    var modelStyle = modelToStyle_1.getStyle();
-                    var currentWidth = modelStyle[keyWidth];
-                    config.autoWidth = keepAutoWidth && currentWidth === 'auto';
-                    if (isNaN(parseFloat(currentWidth))) {
-                        currentWidth = computedStyle[keyWidth];
-                    }
-                    var currentHeight = modelStyle[keyHeight];
-                    config.autoHeight = keepAutoHeight && currentHeight === 'auto';
-                    if (isNaN(parseFloat(currentHeight))) {
-                        currentHeight = computedStyle[keyHeight];
-                    }
-                    resizer.startDim.w = parseFloat(currentWidth);
-                    resizer.startDim.h = parseFloat(currentHeight);
+            this.resizer = editor.runCommand('resize', SelectComponent_assign(SelectComponent_assign({}, resizableOpts), { el: el, component: component, force: true, afterStart: function () {
                     showOffsets = false;
-                    if (currentUnit) {
-                        config.unitHeight = (0,mixins.getUnitFromValue)(currentHeight);
-                        config.unitWidth = (0,mixins.getUnitFromValue)(currentWidth);
-                    }
-                    self_1.activeResizer = true;
-                    editor.trigger('component:resize', SelectComponent_assign(SelectComponent_assign({}, resizeEventOpts_1), { type: 'start' }));
-                }, 
-                // Update all positioned elements (eg. component toolbar)
-                onMove: function (ev) {
-                    onMove_1(ev);
-                    editor.trigger('component:resize', SelectComponent_assign(SelectComponent_assign({}, resizeEventOpts_1), { type: 'move' }));
-                }, onEnd: function (ev, opts) {
-                    onEnd_1(ev, opts);
-                    toggleBodyClass_1('remove', ev, opts);
-                    editor.trigger('component:resize', SelectComponent_assign(SelectComponent_assign({}, resizeEventOpts_1), { type: 'end' }));
-                    canvas.toggleFramesEvents(true);
+                    _this.activeResizer = true;
+                }, afterEnd: function () {
                     showOffsets = true;
-                    self_1.activeResizer = false;
-                }, updateTarget: function (el, rect, options) {
-                    updateTarget_1(el, rect, options);
-                    if (!modelToStyle_1) {
-                        return;
-                    }
-                    var store = options.store, selectedHandler = options.selectedHandler, config = options.config;
-                    var keyHeight = config.keyHeight, keyWidth = config.keyWidth, autoHeight = config.autoHeight, autoWidth = config.autoWidth, unitWidth = config.unitWidth, unitHeight = config.unitHeight;
-                    var onlyHeight = ['tc', 'bc'].indexOf(selectedHandler) >= 0;
-                    var onlyWidth = ['cl', 'cr'].indexOf(selectedHandler) >= 0;
-                    var style = {};
-                    if (!onlyHeight) {
-                        var bodyw = canvas.getBody().offsetWidth;
-                        var width = rect.w < bodyw ? rect.w : bodyw;
-                        style[keyWidth] = autoWidth ? 'auto' : "".concat(width).concat(unitWidth);
-                    }
-                    if (!onlyWidth) {
-                        style[keyHeight] = autoHeight ? 'auto' : "".concat(rect.h).concat(unitHeight);
-                    }
-                    if (em.getDragMode(model)) {
-                        style.top = "".concat(rect.t).concat(unitHeight);
-                        style.left = "".concat(rect.l).concat(unitWidth);
-                    }
-                    var finalStyle = SelectComponent_assign(SelectComponent_assign({}, style), { 
-                        // value for the partial update
-                        __p: !store });
-                    modelToStyle_1.addStyle(finalStyle, { avoidStore: !store });
-                    em.Styles.__emitCmpStyleUpdate(finalStyle, { components: em.getSelected() });
-                } }, resizableOpts);
-            this.resizer = editor.runCommand('resize', { el: el, options: options, force: 1 });
+                    _this.activeResizer = false;
+                } }));
         }
         else {
             if (hasCustomResize)
@@ -18128,6 +18554,14 @@ var showOffsets;
     getBadge: function (opts) {
         if (opts === void 0) { opts = {}; }
         return this.canvas.getBadgeEl(opts.view);
+    },
+    /**
+     * On canvas scroll callback
+     * @private
+     */
+    onCanvasScroll: function (e) {
+        this.onFrameScroll(e);
+        this.onContainerChange();
     },
     /**
      * On frame scroll callback
@@ -18199,7 +18633,7 @@ var showOffsets;
     }, 0),
     _trgToolUp: function (type, opts) {
         if (opts === void 0) { opts = {}; }
-        this.em.trigger('canvas:tools:update', SelectComponent_assign({ type: type }, opts));
+        this.em.trigger(types/* CanvasEvents */.M.toolsUpdate, SelectComponent_assign({ type: type }, opts));
     },
     updateToolsGlobal: function (opts) {
         if (opts === void 0) { opts = {}; }
@@ -18297,6 +18731,7 @@ var showOffsets;
         this.stopSelectComponent();
         !opts.preserveSelected && em.setSelected();
         this.toggleToolsEl();
+        this.updateAttached.cancel();
         editor && editor.stopCommand('resize');
     },
 });
@@ -18304,16 +18739,16 @@ var showOffsets;
 
 /***/ }),
 
-/***/ 2983:
+/***/ 1406:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6411);
-/* harmony import */ var _utils_sorter_CanvasComponentNode__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6778);
-/* harmony import */ var _utils_sorter_types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2128);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7774);
+/* harmony import */ var _utils_sorter_CanvasComponentNode__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1447);
+/* harmony import */ var _utils_sorter_types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8433);
 
 
 
@@ -18426,7 +18861,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 9490:
+/***/ 9395:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -18434,8 +18869,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _canvas_model_CanvasSpot__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2820);
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6411);
+/* harmony import */ var _canvas_model_CanvasSpot__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(179);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7774);
 var __assign = (undefined && undefined.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -18615,7 +19050,7 @@ var __assign = (undefined && undefined.__assign) || function () {
 
 /***/ }),
 
-/***/ 1396:
+/***/ 7285:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -18623,7 +19058,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _utils_mixins__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9195);
+/* harmony import */ var _utils_mixins__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1166);
 
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
@@ -18673,7 +19108,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 1749:
+/***/ 9156:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
@@ -18754,12 +19189,12 @@ var DEFAULT_BOXRECT = __assign(__assign({}, DEFAULT_COORDS), { width: 0, height:
 
 /***/ }),
 
-/***/ 3172:
+/***/ 2225:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   I: () => (/* binding */ ComponentsEvents),
-/* harmony export */   t: () => (/* binding */ ActionLabelComponents)
+/* harmony export */   IT: () => (/* binding */ ComponentsEvents),
+/* harmony export */   tX: () => (/* binding */ ActionLabelComponents)
 /* harmony export */ });
 var ActionLabelComponents;
 (function (ActionLabelComponents) {
@@ -18782,6 +19217,8 @@ var ComponentsEvents;
      */
     ComponentsEvents["remove"] = "component:remove";
     ComponentsEvents["removeBefore"] = "component:remove:before";
+    ComponentsEvents["removed"] = "component:removed";
+    ComponentsEvents["clone"] = "component:clone";
     /**
      * @event `component:create` Component created.
      * @example
@@ -18794,7 +19231,15 @@ var ComponentsEvents;
      * editor.on('component:update', (component) => { ... });
      */
     ComponentsEvents["update"] = "component:update";
+    ComponentsEvents["updateProperty"] = "component:update:";
     ComponentsEvents["updateInside"] = "component:update-inside";
+    /**
+     * @event `component:styleUpdate` Component related styles are updated, the component is passed as an argument to the callback.
+     * @example
+     * editor.on('component:styleUpdate', (component) => { ... });
+     */
+    ComponentsEvents["styleUpdate"] = "component:styleUpdate";
+    ComponentsEvents["styleUpdateProperty"] = "component:styleUpdate:";
     /**
      * @event `component:select` Component selected.
      * @example
@@ -18802,6 +19247,26 @@ var ComponentsEvents;
      */
     ComponentsEvents["select"] = "component:select";
     ComponentsEvents["selectBefore"] = "component:select:before";
+    ComponentsEvents["selected"] = "component:selected";
+    ComponentsEvents["deselected"] = "component:deselected";
+    ComponentsEvents["toggled"] = "component:toggled";
+    ComponentsEvents["hover"] = "component:hover";
+    ComponentsEvents["hoverBefore"] = "component:hover:before";
+    ComponentsEvents["hovered"] = "component:hovered";
+    ComponentsEvents["unhovered"] = "component:unhovered";
+    ComponentsEvents["paste"] = "component:paste";
+    ComponentsEvents["syncStyle"] = "component:sync-style";
+    ComponentsEvents["typeAdd"] = "component:type:add";
+    ComponentsEvents["typeUpdate"] = "component:type:update";
+    ComponentsEvents["dragStart"] = "component:drag:start";
+    ComponentsEvents["drag"] = "component:drag";
+    ComponentsEvents["dragEnd"] = "component:drag:end";
+    /**
+     * @event `component:mount` Component is mounted in the canvas.
+     * @example
+     * editor.on('component:mount', (component) => { ... });
+     */
+    ComponentsEvents["mount"] = "component:mount";
     /**
      * @event `component:script:mount` Component with script is mounted.
      * @example
@@ -18815,6 +19280,64 @@ var ComponentsEvents;
      * editor.on('component:script:unmount', ({ component, view, el }) => { ... });
      */
     ComponentsEvents["scriptUnmount"] = "component:script:unmount";
+    /**
+     * @event `component:render` Component rendered in the canvas. This event could be triggered multiple times for the same component (eg. undo/redo, explicit rerender).
+     * @example
+     * editor.on('component:render', ({ component, view, el }) => { ... });
+     */
+    ComponentsEvents["render"] = "component:render";
+    /**
+     * @event `component:input` Event triggered on `input` DOM event. This is useful to catch direct input changes in the component (eg. Text component).
+     * @example
+     * editor.on('component:input', (component) => { ... });
+     */
+    ComponentsEvents["input"] = "component:input";
+    ComponentsEvents["content"] = "component:content";
+    /**
+     * @event `component:resize` Component resized. This event is triggered when the component is resized in the canvas.
+     * @example
+     * editor.on('component:resize', ({ component, type }) => {
+     *  // type can be 'start', 'move', or 'end'
+     * });
+     */
+    ComponentsEvents["resize"] = "component:resize";
+    /**
+     * @event `component:resize:start` Component resize started. This event is triggered when the component starts being resized in the canvas.
+     * @example
+     * editor.on('component:resize:start', ({ component, event, ... }) => {})
+     */
+    ComponentsEvents["resizeStart"] = "component:resize:start";
+    /**
+     * @event `component:resize:move` Component resize in progress. This event is triggered while the component is being resized in the canvas.
+     * @example
+     * editor.on('component:resize:move', ({ component, event, ... }) => {})
+     */
+    ComponentsEvents["resizeMove"] = "component:resize:move";
+    /**
+     * @event `component:resize:end` Component resize ended. This event is triggered when the component stops being resized in the canvas.
+     * @example
+     * editor.on('component:resize:end', ({ component, event, ... }) => {})
+     */
+    ComponentsEvents["resizeEnd"] = "component:resize:end";
+    /**
+     * @event `component:resize:update` Component resize style update. This event is triggered when the component is resized in the canvas and the size is updated.
+     * @example
+     * editor.on('component:resize:update', ({ component, style, updateStyle, ... }) => {
+     *  // If updateStyle is triggered during the event, the default style update will be skipped.
+     *  updateStyle({ ...style, width: '...' })
+     * })
+     */
+    ComponentsEvents["resizeUpdate"] = "component:resize:update";
+    /**
+     * @event `component:resize:init` Component resize init. This event allows you to control the resizer options dinamically.
+     * @example
+     * editor.on('component:resize:init', (opts) => {
+     *  if (opts.component.is('someType')) {
+     *   opts.resizable = true; // Update resizable options
+     *  }
+     * });
+     */
+    ComponentsEvents["resizeInit"] = "component:resize:init";
     /**
      * @event `symbol:main:add` Added new main symbol.
      * @example
@@ -18865,18 +19388,20 @@ var ComponentsEvents;
      */
     ComponentsEvents["symbol"] = "symbol";
 })(ComponentsEvents || (ComponentsEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* unused harmony default export */ var __WEBPACK_DEFAULT_EXPORT__ = ((/* unused pure expression or super */ null && (ComponentsEvents)));
 
 
 /***/ }),
 
-/***/ 91:
+/***/ 8242:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1749);
+/* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9156);
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -19019,14 +19544,14 @@ DomainViews.prototype.itemView = '';
 
 /***/ }),
 
-/***/ 5633:
+/***/ 9966:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2097);
+/* harmony import */ var _dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6294);
 var __assign = (undefined && undefined.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -19050,6 +19575,7 @@ var Dragger = /** @class */ (function () {
     function Dragger(opts) {
         if (opts === void 0) { opts = {}; }
         this.opts = {
+            snapGuides: { x: 5, y: 5 },
             snapOffset: 5,
             scale: 1,
         };
@@ -19134,20 +19660,6 @@ var Dragger = /** @class */ (function () {
             y: currentPos.y - startPointer.y + glDiff.y,
         };
         this.lastScrollDiff = resetPos();
-        var lockedAxis = this.lockedAxis;
-        // @ts-ignore Lock one axis
-        if (ev.shiftKey) {
-            lockedAxis = !lockedAxis && this.detectAxisLock(delta.x, delta.y);
-        }
-        else {
-            lockedAxis = null;
-        }
-        if (lockedAxis === 'x') {
-            delta.x = startPointer.x;
-        }
-        else if (lockedAxis === 'y') {
-            delta.y = startPointer.y;
-        }
         var moveDelta = function (delta) {
             xyArr.forEach(function (co) { return (delta[co] = delta[co] * (0,underscore__WEBPACK_IMPORTED_MODULE_0__.result)(opts, 'scale')); });
             _this.delta = delta;
@@ -19156,7 +19668,6 @@ var Dragger = /** @class */ (function () {
         };
         var deltaPre = __assign({}, delta);
         this.currentPointer = currentPos;
-        this.lockedAxis = lockedAxis;
         this.lastScroll = this.getScrollInfo();
         moveDelta(delta);
         if (this.guidesTarget.length) {
@@ -19171,7 +19682,7 @@ var Dragger = /** @class */ (function () {
      */
     Dragger.prototype.snapGuides = function (delta) {
         var _this = this;
-        var newDelta = delta;
+        var newDelta = __assign({}, delta);
         var _a = this, trgX = _a.trgX, trgY = _a.trgY;
         this.guidesTarget.forEach(function (trg) {
             // Skip the guide if its locked axis already exists
@@ -19182,12 +19693,12 @@ var Dragger = /** @class */ (function () {
                 if ((trg.y && stat.x) || (trg.x && stat.y))
                     return;
                 var isY = trg.y && stat.y;
-                var axs = isY ? 'y' : 'x';
-                var trgPoint = trg[axs];
-                var statPoint = stat[axs];
-                var deltaPoint = delta[axs];
+                var axis = isY ? 'y' : 'x';
+                var trgPoint = trg[axis];
+                var statPoint = stat[axis];
+                var deltaPoint = delta[axis];
                 var trgGuide = isY ? trgY : trgX;
-                if (_this.isPointIn(trgPoint, statPoint)) {
+                if (_this.isPointIn(trgPoint, statPoint, { axis: axis })) {
                     if ((0,underscore__WEBPACK_IMPORTED_MODULE_0__.isUndefined)(trgGuide)) {
                         var trgValue = deltaPoint - (trgPoint - statPoint);
                         _this.setGuideLock(trg, trgValue);
@@ -19197,16 +19708,16 @@ var Dragger = /** @class */ (function () {
         });
         trgX = this.trgX;
         trgY = this.trgY;
-        xyArr.forEach(function (co) {
-            var axis = co.toUpperCase();
+        xyArr.forEach(function (axis) {
+            var axisName = axis.toUpperCase();
             // @ts-ignore
-            var trg = _this["trg".concat(axis)];
-            if (trg && !_this.isPointIn(delta[co], trg.lock)) {
+            var trg = _this["trg".concat(axisName)];
+            if (trg && !_this.isPointIn(delta[axis], trg.lock, { axis: axis })) {
                 _this.setGuideLock(trg, null);
                 trg = null;
             }
             if (trg && !(0,underscore__WEBPACK_IMPORTED_MODULE_0__.isUndefined)(trg.lock)) {
-                newDelta[co] = trg.lock;
+                newDelta[axis] = trg.lock;
             }
         });
         return {
@@ -19216,9 +19727,16 @@ var Dragger = /** @class */ (function () {
         };
     };
     Dragger.prototype.isPointIn = function (src, trg, _a) {
-        var _b = _a === void 0 ? {} : _a, offset = _b.offset;
-        var ofst = offset || this.opts.snapOffset || 0;
-        return (src >= trg && src <= trg + ofst) || (src <= trg && src >= trg - ofst);
+        var _b;
+        var _c = _a === void 0 ? {} : _a, offset = _c.offset, axis = _c.axis;
+        var _d = this.opts, _e = _d.snapGuides, snapGuides = _e === void 0 ? {} : _e, _f = _d.snapOffset, snapOffset = _f === void 0 ? 0 : _f;
+        var axisOffset = axis === 'x' ? snapGuides.x : axis === 'y' ? snapGuides.y : undefined;
+        // If snapGuides.x or snapGuides.y is explicitly 0, disable snapping for that axis
+        var effectiveOffset = axisOffset === 0 ? 0 : ((_b = offset !== null && offset !== void 0 ? offset : axisOffset) !== null && _b !== void 0 ? _b : snapOffset);
+        // If effectiveOffset is 0, snapping is disabled for this axis
+        if (effectiveOffset === 0)
+            return false;
+        return (src >= trg && src <= trg + effectiveOffset) || (src <= trg && src >= trg - effectiveOffset);
     };
     Dragger.prototype.setGuideLock = function (guide, value) {
         var axis = !(0,underscore__WEBPACK_IMPORTED_MODULE_0__.isUndefined)(guide.x) ? 'X' : 'Y';
@@ -19247,7 +19765,6 @@ var Dragger = /** @class */ (function () {
         var x = cancelled ? 0 : delta.x;
         var y = cancelled ? 0 : delta.y;
         this.toggleDrag();
-        this.lockedAxis = null;
         this.move(x, y, true);
         var onEnd = this.opts.onEnd;
         (0,underscore__WEBPACK_IMPORTED_MODULE_0__.isFunction)(onEnd) && onEnd(ev, this, { cancelled: cancelled });
@@ -19365,7 +19882,7 @@ var Dragger = /** @class */ (function () {
 
 /***/ }),
 
-/***/ 6411:
+/***/ 7774:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -20579,7 +21096,7 @@ fn.siblings = function () {
 
 /***/ }),
 
-/***/ 2097:
+/***/ 6294:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
@@ -20599,6 +21116,7 @@ fn.siblings = function () {
 /* harmony export */   Xy: () => (/* binding */ getDocumentScroll),
 /* harmony export */   YZ: () => (/* binding */ removeEl),
 /* harmony export */   ZQ: () => (/* binding */ isDoc),
+/* harmony export */   _I: () => (/* binding */ processDataGjsAttributeHyphen),
 /* harmony export */   a_: () => (/* binding */ createEl),
 /* harmony export */   af: () => (/* binding */ appendVNodes),
 /* harmony export */   bG: () => (/* binding */ replaceWith),
@@ -20823,11 +21341,15 @@ var off = function (el, ev, fn, opts) {
         els.forEach(function (el) { return el === null || el === void 0 ? void 0 : el.removeEventListener(ev, fn, opts); });
     });
 };
+var processDataGjsAttributeHyphen = function (str) {
+    var camelCased = str.replace(/-([a-zA-Z0-9])/g, function (_, char) { return char.toUpperCase(); });
+    return camelCased;
+};
 
 
 /***/ }),
 
-/***/ 9195:
+/***/ 1166:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -20839,6 +21361,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   createId: () => (/* binding */ createId),
 /* harmony export */   deepMerge: () => (/* binding */ deepMerge),
 /* harmony export */   escape: () => (/* binding */ escape),
+/* harmony export */   escapeAltQuoteAttrValue: () => (/* binding */ escapeAltQuoteAttrValue),
+/* harmony export */   escapeAttrValue: () => (/* binding */ escapeAttrValue),
 /* harmony export */   escapeNodeContent: () => (/* binding */ escapeNodeContent),
 /* harmony export */   find: () => (/* binding */ find),
 /* harmony export */   get: () => (/* binding */ get),
@@ -20861,6 +21385,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   matches: () => (/* binding */ matches),
 /* harmony export */   normalizeFloat: () => (/* binding */ normalizeFloat),
 /* harmony export */   normalizeKey: () => (/* binding */ normalizeKey),
+/* harmony export */   serialize: () => (/* binding */ serialize),
+/* harmony export */   set: () => (/* binding */ set),
 /* harmony export */   setViewEl: () => (/* binding */ setViewEl),
 /* harmony export */   shallowDiff: () => (/* binding */ shallowDiff),
 /* harmony export */   stringToPath: () => (/* binding */ stringToPath),
@@ -20869,7 +21395,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   wait: () => (/* binding */ wait)
 /* harmony export */ });
 /* harmony import */ var underscore__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5706);
-/* harmony import */ var _dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2097);
+/* harmony import */ var _dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6294);
 var __assign = (undefined && undefined.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -20920,6 +21446,36 @@ var get = function (object, path, def) {
     }
     return (_a = (index && index == length ? object : undefined)) !== null && _a !== void 0 ? _a : def;
 };
+var set = function (object, path, value) {
+    if (!isObject(object))
+        return false;
+    var paths = castPath(path, object);
+    var length = paths.length;
+    if (length === 0)
+        return false;
+    if (length === 1) {
+        object[paths[0]] = value;
+        return true;
+    }
+    var parentPath = paths.slice(0, -1);
+    var lastKey = paths[length - 1];
+    var parent = get(object, parentPath);
+    if (parent) {
+        if (Array.isArray(parent)) {
+            var index = +lastKey;
+            if (!isNaN(index)) {
+                parent[index] = value;
+                return true;
+            }
+        }
+        else if (isObject(parent)) {
+            parent[lastKey] = value;
+            return true;
+        }
+    }
+    return false;
+};
+var serialize = function (obj) { return JSON.parse(JSON.stringify(obj)); };
 var isBultInMethod = function (key) { return (0,underscore__WEBPACK_IMPORTED_MODULE_0__.isFunction)(obj[key]); };
 var normalizeKey = function (key) { return (isBultInMethod(key) ? "_".concat(key) : key); };
 var wait = function (mls) {
@@ -21057,6 +21613,14 @@ var escapeNodeContent = function (str) {
     if (str === void 0) { str = ''; }
     return "".concat(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 };
+var escapeAttrValue = function (str) {
+    if (str === void 0) { str = ''; }
+    return "".concat(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+};
+var escapeAltQuoteAttrValue = function (str) {
+    if (str === void 0) { str = ''; }
+    return "".concat(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;');
+};
 var deepMerge = function () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
@@ -21135,13 +21699,13 @@ var buildBase64UrlFromSvg = function (svg) {
 
 /***/ }),
 
-/***/ 3253:
+/***/ 6756:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   h: () => (/* binding */ BaseComponentNode)
 /* harmony export */ });
-/* harmony import */ var _SortableTreeNode__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3161);
+/* harmony import */ var _SortableTreeNode__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3178);
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -21295,6 +21859,9 @@ var BaseComponentNode = /** @class */ (function (_super) {
     BaseComponentNode.prototype.canMove = function (source, index) {
         return this.model.em.Components.canMove(this.model, source.model, this.getRealIndex(index)).result;
     };
+    BaseComponentNode.prototype.equals = function (node) {
+        return !!(node === null || node === void 0 ? void 0 : node._model) && this._model.getId() === node._model.getId();
+    };
     /**
      * Reset the state of the node by clearing its status and disabling editing.
      */
@@ -21373,13 +21940,13 @@ function isDisplayed(element) {
 
 /***/ }),
 
-/***/ 6778:
+/***/ 1447:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   A: () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _BaseComponentNode__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3253);
+/* harmony import */ var _BaseComponentNode__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6756);
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -21438,7 +22005,7 @@ var CanvasComponentNode = /** @class */ (function (_super) {
 
 /***/ }),
 
-/***/ 3161:
+/***/ 3178:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
@@ -21517,7 +22084,7 @@ var SortableTreeNode = /** @class */ (function () {
 
 /***/ }),
 
-/***/ 2128:
+/***/ 8433:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
@@ -21537,58 +22104,58 @@ var DragDirection;
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 var map = {
-	"./CanvasClear": 371,
-	"./CanvasClear.ts": 371,
-	"./CanvasMove": 6301,
-	"./CanvasMove.ts": 6301,
-	"./CommandAbstract": 5301,
-	"./CommandAbstract.ts": 5301,
-	"./ComponentDelete": 8542,
-	"./ComponentDelete.ts": 8542,
-	"./ComponentDrag": 1319,
-	"./ComponentDrag.ts": 1319,
-	"./ComponentEnter": 1859,
-	"./ComponentEnter.ts": 1859,
-	"./ComponentExit": 3709,
-	"./ComponentExit.ts": 3709,
-	"./ComponentNext": 2860,
-	"./ComponentNext.ts": 2860,
-	"./ComponentPrev": 4944,
-	"./ComponentPrev.ts": 4944,
-	"./ComponentStyleClear": 767,
-	"./ComponentStyleClear.ts": 767,
-	"./CopyComponent": 2126,
-	"./CopyComponent.ts": 2126,
-	"./ExportTemplate": 4860,
-	"./ExportTemplate.ts": 4860,
-	"./Fullscreen": 1085,
-	"./Fullscreen.ts": 1085,
-	"./MoveComponent": 9622,
-	"./MoveComponent.ts": 9622,
-	"./OpenAssets": 8481,
-	"./OpenAssets.ts": 8481,
-	"./OpenBlocks": 3666,
-	"./OpenBlocks.ts": 3666,
-	"./OpenLayers": 5838,
-	"./OpenLayers.ts": 5838,
-	"./OpenStyleManager": 8692,
-	"./OpenStyleManager.ts": 8692,
-	"./OpenTraitManager": 9163,
-	"./OpenTraitManager.ts": 9163,
-	"./PasteComponent": 9298,
-	"./PasteComponent.ts": 9298,
-	"./Preview": 8594,
-	"./Preview.ts": 8594,
-	"./Resize": 7604,
-	"./Resize.ts": 7604,
-	"./SelectComponent": 4596,
-	"./SelectComponent.ts": 4596,
-	"./SelectPosition": 2983,
-	"./SelectPosition.ts": 2983,
-	"./ShowOffset": 9490,
-	"./ShowOffset.ts": 9490,
-	"./SwitchVisibility": 1396,
-	"./SwitchVisibility.ts": 1396
+	"./CanvasClear": 9484,
+	"./CanvasClear.ts": 9484,
+	"./CanvasMove": 9516,
+	"./CanvasMove.ts": 9516,
+	"./CommandAbstract": 9946,
+	"./CommandAbstract.ts": 9946,
+	"./ComponentDelete": 7801,
+	"./ComponentDelete.ts": 7801,
+	"./ComponentDrag": 4864,
+	"./ComponentDrag.ts": 4864,
+	"./ComponentEnter": 6134,
+	"./ComponentEnter.ts": 6134,
+	"./ComponentExit": 914,
+	"./ComponentExit.ts": 914,
+	"./ComponentNext": 5547,
+	"./ComponentNext.ts": 5547,
+	"./ComponentPrev": 8655,
+	"./ComponentPrev.ts": 8655,
+	"./ComponentStyleClear": 7640,
+	"./ComponentStyleClear.ts": 7640,
+	"./CopyComponent": 5837,
+	"./CopyComponent.ts": 5837,
+	"./ExportTemplate": 6477,
+	"./ExportTemplate.ts": 6477,
+	"./Fullscreen": 1772,
+	"./Fullscreen.ts": 1772,
+	"./MoveComponent": 741,
+	"./MoveComponent.ts": 741,
+	"./OpenAssets": 2924,
+	"./OpenAssets.ts": 2924,
+	"./OpenBlocks": 3963,
+	"./OpenBlocks.ts": 3963,
+	"./OpenLayers": 1479,
+	"./OpenLayers.ts": 1479,
+	"./OpenStyleManager": 3473,
+	"./OpenStyleManager.ts": 3473,
+	"./OpenTraitManager": 5054,
+	"./OpenTraitManager.ts": 5054,
+	"./PasteComponent": 6979,
+	"./PasteComponent.ts": 6979,
+	"./Preview": 4457,
+	"./Preview.ts": 4457,
+	"./Resize": 5493,
+	"./Resize.ts": 5493,
+	"./SelectComponent": 9317,
+	"./SelectComponent.ts": 9317,
+	"./SelectPosition": 1406,
+	"./SelectPosition.ts": 1406,
+	"./ShowOffset": 9395,
+	"./ShowOffset.ts": 9395,
+	"./SwitchVisibility": 7285,
+	"./SwitchVisibility.ts": 7285
 };
 
 
@@ -24713,7 +25280,7 @@ __webpack_require__.d(__webpack_exports__, {
 // EXTERNAL MODULE: ../../node_modules/.pnpm/underscore@1.13.1/node_modules/underscore/modules/index-all.js + 160 modules
 var index_all = __webpack_require__(5706);
 // EXTERNAL MODULE: ./src/utils/mixins.ts
-var mixins = __webpack_require__(9195);
+var mixins = __webpack_require__(1166);
 ;// CONCATENATED MODULE: ./src/utils/html.ts
 
 /**
@@ -24772,7 +25339,6 @@ var config = function () { return ({
     mediaCondition: 'max-width',
     tagVarStart: '{[ ',
     tagVarEnd: ' ]}',
-    keepEmptyTextNodes: false,
     jsInHtml: true,
     nativeDnD: true,
     multipleSelection: true,
@@ -24826,7 +25392,7 @@ var config = function () { return ({
 var backbone = __webpack_require__(4193);
 var backbone_default = /*#__PURE__*/__webpack_require__.n(backbone);
 // EXTERNAL MODULE: ./src/utils/cash-dom.ts
-var cash_dom = __webpack_require__(6411);
+var cash_dom = __webpack_require__(7774);
 ;// CONCATENATED MODULE: ./src/utils/extender.ts
 
 /* harmony default export */ const extender = (function (_a) {
@@ -24927,7 +25493,7 @@ var cash_dom = __webpack_require__(6411);
 });
 
 // EXTERNAL MODULE: ./src/common/index.ts
-var common = __webpack_require__(1749);
+var common = __webpack_require__(9156);
 ;// CONCATENATED MODULE: ./src/editor/model/Selected.ts
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -25037,6 +25603,7 @@ var Module = /** @class */ (function () {
         this.debounced = [];
         this.collections = [];
         this.cls = [];
+        this.events = {};
         this._em = em;
         this._name = moduleName;
         var name = (this.name.charAt(0).toLowerCase() + this.name.slice(1));
@@ -25065,6 +25632,7 @@ var Module = /** @class */ (function () {
     });
     Module.prototype.render = function (opts) { };
     Module.prototype.postLoad = function (key) { };
+    Module.prototype.onInit = function () { };
     Object.defineProperty(Module.prototype, "name", {
         get: function () {
             return this._name;
@@ -25116,9 +25684,11 @@ var ItemManagerModule = /** @class */ (function (_super) {
         if (opts === void 0) { opts = {}; }
         var _this = _super.call(this, em, moduleName, defaults) || this;
         _this.cls = [];
+        _this._itemCache = new Map();
         _this.private = false;
         _this.all = all;
-        _this.events = events;
+        if (events)
+            _this.events = events;
         !opts.skipListen && _this.__initListen();
         return _this;
     }
@@ -25172,6 +25742,44 @@ var ItemManagerModule = /** @class */ (function (_super) {
             acc[i.get(i.idAttribute)] = i;
             return acc;
         }, {});
+    };
+    ItemManagerModule.prototype._makeCacheKey = function (m) {
+        return '';
+    };
+    ItemManagerModule.prototype._cacheItem = function (item) {
+        var key = this._makeCacheKey(item);
+        key && this._itemCache.set(key, item);
+    };
+    ItemManagerModule.prototype._uncacheItem = function (item) {
+        var key = this._makeCacheKey(item);
+        key && this._itemCache.delete(key);
+    };
+    ItemManagerModule.prototype._clearItemCache = function () {
+        this._itemCache.clear();
+    };
+    ItemManagerModule.prototype._onItemsResetCache = function (collection) {
+        var _this = this;
+        this._clearItemCache();
+        collection.each(function (item) { return _this._cacheItem(item); });
+    };
+    ItemManagerModule.prototype._onItemKeyChange = function (item) {
+        var oldKey;
+        for (var _i = 0, _a = this._itemCache.entries(); _i < _a.length; _i++) {
+            var _b = _a[_i], key = _b[0], cachedItem = _b[1];
+            if (cachedItem === item) {
+                oldKey = key;
+                break;
+            }
+        }
+        if (oldKey) {
+            this._itemCache.delete(oldKey);
+        }
+        this._cacheItem(item);
+    };
+    ItemManagerModule.prototype._setupCacheListeners = function () {
+        this.em.listenTo(this.all, 'add', this._cacheItem.bind(this));
+        this.em.listenTo(this.all, 'remove', this._uncacheItem.bind(this));
+        this.em.listenTo(this.all, 'reset', this._onItemsResetCache.bind(this));
     };
     ItemManagerModule.prototype.__initListen = function (opts) {
         if (opts === void 0) { opts = {}; }
@@ -25278,454 +25886,47 @@ var config_config_config = function () { return ({
 /* harmony default export */ const canvas_config_config = (config_config_config);
 
 // EXTERNAL MODULE: ./src/abstract/ModuleModel.ts
-var ModuleModel = __webpack_require__(3023);
-;// CONCATENATED MODULE: ./src/device_manager/config/config.ts
-var device_manager_config_config_config = function () { return ({
-    default: '',
-    devices: [
-        {
-            id: 'desktop',
-            name: 'Desktop',
-            width: '',
-        },
-        {
-            id: 'tablet',
-            name: 'Tablet',
-            width: '770px',
-            widthMedia: '992px',
-        },
-        {
-            id: 'mobileLandscape',
-            name: 'Mobile landscape',
-            width: '568px',
-            widthMedia: '768px',
-        },
-        {
-            id: 'mobilePortrait',
-            name: 'Mobile portrait',
-            width: '320px',
-            widthMedia: '480px',
-        },
-    ],
-}); };
-/* harmony default export */ const device_manager_config_config = (device_manager_config_config_config);
-
-;// CONCATENATED MODULE: ./src/device_manager/model/Device.ts
-var Device_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-/**
- * @typedef Device
- * @property {String} [name=''] Device type, eg. `Mobile`
- * @property {String} [width] Width to set for the editor iframe, eg. '900px'
- * @property {String} [height=''] Height to set for the editor iframe, eg. '600px'
- * @property {String} [widthMedia=''] The width which will be used in media queries, If empty the width will be used
- * @property {Number} [priority=null] Setup the order of media queries
- */
-var Device = /** @class */ (function (_super) {
-    Device_extends(Device, _super);
-    function Device() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Device.prototype.defaults = function () {
-        return {
-            name: '',
-            width: null,
-            height: '',
-            widthMedia: null,
-            priority: null,
-        };
-    };
-    Device.prototype.initialize = function () {
-        var _this = this;
-        this.get('widthMedia') === null && this.set('widthMedia', this.get('width'));
-        this.get('width') === null && this.set('width', this.get('widthMedia'));
-        !this.get('priority') && this.set('priority', parseFloat(this.get('widthMedia')) || 0);
-        var toCheck = ['width', 'height', 'widthMedia'];
-        toCheck.forEach(function (prop) { return _this.checkUnit(prop); });
-    };
-    Device.prototype.checkUnit = function (prop) {
-        var pr = (this.get(prop) || '');
-        var noUnit = (parseFloat(pr) || 0).toString() === pr.toString();
-        noUnit && this.set(prop, "".concat(pr, "px"));
-    };
-    Device.prototype.getName = function () {
-        return this.get('name') || this.get('id');
-    };
-    Device.prototype.getWidthMedia = function () {
-        return this.get('widthMedia') || '';
-    };
-    return Device;
-}(common/* Model */.Kx));
-/* harmony default export */ const model_Device = (Device);
-
-;// CONCATENATED MODULE: ./src/device_manager/model/Devices.ts
-var Devices_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-
-var Devices = /** @class */ (function (_super) {
-    Devices_extends(Devices, _super);
-    function Devices() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Devices;
-}(common/* Collection */.pM));
-/* harmony default export */ const model_Devices = (Devices);
-Devices.prototype.model = model_Device;
-
-;// CONCATENATED MODULE: ./src/device_manager/view/DevicesView.ts
-var DevicesView_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __makeTemplateObject = (undefined && undefined.__makeTemplateObject) || function (cooked, raw) {
-    if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
-    return cooked;
-};
-
-
-var DevicesView = /** @class */ (function (_super) {
-    DevicesView_extends(DevicesView, _super);
-    function DevicesView(o) {
-        var _this = _super.call(this, o) || this;
-        _this.config = o.config || {};
-        _this.em = _this.config.em;
-        _this.ppfx = _this.config.pStylePrefix || '';
-        _this.listenTo(_this.em, 'change:device', _this.updateSelect);
-        return _this;
-    }
-    DevicesView.prototype.template = function (_a) {
-        var ppfx = _a.ppfx, label = _a.label;
-        return html(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n      <div class=\"", "device-label\">", "</div>\n      <div class=\"", "field ", "select\">\n        <span id=\"", "input-holder\">\n          <select class=\"", "devices\"></select>\n        </span>\n        <div class=\"", "sel-arrow\">\n          <div class=\"", "d-s-arrow\"></div>\n        </div>\n      </div>\n      <button style=\"display:none\" class=\"", "add-trasp\" data-add-trasp>+</button>\n    "], ["\n      <div class=\"", "device-label\">", "</div>\n      <div class=\"", "field ", "select\">\n        <span id=\"", "input-holder\">\n          <select class=\"", "devices\"></select>\n        </span>\n        <div class=\"", "sel-arrow\">\n          <div class=\"", "d-s-arrow\"></div>\n        </div>\n      </div>\n      <button style=\"display:none\" class=\"", "add-trasp\" data-add-trasp>+</button>\n    "])), ppfx, label, ppfx, ppfx, ppfx, ppfx, ppfx, ppfx, ppfx);
-    };
-    DevicesView.prototype.events = function () {
-        return {
-            change: 'updateDevice',
-            'click [data-add-trasp]': 'startAdd',
-        };
-    };
+var ModuleModel = __webpack_require__(7058);
+;// CONCATENATED MODULE: ./src/device_manager/types.ts
+/**{START_EVENTS}*/
+var DeviceEvents;
+(function (DeviceEvents) {
     /**
-     * Start adding new device
-     * @return {[type]} [description]
-     * @private
-     */
-    DevicesView.prototype.startAdd = function () { };
-    /**
-     * Update device of the editor
-     * @private
-     */
-    DevicesView.prototype.updateDevice = function () {
-        var em = this.em;
-        if (em) {
-            var devEl = this.devicesEl;
-            em.set('device', devEl ? devEl.val() : '');
-        }
-    };
-    /**
-     * Update select value on device update
-     * @private
-     */
-    DevicesView.prototype.updateSelect = function () {
-        var _a = this, em = _a.em, devicesEl = _a.devicesEl;
-        if (em && em.getDeviceModel && devicesEl) {
-            var device = em.getDeviceModel();
-            devicesEl.val(device ? device.get('id') : '');
-        }
-    };
-    /**
-     * Return devices options
-     * @return {string} String of options
-     * @private
-     */
-    DevicesView.prototype.getOptions = function () {
-        var _a = this, collection = _a.collection, em = _a.em;
-        var result = '';
-        collection.forEach(function (device) {
-            var _a = device.attributes, name = _a.name, id = _a.id;
-            var label = (em && em.t && em.t("deviceManager.devices.".concat(id))) || name;
-            result += "<option value=\"".concat(id || name, "\">").concat(label, "</option>");
-        });
-        return result;
-    };
-    DevicesView.prototype.render = function () {
-        var _a = this, em = _a.em, ppfx = _a.ppfx, $el = _a.$el, el = _a.el;
-        var label = em && em.t && em.t('deviceManager.device');
-        $el.html(this.template({ ppfx: ppfx, label: label }));
-        this.devicesEl = $el.find(".".concat(ppfx, "devices"));
-        this.devicesEl.append(this.getOptions());
-        this.devicesEl.val(em.get('device'));
-        el.className = "".concat(ppfx, "devices-c");
-        return this;
-    };
-    return DevicesView;
-}(common/* View */.Ss));
-/* harmony default export */ const view_DevicesView = (DevicesView);
-var templateObject_1;
-
-;// CONCATENATED MODULE: ./src/device_manager/index.ts
-var device_manager_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var device_manager_assign = (undefined && undefined.__assign) || function () {
-    device_manager_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return device_manager_assign.apply(this, arguments);
-};
-/**
- * You can customize the initial state of the module from the editor initialization, by passing the following [Configuration Object](https://github.com/GrapesJS/grapesjs/blob/master/src/device_manager/config/config.ts)
- * ```js
- * const editor = grapesjs.init({
- *  deviceManager: {
- *    // options
- *  }
- * })
- * ```
- *
- * Once the editor is instantiated you can use its API. Before using these methods you should get the module from the instance
- *
- * ```js
- * const deviceManager = editor.Devices;
- * ```
- * ## Available Events
- * * `device:add` - Added new device. The [Device] is passed as an argument to the callback
- * * `device:remove` - Device removed. The [Device] is passed as an argument to the callback
- * * `device:select` - New device selected. The newly selected [Device] and the previous one, are passed as arguments to the callback
- * * `device:update` - Device updated. The updated [Device] and the object containing changes are passed as arguments to the callback
- * * `device` - Catch-all event for all the events mentioned above. An object containing all the available data about the triggered event is passed as an argument to the callback
- *
- * ## Methods
- * * [add](#add)
- * * [get](#get)
- * * [getDevices](#getdevices)
- * * [remove](#remove)
- * * [select](#select)
- * * [getSelected](#getselected)
- *
- * [Device]: device.html
- *
- * @module Devices
- */
-
-
-
-
-
-
-var evAll = 'device';
-var evPfx = "".concat(evAll, ":");
-var evSelect = "".concat(evPfx, "select");
-var evSelectBefore = "".concat(evSelect, ":before");
-var evUpdate = "".concat(evPfx, "update");
-var evAdd = "".concat(evPfx, "add");
-var evAddBefore = "".concat(evAdd, ":before");
-var evRemove = "".concat(evPfx, "remove");
-var evRemoveBefore = "".concat(evRemove, ":before");
-var chnSel = 'change:device';
-var deviceEvents = {
-    all: evAll,
-    select: evSelect,
-    update: evUpdate,
-    add: evAdd,
-    remove: evRemove,
-    removeBefore: evRemoveBefore,
-};
-var DeviceManager = /** @class */ (function (_super) {
-    device_manager_extends(DeviceManager, _super);
-    function DeviceManager(em) {
-        var _a;
-        var _this = _super.call(this, em, 'DeviceManager', new model_Devices(), deviceEvents, device_manager_config_config()) || this;
-        _this.Device = model_Device;
-        _this.Devices = model_Devices;
-        _this.storageKey = '';
-        _this.devices = _this.all;
-        (_a = _this.config.devices) === null || _a === void 0 ? void 0 : _a.forEach(function (device) { return _this.add(device, { silent: true }); });
-        _this.select(_this.config.default || _this.devices.at(0));
-        em.on(chnSel, _this._onSelect, _this);
-        return _this;
-    }
-    DeviceManager.prototype._onSelect = function (m, deviceId, opts) {
-        var _a = this, em = _a.em, events = _a.events;
-        var prevId = m.previous('device');
-        var newDevice = this.get(deviceId);
-        var ev = events.select;
-        em.trigger(ev, newDevice, this.get(prevId));
-        this.__catchAllEvent(ev, newDevice, opts);
-    };
-    /**
-     * Add new device
-     * @param {Object} props Device properties
-     * @returns {[Device]} Added device
+     * @event `device:add` New device added to the collection. The `Device` is passed as an argument.
      * @example
-     * const device1 = deviceManager.add({
-     *  // Without an explicit ID, the `name` will be taken. In case of missing `name`, a random ID will be created.
-     *  id: 'tablet',
-     *  name: 'Tablet',
-     *  width: '900px', // This width will be applied on the canvas frame and for the CSS media
-     * });
-     * const device2 = deviceManager.add({
-     *  id: 'tablet2',
-     *  name: 'Tablet 2',
-     *  width: '800px', // This width will be applied on the canvas frame
-     *  widthMedia: '810px', // This width that will be used for the CSS media
-     *  height: '600px', // Height will be applied on the canvas frame
-     * });
+     * editor.on('device:add', (device) => { ... });
      */
-    DeviceManager.prototype.add = function (props, options) {
-        if (options === void 0) { options = {}; }
-        var result;
-        var opts = options;
-        // Support old API
-        if ((0,index_all.isString)(props)) {
-            var width = options;
-            opts = arguments[2] || {};
-            result = device_manager_assign(device_manager_assign({}, opts), { id: props, name: opts.name || props, width: width });
-        }
-        else {
-            result = props;
-        }
-        if (!result.id) {
-            result.id = result.name || this._createId();
-        }
-        return this.devices.add(result, opts);
-    };
+    DeviceEvents["add"] = "device:add";
+    DeviceEvents["addBefore"] = "device:add:before";
     /**
-     * Return device by ID
-     * @param  {String} id ID of the device
-     * @returns {[Device]|null}
+     * @event `device:remove` Device removed from the collection. The `Device` is passed as an argument.
      * @example
-     * const device = deviceManager.get('Tablet');
-     * console.log(JSON.stringify(device));
-     * // {name: 'Tablet', width: '900px'}
+     * editor.on('device:remove', (device) => { ... });
      */
-    DeviceManager.prototype.get = function (id) {
-        // Support old API
-        var byName = this.getAll().filter(function (d) { return d.get('name') === id; })[0];
-        return byName || this.devices.get(id) || null;
-    };
+    DeviceEvents["remove"] = "device:remove";
+    DeviceEvents["removeBefore"] = "device:remove:before";
     /**
-     * Remove device
-     * @param {String|[Device]} device Device or device id
-     * @returns {[Device]} Removed device
+     * @event `device:select` A new device is selected. Current and previous `Device` are passed as arguments.
      * @example
-     * const removed = deviceManager.remove('device-id');
-     * // or by passing the Device
-     * const device = deviceManager.get('device-id');
-     * deviceManager.remove(device);
+     * editor.on('device:select', (newDevice, prevDevice) => { ... });
      */
-    DeviceManager.prototype.remove = function (device, opts) {
-        if (opts === void 0) { opts = {}; }
-        return this.__remove(device, opts);
-    };
+    DeviceEvents["select"] = "device:select";
+    DeviceEvents["selectBefore"] = "device:select:before";
     /**
-     * Return all devices
-     * @returns {Array<[Device]>}
+     * @event `device:update` Device updated. The `Device`, changed properties, and update options are passed as arguments.
      * @example
-     * const devices = deviceManager.getDevices();
-     * console.log(JSON.stringify(devices));
-     * // [{name: 'Desktop', width: ''}, ...]
+     * editor.on('device:update', (device, changes, options) => { ... });
      */
-    DeviceManager.prototype.getDevices = function () {
-        return this.devices.models;
-    };
+    DeviceEvents["update"] = "device:update";
     /**
-     * Change the selected device. This will update the frame in the canvas
-     * @param {String|[Device]} device Device or device id
+     * @event `device` Catch-all event for all the events mentioned above.
      * @example
-     * deviceManager.select('some-id');
-     * // or by passing the page
-     * const device = deviceManager.get('some-id');
-     * deviceManager.select(device);
+     * editor.on('device', ({ event, model, ... }) => { ... });
      */
-    DeviceManager.prototype.select = function (device, opts) {
-        if (opts === void 0) { opts = {}; }
-        var md = (0,index_all.isString)(device) ? this.get(device) : device;
-        md && this.em.set('device', md.get('id'), opts);
-        return this;
-    };
-    /**
-     * Get the selected device
-     * @returns {[Device]}
-     * @example
-     * const selected = deviceManager.getSelected();
-     */
-    DeviceManager.prototype.getSelected = function () {
-        return this.get(this.em.get('device'));
-    };
-    DeviceManager.prototype.getAll = function () {
-        return this.devices;
-    };
-    DeviceManager.prototype.render = function () {
-        var _a;
-        var em = this.em;
-        (_a = this.view) === null || _a === void 0 ? void 0 : _a.remove();
-        this.view = new view_DevicesView({
-            collection: this.devices,
-            config: device_manager_assign({ em: em }, this.config),
-        });
-        return this.view.render().el;
-    };
-    DeviceManager.prototype.destroy = function () {
-        this.__destroy();
-    };
-    return DeviceManager;
-}(ItemManagerModule));
-/* harmony default export */ const device_manager = (DeviceManager);
+    DeviceEvents["all"] = "device";
+})(DeviceEvents || (DeviceEvents = {}));
+// This is necessary to prevent the TS documentation generator from breaking.
+/* harmony default export */ const types = (DeviceEvents);
 
 ;// CONCATENATED MODULE: ./src/pages/types.ts
 /**{START_EVENTS}*/
@@ -25765,9 +25966,8 @@ var PagesEvents;
      */
     PagesEvents["all"] = "page";
 })(PagesEvents || (PagesEvents = {}));
-/**{END_EVENTS}*/
 // need this to avoid the TS documentation generator to break
-/* harmony default export */ const types = (PagesEvents);
+/* harmony default export */ const pages_types = (PagesEvents);
 
 ;// CONCATENATED MODULE: ./src/abstract/ModuleCollection.ts
 var ModuleCollection_extends = (undefined && undefined.__extends) || (function () {
@@ -25808,6 +26008,8 @@ var ModuleCollection = /** @class */ (function (_super) {
 }(common/* Collection */.pM));
 /* harmony default export */ const abstract_ModuleCollection = (ModuleCollection);
 
+// EXTERNAL MODULE: ./src/canvas/types.ts
+var canvas_types = __webpack_require__(9064);
 ;// CONCATENATED MODULE: ./src/canvas/model/Frame.ts
 var Frame_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -25844,6 +26046,7 @@ var Frame_spreadArray = (undefined && undefined.__spreadArray) || function (to, 
     }
     return to.concat(ar || Array.prototype.slice.call(from));
 };
+
 
 
 
@@ -26059,6 +26262,12 @@ var Frame = /** @class */ (function (_super) {
         if (data === void 0) { data = {}; }
         this.em.trigger('frame:updated', Frame_assign({ frame: this }, data));
     };
+    Frame.prototype._emitUnload = function () {
+        this._emitWithEditor(canvas_types/* default */.A.frameUnload, { frame: this });
+    };
+    Frame.prototype._emitWithEditor = function (event, data) {
+        [this.em, this].forEach(function (item) { return item === null || item === void 0 ? void 0 : item.trigger(event, data); });
+    };
     Frame.prototype.hasAutoHeight = function () {
         var height = this.attributes.height;
         if (height === 'auto' || this.config.infiniteCanvas) {
@@ -26198,8 +26407,8 @@ var Canvas = /** @class */ (function (_super) {
         _this.on('change:zoom', _this.onZoomChange);
         _this.on('change:x change:y', _this.onCoordsChange);
         _this.on('change:pointer change:pointerScreen', _this.onPointerChange);
-        _this.listenTo(em, "change:device ".concat(evUpdate), _this.updateDevice);
-        _this.listenTo(em, types.select, _this._pageUpdated);
+        _this.listenTo(em, "change:device ".concat(types.update), _this.updateDevice);
+        _this.listenTo(em, pages_types.select, _this._pageUpdated);
         return _this;
     }
     Canvas.prototype.defaults = function () {
@@ -26235,7 +26444,10 @@ var Canvas = /** @class */ (function (_super) {
         var em = this.em;
         em.setSelected();
         em.get('readyCanvas') && em.stopDefault(); // We have to stop before changing current frames
-        prev === null || prev === void 0 ? void 0 : prev.getFrames().map(function (frame) { return frame.disable(); });
+        prev === null || prev === void 0 ? void 0 : prev.getFrames().map(function (frame) {
+            frame.disable();
+            frame._emitUnload();
+        });
         this.set('frames', page.getFrames());
         this.updateDevice({ frame: page.getMainFrame() });
     };
@@ -26243,17 +26455,17 @@ var Canvas = /** @class */ (function (_super) {
         if (opts === void 0) { opts = {}; }
         var em = this.em;
         var device = em.getDeviceModel();
-        var model = opts.frame || em.getCurrentFrameModel();
-        if (model && device) {
-            var _a = device.attributes, width = _a.width, height = _a.height;
-            model.set({ width: width, height: height }, { noUndo: 1 });
+        var frame = opts.frame || em.getCurrentFrameModel();
+        if (frame && device) {
+            var _a = device.attributes, width = _a.width, height = _a.height, minHeight = _a.minHeight;
+            frame.set({ width: width, height: height, minHeight: minHeight }, { noUndo: 1 });
         }
     };
-    Canvas.prototype.onZoomChange = function () {
+    Canvas.prototype.onZoomChange = function (m, v, options) {
         var _a = this, em = _a.em, module = _a.module;
         var zoom = this.get('zoom');
         zoom < 1 && this.set('zoom', 1);
-        em.trigger(module.events.zoom);
+        em.trigger(module.events.zoom, { options: options });
     };
     Canvas.prototype.onCoordsChange = function () {
         var _a = this, em = _a.em, module = _a.module;
@@ -26273,9 +26485,9 @@ var Canvas = /** @class */ (function (_super) {
 /* harmony default export */ const model_Canvas = (Canvas);
 
 // EXTERNAL MODULE: ./src/canvas/model/CanvasSpot.ts
-var CanvasSpot = __webpack_require__(2820);
+var CanvasSpot = __webpack_require__(179);
 // EXTERNAL MODULE: ./src/dom_components/types.ts
-var dom_components_types = __webpack_require__(3172);
+var dom_components_types = __webpack_require__(2225);
 ;// CONCATENATED MODULE: ./src/canvas/model/CanvasSpots.ts
 var CanvasSpots_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -26306,7 +26518,7 @@ var CanvasSpots = /** @class */ (function (_super) {
         _this.on('remove', _this.onRemove);
         var em = _this.em;
         _this.refreshDbn = (0,index_all.debounce)(function () { return _this.refresh(); }, 0);
-        var evToRefreshDbn = "component:resize styleable:change component:input ".concat(dom_components_types/* ComponentsEvents */.I.update, " frame:updated undo redo");
+        var evToRefreshDbn = "".concat(dom_components_types/* ComponentsEvents */.IT.resize, " styleable:change ").concat(dom_components_types/* ComponentsEvents */.IT.input, " ").concat(dom_components_types/* ComponentsEvents */.IT.update, " frame:updated undo redo");
         _this.listenTo(em, evToRefreshDbn, function () { return _this.refreshDbn(); });
         return _this;
     }
@@ -26346,123 +26558,6 @@ var CanvasSpots = /** @class */ (function (_super) {
     return CanvasSpots;
 }(abstract_ModuleCollection));
 /* harmony default export */ const model_CanvasSpots = (CanvasSpots);
-
-;// CONCATENATED MODULE: ./src/canvas/types.ts
-/**{START_EVENTS}*/
-var CanvasEvents;
-(function (CanvasEvents) {
-    /**
-     * @event `canvas:dragenter` Something is dragged inside the canvas, `DataTransfer` instance passed as an argument.
-     */
-    CanvasEvents["dragEnter"] = "canvas:dragenter";
-    /**
-     * @event `canvas:dragover` Something is dragging on the canvas, `DataTransfer` instance passed as an argument.
-     */
-    CanvasEvents["dragOver"] = "canvas:dragover";
-    /**
-     * @event `canvas:dragend` When a drag operation is ended, `DataTransfer` instance passed as an argument.
-     */
-    CanvasEvents["dragEnd"] = "canvas:dragend";
-    /**
-     * @event `canvas:dragdata` On any dataTransfer parse, `DataTransfer` instance and the `result` are passed as arguments. By changing `result.content` you're able to customize what is dropped.
-     */
-    CanvasEvents["dragData"] = "canvas:dragdata";
-    /**
-     * @event `canvas:drop` Something is dropped in canvas, `DataTransfer` instance and the dropped model are passed as arguments.
-     */
-    CanvasEvents["drop"] = "canvas:drop";
-    /**
-     * @event `canvas:spot` Spots updated.
-     * @example
-     * editor.on('canvas:spot', () => {
-     *  console.log('Spots', editor.Canvas.getSpots());
-     * });
-     */
-    CanvasEvents["spot"] = "canvas:spot";
-    /**
-     * @event `canvas:spot:add` New canvas spot added.
-     * @example
-     * editor.on('canvas:spot:add', ({ spot }) => {
-     *  console.log('Spot added', spot);
-     * });
-     */
-    CanvasEvents["spotAdd"] = "canvas:spot:add";
-    /**
-     * @event `canvas:spot:update` Canvas spot updated.
-     * @example
-     * editor.on('canvas:spot:update', ({ spot }) => {
-     *  console.log('Spot updated', spot);
-     * });
-     */
-    CanvasEvents["spotUpdate"] = "canvas:spot:update";
-    /**
-     * @event `canvas:spot:remove` Canvas spot removed.
-     * @example
-     * editor.on('canvas:spot:remove', ({ spot }) => {
-     *  console.log('Spot removed', spot);
-     * });
-     */
-    CanvasEvents["spotRemove"] = "canvas:spot:remove";
-    /**
-     * @event `canvas:coords` Canvas coordinates updated.
-     * @example
-     * editor.on('canvas:coords', () => {
-     *  console.log('Canvas coordinates updated:', editor.Canvas.getCoords());
-     * });
-     */
-    CanvasEvents["coords"] = "canvas:coords";
-    /**
-     * @event `canvas:zoom` Canvas zoom updated.
-     * @example
-     * editor.on('canvas:zoom', () => {
-     *  console.log('Canvas zoom updated:', editor.Canvas.getZoom());
-     * });
-     */
-    CanvasEvents["zoom"] = "canvas:zoom";
-    /**
-     * @event `canvas:pointer` Canvas pointer updated.
-     * @example
-     * editor.on('canvas:pointer', () => {
-     *  console.log('Canvas pointer updated:', editor.Canvas.getPointer());
-     * });
-     */
-    CanvasEvents["pointer"] = "canvas:pointer";
-    /**
-     * @event `canvas:refresh` Canvas was refreshed to update elements on top, like spots/tools (eg. via `editor.Canvas.refresh()` or on frame resize).
-     * @example
-     * editor.on('canvas:refresh', (canvasRefreshOptions) => {
-     *  console.log('Canvas refreshed with options:', canvasRefreshOptions);
-     * });
-     */
-    CanvasEvents["refresh"] = "canvas:refresh";
-    /**
-     * @event `canvas:frame:load` Frame loaded in canvas. The event is triggered right after iframe's `onload`.
-     * @example
-     * editor.on('canvas:frame:load', ({ window }) => {
-     *  console.log('Frame loaded', window);
-     * });
-     */
-    CanvasEvents["frameLoad"] = "canvas:frame:load";
-    /**
-     * @event `canvas:frame:load:head` Frame head loaded in canvas. The event is triggered right after iframe's finished to load the head elemenets (eg. scripts)
-     * @example
-     * editor.on('canvas:frame:load:head', ({ window }) => {
-     *  console.log('Frame head loaded', window);
-     * });
-     */
-    CanvasEvents["frameLoadHead"] = "canvas:frame:load:head";
-    /**
-     * @event `canvas:frame:load:body` Frame body loaded in canvas. The event is triggered when the body is rendered with components.
-     * @example
-     * editor.on('canvas:frame:load:body', ({ window }) => {
-     *  console.log('Frame completed the body render', window);
-     * });
-     */
-    CanvasEvents["frameLoadBody"] = "canvas:frame:load:body";
-})(CanvasEvents || (CanvasEvents = {}));
-/**{END_EVENTS}*/
-// need this to avoid the TS documentation generator to break
-/* harmony default export */ const canvas_types = (CanvasEvents);
 
 ;// CONCATENATED MODULE: ./src/abstract/ModuleView.ts
 var ModuleView_extends = (undefined && undefined.__extends) || (function () {
@@ -26531,7 +26626,7 @@ var ModuleView = /** @class */ (function (_super) {
 /* harmony default export */ const abstract_ModuleView = (ModuleView);
 
 // EXTERNAL MODULE: ./src/utils/dom.ts
-var dom = __webpack_require__(2097);
+var dom = __webpack_require__(6294);
 ;// CONCATENATED MODULE: ./src/abstract/ModuleDomainViews.ts
 var ModuleDomainViews_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -26636,6 +26731,18 @@ var ModuleDomainViews = /** @class */ (function (_super) {
 }(abstract_ModuleView));
 /* harmony default export */ const abstract_ModuleDomainViews = (ModuleDomainViews);
 
+;// CONCATENATED MODULE: ./src/css_composer/types.ts
+var CssEvents;
+(function (CssEvents) {
+    /**
+     * @event `css:mount` CSS rule is mounted in the canvas.
+     * @example
+     * editor.on('css:mount', ({ rule }) => { ... });
+     */
+    CssEvents["mount"] = "css:mount";
+    CssEvents["mountBefore"] = "css:mount:before";
+})(CssEvents || (CssEvents = {}));
+
 ;// CONCATENATED MODULE: ./src/css_composer/view/CssRuleView.ts
 var CssRuleView_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -26652,6 +26759,7 @@ var CssRuleView_extends = (undefined && undefined.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+
 
 var CssRuleView = /** @class */ (function (_super) {
     CssRuleView_extends(CssRuleView, _super);
@@ -26673,6 +26781,13 @@ var CssRuleView = /** @class */ (function (_super) {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(CssRuleView.prototype, "em", {
+        get: function () {
+            return this.model.em;
+        },
+        enumerable: false,
+        configurable: true
+    });
     CssRuleView.prototype.remove = function () {
         _super.prototype.remove.call(this);
         this.model.removeView(this);
@@ -26686,9 +26801,13 @@ var CssRuleView = /** @class */ (function (_super) {
         return 'style';
     };
     CssRuleView.prototype.render = function () {
-        var _a = this, model = _a.model, el = _a.el;
+        var _a = this, model = _a.model, el = _a.el, em = _a.em;
         var important = model.get('important');
-        el.innerHTML = model.toCSS({ important: important });
+        var css = model.toCSS({ important: important });
+        var mountProps = { rule: model, ruleView: this, css: css };
+        em === null || em === void 0 ? void 0 : em.trigger(CssEvents.mountBefore, mountProps);
+        el.innerHTML = mountProps.css;
+        em === null || em === void 0 ? void 0 : em.trigger(CssEvents.mount, mountProps);
         return this;
     };
     return CssRuleView;
@@ -26794,7 +26913,7 @@ var CssRulesView = /** @class */ (function (_super) {
         var rendered, view;
         // I have to render keyframes of the same name together
         // Unfortunately at the moment I didn't find the way of appending them
-        // if not staticly, via appendData
+        // if not statically, via appendData
         if (model.get('atRuleType') === 'keyframes') {
             var atRule = model.getAtRule();
             var atRuleEl = this.atRules[atRule];
@@ -26871,6 +26990,1316 @@ var CssRulesView = /** @class */ (function (_super) {
     return CssRulesView;
 }(common/* View */.Ss));
 /* harmony default export */ const view_CssRulesView = (CssRulesView);
+
+;// CONCATENATED MODULE: ./src/data_sources/types.ts
+var DataComponentTypes;
+(function (DataComponentTypes) {
+    DataComponentTypes["variable"] = "data-variable";
+    DataComponentTypes["condition"] = "data-condition";
+    DataComponentTypes["conditionTrue"] = "data-condition-true-content";
+    DataComponentTypes["conditionFalse"] = "data-condition-false-content";
+    DataComponentTypes["collection"] = "data-collection";
+    DataComponentTypes["collectionItem"] = "data-collection-item";
+})(DataComponentTypes || (DataComponentTypes = {}));
+var DataCollectionKeys;
+(function (DataCollectionKeys) {
+    DataCollectionKeys["rootData"] = "__rootData";
+})(DataCollectionKeys || (DataCollectionKeys = {}));
+var DataFieldPrimitiveType;
+(function (DataFieldPrimitiveType) {
+    DataFieldPrimitiveType["string"] = "string";
+    DataFieldPrimitiveType["number"] = "number";
+    DataFieldPrimitiveType["boolean"] = "boolean";
+    DataFieldPrimitiveType["date"] = "date";
+    DataFieldPrimitiveType["json"] = "json";
+    DataFieldPrimitiveType["relation"] = "relation";
+})(DataFieldPrimitiveType || (DataFieldPrimitiveType = {}));
+/**{START_EVENTS}*/
+var DataSourcesEvents;
+(function (DataSourcesEvents) {
+    /**
+     * @event `data:add` Added new data source.
+     * @example
+     * editor.on('data:add', (dataSource) => { ... });
+     */
+    DataSourcesEvents["add"] = "data:add";
+    DataSourcesEvents["addBefore"] = "data:add:before";
+    /**
+     * @event `data:remove` Data source removed.
+     * @example
+     * editor.on('data:remove', (dataSource) => { ... });
+     */
+    DataSourcesEvents["remove"] = "data:remove";
+    DataSourcesEvents["removeBefore"] = "data:remove:before";
+    /**
+     * @event `data:update` Data source updated.
+     * @example
+     * editor.on('data:update', (dataSource, changes) => { ... });
+     */
+    DataSourcesEvents["update"] = "data:update";
+    /**
+     * @event `data:path` Data record path update.
+     * @example
+     * editor.on('data:path:SOURCE_ID.RECORD_ID.PROP_NAME', ({ dataSource, dataRecord, path }) => { ... });
+     * editor.on('data:path', ({ dataSource, dataRecord, path }) => {
+     *  console.log('Path update in any data source')
+     * });
+     */
+    DataSourcesEvents["path"] = "data:path";
+    /**
+     * @event `data:pathSource` Data record path update per source.
+     * @example
+     * editor.on('data:pathSource:SOURCE_ID', ({ dataSource, dataRecord, path }) => { ... });
+     */
+    DataSourcesEvents["pathSource"] = "data:pathSource:";
+    /**
+     * @event `data:provider:load` Data source provider load.
+     * @example
+     * editor.on('data:provider:load', ({ dataSource, result }) => { ... });
+     */
+    DataSourcesEvents["providerLoad"] = "data:provider:load";
+    DataSourcesEvents["providerLoadBefore"] = "data:provider:load:before";
+    DataSourcesEvents["providerLoadError"] = "data:provider:load:error";
+    /**
+     * @event `data:provider:loadAll` Load of all data source providers (eg. on project load).
+     * @example
+     * editor.on('data:provider:loadAll', () => { ... });
+     */
+    DataSourcesEvents["providerLoadAll"] = "data:provider:loadAll";
+    DataSourcesEvents["providerLoadAllBefore"] = "data:provider:loadAll:before";
+    /**
+     * @event `data` Catch-all event for all the events mentioned above.
+     * @example
+     * editor.on('data', ({ event, model, ... }) => { ... });
+     */
+    DataSourcesEvents["all"] = "data";
+})(DataSourcesEvents || (DataSourcesEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const data_sources_types = ((/* unused pure expression or super */ null && (DataSourcesEvents)));
+
+;// CONCATENATED MODULE: ./src/data_sources/model/DataVariable.ts
+var DataVariable_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var DataVariable_assign = (undefined && undefined.__assign) || function () {
+    DataVariable_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return DataVariable_assign.apply(this, arguments);
+};
+
+
+
+var DataVariableType = DataComponentTypes.variable;
+var DataVariable_DataVariable = /** @class */ (function (_super) {
+    DataVariable_extends(DataVariable, _super);
+    function DataVariable(props, options) {
+        var _this = _super.call(this, props, options) || this;
+        _this.em = options.em;
+        _this.collectionsStateMap = options.collectionsStateMap;
+        return _this;
+    }
+    DataVariable.prototype.defaults = function () {
+        return {
+            type: DataVariableType,
+            defaultValue: '',
+            path: '',
+            collectionId: undefined,
+            variableType: undefined,
+            asPlainText: undefined,
+        };
+    };
+    Object.defineProperty(DataVariable.prototype, "path", {
+        get: function () {
+            var _a;
+            return (_a = this.get('path')) !== null && _a !== void 0 ? _a : '';
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataVariable.prototype, "defaultValue", {
+        get: function () {
+            var _a;
+            return (_a = this.get('defaultValue')) !== null && _a !== void 0 ? _a : '';
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataVariable.prototype, "collectionId", {
+        get: function () {
+            return this.get('collectionId');
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataVariable.prototype, "variableType", {
+        get: function () {
+            return this.get('variableType');
+        },
+        enumerable: false,
+        configurable: true
+    });
+    DataVariable.prototype.resolvesFromCollection = function () {
+        return !!this.collectionId;
+    };
+    DataVariable.prototype.updateCollectionsStateMap = function (collectionsStateMap) {
+        this.collectionsStateMap = collectionsStateMap;
+        this.trigger('change');
+    };
+    DataVariable.prototype.getResolverPath = function () {
+        var _a;
+        if (this.resolvesFromCollection()) {
+            var value = this.resolveCollectionVariable();
+            return isDataVariable(value) ? ((_a = value.path) !== null && _a !== void 0 ? _a : '') : false;
+        }
+        return this.path;
+    };
+    DataVariable.prototype.toJSON = function (options) {
+        var defaults = this.defaults();
+        var json = _super.prototype.toJSON.call(this, options);
+        var filteredJson = Object.fromEntries(Object.entries(json).filter(function (_a) {
+            var key = _a[0], value = _a[1];
+            return value !== defaults[key];
+        }));
+        return DataVariable_assign(DataVariable_assign({}, filteredJson), { type: DataVariableType });
+    };
+    DataVariable.prototype.getDataValue = function () {
+        var opts = {
+            em: this.em,
+            collectionsStateMap: this.collectionsStateMap,
+        };
+        return DataVariable.resolveDataResolver({
+            path: this.path,
+            defaultValue: this.defaultValue,
+            collectionId: this.collectionId,
+            variableType: this.variableType,
+        }, opts);
+    };
+    DataVariable.resolveDataSourceVariable = function (props, opts) {
+        var _a, _b;
+        return opts.em.DataSources.getValue((_a = props.path) !== null && _a !== void 0 ? _a : '', (_b = props.defaultValue) !== null && _b !== void 0 ? _b : '');
+    };
+    DataVariable.resolveDataResolver = function (props, opts) {
+        var _a, _b, _c, _d;
+        if (props.collectionId) {
+            var value = DataVariable.resolveCollectionVariable(props, opts);
+            if (!isDataVariable(value))
+                return value;
+            return DataVariable.resolveDataSourceVariable({ path: (_a = value.path) !== null && _a !== void 0 ? _a : '', defaultValue: (_b = props.defaultValue) !== null && _b !== void 0 ? _b : '' }, { em: opts.em });
+        }
+        return DataVariable.resolveDataSourceVariable({ path: (_c = props.path) !== null && _c !== void 0 ? _c : '', defaultValue: (_d = props.defaultValue) !== null && _d !== void 0 ? _d : '' }, { em: opts.em });
+    };
+    DataVariable.prototype.resolveCollectionVariable = function () {
+        var _a = this, em = _a.em, collectionsStateMap = _a.collectionsStateMap;
+        return DataVariable.resolveCollectionVariable(this.attributes, { em: em, collectionsStateMap: collectionsStateMap });
+    };
+    DataVariable.resolveCollectionVariable = function (params, ctx) {
+        var _a = params.collectionId, collectionId = _a === void 0 ? '' : _a, variableType = params.variableType, path = params.path, _b = params.defaultValue, defaultValue = _b === void 0 ? '' : _b;
+        var collectionsStateMap = ctx.collectionsStateMap, em = ctx.em;
+        var collectionItemState = collectionsStateMap === null || collectionsStateMap === void 0 ? void 0 : collectionsStateMap[collectionId];
+        if (!collectionItemState || !variableType)
+            return defaultValue;
+        return em.DataSources.getValue("".concat(variableType).concat(path ? ".".concat(path) : ''), defaultValue, {
+            context: collectionItemState,
+        });
+    };
+    return DataVariable;
+}(common/* Model */.Kx));
+/* harmony default export */ const model_DataVariable = (DataVariable_DataVariable);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/DataResolverListener.ts
+
+
+
+
+
+var DataResolverListener = /** @class */ (function () {
+    function DataResolverListener(props) {
+        var _this = this;
+        this.listeners = [];
+        this.model = new common/* Model */.Kx();
+        this.onChange = function () {
+            var value = _this.resolver.getDataValue();
+            _this.onUpdate(value);
+        };
+        this.em = props.em;
+        this.resolver = props.resolver;
+        this.onUpdate = props.onUpdate;
+        this.listenToResolver();
+    }
+    DataResolverListener.prototype.createListener = function (obj, event, callback) {
+        if (callback === void 0) { callback = this.onChange; }
+        return { obj: obj, event: event, callback: callback };
+    };
+    DataResolverListener.prototype.listenToResolver = function () {
+        var _a = this, resolver = _a.resolver, model = _a.model;
+        this.removeListeners();
+        var listeners = [];
+        var type = resolver.attributes.type;
+        switch (type) {
+            case DataVariableType:
+                listeners = this.listenToDataVariable(resolver);
+                break;
+            case DataCondition_DataConditionType:
+                listeners = this.listenToConditionalVariable(resolver);
+                break;
+        }
+        listeners.forEach(function (ls) { return model.listenTo(ls.obj, ls.event, ls.callback); });
+        this.listeners = listeners;
+    };
+    DataResolverListener.prototype.listenToConditionalVariable = function (dataVariable) {
+        return [
+            {
+                obj: dataVariable,
+                event: DataConditionOutputChangedEvent,
+                callback: this.onChange,
+            },
+        ];
+    };
+    DataResolverListener.prototype.listenToDataVariable = function (dataVariable) {
+        var _this = this;
+        var em = this.em;
+        var dataListeners = [];
+        var onChangeAndRewatch = function () {
+            _this.listenToResolver();
+            _this.onChange();
+        };
+        dataListeners.push(this.createListener(dataVariable, 'change', onChangeAndRewatch));
+        var path = dataVariable.getResolverPath();
+        if (!path)
+            return dataListeners;
+        var normPath = (0,mixins.stringToPath)(path || '').join('.');
+        var _a = em.DataSources.fromPath(path), ds = _a[0], dr = _a[1];
+        if (ds) {
+            dataListeners.push(this.createListener(ds.records, 'add remove reset', onChangeAndRewatch));
+        }
+        if (dr) {
+            dataListeners.push(this.createListener(dr, 'change'));
+        }
+        dataListeners.push(this.createListener(em.DataSources.all, 'add remove reset', onChangeAndRewatch), this.createListener(em, "".concat(DataSourcesEvents.path, ":").concat(normPath)), this.createListener(em, DataSourcesEvents.path, function (_a) {
+            var eventPath = _a.path;
+            if (
+            // Skip same path as it's already handled be the listener above
+            eventPath !== path &&
+                eventPath.startsWith(path)) {
+                _this.onChange();
+            }
+        }));
+        return dataListeners;
+    };
+    DataResolverListener.prototype.removeListeners = function () {
+        var _this = this;
+        this.listeners.forEach(function (ls) { return _this.model.stopListening(ls.obj, ls.event, ls.callback); });
+        this.listeners = [];
+    };
+    DataResolverListener.prototype.destroy = function () {
+        this.removeListeners();
+    };
+    return DataResolverListener;
+}());
+/* harmony default export */ const model_DataResolverListener = (DataResolverListener);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/LogicalGroupEvaluator.ts
+
+var LogicalGroupEvaluator = /** @class */ (function () {
+    function LogicalGroupEvaluator(operator, statements, opts) {
+        this.operator = operator;
+        this.statements = statements;
+        this.opts = opts;
+    }
+    LogicalGroupEvaluator.prototype.evaluate = function () {
+        var _this = this;
+        var results = this.statements.map(function (statement) {
+            var condition = new DataConditionEvaluator({ condition: statement }, _this.opts);
+            return condition.evaluate();
+        });
+        return this.operator.evaluate(results);
+    };
+    return LogicalGroupEvaluator;
+}());
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/BaseOperator.ts
+
+var SimpleOperator = /** @class */ (function () {
+    function SimpleOperator(operationString, opts) {
+        this.operationString = operationString;
+        this.em = opts.em;
+    }
+    SimpleOperator.prototype.getOperations = function () {
+        return enumToArray(this.operationsEnum);
+    };
+    return SimpleOperator;
+}());
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/AnyTypeOperator.ts
+var AnyTypeOperator_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+
+var AnyTypeOperation;
+(function (AnyTypeOperation) {
+    AnyTypeOperation["equals"] = "equals";
+    AnyTypeOperation["isTruthy"] = "isTruthy";
+    AnyTypeOperation["isFalsy"] = "isFalsy";
+    AnyTypeOperation["isDefined"] = "isDefined";
+    AnyTypeOperation["isNull"] = "isNull";
+    AnyTypeOperation["isUndefined"] = "isUndefined";
+    AnyTypeOperation["isArray"] = "isArray";
+    AnyTypeOperation["isObject"] = "isObject";
+    AnyTypeOperation["isString"] = "isString";
+    AnyTypeOperation["isNumber"] = "isNumber";
+    AnyTypeOperation["isBoolean"] = "isBoolean";
+    AnyTypeOperation["isDefaultValue"] = "isDefaultValue";
+})(AnyTypeOperation || (AnyTypeOperation = {}));
+var AnyTypeOperator = /** @class */ (function (_super) {
+    AnyTypeOperator_extends(AnyTypeOperator, _super);
+    function AnyTypeOperator() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.operationsEnum = AnyTypeOperation;
+        return _this;
+    }
+    AnyTypeOperator.prototype.evaluate = function (left, right) {
+        var _a;
+        switch (this.operationString) {
+            case 'equals':
+                return left === right;
+            case 'isTruthy':
+                return !!left;
+            case 'isFalsy':
+                return !left;
+            case 'isDefined':
+                return left !== undefined && left !== null;
+            case 'isNull':
+                return left === null;
+            case 'isUndefined':
+                return left === undefined;
+            case 'isArray':
+                return Array.isArray(left);
+            case 'isObject':
+                return typeof left === 'object' && left !== null;
+            case 'isString':
+                return typeof left === 'string';
+            case 'isNumber':
+                return typeof left === 'number';
+            case 'isBoolean':
+                return typeof left === 'boolean';
+            case 'isDefaultValue':
+                return left instanceof model_DataVariable && left.get('defaultValue') === right;
+            default:
+                (_a = this.em) === null || _a === void 0 ? void 0 : _a.logWarning("Unsupported generic operation: ".concat(this.operationString));
+                return false;
+        }
+    };
+    return AnyTypeOperator;
+}(SimpleOperator));
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/BooleanOperator.ts
+var BooleanOperator_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+var BooleanOperation;
+(function (BooleanOperation) {
+    BooleanOperation["and"] = "and";
+    BooleanOperation["or"] = "or";
+    BooleanOperation["xor"] = "xor";
+})(BooleanOperation || (BooleanOperation = {}));
+var BooleanOperator = /** @class */ (function (_super) {
+    BooleanOperator_extends(BooleanOperator, _super);
+    function BooleanOperator() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.operationsEnum = BooleanOperation;
+        return _this;
+    }
+    BooleanOperator.prototype.evaluate = function (statements) {
+        if (!(statements === null || statements === void 0 ? void 0 : statements.length))
+            return false;
+        switch (this.operationString) {
+            case BooleanOperation.and:
+                return statements.every(Boolean);
+            case BooleanOperation.or:
+                return statements.some(Boolean);
+            case BooleanOperation.xor:
+                return statements.filter(Boolean).length === 1;
+            default:
+                this.em.logWarning("Unsupported boolean operation: ".concat(this.operationString));
+                return false;
+        }
+    };
+    return BooleanOperator;
+}(SimpleOperator));
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/NumberOperator.ts
+var NumberOperator_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+var NumberOperation;
+(function (NumberOperation) {
+    NumberOperation["greaterThan"] = ">";
+    NumberOperation["lessThan"] = "<";
+    NumberOperation["greaterThanOrEqual"] = ">=";
+    NumberOperation["lessThanOrEqual"] = "<=";
+    NumberOperation["equals"] = "=";
+    NumberOperation["notEquals"] = "!=";
+})(NumberOperation || (NumberOperation = {}));
+var NumberOperator = /** @class */ (function (_super) {
+    NumberOperator_extends(NumberOperator, _super);
+    function NumberOperator() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.operationsEnum = NumberOperation;
+        return _this;
+    }
+    NumberOperator.prototype.evaluate = function (left, right) {
+        if (typeof left !== 'number')
+            return false;
+        switch (this.operationString) {
+            case NumberOperation.greaterThan:
+                return left > right;
+            case NumberOperation.lessThan:
+                return left < right;
+            case NumberOperation.greaterThanOrEqual:
+                return left >= right;
+            case NumberOperation.lessThanOrEqual:
+                return left <= right;
+            case NumberOperation.equals:
+                return left === right;
+            case NumberOperation.notEquals:
+                return left !== right;
+            default:
+                this.em.logWarning("Unsupported number operation: ".concat(this.operationString));
+                return false;
+        }
+    };
+    return NumberOperator;
+}(SimpleOperator));
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/StringOperator.ts
+var StringOperator_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+var StringOperation;
+(function (StringOperation) {
+    StringOperation["contains"] = "contains";
+    StringOperation["startsWith"] = "startsWith";
+    StringOperation["endsWith"] = "endsWith";
+    StringOperation["matchesRegex"] = "matchesRegex";
+    StringOperation["equalsIgnoreCase"] = "equalsIgnoreCase";
+    StringOperation["trimEquals"] = "trimEquals";
+})(StringOperation || (StringOperation = {}));
+var StringOperator = /** @class */ (function (_super) {
+    StringOperator_extends(StringOperator, _super);
+    function StringOperator() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.operationsEnum = StringOperation;
+        return _this;
+    }
+    StringOperator.prototype.evaluate = function (left, right) {
+        if (typeof left !== 'string')
+            return false;
+        switch (this.operationString) {
+            case StringOperation.contains:
+                return left.includes(right);
+            case StringOperation.startsWith:
+                return left.startsWith(right);
+            case StringOperation.endsWith:
+                return left.endsWith(right);
+            case StringOperation.matchesRegex:
+                if (!right)
+                    this.em.logWarning('Regex pattern must be provided.');
+                return new RegExp(right !== null && right !== void 0 ? right : '').test(left);
+            case StringOperation.equalsIgnoreCase:
+                return left.toLowerCase() === right.toLowerCase();
+            case StringOperation.trimEquals:
+                return left.trim() === right.trim();
+            default:
+                this.em.logWarning("Unsupported string operation: ".concat(this.operationString));
+                return false;
+        }
+    };
+    return StringOperator;
+}(SimpleOperator));
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/DataConditionEvaluator.ts
+var DataConditionEvaluator_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+
+
+
+
+
+
+
+var DataConditionEvaluator = /** @class */ (function (_super) {
+    DataConditionEvaluator_extends(DataConditionEvaluator, _super);
+    function DataConditionEvaluator(props, opts) {
+        var _a;
+        var _this = _super.call(this, props) || this;
+        _this.collectionsStateMap = {};
+        _this.em = opts.em;
+        _this.collectionsStateMap = (_a = opts.collectionsStateMap) !== null && _a !== void 0 ? _a : {};
+        return _this;
+    }
+    DataConditionEvaluator.prototype.evaluate = function () {
+        var condition = this.get('condition');
+        if (!condition || (0,index_all.isBoolean)(condition))
+            return !!condition;
+        var resolvedOperator = this.getOperator();
+        if (!resolvedOperator)
+            return false;
+        return resolvedOperator.evaluate(this.getResolvedLeftValue(), this.getResolvedRightValue());
+    };
+    DataConditionEvaluator.prototype.getDependentDataVariables = function () {
+        var condition = this.get('condition');
+        if (!condition)
+            return [];
+        return this.extractDataVariables(condition);
+    };
+    DataConditionEvaluator.prototype.getOperations = function () {
+        var operator = this.getOperator();
+        if (!operator || operator instanceof LogicalGroupEvaluator)
+            return [];
+        return operator.getOperations();
+    };
+    DataConditionEvaluator.prototype.updateCollectionStateMap = function (collectionsStateMap) {
+        this.collectionsStateMap = collectionsStateMap;
+    };
+    DataConditionEvaluator.prototype.getOperator = function () {
+        var opts = { em: this.em, collectionsStateMap: this.collectionsStateMap };
+        var condition = this.get('condition');
+        if (!condition || (0,index_all.isBoolean)(condition))
+            return;
+        var resolvedOperator;
+        if (this.isLogicGroup(condition)) {
+            var logicalOperator = condition.logicalOperator, statements = condition.statements;
+            var operator = new BooleanOperator(logicalOperator, opts);
+            resolvedOperator = new LogicalGroupEvaluator(operator, statements, opts);
+        }
+        if (this.isExpression(condition)) {
+            var left = condition.left, operator = condition.operator;
+            var evaluatedLeft = valueOrResolve(left, opts);
+            resolvedOperator = this.resolveOperator(evaluatedLeft, operator);
+        }
+        return resolvedOperator;
+    };
+    /**
+     * Factory method for creating operators based on the data type.
+     */
+    DataConditionEvaluator.prototype.resolveOperator = function (left, operator) {
+        var em = this.em;
+        if (this.isOperatorInEnum(operator, AnyTypeOperation)) {
+            return new AnyTypeOperator(operator, { em: em });
+        }
+        else if (typeof left === 'number') {
+            return new NumberOperator(operator, { em: em });
+        }
+        else if (typeof left === 'string') {
+            return new StringOperator(operator, { em: em });
+        }
+        return;
+    };
+    DataConditionEvaluator.prototype.extractDataVariables = function (condition) {
+        var _this = this;
+        var variables = [];
+        if (this.isExpression(condition)) {
+            if (isDataVariable(condition.left))
+                variables.push(condition.left);
+            if (isDataVariable(condition.right))
+                variables.push(condition.right);
+        }
+        else if (this.isLogicGroup(condition)) {
+            condition.statements.forEach(function (stmt) { return variables.push.apply(variables, _this.extractDataVariables(stmt)); });
+        }
+        return variables;
+    };
+    DataConditionEvaluator.prototype.isLogicGroup = function (condition) {
+        return condition && typeof condition.logicalOperator !== 'undefined' && Array.isArray(condition.statements);
+    };
+    DataConditionEvaluator.prototype.isExpression = function (condition) {
+        return condition && typeof condition.left !== 'undefined' && typeof condition.operator === 'string';
+    };
+    DataConditionEvaluator.prototype.isOperatorInEnum = function (operator, enumObject) {
+        return Object.values(enumObject).includes(operator);
+    };
+    DataConditionEvaluator.prototype.resolveExpressionSide = function (property) {
+        var condition = this.get('condition');
+        var _a = this, em = _a.em, collectionsStateMap = _a.collectionsStateMap;
+        if (!condition || typeof condition === 'boolean') {
+            return condition;
+        }
+        if (condition && typeof condition === 'object' && property in condition) {
+            var value = condition[property];
+            return valueOrResolve(value, { em: em, collectionsStateMap: collectionsStateMap });
+        }
+        return undefined;
+    };
+    DataConditionEvaluator.prototype.getResolvedLeftValue = function () {
+        return this.resolveExpressionSide('left');
+    };
+    DataConditionEvaluator.prototype.getResolvedRightValue = function () {
+        return this.resolveExpressionSide('right');
+    };
+    DataConditionEvaluator.prototype.toJSON = function (options) {
+        var condition = this.get('condition');
+        if (typeof condition === 'object') {
+            var json = JSON.parse(JSON.stringify(condition));
+            return json;
+        }
+        return condition;
+    };
+    return DataConditionEvaluator;
+}(common/* Model */.Kx));
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/DataCondition.ts
+var DataCondition_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+
+
+
+
+
+var DataCondition_DataConditionType = 'data-condition';
+var DataConditionEvaluationChangedEvent = 'data-condition-evaluation-changed';
+var DataConditionOutputChangedEvent = 'data-condition-output-changed';
+var DataCondition_DataCondition = /** @class */ (function (_super) {
+    DataCondition_extends(DataCondition, _super);
+    function DataCondition(props, opts) {
+        var _a;
+        var _this = _super.call(this, props, opts) || this;
+        _this.collectionsStateMap = {};
+        _this.resolverListeners = [];
+        _this._previousEvaluationResult = null;
+        _this.em = opts.em;
+        _this.collectionsStateMap = (_a = opts.collectionsStateMap) !== null && _a !== void 0 ? _a : {};
+        var _b = props.condition, condition = _b === void 0 ? {} : _b;
+        var instance = new DataConditionEvaluator({ condition: condition }, { em: _this.em });
+        _this._conditionEvaluator = instance;
+        _this.listenToDataVariables();
+        _this.listenToPropsChange();
+        return _this;
+    }
+    DataCondition.prototype.defaults = function () {
+        return {
+            type: DataCondition_DataConditionType,
+            condition: {
+                left: '',
+                operator: StringOperation.equalsIgnoreCase,
+                right: '',
+            },
+            ifTrue: {},
+            ifFalse: {},
+        };
+    };
+    DataCondition.prototype.getCondition = function () {
+        return this._conditionEvaluator.get('condition');
+    };
+    DataCondition.prototype.getIfTrue = function () {
+        return this.get('ifTrue');
+    };
+    DataCondition.prototype.getIfFalse = function () {
+        return this.get('ifFalse');
+    };
+    DataCondition.prototype.getOperations = function () {
+        return this._conditionEvaluator.getOperations();
+    };
+    DataCondition.prototype.setCondition = function (condition) {
+        this.set('condition', condition);
+        this._conditionEvaluator.set('condition', condition);
+        this.trigger(DataConditionOutputChangedEvent, this.getDataValue());
+    };
+    DataCondition.prototype.setIfTrue = function (newIfTrue) {
+        this.set('ifTrue', newIfTrue);
+    };
+    DataCondition.prototype.setIfFalse = function (newIfFalse) {
+        this.set('ifFalse', newIfFalse);
+    };
+    DataCondition.prototype.isTrue = function () {
+        return this._conditionEvaluator.evaluate();
+    };
+    DataCondition.prototype.getDataValue = function (skipResolve) {
+        if (skipResolve === void 0) { skipResolve = false; }
+        var _a = this, em = _a.em, collectionsStateMap = _a.collectionsStateMap;
+        var options = { em: em, collectionsStateMap: collectionsStateMap };
+        var ifTrue = this.getIfTrue();
+        var ifFalse = this.getIfFalse();
+        var isConditionTrue = this.isTrue();
+        if (skipResolve) {
+            return isConditionTrue ? ifTrue : ifFalse;
+        }
+        return isConditionTrue ? valueOrResolve(ifTrue, options) : valueOrResolve(ifFalse, options);
+    };
+    DataCondition.prototype.resolvesFromCollection = function () {
+        return false;
+    };
+    DataCondition.prototype.updateCollectionsStateMap = function (collectionsStateMap) {
+        this.collectionsStateMap = collectionsStateMap;
+        this._conditionEvaluator.updateCollectionStateMap(collectionsStateMap);
+        this.listenToDataVariables();
+        this.emitConditionEvaluationChange();
+    };
+    DataCondition.prototype.listenToPropsChange = function () {
+        var _this = this;
+        this.on('change:condition', this.handleConditionChange.bind(this));
+        this.on('change:condition change:ifTrue change:ifFalse', function () {
+            _this.listenToDataVariables();
+        });
+    };
+    DataCondition.prototype.handleConditionChange = function () {
+        this.setCondition(this.get('condition'));
+    };
+    DataCondition.prototype.listenToDataVariables = function () {
+        this.cleanupListeners();
+        this.setupConditionDataVariableListeners();
+        this.setupOutputDataVariableListeners();
+    };
+    DataCondition.prototype.setupConditionDataVariableListeners = function () {
+        var _this = this;
+        this._conditionEvaluator.getDependentDataVariables().forEach(function (variable) {
+            _this.addListener(variable, function () {
+                _this.emitConditionEvaluationChange();
+            });
+        });
+    };
+    DataCondition.prototype.setupOutputDataVariableListeners = function () {
+        var isConditionTrue = this.isTrue();
+        this.setupOutputVariableListener(this.getIfTrue(), isConditionTrue);
+        this.setupOutputVariableListener(this.getIfFalse(), !isConditionTrue);
+    };
+    DataCondition.prototype.setupOutputVariableListener = function (outputVariable, isConditionTrue) {
+        var _this = this;
+        if (isDataVariable(outputVariable)) {
+            this.addListener(outputVariable, function () {
+                if (isConditionTrue) {
+                    _this.trigger(DataConditionOutputChangedEvent, outputVariable);
+                }
+            });
+        }
+    };
+    DataCondition.prototype.addListener = function (variable, onUpdate) {
+        var listener = new model_DataResolverListener({
+            em: this.em,
+            resolver: new model_DataVariable(variable, { em: this.em, collectionsStateMap: this.collectionsStateMap }),
+            onUpdate: onUpdate,
+        });
+        this.resolverListeners.push(listener);
+    };
+    DataCondition.prototype.emitConditionEvaluationChange = function () {
+        var currentEvaluationResult = this.isTrue();
+        if (this._previousEvaluationResult !== currentEvaluationResult) {
+            this._previousEvaluationResult = currentEvaluationResult;
+            this.trigger(DataConditionEvaluationChangedEvent, currentEvaluationResult);
+            this.emitOutputValueChange();
+        }
+    };
+    DataCondition.prototype.emitOutputValueChange = function () {
+        var currentOutputValue = this.getDataValue();
+        this.trigger(DataConditionOutputChangedEvent, currentOutputValue);
+    };
+    DataCondition.prototype.cleanupListeners = function () {
+        this.resolverListeners.forEach(function (listener) { return listener.destroy(); });
+        this.resolverListeners = [];
+    };
+    DataCondition.prototype.toJSON = function () {
+        var ifTrue = this.getIfTrue();
+        var ifFalse = this.getIfFalse();
+        return {
+            type: DataCondition_DataConditionType,
+            condition: this._conditionEvaluator.toJSON(),
+            ifTrue: ifTrue,
+            ifFalse: ifFalse,
+        };
+    };
+    return DataCondition;
+}(common/* Model */.Kx));
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/data_collection/constants.ts
+var keyCollectionDefinition = 'dataResolver';
+
+;// CONCATENATED MODULE: ./src/dom_components/model/SymbolUtils.ts
+var SymbolUtils_assign = (undefined && undefined.__assign) || function () {
+    SymbolUtils_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return SymbolUtils_assign.apply(this, arguments);
+};
+var SymbolUtils_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+
+
+
+
+var isSymbolMain = function (cmp) { return (0,index_all.isArray)(cmp.get(keySymbols)); };
+var isSymbolInstance = function (cmp) { return !!cmp.get(keySymbol); };
+var isSymbol = function (cmp) { return !!(isSymbolMain(cmp) || isSymbolInstance(cmp)); };
+var isSymbolRoot = function (symbol) {
+    var parent = symbol.parent();
+    return isSymbol(symbol) && (!parent || !isSymbol(parent));
+};
+var isSymbolNested = function (symbol) {
+    if (!isSymbol(symbol))
+        return false;
+    var symbTopSelf = getSymbolTop(isSymbolMain(symbol) ? symbol : getSymbolMain(symbol));
+    var symbTop = getSymbolTop(symbol);
+    var symbTopMain = isSymbolMain(symbTop) ? symbTop : getSymbolMain(symbTop);
+    return symbTopMain !== symbTopSelf;
+};
+var initSymbol = function (symbol) {
+    if (symbol.__symbReady)
+        return;
+    symbol.on('change', symbol.__upSymbProps);
+    symbol.__symbReady = true;
+};
+var getSymbolMain = function (symbol) {
+    var result = symbol.get(keySymbol);
+    if (result && (0,index_all.isString)(result)) {
+        var ref = symbol.__getAllById()[result];
+        if (ref) {
+            result = ref;
+            symbol.set(keySymbol, ref);
+        }
+        else {
+            result = 0;
+        }
+    }
+    return result || undefined;
+};
+var getSymbolInstances = function (symbol) {
+    var symbs = symbol === null || symbol === void 0 ? void 0 : symbol.get(keySymbols);
+    if (symbs && (0,index_all.isArray)(symbs)) {
+        symbs.forEach(function (symb, idx) {
+            if (symb && (0,index_all.isString)(symb)) {
+                symbs[idx] = symbol.__getAllById()[symb];
+            }
+        });
+        symbs = symbs.filter(function (symb) { return symb && !(0,index_all.isString)(symb); });
+    }
+    return symbs || undefined;
+};
+var isSymbolOverride = function (symbol, prop) {
+    if (prop === void 0) { prop = ''; }
+    var ovrd = symbol === null || symbol === void 0 ? void 0 : symbol.get(keySymbolOvrd);
+    var prp = prop.split(':')[0];
+    var props = prop !== prp ? [prop, prp] : [prop];
+    return ovrd === true || ((0,index_all.isArray)(ovrd) && props.some(function (p) { return ovrd.indexOf(p) >= 0; }));
+};
+var getSymbolsToUpdate = function (symb, opts) {
+    if (opts === void 0) { opts = {}; }
+    var result = [];
+    var changed = opts.changed;
+    if (opts.fromInstance ||
+        opts.noPropagate ||
+        opts.fromUndo ||
+        // Avoid updating others if the current component has override
+        (changed && isSymbolOverride(symb, changed))) {
+        return result;
+    }
+    var symbols = getSymbolInstances(symb) || [];
+    var symbol = getSymbolMain(symb);
+    var all = symbol ? SymbolUtils_spreadArray([symbol], (getSymbolInstances(symbol) || []), true) : symbols;
+    result = all
+        .filter(function (s) { return s !== symb; })
+        // Avoid updating those with override
+        .filter(function (s) { return !(changed && isSymbolOverride(s, changed)); });
+    return result;
+};
+var getSymbolTop = function (symbol, opts) {
+    var result = symbol;
+    var parent = symbol.parent(opts);
+    // while (parent && (isSymbolMain(parent) || getSymbol(parent))) {
+    while (parent && isSymbol(parent)) {
+        result = parent;
+        parent = parent.parent(opts);
+    }
+    return result;
+};
+var detachSymbolInstance = function (symbol, opts) {
+    if (opts === void 0) { opts = {}; }
+    var symbolMain = getSymbolMain(symbol);
+    var symbs = symbolMain && getSymbolInstances(symbolMain);
+    !opts.skipRefs &&
+        symbs &&
+        symbolMain.set(keySymbols, symbs.filter(function (s) { return s !== symbol; }));
+    symbol.set(keySymbol, 0);
+    symbol.components().forEach(function (s) { return detachSymbolInstance(s, opts); });
+};
+var logSymbol = function (symb, type, toUp, opts) {
+    if (opts === void 0) { opts = {}; }
+    var symbol = getSymbolMain(symb);
+    var symbols = getSymbolInstances(symb);
+    if (!symbol && !symbols) {
+        return;
+    }
+    symb.em.log(type, { model: symb, toUp: toUp, context: 'symbols', opts: opts });
+};
+var updateSymbolProps = function (symbol, opts) {
+    if (opts === void 0) { opts = {}; }
+    var changedAttributes = symbol.changedAttributes();
+    if (!changedAttributes)
+        return;
+    var resolvedProps = symbol.dataResolverWatchers.getProps(changedAttributes);
+    cleanChangedProperties(resolvedProps);
+    if (!(0,mixins.isEmptyObj)(resolvedProps)) {
+        var toUpdate = getSymbolsToUpdate(symbol, opts);
+        // Filter properties to propagate
+        resolvedProps = filterPropertiesForPropagation(resolvedProps, symbol);
+        logSymbol(symbol, 'props', toUpdate, { opts: opts, changed: resolvedProps });
+        // Update child symbols
+        toUpdate.forEach(function (child) {
+            var propsToUpdate = filterPropertiesForPropagation(resolvedProps, child);
+            child.set(propsToUpdate, SymbolUtils_assign({ fromInstance: symbol }, opts));
+        });
+    }
+};
+var cleanChangedProperties = function (changed) {
+    var _a, _b;
+    var keysToDelete = ['status', 'open', keySymbols, keySymbol, keySymbolOvrd];
+    keysToDelete.forEach(function (key) { return delete changed[key]; });
+    (_a = changed.attributes) === null || _a === void 0 ? true : delete _a.id;
+    (0,mixins.isEmptyObj)((_b = changed.attributes) !== null && _b !== void 0 ? _b : {}) && delete changed.attributes;
+};
+var filterPropertiesForPropagation = function (props, component) {
+    var filteredProps = SymbolUtils_assign({}, props);
+    (0,index_all.keys)(props).forEach(function (prop) {
+        if (!shouldPropagateProperty(props, prop, component)) {
+            delete filteredProps[prop];
+        }
+    });
+    return filteredProps;
+};
+var hasCollectionId = function (obj) {
+    if (!obj)
+        return false;
+    return Object.values(obj).some(function (val) { return Boolean(val === null || val === void 0 ? void 0 : val.collectionId); });
+};
+var isCollectionVariableDefinition = function (props, prop) {
+    var _a;
+    switch (prop) {
+        case 'attributes':
+        case 'style':
+            return hasCollectionId(props[prop]);
+        default:
+            return Boolean((_a = props[prop]) === null || _a === void 0 ? void 0 : _a.collectionId);
+    }
+};
+var shouldPropagateProperty = function (props, prop, component) {
+    var isCollectionVar = isCollectionVariableDefinition(props, prop);
+    return !isSymbolOverride(component, prop) || isCollectionVar;
+};
+var updateSymbolCls = function (symbol, opts) {
+    if (opts === void 0) { opts = {}; }
+    var toUp = getSymbolsToUpdate(symbol, opts);
+    logSymbol(symbol, 'classes', toUp, { opts: opts });
+    toUp.forEach(function (child) {
+        // @ts-ignore This will propagate the change up to __upSymbProps
+        child.set('classes', symbol.get('classes'), { fromInstance: symbol });
+    });
+    symbol.__changesUp(opts);
+};
+var updateSymbolComps = function (symbol, m, c, o) {
+    var optUp = o || c || {};
+    var fromInstance = optUp.fromInstance, fromUndo = optUp.fromUndo;
+    var toUpOpts = { fromInstance: fromInstance, fromUndo: fromUndo };
+    var isTemp = m.opt.temporary;
+    // Reset
+    if (!o) {
+        var coll = m;
+        var toUp = getSymbolsToUpdate(symbol, SymbolUtils_assign(SymbolUtils_assign({}, toUpOpts), { changed: 'components:reset' }));
+        var cmps_1 = coll.models;
+        var newSymbols_1 = new Set();
+        logSymbol(symbol, 'reset', toUp, { components: cmps_1 });
+        toUp.forEach(function (rel) {
+            var relCmps = rel.components();
+            var toReset = cmps_1.map(function (cmp, i) {
+                if (symbol.get(keyCollectionDefinition)) {
+                    return cmp.clone({ symbol: isSymbol(cmp) });
+                }
+                // This particular case here is to handle reset from `resetFromString`
+                // where we can receive an array of regulat components or already
+                // existing symbols (updated already before reset)
+                if (!isSymbol(cmp) || newSymbols_1.has(cmp)) {
+                    newSymbols_1.add(cmp);
+                    return cmp.clone({ symbol: true });
+                }
+                return relCmps.at(i);
+            });
+            relCmps.reset(toReset, SymbolUtils_assign({ fromInstance: symbol }, c));
+        });
+        // Add
+    }
+    else if (o.add) {
+        var addedInstances_1 = [];
+        var isMainSymb_1 = !!getSymbolInstances(symbol);
+        var toUp = getSymbolsToUpdate(symbol, SymbolUtils_assign(SymbolUtils_assign({}, toUpOpts), { changed: 'components:add' }));
+        if (toUp.length) {
+            var addSymb = getSymbolMain(m);
+            addedInstances_1 = (addSymb ? getSymbolInstances(addSymb) : getSymbolInstances(m)) || [];
+            addedInstances_1 = SymbolUtils_spreadArray([], addedInstances_1, true);
+            addedInstances_1.push(addSymb ? addSymb : m);
+        }
+        !isTemp &&
+            logSymbol(symbol, 'add', toUp, {
+                opts: o,
+                addedInstances: addedInstances_1.map(function (c) { return c.cid; }),
+                added: m.cid,
+            });
+        // Here, before appending a new symbol, I have to ensure there are no previously
+        // created symbols (eg. used mainly when drag components around)
+        toUp.forEach(function (symb) {
+            var symbTop = getSymbolTop(symb);
+            var symbPrev = addedInstances_1.filter(function (addedInst) {
+                var addedTop = getSymbolTop(addedInst, { prev: 1 });
+                return symbTop && addedTop && addedTop === symbTop;
+            })[0];
+            var toAppend = symbPrev || m.clone({ symbol: true, symbolInv: isMainSymb_1 });
+            symb.append(toAppend, SymbolUtils_assign({ fromInstance: symbol }, o));
+        });
+        // Remove
+    }
+    else {
+        // Remove instance reference from the symbol
+        var symb = getSymbolMain(m);
+        symb &&
+            !o.temporary &&
+            symb.set(keySymbols, getSymbolInstances(symb).filter(function (i) { return i !== m; }));
+        // Propagate remove only if the component is an inner symbol
+        if (!isSymbolRoot(m) && !o.skipRefsUp) {
+            var changed_1 = 'components:remove';
+            var index_1 = o.index;
+            var parent_1 = m.parent();
+            var opts_1 = SymbolUtils_assign({ fromInstance: m }, o);
+            var isSymbNested = isSymbolRoot(m);
+            var toUpFn = function (symb) {
+                var symbPrnt = symb.parent();
+                symbPrnt && !isSymbolOverride(symbPrnt, changed_1) && symb.remove(opts_1);
+            };
+            // Check if the parent allows the removing
+            var toUp = !isSymbolOverride(parent_1, changed_1) ? getSymbolsToUpdate(m, toUpOpts) : [];
+            if (isSymbNested) {
+                toUp = parent_1 && getSymbolsToUpdate(parent_1, SymbolUtils_assign(SymbolUtils_assign({}, toUpOpts), { changed: changed_1 }));
+                toUpFn = function (symb) {
+                    var toRemove = symb.components().at(index_1);
+                    toRemove && toRemove.remove(SymbolUtils_assign({ fromInstance: parent_1 }, opts_1));
+                };
+            }
+            !isTemp &&
+                logSymbol(symbol, 'remove', toUp, {
+                    opts: o,
+                    removed: m.cid,
+                    isSymbNested: isSymbNested,
+                });
+            toUp.forEach(toUpFn);
+        }
+    }
+    symbol.__changesUp(optUp);
+};
+
+;// CONCATENATED MODULE: ./src/data_sources/utils.ts
+
+
+
+
+
+
+var DEF_DATA_FIELD_ID = 'id';
+function isDataResolverProps(value) {
+    return typeof value === 'object' && [DataVariableType, DataCondition_DataConditionType].includes(value === null || value === void 0 ? void 0 : value.type);
+}
+function isDataResolver(value) {
+    return value instanceof DataVariable || value instanceof DataCondition;
+}
+function isDataVariable(variable) {
+    return (variable === null || variable === void 0 ? void 0 : variable.type) === DataVariableType;
+}
+function isDataCondition(variable) {
+    return (variable === null || variable === void 0 ? void 0 : variable.type) === DataConditionType;
+}
+function valueOrResolve(variable, opts) {
+    if (!isDataResolverProps(variable))
+        return variable;
+    if (isDataVariable(variable))
+        model_DataVariable.resolveDataResolver(variable, opts);
+    return getDataResolverInstanceValue(variable, opts);
+}
+function getDataResolverInstance(resolverProps, options) {
+    var _a;
+    var type = resolverProps.type;
+    var resolver;
+    switch (type) {
+        case DataVariableType:
+            resolver = new model_DataVariable(resolverProps, options);
+            break;
+        case DataCondition_DataConditionType: {
+            resolver = new DataCondition_DataCondition(resolverProps, options);
+            break;
+        }
+        default:
+            (_a = options.em) === null || _a === void 0 ? void 0 : _a.logWarning("Unsupported resolver type: ".concat(type));
+            return;
+    }
+    return resolver;
+}
+function getDataResolverInstanceValue(resolverProps, options) {
+    var resolver = getDataResolverInstance(resolverProps, options);
+    return resolver === null || resolver === void 0 ? void 0 : resolver.getDataValue();
+}
+var ensureComponentInstance = function (cmp, opt) {
+    var _a, _b;
+    if (cmp instanceof Component)
+        return cmp;
+    var componentType = (_a = cmp === null || cmp === void 0 ? void 0 : cmp.type) !== null && _a !== void 0 ? _a : 'default';
+    var defaultModel = opt.em.Components.getType('default');
+    var type = (_b = opt.em.Components.getType(componentType)) !== null && _b !== void 0 ? _b : defaultModel;
+    var Model = type.model;
+    return new Model(serialize(cmp !== null && cmp !== void 0 ? cmp : {}), opt);
+};
+var isComponentDataOutputType = function (type) {
+    return (!!type &&
+        [DataComponentTypes.collectionItem, DataComponentTypes.conditionTrue, DataComponentTypes.conditionFalse].includes(type));
+};
+function enumToArray(enumObj) {
+    return Object.keys(enumObj)
+        .filter(function (key) { return isNaN(Number(key)); })
+        .map(function (key) { return enumObj[key]; });
+}
+function shouldSyncCollectionSymbol(component) {
+    var componentCollectionMap = component.collectionsStateMap;
+    if (!componentCollectionMap)
+        return false;
+    var parentCollectionIds = Object.keys(componentCollectionMap);
+    if (!parentCollectionIds.length)
+        return false;
+    var mainSymbolComponent = getSymbolMain(component);
+    if (!mainSymbolComponent || mainSymbolComponent === component)
+        return false;
+    var mainSymbolCollectionMap = mainSymbolComponent.collectionsStateMap;
+    var mainSymbolParentIds = Object.keys(mainSymbolCollectionMap);
+    var isSubsetOfOriginalCollections = mainSymbolParentIds.every(function (id) { return parentCollectionIds.includes(id); });
+    return isSubsetOfOriginalCollections;
+}
+function getIdFromCollectionSymbol(component) {
+    var mainSymbolComponent = getSymbolMain(component);
+    return mainSymbolComponent ? mainSymbolComponent.getId() : '';
+}
+function checkAndGetSyncableCollectionItemId(component) {
+    var shouldSync = shouldSyncCollectionSymbol(component);
+    var itemId = shouldSync ? getIdFromCollectionSymbol(component) : null;
+    return { shouldSync: shouldSync, itemId: itemId };
+}
 
 ;// CONCATENATED MODULE: ./src/parser/model/BrowserParserHtml.ts
 
@@ -26998,11 +28427,31 @@ var ParserEvents;
     ParserEvents["html"] = "parse:html";
     ParserEvents["htmlRoot"] = "parse:html:root";
     /**
+     * @event `parse:html:before` Event triggered before the HTML parsing starts. An object containing the input is passed as an argument.
+     * @example
+     * editor.on('parse:html:before', (options) => {
+     *   console.log('Parser input', options.input);
+     *   // You can also process the input and update `options.input`
+     *   options.input += '<div>Extra content</div>';
+     * });
+     */
+    ParserEvents["htmlBefore"] = "parse:html:before";
+    /**
      * @event `parse:css` On CSS parse, an object containing the input and the output of the parser is passed as an argument.
      * @example
      * editor.on('parse:css', ({ input, output }) => { ... });
      */
     ParserEvents["css"] = "parse:css";
+    /**
+     * @event `parse:css:before` Event triggered before the CSS parsing starts. An object containing the input is passed as an argument.
+     * @example
+     * editor.on('parse:css:before', (options) => {
+     *   console.log('Parser input', options.input);
+     *   // You can also process the input and update `options.input`
+     *   options.input += '.my-class { color: red; }';
+     * });
+     */
+    ParserEvents["cssBefore"] = "parse:css:before";
     /**
      * @event `parse` Catch-all event for all the events mentioned above. An object containing all the available data about the triggered event is passed as an argument to the callback.
      * @example
@@ -27010,7 +28459,8 @@ var ParserEvents;
      */
     ParserEvents["all"] = "parse";
 })(ParserEvents || (ParserEvents = {}));
-/**{END_EVENTS}*/
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const parser_types = ((/* unused pure expression or super */ null && (ParserEvents)));
 
 ;// CONCATENATED MODULE: ./src/parser/model/ParserHtml.ts
 var ParserHtml_assign = (undefined && undefined.__assign) || function () {
@@ -27091,8 +28541,9 @@ var ParserHtml = function (em, config) {
             var result = {};
             while (str.indexOf('/*') >= 0) {
                 var start = str.indexOf('/*');
-                var end = str.indexOf('*/') + 2;
-                str = str.replace(str.slice(start, end), '');
+                var end = str.indexOf('*/');
+                var endIndex = end > -1 ? end + 2 : undefined;
+                str = str.replace(str.slice(start, endIndex), '');
             }
             var decls = str.split(';');
             for (var i = 0, len = decls.length; i < len; i++) {
@@ -27135,10 +28586,14 @@ var ParserHtml = function (em, config) {
             }
             return result;
         },
-        parseNodeAttr: function (node, result) {
-            var model = result || {};
+        parseNodeAttr: function (node, modelResult) {
+            var _a, _b;
+            var model = modelResult || {};
             var attrs = node.attributes || [];
             var attrsLen = attrs.length;
+            var convertHyphens = !!((_a = config === null || config === void 0 ? void 0 : config.optionsHtml) === null || _a === void 0 ? void 0 : _a.convertDataGjsAttributesHyphens);
+            var defaults = (convertHyphens && !!model.type && (0,index_all.result)((_b = em === null || em === void 0 ? void 0 : em.Components.getType(model.type)) === null || _b === void 0 ? void 0 : _b.model.prototype, 'defaults')) ||
+                {};
             for (var i = 0; i < attrsLen; i++) {
                 var nodeName = attrs[i].nodeName;
                 var nodeValue = attrs[i].nodeValue;
@@ -27153,7 +28608,12 @@ var ParserHtml = function (em, config) {
                 }
                 else if (nodeName.indexOf(this.modelAttrStart) === 0) {
                     var propsResult = this.getPropAttribute(nodeName, nodeValue);
-                    model[propsResult.name] = propsResult.value;
+                    var resolvedName = propsResult.name;
+                    if (convertHyphens && !(resolvedName in defaults)) {
+                        var transformed = (0,dom/* processDataGjsAttributeHyphen */._I)(resolvedName);
+                        resolvedName = transformed in defaults ? transformed : resolvedName;
+                    }
+                    model[resolvedName] = propsResult.value;
                 }
                 else {
                     // @ts-ignore Check for attributes from props (eg. required, disabled)
@@ -27202,7 +28662,7 @@ var ParserHtml = function (em, config) {
             var nodes = ((_a = node.content) === null || _a === void 0 ? void 0 : _a.childNodes) || node.childNodes;
             var nodesLen = nodes.length;
             var model = this.detectNode(node, opts);
-            if (!model.tagName) {
+            if (!model.tagName && model.tagName !== '') {
                 var tag = node.tagName || '';
                 var ns = node.namespaceURI || '';
                 model.tagName = tag && ns === 'http://www.w3.org/1999/xhtml' ? tag.toLowerCase() : tag;
@@ -27300,17 +28760,20 @@ var ParserHtml = function (em, config) {
          * @return {Object}
          */
         parse: function (str, parserCss, opts) {
-            var _a, _b, _c, _d, _e;
+            var _a, _b, _c;
             if (opts === void 0) { opts = {}; }
             var conf = (em === null || em === void 0 ? void 0 : em.get('Config')) || {};
+            var Parser = em === null || em === void 0 ? void 0 : em.Parser;
             var res = { html: [] };
-            var cf = ParserHtml_assign(ParserHtml_assign({}, config), opts);
             var preOptions = ParserHtml_assign(ParserHtml_assign(ParserHtml_assign({}, config.optionsHtml), { 
                 // @ts-ignore Support previous `configParser.htmlType` option
                 htmlType: ((_a = config.optionsHtml) === null || _a === void 0 ? void 0 : _a.htmlType) || config.htmlType }), opts);
             var options = ParserHtml_assign(ParserHtml_assign({}, preOptions), { asDocument: this.__checkAsDocument(str, preOptions) });
+            var cf = ParserHtml_assign(ParserHtml_assign({}, config), options);
             var preParser = options.preParser, asDocument = options.asDocument;
-            var input = (0,index_all.isFunction)(preParser) ? preParser(str, { editor: em === null || em === void 0 ? void 0 : em.getEditor() }) : str;
+            var inputOptions = { input: (0,index_all.isFunction)(preParser) ? preParser(str, { editor: em === null || em === void 0 ? void 0 : em.getEditor() }) : str };
+            Parser === null || Parser === void 0 ? void 0 : Parser.__emitEvent(ParserEvents.htmlBefore, inputOptions);
+            var input = inputOptions.input;
             var parseRes = (0,index_all.isFunction)(cf.parserHtml) ? cf.parserHtml(input, options) : BrowserParserHtml(input, options);
             var root = parseRes;
             var docEl = parseRes;
@@ -27343,7 +28806,7 @@ var ParserHtml = function (em, config) {
                 if (styleStr)
                     res.css = parserCss.parse(styleStr);
             }
-            (_d = em === null || em === void 0 ? void 0 : em.Parser) === null || _d === void 0 ? void 0 : _d.__emitEvent(ParserEvents.htmlRoot, { input: input, root: root });
+            Parser === null || Parser === void 0 ? void 0 : Parser.__emitEvent(ParserEvents.htmlRoot, { input: input, root: root });
             var resHtml = [];
             if (asDocument) {
                 res.head = this.parseNode(docEl.head, cf);
@@ -27351,12 +28814,12 @@ var ParserHtml = function (em, config) {
                 resHtml = this.parseNode(docEl.body, cf);
             }
             else {
-                var result = this.parseNodes(root, cf);
+                var result_1 = this.parseNodes(root, cf);
                 // I have to keep it otherwise it breaks the DomComponents.addComponent (returns always array)
-                resHtml = result.length === 1 && !cf.returnArray ? result[0] : result;
+                resHtml = result_1.length === 1 && !cf.returnArray ? result_1[0] : result_1;
             }
             res.html = resHtml;
-            (_e = em === null || em === void 0 ? void 0 : em.Parser) === null || _e === void 0 ? void 0 : _e.__emitEvent(ParserEvents.html, { input: input, output: res, options: options });
+            Parser === null || Parser === void 0 ? void 0 : Parser.__emitEvent(ParserEvents.html, { input: input, output: res, options: options });
             return res;
         },
         __sanitizeNode: function (node, opts) {
@@ -27388,82 +28851,9 @@ var ParserHtml = function (em, config) {
 };
 /* harmony default export */ const model_ParserHtml = (ParserHtml);
 
-;// CONCATENATED MODULE: ./src/data_sources/model/DataVariable.ts
-var DataVariable_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-
-var DataVariableType = 'data-variable';
-var DataVariable = /** @class */ (function (_super) {
-    DataVariable_extends(DataVariable, _super);
-    function DataVariable(attrs, options) {
-        var _this = _super.call(this, attrs, options) || this;
-        _this.em = options.em;
-        _this.listenToDataSource();
-        return _this;
-    }
-    DataVariable.prototype.defaults = function () {
-        return {
-            type: DataVariableType,
-            defaultValue: '',
-            path: '',
-        };
-    };
-    DataVariable.prototype.listenToDataSource = function () {
-        var path = this.attributes.path;
-        var resolvedPath = (0,mixins.stringToPath)(path).join('.');
-        if (this.em) {
-            this.listenTo(this.em.DataSources, "change:".concat(resolvedPath), this.onDataSourceChange);
-        }
-    };
-    DataVariable.prototype.onDataSourceChange = function () {
-        var newValue = this.getDataValue();
-        this.set({ value: newValue });
-    };
-    DataVariable.prototype.getDataValue = function () {
-        var _a;
-        var _b = this.attributes, path = _b.path, defaultValue = _b.defaultValue;
-        if (!this.em) {
-            throw new Error('EditorModel instance is not provided for a data variable.');
-        }
-        var val = (_a = this.em) === null || _a === void 0 ? void 0 : _a.DataSources.getValue(path, defaultValue);
-        return val;
-    };
-    return DataVariable;
-}(common/* Model */.Kx));
-/* harmony default export */ const model_DataVariable = (DataVariable);
-
-;// CONCATENATED MODULE: ./src/data_sources/model/StyleDataVariable.ts
-var StyleDataVariable_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var StyleDataVariable_assign = (undefined && undefined.__assign) || function () {
-    StyleDataVariable_assign = Object.assign || function(t) {
+;// CONCATENATED MODULE: ./src/dom_components/model/ModelResolverWatcher.ts
+var ModelResolverWatcher_assign = (undefined && undefined.__assign) || function () {
+    ModelResolverWatcher_assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
@@ -27471,659 +28861,354 @@ var StyleDataVariable_assign = (undefined && undefined.__assign) || function () 
         }
         return t;
     };
-    return StyleDataVariable_assign.apply(this, arguments);
+    return ModelResolverWatcher_assign.apply(this, arguments);
 };
 
-var StyleDataVariable = /** @class */ (function (_super) {
-    StyleDataVariable_extends(StyleDataVariable, _super);
-    function StyleDataVariable() {
-        return _super !== null && _super.apply(this, arguments) || this;
+
+var ModelResolverWatcher = /** @class */ (function () {
+    function ModelResolverWatcher(model, updateFn, options) {
+        this.model = model;
+        this.updateFn = updateFn;
+        this.resolverListeners = {};
+        this.em = options.em;
     }
-    StyleDataVariable.prototype.defaults = function () {
-        return StyleDataVariable_assign({}, _super.prototype.defaults.call(this));
+    ModelResolverWatcher.prototype.bindModel = function (model) {
+        this.model = model;
     };
-    return StyleDataVariable;
-}(model_DataVariable));
-/* harmony default export */ const model_StyleDataVariable = (StyleDataVariable);
-
-;// CONCATENATED MODULE: ./src/data_sources/types.ts
-/**{START_EVENTS}*/
-var DataSourcesEvents;
-(function (DataSourcesEvents) {
-    /**
-     * @event `data:add` Added new data source.
-     * @example
-     * editor.on('data:add', (dataSource) => { ... });
-     */
-    DataSourcesEvents["add"] = "data:add";
-    DataSourcesEvents["addBefore"] = "data:add:before";
-    /**
-     * @event `data:remove` Data source removed.
-     * @example
-     * editor.on('data:remove', (dataSource) => { ... });
-     */
-    DataSourcesEvents["remove"] = "data:remove";
-    DataSourcesEvents["removeBefore"] = "data:remove:before";
-    /**
-     * @event `data:update` Data source updated.
-     * @example
-     * editor.on('data:update', (dataSource, changes) => { ... });
-     */
-    DataSourcesEvents["update"] = "data:update";
-    /**
-     * @event `data:path` Data record path update.
-     * @example
-     * editor.on('data:path:SOURCE_ID:RECORD_ID:PROP_NAME', ({ dataSource, dataRecord, path }) => { ... });
-     */
-    DataSourcesEvents["path"] = "data:path";
-    /**
-     * @event `data` Catch-all event for all the events mentioned above.
-     * @example
-     * editor.on('data', ({ event, model, ... }) => { ... });
-     */
-    DataSourcesEvents["all"] = "data";
-})(DataSourcesEvents || (DataSourcesEvents = {}));
-
-;// CONCATENATED MODULE: ./src/data_sources/model/utils.ts
-
-
-function isDynamicValueDefinition(value) {
-    return typeof value === 'object' && [DataVariableType, DataCondition_ConditionalVariableType].includes(value === null || value === void 0 ? void 0 : value.type);
-}
-function isDynamicValue(value) {
-    return value instanceof model_DataVariable || value instanceof DataCondition;
-}
-function isDataVariable(variable) {
-    return (variable === null || variable === void 0 ? void 0 : variable.type) === DataVariableType;
-}
-function isDataCondition(variable) {
-    return (variable === null || variable === void 0 ? void 0 : variable.type) === ConditionalVariableType;
-}
-function evaluateVariable(variable, em) {
-    return isDataVariable(variable) ? new model_DataVariable(variable, { em: em }).getDataValue() : variable;
-}
-function getDynamicValueInstance(valueDefinition, em) {
-    var dynamicType = valueDefinition.type;
-    var dynamicVariable;
-    switch (dynamicType) {
-        case DataVariableType:
-            dynamicVariable = new model_DataVariable(valueDefinition, { em: em });
-            break;
-        case DataCondition_ConditionalVariableType: {
-            var condition = valueDefinition.condition, ifTrue = valueDefinition.ifTrue, ifFalse = valueDefinition.ifFalse;
-            dynamicVariable = new DataCondition(condition, ifTrue, ifFalse, { em: em });
-            break;
+    ModelResolverWatcher.prototype.setDataValues = function (values, options) {
+        if (options === void 0) { options = {}; }
+        var shouldSkipWatcherUpdates = options.skipWatcherUpdates || options.fromDataSource;
+        if (!shouldSkipWatcherUpdates) {
+            this.removeListeners();
         }
-        default:
-            throw new Error("Unsupported dynamic type: ".concat(dynamicType));
-    }
-    return dynamicVariable;
-}
-function evaluateDynamicValueDefinition(valueDefinition, em) {
-    var dynamicVariable = getDynamicValueInstance(valueDefinition, em);
-    return { variable: dynamicVariable, value: dynamicVariable.getDataValue() };
-}
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/LogicalGroupStatement.ts
-
-var LogicalGroupStatement = /** @class */ (function () {
-    function LogicalGroupStatement(operator, statements, opts) {
-        this.operator = operator;
-        this.statements = statements;
-        this.em = opts.em;
-    }
-    LogicalGroupStatement.prototype.evaluate = function () {
+        return this.addDataValues(values, options);
+    };
+    ModelResolverWatcher.prototype.addDataValues = function (values, options) {
+        if (options === void 0) { options = {}; }
+        if (!values)
+            return {};
+        var evaluatedValues = this.evaluateValues(values);
+        var shouldSkipWatcherUpdates = options.skipWatcherUpdates || options.fromDataSource;
+        if (!shouldSkipWatcherUpdates) {
+            this.updateListeners(values);
+        }
+        return evaluatedValues;
+    };
+    ModelResolverWatcher.prototype.onCollectionsStateMapUpdate = function () {
         var _this = this;
-        var results = this.statements.map(function (statement) {
-            var condition = new Condition(statement, { em: _this.em });
-            return condition.evaluate();
+        var resolvesFromCollections = this.getValuesResolvingFromCollections();
+        if (!resolvesFromCollections.length)
+            return;
+        var evaluatedValues = this.addDataValues(this.getValuesOrResolver(Object.fromEntries(resolvesFromCollections.map(function (key) { return [key, '']; }))));
+        Object.entries(evaluatedValues).forEach(function (_a) {
+            var key = _a[0], value = _a[1];
+            return _this.updateFn(_this.model, key, value);
         });
-        return this.operator.evaluate(results);
     };
-    return LogicalGroupStatement;
-}());
-
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/index.ts
-var Operator = /** @class */ (function () {
-    function Operator() {
-    }
-    return Operator;
-}());
-
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/GenericOperator.ts
-var GenericOperator_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-
-var GenericOperation;
-(function (GenericOperation) {
-    GenericOperation["equals"] = "equals";
-    GenericOperation["isTruthy"] = "isTruthy";
-    GenericOperation["isFalsy"] = "isFalsy";
-    GenericOperation["isDefined"] = "isDefined";
-    GenericOperation["isNull"] = "isNull";
-    GenericOperation["isUndefined"] = "isUndefined";
-    GenericOperation["isArray"] = "isArray";
-    GenericOperation["isObject"] = "isObject";
-    GenericOperation["isString"] = "isString";
-    GenericOperation["isNumber"] = "isNumber";
-    GenericOperation["isBoolean"] = "isBoolean";
-    GenericOperation["isDefaultValue"] = "isDefaultValue";
-})(GenericOperation || (GenericOperation = {}));
-var GenericOperator = /** @class */ (function (_super) {
-    GenericOperator_extends(GenericOperator, _super);
-    function GenericOperator(operator) {
-        var _this = _super.call(this) || this;
-        _this.operator = operator;
-        return _this;
-    }
-    GenericOperator.prototype.evaluate = function (left, right) {
-        switch (this.operator) {
-            case 'equals':
-                return left === right;
-            case 'isTruthy':
-                return !!left;
-            case 'isFalsy':
-                return !left;
-            case 'isDefined':
-                return left !== undefined && left !== null;
-            case 'isNull':
-                return left === null;
-            case 'isUndefined':
-                return left === undefined;
-            case 'isArray':
-                return Array.isArray(left);
-            case 'isObject':
-                return typeof left === 'object' && left !== null;
-            case 'isString':
-                return typeof left === 'string';
-            case 'isNumber':
-                return typeof left === 'number';
-            case 'isBoolean':
-                return typeof left === 'boolean';
-            case 'isDefaultValue':
-                return left instanceof model_DataVariable && left.get('default') === right;
-            default:
-                throw new Error("Unsupported generic operator: ".concat(this.operator));
-        }
-    };
-    return GenericOperator;
-}(Operator));
-
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/LogicalOperator.ts
-var LogicalOperator_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-var LogicalOperation;
-(function (LogicalOperation) {
-    LogicalOperation["and"] = "and";
-    LogicalOperation["or"] = "or";
-    LogicalOperation["xor"] = "xor";
-})(LogicalOperation || (LogicalOperation = {}));
-var LogicalOperator = /** @class */ (function (_super) {
-    LogicalOperator_extends(LogicalOperator, _super);
-    function LogicalOperator(operator) {
-        var _this = _super.call(this) || this;
-        _this.operator = operator;
-        return _this;
-    }
-    LogicalOperator.prototype.evaluate = function (statements) {
-        if (!statements.length)
-            throw new Error('Expected one or more statments, got none');
-        switch (this.operator) {
-            case LogicalOperation.and:
-                return statements.every(Boolean);
-            case LogicalOperation.or:
-                return statements.some(Boolean);
-            case LogicalOperation.xor:
-                return statements.filter(Boolean).length === 1;
-            default:
-                throw new Error("Unsupported logical operator: ".concat(this.operator));
-        }
-    };
-    return LogicalOperator;
-}(Operator));
-
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/NumberOperator.ts
-var NumberOperator_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-var NumberOperation;
-(function (NumberOperation) {
-    NumberOperation["greaterThan"] = ">";
-    NumberOperation["lessThan"] = "<";
-    NumberOperation["greaterThanOrEqual"] = ">=";
-    NumberOperation["lessThanOrEqual"] = "<=";
-    NumberOperation["equals"] = "=";
-    NumberOperation["notEquals"] = "!=";
-})(NumberOperation || (NumberOperation = {}));
-var NumberOperator = /** @class */ (function (_super) {
-    NumberOperator_extends(NumberOperator, _super);
-    function NumberOperator(operator) {
-        var _this = _super.call(this) || this;
-        _this.operator = operator;
-        return _this;
-    }
-    NumberOperator.prototype.evaluate = function (left, right) {
-        switch (this.operator) {
-            case NumberOperation.greaterThan:
-                return left > right;
-            case NumberOperation.lessThan:
-                return left < right;
-            case NumberOperation.greaterThanOrEqual:
-                return left >= right;
-            case NumberOperation.lessThanOrEqual:
-                return left <= right;
-            case NumberOperation.equals:
-                return left === right;
-            case NumberOperation.notEquals:
-                return left !== right;
-            default:
-                throw new Error("Unsupported number operator: ".concat(this.operator));
-        }
-    };
-    return NumberOperator;
-}(Operator));
-
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/operators/StringOperations.ts
-var StringOperations_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-var StringOperation;
-(function (StringOperation) {
-    StringOperation["contains"] = "contains";
-    StringOperation["startsWith"] = "startsWith";
-    StringOperation["endsWith"] = "endsWith";
-    StringOperation["matchesRegex"] = "matchesRegex";
-    StringOperation["equalsIgnoreCase"] = "equalsIgnoreCase";
-    StringOperation["trimEquals"] = "trimEquals";
-})(StringOperation || (StringOperation = {}));
-var StringOperator = /** @class */ (function (_super) {
-    StringOperations_extends(StringOperator, _super);
-    function StringOperator(operator) {
-        var _this = _super.call(this) || this;
-        _this.operator = operator;
-        return _this;
-    }
-    StringOperator.prototype.evaluate = function (left, right) {
-        switch (this.operator) {
-            case StringOperation.contains:
-                return left.includes(right);
-            case StringOperation.startsWith:
-                return left.startsWith(right);
-            case StringOperation.endsWith:
-                return left.endsWith(right);
-            case StringOperation.matchesRegex:
-                if (!right)
-                    throw new Error('Regex pattern must be provided.');
-                return new RegExp(right).test(left);
-            case StringOperation.equalsIgnoreCase:
-                return left.toLowerCase() === right.toLowerCase();
-            case StringOperation.trimEquals:
-                return left.trim() === right.trim();
-            default:
-                throw new Error("Unsupported string operator: ".concat(this.operator));
-        }
-    };
-    return StringOperator;
-}(Operator));
-
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/Condition.ts
-var Condition_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-
-
-
-
-
-
-var Condition = /** @class */ (function (_super) {
-    Condition_extends(Condition, _super);
-    function Condition(condition, opts) {
-        var _this = _super.call(this, condition) || this;
-        _this.condition = condition;
-        _this.em = opts.em;
-        return _this;
-    }
-    Condition.prototype.evaluate = function () {
-        return this.evaluateCondition(this.condition);
-    };
-    /**
-     * Recursively evaluates conditions and logic groups.
-     */
-    Condition.prototype.evaluateCondition = function (condition) {
-        if (typeof condition === 'boolean')
-            return condition;
-        if (this.isLogicGroup(condition)) {
-            var logicalOperator = condition.logicalOperator, statements = condition.statements;
-            var operator = new LogicalOperator(logicalOperator);
-            var logicalGroup = new LogicalGroupStatement(operator, statements, { em: this.em });
-            return logicalGroup.evaluate();
-        }
-        if (this.isExpression(condition)) {
-            var left = condition.left, operator = condition.operator, right = condition.right;
-            var evaluateLeft = evaluateVariable(left, this.em);
-            var evaluateRight = evaluateVariable(right, this.em);
-            var op = this.getOperator(evaluateLeft, operator);
-            var evaluated = op.evaluate(evaluateLeft, evaluateRight);
-            return evaluated;
-        }
-        throw new Error('Invalid condition type.');
-    };
-    /**
-     * Factory method for creating operators based on the data type.
-     */
-    Condition.prototype.getOperator = function (left, operator) {
-        if (this.isOperatorInEnum(operator, GenericOperation)) {
-            return new GenericOperator(operator);
-        }
-        else if (typeof left === 'number') {
-            return new NumberOperator(operator);
-        }
-        else if (typeof left === 'string') {
-            return new StringOperator(operator);
-        }
-        throw new Error("Unsupported data type: ".concat(typeof left));
-    };
-    /**
-     * Extracts all data variables from the condition, including nested ones.
-     */
-    Condition.prototype.getDataVariables = function () {
-        var variables = [];
-        this.extractVariables(this.condition, variables);
-        return variables;
-    };
-    /**
-     * Recursively extracts variables from expressions or logic groups.
-     */
-    Condition.prototype.extractVariables = function (condition, variables) {
-        var _this = this;
-        if (this.isExpression(condition)) {
-            if (isDataVariable(condition.left))
-                variables.push(condition.left);
-            if (isDataVariable(condition.right))
-                variables.push(condition.right);
-        }
-        else if (this.isLogicGroup(condition)) {
-            condition.statements.forEach(function (stmt) { return _this.extractVariables(stmt, variables); });
-        }
-    };
-    /**
-     * Checks if a condition is a LogicGroup.
-     */
-    Condition.prototype.isLogicGroup = function (condition) {
-        return condition && typeof condition.logicalOperator !== 'undefined' && Array.isArray(condition.statements);
-    };
-    /**
-     * Checks if a condition is an Expression.
-     */
-    Condition.prototype.isExpression = function (condition) {
-        return condition && typeof condition.left !== 'undefined' && typeof condition.operator === 'string';
-    };
-    /**
-     * Checks if an operator exists in a specific enum.
-     */
-    Condition.prototype.isOperatorInEnum = function (operator, enumObject) {
-        return Object.values(enumObject).includes(operator);
-    };
-    return Condition;
-}(common/* Model */.Kx));
-
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/DataCondition.ts
-var DataCondition_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-
-
-
-
-var DataCondition_ConditionalVariableType = 'conditional-variable';
-var DataCondition = /** @class */ (function (_super) {
-    DataCondition_extends(DataCondition, _super);
-    function DataCondition(condition, ifTrue, ifFalse, opts) {
-        var _this = this;
-        if (typeof condition === 'undefined') {
-            throw new MissingConditionError();
-        }
-        var conditionInstance = new Condition(condition, { em: opts.em });
-        _this = _super.call(this, {
-            type: DataCondition_ConditionalVariableType,
-            condition: conditionInstance,
-            ifTrue: ifTrue,
-            ifFalse: ifFalse,
-        }) || this;
-        _this.ifTrue = ifTrue;
-        _this.ifFalse = ifFalse;
-        _this.variableListeners = [];
-        _this.condition = conditionInstance;
-        _this.em = opts.em;
-        _this.lastEvaluationResult = _this.evaluate();
-        _this.listenToDataVariables();
-        _this._onValueChange = opts.onValueChange;
-        return _this;
-    }
-    DataCondition.prototype.evaluate = function () {
-        return this.condition.evaluate();
-    };
-    DataCondition.prototype.getDataValue = function () {
-        return this.lastEvaluationResult ? evaluateVariable(this.ifTrue, this.em) : evaluateVariable(this.ifFalse, this.em);
-    };
-    DataCondition.prototype.reevaluate = function () {
-        this.lastEvaluationResult = this.evaluate();
-    };
-    Object.defineProperty(DataCondition.prototype, "onValueChange", {
-        set: function (newFunction) {
-            this._onValueChange = newFunction;
-            this.listenToDataVariables();
+    Object.defineProperty(ModelResolverWatcher.prototype, "collectionsStateMap", {
+        get: function () {
+            var _a;
+            var component = this.model;
+            return (_a = component === null || component === void 0 ? void 0 : component.collectionsStateMap) !== null && _a !== void 0 ? _a : {};
         },
         enumerable: false,
         configurable: true
     });
-    DataCondition.prototype.listenToDataVariables = function () {
+    ModelResolverWatcher.prototype.updateListeners = function (values) {
         var _this = this;
-        if (!this.em)
-            return;
-        // Clear previous listeners to avoid memory leaks
-        this.cleanupListeners();
-        var dataVariables = this.getDependentDataVariables();
-        dataVariables.forEach(function (variable) {
-            var variableInstance = new model_DataVariable(variable, { em: _this.em });
-            var listener = new DataVariableListenerManager({
-                em: _this.em,
-                dataVariable: variableInstance,
-                updateValueFromDataVariable: (function () {
-                    var _a;
-                    _this.reevaluate();
-                    (_a = _this._onValueChange) === null || _a === void 0 ? void 0 : _a.call(_this);
-                }).bind(_this),
+        var _a = this, em = _a.em, collectionsStateMap = _a.collectionsStateMap;
+        this.removeListeners(Object.keys(values));
+        var propsKeys = Object.keys(values);
+        var _loop_1 = function (index) {
+            var key = propsKeys[index];
+            var resolverProps = values[key];
+            if (!isDataResolverProps(resolverProps)) {
+                return "continue";
+            }
+            var resolver = getDataResolverInstance(resolverProps, { em: em, collectionsStateMap: collectionsStateMap });
+            this_1.resolverListeners[key] = new model_DataResolverListener({
+                em: em,
+                resolver: resolver,
+                onUpdate: function (value) { return _this.updateFn(_this.model, key, value); },
             });
-            _this.variableListeners.push(listener);
-        });
-    };
-    DataCondition.prototype.getDependentDataVariables = function () {
-        var dataVariables = this.condition.getDataVariables();
-        if (isDataVariable(this.ifTrue))
-            dataVariables.push(this.ifTrue);
-        if (isDataVariable(this.ifFalse))
-            dataVariables.push(this.ifFalse);
-        return dataVariables;
-    };
-    DataCondition.prototype.cleanupListeners = function () {
-        this.variableListeners.forEach(function (listener) { return listener.destroy(); });
-        this.variableListeners = [];
-    };
-    DataCondition.prototype.toJSON = function () {
-        return {
-            type: DataCondition_ConditionalVariableType,
-            condition: this.condition,
-            ifTrue: this.ifTrue,
-            ifFalse: this.ifFalse,
         };
-    };
-    return DataCondition;
-}(common/* Model */.Kx));
-
-var MissingConditionError = /** @class */ (function (_super) {
-    DataCondition_extends(MissingConditionError, _super);
-    function MissingConditionError() {
-        return _super.call(this, 'No condition was provided to a conditional component.') || this;
-    }
-    return MissingConditionError;
-}(Error));
-
-
-;// CONCATENATED MODULE: ./src/data_sources/model/DataVariableListenerManager.ts
-
-
-
-
-
-var DynamicVariableListenerManager = /** @class */ (function () {
-    function DynamicVariableListenerManager(options) {
-        var _this = this;
-        this.dataListeners = [];
-        this.model = new common/* Model */.Kx();
-        this.onChange = function () {
-            var value = _this.dynamicVariable.getDataValue();
-            _this.updateValueFromDynamicVariable(value);
-        };
-        this.em = options.em;
-        this.dynamicVariable = options.dataVariable;
-        this.updateValueFromDynamicVariable = options.updateValueFromDataVariable;
-        this.listenToDynamicVariable();
-    }
-    DynamicVariableListenerManager.prototype.listenToDynamicVariable = function () {
-        var _this = this;
-        var _a = this, em = _a.em, dynamicVariable = _a.dynamicVariable;
-        this.removeListeners();
-        // @ts-ignore
-        var type = dynamicVariable.get('type');
-        var dataListeners = [];
-        switch (type) {
-            case DataVariableType:
-                dataListeners = this.listenToDataVariable(dynamicVariable, em);
-                break;
-            case DataCondition_ConditionalVariableType:
-                dataListeners = this.listenToConditionalVariable(dynamicVariable, em);
-                break;
+        var this_1 = this;
+        for (var index = 0; index < propsKeys.length; index++) {
+            _loop_1(index);
         }
-        dataListeners.forEach(function (ls) { return _this.model.listenTo(ls.obj, ls.event, _this.onChange); });
-        this.dataListeners = dataListeners;
     };
-    DynamicVariableListenerManager.prototype.listenToConditionalVariable = function (dataVariable, em) {
+    ModelResolverWatcher.prototype.evaluateValues = function (values) {
+        var _a = this, em = _a.em, collectionsStateMap = _a.collectionsStateMap;
+        var evaluatedValues = ModelResolverWatcher_assign({}, values);
+        var propsKeys = Object.keys(values);
+        for (var index = 0; index < propsKeys.length; index++) {
+            var key = propsKeys[index];
+            var resolverProps = values[key];
+            if (!isDataResolverProps(resolverProps)) {
+                continue;
+            }
+            evaluatedValues[key] = getDataResolverInstanceValue(resolverProps, { em: em, collectionsStateMap: collectionsStateMap });
+        }
+        return evaluatedValues;
+    };
+    /**
+     * removes listeners to stop watching for changes,
+     * if keys argument is omitted, remove all listeners
+     * @argument keys
+     */
+    ModelResolverWatcher.prototype.removeListeners = function (keys) {
         var _this = this;
-        var dataListeners = dataVariable.getDependentDataVariables().flatMap(function (dataVariable) {
-            return _this.listenToDataVariable(new model_DataVariable(dataVariable, { em: _this.em }), em);
+        var propsKeys = keys ? keys : Object.keys(this.resolverListeners);
+        propsKeys.forEach(function (key) {
+            var _a, _b;
+            if (_this.resolverListeners[key]) {
+                (_b = (_a = _this.resolverListeners[key]).destroy) === null || _b === void 0 ? void 0 : _b.call(_a);
+                delete _this.resolverListeners[key];
+            }
         });
-        return dataListeners;
+        return propsKeys;
     };
-    DynamicVariableListenerManager.prototype.listenToDataVariable = function (dataVariable, em) {
-        var dataListeners = [];
-        var path = dataVariable.attributes.path;
-        var normPath = (0,mixins.stringToPath)(path || '').join('.');
-        var _a = this.em.DataSources.fromPath(path), ds = _a[0], dr = _a[1];
-        ds && dataListeners.push({ obj: ds.records, event: 'add remove reset' });
-        dr && dataListeners.push({ obj: dr, event: 'change' });
-        dataListeners.push({ obj: dataVariable, event: 'change:path change:defaultValue' }, { obj: em.DataSources.all, event: 'add remove reset' }, { obj: em, event: "".concat(DataSourcesEvents.path, ":").concat(normPath) });
-        return dataListeners;
+    ModelResolverWatcher.prototype.getValuesOrResolver = function (values) {
+        if (!values)
+            return {};
+        var serializableValues = ModelResolverWatcher_assign({}, values);
+        var propsKeys = Object.keys(serializableValues);
+        for (var index = 0; index < propsKeys.length; index++) {
+            var key = propsKeys[index];
+            var resolverListener = this.resolverListeners[key];
+            if (resolverListener) {
+                serializableValues[key] = resolverListener.resolver.toJSON();
+            }
+        }
+        return serializableValues;
     };
-    DynamicVariableListenerManager.prototype.removeListeners = function () {
+    ModelResolverWatcher.prototype.getAllDataResolvers = function () {
+        var serializableValues = {};
+        var propsKeys = Object.keys(this.resolverListeners);
+        for (var index = 0; index < propsKeys.length; index++) {
+            var key = propsKeys[index];
+            serializableValues[key] = this.resolverListeners[key].resolver.toJSON();
+        }
+        return serializableValues;
+    };
+    ModelResolverWatcher.prototype.getValuesResolvingFromCollections = function () {
         var _this = this;
-        this.dataListeners.forEach(function (ls) { return _this.model.stopListening(ls.obj, ls.event, _this.onChange); });
-        this.dataListeners = [];
+        var keys = Object.keys(this.resolverListeners).filter(function (key) {
+            return _this.resolverListeners[key].resolver.resolvesFromCollection();
+        });
+        return keys;
     };
-    DynamicVariableListenerManager.prototype.destroy = function () {
+    ModelResolverWatcher.prototype.destroy = function () {
         this.removeListeners();
     };
-    return DynamicVariableListenerManager;
+    return ModelResolverWatcher;
 }());
-/* harmony default export */ const DataVariableListenerManager = (DynamicVariableListenerManager);
+
+
+;// CONCATENATED MODULE: ./src/dom_components/model/ModelDataResolverWatchers.ts
+var ModelDataResolverWatchers_assign = (undefined && undefined.__assign) || function () {
+    ModelDataResolverWatchers_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return ModelDataResolverWatchers_assign.apply(this, arguments);
+};
+var ModelDataResolverWatchers_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+
+
+
+
+var updateFromWatcher = { fromDataSource: true, avoidStore: true };
+var keyDataValues = '__data_values';
+var ModelDataResolverWatchers = /** @class */ (function () {
+    function ModelDataResolverWatchers(model, options) {
+        var _this = this;
+        this.model = model;
+        this.options = options;
+        this.onPropertyUpdate = function (model, key, value) {
+            model === null || model === void 0 ? void 0 : model.set(key, value, updateFromWatcher);
+        };
+        this.onAttributeUpdate = function (model, key, value) {
+            var _a;
+            if (!_this.isComponent(model))
+                return;
+            model === null || model === void 0 ? void 0 : model.addAttributes((_a = {}, _a[key] = value, _a), updateFromWatcher);
+        };
+        this.onStyleUpdate = function (model, key, value) {
+            var _a;
+            model === null || model === void 0 ? void 0 : model.addStyle((_a = {}, _a[key] = value, _a), ModelDataResolverWatchers_assign(ModelDataResolverWatchers_assign({}, updateFromWatcher), { partial: true, avoidStore: true }));
+        };
+        this.propertyWatcher = new ModelResolverWatcher(model, this.onPropertyUpdate, options);
+        this.attributeWatcher = new ModelResolverWatcher(model, this.onAttributeUpdate, options);
+        this.styleWatcher = new ModelResolverWatcher(model, this.onStyleUpdate, options);
+    }
+    ModelDataResolverWatchers.prototype.bindModel = function (model) {
+        this.model = model;
+        this.watchers.forEach(function (watcher) { return watcher.bindModel(model); });
+        this.updateSymbolOverride();
+    };
+    ModelDataResolverWatchers.prototype.addProps = function (props, options) {
+        var _a;
+        if (options === void 0) { options = {}; }
+        var dataValues = (_a = props[keyDataValues]) !== null && _a !== void 0 ? _a : {};
+        var filteredProps = this.filterProps(props);
+        var evaluatedProps = ModelDataResolverWatchers_assign(ModelDataResolverWatchers_assign({}, props), this.propertyWatcher.addDataValues(ModelDataResolverWatchers_assign(ModelDataResolverWatchers_assign({}, filteredProps), dataValues.props), options));
+        if (this.shouldProcessProp('attributes', props, dataValues)) {
+            evaluatedProps.attributes = this.processAttributes(props, dataValues, options);
+        }
+        if (this.shouldProcessProp('style', props, dataValues)) {
+            evaluatedProps.style = this.processStyles(props, dataValues, options);
+        }
+        var skipOverrideUpdates = options.skipWatcherUpdates || options.fromDataSource;
+        if (!skipOverrideUpdates) {
+            this.updateSymbolOverride();
+            evaluatedProps[keyDataValues] = {
+                props: this.propertyWatcher.getAllDataResolvers(),
+                style: this.styleWatcher.getAllDataResolvers(),
+                attributes: this.attributeWatcher.getAllDataResolvers(),
+            };
+        }
+        return evaluatedProps;
+    };
+    ModelDataResolverWatchers.prototype.getProps = function (data) {
+        var resolvedProps = this.getValueOrResolver('props', data);
+        var result = ModelDataResolverWatchers_assign({}, resolvedProps);
+        delete result[keyDataValues];
+        if (!(0,index_all.isEmpty)(data.attributes)) {
+            result.attributes = this.getValueOrResolver('attributes', data.attributes);
+        }
+        if ((0,index_all.isObject)(data.style) && !(0,index_all.isEmpty)(data.style)) {
+            result.style = this.getValueOrResolver('styles', data.style);
+        }
+        return result;
+    };
+    /**
+     * Resolves properties, styles, or attributes to their final values or returns the data resolvers.
+     * - If `data` is `null` or `undefined`, the method returns an object containing all data resolvers for the specified `target`.
+     */
+    ModelDataResolverWatchers.prototype.getValueOrResolver = function (target, data) {
+        var watcher;
+        switch (target) {
+            case 'props':
+                watcher = this.propertyWatcher;
+                break;
+            case 'styles':
+                watcher = this.styleWatcher;
+                break;
+            case 'attributes':
+                watcher = this.attributeWatcher;
+                break;
+            default: {
+                var em = this.options.em;
+                em === null || em === void 0 ? void 0 : em.logError("Invalid target '".concat(target, "'. Must be 'props', 'styles', or 'attributes'."));
+                return {};
+            }
+        }
+        if (!data) {
+            return watcher.getAllDataResolvers();
+        }
+        return watcher.getValuesOrResolver(data);
+    };
+    ModelDataResolverWatchers.prototype.removeAttributes = function (attributes) {
+        this.attributeWatcher.removeListeners(attributes);
+        this.updateSymbolOverride();
+    };
+    /**
+     * Disables inline style management for the component. Style handling is shifted to CSS rules
+     */
+    ModelDataResolverWatchers.prototype.disableStyles = function () {
+        this.styleWatcher.removeListeners();
+        this.styleWatcher.destroy();
+    };
+    ModelDataResolverWatchers.prototype.onCollectionsStateMapUpdate = function () {
+        this.watchers.forEach(function (watcher) { return watcher.onCollectionsStateMapUpdate(); });
+    };
+    ModelDataResolverWatchers.prototype.destroy = function () {
+        this.watchers.forEach(function (watcher) { return watcher.destroy(); });
+    };
+    Object.defineProperty(ModelDataResolverWatchers.prototype, "watchers", {
+        get: function () {
+            return [this.propertyWatcher, this.styleWatcher, this.attributeWatcher];
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ModelDataResolverWatchers.prototype.isComponent = function (model) {
+        return model instanceof model_Component;
+    };
+    ModelDataResolverWatchers.prototype.shouldProcessProp = function (key, newProps, dataValues) {
+        var watcher = key === 'attributes' ? this.attributeWatcher : this.styleWatcher;
+        var dataSubProps = dataValues[key];
+        var hasNewValues = !!newProps[key];
+        var hasExistingDataValues = dataSubProps && Object.keys(dataSubProps).length > 0;
+        var hasApplicableWatchers = dataSubProps && Object.keys(watcher.getAllDataResolvers()).length > 0;
+        return hasNewValues || hasExistingDataValues || hasApplicableWatchers;
+    };
+    ModelDataResolverWatchers.prototype.updateSymbolOverride = function () {
+        var _a;
+        var model = this.model;
+        if (!this.isComponent(model) || !isSymbol(model))
+            return;
+        var isCollectionItem = !!Object.keys((_a = model === null || model === void 0 ? void 0 : model.collectionsStateMap) !== null && _a !== void 0 ? _a : {}).length;
+        if (!isCollectionItem)
+            return;
+        var keys = this.propertyWatcher.getValuesResolvingFromCollections();
+        var attributesKeys = this.attributeWatcher.getValuesResolvingFromCollections();
+        var combinedKeys = ModelDataResolverWatchers_spreadArray(['locked', 'layerable'], keys, true);
+        var haveOverridenAttributes = Object.keys(attributesKeys).length;
+        if (haveOverridenAttributes)
+            combinedKeys.push('attributes');
+        var toUp = getSymbolsToUpdate(model);
+        toUp.forEach(function (child) {
+            child.setSymbolOverride(combinedKeys, { fromDataSource: true });
+        });
+        model.setSymbolOverride(combinedKeys, { fromDataSource: true });
+    };
+    ModelDataResolverWatchers.prototype.filterProps = function (props) {
+        var excludedFromEvaluation = [
+            'components',
+            'dataResolver',
+            'status',
+            'state',
+            'open',
+            keySymbolOvrd,
+            keyDataValues,
+        ];
+        var filteredProps = Object.fromEntries(Object.entries(props).filter(function (_a) {
+            var key = _a[0];
+            return !excludedFromEvaluation.includes(key);
+        }));
+        return filteredProps;
+    };
+    ModelDataResolverWatchers.prototype.processAttributes = function (baseValue, dataValues, options) {
+        var _a;
+        if (options === void 0) { options = {}; }
+        return this.attributeWatcher.setDataValues(ModelDataResolverWatchers_assign(ModelDataResolverWatchers_assign({}, baseValue.attributes), ((_a = dataValues.attributes) !== null && _a !== void 0 ? _a : {})), options);
+    };
+    ModelDataResolverWatchers.prototype.processStyles = function (baseValue, dataValues, options) {
+        var _a;
+        if (options === void 0) { options = {}; }
+        if (typeof baseValue === 'string') {
+            this.styleWatcher.removeListeners();
+            return baseValue;
+        }
+        return this.styleWatcher.setDataValues(ModelDataResolverWatchers_assign(ModelDataResolverWatchers_assign({}, baseValue.style), ((_a = dataValues.style) !== null && _a !== void 0 ? _a : {})), options);
+    };
+    return ModelDataResolverWatchers;
+}());
+
 
 ;// CONCATENATED MODULE: ./src/domain_abstract/model/StyleableModel.ts
 var StyleableModel_extends = (undefined && undefined.__extends) || (function () {
@@ -28157,10 +29242,6 @@ var StyleableModel_assign = (undefined && undefined.__assign) || function () {
 
 
 
-
-
-
-
 var parserHtml = model_ParserHtml();
 var getLastStyleValue = function (value) {
     return (0,index_all.isArray)(value) ? value[value.length - 1] : value;
@@ -28169,12 +29250,48 @@ var StyleableModel = /** @class */ (function (_super) {
     StyleableModel_extends(StyleableModel, _super);
     function StyleableModel(attributes, options) {
         if (options === void 0) { options = {}; }
-        var _this = _super.call(this, attributes, options) || this;
-        _this.dynamicVariableListeners = {};
+        var _this = this;
+        var em = options.em;
+        var dataResolverWatchers = new ModelDataResolverWatchers(undefined, { em: em });
+        _this = _super.call(this, attributes, StyleableModel_assign(StyleableModel_assign({}, options), { dataResolverWatchers: dataResolverWatchers })) || this;
         _this.views = [];
+        _this.collectionsStateMap = {};
+        dataResolverWatchers.bindModel(_this);
+        _this.dataResolverWatchers = dataResolverWatchers;
         _this.em = options.em;
+        _this.opt = options;
         return _this;
     }
+    StyleableModel.prototype.get = function (attributeName, opts) {
+        if (opts === null || opts === void 0 ? void 0 : opts.skipResolve)
+            return this.dataResolverWatchers.getValueOrResolver('props')[attributeName];
+        return _super.prototype.get.call(this, attributeName);
+    };
+    StyleableModel.prototype.set = function (keyOrAttributes, valueOrOptions, optionsOrUndefined) {
+        var _a;
+        var _b;
+        var defaultOptions = {
+            skipWatcherUpdates: false,
+            fromDataSource: false,
+        };
+        var attributes;
+        var options;
+        if (typeof keyOrAttributes === 'object') {
+            attributes = keyOrAttributes;
+            options = valueOrOptions || defaultOptions;
+        }
+        else if (typeof keyOrAttributes === 'string') {
+            attributes = (_a = {}, _a[keyOrAttributes] = valueOrOptions, _a);
+            options = optionsOrUndefined || defaultOptions;
+        }
+        else {
+            attributes = {};
+            options = defaultOptions;
+        }
+        this.dataResolverWatchers = (_b = this.dataResolverWatchers) !== null && _b !== void 0 ? _b : options.dataResolverWatchers;
+        var evaluatedValues = this.dataResolverWatchers.addProps(attributes, options);
+        return _super.prototype.set.call(this, evaluatedValues, options);
+    };
     /**
      * Parse style string to an object
      * @param  {string} str
@@ -28191,20 +29308,20 @@ var StyleableModel = /** @class */ (function (_super) {
     StyleableModel.prototype.extendStyle = function (prop) {
         return StyleableModel_assign(StyleableModel_assign({}, this.getStyle('', { skipResolve: true })), prop);
     };
-    /**
-     * Get style object
-     * @return {Object}
-     */
     StyleableModel.prototype.getStyle = function (prop, opts) {
         if (opts === void 0) { opts = {}; }
-        var style = this.get('style') || {};
-        var result = StyleableModel_assign({}, style);
-        if (this.em && !opts.skipResolve) {
-            var resolvedStyle = this.resolveDataVariables(StyleableModel_assign({}, result));
-            // @ts-ignore
-            return prop && (0,index_all.isString)(prop) ? resolvedStyle[prop] : resolvedStyle;
+        var rawStyle = this.get('style');
+        var parsedStyle = (0,index_all.isString)(rawStyle)
+            ? this.parseStyle(rawStyle)
+            : (0,index_all.isObject)(rawStyle)
+                ? StyleableModel_assign({}, rawStyle) : {};
+        delete parsedStyle.__p;
+        var shouldReturnFull = !prop || prop === '' || (0,index_all.isObject)(prop);
+        if (!opts.skipResolve) {
+            return shouldReturnFull ? parsedStyle : parsedStyle[prop];
         }
-        return prop && (0,index_all.isString)(prop) ? result[prop] : result;
+        var unresolvedStyles = this.dataResolverWatchers.getValueOrResolver('styles', parsedStyle);
+        return shouldReturnFull ? unresolvedStyles : unresolvedStyles[prop];
     };
     /**
      * Set new style object
@@ -28219,7 +29336,7 @@ var StyleableModel = /** @class */ (function (_super) {
         if ((0,index_all.isString)(prop)) {
             prop = this.parseStyle(prop);
         }
-        var propOrig = this.getStyle(opts);
+        var propOrig = this.getStyle('', { skipResolve: true });
         if (opts.partial || opts.avoidStore) {
             opts.avoidStore = true;
             prop.__p = true;
@@ -28235,15 +29352,14 @@ var StyleableModel = /** @class */ (function (_super) {
                 delete newStyle[key];
                 return;
             }
-            var styleValue = newStyle[key];
-            if (isDynamicValueDefinition(styleValue)) {
-                var styleDynamicVariable = _this.resolveDynamicValue(styleValue);
-                newStyle[key] = styleDynamicVariable;
-                _this.manageDataVariableListener(styleDynamicVariable, key);
-            }
         });
-        this.set('style', newStyle, opts);
-        var diff = (0,mixins.shallowDiff)(propOrig, newStyle);
+        this.set({ style: newStyle }, opts);
+        newStyle = this.attributes['style'];
+        var changedKeys = Object.keys((0,mixins.shallowDiff)(propOrig, propNew));
+        var diff = changedKeys.reduce(function (acc, key) {
+            var _a;
+            return StyleableModel_assign(StyleableModel_assign({}, acc), (_a = {}, _a[key] = newStyle[key], _a));
+        }, {});
         // Delete the property used for partial updates
         delete diff.__p;
         (0,index_all.keys)(diff).forEach(function (pr) {
@@ -28258,39 +29374,6 @@ var StyleableModel = /** @class */ (function (_super) {
             }
         });
         return newStyle;
-    };
-    StyleableModel.prototype.resolveDynamicValue = function (styleValue) {
-        var dynamicType = styleValue.type;
-        var styleDynamicVariable;
-        switch (dynamicType) {
-            case DataVariableType:
-                styleDynamicVariable = new model_StyleDataVariable(styleValue, { em: this.em });
-                break;
-            case DataCondition_ConditionalVariableType: {
-                var condition = styleValue.condition, ifTrue = styleValue.ifTrue, ifFalse = styleValue.ifFalse;
-                styleDynamicVariable = new DataCondition(condition, ifTrue, ifFalse, { em: this.em });
-                break;
-            }
-            default:
-                throw new Error("Unsupported dynamic value type for styles. Only '".concat(DataVariableType, "' and '").concat(DataCondition_ConditionalVariableType, "' are supported. Received '").concat(dynamicType, "'."));
-        }
-        return styleDynamicVariable;
-    };
-    /**
-     * Manage DataVariableListenerManager for a style property
-     */
-    StyleableModel.prototype.manageDataVariableListener = function (dataVar, styleProp) {
-        var _this = this;
-        if (this.dynamicVariableListeners[styleProp]) {
-            this.dynamicVariableListeners[styleProp].listenToDynamicVariable();
-        }
-        else {
-            this.dynamicVariableListeners[styleProp] = new DataVariableListenerManager({
-                em: this.em,
-                dataVariable: dataVar,
-                updateValueFromDataVariable: function () { return _this.updateView(); },
-            });
-        }
     };
     StyleableModel.prototype.getView = function (frame) {
         var _a = this, views = _a.views, em = _a.em;
@@ -28307,27 +29390,6 @@ var StyleableModel = /** @class */ (function (_super) {
     };
     StyleableModel.prototype.updateView = function () {
         this.views.forEach(function (view) { return view.updateStyles(); });
-    };
-    /**
-     * Resolve dynamic values ( datasource variables - conditional variables ) to their actual values
-     */
-    StyleableModel.prototype.resolveDataVariables = function (style) {
-        var _this = this;
-        var resolvedStyle = StyleableModel_assign({}, style);
-        (0,index_all.keys)(resolvedStyle).forEach(function (key) {
-            var styleValue = resolvedStyle[key];
-            if (typeof styleValue === 'string' || Array.isArray(styleValue)) {
-                return;
-            }
-            if (isDynamicValueDefinition(styleValue)) {
-                var dataVar = _this.resolveDynamicValue(styleValue);
-                resolvedStyle[key] = dataVar.getDataValue();
-            }
-            if (isDynamicValue(styleValue)) {
-                resolvedStyle[key] = styleValue.getDataValue();
-            }
-        });
-        return resolvedStyle;
     };
     /**
      * Add style property
@@ -28370,7 +29432,7 @@ var StyleableModel = /** @class */ (function (_super) {
     StyleableModel.prototype.styleToString = function (opts) {
         if (opts === void 0) { opts = {}; }
         var result = [];
-        var style = this.getStyle(opts);
+        var style = opts.style || this.getStyle(opts);
         var imp = opts.important;
         var _loop_1 = function (prop) {
             var important = (0,index_all.isArray)(imp) ? imp.indexOf(prop) >= 0 : imp;
@@ -28397,662 +29459,27 @@ var StyleableModel = /** @class */ (function (_super) {
         // @ts-ignore
         return this.selectorsToString ? this.selectorsToString(opts) : this.getSelectors().getFullString();
     };
+    StyleableModel.prototype.onCollectionsStateMapUpdate = function (collectionsStateMap) {
+        this.collectionsStateMap = collectionsStateMap;
+        this.dataResolverWatchers.onCollectionsStateMapUpdate();
+    };
+    StyleableModel.prototype.clone = function (attributes, opts) {
+        var props = this.dataResolverWatchers.getProps(this.attributes);
+        var mergedProps = StyleableModel_assign(StyleableModel_assign({}, props), attributes);
+        var mergedOpts = StyleableModel_assign(StyleableModel_assign({}, this.opt), opts);
+        var ClassConstructor = this.constructor;
+        return new ClassConstructor(mergedProps, mergedOpts);
+    };
+    StyleableModel.prototype.toJSON = function (opts, attributes) {
+        if (opts === null || opts === void 0 ? void 0 : opts.fromUndo)
+            return StyleableModel_assign({}, _super.prototype.toJSON.call(this, opts));
+        var mergedProps = StyleableModel_assign(StyleableModel_assign({}, this.attributes), attributes);
+        var obj = this.dataResolverWatchers.getProps(mergedProps);
+        return obj;
+    };
     return StyleableModel;
 }(common/* Model */.Kx));
 /* harmony default export */ const model_StyleableModel = (StyleableModel);
-
-;// CONCATENATED MODULE: ./src/dom_components/model/SymbolUtils.ts
-var SymbolUtils_assign = (undefined && undefined.__assign) || function () {
-    SymbolUtils_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return SymbolUtils_assign.apply(this, arguments);
-};
-var SymbolUtils_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-
-
-
-var isSymbolMain = function (cmp) { return (0,index_all.isArray)(cmp.get(keySymbols)); };
-var isSymbolInstance = function (cmp) { return !!cmp.get(keySymbol); };
-var isSymbol = function (cmp) { return !!(isSymbolMain(cmp) || isSymbolInstance(cmp)); };
-var isSymbolRoot = function (symbol) {
-    var parent = symbol.parent();
-    return isSymbol(symbol) && (!parent || !isSymbol(parent));
-};
-var isSymbolNested = function (symbol) {
-    if (!isSymbol(symbol))
-        return false;
-    var symbTopSelf = getSymbolTop(isSymbolMain(symbol) ? symbol : getSymbolMain(symbol));
-    var symbTop = getSymbolTop(symbol);
-    var symbTopMain = isSymbolMain(symbTop) ? symbTop : getSymbolMain(symbTop);
-    return symbTopMain !== symbTopSelf;
-};
-var initSymbol = function (symbol) {
-    if (symbol.__symbReady)
-        return;
-    symbol.on('change', symbol.__upSymbProps);
-    symbol.__symbReady = true;
-};
-var getSymbolMain = function (symbol) {
-    var result = symbol.get(keySymbol);
-    if (result && (0,index_all.isString)(result)) {
-        var ref = symbol.__getAllById()[result];
-        if (ref) {
-            result = ref;
-            symbol.set(keySymbol, ref);
-        }
-        else {
-            result = 0;
-        }
-    }
-    return result || undefined;
-};
-var getSymbolInstances = function (symbol) {
-    var symbs = symbol === null || symbol === void 0 ? void 0 : symbol.get(keySymbols);
-    if (symbs && (0,index_all.isArray)(symbs)) {
-        symbs.forEach(function (symb, idx) {
-            if (symb && (0,index_all.isString)(symb)) {
-                symbs[idx] = symbol.__getAllById()[symb];
-            }
-        });
-        symbs = symbs.filter(function (symb) { return symb && !(0,index_all.isString)(symb); });
-    }
-    return symbs || undefined;
-};
-var isSymbolOverride = function (symbol, prop) {
-    if (prop === void 0) { prop = ''; }
-    var ovrd = symbol === null || symbol === void 0 ? void 0 : symbol.get(keySymbolOvrd);
-    var prp = prop.split(':')[0];
-    var props = prop !== prp ? [prop, prp] : [prop];
-    return ovrd === true || ((0,index_all.isArray)(ovrd) && props.some(function (p) { return ovrd.indexOf(p) >= 0; }));
-};
-var getSymbolsToUpdate = function (symb, opts) {
-    if (opts === void 0) { opts = {}; }
-    var result = [];
-    var changed = opts.changed;
-    if (opts.fromInstance ||
-        opts.noPropagate ||
-        opts.fromUndo ||
-        // Avoid updating others if the current component has override
-        (changed && isSymbolOverride(symb, changed))) {
-        return result;
-    }
-    var symbols = getSymbolInstances(symb) || [];
-    var symbol = getSymbolMain(symb);
-    var all = symbol ? SymbolUtils_spreadArray([symbol], (getSymbolInstances(symbol) || []), true) : symbols;
-    result = all
-        .filter(function (s) { return s !== symb; })
-        // Avoid updating those with override
-        .filter(function (s) { return !(changed && isSymbolOverride(s, changed)); });
-    return result;
-};
-var getSymbolTop = function (symbol, opts) {
-    var result = symbol;
-    var parent = symbol.parent(opts);
-    // while (parent && (isSymbolMain(parent) || getSymbol(parent))) {
-    while (parent && isSymbol(parent)) {
-        result = parent;
-        parent = parent.parent(opts);
-    }
-    return result;
-};
-var detachSymbolInstance = function (symbol, opts) {
-    if (opts === void 0) { opts = {}; }
-    var symbolMain = getSymbolMain(symbol);
-    var symbs = symbolMain && getSymbolInstances(symbolMain);
-    !opts.skipRefs &&
-        symbs &&
-        symbolMain.set(keySymbols, symbs.filter(function (s) { return s !== symbol; }));
-    symbol.set(keySymbol, 0);
-    symbol.components().forEach(function (s) { return detachSymbolInstance(s, opts); });
-};
-var logSymbol = function (symb, type, toUp, opts) {
-    if (opts === void 0) { opts = {}; }
-    var symbol = getSymbolMain(symb);
-    var symbols = getSymbolInstances(symb);
-    if (!symbol && !symbols) {
-        return;
-    }
-    symb.em.log(type, { model: symb, toUp: toUp, context: 'symbols', opts: opts });
-};
-var updateSymbolProps = function (symbol, opts) {
-    if (opts === void 0) { opts = {}; }
-    var changed = symbol.changedAttributes() || {};
-    var attrs = changed.attributes || {};
-    delete changed.status;
-    delete changed.open;
-    delete changed[keySymbols];
-    delete changed[keySymbol];
-    delete changed[keySymbolOvrd];
-    delete changed.attributes;
-    delete attrs.id;
-    if (!(0,mixins.isEmptyObj)(attrs)) {
-        changed.attributes = attrs;
-    }
-    if (!(0,mixins.isEmptyObj)(changed)) {
-        var toUp = getSymbolsToUpdate(symbol, opts);
-        // Avoid propagating overrides to other symbols
-        (0,index_all.keys)(changed).map(function (prop) {
-            if (isSymbolOverride(symbol, prop))
-                delete changed[prop];
-        });
-        logSymbol(symbol, 'props', toUp, { opts: opts, changed: changed });
-        toUp.forEach(function (child) {
-            var propsChanged = SymbolUtils_assign({}, changed);
-            // Avoid updating those with override
-            (0,index_all.keys)(propsChanged).map(function (prop) {
-                if (isSymbolOverride(child, prop))
-                    delete propsChanged[prop];
-            });
-            child.set(propsChanged, SymbolUtils_assign({ fromInstance: symbol }, opts));
-        });
-    }
-};
-var updateSymbolCls = function (symbol, opts) {
-    if (opts === void 0) { opts = {}; }
-    var toUp = getSymbolsToUpdate(symbol, opts);
-    logSymbol(symbol, 'classes', toUp, { opts: opts });
-    toUp.forEach(function (child) {
-        // @ts-ignore This will propagate the change up to __upSymbProps
-        child.set('classes', symbol.get('classes'), { fromInstance: symbol });
-    });
-    symbol.__changesUp(opts);
-};
-var updateSymbolComps = function (symbol, m, c, o) {
-    var optUp = o || c || {};
-    var fromInstance = optUp.fromInstance, fromUndo = optUp.fromUndo;
-    var toUpOpts = { fromInstance: fromInstance, fromUndo: fromUndo };
-    var isTemp = m.opt.temporary;
-    // Reset
-    if (!o) {
-        var coll = m;
-        var toUp = getSymbolsToUpdate(symbol, SymbolUtils_assign(SymbolUtils_assign({}, toUpOpts), { changed: 'components:reset' }));
-        var cmps_1 = coll.models;
-        var newSymbols_1 = new Set();
-        logSymbol(symbol, 'reset', toUp, { components: cmps_1 });
-        toUp.forEach(function (rel) {
-            var relCmps = rel.components();
-            var toReset = cmps_1.map(function (cmp, i) {
-                // This particular case here is to handle reset from `resetFromString`
-                // where we can receive an array of regulat components or already
-                // existing symbols (updated already before reset)
-                if (!isSymbol(cmp) || newSymbols_1.has(cmp)) {
-                    newSymbols_1.add(cmp);
-                    return cmp.clone({ symbol: true });
-                }
-                return relCmps.at(i);
-            });
-            relCmps.reset(toReset, SymbolUtils_assign({ fromInstance: symbol }, c));
-        });
-        // Add
-    }
-    else if (o.add) {
-        var addedInstances_1 = [];
-        var isMainSymb_1 = !!getSymbolInstances(symbol);
-        var toUp = getSymbolsToUpdate(symbol, SymbolUtils_assign(SymbolUtils_assign({}, toUpOpts), { changed: 'components:add' }));
-        if (toUp.length) {
-            var addSymb = getSymbolMain(m);
-            addedInstances_1 = (addSymb ? getSymbolInstances(addSymb) : getSymbolInstances(m)) || [];
-            addedInstances_1 = SymbolUtils_spreadArray([], addedInstances_1, true);
-            addedInstances_1.push(addSymb ? addSymb : m);
-        }
-        !isTemp &&
-            logSymbol(symbol, 'add', toUp, {
-                opts: o,
-                addedInstances: addedInstances_1.map(function (c) { return c.cid; }),
-                added: m.cid,
-            });
-        // Here, before appending a new symbol, I have to ensure there are no previously
-        // created symbols (eg. used mainly when drag components around)
-        toUp.forEach(function (symb) {
-            var symbTop = getSymbolTop(symb);
-            var symbPrev = addedInstances_1.filter(function (addedInst) {
-                var addedTop = getSymbolTop(addedInst, { prev: 1 });
-                return symbTop && addedTop && addedTop === symbTop;
-            })[0];
-            var toAppend = symbPrev || m.clone({ symbol: true, symbolInv: isMainSymb_1 });
-            symb.append(toAppend, SymbolUtils_assign({ fromInstance: symbol }, o));
-        });
-        // Remove
-    }
-    else {
-        // Remove instance reference from the symbol
-        var symb = getSymbolMain(m);
-        symb &&
-            !o.temporary &&
-            symb.set(keySymbols, getSymbolInstances(symb).filter(function (i) { return i !== m; }));
-        // Propagate remove only if the component is an inner symbol
-        if (!isSymbolRoot(m) && !o.skipRefsUp) {
-            var changed_1 = 'components:remove';
-            var index_1 = o.index;
-            var parent_1 = m.parent();
-            var opts_1 = SymbolUtils_assign({ fromInstance: m }, o);
-            var isSymbNested = isSymbolRoot(m);
-            var toUpFn = function (symb) {
-                var symbPrnt = symb.parent();
-                symbPrnt && !isSymbolOverride(symbPrnt, changed_1) && symb.remove(opts_1);
-            };
-            // Check if the parent allows the removing
-            var toUp = !isSymbolOverride(parent_1, changed_1) ? getSymbolsToUpdate(m, toUpOpts) : [];
-            if (isSymbNested) {
-                toUp = parent_1 && getSymbolsToUpdate(parent_1, SymbolUtils_assign(SymbolUtils_assign({}, toUpOpts), { changed: changed_1 }));
-                toUpFn = function (symb) {
-                    var toRemove = symb.components().at(index_1);
-                    toRemove && toRemove.remove(SymbolUtils_assign({ fromInstance: parent_1 }, opts_1));
-                };
-            }
-            !isTemp &&
-                logSymbol(symbol, 'remove', toUp, {
-                    opts: o,
-                    removed: m.cid,
-                    isSymbNested: isSymbNested,
-                });
-            toUp.forEach(toUpFn);
-        }
-    }
-    symbol.__changesUp(optUp);
-};
-
-;// CONCATENATED MODULE: ./src/dom_components/model/Components.ts
-var Components_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var Components_assign = (undefined && undefined.__assign) || function () {
-    Components_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return Components_assign.apply(this, arguments);
-};
-var __rest = (undefined && undefined.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
-var Components_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-
-
-
-
-
-var getComponentIds = function (cmp, res) {
-    if (res === void 0) { res = []; }
-    if (!cmp)
-        return [];
-    var cmps = ((0,index_all.isArray)(cmp) || (0,index_all.isFunction)(cmp.map) ? cmp : [cmp]);
-    cmps.map(function (cmp) {
-        res.push(cmp.getId());
-        getComponentIds(cmp.components().models, res);
-    });
-    return res;
-};
-var getComponentsFromDefs = function (items, all, opts) {
-    if (all === void 0) { all = {}; }
-    if (opts === void 0) { opts = {}; }
-    opts.visitedCmps = opts.visitedCmps || {};
-    var visitedCmps = opts.visitedCmps;
-    var itms = (0,index_all.isArray)(items) ? items : [items];
-    return itms.map(function (item) {
-        var _a = item.attributes, attributes = _a === void 0 ? {} : _a, components = item.components, tagName = item.tagName, style = item.style;
-        var id = attributes.id, draggable = attributes.draggable, restAttr = __rest(attributes, ["id", "draggable"]);
-        var result = item;
-        if (id) {
-            // Detect components with the same ID
-            if (!visitedCmps[id]) {
-                visitedCmps[id] = [];
-                // Update the component if exists already
-                if (all[id]) {
-                    result = all[id];
-                    var cmp_1 = result;
-                    tagName && cmp_1.set({ tagName: tagName }, Components_assign(Components_assign({}, opts), { silent: true }));
-                    (0,index_all.keys)(restAttr).length && cmp_1.addAttributes(restAttr, Components_assign({}, opts));
-                    (0,index_all.keys)(style).length && cmp_1.addStyle(style, opts);
-                }
-            }
-            else {
-                // Found another component with the same ID, treat it as a new component
-                visitedCmps[id].push(result);
-                id = model_Component.getNewId(all);
-                result.attributes.id = id;
-            }
-        }
-        // Here `result` might be a Component
-        var cmp = (0,index_all.isFunction)(result.components) ? result : null;
-        if (components) {
-            var newComponents = getComponentsFromDefs(components, all, opts);
-            if (cmp) {
-                cmp.components().reset(newComponents, opts);
-            }
-            else {
-                result.components = newComponents;
-            }
-        }
-        else if (cmp) {
-            // The component already exists but the parsed one is without components
-            cmp.components().reset([], opts);
-        }
-        return result;
-    });
-};
-var Components = /** @class */ (function (_super) {
-    Components_extends(Components, _super);
-    function Components(models, opt) {
-        var _this = _super.call(this, models, opt) || this;
-        _this.opt = opt;
-        _this.listenTo(_this, 'add', _this.onAdd);
-        _this.listenTo(_this, 'remove', _this.removeChildren);
-        _this.listenTo(_this, 'reset', _this.resetChildren);
-        var em = opt.em, config = opt.config;
-        _this.config = config;
-        _this.em = em;
-        _this.domc = opt.domc || (em === null || em === void 0 ? void 0 : em.Components);
-        return _this;
-    }
-    Object.defineProperty(Components.prototype, "events", {
-        get: function () {
-            var _a;
-            return (_a = this.domc) === null || _a === void 0 ? void 0 : _a.events;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Components.prototype.resetChildren = function (models, opts) {
-        var _this = this;
-        if (opts === void 0) { opts = {}; }
-        var coll = this;
-        var prev = opts.previousModels || [];
-        var toRemove = prev.filter(function (prev) { return !models.get(prev.cid); });
-        var newIds = getComponentIds(models);
-        var idsToKeep = getComponentIds(prev).filter(function (pr) { return newIds.indexOf(pr) >= 0; });
-        opts.keepIds = (opts.keepIds || []).concat(idsToKeep);
-        toRemove.forEach(function (md) { return _this.removeChildren(md, coll, opts); });
-        models.each(function (model) { return _this.onAdd(model); });
-    };
-    Components.prototype.resetFromString = function (input, opts) {
-        var _a, _b;
-        if (input === void 0) { input = ''; }
-        if (opts === void 0) { opts = {}; }
-        opts.keepIds = getComponentIds(this);
-        var _c = this, domc = _c.domc, em = _c.em, parent = _c.parent;
-        var cssc = em === null || em === void 0 ? void 0 : em.Css;
-        var allByID = (domc === null || domc === void 0 ? void 0 : domc.allById()) || {};
-        var parsed = this.parseString(input, opts);
-        var newCmps = getComponentsFromDefs(parsed, allByID, opts);
-        var _d = opts.visitedCmps, visitedCmps = _d === void 0 ? {} : _d;
-        // Clone styles for duplicated components
-        Object.keys(visitedCmps).forEach(function (id) {
-            var cmps = visitedCmps[id];
-            if (cmps.length) {
-                // Get all available rules of the component
-                var rulesToClone_1 = (cssc === null || cssc === void 0 ? void 0 : cssc.getRules("#".concat(id))) || [];
-                if (rulesToClone_1.length) {
-                    cmps.forEach(function (cmp) {
-                        rulesToClone_1.forEach(function (rule) {
-                            var newRule = rule.clone();
-                            // @ts-ignore
-                            newRule.set('selectors', ["#".concat(cmp.attributes.id)]);
-                            cssc.getAll().add(newRule);
-                        });
-                    });
-                }
-            }
-        });
-        this.reset(newCmps, opts);
-        em === null || em === void 0 ? void 0 : em.trigger('component:content', parent, opts, input);
-        (_b = (_a = parent).__checkInnerChilds) === null || _b === void 0 ? void 0 : _b.call(_a);
-    };
-    Components.prototype.removeChildren = function (removed, coll, opts) {
-        var _this = this;
-        if (opts === void 0) { opts = {}; }
-        // Removing a parent component can cause this function
-        // to be called with an already removed child element
-        if (!removed) {
-            return;
-        }
-        var _a = this, domc = _a.domc, em = _a.em;
-        var isTemp = opts.temporary || opts.fromUndo;
-        removed.prevColl = this; // This one is required for symbols
-        if (!isTemp) {
-            // Remove the component from the global list
-            var id_1 = removed.getId();
-            var sels = em.Selectors.getAll();
-            var rules = em.Css.getAll();
-            var canRemoveStyle = (opts.keepIds || []).indexOf(id_1) < 0;
-            var allByID = domc ? domc.allById() : {};
-            delete allByID[id_1];
-            // Remove all component related styles
-            var rulesRemoved = (canRemoveStyle
-                ? rules.remove(rules.filter(function (r) { return r.getSelectors().getFullString() === "#".concat(id_1); }), opts)
-                : []);
-            // Clean selectors
-            sels.remove(rulesRemoved.map(function (rule) { return rule.getSelectors().at(0); }));
-            if (!removed.opt.temporary) {
-                em.Commands.run('core:component-style-clear', { target: removed });
-                removed.views.forEach(function (view) {
-                    view.scriptContainer &&
-                        removed.emitWithEitor(dom_components_types/* ComponentsEvents */.I.scriptUnmount, { component: removed, view: view, el: view.el });
-                });
-                removed.removed();
-                removed.trigger('removed');
-                em.trigger(dom_components_types/* ComponentsEvents */.I.remove, removed);
-                if (domc && isSymbolInstance(removed) && isSymbolRoot(removed)) {
-                    domc.symbols.__trgEvent(domc.events.symbolInstanceRemove, { component: removed }, true);
-                }
-            }
-            var inner_1 = removed.components();
-            inner_1.forEach(function (it) {
-                updateSymbolComps(it, it, inner_1, Components_assign(Components_assign({}, opts), { skipRefsUp: true }));
-                _this.removeChildren(it, coll, opts);
-            });
-        }
-        // Remove stuff registered in DomComponents.handleChanges
-        var inner = removed.components();
-        em.stopListening(inner);
-        em.stopListening(removed);
-        em.stopListening(removed.get('classes'));
-        removed.__postRemove();
-    };
-    /** @ts-ignore */
-    Components.prototype.model = function (attrs, options) {
-        var opt = options.collection.opt;
-        var em = opt.em;
-        var model;
-        var df = em.Components.componentTypes;
-        options.em = em;
-        options.config = opt.config;
-        options.componentTypes = df;
-        options.domc = opt.domc;
-        for (var it_1 = 0; it_1 < df.length; it_1++) {
-            var dfId = df[it_1].id;
-            if (dfId == attrs.type) {
-                model = df[it_1].model;
-                break;
-            }
-        }
-        // If no model found, get the default one
-        if (!model) {
-            model = df[df.length - 1].model;
-            em &&
-                attrs.type &&
-                em.logWarning("Component type '".concat(attrs.type, "' not found"), {
-                    attrs: attrs,
-                    options: options,
-                });
-        }
-        return new model(attrs, options);
-    };
-    Components.prototype.parseString = function (value, opt) {
-        if (opt === void 0) { opt = {}; }
-        var _a = this, em = _a.em, domc = _a.domc, parent = _a.parent;
-        var isWrapper = parent === null || parent === void 0 ? void 0 : parent.is('wrapper');
-        var asDocument = opt.asDocument && isWrapper;
-        var cssc = em.Css;
-        var parsed = em.Parser.parseHtml(value, Components_assign({ asDocument: asDocument }, opt.parserOptions));
-        var components = parsed.html;
-        if (isWrapper && parsed.doctype) {
-            var root = parent;
-            var _b = parsed.html || {}, _c = _b.components, bodyCmps = _c === void 0 ? [] : _c, restBody = __rest(_b, ["components"]);
-            var _d = parsed.head || {}, headCmps = _d.components, restHead = __rest(_d, ["components"]);
-            components = bodyCmps;
-            root.set(restBody, opt);
-            root.head.set(restHead, opt);
-            root.head.components(headCmps, opt);
-            root.docEl.set(parsed.root, opt);
-            root.set({ doctype: parsed.doctype });
-        }
-        // We need this to avoid duplicate IDs
-        model_Component.checkId(components, parsed.css, domc.componentsById, opt);
-        if (parsed.css && cssc && !opt.temporary) {
-            var at = opt.at, optsToPass = __rest(opt, ["at"]);
-            cssc.addCollection(parsed.css, Components_assign(Components_assign({}, optsToPass), { extend: 1 }));
-        }
-        return components;
-    };
-    Components.prototype.add = function (models, opt) {
-        var _this = this;
-        if (opt === void 0) { opt = {}; }
-        if (models == undefined)
-            return;
-        opt.keepIds = Components_spreadArray(Components_spreadArray([], (opt.keepIds || []), true), getComponentIds(opt.previousModels), true);
-        if ((0,index_all.isString)(models)) {
-            models = this.parseString(models, opt);
-        }
-        else if ((0,index_all.isArray)(models)) {
-            models.forEach(function (item, index) {
-                if ((0,index_all.isString)(item)) {
-                    var nodes = _this.parseString(item, opt);
-                    models[index] = (0,index_all.isArray)(nodes) && !nodes.length ? null : nodes;
-                }
-            });
-        }
-        var processedModels = ((0,index_all.isArray)(models) ? models : [models])
-            .filter(Boolean)
-            .map(function (model) { return _this.processDef(model); });
-        models = (0,index_all.isArray)(models) ? (0,index_all.flatten)(processedModels, 1) : processedModels[0];
-        return _super.prototype.add.call(this, models, opt);
-    };
-    /**
-     * Process component definition.
-     */
-    Components.prototype.processDef = function (mdl) {
-        // Avoid processing Models
-        if (mdl.cid && mdl.ccid)
-            return mdl;
-        var _a = this, em = _a.em, _b = _a.config, config = _b === void 0 ? {} : _b;
-        var processor = config.processor;
-        var model = mdl;
-        if (processor) {
-            model = Components_assign({}, model); // Avoid 'Cannot delete property ...'
-            var modelPr = processor(model);
-            if (modelPr) {
-                //@ts-ignore
-                (0,index_all.each)(model, function (val, key) { return delete model[key]; });
-                (0,index_all.extend)(model, modelPr);
-            }
-        }
-        // React JSX preset
-        //@ts-ignore
-        if (model.$$typeof && typeof model.props == 'object') {
-            model = Components_assign({}, model);
-            model.props = Components_assign({}, model.props);
-            var domc = em.Components;
-            var parser = em.Parser;
-            var parserHtml = parser.parserHtml;
-            (0,index_all.each)(model, function (value, key) {
-                //@ts-ignore
-                if (!(0,index_all.includes)(['props', 'type'], key))
-                    delete model[key];
-            });
-            var props = model.props;
-            var comps = props.children;
-            delete props.children;
-            delete model.props;
-            var res = parserHtml.splitPropsFromAttr(props);
-            model.attributes = res.attrs;
-            if (comps) {
-                model.components = comps;
-            }
-            if (!model.type) {
-                model.type = 'textnode';
-            }
-            else if (!domc.getType(model.type)) {
-                model.tagName = model.type;
-                delete model.type;
-            }
-            (0,index_all.extend)(model, res.props);
-        }
-        return model;
-    };
-    Components.prototype.onAdd = function (model, c, opts) {
-        if (opts === void 0) { opts = {}; }
-        var _a = this, domc = _a.domc, em = _a.em;
-        var style = model.getStyle();
-        var avoidInline = em && em.getConfig().avoidInlineStyle;
-        domc && domc.Component.ensureInList(model);
-        if (!(0,index_all.isEmpty)(style) && !avoidInline && em && em.getConfig().forceClass && !opts.temporary) {
-            var name_1 = model.cid;
-            em.Css.setClassRule(name_1, style);
-            model.setStyle({});
-            model.addClass(name_1);
-        }
-        model.__postAdd({ recursive: true });
-        if (em && !opts.temporary) {
-            var triggerAdd_1 = function (model) {
-                em.trigger(dom_components_types/* ComponentsEvents */.I.add, model, opts);
-                model.components().forEach(function (comp) { return triggerAdd_1(comp); });
-            };
-            triggerAdd_1(model);
-            if (domc && isSymbolInstance(model) && isSymbolRoot(model)) {
-                domc.symbols.__trgEvent(domc.events.symbolInstanceAdd, { component: model }, true);
-            }
-        }
-    };
-    return Components;
-}(common/* Collection */.pM));
-/* harmony default export */ const model_Components = (Components);
 
 ;// CONCATENATED MODULE: ./src/selector_manager/model/Selector.ts
 var Selector_extends = (undefined && undefined.__extends) || (function () {
@@ -29497,6 +29924,7 @@ var TraitsEvents;
      * editor.on('trait:value', ({ trait, component, value }) => { ... });
      */
     TraitsEvents["value"] = "trait:value";
+    TraitsEvents["update"] = "trait:update";
     /**
      * @event `trait:category:update` Trait category updated.
      * @example
@@ -29516,7 +29944,6 @@ var TraitsEvents;
      */
     TraitsEvents["all"] = "trait";
 })(TraitsEvents || (TraitsEvents = {}));
-/**{END_EVENTS}*/
 // need this to avoid the TS documentation generator to break
 /* harmony default export */ const trait_manager_types = (TraitsEvents);
 
@@ -29797,14 +30224,16 @@ var Trait = /** @class */ (function (_super) {
         component.trigger(trait_manager_types.value, props);
         em === null || em === void 0 ? void 0 : em.trigger(trait_manager_types.value, props);
         // This should be triggered for any trait prop change
-        em === null || em === void 0 ? void 0 : em.trigger('trait:update', props);
+        em === null || em === void 0 ? void 0 : em.trigger(trait_manager_types.update, props);
     };
     Trait.prototype.getTargetValue = function (opts) {
+        var _a;
         if (opts === void 0) { opts = {}; }
-        var _a = this, component = _a.component, em = _a.em;
+        var _b = this, component = _b.component, em = _b.em;
         var name = this.getName();
         var getValue = this.get('getValue');
         var value;
+        var skipResolve = opts.skipResolve;
         if (getValue) {
             value = getValue({
                 editor: em === null || em === void 0 ? void 0 : em.getEditor(),
@@ -29814,14 +30243,16 @@ var Trait = /** @class */ (function (_super) {
         }
         else if (this.changeProp) {
             value = component.get(name);
+            if (skipResolve)
+                value = component.dataResolverWatchers.getValueOrResolver('props', (_a = {}, _a[name] = value, _a))[name];
         }
         else {
-            value = component.getAttributes()[name];
+            value = component.getAttributes({ skipResolve: skipResolve })[name];
         }
         if (opts.useType) {
             var type = this.getType();
             if (type === 'checkbox') {
-                var _b = this.attributes, valueTrue = _b.valueTrue, valueFalse = _b.valueFalse;
+                var _c = this.attributes, valueTrue = _c.valueTrue, valueFalse = _c.valueFalse;
                 if (!(0,index_all.isUndefined)(valueTrue) && valueTrue === value) {
                     value = true;
                 }
@@ -30010,9 +30441,24 @@ var Traits = /** @class */ (function (_super) {
 }(CollectionWithCategories));
 /* harmony default export */ const model_Traits = (Traits);
 
-;// CONCATENATED MODULE: ./src/dom_components/model/DynamicValueWatcher.ts
-var DynamicValueWatcher_assign = (undefined && undefined.__assign) || function () {
-    DynamicValueWatcher_assign = Object.assign || function(t) {
+;// CONCATENATED MODULE: ./src/dom_components/model/Components.ts
+var Components_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var Components_assign = (undefined && undefined.__assign) || function () {
+    Components_assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
@@ -30020,171 +30466,395 @@ var DynamicValueWatcher_assign = (undefined && undefined.__assign) || function (
         }
         return t;
     };
-    return DynamicValueWatcher_assign.apply(this, arguments);
+    return Components_assign.apply(this, arguments);
+};
+var __rest = (undefined && undefined.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+var Components_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 };
 
 
-var DynamicValueWatcher = /** @class */ (function () {
-    function DynamicValueWatcher(updateFn, em) {
-        this.updateFn = updateFn;
-        this.em = em;
-        this.dynamicVariableListeners = {};
-    }
-    DynamicValueWatcher.getStaticValues = function (values, em) {
-        if (!values)
-            return {};
-        var evaluatedValues = DynamicValueWatcher_assign({}, values);
-        var propsKeys = Object.keys(values);
-        for (var _i = 0, propsKeys_1 = propsKeys; _i < propsKeys_1.length; _i++) {
-            var key = propsKeys_1[_i];
-            var valueDefinition = values[key];
-            if (!isDynamicValueDefinition(valueDefinition))
-                continue;
-            var value = evaluateDynamicValueDefinition(valueDefinition, em).value;
-            evaluatedValues[key] = value;
-        }
-        return evaluatedValues;
-    };
-    DynamicValueWatcher.areStaticValues = function (values) {
-        if (!values)
-            return true;
-        return Object.keys(values).every(function (key) {
-            return !isDynamicValueDefinition(values[key]);
-        });
-    };
-    DynamicValueWatcher.prototype.setDynamicValues = function (values) {
-        this.removeListeners();
-        return this.addDynamicValues(values);
-    };
-    DynamicValueWatcher.prototype.addDynamicValues = function (values) {
-        var _this = this;
-        if (!values)
-            return {};
-        this.removeListeners(Object.keys(values));
-        var dynamicProps = this.getDynamicValues(values);
-        var propsKeys = Object.keys(dynamicProps);
-        var _loop_1 = function (index) {
-            var key = propsKeys[index];
-            this_1.dynamicVariableListeners[key] = new DataVariableListenerManager({
-                em: this_1.em,
-                dataVariable: dynamicProps[key],
-                updateValueFromDataVariable: function (value) {
-                    _this.updateFn.bind(_this)(key, value);
-                },
-            });
-        };
-        var this_1 = this;
-        for (var index = 0; index < propsKeys.length; index++) {
-            _loop_1(index);
-        }
-        return dynamicProps;
-    };
-    DynamicValueWatcher.prototype.getDynamicValues = function (values) {
-        var dynamicValues = {};
-        var propsKeys = Object.keys(values);
-        for (var index = 0; index < propsKeys.length; index++) {
-            var key = propsKeys[index];
-            if (!isDynamicValueDefinition(values[key])) {
-                continue;
+
+
+
+var getComponentIds = function (cmp, res) {
+    if (res === void 0) { res = []; }
+    if (!cmp)
+        return [];
+    var cmps = ((0,index_all.isArray)(cmp) || (0,index_all.isFunction)(cmp.map) ? cmp : [cmp]);
+    cmps.map(function (cmp) {
+        res.push(cmp.getId());
+        getComponentIds(cmp.components().models, res);
+    });
+    return res;
+};
+var getComponentsFromDefs = function (items, all, opts) {
+    if (all === void 0) { all = {}; }
+    if (opts === void 0) { opts = {}; }
+    opts.visitedCmps = opts.visitedCmps || {};
+    var visitedCmps = opts.visitedCmps;
+    var updateOptions = opts.updateOptions || {};
+    var itms = (0,index_all.isArray)(items) ? items : [items];
+    return itms.map(function (item) {
+        var _a = item.attributes, attributes = _a === void 0 ? {} : _a, components = item.components, tagName = item.tagName, style = item.style;
+        var id = attributes.id, draggable = attributes.draggable, restAttr = __rest(attributes, ["id", "draggable"]);
+        var result = item;
+        if (id) {
+            // Detect components with the same ID
+            if (!visitedCmps[id]) {
+                visitedCmps[id] = [];
+                // Update the component if exists already
+                if (all[id]) {
+                    result = all[id];
+                    var onAttributes = updateOptions.onAttributes, onStyle = updateOptions.onStyle;
+                    var component = result;
+                    tagName && component.set({ tagName: tagName }, Components_assign(Components_assign({}, opts), { silent: true }));
+                    if (onAttributes) {
+                        onAttributes({ item: item, component: component, attributes: restAttr, options: opts });
+                    }
+                    else if ((0,index_all.keys)(restAttr).length) {
+                        component.addAttributes(restAttr, Components_assign({}, opts));
+                    }
+                    if (onStyle) {
+                        onStyle({ item: item, component: component, style: style, options: opts });
+                    }
+                    else if ((0,index_all.keys)(style).length) {
+                        component.addStyle(style, opts);
+                    }
+                }
             }
-            var variable = evaluateDynamicValueDefinition(values[key], this.em).variable;
-            dynamicValues[key] = variable;
+            else {
+                // Found another component with the same ID, treat it as a new component
+                visitedCmps[id].push(result);
+                id = model_Component.getNewId(all);
+                result.attributes.id = id;
+            }
         }
-        return dynamicValues;
+        // Here `result` might be a Component
+        var cmp = (0,index_all.isFunction)(result.components) ? result : null;
+        if (components) {
+            var newComponents = getComponentsFromDefs(components, all, opts);
+            if (cmp) {
+                cmp.components().reset(newComponents, opts);
+            }
+            else {
+                result.components = newComponents;
+            }
+        }
+        else if (cmp) {
+            // The component already exists but the parsed one is without components
+            cmp.components().reset([], opts);
+        }
+        return result;
+    });
+};
+var Components = /** @class */ (function (_super) {
+    Components_extends(Components, _super);
+    function Components(models, opt) {
+        var _this = _super.call(this, models, opt) || this;
+        _this.opt = opt;
+        _this.listenTo(_this, 'add', _this.onAdd);
+        _this.listenTo(_this, 'remove', _this.removeChildren);
+        _this.listenTo(_this, 'reset', _this.resetChildren);
+        var em = opt.em, config = opt.config;
+        _this.config = config;
+        _this.em = em;
+        _this.domc = opt.domc || (em === null || em === void 0 ? void 0 : em.Components);
+        return _this;
+    }
+    Object.defineProperty(Components.prototype, "events", {
+        get: function () {
+            var _a;
+            return (_a = this.domc) === null || _a === void 0 ? void 0 : _a.events;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Components.prototype.resetChildren = function (models, opts) {
+        var _this = this;
+        if (opts === void 0) { opts = {}; }
+        var coll = this;
+        var prev = opts.previousModels || [];
+        var toRemove = prev.filter(function (prev) { return !models.get(prev.cid); });
+        var newIds = getComponentIds(models);
+        var idsToKeep = getComponentIds(prev).filter(function (pr) { return newIds.indexOf(pr) >= 0; });
+        opts.keepIds = (opts.keepIds || []).concat(idsToKeep);
+        toRemove.forEach(function (md) { return _this.removeChildren(md, coll, opts); });
+        models.each(function (model) { return _this.onAdd(model); });
+    };
+    Components.prototype.resetFromString = function (input, opts) {
+        var _a, _b;
+        if (input === void 0) { input = ''; }
+        if (opts === void 0) { opts = {}; }
+        opts.keepIds = getComponentIds(this);
+        var _c = this, domc = _c.domc, em = _c.em, parent = _c.parent;
+        var allByID = (domc === null || domc === void 0 ? void 0 : domc.allById()) || {};
+        var parsed = this.parseString(input, Components_assign(Components_assign({}, opts), { cloneRules: true }));
+        var fromDefOpts = Components_assign({ skipViewUpdate: true }, opts);
+        var newCmps = getComponentsFromDefs(parsed, allByID, fromDefOpts);
+        Components.cloneCssRules(em, fromDefOpts.visitedCmps);
+        this.reset(newCmps, opts);
+        em === null || em === void 0 ? void 0 : em.trigger(dom_components_types/* ComponentsEvents */.IT.content, parent, opts, input);
+        (_b = (_a = parent).__checkInnerChilds) === null || _b === void 0 ? void 0 : _b.call(_a);
+    };
+    Components.prototype.removeChildren = function (removed, coll, opts) {
+        var _this = this;
+        if (opts === void 0) { opts = {}; }
+        // Removing a parent component can cause this function
+        // to be called with an already removed child element
+        if (!removed) {
+            return;
+        }
+        var _a = this, domc = _a.domc, em = _a.em;
+        var isTemp = opts.temporary || opts.fromUndo;
+        removed.prevColl = this; // This one is required for symbols
+        if (!isTemp) {
+            // Remove the component from the global list
+            var id_1 = removed.getId();
+            var sels = em.Selectors.getAll();
+            var rules = em.Css.getAll();
+            var canRemoveStyle = (opts.keepIds || []).indexOf(id_1) < 0;
+            var allByID = domc ? domc.allById() : {};
+            delete allByID[id_1];
+            // Remove all component related styles
+            var rulesRemoved = (canRemoveStyle
+                ? rules.remove(rules.filter(function (r) { return r.getSelectors().getFullString() === "#".concat(id_1); }), opts)
+                : []);
+            // Clean selectors
+            sels.remove(rulesRemoved.map(function (rule) { return rule.getSelectors().at(0); }));
+            if (!removed.opt.temporary) {
+                em.Commands.run('core:component-style-clear', { target: removed });
+                removed.views.forEach(function (view) {
+                    view.scriptContainer &&
+                        removed.emitWithEditor(dom_components_types/* ComponentsEvents */.IT.scriptUnmount, { component: removed, view: view, el: view.el });
+                });
+                removed.removed();
+                removed.trigger('removed');
+                em.trigger(dom_components_types/* ComponentsEvents */.IT.remove, removed);
+                if (domc && isSymbolInstance(removed) && isSymbolRoot(removed)) {
+                    domc.symbols.__trgEvent(domc.events.symbolInstanceRemove, { component: removed }, true);
+                }
+            }
+            var inner_1 = removed.components();
+            inner_1.forEach(function (it) {
+                updateSymbolComps(it, it, inner_1, Components_assign(Components_assign({}, opts), { skipRefsUp: true }));
+                _this.removeChildren(it, coll, opts);
+            });
+        }
+        // Remove stuff registered in DomComponents.handleChanges
+        var inner = removed.components();
+        em.stopListening(inner);
+        em.stopListening(removed);
+        em.stopListening(removed.get('classes'));
+        removed.__postRemove();
+        if (!removed.opt.temporary) {
+            var triggerRemoved_1 = function (cmp) {
+                cmp.emitWithEditor(dom_components_types/* ComponentsEvents */.IT.removed, cmp, { removeOptions: opts });
+                cmp.components().forEach(function (cmp) { return triggerRemoved_1(cmp); });
+            };
+            triggerRemoved_1(removed);
+        }
+    };
+    /** @ts-ignore */
+    Components.prototype.model = function (attrs, options) {
+        var opt = options.collection.opt;
+        var em = opt.em;
+        var model;
+        var df = em.Components.componentTypes;
+        options.em = em;
+        options.config = opt.config;
+        options.componentTypes = df;
+        options.domc = opt.domc;
+        for (var it_1 = 0; it_1 < df.length; it_1++) {
+            var dfId = df[it_1].id;
+            if (dfId == attrs.type) {
+                model = df[it_1].model;
+                break;
+            }
+        }
+        // If no model found, get the default one
+        if (!model) {
+            model = df[df.length - 1].model;
+            em &&
+                attrs.type &&
+                em.logWarning("Component type '".concat(attrs.type, "' not found"), {
+                    attrs: attrs,
+                    options: options,
+                });
+        }
+        return new model(attrs, options);
+    };
+    Components.prototype.parseString = function (value, opt) {
+        if (opt === void 0) { opt = {}; }
+        var _a = this, em = _a.em, domc = _a.domc, parent = _a.parent;
+        var isWrapper = parent === null || parent === void 0 ? void 0 : parent.is('wrapper');
+        var asDocument = opt.asDocument && isWrapper;
+        var cssc = em.Css;
+        var parsed = em.Parser.parseHtml(value, Components_assign({ asDocument: asDocument }, opt.parserOptions));
+        var components = parsed.html;
+        if (isWrapper && parsed.doctype) {
+            var root = parent;
+            var _b = parsed.html || {}, _c = _b.components, bodyCmps = _c === void 0 ? [] : _c, restBody = __rest(_b, ["components"]);
+            var _d = parsed.head || {}, headCmps = _d.components, restHead = __rest(_d, ["components"]);
+            components = bodyCmps;
+            root.set(restBody, opt);
+            root.head.set(restHead, opt);
+            root.head.components(headCmps, opt);
+            root.docEl.set(parsed.root, opt);
+            root.set({ doctype: parsed.doctype });
+        }
+        // We need this to avoid duplicate IDs
+        var result = model_Component.checkId(components, parsed.css, domc.componentsById, opt);
+        opt.cloneRules && Components.cloneCssRules(em, result.updatedIds);
+        if (parsed.css && cssc && !opt.temporary) {
+            var at = opt.at, optsToPass = __rest(opt, ["at"]);
+            cssc.addCollection(parsed.css, Components_assign(Components_assign({}, optsToPass), { extend: 1 }));
+        }
+        return components;
+    };
+    Components.prototype.add = function (models, opt) {
+        var _this = this;
+        if (opt === void 0) { opt = {}; }
+        if (models == undefined)
+            return;
+        opt.keepIds = Components_spreadArray(Components_spreadArray([], (opt.keepIds || []), true), getComponentIds(opt.previousModels), true);
+        if ((0,index_all.isString)(models)) {
+            models = this.parseString(models, opt);
+        }
+        else if ((0,index_all.isArray)(models)) {
+            // Avoid "Cannot assign to read only property '0' of object '[object Array]'
+            models = Components_spreadArray([], models, true);
+            models.forEach(function (item, index) {
+                if ((0,index_all.isString)(item)) {
+                    var nodes = _this.parseString(item, opt);
+                    models[index] = (0,index_all.isArray)(nodes) && !nodes.length ? null : nodes;
+                }
+            });
+        }
+        var processedModels = ((0,index_all.isArray)(models) ? models : [models])
+            .filter(Boolean)
+            .map(function (model) { return _this.processDef(model); });
+        models = (0,index_all.isArray)(models) ? (0,index_all.flatten)(processedModels, 1) : processedModels[0];
+        return _super.prototype.add.call(this, models, opt);
     };
     /**
-     * removes listeners to stop watching for changes,
-     * if keys argument is omitted, remove all listeners
-     * @argument keys
+     * Process component definition.
      */
-    DynamicValueWatcher.prototype.removeListeners = function (keys) {
-        var _this = this;
-        var propsKeys = keys ? keys : Object.keys(this.dynamicVariableListeners);
-        propsKeys.forEach(function (key) {
-            if (_this.dynamicVariableListeners[key]) {
-                _this.dynamicVariableListeners[key].destroy();
-                delete _this.dynamicVariableListeners[key];
+    Components.prototype.processDef = function (mdl) {
+        // Avoid processing Models
+        if (mdl.cid && mdl.ccid)
+            return mdl;
+        var _a = this, em = _a.em, _b = _a.config, config = _b === void 0 ? {} : _b;
+        var processor = config.processor;
+        var model = mdl;
+        if (processor) {
+            model = Components_assign({}, model); // Avoid 'Cannot delete property ...'
+            var modelPr = processor(model);
+            if (modelPr) {
+                //@ts-ignore
+                (0,index_all.each)(model, function (val, key) { return delete model[key]; });
+                (0,index_all.extend)(model, modelPr);
+            }
+        }
+        // React JSX preset
+        //@ts-ignore
+        if (model.$$typeof && typeof model.props == 'object') {
+            model = Components_assign({}, model);
+            model.props = Components_assign({}, model.props);
+            var domc = em.Components;
+            var parser = em.Parser;
+            var parserHtml = parser.parserHtml;
+            (0,index_all.each)(model, function (value, key) {
+                //@ts-ignore
+                if (!(0,index_all.includes)(['props', 'type'], key))
+                    delete model[key];
+            });
+            var props = model.props;
+            var comps = props.children;
+            delete props.children;
+            delete model.props;
+            var res = parserHtml.splitPropsFromAttr(props);
+            model.attributes = res.attrs;
+            if (comps) {
+                model.components = comps;
+            }
+            if (!model.type) {
+                model.type = 'textnode';
+            }
+            else if (!domc.getType(model.type)) {
+                model.tagName = model.type;
+                delete model.type;
+            }
+            (0,index_all.extend)(model, res.props);
+        }
+        return model;
+    };
+    Components.prototype.onAdd = function (model, c, opts) {
+        if (opts === void 0) { opts = {}; }
+        var _a = this, domc = _a.domc, em = _a.em;
+        var avoidInline = em.config.avoidInlineStyle;
+        domc && domc.Component.ensureInList(model);
+        if (!avoidInline && em.config.forceClass && !opts.temporary) {
+            var style = model.getStyle();
+            if (!(0,index_all.isEmpty)(style)) {
+                var name_1 = model.cid;
+                em.Css.setClassRule(name_1, style);
+                model.setStyle({});
+                model.addClass(name_1);
+            }
+        }
+        model.__postAdd({ recursive: true });
+        if (em && !opts.temporary) {
+            var triggerAdd_1 = function (model) {
+                em.trigger(dom_components_types/* ComponentsEvents */.IT.add, model, opts);
+                model.components().forEach(function (comp) { return triggerAdd_1(comp); });
+            };
+            triggerAdd_1(model);
+            if (domc && isSymbolInstance(model) && isSymbolRoot(model)) {
+                domc.symbols.__trgEvent(domc.events.symbolInstanceAdd, { component: model }, true);
+            }
+        }
+    };
+    Components.cloneCssRules = function (em, cmpsMap) {
+        if (cmpsMap === void 0) { cmpsMap = {}; }
+        var Css = em.Css;
+        Object.keys(cmpsMap).forEach(function (id) {
+            var cmps = cmpsMap[id];
+            if (cmps.length) {
+                // Get all available rules of the component
+                var rulesToClone_1 = (Css.getRules("#".concat(id)) || []).filter(function (rule) { return !(0,index_all.isEmpty)(rule.attributes.style); });
+                if (rulesToClone_1.length) {
+                    var rules_1 = Css.getAll();
+                    cmps.forEach(function (cmp) {
+                        rulesToClone_1.forEach(function (rule) {
+                            var newRule = rule.clone();
+                            newRule.set('selectors', ["#".concat(cmp.attributes.id)]);
+                            rules_1.add(newRule);
+                        });
+                    });
+                }
             }
         });
     };
-    DynamicValueWatcher.prototype.getSerializableValues = function (values) {
-        if (!values)
-            return {};
-        var serializableValues = DynamicValueWatcher_assign({}, values);
-        var propsKeys = Object.keys(serializableValues);
-        for (var index = 0; index < propsKeys.length; index++) {
-            var key = propsKeys[index];
-            if (this.dynamicVariableListeners[key]) {
-                serializableValues[key] = this.dynamicVariableListeners[key].dynamicVariable.toJSON();
-            }
-        }
-        return serializableValues;
-    };
-    DynamicValueWatcher.prototype.getAllSerializableValues = function () {
-        var serializableValues = {};
-        var propsKeys = Object.keys(this.dynamicVariableListeners);
-        for (var index = 0; index < propsKeys.length; index++) {
-            var key = propsKeys[index];
-            serializableValues[key] = this.dynamicVariableListeners[key].dynamicVariable.toJSON();
-        }
-        return serializableValues;
-    };
-    return DynamicValueWatcher;
-}());
-
-
-;// CONCATENATED MODULE: ./src/dom_components/model/ComponentDynamicValueWatcher.ts
-
-var ComponentDynamicValueWatcher = /** @class */ (function () {
-    function ComponentDynamicValueWatcher(component, em) {
-        this.component = component;
-        this.propertyWatcher = new DynamicValueWatcher(this.createPropertyUpdater(), em);
-        this.attributeWatcher = new DynamicValueWatcher(this.createAttributeUpdater(), em);
-    }
-    ComponentDynamicValueWatcher.prototype.createPropertyUpdater = function () {
-        var _this = this;
-        return function (key, value) {
-            _this.component.set(key, value, { fromDataSource: true, avoidStore: true });
-        };
-    };
-    ComponentDynamicValueWatcher.prototype.createAttributeUpdater = function () {
-        var _this = this;
-        return function (key, value) {
-            var _a;
-            _this.component.addAttributes((_a = {}, _a[key] = value, _a), { fromDataSource: true, avoidStore: true });
-        };
-    };
-    ComponentDynamicValueWatcher.prototype.addProps = function (props) {
-        this.propertyWatcher.addDynamicValues(props);
-    };
-    ComponentDynamicValueWatcher.prototype.addAttributes = function (attributes) {
-        this.attributeWatcher.addDynamicValues(attributes);
-    };
-    ComponentDynamicValueWatcher.prototype.setAttributes = function (attributes) {
-        this.attributeWatcher.setDynamicValues(attributes);
-    };
-    ComponentDynamicValueWatcher.prototype.removeAttributes = function (attributes) {
-        this.attributeWatcher.removeListeners(attributes);
-    };
-    ComponentDynamicValueWatcher.prototype.getDynamicPropsDefs = function () {
-        return this.propertyWatcher.getAllSerializableValues();
-    };
-    ComponentDynamicValueWatcher.prototype.getDynamicAttributesDefs = function () {
-        return this.attributeWatcher.getAllSerializableValues();
-    };
-    ComponentDynamicValueWatcher.prototype.getAttributesDefsOrValues = function (attributes) {
-        return this.attributeWatcher.getSerializableValues(attributes);
-    };
-    ComponentDynamicValueWatcher.prototype.getPropsDefsOrValues = function (props) {
-        return this.propertyWatcher.getSerializableValues(props);
-    };
-    ComponentDynamicValueWatcher.prototype.destroy = function () {
-        this.propertyWatcher.removeListeners();
-        this.attributeWatcher.removeListeners();
-    };
-    return ComponentDynamicValueWatcher;
-}());
-
+    return Components;
+}(common/* Collection */.pM));
+/* harmony default export */ const model_Components = (Components);
 
 ;// CONCATENATED MODULE: ./src/dom_components/model/Component.ts
 var Component_extends = (undefined && undefined.__extends) || (function () {
@@ -30249,12 +30919,12 @@ var escapeRegExp = function (str) {
     return str.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
 };
 var avoidInline = function (em) { return !!(em === null || em === void 0 ? void 0 : em.getConfig().avoidInlineStyle); };
-var eventDrag = 'component:drag';
+var eventDrag = dom_components_types/* ComponentsEvents */.IT.drag;
 var keySymbols = '__symbols';
 var keySymbol = '__symbol';
 var keySymbolOvrd = '__symbol_ovrd';
-var keyUpdate = dom_components_types/* ComponentsEvents */.I.update;
-var keyUpdateInside = dom_components_types/* ComponentsEvents */.I.updateInside;
+var keyUpdate = dom_components_types/* ComponentsEvents */.IT.update;
+var keyUpdateInside = dom_components_types/* ComponentsEvents */.IT.updateInside;
 /**
  * The Component object represents a single node of our template structure, so when you update its properties the changes are
  * immediately reflected on the canvas and in the code to export (indeed, when you ask to export the code we just go through all
@@ -30278,7 +30948,7 @@ var keyUpdateInside = dom_components_types/* ComponentsEvents */.I.updateInside;
  * @property {String} [name=''] Name of the component. Will be used, for example, in Layers and badges
  * @property {Boolean} [removable=true] When `true` the component is removable from the canvas, default: `true`
  * @property {Boolean|String|Function} [draggable=true] Indicates if it's possible to drag the component inside others.
- *  You can also specify a query string to indentify elements,
+ *  You can also specify a query string to identify elements,
  *  eg. `'.some-class[title=Hello], [data-gjs-type=column]'` means you can drag the component only inside elements
  *  containing `some-class` class and `Hello` title, and `column` components. In the case of a function, target and destination components are passed as arguments, return a Boolean to indicate if the drag is possible. Default: `true`
  * @property {Boolean|String|Function} [droppable=true] Indicates if it's possible to drop other components inside. You can use
@@ -30317,15 +30987,14 @@ var keyUpdateInside = dom_components_types/* ComponentsEvents */.I.updateInside;
  *
  * @module docsjs.Component
  */
-var Component = /** @class */ (function (_super) {
+var Component_Component = /** @class */ (function (_super) {
     Component_extends(Component, _super);
     function Component(props, opt) {
         if (props === void 0) { props = {}; }
-        var _this = _super.call(this, props, opt) || this;
-        _this.componentDVListener = new ComponentDynamicValueWatcher(_this, opt.em);
-        _this.componentDVListener.addProps(props);
-        (0,index_all.bindAll)(_this, '__upSymbProps', '__upSymbCls', '__upSymbComps');
+        var _this = this;
         var em = opt.em;
+        _this = _super.call(this, props, opt) || this;
+        (0,index_all.bindAll)(_this, '__upSymbProps', '__upSymbCls', '__upSymbComps', 'syncOnComponentChange');
         // Propagate properties from parent if indicated
         var parent = _this.parent();
         var parentAttr = parent === null || parent === void 0 ? void 0 : parent.attributes;
@@ -30346,7 +31015,9 @@ var Component = /** @class */ (function (_super) {
         _this.opt = opt;
         _this.em = em;
         _this.config = opt.config || {};
-        _this.setAttributes(Component_assign(Component_assign({}, ((0,index_all.result)(_this, 'defaults').attributes || {})), (_this.get('attributes') || {})));
+        var defaultAttrs = Component_assign(Component_assign({}, ((0,index_all.result)(_this, 'defaults').attributes || {})), (_this.get('attributes') || {}));
+        var attrs = _this.dataResolverWatchers.getValueOrResolver('attributes', defaultAttrs);
+        _this.setAttributes(attrs);
         _this.ccid = Component.createId(_this, opt);
         _this.preInit();
         _this.initClasses();
@@ -30365,7 +31036,7 @@ var Component = /** @class */ (function (_super) {
         _this.views = [];
         // Register global updates for collection properties
         ['classes', 'traits', 'components'].forEach(function (name) {
-            var events = "add remove ".concat(name !== 'components' ? 'change' : '');
+            var events = "add remove reset ".concat(name !== 'components' ? 'change' : '');
             _this.listenTo(_this.get(name), events.trim(), function () {
                 var args = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
@@ -30381,10 +31052,14 @@ var Component = /** @class */ (function (_super) {
             if (styles && cssc) {
                 cssc.addCollection(styles, { avoidUpdateStyle: true }, { group: "cmp:".concat(type) });
             }
+            _this._moveInlineStyleToRule();
             _this.__postAdd();
             _this.init();
             isSymbol(_this) && initSymbol(_this);
-            em === null || em === void 0 ? void 0 : em.trigger(dom_components_types/* ComponentsEvents */.I.create, _this, opt);
+            em === null || em === void 0 ? void 0 : em.trigger(dom_components_types/* ComponentsEvents */.IT.create, _this, opt);
+        }
+        if (avoidInline(em)) {
+            _this.dataResolverWatchers.disableStyles();
         }
         return _this;
     }
@@ -30513,6 +31188,9 @@ var Component = /** @class */ (function (_super) {
         enumerable: false,
         configurable: true
     });
+    Component.prototype.getType = function () {
+        return this.get('type') || 'default';
+    };
     Component.prototype.preInit = function () { };
     /**
      * Hook method, called once the model is created
@@ -30529,31 +31207,48 @@ var Component = /** @class */ (function (_super) {
      * Hook method, called once the model has been removed
      */
     Component.prototype.removed = function () { };
-    Component.prototype.set = function (keyOrAttributes, valueOrOptions, optionsOrUndefined) {
+    Component.prototype.onCollectionsStateMapUpdate = function (collectionsStateMap) {
         var _a;
-        var _b;
-        var attributes;
-        var options = { skipWatcherUpdates: false, fromDataSource: false };
-        if (typeof keyOrAttributes === 'object') {
-            attributes = keyOrAttributes;
-            options = valueOrOptions || options;
+        _super.prototype.onCollectionsStateMapUpdate.call(this, collectionsStateMap);
+        (_a = this._getStyleRule()) === null || _a === void 0 ? void 0 : _a.onCollectionsStateMapUpdate(collectionsStateMap);
+        var cmps = this.components();
+        cmps.forEach(function (cmp) { return cmp.onCollectionsStateMapUpdate(collectionsStateMap); });
+    };
+    Component.prototype.syncComponentsCollectionState = function () {
+        this.stopListening(this.components(), 'add remove reset', this.syncOnComponentChange);
+        this.listenTo(this.components(), 'add remove reset', this.syncOnComponentChange);
+        this.components().forEach(function (cmp) { return cmp.syncComponentsCollectionState(); });
+    };
+    Component.prototype.stopSyncComponentCollectionState = function () {
+        this.stopListening(this.components(), 'add remove reset', this.syncOnComponentChange);
+        this.collectionsStateMap = {};
+        this.components().forEach(function (cmp) { return cmp.stopSyncComponentCollectionState(); });
+    };
+    Component.prototype.syncOnComponentChange = function (model, collection, opts) {
+        var _this = this;
+        if (!this.collectionsStateMap || !Object.keys(this.collectionsStateMap).length)
+            return;
+        var options = opts || collection || {};
+        // Reset (in reset, 'model' is Collection, 'collection' is opts )
+        if (!opts) {
+            var modelsRemoved = options.previousModels || [];
+            modelsRemoved.forEach(function (cmp) { return cmp.stopSyncComponentCollectionState(); });
+            this.components().forEach(function (cmp) {
+                cmp.syncComponentsCollectionState();
+                cmp.onCollectionsStateMapUpdate(_this.collectionsStateMap);
+            });
         }
-        else if (typeof keyOrAttributes === 'string') {
-            attributes = (_a = {}, _a[keyOrAttributes] = valueOrOptions, _a);
-            options = optionsOrUndefined || options;
+        else if (options.add) {
+            // Add
+            var modelAdded = model;
+            modelAdded.syncComponentsCollectionState();
+            modelAdded.onCollectionsStateMapUpdate(this.collectionsStateMap);
         }
         else {
-            attributes = {};
-            options = optionsOrUndefined || options;
+            // Remove
+            var modelRemoved = model;
+            modelRemoved.stopSyncComponentCollectionState();
         }
-        // @ts-ignore
-        var em = this.em || options.em;
-        var evaluatedAttributes = DynamicValueWatcher.getStaticValues(attributes, em);
-        var shouldSkipWatcherUpdates = options.skipWatcherUpdates || options.fromDataSource;
-        if (!shouldSkipWatcherUpdates) {
-            (_b = this.componentDVListener) === null || _b === void 0 ? void 0 : _b.addProps(attributes);
-        }
-        return _super.prototype.set.call(this, evaluatedAttributes, options);
     };
     Component.prototype.__postAdd = function (opts) {
         if (opts === void 0) { opts = {}; }
@@ -30583,24 +31278,45 @@ var Component = /** @class */ (function (_super) {
         ['status', 'open', 'toolbar', 'traits'].forEach(function (name) { return delete changed[name]; });
         // Propagate component prop changes
         if (!(0,mixins.isEmptyObj)(changed)) {
-            this.__changesUp(opts);
+            this.__changesUp(opts, { changed: changed });
             this.__propSelfToParent({ component: this, changed: changed, options: opts });
         }
     };
-    Component.prototype.__onStyleChange = function (newStyles) {
+    Component.prototype.__onStyleChange = function (newStyles, opts) {
         var _this = this;
-        var em = this.em;
-        if (!em)
+        var _a = this, collectionsStateMap = _a.collectionsStateMap, em = _a.em;
+        if (!em || (opts === null || opts === void 0 ? void 0 : opts.noEvent))
             return;
-        var event = 'component:styleUpdate';
         var styleKeys = (0,index_all.keys)(newStyles);
         var pros = { style: newStyles };
-        em.trigger(event, this, pros);
-        styleKeys.forEach(function (key) { return em.trigger("".concat(event, ":").concat(key), _this, pros); });
+        this.emitWithEditor(dom_components_types/* ComponentsEvents */.IT.styleUpdate, this, pros);
+        styleKeys.forEach(function (key) { return _this.emitWithEditor("".concat(dom_components_types/* ComponentsEvents */.IT.styleUpdateProperty).concat(key), _this, pros); });
+        var parentCollectionIds = Object.keys(collectionsStateMap).filter(function (key) { return key !== DataCollectionKeys.rootData; });
+        if (parentCollectionIds.length === 0)
+            return;
+        var isAtInitialPosition = parentCollectionIds.every(function (id) {
+            var collection = collectionsStateMap[id];
+            return collection.currentIndex === collection.startIndex;
+        });
+        if (!isAtInitialPosition)
+            return;
+        var componentsToUpdate = getSymbolsToUpdate(this);
+        componentsToUpdate.forEach(function (component) {
+            var componentCollectionsState = component.collectionsStateMap;
+            var componentParentCollectionIds = Object.keys(componentCollectionsState);
+            var isChildOfOriginalCollections = componentParentCollectionIds.every(function (id) { return parentCollectionIds.includes(id); });
+            if (isChildOfOriginalCollections) {
+                component.addStyle(Component_assign({}, newStyles), { noEvent: true });
+            }
+        });
     };
-    Component.prototype.__changesUp = function (opts) {
+    Component.prototype.__changesUp = function (options, data) {
+        var _this = this;
+        if (data === void 0) { data = {}; }
         var _a = this, em = _a.em, frame = _a.frame;
-        [frame, em].forEach(function (md) { return md && md.changesUp(opts); });
+        [frame, em].forEach(function (md) {
+            md === null || md === void 0 ? void 0 : md.changesUp(options, Component_assign({ component: _this, options: options }, data));
+        });
     };
     Component.prototype.__propSelfToParent = function (props) {
         this.trigger(keyUpdate, props);
@@ -30628,6 +31344,7 @@ var Component = /** @class */ (function (_super) {
     Component.prototype.__upSymbComps = function (m, c, o) {
         updateSymbolComps(this, m, c, o);
     };
+    Component.prototype.__onDestroy = function () { };
     /**
      * Check component's type
      * @param  {string}  type Component type
@@ -30678,9 +31395,13 @@ var Component = /** @class */ (function (_super) {
      * @example
      * component.setSymbolOverride(['children', 'classes']);
      */
-    Component.prototype.setSymbolOverride = function (value) {
+    Component.prototype.setSymbolOverride = function (value, options) {
         var _a;
-        this.set(keySymbolOvrd, (_a = ((0,index_all.isString)(value) ? [value] : value)) !== null && _a !== void 0 ? _a : 0);
+        var _b;
+        if (options === void 0) { options = {}; }
+        this.set((_a = {},
+            _a[keySymbolOvrd] = (_b = ((0,index_all.isString)(value) ? [value] : value)) !== null && _b !== void 0 ? _b : 0,
+            _a), options);
     };
     /**
      * Get symbol override value.
@@ -30855,14 +31576,7 @@ var Component = /** @class */ (function (_super) {
      */
     Component.prototype.setAttributes = function (attrs, opts) {
         if (opts === void 0) { opts = { skipWatcherUpdates: false, fromDataSource: false }; }
-        // @ts-ignore
-        var em = this.em || opts.em;
-        var evaluatedAttributes = DynamicValueWatcher.getStaticValues(attrs, em);
-        var shouldSkipWatcherUpdates = opts.skipWatcherUpdates || opts.fromDataSource;
-        if (!shouldSkipWatcherUpdates) {
-            this.componentDVListener.setAttributes(attrs);
-        }
-        this.set('attributes', Component_assign({}, evaluatedAttributes), opts);
+        this.set('attributes', Component_assign({}, attrs), opts);
         return this;
     };
     /**
@@ -30875,8 +31589,8 @@ var Component = /** @class */ (function (_super) {
      */
     Component.prototype.addAttributes = function (attrs, opts) {
         if (opts === void 0) { opts = {}; }
-        var dynamicAttributes = this.componentDVListener.getDynamicAttributesDefs();
-        return this.setAttributes(Component_assign(Component_assign(Component_assign({}, this.getAttributes({ noClass: true })), dynamicAttributes), attrs), opts);
+        var previousAttrs = this.dataResolverWatchers.getValueOrResolver('attributes', this.getAttributes({ noClass: true, noStyle: true }));
+        return this.setAttributes(Component_assign(Component_assign({}, previousAttrs), attrs), opts);
     };
     /**
      * Remove attributes from the component
@@ -30891,34 +31605,29 @@ var Component = /** @class */ (function (_super) {
         if (attrs === void 0) { attrs = []; }
         if (opts === void 0) { opts = {}; }
         var attrArr = Array.isArray(attrs) ? attrs : [attrs];
-        this.componentDVListener.removeAttributes(attrArr);
         var compAttr = this.getAttributes();
         attrArr.map(function (i) { return delete compAttr[i]; });
         return this.setAttributes(compAttr, opts);
     };
-    /**
-     * Get the style of the component
-     * @return {Object}
-     */
-    Component.prototype.getStyle = function (options, optsAdd) {
-        if (options === void 0) { options = {}; }
-        if (optsAdd === void 0) { optsAdd = {}; }
+    Component.prototype.getStyle = function (prop, opts) {
         var em = this.em;
-        var prop = (0,index_all.isString)(options) ? options : '';
-        var opts = prop ? optsAdd : options;
-        if (avoidInline(em) && !opts.inline) {
+        var isPropString = (0,index_all.isString)(prop);
+        var resolvedProp = isPropString ? prop : '';
+        var resolvedOpts = isPropString ? opts : prop;
+        var skipResolve = !!(resolvedOpts === null || resolvedOpts === void 0 ? void 0 : resolvedOpts.skipResolve);
+        if (avoidInline(em) && !(resolvedOpts === null || resolvedOpts === void 0 ? void 0 : resolvedOpts.inline)) {
             var state = em.get('state');
             var cc = em.Css;
-            var rule = cc.getIdRule(this.getId(), Component_assign({ state: state }, opts));
+            var rule = cc.getIdRule(this.getId(), Component_assign({ state: state }, resolvedOpts));
             this.rule = rule;
             if (rule) {
-                return rule.getStyle(prop);
+                return rule.getStyle(resolvedProp, { skipResolve: skipResolve });
             }
-            // Return empty style if not rule have been found. We cannot return inline style with the next return
+            // Return empty style if no rule have been found. We cannot return inline style with the next return
             // because else on load inline style is set a #id or .class style
             return {};
         }
-        return _super.prototype.getStyle.call(this, prop);
+        return _super.prototype.getStyle.call(this, resolvedProp, { skipResolve: skipResolve });
     };
     /**
      * Set the style on the component
@@ -30935,10 +31644,10 @@ var Component = /** @class */ (function (_super) {
         if (avoidInline(em) && !opt.temporary && !opts.inline) {
             var style = this.get('style') || {};
             prop = (0,index_all.isString)(prop) ? this.parseStyle(prop) : prop;
-            prop = Component_assign(Component_assign({}, prop), style);
+            prop = Component_assign(Component_assign({}, style), prop);
             var state = em.get('state');
             var cc = em.Css;
-            var propOrig = this.getStyle(opts);
+            var propOrig = this.getStyle(Component_assign(Component_assign({}, opts), { skipResolve: true }));
             this.rule = cc.setIdRule(this.getId(), prop, Component_assign({ state: state }, opts));
             var diff = (0,mixins.shallowDiff)(propOrig, prop);
             this.set('style', '', { silent: true });
@@ -30948,7 +31657,7 @@ var Component = /** @class */ (function (_super) {
             prop = _super.prototype.setStyle.apply(this, arguments);
         }
         if (!opt.temporary) {
-            this.__onStyleChange(opts.addStyle || prop);
+            this.__onStyleChange(opts.addStyle || prop, opts);
         }
         return prop;
     };
@@ -30960,7 +31669,10 @@ var Component = /** @class */ (function (_super) {
         if (opts === void 0) { opts = {}; }
         var em = this.em;
         var classes = [];
-        var attributes = Component_assign({}, this.get('attributes'));
+        var resolvedAttrs = Component_assign({}, this.get('attributes'));
+        var attributes = (opts === null || opts === void 0 ? void 0 : opts.skipResolve)
+            ? this.dataResolverWatchers.getValueOrResolver('attributes', resolvedAttrs)
+            : resolvedAttrs;
         var sm = em === null || em === void 0 ? void 0 : em.Selectors;
         var id = this.getId();
         // Add classes
@@ -31109,18 +31821,17 @@ var Component = /** @class */ (function (_super) {
             var name = trait.getName();
             var value = trait.getInitValue();
             if (trait.changeProp) {
-                _this.set(name, value);
+                (0,index_all.isUndefined)(_this.get(name)) && _this.set(name, value);
             }
             else {
                 if (name && value)
                     attrs[name] = value;
             }
         });
-        var dynamicAttributes = this.componentDVListener.getDynamicAttributesDefs();
-        traits.length &&
-            this.setAttributes(Component_assign(Component_assign({}, attrs), dynamicAttributes));
+        var resolvedAttributes = this.dataResolverWatchers.getValueOrResolver('attributes', attrs);
+        traits.length && this.setAttributes(resolvedAttributes);
         this.on(event, this.initTraits);
-        changed && em && em.trigger('component:toggled');
+        changed && em && em.trigger(dom_components_types/* ComponentsEvents */.IT.toggled);
         return this;
     };
     Component.prototype.initScriptProps = function () {
@@ -31173,7 +31884,7 @@ var Component = /** @class */ (function (_super) {
                 return comp;
             }
         });
-        var result = this.components().add(toAppend, Component_assign({ action: dom_components_types/* ActionLabelComponents */.t.add }, opts));
+        var result = this.components().add(toAppend, Component_assign({ action: dom_components_types/* ActionLabelComponents */.tX.add }, opts));
         return result;
     };
     /**
@@ -31198,7 +31909,7 @@ var Component = /** @class */ (function (_super) {
         }
         else {
             coll.reset(undefined, opts);
-            return components ? this.append(components, opts) : [];
+            return (components ? this.append(components, opts) : []);
         }
     };
     /**
@@ -31363,7 +32074,7 @@ var Component = /** @class */ (function (_super) {
         var _a;
         var trait = this.getTrait(id);
         trait && trait.set(props);
-        (_a = this.em) === null || _a === void 0 ? void 0 : _a.trigger('component:toggled');
+        (_a = this.em) === null || _a === void 0 ? void 0 : _a.trigger(dom_components_types/* ComponentsEvents */.IT.toggled);
         return this;
     };
     /**
@@ -31394,7 +32105,7 @@ var Component = /** @class */ (function (_super) {
         var toRemove = ids.map(function (id) { return _this.getTrait(id); });
         var traits = this.traits;
         var removed = toRemove.length ? traits.remove(toRemove) : [];
-        (_a = this.em) === null || _a === void 0 ? void 0 : _a.trigger('component:toggled');
+        (_a = this.em) === null || _a === void 0 ? void 0 : _a.trigger(dom_components_types/* ComponentsEvents */.IT.toggled);
         return (0,index_all.isArray)(removed) ? removed : [removed];
     };
     /**
@@ -31415,7 +32126,7 @@ var Component = /** @class */ (function (_super) {
         if (opts === void 0) { opts = {}; }
         this.__loadTraits();
         var added = this.traits.add(trait, opts);
-        (_a = this.em) === null || _a === void 0 ? void 0 : _a.trigger('component:toggled');
+        (_a = this.em) === null || _a === void 0 ? void 0 : _a.trigger(dom_components_types/* ComponentsEvents */.IT.toggled);
         return (0,index_all.isArray)(added) ? added : [added];
     };
     /**
@@ -31441,13 +32152,13 @@ var Component = /** @class */ (function (_super) {
      * @private
      * @ts-ignore */
     Component.prototype.clone = function (opt) {
+        var _a;
         if (opt === void 0) { opt = {}; }
         var em = this.em;
-        var attr = Component_assign({}, this.componentDVListener.getPropsDefsOrValues(this.attributes));
+        var attr = this.dataResolverWatchers.getProps(this.attributes);
         var opts = Component_assign({}, this.opt);
         var id = this.getId();
         var cssc = em === null || em === void 0 ? void 0 : em.Css;
-        attr.attributes = Component_assign({}, (attr.attributes ? this.componentDVListener.getAttributesDefsOrValues(attr.attributes) : undefined));
         // @ts-ignore
         attr.components = [];
         // @ts-ignore
@@ -31472,6 +32183,7 @@ var Component = /** @class */ (function (_super) {
         attr.status = '';
         // @ts-ignore
         opts.collection = null;
+        opts.forCloning = true;
         // @ts-ignore
         var cloned = new this.constructor(attr, opts);
         // Clone component specific rules
@@ -31493,8 +32205,9 @@ var Component = /** @class */ (function (_super) {
             cloned.set(keySymbols, 0);
         }
         else if (symbol) {
+            var mainSymbolInstances = (_a = getSymbolInstances(symbol)) !== null && _a !== void 0 ? _a : [];
             // Contains already a reference to a symbol
-            symbol.set(keySymbols, Component_spreadArray(Component_spreadArray([], getSymbolInstances(symbol), true), [cloned], false));
+            symbol.set(keySymbols, Component_spreadArray(Component_spreadArray([], mainSymbolInstances, true), [cloned], false));
             initSymbol(cloned);
         }
         else if (opt.symbol) {
@@ -31518,7 +32231,7 @@ var Component = /** @class */ (function (_super) {
                 this.set(keySymbol, cloned);
             }
         }
-        var event = 'component:clone';
+        var event = dom_components_types/* ComponentsEvents */.IT.clone;
         em && em.trigger(event, cloned);
         this.trigger(event, cloned);
         return cloned;
@@ -31654,10 +32367,10 @@ var Component = /** @class */ (function (_super) {
                 else {
                     var valueRes = '';
                     if (opts.altQuoteAttr && (0,index_all.isString)(val) && val.indexOf('"') >= 0) {
-                        valueRes = "'".concat(val.replace(/'/g, '&apos;'), "'");
+                        valueRes = "'".concat((0,mixins.escapeAltQuoteAttrValue)(val), "'");
                     }
                     else {
-                        var value = (0,index_all.isString)(val) ? val.replace(/"/g, '&quot;') : val;
+                        var value = (0,index_all.isString)(val) ? (0,mixins.escapeAttrValue)(val) : val;
                         valueRes = "\"".concat(value, "\"");
                     }
                     attrs.push("".concat(attr, "=").concat(valueRes));
@@ -31686,10 +32399,8 @@ var Component = /** @class */ (function (_super) {
      */
     Component.prototype.toJSON = function (opts) {
         if (opts === void 0) { opts = {}; }
-        var obj = backbone.Model.prototype.toJSON.call(this, opts);
-        obj = Component_assign(Component_assign({}, obj), this.componentDVListener.getDynamicPropsDefs());
-        obj.attributes = this.componentDVListener.getAttributesDefsOrValues(this.getAttributes());
-        delete obj.componentDVListener;
+        var obj = _super.prototype.toJSON.call(this, opts, { attributes: this.getAttributes() });
+        delete obj.dataResolverWatchers;
         delete obj.attributes.class;
         delete obj.toolbar;
         delete obj.traits;
@@ -31697,6 +32408,11 @@ var Component = /** @class */ (function (_super) {
         delete obj.open; // used in Layers
         delete obj._undoexc;
         delete obj.delegate;
+        if (this.collectionsStateMap && Object.getOwnPropertyNames(this.collectionsStateMap).length > 0) {
+            delete obj[keySymbol];
+            delete obj[keySymbolOvrd];
+            delete obj[keySymbols];
+        }
         if (!opts.fromUndo) {
             var symbol = obj[keySymbol];
             var symbols = obj[keySymbols];
@@ -31744,6 +32460,10 @@ var Component = /** @class */ (function (_super) {
      */
     Component.prototype.getId = function () {
         var attrs = this.get('attributes') || {};
+        var _a = checkAndGetSyncableCollectionItemId(this), shouldSync = _a.shouldSync, itemId = _a.itemId;
+        if (shouldSync) {
+            attrs.id = itemId;
+        }
         return attrs.id || this.ccid || this.cid;
     };
     /**
@@ -31752,9 +32472,7 @@ var Component = /** @class */ (function (_super) {
      * @return {this}
      */
     Component.prototype.setId = function (id, opts) {
-        var attrs = Component_assign({}, this.get('attributes'));
-        attrs.id = id;
-        this.set('attributes', attrs, opts);
+        this.addAttributes({ id: id }, opts);
         return this;
     };
     /**
@@ -31852,8 +32570,8 @@ var Component = /** @class */ (function (_super) {
                 options: args[2] || args[1] || {},
             });
     };
-    Component.prototype.emitWithEitor = function (event, data) {
-        [this.em, this].forEach(function (item) { return item === null || item === void 0 ? void 0 : item.trigger(event, data); });
+    Component.prototype.emitWithEditor = function (event, data, extra) {
+        [this.em, this].forEach(function (item) { return item === null || item === void 0 ? void 0 : item.trigger(event, data, extra); });
     };
     /**
      * Execute callback function on itself and all inner components
@@ -31897,7 +32615,7 @@ var Component = /** @class */ (function (_super) {
         var em = this.em;
         var coll = this.collection;
         var remove = function () {
-            coll && coll.remove(_this, Component_assign({ action: dom_components_types/* ActionLabelComponents */.t.remove }, opts));
+            coll && coll.remove(_this, Component_assign({ action: dom_components_types/* ActionLabelComponents */.tX.remove }, opts));
             // Component without parent
             if (!coll) {
                 _this.components('', opts);
@@ -31905,12 +32623,14 @@ var Component = /** @class */ (function (_super) {
             }
         };
         var rmOpts = Component_assign({}, opts);
-        [this, em].map(function (i) { return i.trigger(dom_components_types/* ComponentsEvents */.I.removeBefore, _this, remove, rmOpts); });
+        [this, em].map(function (i) { return i.trigger(dom_components_types/* ComponentsEvents */.IT.removeBefore, _this, remove, rmOpts); });
         !rmOpts.abort && remove();
         return this;
     };
     Component.prototype.destroy = function (options) {
-        this.componentDVListener.destroy();
+        this.stopListening(this.components(), 'add remove reset', this.syncOnComponentChange);
+        this.dataResolverWatchers.destroy();
+        this.__onDestroy();
         return _super.prototype.destroy.call(this, options);
     };
     /**
@@ -31934,7 +32654,7 @@ var Component = /** @class */ (function (_super) {
                 if (sameParent && at && at > index) {
                     opts.at = at - 1;
                 }
-                var action = dom_components_types/* ActionLabelComponents */.t.move;
+                var action = dom_components_types/* ActionLabelComponents */.tX.move;
                 this.remove({ action: action, temporary: 1 });
                 component.append(this, Component_assign({ action: action }, opts));
                 this.emitUpdate();
@@ -32024,6 +32744,14 @@ var Component = /** @class */ (function (_super) {
         var rule = this._getStyleRule(opts);
         return rule === null || rule === void 0 ? void 0 : rule.get('selectors').at(0);
     };
+    Component.prototype._moveInlineStyleToRule = function () {
+        var inlineStyle = this.get('style');
+        var hasInlineStyle = ((0,index_all.isString)(inlineStyle) && inlineStyle.length > 0) ||
+            ((0,mixins.isObject)(inlineStyle) && Object.keys(inlineStyle).length > 0);
+        if (avoidInline(this.em) && hasInlineStyle) {
+            this.addStyle((0,mixins.isObject)(inlineStyle) ? this.dataResolverWatchers.getValueOrResolver('styles', inlineStyle) : inlineStyle, { avoidStore: true, noUndo: true });
+        }
+    };
     Component.prototype._idUpdated = function (m, v, opts) {
         if (opts === void 0) { opts = {}; }
         if (opts.idUpdate)
@@ -32051,42 +32779,76 @@ var Component = /** @class */ (function (_super) {
         return { tagName: (0,mixins.toLowerCase)(el.tagName) };
     };
     Component.ensureInList = function (model) {
+        var _a;
         var list = Component.getList(model);
-        var id = model.getId();
+        var propId = model.id;
+        var id = propId || model.getId();
         var current = list[id];
         if (!current) {
-            // Insert in list
             list[id] = model;
         }
         else if (current !== model) {
-            // Create new ID
+            var keepIdsCrossPages = (_a = model.em) === null || _a === void 0 ? void 0 : _a.Components.config.keepAttributeIdsCrossPages;
+            var currentPage = current.page;
+            var modelPage = model.page;
+            var samePage = !!currentPage && !!modelPage && currentPage === modelPage;
             var nextId = Component.getIncrementId(id, list);
-            model.setId(nextId);
+            if (samePage || !keepIdsCrossPages) {
+                model.setId(nextId);
+            }
+            else {
+                model.set({ id: nextId });
+            }
             list[nextId] = model;
         }
         model.components().forEach(function (i) { return Component.ensureInList(i); });
     };
     Component.createId = function (model, opts) {
+        var _a;
         if (opts === void 0) { opts = {}; }
         var list = Component.getList(model);
-        var _a = opts.idMap, idMap = _a === void 0 ? {} : _a;
-        var id = model.get('attributes').id;
+        var keepIdsCrossPages = (_a = model.em) === null || _a === void 0 ? void 0 : _a.Components.config.keepAttributeIdsCrossPages;
+        var _b = opts.idMap, idMap = _b === void 0 ? {} : _b;
+        var attrs = model.get('attributes') || {};
+        var attrId = attrs.id;
+        var propId = model.id;
+        var currentId = propId !== null && propId !== void 0 ? propId : attrId;
         var nextId;
-        if (id) {
-            nextId = Component.getIncrementId(id, list, opts);
-            model.setId(nextId);
-            if (id !== nextId)
-                idMap[id] = nextId;
+        if (propId) {
+            nextId = Component.getIncrementId(propId, list, opts);
+            if (nextId !== propId) {
+                model.set({ id: nextId });
+            }
+        }
+        else if (attrId) {
+            var existing = list[attrId];
+            if (!existing || existing === model) {
+                nextId = attrId;
+            }
+            else {
+                var existingPage = existing.page;
+                var newPage = model.page;
+                var samePage = !!existingPage && !!newPage && existingPage === newPage;
+                nextId = Component.getIncrementId(attrId, list, opts);
+                if (samePage || !keepIdsCrossPages) {
+                    model.setId(nextId);
+                }
+                else {
+                    model.set({ id: nextId });
+                }
+            }
         }
         else {
             nextId = Component.getNewId(list);
+        }
+        if (!!currentId && currentId !== nextId) {
+            idMap[currentId] = nextId;
         }
         list[nextId] = model;
         return nextId;
     };
     Component.getNewId = function (list) {
         var count = Object.keys(list).length;
-        // Testing 1000000 components with `+ 2` returns 0 collisions
         var ilen = count.toString().length + 2;
         var uid = (Math.random() + 1.1).toString(36).slice(-ilen);
         var newId = "i".concat(uid);
@@ -32109,17 +32871,16 @@ var Component = /** @class */ (function (_super) {
         return newId;
     };
     Component.getList = function (model) {
-        var _a;
-        var em = model.em;
-        var dm = em === null || em === void 0 ? void 0 : em.Components;
-        return (_a = dm === null || dm === void 0 ? void 0 : dm.componentsById) !== null && _a !== void 0 ? _a : {};
+        var _a, _b, _c;
+        return (_c = (_b = (_a = model.em) === null || _a === void 0 ? void 0 : _a.Components) === null || _b === void 0 ? void 0 : _b.componentsById) !== null && _c !== void 0 ? _c : {};
     };
     Component.checkId = function (components, styles, list, opts) {
         if (styles === void 0) { styles = []; }
         if (list === void 0) { list = {}; }
         if (opts === void 0) { opts = {}; }
+        opts.updatedIds = opts.updatedIds || {};
         var comps = (0,index_all.isArray)(components) ? components : [components];
-        var _a = opts.keepIds, keepIds = _a === void 0 ? [] : _a, _b = opts.idMap, idMap = _b === void 0 ? {} : _b;
+        var _a = opts.keepIds, keepIds = _a === void 0 ? [] : _a, _b = opts.idMap, idMap = _b === void 0 ? {} : _b, updatedIds = opts.updatedIds;
         comps.forEach(function (comp) {
             comp.attributes;
             var _a = comp.attributes, attributes = _a === void 0 ? {} : _a, components = comp.components;
@@ -32127,6 +32888,7 @@ var Component = /** @class */ (function (_super) {
             // Check if we have collisions with current components
             if (id && list[id] && keepIds.indexOf(id) < 0) {
                 var newId_1 = Component.getIncrementId(id, list);
+                updatedIds[id] = updatedIds[id] ? Component_spreadArray(Component_spreadArray([], updatedIds[id], true), [comp], false) : [comp];
                 idMap[id] = newId_1;
                 attributes.id = newId_1;
                 // Update passed styles
@@ -32141,11 +32903,14 @@ var Component = /** @class */ (function (_super) {
             }
             components && Component.checkId(components, styles, list, opts);
         });
+        return {
+            updatedIds: opts.updatedIds,
+        };
     };
     Component.typeExtends = new Set();
     return Component;
 }(model_StyleableModel));
-/* harmony default export */ const model_Component = (Component);
+/* harmony default export */ const model_Component = (Component_Component);
 
 ;// CONCATENATED MODULE: ./src/dom_components/model/ComponentHead.ts
 var ComponentHead_extends = (undefined && undefined.__extends) || (function () {
@@ -32200,10 +32965,112 @@ var ComponentHead = /** @class */ (function (_super) {
 }(model_Component));
 /* harmony default export */ const model_ComponentHead = (ComponentHead);
 
-// EXTERNAL MODULE: ./src/utils/sorter/types.ts
-var sorter_types = __webpack_require__(2128);
+;// CONCATENATED MODULE: ./src/utils/AutoScroller.ts
+
+
+var AutoScroller = /** @class */ (function () {
+    function AutoScroller(autoscrollLimit, opts) {
+        if (autoscrollLimit === void 0) { autoscrollLimit = 50; }
+        var _a;
+        this.dragging = false;
+        this.lastMaxHeight = 0;
+        this.zoom = 1;
+        /**
+         * When an element is inside an iframe, its `getBoundingClientRect()` values
+         * are relative to the iframe's document, not the main window's.
+         */
+        this.rectIsInScrollIframe = false;
+        this.autoscrollLimit = autoscrollLimit;
+        this.lastMaxHeight = (_a = opts === null || opts === void 0 ? void 0 : opts.lastMaxHeight) !== null && _a !== void 0 ? _a : 0;
+        this.onScroll = opts === null || opts === void 0 ? void 0 : opts.onScroll;
+        this.rectIsInScrollIframe = !!(opts === null || opts === void 0 ? void 0 : opts.rectIsInScrollIframe);
+        (0,index_all.bindAll)(this, 'start', 'autoscroll', 'updateClientY', 'stop');
+    }
+    AutoScroller.prototype.start = function (eventEl, scrollEl, opts) {
+        var _this = this;
+        this.eventEl = eventEl;
+        this.scrollEl = scrollEl;
+        this.lastMaxHeight = (opts === null || opts === void 0 ? void 0 : opts.lastMaxHeight) || Number.POSITIVE_INFINITY;
+        this.zoom = (opts === null || opts === void 0 ? void 0 : opts.zoom) || 1;
+        this.ignoredElement = opts === null || opts === void 0 ? void 0 : opts.ignoredElement;
+        // By detaching those from the stack avoid browsers lags
+        // Noticeable with "fast" drag of blocks
+        setTimeout(function () {
+            _this.toggleAutoscrollFx(true);
+            requestAnimationFrame(_this.autoscroll);
+        }, 0);
+    };
+    AutoScroller.prototype.autoscroll = function () {
+        var _this = this;
+        var _a, _b;
+        var scrollEl = this.scrollEl;
+        if (!this.dragging || !scrollEl)
+            return;
+        if (this.lastClientY === undefined) {
+            setTimeout(function () {
+                requestAnimationFrame(_this.autoscroll);
+            }, 50);
+            return;
+        }
+        var clientY = (_a = this.lastClientY) !== null && _a !== void 0 ? _a : 0;
+        var limitTop = this.autoscrollLimit;
+        var eventElHeight = this.getEventElHeight();
+        var limitBottom = eventElHeight - limitTop;
+        var scrollAmount = 0;
+        if (clientY < limitTop)
+            scrollAmount += clientY - limitTop;
+        if (clientY > limitBottom)
+            scrollAmount += clientY - limitBottom;
+        var scrollTop = this.getElScrollTop(scrollEl);
+        scrollAmount = Math.min(scrollAmount, this.lastMaxHeight - scrollTop);
+        scrollAmount = Math.max(scrollAmount, -scrollTop);
+        if (scrollAmount !== 0) {
+            scrollEl.scrollBy({ top: scrollAmount, behavior: 'auto' });
+            (_b = this.onScroll) === null || _b === void 0 ? void 0 : _b.call(this);
+        }
+        requestAnimationFrame(this.autoscroll);
+    };
+    AutoScroller.prototype.getEventElHeight = function () {
+        var eventEl = this.eventEl;
+        if (!eventEl)
+            return 0;
+        var elRect = eventEl.getBoundingClientRect();
+        return elRect.height;
+    };
+    AutoScroller.prototype.updateClientY = function (ev) {
+        var target = ev.target;
+        if (this.ignoredElement && this.ignoredElement.contains(target)) {
+            return;
+        }
+        var scrollEl = this.scrollEl;
+        ev.preventDefault();
+        var scrollTop = !this.rectIsInScrollIframe ? this.getElScrollTop(scrollEl) : 0;
+        this.lastClientY = (0,dom/* getPointerEvent */.G2)(ev).clientY * this.zoom - scrollTop;
+    };
+    AutoScroller.prototype.getElScrollTop = function (scrollEl) {
+        return (scrollEl instanceof HTMLElement ? scrollEl.scrollTop : scrollEl === null || scrollEl === void 0 ? void 0 : scrollEl.scrollY) || 0;
+    };
+    AutoScroller.prototype.toggleAutoscrollFx = function (enable) {
+        this.dragging = enable;
+        var eventEl = this.eventEl;
+        if (!eventEl)
+            return;
+        var method = enable ? 'on' : 'off';
+        var mt = { on: dom.on, off: dom/* off */.AU };
+        mt[method](eventEl, 'mousemove dragover', this.updateClientY);
+        mt[method](eventEl, 'mouseup', this.stop);
+    };
+    AutoScroller.prototype.stop = function () {
+        this.toggleAutoscrollFx(false);
+        this.lastClientY = undefined;
+        this.ignoredElement = undefined;
+    };
+    return AutoScroller;
+}());
+/* harmony default export */ const utils_AutoScroller = (AutoScroller);
+
 // EXTERNAL MODULE: ./src/utils/sorter/CanvasComponentNode.ts
-var CanvasComponentNode = __webpack_require__(6778);
+var CanvasComponentNode = __webpack_require__(1447);
 ;// CONCATENATED MODULE: ./src/utils/sorter/CanvasNewComponentNode.ts
 var CanvasNewComponentNode_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -32312,6 +33179,8 @@ var CanvasNewComponentNode = /** @class */ (function (_super) {
 }(CanvasComponentNode/* default */.A));
 /* harmony default export */ const sorter_CanvasNewComponentNode = (CanvasNewComponentNode);
 
+// EXTERNAL MODULE: ./src/utils/sorter/types.ts
+var sorter_types = __webpack_require__(8433);
 ;// CONCATENATED MODULE: ./src/utils/Droppable.ts
 var Droppable_assign = (undefined && undefined.__assign) || function () {
     Droppable_assign = Object.assign || function(t) {
@@ -32324,6 +33193,7 @@ var Droppable_assign = (undefined && undefined.__assign) || function () {
     };
     return Droppable_assign.apply(this, arguments);
 };
+
 
 
 
@@ -32391,7 +33261,7 @@ var Droppable = /** @class */ (function () {
         this.counter = 0;
         dragStop && dragStop(cancel || !this.over);
         this.__customTglEff(false);
-        em.trigger('canvas:dragend', ev);
+        em.trigger(canvas_types/* default */.A.dragEnd, ev);
     };
     Droppable.prototype.handleDragLeave = function (ev) {
         this.updateCounter(-1, ev);
@@ -32402,8 +33272,8 @@ var Droppable = /** @class */ (function () {
     };
     Droppable.prototype.handleDragEnter = function (ev) {
         var _this = this;
-        var _a, _b, _c;
-        var _d = this, em = _d.em, canvas = _d.canvas;
+        var _a, _b;
+        var _c = this, em = _c.em, canvas = _c.canvas;
         var dt = ev.dataTransfer;
         var dragSourceOrigin = em.get('dragSource');
         if (!(dragSourceOrigin === null || dragSourceOrigin === void 0 ? void 0 : dragSourceOrigin.content) && !canvas.getConfig().allowExternalDrop) {
@@ -32482,12 +33352,13 @@ var Droppable = /** @class */ (function () {
                 sorter_1.eventHandlers.legacyOnEnd = sorterOptions.legacyOnEnd;
                 sorter_1.containerContext.customTarget = sorterOptions.customTarget;
             }
-            var dropModel = this.getTempDropModel(content);
-            var el = (_b = dropModel.view) === null || _b === void 0 ? void 0 : _b.el;
-            var sources = el ? [{ element: el, dragSource: dragSourceOrigin }] : [];
+            var shallowCmp = em.Components.getShallowWrapper();
+            var model = shallowCmp === null || shallowCmp === void 0 ? void 0 : shallowCmp.append(content, { temporary: true })[0];
+            var element = model === null || model === void 0 ? void 0 : model.getEl();
+            var sources = [{ element: element, dragSource: Droppable_assign({ model: model }, dragSourceOrigin) }];
             sorter_1.startSort(sources);
             this.sorter = sorter_1;
-            this.draggedNode = (_c = sorter_1.sourceNodes) === null || _c === void 0 ? void 0 : _c[0];
+            this.draggedNode = (_b = sorter_1.sourceNodes) === null || _b === void 0 ? void 0 : _b[0];
             dragStop = function (cancel) {
                 if (cancel) {
                     sorter_1.cancelDrag();
@@ -32498,33 +33369,14 @@ var Droppable = /** @class */ (function () {
             };
         }
         this.dragStop = dragStop;
-        em.trigger('canvas:dragenter', dt, content);
-    };
-    /**
-     * Generates a temporary model of the content being dragged for use with the sorter.
-     * @returns The temporary model representing the dragged content.
-     */
-    Droppable.prototype.getTempDropModel = function (content) {
-        var _a;
-        var comps = this.em.Components.getComponents();
-        var opts = {
-            avoidChildren: 1,
-            avoidStore: 1,
-            avoidUpdateStyle: 1,
-        };
-        var tempModel = comps.add(content, Droppable_assign(Droppable_assign({}, opts), { temporary: true }));
-        var dropModel = comps.remove(tempModel, Droppable_assign(Droppable_assign({}, opts), { temporary: true }));
-        // @ts-ignore
-        dropModel = dropModel instanceof Array ? dropModel[0] : dropModel;
-        (_a = dropModel.view) === null || _a === void 0 ? void 0 : _a.$el.data('model', dropModel);
-        return dropModel;
+        em.trigger(canvas_types/* default */.A.dragEnter, dt, content);
     };
     Droppable.prototype.handleDragEnd = function (model, dt) {
         var em = this.em;
         this.over = false;
         if (model) {
             em.set('dragResult', model);
-            em.trigger('canvas:drop', dt, model);
+            em.trigger(canvas_types/* default */.A.drop, dt, model);
         }
         em.runDefault({ preserveSelected: 1 });
     };
@@ -32534,7 +33386,7 @@ var Droppable = /** @class */ (function () {
      */
     Droppable.prototype.handleDragOver = function (ev) {
         ev.preventDefault();
-        this.em.trigger('canvas:dragover', ev);
+        this.em.trigger(canvas_types/* default */.A.dragOver, ev);
     };
     /**
      * WARNING: This function might fail to run on drop, for example, when the
@@ -32544,7 +33396,7 @@ var Droppable = /** @class */ (function () {
         var _a;
         ev.preventDefault();
         var dt = ev.dataTransfer;
-        var content = this.getContentByData(dt).content;
+        var content = this.getContentByData(dt).content || '';
         if (this.draggedNode) {
             this.draggedNode.content = content;
         }
@@ -32553,10 +33405,10 @@ var Droppable = /** @class */ (function () {
     };
     Droppable.prototype.getContentByData = function (dt) {
         var em = this.em;
-        var types = dt && dt.types;
-        var files = (dt && dt.files) || [];
+        var types = (dt === null || dt === void 0 ? void 0 : dt.types) || [];
+        var files = (dt === null || dt === void 0 ? void 0 : dt.files) || [];
         var dragSource = em.get('dragSource');
-        var content = dt && dt.getData('text');
+        var content = (dt === null || dt === void 0 ? void 0 : dt.getData('text')) || '';
         if (files.length) {
             content = [];
             for (var i = 0; i < files.length; i++) {
@@ -32592,8 +33444,13 @@ var Droppable = /** @class */ (function () {
             // Avoid dropping non-selectable and non-editable text nodes inside the editor
             content = "<div>".concat(content, "</div>");
         }
-        var result = { content: content };
-        em.trigger('canvas:dragdata', dt, result);
+        var result = {
+            content: content,
+            setContent: function (content) {
+                result.content = content;
+            },
+        };
+        em.trigger(canvas_types/* default */.A.dragData, dt, result);
         return result;
     };
     return Droppable;
@@ -32644,6 +33501,7 @@ var FrameView_spreadArray = (undefined && undefined.__spreadArray) || function (
 
 
 
+
 var FrameView = /** @class */ (function (_super) {
     FrameView_extends(FrameView, _super);
     function FrameView(model, view) {
@@ -32652,7 +33510,7 @@ var FrameView = /** @class */ (function (_super) {
         _this.loaded = false;
         _this.lastMaxHeight = 0;
         _this.tools = {};
-        (0,index_all.bindAll)(_this, 'updateClientY', 'stopAutoscroll', 'autoscroll', '_emitUpdate');
+        (0,index_all.bindAll)(_this, 'startAutoscroll', 'stopAutoscroll', '_emitUpdate');
         var el = _this.el;
         //@ts-ignore
         _this.module._config = FrameView_assign(FrameView_assign({}, (_this.config || {})), { 
@@ -32665,6 +33523,15 @@ var FrameView = /** @class */ (function (_super) {
         _this.listenTo(cvModel, 'change:styles', _this.renderStyles);
         model.view = _this;
         (0,mixins.setViewEl)(el, _this);
+        _this.autoScroller = new utils_AutoScroller(_this.config.autoscrollLimit, {
+            rectIsInScrollIframe: true,
+            onScroll: function () {
+                var toolsEl = _this.getGlobalToolsEl();
+                toolsEl.style.opacity = '0';
+                _this.showGlobalTools();
+                _this.em.Canvas.spots.refreshDbn();
+            },
+        });
         return _this;
     }
     Object.defineProperty(FrameView.prototype, "tagName", {
@@ -32825,61 +33692,17 @@ var FrameView = /** @class */ (function (_super) {
         return this;
     };
     FrameView.prototype.startAutoscroll = function () {
-        var _this = this;
-        this.lastMaxHeight = this.getWrapper().offsetHeight - this.el.offsetHeight;
-        // By detaching those from the stack avoid browsers lags
-        // Noticeable with "fast" drag of blocks
-        setTimeout(function () {
-            _this._toggleAutoscrollFx(true);
-            requestAnimationFrame(_this.autoscroll);
-        }, 0);
+        this.autoScroller.start(this.el, this.getWindow(), {
+            lastMaxHeight: this.getWrapper().offsetHeight - this.el.offsetHeight,
+            zoom: this.em.getZoomDecimal(),
+            ignoredElement: this.em.Canvas.getSpotsEl(),
+        });
     };
-    FrameView.prototype.autoscroll = function () {
-        if (this.dragging) {
-            var lastClientY = this.lastClientY;
-            var canvas = this.em.Canvas;
-            var win = this.getWindow();
-            var actualTop = win.pageYOffset;
-            var clientY = lastClientY || 0;
-            var limitTop = canvas.getConfig().autoscrollLimit;
-            var limitBottom = this.getRect().height - limitTop;
-            var nextTop = actualTop;
-            if (clientY < limitTop) {
-                nextTop -= limitTop - clientY;
-            }
-            if (clientY > limitBottom) {
-                nextTop += clientY - limitBottom;
-            }
-            if (!(0,index_all.isUndefined)(lastClientY) && // Fixes #3134
-                nextTop !== actualTop &&
-                nextTop > 0 &&
-                nextTop < this.lastMaxHeight) {
-                var toolsEl = this.getGlobalToolsEl();
-                toolsEl.style.opacity = '0';
-                this.showGlobalTools();
-                win.scrollTo(0, nextTop);
-                canvas.spots.refreshDbn();
-            }
-            requestAnimationFrame(this.autoscroll);
-        }
-    };
-    FrameView.prototype.updateClientY = function (ev) {
-        ev.preventDefault();
-        this.lastClientY = (0,dom/* getPointerEvent */.G2)(ev).clientY * this.em.getZoomDecimal();
+    FrameView.prototype.stopAutoscroll = function () {
+        this.autoScroller.stop();
     };
     FrameView.prototype.showGlobalTools = function () {
         this.getGlobalToolsEl().style.opacity = '';
-    };
-    FrameView.prototype.stopAutoscroll = function () {
-        this.dragging && this._toggleAutoscrollFx(false);
-    };
-    FrameView.prototype._toggleAutoscrollFx = function (enable) {
-        this.dragging = enable;
-        var win = this.getWindow();
-        var method = enable ? 'on' : 'off';
-        var mt = { on: dom.on, off: dom/* off */.AU };
-        mt[method](win, 'mousemove dragover', this.updateClientY);
-        mt[method](win, 'mouseup', this.stopAutoscroll);
     };
     FrameView.prototype.render = function () {
         var _a = this, $el = _a.$el, ppfx = _a.ppfx, em = _a.em;
@@ -32908,9 +33731,9 @@ var FrameView = /** @class */ (function (_super) {
                 }
             }
             else {
-                em === null || em === void 0 ? void 0 : em.trigger(canvas_types.frameLoadHead, evOpts);
+                em === null || em === void 0 ? void 0 : em.trigger(canvas_types/* default */.A.frameLoadHead, evOpts);
                 _this.renderBody();
-                em === null || em === void 0 ? void 0 : em.trigger(canvas_types.frameLoadBody, evOpts);
+                em === null || em === void 0 ? void 0 : em.trigger(canvas_types/* default */.A.frameLoadBody, evOpts);
                 em === null || em === void 0 ? void 0 : em.trigger(evLoad, evOpts); // deprecated
             }
         };
@@ -32924,7 +33747,7 @@ var FrameView = /** @class */ (function (_super) {
             }
             evOpts.window = _this.getWindow();
             em === null || em === void 0 ? void 0 : em.trigger("".concat(evLoad, ":before"), evOpts); // deprecated
-            em === null || em === void 0 ? void 0 : em.trigger(canvas_types.frameLoad, evOpts);
+            em === null || em === void 0 ? void 0 : em.trigger(canvas_types/* default */.A.frameLoad, evOpts);
             _this.renderHead();
             appendScript(FrameView_spreadArray([], canvas.get('scripts'), true));
         };
@@ -32975,9 +33798,8 @@ var FrameView = /** @class */ (function (_super) {
     };
     FrameView.prototype.renderBody = function () {
         var _this = this;
-        var _a, _b, _c;
-        var _d = this, config = _d.config, em = _d.em, model = _d.model, ppfx = _d.ppfx;
-        var doc = this.getDoc();
+        var _a;
+        var _b = this, config = _b.config, em = _b.em, model = _b.model, ppfx = _b.ppfx;
         var body = this.getBody();
         var win = this.getWindow();
         var hasAutoHeight = model.hasAutoHeight();
@@ -32992,11 +33814,33 @@ var FrameView = /** @class */ (function (_super) {
         var view = (((_a = em === null || em === void 0 ? void 0 : em.Components) === null || _a === void 0 ? void 0 : _a.getType('wrapper')) || {}).view;
         if (!view)
             return;
-        this.wrapper = new view({
-            model: root,
-            config: FrameView_assign(FrameView_assign({}, root.config), { em: em, frameView: this }),
-        }).render();
-        (0,dom/* append */.BC)(body, (_b = this.wrapper) === null || _b === void 0 ? void 0 : _b.el);
+        if ((0,index_all.isFunction)(config.customRenderer)) {
+            config.customRenderer({
+                editor: em.Editor,
+                frame: model,
+                window: win,
+                frameView: this,
+                onMount: function (rootView) {
+                    _this.wrapper = rootView;
+                    _this._onRootMount(rootView);
+                },
+            });
+        }
+        else {
+            this.wrapper = new view({
+                model: root,
+                config: FrameView_assign(FrameView_assign({}, root.config), { em: em, frameView: this }),
+            }).render();
+            this._onRootMount(this.wrapper);
+        }
+    };
+    FrameView.prototype._onRootMount = function (rootView) {
+        var _this = this;
+        var _a;
+        var _b = this, config = _b.config, em = _b.em, model = _b.model;
+        var doc = this.getDoc();
+        var body = doc.body;
+        (0,dom/* append */.BC)(body, rootView.el);
         (0,dom/* append */.BC)(body, new view_CssRulesView({
             collection: model.getStyles(),
             //@ts-ignore
@@ -33023,7 +33867,7 @@ var FrameView = /** @class */ (function (_super) {
         });
         this._toggleEffects(true);
         if ((0,mixins.hasDnd)(em)) {
-            this.droppable = new utils_Droppable(em, (_c = this.wrapper) === null || _c === void 0 ? void 0 : _c.el);
+            this.droppable = new utils_Droppable(em, (_a = this.wrapper) === null || _a === void 0 ? void 0 : _a.el);
         }
         this.loaded = true;
         model.trigger('loaded');
@@ -33041,7 +33885,7 @@ var FrameView = /** @class */ (function (_super) {
 /* harmony default export */ const view_FrameView = (FrameView);
 
 // EXTERNAL MODULE: ./src/utils/Dragger.ts
-var Dragger = __webpack_require__(5633);
+var Dragger = __webpack_require__(9966);
 ;// CONCATENATED MODULE: ./src/canvas/view/FrameWrapView.ts
 var FrameWrapView_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -33134,6 +33978,8 @@ var FrameWrapView = /** @class */ (function (_super) {
     };
     FrameWrapView.prototype.remove = function (opts) {
         var _this = this;
+        var _a;
+        (_a = this.sizeObserver) === null || _a === void 0 ? void 0 : _a.disconnect();
         this.__clear(opts);
         abstract_ModuleView.prototype.remove.apply(this, opts);
         //@ts-ignore
@@ -33195,11 +34041,11 @@ var FrameWrapView = /** @class */ (function (_super) {
         this.updateDim();
     };
     FrameWrapView.prototype.__handleSize = function () {
-        var _a, _b;
+        var _a;
         var un = 'px';
-        var _c = this, model = _c.model, el = _c.el;
+        var _b = this, model = _b.model, el = _b.el;
         var style = el.style;
-        var _d = model.attributes, width = _d.width, height = _d.height;
+        var _c = model.attributes, width = _c.width, height = _c.height;
         var currW = style.width || '';
         var currH = style.height || '';
         var newW = width || '';
@@ -33208,24 +34054,25 @@ var FrameWrapView = /** @class */ (function (_super) {
         var newWidth = (0,index_all.isNumber)(newW) ? "".concat(newW).concat(un) : newW;
         var newHeight = (0,index_all.isNumber)(newH) ? "".concat(newH).concat(un) : newH;
         style.width = newWidth;
+        (_a = this.sizeObserver) === null || _a === void 0 ? void 0 : _a.disconnect();
         if (model.hasAutoHeight()) {
             var iframe = this.frame.el;
-            if (iframe.contentDocument
-            // this doesn't work always
-            // && !this.sizeObserver
-            ) {
-                var contentDocument_1 = iframe.contentDocument;
+            var contentDocument_1 = iframe.contentDocument;
+            if (contentDocument_1) {
                 var observer = new ResizeObserver(function () {
-                    style.height = "".concat(contentDocument_1.body.scrollHeight, "px");
+                    // This prevents "ResizeObserver loop completed with undelivered notifications"
+                    requestAnimationFrame(function () {
+                        var minHeight = parseFloat(model.get('minHeight')) || 0;
+                        var heightResult = Math.max(contentDocument_1.body.scrollHeight, minHeight);
+                        style.height = "".concat(heightResult, "px");
+                    });
                 });
                 observer.observe(contentDocument_1.body);
-                (_a = this.sizeObserver) === null || _a === void 0 ? void 0 : _a.disconnect();
                 this.sizeObserver = observer;
             }
         }
         else {
             style.height = newHeight;
-            (_b = this.sizeObserver) === null || _b === void 0 ? void 0 : _b.disconnect();
             delete this.sizeObserver;
         }
         return { noChanges: noChanges, width: width, height: height, newW: newW, newH: newH };
@@ -33348,6 +34195,7 @@ var CanvasView_assign = (undefined && undefined.__assign) || function () {
 
 
 
+
 var CanvasView = /** @class */ (function (_super) {
     CanvasView_extends(CanvasView, _super);
     function CanvasView(model) {
@@ -33360,7 +34208,7 @@ var CanvasView = /** @class */ (function (_super) {
         _this.clsUnscale = "".concat(pfx, "unscale");
         _this._initFrames();
         _this.listenTo(em, events.refresh, _this.clearOff);
-        _this.listenTo(em, 'component:selected', _this.checkSelected);
+        _this.listenTo(em, dom_components_types/* ComponentsEvents */.IT.selected, _this.checkSelected);
         _this.listenTo(em, "".concat(events.coords, " ").concat(events.zoom), _this.updateFrames);
         _this.listenTo(model, 'change:frames', _this._onFramesUpdate);
         _this.toggleListeners(true);
@@ -33398,6 +34246,7 @@ var CanvasView = /** @class */ (function (_super) {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
+        clearTimeout(this.timerZoom);
         (_a = this.frames) === null || _a === void 0 ? void 0 : _a.remove();
         //@ts-ignore
         this.frames = undefined;
@@ -33493,8 +34342,8 @@ var CanvasView = /** @class */ (function (_super) {
         this.updateFramesArea();
         this.clearOff();
         toolsWrpEl.style.display = 'none';
-        em.trigger('canvas:update', ev);
-        this.timerZoom && clearTimeout(this.timerZoom);
+        em.trigger(canvas_types/* CanvasEvents */.M.update, ev);
+        clearTimeout(this.timerZoom);
         this.timerZoom = setTimeout(function () {
             em.stopDefault(defOpts);
             em.runDefault(defOpts);
@@ -33514,14 +34363,15 @@ var CanvasView = /** @class */ (function (_super) {
         }
     };
     CanvasView.prototype.fitViewport = function (opts) {
-        var _a, _b;
+        var _a, _b, _c;
         if (opts === void 0) { opts = {}; }
-        var _c = this, em = _c.em, module = _c.module, model = _c.model;
+        var _d = this, em = _d.em, module = _d.module, model = _d.model;
+        this.clearOff();
         var canvasRect = this.getCanvasOffset();
         var el = opts.el;
         var elFrame = el && ((_a = (0,mixins.getComponentView)(el)) === null || _a === void 0 ? void 0 : _a.frameView);
         var frame = elFrame ? elFrame.model : opts.frame || em.getCurrentFrameModel() || model.frames.at(0);
-        var _d = frame.attributes, x = _d.x, y = _d.y;
+        var _e = frame.attributes, x = _e.x, y = _e.y;
         var boxRect = {
             x: x !== null && x !== void 0 ? x : 0,
             y: y !== null && y !== void 0 ? y : 0,
@@ -33548,20 +34398,22 @@ var CanvasView = /** @class */ (function (_super) {
         var heightRatio = canvasHeight / boxHeight;
         var zoomRatio = noHeight ? widthRatio : Math.min(widthRatio, heightRatio);
         var zoom = zoomRatio * 100;
-        module.setZoom(zoom);
-        // check for the frame witdh is necessary as we're centering the frame via CSS
+        var newZoom = (_c = ((0,index_all.isFunction)(opts.zoom) ? opts.zoom(zoom) : opts.zoom)) !== null && _c !== void 0 ? _c : zoom;
+        module.setZoom(newZoom, { from: 'fitViewport' });
+        // check for the frame width is necessary as we're centering the frame via CSS
         var coordX = -boxRect.x + (frame.width >= canvasWidth ? canvasWidth / 2 - boxWidth / 2 : -gapX);
         var coordY = -boxRect.y + canvasHeight / 2 - boxHeight / 2;
+        var zoomDecimal = module.getZoomDecimal();
         var coords = {
-            x: (coordX + gapX) * zoomRatio,
-            y: (coordY + gapY) * zoomRatio,
+            x: (coordX + gapX) * zoomDecimal,
+            y: (coordY + gapY) * zoomDecimal,
         };
         if (noHeight) {
             var zoomMltp = module.getZoomMultiplier();
             var canvasWorldHeight = canvasHeight * zoomMltp;
             var canvasHeightDiff = canvasWorldHeight - canvasHeight;
             var yDelta = canvasHeightDiff / 2;
-            coords.y = (-boxRect.y + gapY) * zoomRatio - yDelta / zoomMltp;
+            coords.y = (-boxRect.y + gapY) * zoomDecimal - yDelta / zoomMltp;
         }
         module.setCoords(coords.x, coords.y);
     };
@@ -33597,11 +34449,12 @@ var CanvasView = /** @class */ (function (_super) {
     };
     CanvasView.prototype.getRectToScreen = function (boxRect) {
         var _a, _b, _c, _d;
+        var canvasScroll = this.getCanvasScroll();
         var zoom = this.module.getZoomDecimal();
         var coords = this.module.getCoords();
         var vwDelta = this.getViewportDelta();
-        var x = ((_a = boxRect.x) !== null && _a !== void 0 ? _a : 0) * zoom + coords.x + vwDelta.x || 0;
-        var y = ((_b = boxRect.y) !== null && _b !== void 0 ? _b : 0) * zoom + coords.y + vwDelta.y || 0;
+        var x = ((_a = boxRect.x) !== null && _a !== void 0 ? _a : 0) * zoom - canvasScroll.scrollLeft + coords.x + vwDelta.x || 0;
+        var y = ((_b = boxRect.y) !== null && _b !== void 0 ? _b : 0) * zoom - canvasScroll.scrollTop + coords.y + vwDelta.y || 0;
         return {
             x: x,
             y: y,
@@ -33792,6 +34645,22 @@ var CanvasView = /** @class */ (function (_super) {
         };
     };
     /**
+     * Returns the scroll position of the canvas.
+     *
+     * If the canvas is scrollable, returns the current `scrollTop` and `scrollLeft` values.
+     * Otherwise, returns an object with `scrollTop` and `scrollLeft` both set to 0.
+     *
+     * @returns An object containing the vertical and horizontal scroll positions.
+     */
+    CanvasView.prototype.getCanvasScroll = function () {
+        return this.config.scrollableCanvas
+            ? {
+                scrollTop: this.el.scrollTop,
+                scrollLeft: this.el.scrollLeft,
+            }
+            : { scrollTop: 0, scrollLeft: 0 };
+    };
+    /**
      * Update javascript of a specific component passed by its View
      * @param {ModuleView} view Component's View
      * @private
@@ -33817,10 +34686,10 @@ var CanvasView = /** @class */ (function (_super) {
         script.innerHTML = "\n      setTimeout(function() {\n        var item = document.getElementById('".concat(id, "');\n        if (!item) return;\n        var script = (").concat(scriptFnStr, ").bind(item);\n        script(").concat(scriptProps, ", { el: item });\n      }, 1);");
         // #873 Adding setTimeout will make js components work on init of the editor
         setTimeout(function () {
-            component.emitWithEitor(dom_components_types/* ComponentsEvents */.I.scriptMountBefore, dataToEmit);
+            component.emitWithEditor(dom_components_types/* ComponentsEvents */.IT.scriptMountBefore, dataToEmit);
             var scr = view.scriptContainer;
             scr === null || scr === void 0 ? void 0 : scr.appendChild(script);
-            component.emitWithEitor(dom_components_types/* ComponentsEvents */.I.scriptMount, dataToEmit);
+            component.emitWithEditor(dom_components_types/* ComponentsEvents */.IT.scriptMount, dataToEmit);
         }, 0);
     };
     /**
@@ -33871,7 +34740,10 @@ var CanvasView = /** @class */ (function (_super) {
         this.toolsGlobEl = el.querySelector(".".concat(ppfx, "tools-gl"));
         this.spotsEl = el.querySelector('[data-spots]');
         this.cvStyle = el.querySelector('[data-canvas-style]');
-        this.el.className = (0,mixins.getUiClass)(em, this.className);
+        el.className = (0,mixins.getUiClass)(em, this.className);
+        if (config.scrollableCanvas === true) {
+            el.style.overflow = 'auto';
+        }
         this.ready = true;
         this._renderFrames();
         return this;
@@ -33955,6 +34827,7 @@ var canvas_spreadArray = (undefined && undefined.__spreadArray) || function (to,
 
 
 
+
 var CanvasModule = /** @class */ (function (_super) {
     canvas_extends(CanvasModule, _super);
     /**
@@ -33964,13 +34837,14 @@ var CanvasModule = /** @class */ (function (_super) {
      */
     function CanvasModule(em) {
         var _this = _super.call(this, em, 'Canvas', canvas_config_config()) || this;
-        _this.events = CanvasEvents;
+        _this.events = canvas_types/* CanvasEvents */.M;
         _this.framesById = {};
         _this.canvas = new model_Canvas(_this);
         _this.spots = new model_CanvasSpots(_this);
         _this.model = _this.canvas;
         _this.startAutoscroll = _this.startAutoscroll.bind(_this);
         _this.stopAutoscroll = _this.stopAutoscroll.bind(_this);
+        _this.autoScroller = new utils_AutoScroller();
         return _this;
     }
     /**
@@ -34286,26 +35160,32 @@ var CanvasModule = /** @class */ (function (_super) {
         var canvasOffset = opts.canvasOff || this.canvasRectOffset(el, elRect);
         var targetHeight = targetEl.offsetHeight || 0;
         var targetWidth = targetEl.offsetWidth || 0;
-        var elRight = elRect.left + elRect.width;
         var canvasView = this.getCanvasView();
+        var _a = canvasView.getCanvasScroll(), canvasScrollTop = _a.scrollTop, canvasScrollLeft = _a.scrollLeft;
         var canvasRect = canvasView.getPosition();
-        var frameOffset = canvasView.getFrameOffset(el);
         var event = opts.event;
-        var top = -targetHeight;
-        var left = !(0,index_all.isUndefined)(opts.left) ? opts.left : elRect.width - targetWidth;
-        left = elRect.left < -left ? -elRect.left : left;
-        left = elRight > canvasRect.width ? left - (elRight - canvasRect.width) : left;
-        // Check when the target top edge reaches the top of the viewable canvas
-        if (canvasOffset.top < targetHeight) {
+        var defaultLeftOffset = elRect.width - targetWidth;
+        var defaultTopOffset = -targetHeight;
+        var left = !(0,index_all.isUndefined)(opts.left) ? opts.left : defaultLeftOffset;
+        var canvasLiftLimit = Math.max(-elRect.left + canvasScrollLeft, 0);
+        left = Math.max(left, canvasLiftLimit);
+        var elementRightLimit = elRect.width - targetWidth;
+        left = Math.min(left, elementRightLimit);
+        var canvasRightLimit = canvasRect.width + canvasScrollLeft - targetWidth - elRect.left;
+        left = Math.min(left, canvasRightLimit);
+        var targetReachesCanvasTop = canvasOffset.top < targetHeight + canvasScrollTop;
+        var top = defaultTopOffset;
+        if (targetReachesCanvasTop) {
             var fullHeight = elRect.height + targetHeight;
-            var elIsShort = fullHeight < frameOffset.height;
+            var elementIsShorterThanFrame = fullHeight < canvasRect.height;
             // Scroll with the window if the top edge is reached and the
             // element is bigger than the canvas
-            if (elIsShort) {
+            if (elementIsShorterThanFrame) {
                 top = top + fullHeight;
             }
             else {
-                top = -canvasOffset.top < elRect.height ? -canvasOffset.top : elRect.height;
+                var canvasRelativeTop = -canvasOffset.top + canvasScrollTop;
+                top = canvasRelativeTop < elRect.height ? canvasRelativeTop : elRect.height;
             }
         }
         var result = {
@@ -34335,7 +35215,9 @@ var CanvasModule = /** @class */ (function (_super) {
     CanvasModule.prototype.getMouseRelativePos = function (e, opts) {
         if (opts === void 0) { opts = {}; }
         var subWinOffset = opts.subWinOffset;
-        var doc = e.target.ownerDocument;
+        var target = e.target;
+        // In Firefox, pointing outside the window, will return the HTMLDocument.
+        var doc = target.nodeType === Node.DOCUMENT_NODE ? target : target.ownerDocument;
         var win = doc.defaultView || doc.parentWindow;
         var frame = win.frameElement;
         var yOffset = subWinOffset ? win.pageYOffset : 0;
@@ -34362,7 +35244,13 @@ var CanvasModule = /** @class */ (function (_super) {
     CanvasModule.prototype.getMouseRelativeCanvas = function (ev, opts) {
         var _a;
         var zoom = this.getZoomDecimal();
-        var _b = (_a = this.getCanvasView().getPosition(opts)) !== null && _a !== void 0 ? _a : {}, _c = _b.top, top = _c === void 0 ? 0 : _c, _d = _b.left, left = _d === void 0 ? 0 : _d;
+        var canvasView = this.getCanvasView();
+        var canvasPos = (_a = canvasView.getPosition(opts)) !== null && _a !== void 0 ? _a : { top: 0, left: 0 };
+        var canvasScroll = canvasView.getCanvasScroll();
+        var _b = {
+            top: canvasPos.top + canvasScroll.scrollTop,
+            left: canvasPos.left + canvasScroll.scrollLeft,
+        }, top = _b.top, left = _b.left;
         return {
             y: ev.clientY * zoom + top,
             x: ev.clientX * zoom + left,
@@ -34401,7 +35289,8 @@ var CanvasModule = /** @class */ (function (_super) {
      * @returns {Boolean}
      */
     CanvasModule.prototype.hasFocus = function () {
-        return this.getDocument().hasFocus();
+        var _a, _b;
+        return !!((_b = (_a = this.getDocument()) === null || _a === void 0 ? void 0 : _a.hasFocus) === null || _b === void 0 ? void 0 : _b.call(_a));
     };
     /**
      * Detects if some input is focused (input elements, text components, etc.)
@@ -34428,7 +35317,7 @@ var CanvasModule = /** @class */ (function (_super) {
      * const selected = editor.getSelected();
      * // Scroll smoothly (this behavior can be polyfilled)
      * canvas.scrollTo(selected, { behavior: 'smooth' });
-     * // Force the scroll, even if the element is alredy visible
+     * // Force the scroll, even if the element is already visible
      * canvas.scrollTo(selected, { force: true });
      */
     CanvasModule.prototype.scrollTo = function (el, opts) {
@@ -34444,6 +35333,13 @@ var CanvasModule = /** @class */ (function (_super) {
     CanvasModule.prototype.startAutoscroll = function (frame) {
         var fr = (frame && frame.view) || this.em.getCurrentFrame();
         fr && fr.startAutoscroll();
+        if (this.config.scrollableCanvas) {
+            var el = this.getCanvasView().el;
+            this.autoScroller.start(el, el, {
+                zoom: this.em.getZoomDecimal(),
+                ignoredElement: this.getSpotsEl(),
+            });
+        }
     };
     /**
      * Stop autoscroll
@@ -34452,6 +35348,9 @@ var CanvasModule = /** @class */ (function (_super) {
     CanvasModule.prototype.stopAutoscroll = function (frame) {
         var fr = (frame && frame.view) || this.em.getCurrentFrame();
         fr && fr.stopAutoscroll();
+        if (this.config.scrollableCanvas) {
+            this.autoScroller.stop();
+        }
     };
     /**
      * Set canvas zoom value
@@ -34460,8 +35359,9 @@ var CanvasModule = /** @class */ (function (_super) {
      * @example
      * canvas.setZoom(50); // set zoom to 50%
      */
-    CanvasModule.prototype.setZoom = function (value) {
-        this.canvas.set('zoom', typeof value === 'string' ? parseFloat(value) : value);
+    CanvasModule.prototype.setZoom = function (value, opts) {
+        if (opts === void 0) { opts = {}; }
+        this.canvas.set('zoom', typeof value === 'string' ? parseFloat(value) : value, opts);
         return this;
     };
     /**
@@ -34543,6 +35443,7 @@ var CanvasModule = /** @class */ (function (_super) {
         (_a = this.canvasView) === null || _a === void 0 ? void 0 : _a.fitViewport(opts);
     };
     CanvasModule.prototype.toggleFramesEvents = function (on) {
+        // Seems like this causing a bug for iframes in Chrome: https://issues.chromium.org/issues/41336877
         var style = this.getFramesEl().style;
         style.pointerEvents = on ? '' : 'none';
     };
@@ -34711,7 +35612,7 @@ var CanvasModule = /** @class */ (function (_super) {
         canvasView === null || canvasView === void 0 ? void 0 : canvasView.clearOff();
         if (opts.spots || opts.all) {
             this.refreshSpots();
-            em.trigger('canvas:updateTools'); // this should be deprecated
+            em.trigger(canvas_types/* CanvasEvents */.M.updateTools); // this should be deprecated
         }
         em.set('canvasOffset', this.getOffset()); // this should be deprecated
         em.trigger(events.refresh, opts);
@@ -34731,6 +35632,2246 @@ var CanvasModule = /** @class */ (function (_super) {
     return CanvasModule;
 }(abstract_Module));
 /* harmony default export */ const canvas = (CanvasModule);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/ComponentWithDataResolver.ts
+var ComponentWithDataResolver_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var ComponentWithDataResolver_assign = (undefined && undefined.__assign) || function () {
+    ComponentWithDataResolver_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return ComponentWithDataResolver_assign.apply(this, arguments);
+};
+
+var ComponentWithDataResolver = /** @class */ (function (_super) {
+    ComponentWithDataResolver_extends(ComponentWithDataResolver, _super);
+    function ComponentWithDataResolver(props, opt) {
+        var _this = _super.call(this, props, opt) || this;
+        _this.dataResolver = _this.initializeDataResolver(props, opt);
+        _this.listenToPropsChange();
+        return _this;
+    }
+    ComponentWithDataResolver.prototype.initializeDataResolver = function (props, opt) {
+        var _a;
+        var resolverProps = (_a = props.dataResolver) !== null && _a !== void 0 ? _a : {
+            type: props.type,
+        };
+        var resolver = this.createResolverInstance(resolverProps, ComponentWithDataResolver_assign(ComponentWithDataResolver_assign({}, opt), { collectionsStateMap: this.collectionsStateMap }));
+        return resolver;
+    };
+    ComponentWithDataResolver.prototype.getDataResolver = function () {
+        return this.get('dataResolver');
+    };
+    ComponentWithDataResolver.prototype.setDataResolver = function (props) {
+        return this.set('dataResolver', props);
+    };
+    ComponentWithDataResolver.prototype.onCollectionsStateMapUpdate = function (collectionsStateMap) {
+        this.dataResolver.updateCollectionsStateMap(collectionsStateMap);
+        _super.prototype.onCollectionsStateMapUpdate.call(this, collectionsStateMap);
+    };
+    ComponentWithDataResolver.prototype.listenToPropsChange = function () {
+        var _this = this;
+        this.on('change:dataResolver', function () {
+            // @ts-ignore
+            _this.dataResolver.set(_this.get('dataResolver'));
+        });
+    };
+    ComponentWithDataResolver.prototype.removePropsListeners = function () {
+        this.stopListening(this.dataResolver);
+        this.off('change:dataResolver');
+        this.off("change:".concat(this.collectionsStateMap));
+    };
+    ComponentWithDataResolver.prototype.destroy = function (options) {
+        this.removePropsListeners();
+        return _super.prototype.destroy.call(this, options);
+    };
+    ComponentWithDataResolver.prototype.toJSON = function (opts) {
+        var json = _super.prototype.toJSON.call(this, opts);
+        var dataResolver = this.dataResolver.toJSON();
+        delete dataResolver.type;
+        return ComponentWithDataResolver_assign(ComponentWithDataResolver_assign({}, json), { dataResolver: dataResolver });
+    };
+    return ComponentWithDataResolver;
+}(model_Component));
+
+
+;// CONCATENATED MODULE: ./src/data_sources/model/ComponentDataVariable.ts
+var ComponentDataVariable_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var ComponentDataVariable_assign = (undefined && undefined.__assign) || function () {
+    ComponentDataVariable_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return ComponentDataVariable_assign.apply(this, arguments);
+};
+
+
+
+var ComponentDataVariable = /** @class */ (function (_super) {
+    ComponentDataVariable_extends(ComponentDataVariable, _super);
+    function ComponentDataVariable() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Object.defineProperty(ComponentDataVariable.prototype, "defaults", {
+        get: function () {
+            return ComponentDataVariable_assign(ComponentDataVariable_assign({}, _super.prototype.defaults), { type: DataVariableType, dataResolver: {}, droppable: false });
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentDataVariable.prototype.getPath = function () {
+        return this.dataResolver.get('path');
+    };
+    ComponentDataVariable.prototype.getCollectionId = function () {
+        return this.dataResolver.get('collectionId');
+    };
+    ComponentDataVariable.prototype.getVariableType = function () {
+        return this.dataResolver.get('variableType');
+    };
+    ComponentDataVariable.prototype.getDefaultValue = function () {
+        return this.dataResolver.get('defaultValue');
+    };
+    ComponentDataVariable.prototype.getDataValue = function () {
+        return this.dataResolver.getDataValue();
+    };
+    ComponentDataVariable.prototype.resolvesFromCollection = function () {
+        return this.dataResolver.resolvesFromCollection();
+    };
+    ComponentDataVariable.prototype.getInnerHTML = function () {
+        return this.getDataValue();
+    };
+    ComponentDataVariable.prototype.setPath = function (newPath) {
+        this.dataResolver.set('path', newPath);
+    };
+    ComponentDataVariable.prototype.setDefaultValue = function (newValue) {
+        this.dataResolver.set('defaultValue', newValue);
+    };
+    /**
+     * Sets the data source path and resets related properties.
+     * This will set collectionId and variableType to undefined as it's typically
+     * used when changing to a completely different data source.
+     * @param newPath The new path to set as the data source
+     */
+    ComponentDataVariable.prototype.resetDataSourcePath = function (newPath) {
+        this.set('dataResolver', {
+            path: newPath,
+            collectionId: undefined,
+            variableType: undefined,
+        });
+    };
+    ComponentDataVariable.prototype.createResolverInstance = function (props, options) {
+        return new model_DataVariable(props, options);
+    };
+    ComponentDataVariable.isComponent = function (el) {
+        return (0,mixins.toLowerCase)(el.tagName) === DataVariableType;
+    };
+    return ComponentDataVariable;
+}(ComponentWithDataResolver));
+/* harmony default export */ const model_ComponentDataVariable = (ComponentDataVariable);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/ComponentDataCondition.ts
+var ComponentDataCondition_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var ComponentDataCondition_assign = (undefined && undefined.__assign) || function () {
+    ComponentDataCondition_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return ComponentDataCondition_assign.apply(this, arguments);
+};
+
+
+
+
+
+var ComponentDataCondition = /** @class */ (function (_super) {
+    ComponentDataCondition_extends(ComponentDataCondition, _super);
+    function ComponentDataCondition() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Object.defineProperty(ComponentDataCondition.prototype, "defaults", {
+        get: function () {
+            return ComponentDataCondition_assign(ComponentDataCondition_assign({}, _super.prototype.defaults), { droppable: false, type: DataComponentTypes.condition, dataResolver: {
+                    condition: {
+                        left: '',
+                        operator: StringOperation.equalsIgnoreCase,
+                        right: '',
+                    },
+                }, components: [
+                    {
+                        type: DataComponentTypes.conditionTrue,
+                    },
+                    {
+                        type: DataComponentTypes.conditionFalse,
+                    },
+                ] });
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentDataCondition.prototype.isTrue = function () {
+        return this.dataResolver.isTrue();
+    };
+    ComponentDataCondition.prototype.getCondition = function () {
+        return this.dataResolver.getCondition();
+    };
+    ComponentDataCondition.prototype.getIfTrueContent = function () {
+        return this.components().at(0);
+    };
+    ComponentDataCondition.prototype.getIfFalseContent = function () {
+        return this.components().at(1);
+    };
+    ComponentDataCondition.prototype.getOutputContent = function () {
+        return this.isTrue() ? this.getIfTrueContent() : this.getIfFalseContent();
+    };
+    ComponentDataCondition.prototype.setCondition = function (newCondition) {
+        this.dataResolver.setCondition(newCondition);
+    };
+    ComponentDataCondition.prototype.setIfTrueComponents = function (content) {
+        this.setComponentsAtIndex(0, content);
+    };
+    ComponentDataCondition.prototype.setIfFalseComponents = function (content) {
+        this.setComponentsAtIndex(1, content);
+    };
+    ComponentDataCondition.prototype.getInnerHTML = function (opts) {
+        var _a, _b;
+        return (_b = (_a = this.getOutputContent()) === null || _a === void 0 ? void 0 : _a.getInnerHTML(opts)) !== null && _b !== void 0 ? _b : '';
+    };
+    ComponentDataCondition.prototype.createResolverInstance = function (props, options) {
+        return new DataCondition_DataCondition(props, options);
+    };
+    ComponentDataCondition.prototype.setComponentsAtIndex = function (index, newContent) {
+        var component = this.components().at(index);
+        component === null || component === void 0 ? void 0 : component.components(newContent);
+    };
+    ComponentDataCondition.isComponent = function (el) {
+        return (0,mixins.toLowerCase)(el.tagName) === DataCondition_DataConditionType;
+    };
+    return ComponentDataCondition;
+}(ComponentWithDataResolver));
+/* harmony default export */ const conditional_variables_ComponentDataCondition = (ComponentDataCondition);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/ComponentDataOutput.ts
+var ComponentDataOutput_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var ComponentDataOutput_assign = (undefined && undefined.__assign) || function () {
+    ComponentDataOutput_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return ComponentDataOutput_assign.apply(this, arguments);
+};
+
+
+
+var ComponentDataOutput = /** @class */ (function (_super) {
+    ComponentDataOutput_extends(ComponentDataOutput, _super);
+    function ComponentDataOutput() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Object.defineProperty(ComponentDataOutput.prototype, "defaults", {
+        get: function () {
+            return ComponentDataOutput_assign(ComponentDataOutput_assign({}, _super.prototype.defaults), { removable: false, draggable: false });
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentDataOutput.isComponent = function (el) {
+        return isComponentDataOutputType((0,mixins.toLowerCase)(el.tagName));
+    };
+    return ComponentDataOutput;
+}(model_Component));
+/* harmony default export */ const conditional_variables_ComponentDataOutput = (ComponentDataOutput);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/DataRecord.ts
+/**
+ * The `DataRecord` class represents a single record within a data source.
+ * It extends the base `Model` class and provides additional methods and properties specific to data records.
+ * Each `DataRecord` is associated with a `DataSource` and can trigger events when its properties change.
+ *
+ * ### DataRecord API
+ *
+ * * [getPath](#getpath)
+ * * [getPaths](#getpaths)
+ * * [set](#set)
+ *
+ * ### Example of Usage
+ *
+ * ```js
+ * const record = new DataRecord({ id: 'record1', name: 'value1' }, { collection: dataRecords });
+ * const path = record.getPath(); // e.g., 'SOURCE_ID.record1'
+ * record.set('name', 'newValue');
+ * ```
+ *
+ * @module DataRecord
+ * @param {DataRecordProps} props - Properties to initialize the data record.
+ * @param {Object} opts - Options for initializing the data record.
+ * @extends {Model<DataRecordProps>}
+ */
+var DataRecord_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var DataRecord_assign = (undefined && undefined.__assign) || function () {
+    DataRecord_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return DataRecord_assign.apply(this, arguments);
+};
+
+
+
+var DataRecord = /** @class */ (function (_super) {
+    DataRecord_extends(DataRecord, _super);
+    function DataRecord(props, opts) {
+        if (opts === void 0) { opts = {}; }
+        var _a;
+        var _this = _super.call(this, props, opts) || this;
+        _this.mutable = (_a = props.mutable) !== null && _a !== void 0 ? _a : true;
+        _this.on('change', _this.handleChange);
+        return _this;
+    }
+    Object.defineProperty(DataRecord.prototype, "cl", {
+        get: function () {
+            return this.collection;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataRecord.prototype, "dataSource", {
+        get: function () {
+            return this.cl.dataSource;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataRecord.prototype, "em", {
+        get: function () {
+            return this.dataSource.em;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataRecord.prototype, "index", {
+        get: function () {
+            return this.cl.indexOf(this);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Handles changes to the record's attributes.
+     * This method triggers a change event for each property that has been altered.
+     *
+     * @private
+     * @name handleChange
+     */
+    DataRecord.prototype.handleChange = function (m, opts) {
+        var _this = this;
+        var changed = this.changedAttributes();
+        (0,index_all.keys)(changed).forEach(function (prop) { return _this.triggerChange(prop, opts); });
+    };
+    /**
+     * Get the path of the record.
+     * The path is a string that represents the location of the record within the data source.
+     * Optionally, include a property name to create a more specific path.
+     *
+     * @param {String} [prop] - Optional property name to include in the path.
+     * @param {Object} [opts] - Options for path generation.
+     * @param {Boolean} [opts.useIndex] - Whether to use the index of the record in the path.
+     * @returns {String} - The path of the record.
+     * @name getPath
+     * @example
+     * const pathRecord = record.getPath();
+     * // e.g., 'SOURCE_ID.record1'
+     * const pathRecord2 = record.getPath('myProp');
+     * // e.g., 'SOURCE_ID.record1.myProp'
+     */
+    DataRecord.prototype.getPath = function (prop, opts) {
+        if (opts === void 0) { opts = {}; }
+        var _a = this, dataSource = _a.dataSource, id = _a.id, index = _a.index;
+        var dsId = dataSource.id;
+        var suffix = prop ? ".".concat(prop) : '';
+        return "".concat(dsId, ".").concat(opts.useIndex ? index : id).concat(suffix);
+    };
+    /**
+     * Get both ID-based and index-based paths of the record.
+     * Returns an array containing the paths using both ID and index.
+     *
+     * @param {String} [prop] - Optional property name to include in the paths.
+     * @returns {Array<String>} - An array of paths.
+     * @name getPaths
+     * @example
+     * const paths = record.getPaths();
+     * // e.g., ['SOURCE_ID.record1', 'SOURCE_ID.0']
+     */
+    DataRecord.prototype.getPaths = function (prop) {
+        return [this.getPath(prop), this.getPath(prop, { useIndex: true })];
+    };
+    /**
+     * Trigger a change event for the record.
+     * Optionally, include a property name to trigger a change event for a specific property.
+     *
+     * @param {String} [prop] - Optional property name to trigger a change event for a specific property.
+     * @name triggerChange
+     */
+    DataRecord.prototype.triggerChange = function (prop, options) {
+        if (options === void 0) { options = {}; }
+        var _a = this, dataSource = _a.dataSource, em = _a.em;
+        var paths = this.getPaths(prop);
+        var data = { dataSource: dataSource, dataRecord: this, path: paths[0], options: options };
+        em.trigger(DataSourcesEvents.path, data);
+        em.trigger("".concat(DataSourcesEvents.pathSource, ":").concat(dataSource.id), data);
+        paths.forEach(function (path) { return em.trigger("".concat(DataSourcesEvents.path, ":").concat(path), DataRecord_assign(DataRecord_assign({}, data), { path: path })); });
+    };
+    DataRecord.prototype.set = function (attributeName, value, options) {
+        var _this = this;
+        var _a, _b;
+        if (!this.isNew() && this.attributes.mutable === false) {
+            throw new Error('Cannot modify immutable record');
+        }
+        var onRecordSetValue = (_b = (_a = this.dataSource) === null || _a === void 0 ? void 0 : _a.transformers) === null || _b === void 0 ? void 0 : _b.onRecordSetValue;
+        var applySet = function (key, val, opts) {
+            if (opts === void 0) { opts = {}; }
+            var newValue = (opts === null || opts === void 0 ? void 0 : opts.avoidTransformers) || !onRecordSetValue
+                ? val
+                : onRecordSetValue({
+                    id: _this.id,
+                    key: key,
+                    value: val,
+                });
+            _super.prototype.set.call(_this, key, newValue, opts);
+            // This ensures to trigger the change event with partial updates
+            _super.prototype.set.call(_this, { __p: opts.partial ? true : undefined }, opts);
+        };
+        if (typeof attributeName === 'object' && attributeName !== null) {
+            var attributes = attributeName;
+            for (var _i = 0, _c = Object.entries(attributes); _i < _c.length; _i++) {
+                var _d = _c[_i], key = _d[0], val = _d[1];
+                applySet(key, val, value);
+            }
+        }
+        else {
+            applySet(attributeName, value, options);
+        }
+        return this;
+    };
+    return DataRecord;
+}(common/* Model */.Kx));
+/* harmony default export */ const model_DataRecord = (DataRecord);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/DataRecords.ts
+var DataRecords_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+
+var DataRecords = /** @class */ (function (_super) {
+    DataRecords_extends(DataRecords, _super);
+    function DataRecords(models, options) {
+        var _this = _super.call(this, models, options) || this;
+        _this.dataSource = options.dataSource;
+        return _this;
+    }
+    return DataRecords;
+}(common/* Collection */.pM));
+/* harmony default export */ const model_DataRecords = (DataRecords);
+DataRecords.prototype.model = model_DataRecord;
+
+;// CONCATENATED MODULE: ./src/data_sources/model/DataSource.ts
+/**
+ * The `DataSource` class represents a data source within the editor.
+ * It manages a collection of data records and provides methods to interact with them.
+ * The `DataSource` can be extended with transformers to modify records during add, read, and delete operations.
+ *
+ * ### DataSource API
+ *
+ * * [addRecord](#addrecord)
+ * * [getRecord](#getrecord)
+ * * [getRecords](#getrecords)
+ * * [removeRecord](#removerecord)
+ *
+ * ### Example of Usage
+ *
+ * ```js
+ * const dataSource = new DataSource({
+ *   records: [
+ *     { id: 'id1', name: 'value1' },
+ *     { id: 'id2', name: 'value2' }
+ *   ],
+ * }, { em: editor });
+ *
+ * dataSource.addRecord({ id: 'id3', name: 'value3' });
+ * ```
+ *
+ * @module DataSource
+ * @param {DataSourceProps} props - Properties to initialize the data source.
+ * @param {DataSourceOptions} opts - Options to initialize the data source.
+ * @extends {Model<DataSourceProps>}
+ */
+var DataSource_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var DataSource_assign = (undefined && undefined.__assign) || function () {
+    DataSource_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return DataSource_assign.apply(this, arguments);
+};
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (undefined && undefined.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var DataSource_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+
+
+
+
+
+var DataSource = /** @class */ (function (_super) {
+    DataSource_extends(DataSource, _super);
+    /**
+     * Initializes a new instance of the `DataSource` class.
+     * It sets up the transformers and initializes the collection of records.
+     * If the `records` property is not an instance of `DataRecords`, it will be converted into one.
+     *
+     * @param {DataSourceProps<DRProps>} props - Properties to initialize the data source.
+     * @param {DataSourceOptions} opts - Options to initialize the data source.
+     * @name constructor
+     */
+    function DataSource(props, opts) {
+        var _this = _super.call(this, DataSource_assign(DataSource_assign({ schema: {} }, props), { records: [] }), opts) || this;
+        var records = props.records, transformers = props.transformers;
+        _this.transformers = transformers || {};
+        if (!(records instanceof model_DataRecords)) {
+            _this.set({ records: new model_DataRecords(records, { dataSource: _this }) });
+        }
+        _this.listenTo(_this.records, 'add', _this.onAdd);
+        _this.listenTo(_this.records, common/* collectionEvents */.e2, _this.handleChanges);
+        return _this;
+    }
+    /**
+     * Returns the default properties for the data source.
+     * These include an empty array of records and an empty object of transformers.
+     *
+     * @returns {Object} The default attributes for the data source.
+     * @name defaults
+     */
+    DataSource.prototype.defaults = function () {
+        return {
+            records: [],
+            transformers: {},
+        };
+    };
+    Object.defineProperty(DataSource.prototype, "records", {
+        /**
+         * Retrieves the collection of records associated with this data source.
+         *
+         * @returns {DataRecords<DRProps>} The collection of data records.
+         * @name records
+         */
+        get: function () {
+            return this.attributes.records;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataSource.prototype, "schema", {
+        /**
+         * Retrieves the collection of records associated with this data source.
+         *
+         * @returns {DataRecords<DRProps>} The collection of data records.
+         * @name records
+         */
+        get: function () {
+            return this.attributes.schema;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataSource.prototype, "em", {
+        /**
+         * Retrieves the editor model associated with this data source.
+         *
+         * @returns {EditorModel} The editor model.
+         * @name em
+         */
+        get: function () {
+            return this.collection.em;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataSource.prototype, "hasProvider", {
+        /**
+         * Indicates if the data source has a provider for records.
+         */
+        get: function () {
+            return !!this.attributes.provider;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Handles the `add` event for records in the data source.
+     * This method triggers a change event on the newly added record.
+     *
+     * @param {DataRecord<DRProps>} dr - The data record that was added.
+     * @private
+     * @name onAdd
+     */
+    DataSource.prototype.onAdd = function (dr) {
+        dr.triggerChange();
+    };
+    /**
+     * Adds a new record to the data source.
+     *
+     * @param {DRProps} record - The properties of the record to add.
+     * @param {AddOptions} [opts] - Options to apply when adding the record.
+     * @returns {DataRecord} The added data record.
+     * @name addRecord
+     */
+    DataSource.prototype.addRecord = function (record, opts) {
+        return this.records.add(record, opts);
+    };
+    /**
+     * Retrieves a record from the data source by its ID.
+     *
+     * @param {string | number} id - The ID of the record to retrieve.
+     * @returns {DataRecord<DRProps> | undefined} The data record, or `undefined` if no record is found with the given ID.
+     * @name getRecord
+     */
+    DataSource.prototype.getRecord = function (id) {
+        return this.records.get(id);
+    };
+    /**
+     * Retrieves all records from the data source.
+     * Each record is processed with the `getRecord` method to apply any read transformers.
+     *
+     * @returns {Array<DataRecord<DRProps> | undefined>} An array of data records.
+     * @name getRecords
+     */
+    DataSource.prototype.getRecords = function () {
+        var _this = this;
+        return DataSource_spreadArray([], this.records.models, true).map(function (record) { return _this.getRecord(record.id); });
+    };
+    /**
+     * Retrieves all records from the data source with resolved relations based on the schema.
+     */
+    DataSource.prototype.getResolvedRecords = function () {
+        var _this = this;
+        var schemaEntries = Object.entries(this.schema);
+        var records = this.getRecords().map(function (record) {
+            var result = DataSource_assign({}, record.attributes);
+            if (schemaEntries.length === 0)
+                return result;
+            schemaEntries.forEach(function (_a) {
+                var fieldName = _a[0], schema = _a[1];
+                var fieldSchema = schema;
+                if ((fieldSchema === null || fieldSchema === void 0 ? void 0 : fieldSchema.type) === DataFieldPrimitiveType.relation && fieldSchema.target) {
+                    var relationValue_1 = result[fieldName];
+                    if (relationValue_1) {
+                        var targetDs = _this.em.DataSources.get(fieldSchema.target);
+                        if (targetDs) {
+                            var targetRecords = targetDs.records;
+                            var targetField_1 = fieldSchema.targetField || DEF_DATA_FIELD_ID;
+                            if (fieldSchema.isMany) {
+                                var relationValues_1 = Array.isArray(relationValue_1) ? relationValue_1 : [relationValue_1];
+                                var relatedRecords = targetRecords.filter(function (r) { return relationValues_1.includes(r.attributes[targetField_1]); });
+                                result[fieldName] = relatedRecords.map(function (r) { return (DataSource_assign({}, r.attributes)); });
+                            }
+                            else {
+                                var relatedRecord = targetDs.records.find(function (r) { return r.attributes[targetField_1] === relationValue_1; });
+                                if (relatedRecord) {
+                                    result[fieldName] = DataSource_assign({}, relatedRecord.attributes);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            return result;
+        });
+        return records;
+    };
+    DataSource.prototype.loadProvider = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a, attributes, em, provider, providerGet, url, method, headers, body, fetchProvider;
+            var _this = this;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _a = this, attributes = _a.attributes, em = _a.em;
+                        provider = attributes.provider;
+                        if (!provider)
+                            return [2 /*return*/];
+                        if ((0,index_all.isString)(provider)) {
+                            // TODO: implement providers as plugins (later)
+                            return [2 /*return*/];
+                        }
+                        providerGet = (0,index_all.isString)(provider.get) ? { url: provider.get } : provider.get;
+                        url = providerGet.url, method = providerGet.method, headers = providerGet.headers, body = providerGet.body;
+                        fetchProvider = function () { return __awaiter(_this, void 0, void 0, function () {
+                            var dataSource, response, _a, result, error_1;
+                            return __generator(this, function (_b) {
+                                switch (_b.label) {
+                                    case 0:
+                                        dataSource = this;
+                                        _b.label = 1;
+                                    case 1:
+                                        _b.trys.push([1, 6, , 7]);
+                                        em.trigger(em.DataSources.events.providerLoadBefore, { dataSource: dataSource });
+                                        return [4 /*yield*/, fetch(url, { method: method, headers: headers, body: body })];
+                                    case 2:
+                                        response = _b.sent();
+                                        if (!!response.ok) return [3 /*break*/, 4];
+                                        _a = Error.bind;
+                                        return [4 /*yield*/, response.text()];
+                                    case 3: throw new (_a.apply(Error, [void 0, _b.sent()]))();
+                                    case 4: return [4 /*yield*/, response.json()];
+                                    case 5:
+                                        result = _b.sent();
+                                        if (result === null || result === void 0 ? void 0 : result.records)
+                                            this.setRecords(result.records);
+                                        if (result === null || result === void 0 ? void 0 : result.schema)
+                                            this.upSchema(result.schema);
+                                        em.trigger(em.DataSources.events.providerLoad, { result: result, dataSource: dataSource });
+                                        return [3 /*break*/, 7];
+                                    case 6:
+                                        error_1 = _b.sent();
+                                        em.logError(error_1.message);
+                                        em.trigger(em.DataSources.events.providerLoadError, { dataSource: dataSource, error: error_1 });
+                                        return [3 /*break*/, 7];
+                                    case 7: return [2 /*return*/];
+                                }
+                            });
+                        }); };
+                        return [4 /*yield*/, fetchProvider()];
+                    case 1:
+                        _b.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    /**
+     * Removes a record from the data source by its ID.
+     *
+     * @param {string | number} id - The ID of the record to remove.
+     * @param {RemoveOptions} [opts] - Options to apply when removing the record.
+     * @returns {DataRecord<DRProps> | undefined} The removed data record, or `undefined` if no record is found with the given ID.
+     * @name removeRecord
+     */
+    DataSource.prototype.removeRecord = function (id, opts) {
+        var record = this.getRecord(id);
+        if ((record === null || record === void 0 ? void 0 : record.mutable) === false && !(opts === null || opts === void 0 ? void 0 : opts.dangerously)) {
+            throw new Error('Cannot remove immutable record');
+        }
+        return this.records.remove(id, opts);
+    };
+    /**
+     * Replaces the existing records in the data source with a new set of records.
+     *
+     * @param {Array<DRProps>} records - An array of data record properties to set.
+     * @returns {Array<DataRecord>} An array of the added data records.
+     * @name setRecords
+     */
+    DataSource.prototype.setRecords = function (records) {
+        var _this = this;
+        this.records.reset([], { silent: true });
+        records.forEach(function (record) {
+            _this.records.add(record);
+        });
+    };
+    /**
+     * Update the schema.
+     * @example
+     * dataSource.upSchema({ name: { type: 'string' } });
+     */
+    DataSource.prototype.upSchema = function (schema, opts) {
+        this.set('schema', DataSource_assign(DataSource_assign({}, this.schema), schema), opts);
+    };
+    /**
+     * Get schema field definition.
+     * @example
+     * const fieldSchema = dataSource.getSchemaField('name');
+     * fieldSchema.type; // 'string'
+     */
+    DataSource.prototype.getSchemaField = function (fieldKey) {
+        return this.schema[fieldKey];
+    };
+    DataSource.prototype.handleChanges = function (dataRecord, c, o) {
+        var options = o || c;
+        this.em.changesUp(options, { dataRecord: dataRecord, options: options });
+    };
+    return DataSource;
+}(common/* Model */.Kx));
+/* harmony default export */ const model_DataSource = (DataSource);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/ComponentWithCollectionsState.ts
+var ComponentWithCollectionsState_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var ComponentWithCollectionsState_assign = (undefined && undefined.__assign) || function () {
+    ComponentWithCollectionsState_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return ComponentWithCollectionsState_assign.apply(this, arguments);
+};
+
+
+
+
+
+var ComponentWithCollectionsState = /** @class */ (function (_super) {
+    ComponentWithCollectionsState_extends(ComponentWithCollectionsState, _super);
+    function ComponentWithCollectionsState(props, opt) {
+        var _this = _super.call(this, props, opt) || this;
+        _this.collectionsStateMap = {};
+        _this.listenToPropsChange();
+        return _this;
+    }
+    ComponentWithCollectionsState.prototype.onCollectionsStateMapUpdate = function (collectionsStateMap) {
+        var _a, _b;
+        this.collectionsStateMap = collectionsStateMap;
+        (_b = (_a = this.dataResolverWatchers) === null || _a === void 0 ? void 0 : _a.onCollectionsStateMapUpdate) === null || _b === void 0 ? void 0 : _b.call(_a);
+        this.components().forEach(function (cmp) {
+            var _a;
+            (_a = cmp.onCollectionsStateMapUpdate) === null || _a === void 0 ? void 0 : _a.call(cmp, collectionsStateMap);
+        });
+    };
+    ComponentWithCollectionsState.prototype.syncOnComponentChange = function (model, collection, opts) {
+        var prev = this.collectionsStateMap;
+        this.collectionsStateMap = {};
+        _super.prototype.syncOnComponentChange.call(this, model, collection, opts);
+        this.collectionsStateMap = prev;
+        this.onCollectionsStateMapUpdate(prev);
+    };
+    ComponentWithCollectionsState.prototype.setDataResolver = function (dataResolver) {
+        return this.set('dataResolver', dataResolver);
+    };
+    ComponentWithCollectionsState.prototype.getDataResolver = function () {
+        return this.dataResolverProps;
+    };
+    Object.defineProperty(ComponentWithCollectionsState.prototype, "dataResolverProps", {
+        get: function () {
+            return this.get('dataResolver');
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentWithCollectionsState.prototype.listenToDataSource = function () {
+        var _this = this;
+        var _a;
+        var path = this.dataResolverPath;
+        if (!path)
+            return;
+        var _b = this, em = _b.em, collectionsStateMap = _b.collectionsStateMap;
+        (_a = this.dataSourceWatcher) === null || _a === void 0 ? void 0 : _a.destroy();
+        this.dataSourceWatcher = new model_DataResolverListener({
+            em: em,
+            resolver: new model_DataVariable({ type: DataVariableType, path: path }, { em: em, collectionsStateMap: collectionsStateMap }),
+            onUpdate: function () { return _this.onDataSourceChange(); },
+        });
+    };
+    ComponentWithCollectionsState.prototype.listenToPropsChange = function () {
+        var _this = this;
+        this.on("change:dataResolver", function () {
+            _this.listenToDataSource();
+        });
+        this.listenToDataSource();
+    };
+    Object.defineProperty(ComponentWithCollectionsState.prototype, "dataSourceProps", {
+        get: function () {
+            return this.get('dataResolver');
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(ComponentWithCollectionsState.prototype, "dataResolverPath", {
+        get: function () {
+            var _a;
+            return (_a = this.dataSourceProps) === null || _a === void 0 ? void 0 : _a.path;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentWithCollectionsState.prototype.onDataSourceChange = function () {
+        this.onCollectionsStateMapUpdate(this.collectionsStateMap);
+    };
+    ComponentWithCollectionsState.prototype.getDataSourceItems = function () {
+        var dataSourceProps = this.dataSourceProps;
+        if (!dataSourceProps)
+            return [];
+        var items = this.listDataSourceItems(dataSourceProps);
+        if (items && (0,index_all.isArray)(items)) {
+            return items;
+        }
+        var clone = ComponentWithCollectionsState_assign({}, items);
+        return clone;
+    };
+    ComponentWithCollectionsState.prototype.listDataSourceItems = function (dataSource) {
+        var path = dataSource instanceof model_DataSource ? dataSource.get('id') : dataSource.path;
+        if (!path)
+            return [];
+        var value = this.em.DataSources.getValue(path, []);
+        var isDatasourceId = path.split('.').length === 1;
+        if (isDatasourceId) {
+            value = Object.entries(value).map(function (_a) {
+                var _ = _a[0], value = _a[1];
+                return value;
+            });
+        }
+        return value;
+    };
+    ComponentWithCollectionsState.prototype.getItemKey = function (items, index) {
+        return (0,index_all.isArray)(items) ? index : Object.keys(items)[index];
+    };
+    ComponentWithCollectionsState.prototype.removePropsListeners = function () {
+        var _a;
+        this.off("change:dataResolver");
+        (_a = this.dataSourceWatcher) === null || _a === void 0 ? void 0 : _a.destroy();
+        this.dataSourceWatcher = undefined;
+    };
+    ComponentWithCollectionsState.prototype.destroy = function (options) {
+        this.removePropsListeners();
+        return _super.prototype.destroy.call(this, options);
+    };
+    return ComponentWithCollectionsState;
+}(model_Component));
+/* harmony default export */ const model_ComponentWithCollectionsState = (ComponentWithCollectionsState);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/data_collection/ComponentDataCollection.ts
+var ComponentDataCollection_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var ComponentDataCollection_assign = (undefined && undefined.__assign) || function () {
+    ComponentDataCollection_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return ComponentDataCollection_assign.apply(this, arguments);
+};
+
+
+
+
+
+
+
+
+var AvoidStoreOptions = { avoidStore: true, partial: true };
+var ComponentDataCollection = /** @class */ (function (_super) {
+    ComponentDataCollection_extends(ComponentDataCollection, _super);
+    function ComponentDataCollection(props, opt) {
+        var _this = this;
+        if (opt.forCloning) {
+            return _this = _super.call(this, props, opt) || this;
+        }
+        var newProps = ComponentDataCollection_assign(ComponentDataCollection_assign({}, props), { droppable: false });
+        var cmp = _this = _super.call(this, newProps, opt) || this;
+        _this.rebuildChildrenFromCollection = _this.rebuildChildrenFromCollection.bind(_this);
+        _this.listenToPropsChange();
+        _this.rebuildChildrenFromCollection();
+        return cmp;
+    }
+    Object.defineProperty(ComponentDataCollection.prototype, "defaults", {
+        get: function () {
+            return ComponentDataCollection_assign(ComponentDataCollection_assign({}, _super.prototype.defaults), { droppable: false, dataResolver: {}, type: DataComponentTypes.collection, components: [
+                    {
+                        type: DataComponentTypes.collectionItem,
+                    },
+                ] });
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentDataCollection.prototype.getItemsCount = function () {
+        var _a, _b;
+        var items = this.getDataSourceItems();
+        var itemsCount = getLength(items);
+        var startIndex = Math.max(0, (_a = this.getConfigStartIndex()) !== null && _a !== void 0 ? _a : 0);
+        var configEndIndex = (_b = this.getConfigEndIndex()) !== null && _b !== void 0 ? _b : Number.MAX_VALUE;
+        var endIndex = Math.min(itemsCount - 1, configEndIndex);
+        var count = endIndex - startIndex + 1;
+        return Math.max(0, count);
+    };
+    ComponentDataCollection.prototype.getConfigStartIndex = function () {
+        return this.dataResolver.startIndex;
+    };
+    ComponentDataCollection.prototype.getConfigEndIndex = function () {
+        return this.dataResolver.endIndex;
+    };
+    ComponentDataCollection.prototype.getDataSource = function () {
+        var _a;
+        return (_a = this.dataResolver) === null || _a === void 0 ? void 0 : _a.dataSource;
+    };
+    ComponentDataCollection.prototype.getCollectionId = function () {
+        var _a;
+        return (_a = this.dataResolver) === null || _a === void 0 ? void 0 : _a.collectionId;
+    };
+    ComponentDataCollection.prototype.getCollectionItemComponents = function () {
+        return this.firstChild.components();
+    };
+    ComponentDataCollection.prototype.setCollectionId = function (collectionId) {
+        this.updateCollectionConfig({ collectionId: collectionId });
+    };
+    ComponentDataCollection.prototype.setStartIndex = function (startIndex) {
+        if (startIndex < 0) {
+            this.em.logError('Start index should be greater than or equal to 0');
+            return;
+        }
+        this.updateCollectionConfig({ startIndex: startIndex });
+    };
+    ComponentDataCollection.prototype.setEndIndex = function (endIndex) {
+        this.updateCollectionConfig({ endIndex: endIndex });
+    };
+    ComponentDataCollection.prototype.setDataSource = function (dataSource) {
+        this.set(keyCollectionDefinition, ComponentDataCollection_assign(ComponentDataCollection_assign({}, this.dataResolver), { dataSource: dataSource }));
+    };
+    ComponentDataCollection.prototype.setCollectionItemComponents = function (content) {
+        this.firstChild.components(content);
+    };
+    ComponentDataCollection.prototype.onCollectionsStateMapUpdate = function (collectionsStateMap) {
+        var _this = this;
+        _super.prototype.onCollectionsStateMapUpdate.call(this, collectionsStateMap);
+        var items = this.getDataSourceItems();
+        var startIndex = this.resolveCollectionConfig(items).startIndex;
+        var cmps = this.components();
+        cmps.forEach(function (cmp, index) {
+            var key = _this.getItemKey(items, startIndex + index);
+            var collectionsStateMap = _this.getCollectionsStateMapForItem(items, key);
+            cmp.onCollectionsStateMapUpdate(collectionsStateMap);
+        });
+    };
+    ComponentDataCollection.prototype.stopSyncComponentCollectionState = function () {
+        this.stopListening(this.components(), 'add remove reset', this.syncOnComponentChange);
+        this.onCollectionsStateMapUpdate({});
+    };
+    ComponentDataCollection.prototype.setCollectionStateMapAndPropagate = function (cmp, collectionsStateMap) {
+        cmp.setSymbolOverride(['locked', 'layerable', keyDataValues]);
+        cmp.syncComponentsCollectionState();
+        cmp.onCollectionsStateMapUpdate(collectionsStateMap);
+    };
+    ComponentDataCollection.prototype.onDataSourceChange = function () {
+        this.rebuildChildrenFromCollection();
+    };
+    ComponentDataCollection.prototype.listenToPropsChange = function () {
+        var _this = this;
+        this.on("change:".concat(keyCollectionDefinition), function () {
+            _this.rebuildChildrenFromCollection();
+            _this.listenToDataSource();
+        });
+        this.listenToDataSource();
+    };
+    Object.defineProperty(ComponentDataCollection.prototype, "dataSourceProps", {
+        get: function () {
+            return this.dataResolver.dataSource;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(ComponentDataCollection.prototype, "dataResolver", {
+        get: function () {
+            return this.get(keyCollectionDefinition) || {};
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(ComponentDataCollection.prototype, "firstChild", {
+        get: function () {
+            return this.components().at(0);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentDataCollection.prototype.updateCollectionConfig = function (updates) {
+        this.set(keyCollectionDefinition, ComponentDataCollection_assign(ComponentDataCollection_assign({}, this.dataResolver), updates));
+    };
+    ComponentDataCollection.prototype.rebuildChildrenFromCollection = function () {
+        var items = this.getDataSourceItems();
+        var totalItems = this.resolveCollectionConfig(items).totalItems;
+        if (totalItems === this.components().length) {
+            this.onCollectionsStateMapUpdate(this.collectionsStateMap);
+            return;
+        }
+        var collectionItems = this.getCollectionItems(items);
+        this.components().reset(collectionItems, updateFromWatcher);
+    };
+    ComponentDataCollection.prototype.getCollectionItems = function (items) {
+        var _a;
+        var firstChild = this.ensureFirstChild();
+        var displayStyle = firstChild.getStyle()['display'];
+        var isDisplayNoneOrMissing = !displayStyle || displayStyle === 'none';
+        var resolvedDisplay = isDisplayNoneOrMissing ? '' : displayStyle;
+        // TODO: Move to component view
+        firstChild.addStyle({ display: 'none' }, AvoidStoreOptions);
+        var components = [firstChild];
+        var result = validateCollectionDef(this.dataResolver, this.em);
+        if (!result) {
+            return components;
+        }
+        var collectionId = this.collectionId;
+        var dataItems = items !== null && items !== void 0 ? items : this.getDataSourceItems();
+        var _b = this.resolveCollectionConfig(dataItems), startIndex = _b.startIndex, endIndex = _b.endIndex;
+        var isDuplicatedId = this.hasDuplicateCollectionId();
+        if (isDuplicatedId) {
+            this.em.logError("The collection ID \"".concat(collectionId, "\" already exists in the parent collection state. Overriding it is not allowed."));
+            return components;
+        }
+        for (var index = startIndex; index <= endIndex; index++) {
+            var isFirstItem = index === startIndex;
+            var key = this.getItemKey(dataItems, index);
+            var collectionsStateMap = this.getCollectionsStateMapForItem(dataItems, key);
+            if (isFirstItem) {
+                (_a = getSymbolInstances(firstChild)) === null || _a === void 0 ? void 0 : _a.forEach(function (cmp) { return detachSymbolInstance(cmp); });
+                this.setCollectionStateMapAndPropagate(firstChild, collectionsStateMap);
+                // TODO: Move to component view
+                firstChild.addStyle({ display: resolvedDisplay }, AvoidStoreOptions);
+                continue;
+            }
+            var instance = firstChild.clone({ symbol: true, symbolInv: true });
+            instance.set({ locked: true, layerable: false }, AvoidStoreOptions);
+            this.setCollectionStateMapAndPropagate(instance, collectionsStateMap);
+            components.push(instance);
+        }
+        return components;
+    };
+    ComponentDataCollection.prototype.getCollectionsStateMapForItem = function (items, key) {
+        var _a;
+        var _b = this.resolveCollectionConfig(items), startIndex = _b.startIndex, endIndex = _b.endIndex, totalItems = _b.totalItems;
+        var collectionId = this.collectionId;
+        var item = items[key];
+        var parentCollectionStateMap = this.collectionsStateMap;
+        var numericKey = typeof key === 'string' ? Object.keys(items).indexOf(key) : key;
+        var offset = numericKey - startIndex;
+        var remainingItems = totalItems - (1 + offset);
+        var collectionState = {
+            collectionId: collectionId,
+            currentIndex: numericKey,
+            currentItem: item,
+            currentKey: key,
+            startIndex: startIndex,
+            endIndex: endIndex,
+            totalItems: totalItems,
+            remainingItems: remainingItems,
+        };
+        var collectionsStateMap = ComponentDataCollection_assign(ComponentDataCollection_assign({}, parentCollectionStateMap), (_a = {}, _a[collectionId] = collectionState, _a));
+        return collectionsStateMap;
+    };
+    ComponentDataCollection.prototype.hasDuplicateCollectionId = function () {
+        var collectionId = this.collectionId;
+        var parentCollectionStateMap = this.collectionsStateMap;
+        return !!parentCollectionStateMap[collectionId];
+    };
+    ComponentDataCollection.prototype.resolveCollectionConfig = function (items) {
+        var _a, _b;
+        var isArray = Array.isArray(items);
+        var actualItemCount = isArray ? items.length : Object.keys(items).length;
+        var startIndex = (_a = this.getConfigStartIndex()) !== null && _a !== void 0 ? _a : 0;
+        var configEndIndex = (_b = this.getConfigEndIndex()) !== null && _b !== void 0 ? _b : Number.MAX_VALUE;
+        var endIndex = Math.min(actualItemCount - 1, configEndIndex);
+        var totalItems = 0;
+        if (actualItemCount > 0) {
+            totalItems = Math.max(0, endIndex - startIndex + 1);
+        }
+        return { startIndex: startIndex, endIndex: endIndex, totalItems: totalItems, isArray: isArray };
+    };
+    ComponentDataCollection.prototype.ensureFirstChild = function () {
+        var dataConditionItemModel = this.em.Components.getType(DataComponentTypes.collectionItem).model;
+        return this.firstChild || new dataConditionItemModel({ type: DataComponentTypes.collectionItem }, this.opt);
+    };
+    Object.defineProperty(ComponentDataCollection.prototype, "collectionId", {
+        get: function () {
+            var _a, _b;
+            return (_b = (_a = this.dataResolverProps) === null || _a === void 0 ? void 0 : _a.collectionId) !== null && _b !== void 0 ? _b : '';
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentDataCollection.isComponent = function (el) {
+        return (0,mixins.toLowerCase)(el.tagName) === DataComponentTypes.collection;
+    };
+    ComponentDataCollection.prototype.toJSON = function (opts) {
+        var json = _super.prototype.toJSON.call(this, opts);
+        delete json.droppable;
+        delete json[keySymbol];
+        var firstChild = this.firstChild;
+        return ComponentDataCollection_assign(ComponentDataCollection_assign({}, json), { components: [firstChild] });
+    };
+    return ComponentDataCollection;
+}(model_ComponentWithCollectionsState));
+/* harmony default export */ const data_collection_ComponentDataCollection = (ComponentDataCollection);
+function getLength(items) {
+    return (0,index_all.isArray)(items) ? items.length : Object.keys(items).length;
+}
+function logErrorIfMissing(property, propertyPath, em) {
+    if (!property) {
+        em.logError("The \"".concat(propertyPath, "\" property is required in the collection definition."));
+        return false;
+    }
+    return true;
+}
+function validateCollectionDef(dataResolver, em) {
+    var validations = [
+        { property: dataResolver === null || dataResolver === void 0 ? void 0 : dataResolver.collectionId, propertyPath: 'dataResolver.collectionId' },
+        { property: dataResolver === null || dataResolver === void 0 ? void 0 : dataResolver.dataSource, propertyPath: 'dataResolver.dataSource' },
+    ];
+    for (var _i = 0, validations_1 = validations; _i < validations_1.length; _i++) {
+        var propertyPath = validations_1[_i].propertyPath;
+        if (!logErrorIfMissing(dataResolver, propertyPath, em)) {
+            return [];
+        }
+    }
+    var startIndex = dataResolver === null || dataResolver === void 0 ? void 0 : dataResolver.startIndex;
+    if (startIndex !== undefined && (startIndex < 0 || !Number.isInteger(startIndex))) {
+        em.logError("Invalid startIndex: ".concat(startIndex, ". It must be a non-negative integer."));
+    }
+    return true;
+}
+
+;// CONCATENATED MODULE: ./src/dom_components/view/ComponentsView.ts
+var ComponentsView_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+
+
+
+
+var ComponentsView = /** @class */ (function (_super) {
+    ComponentsView_extends(ComponentsView, _super);
+    function ComponentsView() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.compView = view_ComponentView;
+        return _this;
+    }
+    ComponentsView.prototype.initialize = function (o) {
+        this.opts = o || {};
+        this.config = o.config || {};
+        // @ts-ignore
+        this.em = this.config.em;
+        var coll = this.collection;
+        this.listenTo(coll, 'add', this.addTo);
+        this.listenTo(coll, 'reset', this.resetChildren);
+        this.listenTo(coll, 'remove', this.removeChildren);
+    };
+    ComponentsView.prototype.removeChildren = function (removed, coll, opts) {
+        var _this = this;
+        if (opts === void 0) { opts = {}; }
+        removed.views.forEach(function (view) {
+            if (!view)
+                return;
+            var childrenView = view.childrenView, scriptContainer = view.scriptContainer;
+            childrenView && childrenView.stopListening();
+            (0,dom/* removeEl */.YZ)(scriptContainer);
+            view.remove.apply(view);
+        });
+        var inner = removed.components();
+        inner.forEach(function (it) { return _this.removeChildren(it, coll, opts); });
+    };
+    /**
+     * Add to collection
+     * @param {Model} model
+     * @param {Collection} coll
+     * @param {Object} opts
+     * @private
+     * */
+    ComponentsView.prototype.addTo = function (model) {
+        this.addToCollection(model, null, this.collection.indexOf(model));
+    };
+    /**
+     * Add new object to collection
+     * @param  {Object}  Model
+     * @param  {Object}   Fragment collection
+     * @param  {Integer}  Index of append
+     *
+     * @return   {Object}   Object rendered
+     * @private
+     * */
+    ComponentsView.prototype.addToCollection = function (model, fragment, index) {
+        var _a = this, config = _a.config, opts = _a.opts, em = _a.em;
+        var frameView = config.frameView;
+        var sameFrameView = (frameView === null || frameView === void 0 ? void 0 : frameView.model) && model.getView(frameView.model);
+        var dt = opts.componentTypes || (em === null || em === void 0 ? void 0 : em.Components.getTypes());
+        var type = model.get('type') || 'default';
+        var viewObject = this.compView;
+        for (var it_1 = 0; it_1 < dt.length; it_1++) {
+            if (dt[it_1].id == type) {
+                viewObject = dt[it_1].view;
+                break;
+            }
+        }
+        var view = sameFrameView ||
+            new viewObject({
+                model: model,
+                // @ts-ignore
+                config: config,
+                componentTypes: dt,
+            });
+        var rendered;
+        try {
+            // Avoid breaking on DOM rendering (eg. invalid attribute name)
+            rendered = view.render().el;
+        }
+        catch (error) {
+            rendered = document.createTextNode('');
+            em.logError(error);
+        }
+        if (fragment) {
+            fragment.appendChild(rendered);
+        }
+        else {
+            var parent_1 = this.parentEl;
+            var children = parent_1.childNodes;
+            if (!(0,index_all.isUndefined)(index)) {
+                var lastIndex = children.length == index;
+                // If the added model is the last of collection
+                // need to change the logic of append
+                if (lastIndex) {
+                    index--;
+                }
+                // In case the added is new in the collection index will be -1
+                if (lastIndex || !children.length) {
+                    parent_1.appendChild(rendered);
+                }
+                else {
+                    parent_1.insertBefore(rendered, children[index]);
+                }
+            }
+            else {
+                parent_1.appendChild(rendered);
+            }
+        }
+        if (!model.opt.temporary) {
+            em === null || em === void 0 ? void 0 : em.trigger(dom_components_types/* ComponentsEvents */.IT.mount, model);
+        }
+        return rendered;
+    };
+    ComponentsView.prototype.resetChildren = function (models, opts) {
+        var _this = this;
+        if (opts === void 0) { opts = {}; }
+        if (opts.skipViewUpdate)
+            return;
+        var previousModels = opts.previousModels;
+        if (!opts.skipDomReset) {
+            this.parentEl.innerHTML = '';
+        }
+        previousModels === null || previousModels === void 0 ? void 0 : previousModels.forEach(function (md) { return _this.removeChildren(md, _this.collection); });
+        models.each(function (model) { return _this.addToCollection(model); });
+    };
+    ComponentsView.prototype.render = function (parent) {
+        var _this = this;
+        var el = this.el;
+        var frag = document.createDocumentFragment();
+        this.parentEl = parent || this.el;
+        this.collection.each(function (model) { return _this.addToCollection(model, frag); });
+        el.innerHTML = '';
+        el.appendChild(frag);
+        return this;
+    };
+    return ComponentsView;
+}(common/* View */.Ss));
+/* harmony default export */ const view_ComponentsView = (ComponentsView);
+
+;// CONCATENATED MODULE: ./src/dom_components/view/ComponentView.ts
+var ComponentView_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var ComponentView_assign = (undefined && undefined.__assign) || function () {
+    ComponentView_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return ComponentView_assign.apply(this, arguments);
+};
+
+
+
+
+
+
+
+
+
+
+var ComponentView = /** @class */ (function (_super) {
+    ComponentView_extends(ComponentView, _super);
+    function ComponentView() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.rendered = false;
+        return _this;
+    }
+    /** @ts-ignore */
+    ComponentView.prototype.className = function () {
+        return this.getClasses();
+    };
+    /** @ts-ignore */
+    ComponentView.prototype.tagName = function () {
+        return this.model.get('tagName');
+    };
+    ComponentView.prototype.preinitialize = function (opt) {
+        if (opt === void 0) { opt = {}; }
+        this.opts = opt;
+    };
+    ComponentView.prototype.initialize = function (opt) {
+        if (opt === void 0) { opt = {}; }
+        var model = this.model;
+        var config = opt.config || {};
+        var em = config.em;
+        var modelOpt = model.opt || {};
+        var _a = this, $el = _a.$el, el = _a.el;
+        this.opts = opt;
+        this.modelOpt = modelOpt;
+        this.config = config;
+        this.em = em;
+        this.pfx = config.stylePrefix || '';
+        this.ppfx = config.pStylePrefix || '';
+        this.attr = model.get('attributes');
+        this.classe = this.attr.class || [];
+        this.listenTo(model, 'change:style', this.updateStyle);
+        this.listenTo(model, 'change:attributes', this.renderAttributes);
+        this.listenTo(model, 'change:highlightable', this.updateHighlight);
+        this.listenTo(model, 'change:status change:locked', this.updateStatus);
+        this.listenTo(model, 'change:script rerender', this.reset);
+        this.listenTo(model, 'change:content', this.updateContent);
+        this.listenTo(model, 'change', this.handleChange);
+        this.listenTo(model, 'active', this.onActive);
+        this.listenTo(model, 'disable', this.onDisable);
+        $el.data('model', model);
+        (0,mixins.setViewEl)(el, this);
+        model.view = this;
+        this.frameView && model.views.push(this);
+        this.initClasses();
+        this.initComponents({ avoidRender: true });
+        this.events = ComponentView_assign(ComponentView_assign({}, this.constructor.getEvents()), { dragstart: 'handleDragStart' });
+        this.delegateEvents();
+        !modelOpt.temporary && this.init(this._clbObj());
+    };
+    Object.defineProperty(ComponentView.prototype, "__cmpStyleOpts", {
+        get: function () {
+            return { state: '', mediaText: '' };
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(ComponentView.prototype, "frameView", {
+        get: function () {
+            return this.opts.config.frameView;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(ComponentView.prototype, "createDoc", {
+        get: function () {
+            var _a, _b;
+            var doc = ((_a = this.frameView) === null || _a === void 0 ? void 0 : _a.getDoc()) || document;
+            return ((_b = this.opts.config) === null || _b === void 0 ? void 0 : _b.useFrameDoc) ? doc : document;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentView.prototype.__isDraggable = function () {
+        var _a = this, model = _a.model, config = _a.config;
+        var draggable = model.attributes.draggable;
+        return config.draggableComponents && draggable;
+    };
+    ComponentView.prototype._clbObj = function () {
+        var _a = this, em = _a.em, model = _a.model, el = _a.el;
+        return {
+            editor: em === null || em === void 0 ? void 0 : em.getEditor(),
+            model: model,
+            el: el,
+        };
+    };
+    /**
+     * Initialize callback
+     */
+    ComponentView.prototype.init = function (opts) { };
+    /**
+     * Remove callback
+     */
+    ComponentView.prototype.removed = function (opts) { };
+    /**
+     * On render callback
+     */
+    ComponentView.prototype.onRender = function (opts) { };
+    /**
+     * Callback executed when the `active` event is triggered on component
+     */
+    ComponentView.prototype.onActive = function (ev) { };
+    /**
+     * Callback executed when the `disable` event is triggered on component
+     */
+    ComponentView.prototype.onDisable = function (opts) { };
+    ComponentView.prototype.remove = function () {
+        var _a;
+        _super.prototype.remove.call(this);
+        var _b = this, model = _b.model, $el = _b.$el;
+        var views = model.views;
+        var frame = this.frameView || {};
+        model.components().forEach(function (comp) {
+            var view = comp.getView(frame.model);
+            view === null || view === void 0 ? void 0 : view.remove();
+        });
+        (_a = this.childrenView) === null || _a === void 0 ? void 0 : _a.remove();
+        views.splice(views.indexOf(this), 1);
+        this.removed(this._clbObj());
+        $el.data({ model: '', collection: '', view: '' });
+        // delete model.view; // Sorter relies on this property
+        return this;
+    };
+    ComponentView.prototype.handleDragStart = function (event) {
+        if (!this.__isDraggable())
+            return false;
+        event.stopPropagation();
+        event.preventDefault();
+        var selected = this.em.getSelectedAll();
+        var modelsToMove = selected.includes(this.model) ? selected : [this.model];
+        this.em.Commands.run('tlb-move', {
+            target: modelsToMove,
+            event: event,
+        });
+    };
+    ComponentView.prototype.initClasses = function () {
+        var model = this.model;
+        var classes = model.classes;
+        var event = 'change:classes';
+        if (classes instanceof model_Selectors) {
+            this.stopListening(model, event, this.initClasses);
+            this.listenTo(model, event, this.initClasses);
+            this.listenTo(classes, 'add remove change reset', this.updateClasses);
+            classes.length && this.importClasses();
+        }
+    };
+    ComponentView.prototype.initComponents = function (opts) {
+        if (opts === void 0) { opts = {}; }
+        var _a = this, model = _a.model, $el = _a.$el, childrenView = _a.childrenView;
+        var event = 'change:components';
+        var comps = model.get('components');
+        var toListen = [model, event, this.initComponents];
+        if (comps instanceof model_Components) {
+            $el.data('collection', comps);
+            childrenView && childrenView.remove();
+            this.stopListening.apply(this, toListen);
+            !opts.avoidRender && this.renderChildren();
+            // @ts-ignore
+            this.listenTo.apply(this, toListen);
+        }
+    };
+    /**
+     * Handle any property change
+     * @private
+     */
+    ComponentView.prototype.handleChange = function () {
+        var model = this.model;
+        var chgArr = (0,index_all.keys)(model.changed);
+        if (chgArr.length === 1 && chgArr[0] === 'status')
+            return;
+        model.emitUpdate();
+        for (var prop in model.changed) {
+            model.emitUpdate(prop);
+        }
+    };
+    /**
+     * Import, if possible, classes inside main container
+     * @private
+     * */
+    ComponentView.prototype.importClasses = function () {
+        var _a = this, em = _a.em, model = _a.model;
+        var sm = em.Selectors;
+        sm && model.classes.forEach(function (s) { return sm.add(s.getName()); });
+    };
+    /**
+     * Update item on status change
+     * @param  {Event} e
+     * @private
+     * */
+    ComponentView.prototype.updateStatus = function (opts) {
+        if (opts === void 0) { opts = {}; }
+        var _a = this, em = _a.em, el = _a.el, ppfx = _a.ppfx, model = _a.model;
+        var canvas = em === null || em === void 0 ? void 0 : em.Canvas;
+        var extHl = canvas === null || canvas === void 0 ? void 0 : canvas.config.extHl;
+        var status = model.get('status');
+        var selectedCls = "".concat(ppfx, "selected");
+        var selectedParentCls = "".concat(selectedCls, "-parent");
+        var freezedCls = "".concat(ppfx, "freezed");
+        var hoveredCls = "".concat(ppfx, "hovered");
+        var noPointerCls = "".concat(ppfx, "no-pointer");
+        var pointerInitCls = "".concat(ppfx, "pointer-init");
+        var toRemove = [selectedCls, selectedParentCls, freezedCls, hoveredCls, noPointerCls, pointerInitCls];
+        var selCls = extHl && !opts.noExtHl ? '' : selectedCls;
+        this.$el.removeClass(toRemove.join(' '));
+        var actualCls = el.getAttribute('class') || '';
+        var cls = [actualCls];
+        var noCustomSpotSelect = !(canvas === null || canvas === void 0 ? void 0 : canvas.hasCustomSpot(CanvasSpot/* CanvasSpotBuiltInTypes */.F.Select));
+        var noCustomSpotTarget = !(canvas === null || canvas === void 0 ? void 0 : canvas.hasCustomSpot(CanvasSpot/* CanvasSpotBuiltInTypes */.F.Target));
+        switch (status) {
+            case 'selected':
+                noCustomSpotSelect && cls.push(selCls);
+                break;
+            case 'selected-parent':
+                noCustomSpotTarget && cls.push(selectedParentCls);
+                break;
+            case 'freezed':
+                cls.push(freezedCls);
+                break;
+            case 'freezed-selected':
+                cls.push(freezedCls);
+                noCustomSpotSelect && cls.push(selCls);
+                break;
+            case 'hovered':
+                !opts.avoidHover && cls.push(hoveredCls);
+                break;
+        }
+        if ((0,index_all.isBoolean)(model.locked)) {
+            cls.push(model.locked ? noPointerCls : pointerInitCls);
+        }
+        var clsStr = cls.filter(Boolean).join(' ');
+        clsStr && el.setAttribute('class', clsStr);
+    };
+    /**
+     * Update highlight attribute
+     * @private
+     * */
+    ComponentView.prototype.updateHighlight = function () {
+        var model = this.model;
+        var isTextable = model.get('textable');
+        var hl = model.get('highlightable') && (isTextable || !model.isChildOf('text'));
+        this.setAttribute('data-gjs-highlightable', hl ? true : '');
+    };
+    /**
+     * Update style attribute
+     * @private
+     * */
+    ComponentView.prototype.updateStyle = function (m, v, opts) {
+        if (opts === void 0) { opts = {}; }
+        var _a = this, model = _a.model, em = _a.em;
+        if (avoidInline(em) && !opts.inline) {
+            // Move inline styles to CSSRule
+            var styleOpts = this.__cmpStyleOpts;
+            var style = model.getStyle(ComponentView_assign({ inline: true }, styleOpts));
+            !(0,index_all.isEmpty)(style) && model.setStyle(style, styleOpts);
+        }
+        else {
+            this.setAttribute('style', model.styleToString(opts));
+        }
+    };
+    ComponentView.prototype.updateStyles = function () {
+        this.updateStyle();
+    };
+    /**
+     * Update classe attribute
+     * @private
+     * */
+    ComponentView.prototype.updateClasses = function () {
+        var _a, _b;
+        var str = ((_b = (_a = this.model.classes).pluck) === null || _b === void 0 ? void 0 : _b.call(_a, 'name').join(' ')) || '';
+        this.setAttribute('class', str);
+        // Regenerate status class
+        this.updateStatus();
+        this.onAttrUpdate();
+    };
+    /**
+     * Update single attribute
+     * @param {[type]} name  [description]
+     * @param {[type]} value [description]
+     */
+    ComponentView.prototype.setAttribute = function (name, value) {
+        var el = this.$el;
+        value ? el.attr(name, value) : el.removeAttr(name);
+    };
+    /**
+     * Get classes from attributes.
+     * This method is called before initialize
+     *
+     * @return  {Array}|null
+     * @private
+     * */
+    ComponentView.prototype.getClasses = function () {
+        return this.model.getClasses().join(' ');
+    };
+    /**
+     * Update attributes
+     * @private
+     * */
+    ComponentView.prototype.updateAttributes = function () {
+        var attrs = [];
+        var _a = this, model = _a.model, $el = _a.$el, el = _a.el;
+        var _b = model.attributes, textable = _b.textable, type = _b.type;
+        var defaultAttr = ComponentView_assign(ComponentView_assign({ id: model.getId(), 'data-gjs-type': type || 'default' }, (this.__isDraggable() && { draggable: true })), (textable && { contenteditable: 'false' }));
+        this.__clearAttributes();
+        this.updateStyle();
+        this.updateHighlight();
+        var attr = ComponentView_assign(ComponentView_assign({}, defaultAttr), model.getAttributes());
+        // Remove all `false` attributes
+        (0,index_all.keys)(attr).forEach(function (key) { return attr[key] === false && delete attr[key]; });
+        $el.attr(attr);
+    };
+    ComponentView.prototype.__clearAttributes = function () {
+        var _a = this, el = _a.el, $el = _a.$el;
+        var attrs = [];
+        (0,index_all.each)(el.attributes, function (attr) { return attrs.push(attr.nodeName); });
+        attrs.forEach(function (attr) { return $el.removeAttr(attr); });
+    };
+    /**
+     * Update component content
+     * @private
+     * */
+    ComponentView.prototype.updateContent = function () {
+        var content = this.model.content;
+        var hasComps = this.model.components().length;
+        this.getChildrenContainer().innerHTML = hasComps ? '' : content;
+    };
+    /**
+     * Prevent default helper
+     * @param  {Event} e
+     * @private
+     */
+    ComponentView.prototype.prevDef = function (e) {
+        e.preventDefault();
+    };
+    /**
+     * Render component's script
+     * @private
+     */
+    ComponentView.prototype.updateScript = function () {
+        var _a = this, model = _a.model, em = _a.em;
+        if (!model.get('script'))
+            return;
+        em === null || em === void 0 ? void 0 : em.Canvas.getCanvasView().updateScript(this);
+    };
+    /**
+     * Return children container
+     * Differently from a simple component where children container is the
+     * component itself
+     * <my-comp>
+     *  <!--
+     *    <child></child> ...
+     *   -->
+     * </my-comp>
+     * You could have the children container more deeper
+     * <my-comp>
+     *  <div></div>
+     *  <div></div>
+     *  <div>
+     *    <div>
+     *      <!--
+     *        <child></child> ...
+     *      -->
+     *    </div>
+     *  </div>
+     * </my-comp>
+     * @return HTMLElement
+     * @private
+     */
+    ComponentView.prototype.getChildrenContainer = function () {
+        var container = this.el;
+        if (typeof this.getChildrenSelector == 'function') {
+            container = this.el.querySelector(this.getChildrenSelector());
+        }
+        else if (typeof this.getTemplate == 'function') {
+            // Need to find deepest first child
+        }
+        return container;
+    };
+    /**
+     * This returns rect informations not affected by the canvas zoom.
+     * The method `getBoundingClientRect` doesn't work here and we
+     * have to take in account offsetParent
+     */
+    ComponentView.prototype.getOffsetRect = function () {
+        var rect = { top: 0, left: 0, bottom: 0, right: 0 };
+        var target = this.el;
+        var gtop = 0;
+        var gleft = 0;
+        var assignRect = function (el) {
+            var offsetParent = el.offsetParent;
+            if (offsetParent) {
+                gtop += offsetParent.offsetTop;
+                gleft += offsetParent.offsetLeft;
+                assignRect(offsetParent);
+            }
+            else {
+                rect.top = target.offsetTop + gtop;
+                rect.left = target.offsetLeft + gleft;
+                rect.bottom = rect.top + target.offsetHeight;
+                rect.right = rect.left + target.offsetWidth;
+            }
+        };
+        assignRect(target);
+        return rect;
+    };
+    ComponentView.prototype.isInViewport = function () {
+        var _a = this, el = _a.el, em = _a.em, frameView = _a.frameView;
+        var canvasView = em.Canvas.getCanvasView();
+        var elRect = canvasView.getElBoxRect(el, { local: true });
+        var frameEl = frameView.el;
+        var frameH = frameEl.clientHeight;
+        var frameW = frameEl.clientWidth;
+        var elTop = elRect.y;
+        var elRight = elRect.x;
+        var elBottom = elTop + elRect.height;
+        var elLeft = elRight + elRect.width;
+        var isTopInside = elTop >= 0 && elTop < frameH;
+        var isBottomInside = elBottom > 0 && elBottom < frameH;
+        var isLeftInside = elLeft >= 0 && elLeft < frameW;
+        var isRightInside = elRight > 0 && elRight <= frameW;
+        var partiallyIn = (isTopInside || isBottomInside) && (isLeftInside || isRightInside);
+        return partiallyIn;
+    };
+    ComponentView.prototype.scrollIntoView = function (opts) {
+        var _a;
+        if (opts === void 0) { opts = {}; }
+        var isInViewport = this.isInViewport();
+        if (!isInViewport || opts.force) {
+            var el = this.el;
+            // PATCH: scrollIntoView won't work with multiple requests from iframes
+            if (opts.behavior !== 'smooth') {
+                var rect = this.getOffsetRect();
+                (_a = el.ownerDocument.defaultView) === null || _a === void 0 ? void 0 : _a.scrollTo(0, rect.top);
+            }
+            else {
+                el.scrollIntoView(ComponentView_assign({ behavior: 'smooth', block: 'nearest' }, opts));
+            }
+        }
+    };
+    /**
+     * Recreate the element of the view
+     */
+    ComponentView.prototype.reset = function () {
+        var view = this;
+        var el = view.el, model = view.model;
+        view.scriptContainer && model.emitWithEditor(dom_components_types/* ComponentsEvents */.IT.scriptUnmount, { component: model, view: view, el: el });
+        // @ts-ignore
+        this.el = '';
+        this._ensureElement();
+        this._setData();
+        (0,dom/* replaceWith */.bG)(el, this.el);
+        this.render();
+    };
+    ComponentView.prototype._setData = function () {
+        var _a = this, model = _a.model, el = _a.el;
+        var collection = model.components();
+        var view = this;
+        this.$el.data({ model: model, collection: collection, view: view });
+        (0,mixins.setViewEl)(el, this);
+    };
+    ComponentView.prototype._createElement = function (tagName) {
+        return this.createDoc.createElement(tagName);
+    };
+    /**
+     * Render children components
+     * @private
+     */
+    ComponentView.prototype.renderChildren = function () {
+        this.updateContent();
+        var container = this.getChildrenContainer();
+        var view = this.childrenView ||
+            new view_ComponentsView({
+                // @ts-ignore
+                collection: this.model.get('components'),
+                config: this.config,
+                componentTypes: this.opts.componentTypes,
+            });
+        view.render(container);
+        this.childrenView = view;
+        var childNodes = Array.prototype.slice.call(view.el.childNodes);
+        for (var i = 0, len = childNodes.length; i < len; i++) {
+            container.appendChild(childNodes.shift());
+        }
+    };
+    ComponentView.prototype.renderAttributes = function (m, v, opts) {
+        if (opts === void 0) { opts = {}; }
+        if (opts.skipViewUpdate)
+            return;
+        this.updateAttributes();
+        this.updateClasses();
+    };
+    ComponentView.prototype.onAttrUpdate = function () { };
+    ComponentView.prototype.render = function () {
+        this.renderAttributes();
+        if (this.modelOpt.temporary)
+            return this;
+        this.renderChildren();
+        this.updateScript();
+        (0,mixins.setViewEl)(this.el, this);
+        this.postRender();
+        return this;
+    };
+    ComponentView.prototype.postRender = function () {
+        if (!this.modelOpt.temporary) {
+            var _a = this, model = _a.model, el = _a.el;
+            this.onRender(this._clbObj());
+            model.emitWithEditor(dom_components_types/* ComponentsEvents */.IT.render, {
+                component: model,
+                view: this,
+                el: el,
+            });
+            this.rendered = true;
+        }
+    };
+    ComponentView.getEvents = function () {
+        return (0,index_all.result)(this.prototype, 'events');
+    };
+    return ComponentView;
+}(common/* View */.Ss));
+/* harmony default export */ const view_ComponentView = (ComponentView);
+
+;// CONCATENATED MODULE: ./src/data_sources/view/ComponentDataCollectionView.ts
+var ComponentDataCollectionView_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+var ComponentDataCollectionView = /** @class */ (function (_super) {
+    ComponentDataCollectionView_extends(ComponentDataCollectionView, _super);
+    function ComponentDataCollectionView() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return ComponentDataCollectionView;
+}(view_ComponentView));
+/* harmony default export */ const view_ComponentDataCollectionView = (ComponentDataCollectionView);
+
+;// CONCATENATED MODULE: ./src/data_sources/view/ComponentDataConditionView.ts
+var ComponentDataConditionView_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+
+var ComponentDataConditionView = /** @class */ (function (_super) {
+    ComponentDataConditionView_extends(ComponentDataConditionView, _super);
+    function ComponentDataConditionView() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    ComponentDataConditionView.prototype.initialize = function (opt) {
+        if (opt === void 0) { opt = {}; }
+        _super.prototype.initialize.call(this, opt);
+        this.postRender = this.postRender.bind(this);
+        this.listenTo(this.model.components(), 'reset', this.postRender);
+        this.dataResolverListener = new model_DataResolverListener({
+            em: this.em,
+            resolver: this.model.dataResolver,
+            onUpdate: this.postRender,
+        });
+    };
+    ComponentDataConditionView.prototype.renderDataResolver = function () {
+        var componentTrue = this.model.getIfTrueContent();
+        var componentFalse = this.model.getIfFalseContent();
+        var elTrue = componentTrue === null || componentTrue === void 0 ? void 0 : componentTrue.getEl();
+        var elFalse = componentFalse === null || componentFalse === void 0 ? void 0 : componentFalse.getEl();
+        var isTrue = this.model.isTrue();
+        if (elTrue) {
+            elTrue.style.display = isTrue ? '' : 'none';
+        }
+        if (elFalse) {
+            elFalse.style.display = isTrue ? 'none' : '';
+        }
+    };
+    ComponentDataConditionView.prototype.postRender = function () {
+        this.renderDataResolver();
+        _super.prototype.postRender.call(this);
+    };
+    ComponentDataConditionView.prototype.remove = function () {
+        this.stopListening(this.model.components(), 'reset', this.postRender);
+        this.dataResolverListener.destroy();
+        return _super.prototype.remove.call(this);
+    };
+    return ComponentDataConditionView;
+}(view_ComponentView));
+/* harmony default export */ const view_ComponentDataConditionView = (ComponentDataConditionView);
+
+;// CONCATENATED MODULE: ./src/data_sources/view/ComponentDataVariableView.ts
+var ComponentDataVariableView_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+
+var ComponentDataVariableView = /** @class */ (function (_super) {
+    ComponentDataVariableView_extends(ComponentDataVariableView, _super);
+    function ComponentDataVariableView() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    ComponentDataVariableView.prototype.initialize = function (opt) {
+        var _this = this;
+        if (opt === void 0) { opt = {}; }
+        _super.prototype.initialize.call(this, opt);
+        this.dataResolverListener = new model_DataResolverListener({
+            em: this.em,
+            resolver: this.model.dataResolver,
+            onUpdate: function () { return _this.postRender(); },
+        });
+    };
+    ComponentDataVariableView.prototype.remove = function () {
+        this.dataResolverListener.destroy();
+        return _super.prototype.remove.call(this);
+    };
+    ComponentDataVariableView.prototype.postRender = function () {
+        var model = this.model;
+        var dataResolver = model.getDataResolver();
+        var asPlainText = !!dataResolver.asPlainText;
+        if (asPlainText) {
+            this.el.textContent = model.getDataValue();
+        }
+        else {
+            this.el.innerHTML = model.getDataValue();
+        }
+        _super.prototype.postRender.call(this);
+    };
+    return ComponentDataVariableView;
+}(view_ComponentView));
+/* harmony default export */ const view_ComponentDataVariableView = (ComponentDataVariableView);
 
 ;// CONCATENATED MODULE: ./src/dom_components/config/config.ts
 var dom_components_config_config_config = function () { return ({
@@ -35910,6 +39051,7 @@ var ComponentVideo_assign = (undefined && undefined.__assign) || function () {
 };
 
 
+
 var ComponentVideo_type = 'video';
 var yt = 'yt';
 var vi = 'vi';
@@ -35931,14 +39073,14 @@ var ComponentVideo = /** @class */ (function (_super) {
     }
     Object.defineProperty(ComponentVideo.prototype, "defaults", {
         get: function () {
-            return ComponentVideo_assign(ComponentVideo_assign({}, _super.prototype.defaults), { type: ComponentVideo_type, tagName: ComponentVideo_type, videoId: '', void: false, provider: defProvider, ytUrl: 'https://www.youtube.com/embed/', ytncUrl: 'https://www.youtube-nocookie.com/embed/', viUrl: 'https://player.vimeo.com/video/', loop: false, poster: '', muted: 0, autoplay: false, controls: true, color: '', list: '', src: '', rel: 1, modestbranding: 0, sources: [], attributes: { allowfullscreen: 'allowfullscreen' } });
+            return ComponentVideo_assign(ComponentVideo_assign({}, _super.prototype.defaults), { type: ComponentVideo_type, tagName: ComponentVideo_type, videoId: '', void: false, provider: defProvider, ytUrl: 'https://www.youtube.com/embed/', ytncUrl: 'https://www.youtube-nocookie.com/embed/', viUrl: 'https://player.vimeo.com/video/', loop: false, poster: '', muted: false, autoplay: false, controls: true, color: '', list: '', src: '', rel: 1, modestbranding: 0, sources: [], attributes: { allowfullscreen: 'allowfullscreen' } });
         },
         enumerable: false,
         configurable: true
     });
     ComponentVideo.prototype.updatePropsFromAttr = function () {
         if (this.get('provider') === defProvider) {
-            var _a = this.get('attributes'), controls = _a.controls, autoplay = _a.autoplay, loop = _a.loop;
+            var _a = this.get('attributes'), controls = _a.controls, autoplay = _a.autoplay, loop = _a.loop, muted = _a.muted;
             var toUp = {};
             if ((0,mixins.isDef)(controls))
                 toUp.controls = !!controls;
@@ -35946,6 +39088,8 @@ var ComponentVideo = /** @class */ (function (_super) {
                 toUp.autoplay = !!autoplay;
             if ((0,mixins.isDef)(loop))
                 toUp.loop = !!loop;
+            if ((0,mixins.isDef)(muted))
+                toUp.muted = !!muted; // Update for muted
             if (!(0,mixins.isEmptyObj)(toUp)) {
                 this.set(toUp);
             }
@@ -35975,7 +39119,7 @@ var ComponentVideo = /** @class */ (function (_super) {
         this.set({ tagName: tagName }, { silent: true }); // avoid break in view
         // @ts-ignore
         this.set({ traits: traits });
-        em.get('ready') && em.trigger('component:toggled');
+        em.get('ready') && em.trigger(dom_components_types/* ComponentsEvents */.IT.toggled);
     };
     /**
      * Set attributes by src string
@@ -35996,6 +39140,7 @@ var ComponentVideo = /** @class */ (function (_super) {
                 hasParam(qr.color) && this.set('color', qr.color);
                 qr.rel === '0' && this.set('rel', 0);
                 qr.modestbranding === '1' && this.set('modestbranding', 1);
+                qr.muted === '1' && this.set('muted', true);
                 break;
             default:
         }
@@ -36037,6 +39182,7 @@ var ComponentVideo = /** @class */ (function (_super) {
                 attr.loop = !!this.get('loop');
                 attr.autoplay = !!this.get('autoplay');
                 attr.controls = !!this.get('controls');
+                attr.muted = !!this.get('muted');
         }
         return attr;
     };
@@ -36082,6 +39228,7 @@ var ComponentVideo = /** @class */ (function (_super) {
             this.getAutoplayTrait(),
             this.getLoopTrait(),
             this.getControlsTrait(),
+            this.getMutedTrait(),
         ];
     };
     /**
@@ -36113,6 +39260,7 @@ var ComponentVideo = /** @class */ (function (_super) {
                 name: 'modestbranding',
                 changeProp: true,
             },
+            this.getMutedTrait(),
         ];
     };
     /**
@@ -36137,6 +39285,7 @@ var ComponentVideo = /** @class */ (function (_super) {
             },
             this.getAutoplayTrait(),
             this.getLoopTrait(),
+            this.getMutedTrait(),
         ];
     };
     /**
@@ -36179,6 +39328,19 @@ var ComponentVideo = /** @class */ (function (_super) {
         };
     };
     /**
+     * Return object trait
+     * @return {Object}
+     * @private
+     */
+    ComponentVideo.prototype.getMutedTrait = function () {
+        return {
+            type: 'checkbox',
+            label: 'Muted',
+            name: 'muted',
+            changeProp: true,
+        };
+    };
+    /**
      * Returns url to youtube video
      * @return {string}
      * @private
@@ -36189,10 +39351,9 @@ var ComponentVideo = /** @class */ (function (_super) {
         var list = this.get('list');
         url += id + (id.indexOf('?') < 0 ? '?' : '');
         url += list ? "&list=".concat(list) : '';
-        url += this.get('autoplay') ? '&autoplay=1&mute=1' : '';
+        url += this.get('autoplay') ? '&autoplay=1' : '';
+        url += this.get('muted') ? '&mute=1' : '';
         url += !this.get('controls') ? '&controls=0&showinfo=0' : '';
-        // Loop works only with playlist enabled
-        // https://stackoverflow.com/questions/25779966/youtube-iframe-loop-doesnt-work
         url += this.get('loop') ? "&loop=1&playlist=".concat(id) : '';
         url += this.get('rel') ? '' : '&rel=0';
         url += this.get('modestbranding') ? '&modestbranding=1' : '';
@@ -36216,7 +39377,8 @@ var ComponentVideo = /** @class */ (function (_super) {
     ComponentVideo.prototype.getVimeoSrc = function () {
         var url = this.get('viUrl');
         url += this.get('videoId') + '?';
-        url += this.get('autoplay') ? '&autoplay=1&muted=1' : '';
+        url += this.get('autoplay') ? '&autoplay=1' : '';
+        url += this.get('muted') ? '&muted=1' : '';
         url += this.get('loop') ? '&loop=1' : '';
         url += !this.get('controls') ? '&title=0&portrait=0&badge=0' : '';
         url += this.get('color') ? '&color=' + this.get('color') : '';
@@ -36246,6 +39408,22 @@ var ComponentVideo = /** @class */ (function (_super) {
     return ComponentVideo;
 }(model_ComponentImage));
 /* harmony default export */ const model_ComponentVideo = (ComponentVideo);
+
+;// CONCATENATED MODULE: ./src/data_sources/model/data_collection/types.ts
+
+var DataCollectionStateType;
+(function (DataCollectionStateType) {
+    DataCollectionStateType["currentIndex"] = "currentIndex";
+    DataCollectionStateType["startIndex"] = "startIndex";
+    DataCollectionStateType["prevItem"] = "prevItem";
+    DataCollectionStateType["currentItem"] = "currentItem";
+    DataCollectionStateType["nextItem"] = "nextItem";
+    DataCollectionStateType["currentKey"] = "currentKey";
+    DataCollectionStateType["endIndex"] = "endIndex";
+    DataCollectionStateType["collectionId"] = "collectionId";
+    DataCollectionStateType["totalItems"] = "totalItems";
+    DataCollectionStateType["remainingItems"] = "remainingItems";
+})(DataCollectionStateType || (DataCollectionStateType = {}));
 
 ;// CONCATENATED MODULE: ./src/dom_components/model/ComponentWrapper.ts
 var ComponentWrapper_extends = (undefined && undefined.__extends) || (function () {
@@ -36278,14 +39456,26 @@ var ComponentWrapper_assign = (undefined && undefined.__assign) || function () {
 
 
 
+
+
+
 var ComponentWrapper = /** @class */ (function (_super) {
     ComponentWrapper_extends(ComponentWrapper, _super);
-    function ComponentWrapper() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function ComponentWrapper(props, opt) {
+        if (props === void 0) { props = {}; }
+        var _this = _super.call(this, props, opt) || this;
+        _this._resolverCurrentItem = 0;
+        _this._isWatchingCollectionStateMap = false;
+        var hasDataResolver = _this.dataResolverProps;
+        if (hasDataResolver) {
+            _this.onDataSourceChange();
+            _this.syncComponentsCollectionState();
+        }
+        return _this;
     }
     Object.defineProperty(ComponentWrapper.prototype, "defaults", {
         get: function () {
-            return ComponentWrapper_assign(ComponentWrapper_assign({}, _super.prototype.defaults), { tagName: 'body', removable: false, copyable: false, draggable: false, components: [], traits: [], doctype: '', head: null, docEl: null, stylable: [
+            return ComponentWrapper_assign(ComponentWrapper_assign({}, _super.prototype.defaults), { dataResolver: null, tagName: 'body', removable: false, copyable: false, draggable: false, components: [], traits: [], doctype: '', head: null, docEl: null, stylable: [
                     'background',
                     'background-color',
                     'background-image',
@@ -36350,6 +39540,94 @@ var ComponentWrapper = /** @class */ (function (_super) {
         var docElAttrStr = docElAttr ? " ".concat(docElAttr) : '';
         return asDoc ? "".concat(doctype, "<html").concat(docElAttrStr, ">").concat(headStr).concat(body, "</html>") : body;
     };
+    ComponentWrapper.prototype.onCollectionsStateMapUpdate = function (collectionsStateMap) {
+        var head = this.head;
+        _super.prototype.onCollectionsStateMapUpdate.call(this, collectionsStateMap);
+        head.onCollectionsStateMapUpdate(collectionsStateMap);
+    };
+    ComponentWrapper.prototype.syncComponentsCollectionState = function () {
+        _super.prototype.syncComponentsCollectionState.call(this);
+        this.head.syncComponentsCollectionState();
+    };
+    ComponentWrapper.prototype.syncOnComponentChange = function (model, collection, opts) {
+        var collectionsStateMap = this.getCollectionsStateMap();
+        this.collectionsStateMap = collectionsStateMap;
+        _super.prototype.syncOnComponentChange.call(this, model, collection, opts);
+        this.onCollectionsStateMapUpdate(collectionsStateMap);
+    };
+    Object.defineProperty(ComponentWrapper.prototype, "resolverCurrentItem", {
+        get: function () {
+            return this._resolverCurrentItem;
+        },
+        set: function (value) {
+            this._resolverCurrentItem = value;
+            this.onCollectionsStateMapUpdate(this.getCollectionsStateMap());
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentWrapper.prototype.setResolverCurrentItem = function (value) {
+        this.resolverCurrentItem = value;
+    };
+    ComponentWrapper.prototype.getCollectionsState = function () {
+        var _a;
+        var collectionId = "".concat(DataCollectionKeys.rootData);
+        var _b = this, dataResolverPath = _b.dataResolverPath, resolverCurrentItem = _b.resolverCurrentItem;
+        var result = { collectionId: collectionId };
+        if (!dataResolverPath)
+            return result;
+        var prevItem;
+        var currentItem;
+        var nextItem;
+        var allItems = this.getDataSourceItems();
+        var allItemsArray = (0,index_all.isArray)(allItems) ? allItems : Object.values(allItems || {});
+        var currentIndex = resolverCurrentItem;
+        if ((0,index_all.isNumber)(resolverCurrentItem)) {
+            currentItem = allItemsArray[resolverCurrentItem];
+            prevItem = allItemsArray[resolverCurrentItem - 1];
+            nextItem = allItemsArray[resolverCurrentItem + 1];
+        }
+        else {
+            var entries = Object.entries(allItems).map(function (_a) {
+                var id = _a[0], value = _a[1];
+                return (ComponentWrapper_assign({ id: id }, value));
+            });
+            var idx = entries.findIndex(function (it) { return (it === null || it === void 0 ? void 0 : it.id) === resolverCurrentItem; });
+            currentIndex = idx;
+            currentItem = allItemsArray[idx];
+            prevItem = allItemsArray[idx - 1];
+            nextItem = allItemsArray[idx + 1];
+        }
+        return ComponentWrapper_assign(ComponentWrapper_assign({}, result), (_a = { prevItem: prevItem, nextItem: nextItem }, _a[DataCollectionStateType.currentItem] = currentItem, _a[DataCollectionStateType.currentIndex] = currentIndex, _a[DataCollectionStateType.totalItems] = allItemsArray.length, _a));
+    };
+    ComponentWrapper.prototype.onDataSourceChange = function () {
+        this.onCollectionsStateMapUpdate(this.getCollectionsStateMap());
+    };
+    ComponentWrapper.prototype.listenToPropsChange = function () {
+        var _this = this;
+        this.on("change:dataResolver", function (_, value) {
+            var hasResolver = !(0,index_all.isUndefined)(value);
+            if (hasResolver && !_this._isWatchingCollectionStateMap) {
+                _this._isWatchingCollectionStateMap = true;
+                _this.syncComponentsCollectionState();
+                _this.onCollectionsStateMapUpdate(_this.getCollectionsStateMap());
+                _this.listenToDataSource();
+            }
+            else if (!hasResolver && _this._isWatchingCollectionStateMap) {
+                _this._isWatchingCollectionStateMap = false;
+                _this.stopSyncComponentCollectionState();
+            }
+        });
+        this.listenToDataSource();
+    };
+    ComponentWrapper.prototype.getCollectionsStateMap = function () {
+        var _a;
+        if (!this.dataResolverPath)
+            return {};
+        return _a = {},
+            _a[DataCollectionKeys.rootData] = this.getCollectionsState(),
+            _a;
+    };
     ComponentWrapper.prototype.__postAdd = function () {
         var _a;
         var um = (_a = this.em) === null || _a === void 0 ? void 0 : _a.UndoManager;
@@ -36366,11 +39644,11 @@ var ComponentWrapper = /** @class */ (function (_super) {
         return false;
     };
     return ComponentWrapper;
-}(model_Component));
+}(model_ComponentWithCollectionsState));
 /* harmony default export */ const model_ComponentWrapper = (ComponentWrapper);
 
-;// CONCATENATED MODULE: ./src/dom_components/view/ComponentsView.ts
-var ComponentsView_extends = (undefined && undefined.__extends) || (function () {
+;// CONCATENATED MODULE: ./src/dom_components/model/Symbols.ts
+var Symbols_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -36385,161 +39663,8 @@ var ComponentsView_extends = (undefined && undefined.__extends) || (function () 
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-
-
-
-
-var ComponentsView = /** @class */ (function (_super) {
-    ComponentsView_extends(ComponentsView, _super);
-    function ComponentsView() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.compView = view_ComponentView;
-        return _this;
-    }
-    ComponentsView.prototype.initialize = function (o) {
-        this.opts = o || {};
-        this.config = o.config || {};
-        // @ts-ignore
-        this.em = this.config.em;
-        var coll = this.collection;
-        this.listenTo(coll, 'add', this.addTo);
-        this.listenTo(coll, 'reset', this.resetChildren);
-        this.listenTo(coll, 'remove', this.removeChildren);
-    };
-    ComponentsView.prototype.removeChildren = function (removed, coll, opts) {
-        var _this = this;
-        if (opts === void 0) { opts = {}; }
-        removed.views.forEach(function (view) {
-            if (!view)
-                return;
-            var childrenView = view.childrenView, scriptContainer = view.scriptContainer;
-            childrenView && childrenView.stopListening();
-            (0,dom/* removeEl */.YZ)(scriptContainer);
-            view.remove.apply(view);
-        });
-        var inner = removed.components();
-        inner.forEach(function (it) { return _this.removeChildren(it, coll, opts); });
-    };
-    /**
-     * Add to collection
-     * @param {Model} model
-     * @param {Collection} coll
-     * @param {Object} opts
-     * @private
-     * */
-    ComponentsView.prototype.addTo = function (model) {
-        this.addToCollection(model, null, this.collection.indexOf(model));
-    };
-    /**
-     * Add new object to collection
-     * @param  {Object}  Model
-     * @param  {Object}   Fragment collection
-     * @param  {Integer}  Index of append
-     *
-     * @return   {Object}   Object rendered
-     * @private
-     * */
-    ComponentsView.prototype.addToCollection = function (model, fragment, index) {
-        var _a = this, config = _a.config, opts = _a.opts, em = _a.em;
-        var frameView = config.frameView;
-        var sameFrameView = (frameView === null || frameView === void 0 ? void 0 : frameView.model) && model.getView(frameView.model);
-        var dt = opts.componentTypes || (em === null || em === void 0 ? void 0 : em.Components.getTypes());
-        var type = model.get('type') || 'default';
-        var viewObject = this.compView;
-        for (var it_1 = 0; it_1 < dt.length; it_1++) {
-            if (dt[it_1].id == type) {
-                viewObject = dt[it_1].view;
-                break;
-            }
-        }
-        var view = sameFrameView ||
-            new viewObject({
-                model: model,
-                // @ts-ignore
-                config: config,
-                componentTypes: dt,
-            });
-        var rendered;
-        try {
-            // Avoid breaking on DOM rendering (eg. invalid attribute name)
-            rendered = view.render().el;
-        }
-        catch (error) {
-            rendered = document.createTextNode('');
-            em.logError(error);
-        }
-        if (fragment) {
-            fragment.appendChild(rendered);
-        }
-        else {
-            var parent_1 = this.parentEl;
-            var children = parent_1.childNodes;
-            if (!(0,index_all.isUndefined)(index)) {
-                var lastIndex = children.length == index;
-                // If the added model is the last of collection
-                // need to change the logic of append
-                if (lastIndex) {
-                    index--;
-                }
-                // In case the added is new in the collection index will be -1
-                if (lastIndex || !children.length) {
-                    parent_1.appendChild(rendered);
-                }
-                else {
-                    parent_1.insertBefore(rendered, children[index]);
-                }
-            }
-            else {
-                parent_1.appendChild(rendered);
-            }
-        }
-        if (!model.opt.temporary) {
-            em === null || em === void 0 ? void 0 : em.trigger('component:mount', model);
-        }
-        return rendered;
-    };
-    ComponentsView.prototype.resetChildren = function (models, opts) {
-        var _this = this;
-        if (opts === void 0) { opts = {}; }
-        var previousModels = opts.previousModels;
-        if (!opts.skipDomReset) {
-            this.parentEl.innerHTML = '';
-        }
-        previousModels === null || previousModels === void 0 ? void 0 : previousModels.forEach(function (md) { return _this.removeChildren(md, _this.collection); });
-        models.each(function (model) { return _this.addToCollection(model); });
-    };
-    ComponentsView.prototype.render = function (parent) {
-        var _this = this;
-        var el = this.el;
-        var frag = document.createDocumentFragment();
-        this.parentEl = parent || this.el;
-        this.collection.each(function (model) { return _this.addToCollection(model, frag); });
-        el.innerHTML = '';
-        el.appendChild(frag);
-        return this;
-    };
-    return ComponentsView;
-}(common/* View */.Ss));
-/* harmony default export */ const view_ComponentsView = (ComponentsView);
-
-;// CONCATENATED MODULE: ./src/dom_components/view/ComponentView.ts
-var ComponentView_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var ComponentView_assign = (undefined && undefined.__assign) || function () {
-    ComponentView_assign = Object.assign || function(t) {
+var Symbols_assign = (undefined && undefined.__assign) || function () {
+    Symbols_assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
@@ -36547,522 +39672,62 @@ var ComponentView_assign = (undefined && undefined.__assign) || function () {
         }
         return t;
     };
-    return ComponentView_assign.apply(this, arguments);
+    return Symbols_assign.apply(this, arguments);
 };
 
 
 
-
-
-
-
-
-
-
-var ComponentView = /** @class */ (function (_super) {
-    ComponentView_extends(ComponentView, _super);
-    function ComponentView() {
-        return _super !== null && _super.apply(this, arguments) || this;
+var Symbols = /** @class */ (function (_super) {
+    Symbols_extends(Symbols, _super);
+    function Symbols() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        var _this = _super.apply(this, args) || this;
+        _this.refreshDbn = (0,index_all.debounce)(function () { return _this.refresh(); }, 0);
+        var events = _this.events;
+        _this.on(events.update, _this.onUpdate);
+        _this.on(events.updateInside, _this.onUpdateDeep);
+        return _this;
     }
-    /** @ts-ignore */
-    ComponentView.prototype.className = function () {
-        return this.getClasses();
-    };
-    /** @ts-ignore */
-    ComponentView.prototype.tagName = function () {
-        return this.model.get('tagName');
-    };
-    ComponentView.prototype.preinitialize = function (opt) {
-        if (opt === void 0) { opt = {}; }
-        this.opts = opt;
-    };
-    ComponentView.prototype.initialize = function (opt) {
-        if (opt === void 0) { opt = {}; }
-        var model = this.model;
-        var config = opt.config || {};
-        var em = config.em;
-        var modelOpt = model.opt || {};
-        var _a = this, $el = _a.$el, el = _a.el;
-        this.opts = opt;
-        this.modelOpt = modelOpt;
-        this.config = config;
-        this.em = em;
-        this.pfx = config.stylePrefix || '';
-        this.ppfx = config.pStylePrefix || '';
-        this.attr = model.get('attributes');
-        this.classe = this.attr.class || [];
-        this.listenTo(model, 'change:style', this.updateStyle);
-        this.listenTo(model, 'change:attributes', this.renderAttributes);
-        this.listenTo(model, 'change:highlightable', this.updateHighlight);
-        this.listenTo(model, 'change:status change:locked', this.updateStatus);
-        this.listenTo(model, 'change:script rerender', this.reset);
-        this.listenTo(model, 'change:content', this.updateContent);
-        this.listenTo(model, 'change', this.handleChange);
-        this.listenTo(model, 'active', this.onActive);
-        this.listenTo(model, 'disable', this.onDisable);
-        $el.data('model', model);
-        (0,mixins.setViewEl)(el, this);
-        model.view = this;
-        this.frameView && model.views.push(this);
-        this.initClasses();
-        this.initComponents({ avoidRender: true });
-        this.events = ComponentView_assign(ComponentView_assign({}, this.constructor.getEvents()), { dragstart: 'handleDragStart' });
-        this.delegateEvents();
-        !modelOpt.temporary && this.init(this._clbObj());
-    };
-    Object.defineProperty(ComponentView.prototype, "__cmpStyleOpts", {
-        get: function () {
-            return { state: '', mediaText: '' };
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(ComponentView.prototype, "frameView", {
-        get: function () {
-            return this.opts.config.frameView;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(ComponentView.prototype, "createDoc", {
-        get: function () {
-            var _a, _b;
-            var doc = ((_a = this.frameView) === null || _a === void 0 ? void 0 : _a.getDoc()) || document;
-            return ((_b = this.opts.config) === null || _b === void 0 ? void 0 : _b.useFrameDoc) ? doc : document;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    ComponentView.prototype.__isDraggable = function () {
-        var _a = this, model = _a.model, config = _a.config;
-        var draggable = model.attributes.draggable;
-        return config.draggableComponents && draggable;
-    };
-    ComponentView.prototype._clbObj = function () {
-        var _a = this, em = _a.em, model = _a.model, el = _a.el;
-        return {
-            editor: em === null || em === void 0 ? void 0 : em.getEditor(),
-            model: model,
-            el: el,
-        };
-    };
-    /**
-     * Initialize callback
-     */
-    ComponentView.prototype.init = function (opts) { };
-    /**
-     * Remove callback
-     */
-    ComponentView.prototype.removed = function (opts) { };
-    /**
-     * On render callback
-     */
-    ComponentView.prototype.onRender = function (opts) { };
-    /**
-     * Callback executed when the `active` event is triggered on component
-     */
-    ComponentView.prototype.onActive = function (ev) { };
-    /**
-     * Callback executed when the `disable` event is triggered on component
-     */
-    ComponentView.prototype.onDisable = function (opts) { };
-    ComponentView.prototype.remove = function () {
-        var _a;
-        _super.prototype.remove.call(this);
-        var _b = this, model = _b.model, $el = _b.$el;
-        var views = model.views;
-        var frame = this.frameView || {};
-        model.components().forEach(function (comp) {
-            var view = comp.getView(frame.model);
-            view === null || view === void 0 ? void 0 : view.remove();
-        });
-        (_a = this.childrenView) === null || _a === void 0 ? void 0 : _a.remove();
-        views.splice(views.indexOf(this), 1);
-        this.removed(this._clbObj());
-        $el.data({ model: '', collection: '', view: '' });
-        // delete model.view; // Sorter relies on this property
-        return this;
-    };
-    ComponentView.prototype.handleDragStart = function (event) {
-        if (!this.__isDraggable())
-            return false;
-        event.stopPropagation();
-        event.preventDefault();
-        var selected = this.em.getSelectedAll();
-        var modelsToMove = selected.includes(this.model) ? selected : [this.model];
-        this.em.Commands.run('tlb-move', {
-            target: modelsToMove,
-            event: event,
-        });
-    };
-    ComponentView.prototype.initClasses = function () {
-        var model = this.model;
-        var classes = model.classes;
-        var event = 'change:classes';
-        if (classes instanceof model_Selectors) {
-            this.stopListening(model, event, this.initClasses);
-            this.listenTo(model, event, this.initClasses);
-            this.listenTo(classes, 'add remove change reset', this.updateClasses);
-            classes.length && this.importClasses();
-        }
-    };
-    ComponentView.prototype.initComponents = function (opts) {
-        if (opts === void 0) { opts = {}; }
-        var _a = this, model = _a.model, $el = _a.$el, childrenView = _a.childrenView;
-        var event = 'change:components';
-        var comps = model.get('components');
-        var toListen = [model, event, this.initComponents];
-        if (comps instanceof model_Components) {
-            $el.data('collection', comps);
-            childrenView && childrenView.remove();
-            this.stopListening.apply(this, toListen);
-            !opts.avoidRender && this.renderChildren();
-            // @ts-ignore
-            this.listenTo.apply(this, toListen);
-        }
-    };
-    /**
-     * Handle any property change
-     * @private
-     */
-    ComponentView.prototype.handleChange = function () {
-        var model = this.model;
-        var chgArr = (0,index_all.keys)(model.changed);
-        if (chgArr.length === 1 && chgArr[0] === 'status')
-            return;
-        model.emitUpdate();
-        for (var prop in model.changed) {
-            model.emitUpdate(prop);
-        }
-    };
-    /**
-     * Import, if possible, classes inside main container
-     * @private
-     * */
-    ComponentView.prototype.importClasses = function () {
-        var _a = this, em = _a.em, model = _a.model;
-        var sm = em.Selectors;
-        sm && model.classes.forEach(function (s) { return sm.add(s.getName()); });
-    };
-    /**
-     * Update item on status change
-     * @param  {Event} e
-     * @private
-     * */
-    ComponentView.prototype.updateStatus = function (opts) {
-        if (opts === void 0) { opts = {}; }
-        var _a = this, em = _a.em, el = _a.el, ppfx = _a.ppfx, model = _a.model;
-        var canvas = em === null || em === void 0 ? void 0 : em.Canvas;
-        var extHl = canvas === null || canvas === void 0 ? void 0 : canvas.config.extHl;
-        var status = model.get('status');
-        var selectedCls = "".concat(ppfx, "selected");
-        var selectedParentCls = "".concat(selectedCls, "-parent");
-        var freezedCls = "".concat(ppfx, "freezed");
-        var hoveredCls = "".concat(ppfx, "hovered");
-        var noPointerCls = "".concat(ppfx, "no-pointer");
-        var pointerInitCls = "".concat(ppfx, "pointer-init");
-        var toRemove = [selectedCls, selectedParentCls, freezedCls, hoveredCls, noPointerCls, pointerInitCls];
-        var selCls = extHl && !opts.noExtHl ? '' : selectedCls;
-        this.$el.removeClass(toRemove.join(' '));
-        var actualCls = el.getAttribute('class') || '';
-        var cls = [actualCls];
-        var noCustomSpotSelect = !(canvas === null || canvas === void 0 ? void 0 : canvas.hasCustomSpot(CanvasSpot/* CanvasSpotBuiltInTypes */.F.Select));
-        var noCustomSpotTarget = !(canvas === null || canvas === void 0 ? void 0 : canvas.hasCustomSpot(CanvasSpot/* CanvasSpotBuiltInTypes */.F.Target));
-        switch (status) {
-            case 'selected':
-                noCustomSpotSelect && cls.push(selCls);
-                break;
-            case 'selected-parent':
-                noCustomSpotTarget && cls.push(selectedParentCls);
-                break;
-            case 'freezed':
-                cls.push(freezedCls);
-                break;
-            case 'freezed-selected':
-                cls.push(freezedCls);
-                noCustomSpotSelect && cls.push(selCls);
-                break;
-            case 'hovered':
-                !opts.avoidHover && cls.push(hoveredCls);
-                break;
-        }
-        if ((0,index_all.isBoolean)(model.locked)) {
-            cls.push(model.locked ? noPointerCls : pointerInitCls);
-        }
-        var clsStr = cls.filter(Boolean).join(' ');
-        clsStr && el.setAttribute('class', clsStr);
-    };
-    /**
-     * Update highlight attribute
-     * @private
-     * */
-    ComponentView.prototype.updateHighlight = function () {
-        var model = this.model;
-        var isTextable = model.get('textable');
-        var hl = model.get('highlightable') && (isTextable || !model.isChildOf('text'));
-        this.setAttribute('data-gjs-highlightable', hl ? true : '');
-    };
-    /**
-     * Update style attribute
-     * @private
-     * */
-    ComponentView.prototype.updateStyle = function (m, v, opts) {
-        if (opts === void 0) { opts = {}; }
-        var _a = this, model = _a.model, em = _a.em;
-        if (avoidInline(em) && !opts.inline) {
-            // Move inline styles to CSSRule
-            var styleOpts = this.__cmpStyleOpts;
-            var style = model.getStyle(ComponentView_assign({ inline: true }, styleOpts));
-            !(0,index_all.isEmpty)(style) && model.setStyle(style, styleOpts);
-        }
-        else {
-            this.setAttribute('style', model.styleToString(opts));
-        }
-    };
-    ComponentView.prototype.updateStyles = function () {
-        this.updateStyle();
-    };
-    /**
-     * Update classe attribute
-     * @private
-     * */
-    ComponentView.prototype.updateClasses = function () {
-        var str = this.model.classes.pluck('name').join(' ');
-        this.setAttribute('class', str);
-        // Regenerate status class
-        this.updateStatus();
-        this.onAttrUpdate();
-    };
-    /**
-     * Update single attribute
-     * @param {[type]} name  [description]
-     * @param {[type]} value [description]
-     */
-    ComponentView.prototype.setAttribute = function (name, value) {
-        var el = this.$el;
-        value ? el.attr(name, value) : el.removeAttr(name);
-    };
-    /**
-     * Get classes from attributes.
-     * This method is called before initialize
-     *
-     * @return  {Array}|null
-     * @private
-     * */
-    ComponentView.prototype.getClasses = function () {
-        return this.model.getClasses().join(' ');
-    };
-    /**
-     * Update attributes
-     * @private
-     * */
-    ComponentView.prototype.updateAttributes = function () {
-        var attrs = [];
-        var _a = this, model = _a.model, $el = _a.$el, el = _a.el;
-        var _b = model.attributes, textable = _b.textable, type = _b.type;
-        var defaultAttr = ComponentView_assign(ComponentView_assign({ id: model.getId(), 'data-gjs-type': type || 'default' }, (this.__isDraggable() && { draggable: true })), (textable && { contenteditable: 'false' }));
-        // Remove all current attributes
-        (0,index_all.each)(el.attributes, function (attr) { return attrs.push(attr.nodeName); });
-        attrs.forEach(function (attr) { return $el.removeAttr(attr); });
-        this.updateStyle();
-        this.updateHighlight();
-        var attr = ComponentView_assign(ComponentView_assign({}, defaultAttr), model.getAttributes());
-        // Remove all `false` attributes
-        (0,index_all.keys)(attr).forEach(function (key) { return attr[key] === false && delete attr[key]; });
-        $el.attr(attr);
-    };
-    /**
-     * Update component content
-     * @private
-     * */
-    ComponentView.prototype.updateContent = function () {
-        var content = this.model.content;
-        var hasComps = this.model.components().length;
-        this.getChildrenContainer().innerHTML = hasComps ? '' : content;
-    };
-    /**
-     * Prevent default helper
-     * @param  {Event} e
-     * @private
-     */
-    ComponentView.prototype.prevDef = function (e) {
-        e.preventDefault();
-    };
-    /**
-     * Render component's script
-     * @private
-     */
-    ComponentView.prototype.updateScript = function () {
-        var _a = this, model = _a.model, em = _a.em;
-        if (!model.get('script'))
-            return;
-        em === null || em === void 0 ? void 0 : em.Canvas.getCanvasView().updateScript(this);
-    };
-    /**
-     * Return children container
-     * Differently from a simple component where children container is the
-     * component itself
-     * <my-comp>
-     *  <!--
-     *    <child></child> ...
-     *   -->
-     * </my-comp>
-     * You could have the children container more deeper
-     * <my-comp>
-     *  <div></div>
-     *  <div></div>
-     *  <div>
-     *    <div>
-     *      <!--
-     *        <child></child> ...
-     *      -->
-     *    </div>
-     *  </div>
-     * </my-comp>
-     * @return HTMLElement
-     * @private
-     */
-    ComponentView.prototype.getChildrenContainer = function () {
-        var container = this.el;
-        if (typeof this.getChildrenSelector == 'function') {
-            container = this.el.querySelector(this.getChildrenSelector());
-        }
-        else if (typeof this.getTemplate == 'function') {
-            // Need to find deepest first child
-        }
-        return container;
-    };
-    /**
-     * This returns rect informations not affected by the canvas zoom.
-     * The method `getBoundingClientRect` doesn't work here and we
-     * have to take in account offsetParent
-     */
-    ComponentView.prototype.getOffsetRect = function () {
-        var rect = { top: 0, left: 0, bottom: 0, right: 0 };
-        var target = this.el;
-        var gtop = 0;
-        var gleft = 0;
-        var assignRect = function (el) {
-            var offsetParent = el.offsetParent;
-            if (offsetParent) {
-                gtop += offsetParent.offsetTop;
-                gleft += offsetParent.offsetLeft;
-                assignRect(offsetParent);
-            }
-            else {
-                rect.top = target.offsetTop + gtop;
-                rect.left = target.offsetLeft + gleft;
-                rect.bottom = rect.top + target.offsetHeight;
-                rect.right = rect.left + target.offsetWidth;
-            }
-        };
-        assignRect(target);
-        return rect;
-    };
-    ComponentView.prototype.isInViewport = function () {
-        var _a = this, el = _a.el, em = _a.em, frameView = _a.frameView;
-        var canvasView = em.Canvas.getCanvasView();
-        var elRect = canvasView.getElBoxRect(el, { local: true });
-        var frameEl = frameView.el;
-        var frameH = frameEl.clientHeight;
-        var frameW = frameEl.clientWidth;
-        var elTop = elRect.y;
-        var elRight = elRect.x;
-        var elBottom = elTop + elRect.height;
-        var elLeft = elRight + elRect.width;
-        var isTopInside = elTop >= 0 && elTop < frameH;
-        var isBottomInside = elBottom > 0 && elBottom < frameH;
-        var isLeftInside = elLeft >= 0 && elLeft < frameW;
-        var isRightInside = elRight > 0 && elRight <= frameW;
-        var partiallyIn = (isTopInside || isBottomInside) && (isLeftInside || isRightInside);
-        return partiallyIn;
-    };
-    ComponentView.prototype.scrollIntoView = function (opts) {
+    Symbols.prototype.removeChildren = function (component, coll, opts) {
         var _a;
         if (opts === void 0) { opts = {}; }
-        var isInViewport = this.isInViewport();
-        if (!isInViewport || opts.force) {
-            var el = this.el;
-            // PATCH: scrollIntoView won't work with multiple requests from iframes
-            if (opts.behavior !== 'smooth') {
-                var rect = this.getOffsetRect();
-                (_a = el.ownerDocument.defaultView) === null || _a === void 0 ? void 0 : _a.scrollTo(0, rect.top);
-            }
-            else {
-                el.scrollIntoView(ComponentView_assign({ behavior: 'smooth', block: 'nearest' }, opts));
-            }
+        _super.prototype.removeChildren.call(this, component, coll, opts);
+        (_a = getSymbolInstances(component)) === null || _a === void 0 ? void 0 : _a.forEach(function (i) { return detachSymbolInstance(i, { skipRefs: true }); });
+        this.__trgEvent(this.events.symbolMainRemove, { component: component });
+    };
+    Symbols.prototype.onAdd = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
         }
+        _super.prototype.onAdd.apply(this, args);
+        var component = args[0];
+        this.__trgEvent(this.events.symbolMainAdd, { component: component });
     };
-    /**
-     * Recreate the element of the view
-     */
-    ComponentView.prototype.reset = function () {
-        var view = this;
-        var el = view.el, model = view.model;
-        view.scriptContainer && model.emitWithEitor(dom_components_types/* ComponentsEvents */.I.scriptUnmount, { component: model, view: view, el: el });
-        // @ts-ignore
-        this.el = '';
-        this._ensureElement();
-        this._setData();
-        (0,dom/* replaceWith */.bG)(el, this.el);
-        this.render();
+    Symbols.prototype.onUpdate = function (props) {
+        this.__trgEvent(this.events.symbolMainUpdate, props);
     };
-    ComponentView.prototype._setData = function () {
-        var model = this.model;
-        var collection = model.components();
-        var view = this;
-        this.$el.data({ model: model, collection: collection, view: view });
+    Symbols.prototype.onUpdateDeep = function (props) {
+        this.__trgEvent(this.events.symbolMainUpdateDeep, props);
     };
-    ComponentView.prototype._createElement = function (tagName) {
-        return this.createDoc.createElement(tagName);
+    Symbols.prototype.refresh = function () {
+        var _a = this, em = _a.em, events = _a.events;
+        em.trigger(events.symbol);
     };
-    /**
-     * Render children components
-     * @private
-     */
-    ComponentView.prototype.renderChildren = function () {
-        this.updateContent();
-        var container = this.getChildrenContainer();
-        var view = this.childrenView ||
-            new view_ComponentsView({
-                // @ts-ignore
-                collection: this.model.get('components'),
-                config: this.config,
-                componentTypes: this.opts.componentTypes,
-            });
-        view.render(container);
-        this.childrenView = view;
-        var childNodes = Array.prototype.slice.call(view.el.childNodes);
-        for (var i = 0, len = childNodes.length; i < len; i++) {
-            container.appendChild(childNodes.shift());
-        }
+    Symbols.prototype.__trgEvent = function (event, props, isInstance) {
+        if (isInstance === void 0) { isInstance = false; }
+        var _a = this, em = _a.em, events = _a.events;
+        var eventType = isInstance ? events.symbolInstance : events.symbolMain;
+        em.trigger(event, props);
+        em.trigger(eventType, Symbols_assign(Symbols_assign({}, props), { event: event }));
+        this.refreshDbn();
     };
-    ComponentView.prototype.renderAttributes = function () {
-        this.updateAttributes();
-        this.updateClasses();
-    };
-    ComponentView.prototype.onAttrUpdate = function () { };
-    ComponentView.prototype.render = function () {
-        this.renderAttributes();
-        if (this.modelOpt.temporary)
-            return this;
-        this.renderChildren();
-        this.updateScript();
-        (0,mixins.setViewEl)(this.el, this);
-        this.postRender();
-        return this;
-    };
-    ComponentView.prototype.postRender = function () {
-        if (!this.modelOpt.temporary) {
-            this.onRender(this._clbObj());
-        }
-    };
-    ComponentView.getEvents = function () {
-        return (0,index_all.result)(this.prototype, 'events');
-    };
-    return ComponentView;
-}(common/* View */.Ss));
-/* harmony default export */ const view_ComponentView = (ComponentView);
+    return Symbols;
+}(model_Components));
+/* harmony default export */ const model_Symbols = (Symbols);
 
 ;// CONCATENATED MODULE: ./src/dom_components/view/ComponentTextNodeView.ts
 var ComponentTextNodeView_extends = (undefined && undefined.__extends) || (function () {
@@ -37244,12 +39909,14 @@ var ComponentImageView = /** @class */ (function (_super) {
         if (file && em) {
             var fu = em.Assets.FileUploader();
             fu === null || fu === void 0 ? void 0 : fu.uploadFile({
-                // @ts-ignore
                 dataTransfer: { files: [file] },
             }, function (res) {
                 var obj = res && res.data && res.data[0];
                 var src = obj && ((0,index_all.isString)(obj) ? obj : obj.src);
                 src && model.set({ src: src });
+            }, {
+                componentView: this,
+                file: file,
             });
             model.set('file', '');
         }
@@ -37351,7 +40018,7 @@ var ComponentTextView_assign = (undefined && undefined.__assign) || function () 
     };
     return ComponentTextView_assign.apply(this, arguments);
 };
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+var ComponentTextView_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -37360,7 +40027,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __generator = (undefined && undefined.__generator) || function (thisArg, body) {
+var ComponentTextView_generator = (undefined && undefined.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
     return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
@@ -37387,6 +40054,7 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+
 
 
 
@@ -37447,10 +40115,10 @@ var ComponentTextView = /** @class */ (function (_super) {
      * @private
      * */
     ComponentTextView.prototype.onActive = function (ev) {
-        return __awaiter(this, void 0, void 0, function () {
+        return ComponentTextView_awaiter(this, void 0, void 0, function () {
             var _a, rte, em, _b, result, delegate, _c, view, _d, err_1;
             var _e, _f;
-            return __generator(this, function (_g) {
+            return ComponentTextView_generator(this, function (_g) {
                 switch (_g.label) {
                     case 0:
                         _a = this, rte = _a.rte, em = _a.em;
@@ -37499,10 +40167,10 @@ var ComponentTextView = /** @class */ (function (_super) {
      * @private
      * */
     ComponentTextView.prototype.disableEditing = function () {
-        return __awaiter(this, arguments, void 0, function (opts) {
+        return ComponentTextView_awaiter(this, arguments, void 0, function (opts) {
             var _a, model, rte, activeRte, em, editable, disableRes, content, err_2;
             if (opts === void 0) { opts = {}; }
-            return __generator(this, function (_b) {
+            return ComponentTextView_generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _a = this, model = _a.model, rte = _a.rte, activeRte = _a.activeRte, em = _a.em;
@@ -37542,9 +40210,9 @@ var ComponentTextView = /** @class */ (function (_super) {
      * @return string
      */
     ComponentTextView.prototype.getContent = function () {
-        return __awaiter(this, void 0, void 0, function () {
+        return ComponentTextView_awaiter(this, void 0, void 0, function () {
             var _a, rte, activeRte, result;
-            return __generator(this, function (_b) {
+            return ComponentTextView_generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _a = this, rte = _a.rte, activeRte = _a.activeRte;
@@ -37563,11 +40231,11 @@ var ComponentTextView = /** @class */ (function (_super) {
      * Merge content from the DOM to the model
      */
     ComponentTextView.prototype.syncContent = function () {
-        return __awaiter(this, arguments, void 0, function (opts) {
+        return ComponentTextView_awaiter(this, arguments, void 0, function (opts) {
             var _a, model, rte, rteEnabled, content, _b, comps, contentOpt;
             var _c;
             if (opts === void 0) { opts = {}; }
-            return __generator(this, function (_d) {
+            return ComponentTextView_generator(this, function (_d) {
                 switch (_d.label) {
                     case 0:
                         _a = this, model = _a.model, rte = _a.rte, rteEnabled = _a.rteEnabled;
@@ -37585,7 +40253,7 @@ var ComponentTextView = /** @class */ (function (_super) {
                         comps = model.components();
                         contentOpt = ComponentTextView_assign({ fromDisable: 1 }, opts);
                         model.set('content', '', contentOpt);
-                        // If there is a custom RTE the content is just added staticly
+                        // If there is a custom RTE the content is just added statically
                         // inside 'content'
                         if ((rte === null || rte === void 0 ? void 0 : rte.customRte) && !rte.customRte.parseContent) {
                             comps.length &&
@@ -37641,11 +40309,9 @@ var ComponentTextView = /** @class */ (function (_super) {
      * @param  {Event} e
      */
     ComponentTextView.prototype.onInput = function () {
-        var _a;
-        var evPfx = 'component';
-        var ev = ["".concat(evPfx, ":update"), "".concat(evPfx, ":input")].join(' ');
-        // Update toolbars
-        (_a = this.em) === null || _a === void 0 ? void 0 : _a.trigger(ev, this.model);
+        var model = this.model;
+        var events = [dom_components_types/* ComponentsEvents */.IT.update, dom_components_types/* ComponentsEvents */.IT.input];
+        events.forEach(function (ev) { return model.emitWithEditor(ev, model); });
     };
     /**
      * Isolate disable propagation method
@@ -37671,8 +40337,9 @@ var ComponentTextView = /** @class */ (function (_super) {
         mixins[method](elDocs, 'mousedown', this.onDisable);
         em[method]('toolbar:run:before', this.onDisable);
         if (model) {
+            var rteEvents = em.RichTextEditor.events;
             model[method]('removed', this.onDisable);
-            model.trigger("rte:".concat(enable ? 'enable' : 'disable'));
+            model.trigger(enable ? rteEvents.enable : rteEvents.disable);
         }
         // @ts-ignore Avoid closing edit mode on component click
         $el === null || $el === void 0 ? void 0 : $el.off('mousedown', this.disablePropagation);
@@ -38071,7 +40738,7 @@ var ComponentVideoView = /** @class */ (function (_super) {
         // @ts-ignore
         view_ComponentView.prototype.initialize.apply(this, arguments);
         var model = this.model;
-        var props = ['loop', 'autoplay', 'controls', 'color', 'rel', 'modestbranding', 'poster'];
+        var props = ['loop', 'autoplay', 'controls', 'color', 'rel', 'modestbranding', 'poster', 'muted'];
         var events = props.map(function (p) { return "change:".concat(p); }).join(' ');
         this.listenTo(model, 'change:provider', this.updateProvider);
         this.listenTo(model, 'change:src', this.updateSrc);
@@ -38129,6 +40796,7 @@ var ComponentVideoView = /** @class */ (function (_super) {
                     el.autoplay = model.get('autoplay');
                     el.controls = model.get('controls');
                     el.poster = model.get('poster');
+                    el.muted = model.get('muted');
                 }
             }
         }
@@ -38226,265 +40894,6 @@ var ComponentWrapperView = /** @class */ (function (_super) {
     return ComponentWrapperView;
 }(view_ComponentView));
 /* harmony default export */ const view_ComponentWrapperView = (ComponentWrapperView);
-
-;// CONCATENATED MODULE: ./src/dom_components/model/Symbols.ts
-var Symbols_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var Symbols_assign = (undefined && undefined.__assign) || function () {
-    Symbols_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return Symbols_assign.apply(this, arguments);
-};
-
-
-
-var Symbols = /** @class */ (function (_super) {
-    Symbols_extends(Symbols, _super);
-    function Symbols() {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        var _this = _super.apply(this, args) || this;
-        _this.refreshDbn = (0,index_all.debounce)(function () { return _this.refresh(); }, 0);
-        var events = _this.events;
-        _this.on(events.update, _this.onUpdate);
-        _this.on(events.updateInside, _this.onUpdateDeep);
-        return _this;
-    }
-    Symbols.prototype.removeChildren = function (component, coll, opts) {
-        var _a;
-        if (opts === void 0) { opts = {}; }
-        _super.prototype.removeChildren.call(this, component, coll, opts);
-        (_a = getSymbolInstances(component)) === null || _a === void 0 ? void 0 : _a.forEach(function (i) { return detachSymbolInstance(i, { skipRefs: true }); });
-        this.__trgEvent(this.events.symbolMainRemove, { component: component });
-    };
-    Symbols.prototype.onAdd = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        _super.prototype.onAdd.apply(this, args);
-        var component = args[0];
-        this.__trgEvent(this.events.symbolMainAdd, { component: component });
-    };
-    Symbols.prototype.onUpdate = function (props) {
-        this.__trgEvent(this.events.symbolMainUpdate, props);
-    };
-    Symbols.prototype.onUpdateDeep = function (props) {
-        this.__trgEvent(this.events.symbolMainUpdateDeep, props);
-    };
-    Symbols.prototype.refresh = function () {
-        var _a = this, em = _a.em, events = _a.events;
-        em.trigger(events.symbol);
-    };
-    Symbols.prototype.__trgEvent = function (event, props, isInstance) {
-        if (isInstance === void 0) { isInstance = false; }
-        var _a = this, em = _a.em, events = _a.events;
-        var eventType = isInstance ? events.symbolInstance : events.symbolMain;
-        em.trigger(event, props);
-        em.trigger(eventType, Symbols_assign(Symbols_assign({}, props), { event: event }));
-        this.refreshDbn();
-    };
-    return Symbols;
-}(model_Components));
-/* harmony default export */ const model_Symbols = (Symbols);
-
-;// CONCATENATED MODULE: ./src/data_sources/model/ComponentDataVariable.ts
-var ComponentDataVariable_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var ComponentDataVariable_assign = (undefined && undefined.__assign) || function () {
-    ComponentDataVariable_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return ComponentDataVariable_assign.apply(this, arguments);
-};
-
-
-
-var ComponentDataVariable = /** @class */ (function (_super) {
-    ComponentDataVariable_extends(ComponentDataVariable, _super);
-    function ComponentDataVariable() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Object.defineProperty(ComponentDataVariable.prototype, "defaults", {
-        get: function () {
-            return ComponentDataVariable_assign(ComponentDataVariable_assign({}, _super.prototype.defaults), { type: DataVariableType, path: '', defaultValue: '' });
-        },
-        enumerable: false,
-        configurable: true
-    });
-    ComponentDataVariable.prototype.getDataValue = function () {
-        var _a = this.attributes, path = _a.path, defaultValue = _a.defaultValue;
-        return this.em.DataSources.getValue(path, defaultValue);
-    };
-    ComponentDataVariable.prototype.getInnerHTML = function () {
-        return this.getDataValue();
-    };
-    ComponentDataVariable.isComponent = function (el) {
-        return (0,mixins.toLowerCase)(el.tagName) === DataVariableType;
-    };
-    return ComponentDataVariable;
-}(model_Component));
-/* harmony default export */ const model_ComponentDataVariable = (ComponentDataVariable);
-
-;// CONCATENATED MODULE: ./src/data_sources/view/ComponentDataVariableView.ts
-var ComponentDataVariableView_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-
-var ComponentDataVariableView = /** @class */ (function (_super) {
-    ComponentDataVariableView_extends(ComponentDataVariableView, _super);
-    function ComponentDataVariableView() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    ComponentDataVariableView.prototype.initialize = function (opt) {
-        var _this = this;
-        if (opt === void 0) { opt = {}; }
-        _super.prototype.initialize.call(this, opt);
-        this.dynamicVariableListener = new DataVariableListenerManager({
-            em: this.em,
-            dataVariable: this.model,
-            updateValueFromDataVariable: function () { return _this.postRender(); },
-        });
-    };
-    ComponentDataVariableView.prototype.postRender = function () {
-        var _a = this, model = _a.model, el = _a.el, em = _a.em;
-        var _b = model.attributes, path = _b.path, defaultValue = _b.defaultValue;
-        el.innerHTML = em.DataSources.getValue(path, defaultValue);
-        _super.prototype.postRender.call(this);
-    };
-    return ComponentDataVariableView;
-}(view_ComponentView));
-/* harmony default export */ const view_ComponentDataVariableView = (ComponentDataVariableView);
-
-;// CONCATENATED MODULE: ./src/data_sources/model/conditional_variables/ConditionalComponent.ts
-var ConditionalComponent_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-
-
-var ComponentConditionalVariable = /** @class */ (function (_super) {
-    ConditionalComponent_extends(ComponentConditionalVariable, _super);
-    function ComponentConditionalVariable(componentDefinition, opt) {
-        var _this = this;
-        var condition = componentDefinition.condition, ifTrue = componentDefinition.ifTrue, ifFalse = componentDefinition.ifFalse;
-        var dataConditionInstance = new DataCondition(condition, ifTrue, ifFalse, { em: opt.em });
-        var initialComponentsProps = dataConditionInstance.getDataValue();
-        var conditionalCmptDef = {
-            type: DataCondition_ConditionalVariableType,
-            components: initialComponentsProps,
-        };
-        _this = _super.call(this, conditionalCmptDef, opt) || this;
-        _this.componentDefinition = componentDefinition;
-        _this.dataCondition = dataConditionInstance;
-        _this.dataCondition.onValueChange = _this.handleConditionChange.bind(_this);
-        return _this;
-    }
-    ComponentConditionalVariable.prototype.handleConditionChange = function () {
-        this.dataCondition.reevaluate();
-        var updatedComponents = this.dataCondition.getDataValue();
-        this.components().reset();
-        this.components().add(updatedComponents);
-    };
-    ComponentConditionalVariable.isComponent = function (el) {
-        return (0,mixins.toLowerCase)(el.tagName) === DataCondition_ConditionalVariableType;
-    };
-    ComponentConditionalVariable.prototype.toJSON = function () {
-        return this.dataCondition.toJSON();
-    };
-    return ComponentConditionalVariable;
-}(model_Component));
-/* harmony default export */ const ConditionalComponent = (ComponentConditionalVariable);
-
-;// CONCATENATED MODULE: ./src/data_sources/view/ComponentDynamicView.ts
-var ComponentDynamicView_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-var ConditionalComponentView = /** @class */ (function (_super) {
-    ComponentDynamicView_extends(ConditionalComponentView, _super);
-    function ConditionalComponentView() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return ConditionalComponentView;
-}(view_ComponentView));
-/* harmony default export */ const ComponentDynamicView = (ConditionalComponentView);
 
 ;// CONCATENATED MODULE: ./src/dom_components/index.ts
 var dom_components_extends = (undefined && undefined.__extends) || (function () {
@@ -38643,6 +41052,8 @@ var dom_components_spreadArray = (undefined && undefined.__spreadArray) || funct
 
 
 
+
+
 /** @private */
 var CanMoveReason;
 (function (CanMoveReason) {
@@ -38668,15 +41079,35 @@ var ComponentManager = /** @class */ (function (_super) {
      * @private
      */
     function ComponentManager(em) {
-        var _this = _super.call(this, em, 'DomComponents', new model_Components(undefined, { em: em }), dom_components_types/* ComponentsEvents */.I, dom_components_config_config()) || this;
+        var _this = _super.call(this, em, 'DomComponents', new model_Components(undefined, { em: em }), dom_components_types/* ComponentsEvents */.IT, dom_components_config_config()) || this;
         _this.componentTypes = [
             {
-                id: DataCondition_ConditionalVariableType,
-                model: ConditionalComponent,
-                view: ComponentDynamicView,
+                id: DataComponentTypes.collectionItem,
+                model: conditional_variables_ComponentDataOutput,
+                view: view_ComponentView,
             },
             {
-                id: DataVariableType,
+                id: DataComponentTypes.conditionTrue,
+                model: conditional_variables_ComponentDataOutput,
+                view: view_ComponentView,
+            },
+            {
+                id: DataComponentTypes.conditionFalse,
+                model: conditional_variables_ComponentDataOutput,
+                view: view_ComponentView,
+            },
+            {
+                id: DataComponentTypes.collection,
+                model: data_collection_ComponentDataCollection,
+                view: view_ComponentDataCollectionView,
+            },
+            {
+                id: DataComponentTypes.condition,
+                model: conditional_variables_ComponentDataCondition,
+                view: view_ComponentDataConditionView,
+            },
+            {
+                id: DataComponentTypes.variable,
                 model: model_ComponentDataVariable,
                 view: view_ComponentDataVariableView,
             },
@@ -38799,7 +41230,7 @@ var ComponentManager = /** @class */ (function (_super) {
         //name = "DomComponents";
         _this.storageKey = 'components';
         _this.keySymbols = 'symbols';
-        _this.events = dom_components_types/* ComponentsEvents */.I;
+        _this.events = dom_components_types/* ComponentsEvents */.IT;
         var config = _this.config;
         _this.symbols = new model_Symbols([], { em: em, config: config, domc: _this });
         if (em) {
@@ -39044,8 +41475,8 @@ var ComponentManager = /** @class */ (function (_super) {
             var blockProps = block === true ? defBlockProps : dom_components_assign(dom_components_assign({}, defBlockProps), block);
             em.Blocks.add(blockProps.id || type, blockProps);
         }
-        var event = "component:type:".concat(compType ? 'update' : 'add');
-        em === null || em === void 0 ? void 0 : em.trigger(event, compType || methods);
+        var event = compType ? dom_components_types/* ComponentsEvents */.IT.typeUpdate : dom_components_types/* ComponentsEvents */.IT.typeAdd;
+        em === null || em === void 0 ? void 0 : em.trigger(event, (compType || methods));
         return this;
     };
     ComponentManager.prototype.getType = function (type) {
@@ -39086,7 +41517,7 @@ var ComponentManager = /** @class */ (function (_super) {
             component.set({
                 status: 'selected',
             });
-            ['component:selected', 'component:toggled'].forEach(function (event) { return _this.em.trigger(event, component, opts); });
+            [dom_components_types/* ComponentsEvents */.IT.selected, dom_components_types/* ComponentsEvents */.IT.toggled].forEach(function (event) { return _this.em.trigger(event, component, opts); });
         }
     };
     ComponentManager.prototype.selectRemove = function (component, opts) {
@@ -39098,7 +41529,9 @@ var ComponentManager = /** @class */ (function (_super) {
                 status: '',
                 state: '',
             });
-            ['component:deselected', 'component:toggled'].forEach(function (event) { return _this.em.trigger(event, component, opts); });
+            [dom_components_types/* ComponentsEvents */.IT.deselected, dom_components_types/* ComponentsEvents */.IT.toggled].forEach(function (event) {
+                return _this.em.trigger(event, component, opts);
+            });
         }
     };
     /**
@@ -39164,7 +41597,7 @@ var ComponentManager = /** @class */ (function (_super) {
         }
         var symbol = component.clone({ symbol: true });
         isSymbolMain(symbol) && this.symbols.add(symbol);
-        this.em.trigger('component:toggled');
+        this.em.trigger(dom_components_types/* ComponentsEvents */.IT.toggled);
         return symbol;
     };
     /**
@@ -39471,7 +41904,7 @@ var CssGenerator = /** @class */ (function (_super) {
             }
         });
         if ((selectorStrNoAdd && found) || selectorsAdd || singleAtRule || !model) {
-            var block = rule.getDeclaration({ body: 1 });
+            var block = rule.getDeclaration();
             block && (opts.json ? (result = rule) : (result += block));
         }
         else {
@@ -39599,7 +42032,6 @@ var CssRule_spreadArray = (undefined && undefined.__spreadArray) || function (to
 
 
 
-
 // @ts-ignore
 var CSS = ((0,mixins.hasWin)() ? window : {}).CSS;
 /**
@@ -39622,15 +42054,14 @@ var CssRule = /** @class */ (function (_super) {
     CssRule_extends(CssRule, _super);
     function CssRule(props, opt) {
         if (opt === void 0) { opt = {}; }
-        var _this = _super.call(this, props) || this;
+        var _this = _super.call(this, props, { em: opt.em }) || this;
         _this.views = [];
-        _this.dynamicVariableListeners = {};
         _this.config = props || {};
         _this.opt = opt;
         _this.em = opt.em;
         _this.ensureSelectors(null, null, {});
+        _this.setStyle(_this.get('style'), { skipWatcherUpdates: true });
         _this.on('change', _this.__onChange);
-        _this.setStyle(_this.get('style'));
         return _this;
     }
     CssRule.prototype.defaults = function () {
@@ -39649,17 +42080,14 @@ var CssRule = /** @class */ (function (_super) {
             _undo: true,
         };
     };
-    CssRule.prototype.__onChange = function (m, opts) {
+    CssRule.prototype.__onChange = function (rule, options) {
         var em = this.em;
         var changed = this.changedAttributes();
-        changed && !(0,mixins.isEmptyObj)(changed) && (em === null || em === void 0 ? void 0 : em.changesUp(opts));
+        changed && !(0,mixins.isEmptyObj)(changed) && (em === null || em === void 0 ? void 0 : em.changesUp(options, { rule: rule, changed: changed, options: options }));
     };
     CssRule.prototype.clone = function () {
-        var opts = CssRule_assign({}, this.opt);
-        var attr = CssRule_assign({}, this.attributes);
-        attr.selectors = this.get('selectors').map(function (s) { return s.clone(); });
-        // @ts-ignore
-        return new this.constructor(attr, opts);
+        var selectors = this.get('selectors').map(function (s) { return s.clone(); });
+        return _super.prototype.clone.call(this, { selectors: selectors });
     };
     CssRule.prototype.ensureSelectors = function (m, c, opts) {
         var em = this.em;
@@ -39690,9 +42118,11 @@ var CssRule = /** @class */ (function (_super) {
      * cssRule.getAtRule(); // "@media (min-width: 500px)"
      */
     CssRule.prototype.getAtRule = function () {
-        var type = this.get('atRuleType');
-        var condition = this.get('mediaText');
-        // Avoid breaks with the last condition
+        return CssRule.getAtRuleFromProps(this.attributes);
+    };
+    CssRule.getAtRuleFromProps = function (cssRuleProps) {
+        var type = cssRuleProps.atRuleType;
+        var condition = cssRuleProps.mediaText;
         var typeStr = type ? "@".concat(type) : condition ? '@media' : '';
         return typeStr + (condition && typeStr ? " ".concat(condition) : '');
     };
@@ -39812,13 +42242,9 @@ var CssRule = /** @class */ (function (_super) {
         }
         return result;
     };
-    CssRule.prototype.toJSON = function () {
+    CssRule.prototype.toJSON = function (opts) {
         var _a;
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        var obj = common/* Model */.Kx.prototype.toJSON.apply(this, args);
+        var obj = _super.prototype.toJSON.call(this, opts);
         if ((_a = this.em) === null || _a === void 0 ? void 0 : _a.getConfig().avoidDefaults) {
             var defaults = this.defaults();
             (0,index_all.forEach)(defaults, function (value, key) {
@@ -40006,6 +42432,8 @@ var css_composer_spreadArray = (undefined && undefined.__spreadArray) || functio
 
 
 
+
+
 var CssComposer = /** @class */ (function (_super) {
     css_composer_extends(CssComposer, _super);
     /**
@@ -40014,9 +42442,17 @@ var CssComposer = /** @class */ (function (_super) {
      * @private
      */
     function CssComposer(em) {
-        var _this = _super.call(this, em, 'CssComposer', null, {}, css_composer_config_config()) || this;
+        var _this = _super.call(this, em, 'CssComposer', null, CssEvents, css_composer_config_config()) || this;
+        _this.classes = {
+            CssRule: model_CssRule,
+            CssRules: model_CssRules,
+            CssRuleView: view_CssRuleView,
+            CssRulesView: view_CssRulesView,
+        };
+        _this.events = CssEvents;
         _this.Selectors = model_Selectors;
         _this.storageKey = 'styles';
+        _this._itemCache = new Map();
         var config = _this.config;
         var ppfx = config.pStylePrefix;
         if (ppfx)
@@ -40024,14 +42460,37 @@ var CssComposer = /** @class */ (function (_super) {
         // @ts-ignore
         config.rules = _this.em.config.style || config.rules || '';
         _this.rules = new model_CssRules([], config);
+        _this.all = _this.rules;
+        _this._setupCacheListeners();
         return _this;
     }
+    CssComposer.prototype._setupCacheListeners = function () {
+        _super.prototype._setupCacheListeners.call(this);
+        this.em.listenTo(this.rules, 'change:selectors change:state change:mediaText', this._onItemKeyChange.bind(this));
+    };
+    CssComposer.prototype._makeCacheKey = function (rule) {
+        var atRuleKey = rule.getAtRule();
+        var selectorsKey = rule.selectorsToString();
+        return "".concat(atRuleKey, "__").concat(selectorsKey);
+    };
+    CssComposer.prototype._makeCacheKeyFromProps = function (ruleProps) {
+        var _a = ruleProps.atRuleType, atRuleType = _a === void 0 ? '' : _a, _b = ruleProps.mediaText, mediaText = _b === void 0 ? '' : _b, _c = ruleProps.state, state = _c === void 0 ? '' : _c, _d = ruleProps.selectorsAdd, selectorsAdd = _d === void 0 ? '' : _d, _e = ruleProps.selectors, selectors = _e === void 0 ? [] : _e;
+        var selectorsStr = selectors.map(function (selector) { return ((0,index_all.isString)(selector) ? selector : selector.toString()); }).join('');
+        var selectorsRes = [];
+        selectorsStr && selectorsRes.push("".concat(selectorsStr).concat(state ? ":".concat(state) : ''));
+        selectorsAdd && selectorsRes.push(selectorsAdd);
+        var selectorsKey = selectorsRes.join(', ');
+        var typeStr = atRuleType ? "@".concat(atRuleType) : mediaText ? '@media' : '';
+        var atRuleKey = typeStr + (mediaText && typeStr ? " ".concat(mediaText) : '');
+        return "".concat(atRuleKey, "__").concat(selectorsKey);
+    };
     /**
      * On load callback
      * @private
      */
     CssComposer.prototype.onLoad = function () {
         this.rules.add(this.config.rules, { silent: true });
+        this._onItemsResetCache(this.rules);
     };
     /**
      * Do stuff after load
@@ -40049,6 +42508,21 @@ var CssComposer = /** @class */ (function (_super) {
             // @ts-ignore Fix add() first in CssRules
             all: this.rules,
         });
+    };
+    /**
+     * Find a rule in the collection by its properties.
+     * @private
+     */
+    CssComposer.prototype._findRule = function (selectors, state, width, ruleProps) {
+        var slc = selectors;
+        if ((0,index_all.isString)(selectors)) {
+            var sm = this.em.Selectors;
+            var singleSel = selectors.split(',')[0].trim();
+            var node = this.em.Parser.parserCss.checkNode({ selectors: singleSel })[0];
+            slc = sm.get(node.selectors);
+        }
+        var rule = this.rules.find(function (r) { return r.compare(slc, state, width, ruleProps); }) || null;
+        return rule;
     };
     /**
      * Add new rule to the collection, if not yet exists with the same selectors
@@ -40075,27 +42549,27 @@ var CssComposer = /** @class */ (function (_super) {
         var s = state || '';
         var w = width || '';
         var opt = css_composer_assign({}, opts);
-        var rule = this.get(selectors, s, w, opt);
-        // do not create rules that were found before
-        // unless this is a single at-rule, for which multiple declarations
-        // make sense (e.g. multiple `@font-type`s)
+        var key = this._makeCacheKeyFromProps(css_composer_assign(css_composer_assign({ state: s, mediaText: w }, opt), { selectors: Array.isArray(selectors) ? selectors : [selectors] }));
+        var cached = this._itemCache.get(key);
+        if (cached && cached.config && !cached.config.singleAtRule) {
+            return cached;
+        }
+        var rule = this._findRule(selectors, s, w, opt);
         if (rule && rule.config && !rule.config.singleAtRule) {
+            this._cacheItem(rule);
             return rule;
         }
-        else {
-            opt.state = s;
-            opt.mediaText = w;
-            opt.selectors = [];
-            // #4727: Prevent updating atRuleType if already defined
-            if (w && !opt.atRuleType) {
-                opt.atRuleType = 'media';
-            }
-            rule = new model_CssRule(opt, this.config);
-            // @ts-ignore
-            rule.get('selectors').add(selectors, addOpts);
-            this.rules.add(rule, addOpts);
-            return rule;
-        }
+        opt.state = s;
+        opt.mediaText = w;
+        opt.selectors = [];
+        if (w && !opt.atRuleType)
+            opt.atRuleType = 'media';
+        rule = new model_CssRule(opt, this.config);
+        // @ts-ignore
+        rule.get('selectors').add(selectors, addOpts);
+        this.rules.add(rule, addOpts);
+        this._cacheItem(rule);
+        return rule;
     };
     /**
      * Get the rule
@@ -40117,14 +42591,15 @@ var CssComposer = /** @class */ (function (_super) {
      * });
      * */
     CssComposer.prototype.get = function (selectors, state, width, ruleProps) {
-        var slc = selectors;
-        if ((0,index_all.isString)(selectors)) {
-            var sm = this.em.Selectors;
-            var singleSel = selectors.split(',')[0].trim();
-            var node = this.em.Parser.parserCss.checkNode({ selectors: singleSel })[0];
-            slc = sm.get(node.selectors);
+        var key = this._makeCacheKeyFromProps(css_composer_assign(css_composer_assign({}, ruleProps), { selectors: Array.isArray(selectors) ? selectors : [selectors], state: state, width: width, mediaText: width }));
+        var cached = this._itemCache.get(key);
+        if (cached)
+            return cached;
+        var rule = this._findRule(selectors, state, width, ruleProps);
+        if (rule) {
+            this._cacheItem(rule);
         }
-        return this.rules.find(function (rule) { return rule.compare(slc, state, width, ruleProps); }) || null;
+        return rule;
     };
     CssComposer.prototype.getAll = function () {
         return this.rules;
@@ -40168,7 +42643,7 @@ var CssComposer = /** @class */ (function (_super) {
             var style = rule.style || {};
             (0,mixins.isObject)(props) && model.set(props, opts);
             if (updateStyle) {
-                var styleUpdate = opts.extend ? css_composer_assign(css_composer_assign({}, model.get('style')), style) : style;
+                var styleUpdate = opts.extend ? css_composer_assign(css_composer_assign({}, model.getStyle('', { skipResolve: true })), style) : style;
                 model.setStyle(styleUpdate, opts);
             }
             result.push(model);
@@ -40389,8 +42864,9 @@ var CssComposer = /** @class */ (function (_super) {
      */
     CssComposer.prototype.remove = function (rule, opts) {
         var toRemove = (0,index_all.isString)(rule) ? this.getRules(rule) : rule;
-        var result = this.getAll().remove(toRemove, opts);
-        return (0,index_all.isArray)(result) ? result : [result];
+        var arr = Array.isArray(toRemove) ? toRemove : [toRemove];
+        var result = this.getAll().remove(arr, opts);
+        return Array.isArray(result) ? result : [result];
     };
     /**
      * Remove all rules
@@ -40398,6 +42874,7 @@ var CssComposer = /** @class */ (function (_super) {
      */
     CssComposer.prototype.clear = function (opts) {
         if (opts === void 0) { opts = {}; }
+        this._clearItemCache();
         this.getAll().reset([], opts);
         return this;
     };
@@ -40504,7 +42981,7 @@ var Block_extends = (undefined && undefined.__extends) || (function () {
 
 /**
  * @property {String} label Block label, eg. `My block`
- * @property {String|Object} content The content of the block. Might be an HTML string or a [Component Defintion](/modules/Components.html#component-definition)
+ * @property {String|Object} content The content of the block. Might be an HTML string or a [Component Definition](/modules/Components.html#component-definition)
  * @property {String} [media=''] HTML string for the media/icon of the block, eg. `<svg ...`, `<img ...`, etc.
  * @property {String} [category=''] Block category, eg. `Basic blocks`
  * @property {Boolean} [activate=false] If true, triggers the `active` event on the dropped component.
@@ -40701,7 +43178,6 @@ var BlocksEvents;
      */
     BlocksEvents["all"] = "block";
 })(BlocksEvents || (BlocksEvents = {}));
-/**{END_EVENTS}*/
 // need this to avoid the TS documentation generator to break
 /* harmony default export */ const block_manager_types = ((/* unused pure expression or super */ null && (BlocksEvents)));
 
@@ -40808,7 +43284,7 @@ var BlockView = /** @class */ (function (_super) {
                 target = wrapper;
         }
         var result = target && target.append(content, { at: insertAt })[0];
-        result && em.setSelected(result, { scroll: 1 });
+        result && em.setSelected(result, { scroll: true });
     };
     /**
      * Start block dragging
@@ -40914,7 +43390,7 @@ var ModuleCategoryView_extends = (undefined && undefined.__extends) || (function
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var ModuleCategoryView_makeTemplateObject = (undefined && undefined.__makeTemplateObject) || function (cooked, raw) {
+var __makeTemplateObject = (undefined && undefined.__makeTemplateObject) || function (cooked, raw) {
     if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
     return cooked;
 };
@@ -40945,7 +43421,7 @@ var CategoryView = /** @class */ (function (_super) {
     };
     CategoryView.prototype.template = function (_a) {
         var pfx = _a.pfx, label = _a.label, catName = _a.catName;
-        return html(ModuleCategoryView_templateObject_1 || (ModuleCategoryView_templateObject_1 = ModuleCategoryView_makeTemplateObject(["\n      <div class=\"", "title\" data-title>\n        <i class=\"", "caret-icon\"></i>\n        ", "\n      </div>\n      <div class=\"", "", "s-c\"></div>\n    "], ["\n      <div class=\"", "title\" data-title>\n        <i class=\"", "caret-icon\"></i>\n        ", "\n      </div>\n      <div class=\"", "", "s-c\"></div>\n    "])), pfx, pfx, label, pfx, catName);
+        return html(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n      <div class=\"", "title\" data-title>\n        <i class=\"", "caret-icon\"></i>\n        ", "\n      </div>\n      <div class=\"", "", "s-c\"></div>\n    "], ["\n      <div class=\"", "title\" data-title>\n        <i class=\"", "caret-icon\"></i>\n        ", "\n      </div>\n      <div class=\"", "", "s-c\"></div>\n    "])), pfx, pfx, label, pfx, catName);
     };
     /** @ts-ignore */
     CategoryView.prototype.attributes = function () {
@@ -40998,7 +43474,7 @@ var CategoryView = /** @class */ (function (_super) {
     return CategoryView;
 }(common/* View */.Ss));
 /* harmony default export */ const ModuleCategoryView = (CategoryView);
-var ModuleCategoryView_templateObject_1;
+var templateObject_1;
 
 ;// CONCATENATED MODULE: ./src/block_manager/view/BlocksView.ts
 var BlocksView_extends = (undefined && undefined.__extends) || (function () {
@@ -41250,28 +43726,27 @@ var block_manager_assign = (undefined && undefined.__assign) || function () {
 var BlockManager = /** @class */ (function (_super) {
     block_manager_extends(BlockManager, _super);
     function BlockManager(em) {
-        var _a;
-        var _this = _super.call(this, em, 'BlockManager', new model_Blocks(((_a = em.config.blockManager) === null || _a === void 0 ? void 0 : _a.blocks) || [], { em: em }), BlocksEvents, block_manager_config_config()) || this;
+        var _this = _super.call(this, em, 'BlockManager', new model_Blocks([], { em: em }), BlocksEvents, block_manager_config_config()) || this;
         _this.events = BlocksEvents;
         _this.Block = model_Block;
         _this.Blocks = model_Blocks;
         _this.Category = ModuleCategory;
         _this.Categories = ModuleCategories;
         _this.storageKey = '';
-        // Global blocks collection
         _this.blocks = _this.all;
         _this.blocksVisible = new model_Blocks(_this.blocks.models, { em: em });
-        _this.categories = new ModuleCategories([], {
-            em: em,
-            events: { update: BlocksEvents.categoryUpdate },
-        });
-        // Setup the sync between the global and public collections
-        _this.blocks.on('add', function (model) { return _this.blocksVisible.add(model); });
-        _this.blocks.on('remove', function (model) { return _this.blocksVisible.remove(model); });
-        _this.blocks.on('reset', function (coll) { return _this.blocksVisible.reset(coll.models); });
+        _this.categories = new ModuleCategories([], { em: em, events: { update: BlocksEvents.categoryUpdate } });
         _this.__onAllEvent = (0,index_all.debounce)(function () { return _this.__trgCustom(); }, 0);
         return _this;
     }
+    BlockManager.prototype.onInit = function () {
+        var _a = this, config = _a.config, blocks = _a.blocks, blocksVisible = _a.blocksVisible;
+        // Setup the sync between the global and public collections
+        blocks.on('add', function (model) { return blocksVisible.add(model); });
+        blocks.on('remove', function (model) { return blocksVisible.remove(model); });
+        blocks.on('reset', function (coll) { return blocksVisible.reset(coll.models); });
+        blocks.add(config.blocks || []);
+    };
     /**
      * Get configuration object
      * @name getConfig
@@ -41323,12 +43798,15 @@ var BlockManager = /** @class */ (function (_super) {
             var toActive = block.get('activate') || oldActive;
             var toSelect = block.get('select');
             var first = (0,index_all.isArray)(cmp) ? cmp[0] : cmp;
-            if (toSelect || (toActive && toSelect !== false)) {
-                em.setSelected(first);
+            var selected = toSelect || (toActive && toSelect !== false);
+            if (selected) {
+                em.setSelected(first, { activate: toActive });
             }
-            if (toActive) {
+            else if (toActive) {
                 first.trigger('active');
-                oldActive && first.unset(oldKey);
+            }
+            if (toActive && oldActive) {
+                first.unset(oldKey);
             }
             if (block.get('resetId')) {
                 first.onAll(function (cmp) { return cmp.resetId(); });
@@ -41596,6 +44074,56 @@ var State = /** @class */ (function (_super) {
 /* harmony default export */ const model_State = (State);
 State.prototype.idAttribute = 'name';
 
+;// CONCATENATED MODULE: ./src/selector_manager/types.ts
+/**{START_EVENTS}*/
+var SelectorEvents;
+(function (SelectorEvents) {
+    /**
+     * @event `selector:add` Selector added. The Selector is passed as an argument to the callback.
+     * @example
+     * editor.on('selector:add', (selector) => { ... });
+     */
+    SelectorEvents["add"] = "selector:add";
+    /**
+     * @event `selector:remove` Selector removed. The Selector is passed as an argument to the callback.
+     * @example
+     * editor.on('selector:remove', (selector) => { ... });
+     */
+    SelectorEvents["remove"] = "selector:remove";
+    /**
+     * @event `selector:remove:before` Before selector remove. The Selector is passed as an argument to the callback.
+     * @example
+     * editor.on('selector:remove:before', (selector) => { ... });
+     */
+    SelectorEvents["removeBefore"] = "selector:remove:before";
+    /**
+     * @event `selector:update` Selector updated. The Selector and the object containing changes are passed as arguments to the callback.
+     * @example
+     * editor.on('selector:update', (selector, changes) => { ... });
+     */
+    SelectorEvents["update"] = "selector:update";
+    /**
+     * @event `selector:state` States changed. An object containing all the available data about the triggered event is passed as an argument to the callback.
+     * @example
+     * editor.on('selector:state', (state) => { ... });
+     */
+    SelectorEvents["state"] = "selector:state";
+    /**
+     * @event `selector:custom` Custom selector event. An object containing states, selected selectors, and container is passed as an argument.
+     * @example
+     * editor.on('selector:custom', ({ states, selected, container }) => { ... });
+     */
+    SelectorEvents["custom"] = "selector:custom";
+    /**
+     * @event `selector` Catch-all event for all the events mentioned above. An object containing all the available data about the triggered event is passed as an argument to the callback.
+     * @example
+     * editor.on('selector', ({ event, selector, changes, ... }) => { ... });
+     */
+    SelectorEvents["all"] = "selector";
+})(SelectorEvents || (SelectorEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const selector_manager_types = ((/* unused pure expression or super */ null && (SelectorEvents)));
+
 ;// CONCATENATED MODULE: ./src/selector_manager/view/ClassTagView.ts
 var ClassTagView_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -41777,9 +44305,9 @@ var ClassTagsView = /** @class */ (function (_super) {
         _this.em = em;
         _this.componentChanged = (0,index_all.debounce)(_this.componentChanged.bind(_this), 0);
         _this.checkSync = (0,index_all.debounce)(_this.checkSync.bind(_this), 0);
-        var eventCmpUpdate = dom_components_types/* ComponentsEvents */.I.update;
+        var eventCmpUpdate = dom_components_types/* ComponentsEvents */.IT.update;
         var evClsUp = "".concat(eventCmpUpdate, ":classes");
-        var toList = "component:toggled ".concat(evClsUp);
+        var toList = "".concat(dom_components_types/* ComponentsEvents */.IT.toggled, " ").concat(evClsUp);
         var toListCls = "".concat(evClsUp, " ").concat(eventCmpUpdate, ":attributes:id change:state");
         _this.listenTo(em, toList, _this.componentChanged);
         _this.listenTo(em, 'styleManager:update', _this.componentChanged);
@@ -41826,8 +44354,8 @@ var ClassTagsView = /** @class */ (function (_super) {
             ruleComponents.push(ruleComponent);
         });
         style && rule.addStyle(style);
-        em.trigger('component:toggled');
-        em.trigger('component:sync-style', {
+        em.trigger(dom_components_types/* ComponentsEvents */.IT.toggled);
+        em.trigger(dom_components_types/* ComponentsEvents */.IT.syncStyle, {
             component: target,
             selectors: selectors,
             mediaText: mediaText,
@@ -42157,23 +44685,13 @@ var ClassTagsView_templateObject_1, templateObject_2, templateObject_3, template
  * })
  * ```
  *
- * Once the editor is instantiated you can use its API and listen to its events. Before using these methods, you should get the module from the instance.
+ * Once the editor is instantiated you can use its API. Before using these methods you should get the module from the instance.
  *
  * ```js
- * // Listen to events
- * editor.on('selector:add', (selector) => { ... });
- *
- * // Use the API
  * const sm = editor.Selectors;
- * sm.add(...);
  * ```
  *
- * ## Available Events
- * * `selector:add` - Selector added. The [Selector] is passed as an argument to the callback.
- * * `selector:remove` - Selector removed. The [Selector] is passed as an argument to the callback.
- * * `selector:update` - Selector updated. The [Selector] and the object containing changes are passed as arguments to the callback.
- * * `selector:state` - States changed. An object containing all the available data about the triggered event is passed as an argument to the callback.
- * * `selector` - Catch-all event for all the events mentioned above. An object containing all the available data about the triggered event is passed as an argument to the callback.
+ * {REPLACE_EVENTS}
  *
  * ## Methods
  * * [getConfig](#getconfig)
@@ -42245,25 +44763,9 @@ var selector_manager_spreadArray = (undefined && undefined.__spreadArray) || fun
 
 
 
+
 var isId = function (str) { return (0,index_all.isString)(str) && str[0] == '#'; };
 var isClass = function (str) { return (0,index_all.isString)(str) && str[0] == '.'; };
-var selector_manager_evAll = 'selector';
-var selector_manager_evPfx = "".concat(selector_manager_evAll, ":");
-var selector_manager_evAdd = "".concat(selector_manager_evPfx, "add");
-var selector_manager_evUpdate = "".concat(selector_manager_evPfx, "update");
-var selector_manager_evRemove = "".concat(selector_manager_evPfx, "remove");
-var selector_manager_evRemoveBefore = "".concat(selector_manager_evRemove, ":before");
-var evCustom = "".concat(selector_manager_evPfx, "custom");
-var evState = "".concat(selector_manager_evPfx, "state");
-var selectorEvents = {
-    all: selector_manager_evAll,
-    update: selector_manager_evUpdate,
-    add: selector_manager_evAdd,
-    remove: selector_manager_evRemove,
-    removeBefore: selector_manager_evRemoveBefore,
-    state: evState,
-    custom: evCustom,
-};
 var SelectorManager = /** @class */ (function (_super) {
     selector_manager_extends(SelectorManager, _super);
     /**
@@ -42273,16 +44775,16 @@ var SelectorManager = /** @class */ (function (_super) {
      * @return {Object}
      */
     function SelectorManager(em) {
-        var _this = _super.call(this, em, 'SelectorManager', new model_Selectors([]), selectorEvents, selector_manager_config_config(), { skipListen: true }) || this;
+        var _this = _super.call(this, em, 'SelectorManager', new model_Selectors([]), SelectorEvents, selector_manager_config_config(), { skipListen: true }) || this;
         _this.Selector = model_Selector;
         _this.Selectors = model_Selectors;
+        _this.events = SelectorEvents;
         _this.storageKey = '';
         (0,index_all.bindAll)(_this, '__updateSelectedByComponents');
-        var config = _this.config;
+        var _a = _this, config = _a.config, events = _a.events;
         var ppfx = config.pStylePrefix;
         if (ppfx)
             config.stylePrefix = ppfx + config.stylePrefix;
-        // Global selectors container
         _this.all = new model_Selectors(config.selectors);
         _this.selected = new model_Selectors([], { em: em, config: config });
         _this.states = new common/* Collection */.pM(config.states.map(function (state) { return new model_State(state); }), { model: model_State });
@@ -42290,13 +44792,13 @@ var SelectorManager = /** @class */ (function (_super) {
         _this.__update = (0,index_all.debounce)(function () { return _this.__trgCustom(); }, 0);
         _this.__initListen({
             collections: [_this.states, _this.selected],
-            propagate: [{ entity: _this.states, event: _this.events.state }],
+            propagate: [{ entity: _this.states, event: events.state }],
         });
-        em.on('change:state', function (m, value) { return em.trigger(evState, value); });
+        em.on('change:state', function (m, value) { return em.trigger(events.state, value); });
         _this.model.on('change:cFirst', function (m, value) { return em.trigger('selector:type', value); });
-        var eventCmpUpdateCls = "".concat(dom_components_types/* ComponentsEvents */.I.update, ":classes");
-        em.on("component:toggled ".concat(eventCmpUpdateCls), _this.__updateSelectedByComponents);
-        var listenTo = "component:toggled ".concat(eventCmpUpdateCls, " change:device styleManager:update selector:state selector:type style:target");
+        var eventCmpUpdateCls = "".concat(dom_components_types/* ComponentsEvents */.IT.update, ":classes");
+        em.on("".concat(dom_components_types/* ComponentsEvents */.IT.toggled, " ").concat(eventCmpUpdateCls), _this.__updateSelectedByComponents);
+        var listenTo = "".concat(dom_components_types/* ComponentsEvents */.IT.toggled, " ").concat(eventCmpUpdateCls, " change:device styleManager:update selector:state selector:type style:target");
         _this.model.listenTo(em, listenTo, function () { return _this.__update(); });
         return _this;
     }
@@ -42316,13 +44818,6 @@ var SelectorManager = /** @class */ (function (_super) {
             container: this.__ctn,
         };
     };
-    // postLoad() {
-    //   this.__postLoad();
-    //   const { em, model } = this;
-    //   const um = em.get('UndoManager');
-    //   um && um.add(model);
-    //   um && um.add(this.pages);
-    // },
     SelectorManager.prototype.postRender = function () {
         this.__appendTo();
         this.__trgCustom();
@@ -42361,10 +44856,8 @@ var SelectorManager = /** @class */ (function (_super) {
         if (props.label && !props.name) {
             props.name = this.escapeName(props.label);
         }
-        var cname = props.name;
-        var config = this.getConfig();
-        var _a = this, all = _a.all, em = _a.em;
-        var selector = cname ? this.get(cname, props.type) : all.where(props)[0];
+        var _a = this, all = _a.all, em = _a.em, config = _a.config;
+        var selector = all.get(props);
         if (!selector) {
             var selModel = props instanceof model_Selector ? props : new model_Selector(props, selector_manager_assign(selector_manager_assign({}, cOpts), { config: config, em: em }));
             return all.add(selModel, cOpts);
@@ -42380,7 +44873,7 @@ var SelectorManager = /** @class */ (function (_super) {
         else if (isClass(name)) {
             name = name.substr(1);
         }
-        return this.all.where({ name: name, type: type })[0];
+        return this.all.get({ name: name, type: type });
     };
     /**
      * Add a new selector to the collection if it does not already exist.
@@ -42422,7 +44915,7 @@ var SelectorManager = /** @class */ (function (_super) {
         var _this = this;
         var added = [];
         if ((0,index_all.isString)(classes)) {
-            classes = classes.trim().split(' ');
+            classes = classes.trim().split(' ').filter(Boolean);
         }
         classes.forEach(function (name) { return added.push(_this.addSelector(name)); });
         return added;
@@ -42658,6 +45151,9 @@ var SelectorManager = /** @class */ (function (_super) {
         selectorTags === null || selectorTags === void 0 ? void 0 : selectorTags.remove();
         this.selectorTags = undefined;
     };
+    // Need for the IStorableModule to run the clenup
+    SelectorManager.prototype.load = function () { };
+    SelectorManager.prototype.store = function () { };
     /**
      * Get common selectors from the current selection.
      * @return {Array<Selector>}
@@ -42707,6 +45203,7 @@ var parser_config_config_config = function () { return ({
         allowUnsafeAttr: false,
         allowUnsafeAttrValue: false,
         keepEmptyTextNodes: false,
+        convertDataGjsAttributesHyphens: false,
     },
 }); };
 /* harmony default export */ const parser_config_config = (parser_config_config_config);
@@ -42946,18 +45443,21 @@ var ParserCss = function (em, config) {
     return ({
         /**
          * Parse CSS string to a desired model object
-         * @param  {String} input CSS string
+         * @param  {String} str CSS string
          * @return {Array<Object>}
          */
-        parse: function (input, opts) {
+        parse: function (str, opts) {
             var _this = this;
-            var _a;
             if (opts === void 0) { opts = {}; }
             var output = [];
             var parserCss = config.parserCss;
             var editor = em === null || em === void 0 ? void 0 : em.Editor;
             var nodes = [];
             var error;
+            var Parser = em === null || em === void 0 ? void 0 : em.Parser;
+            var inputOptions = { input: str };
+            Parser === null || Parser === void 0 ? void 0 : Parser.__emitEvent(ParserEvents.cssBefore, inputOptions);
+            var input = inputOptions.input;
             try {
                 nodes = parserCss ? parserCss(input, editor) : BrowserParserCss(input);
             }
@@ -42967,7 +45467,7 @@ var ParserCss = function (em, config) {
                     throw err;
             }
             nodes.forEach(function (node) { return (output = output.concat(_this.checkNode(node))); });
-            (_a = em === null || em === void 0 ? void 0 : em.Parser) === null || _a === void 0 ? void 0 : _a.__emitEvent(ParserEvents.css, { input: input, output: output, nodes: nodes, error: error });
+            Parser === null || Parser === void 0 ? void 0 : Parser.__emitEvent(ParserEvents.css, { input: input, output: output, nodes: nodes, error: error });
             return output;
         },
         /**
@@ -43085,6 +45585,12 @@ var ParserModule = /** @class */ (function (_super) {
      * @param  {String} [options.htmlType] [HTML mime type](https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString#Argument02) to parse
      * @param  {Boolean} [options.allowScripts=false] Allow `<script>` tags
      * @param  {Boolean} [options.allowUnsafeAttr=false] Allow unsafe HTML attributes (eg. `on*` inline event handlers)
+     * @param  {Boolean} [options.allowUnsafeAttrValue=false] Allow unsafe HTML attribute values (eg. `src="javascript:..."`)
+     * @param  {Boolean} [options.keepEmptyTextNodes=false] Keep whitespaces regardless of whether they are meaningful
+     * @param  {Boolean} [options.asDocument] Treat the HTML string as document
+     * @param  {Boolean|Function} [options.detectDocument] Indicate if or how to detect if the HTML string should be treated as document
+     * @param  {Function} [options.preParser] How to pre-process the HTML string before parsing
+     * @param  {Boolean} [options.convertDataGjsAttributesHyphens=false] Convert `data-gjs-*` attributes from hyphenated to camelCase (eg. `data-gjs-my-component` to `data-gjs-myComponent`)
      * @returns {Object} Object containing the result `{ html: ..., css: ... }`
      * @example
      * const resHtml = Parser.parseHtml(`<table><div>Hi</div></table>`, {
@@ -43824,7 +46330,6 @@ var StorageEvents;
      */
     StorageEvents["errorLoad"] = "storage:error:load";
 })(StorageEvents || (StorageEvents = {}));
-/**{END_EVENTS}*/
 // need this to avoid the TS documentation generator to break
 /* harmony default export */ const storage_manager_types = (StorageEvents);
 
@@ -46188,10 +48693,10 @@ var TraitCheckboxView = /** @class */ (function (_super) {
     // Returns an 8 character hex
     function rgbaToHex(r, g, b, a) {
         var hex = [
-            pad2(convertDecimalToHex(a)),
             pad2(mathRound(r).toString(16)),
             pad2(mathRound(g).toString(16)),
             pad2(mathRound(b).toString(16)),
+            pad2(convertDecimalToHex(a)),
         ];
         return hex.join('');
     }
@@ -46707,10 +49212,10 @@ var TraitCheckboxView = /** @class */ (function (_super) {
         }
         if ((match = matchers.hex8.exec(color))) {
             return {
-                a: convertHexToDecimal(match[1]),
-                r: parseIntFromHex(match[2]),
-                g: parseIntFromHex(match[3]),
-                b: parseIntFromHex(match[4]),
+                r: parseIntFromHex(match[1]),
+                g: parseIntFromHex(match[2]),
+                b: parseIntFromHex(match[3]),
+                a: convertHexToDecimal(match[4]),
                 format: named ? 'name' : 'hex8',
             };
         }
@@ -46873,6 +49378,7 @@ var InputColor_assign = (undefined && undefined.__assign) || function () {
 
 
 
+
 cash_dom["default"] && ColorPicker(cash_dom["default"]);
 var getColor = function (color) {
     var name = color.getFormat() === 'name' && color.toName();
@@ -46998,7 +49504,7 @@ var InputColor = /** @class */ (function (_super) {
                     }
                 } }));
             if (em && em.on) {
-                this.listenTo(em, 'component:selected', function () {
+                this.listenTo(em, dom_components_types/* ComponentsEvents */.IT.selected, function () {
                     _this.movedColor && handleChange_1(_this.movedColor);
                     changed_1 = true;
                     _this.movedColor = '';
@@ -47318,10 +49824,13 @@ var InputNumber = /** @class */ (function (_super) {
                 }
             }
         }
-        if (!limitlessMax && !(0,index_all.isUndefined)(max) && max !== '')
-            val = val > max ? max : val;
-        if (!limitlessMin && !(0,index_all.isUndefined)(min) && min !== '')
-            val = val < min ? min : val;
+        // Apply constraints only if val is a valid number
+        if (!isNaN(val) && val !== '') {
+            if (!limitlessMax && !(0,index_all.isUndefined)(max) && max !== '')
+                val = val > max ? max : val;
+            if (!limitlessMin && !(0,index_all.isUndefined)(min) && min !== '')
+                val = val < min ? min : val;
+        }
         return {
             force: force,
             value: val,
@@ -47479,7 +49988,7 @@ var TraitSelectView = /** @class */ (function (_super) {
 /* harmony default export */ const view_TraitSelectView = (TraitSelectView);
 
 // EXTERNAL MODULE: ./src/domain_abstract/view/DomainViews.ts
-var DomainViews = __webpack_require__(91);
+var DomainViews = __webpack_require__(8242);
 ;// CONCATENATED MODULE: ./src/trait_manager/view/TraitsView.ts
 var TraitsView_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -47496,6 +50005,7 @@ var TraitsView_extends = (undefined && undefined.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+
 
 
 
@@ -47521,7 +50031,7 @@ var TraitsView = /** @class */ (function (_super) {
         _this.classNoCat = "".concat(ppfx, "traits-empty-c");
         _this.catsClass = "".concat(ppfx, "trait-categories");
         _this.collection = new model_Traits([], { em: em });
-        _this.listenTo(em, 'component:toggled', _this.updatedCollection);
+        _this.listenTo(em, dom_components_types/* ComponentsEvents */.IT.toggled, _this.updatedCollection);
         _this.updatedCollection();
         return _this;
     }
@@ -47673,6 +50183,7 @@ var trait_manager_spreadArray = (undefined && undefined.__spreadArray) || functi
 
 
 
+
 var TraitManager = /** @class */ (function (_super) {
     trait_manager_extends(TraitManager, _super);
     /**
@@ -47704,7 +50215,7 @@ var TraitManager = /** @class */ (function (_super) {
         (0,index_all.bindAll)(_this, '__onSelect');
         var upAll = (0,index_all.debounce)(function () { return _this.__upSel(); }, 0);
         var update = (0,index_all.debounce)(function () { return _this.__onUp(); }, 0);
-        state.listenTo(em, 'component:toggled', upAll);
+        state.listenTo(em, dom_components_types/* ComponentsEvents */.IT.toggled, upAll);
         state.listenTo(em, events.value, update);
         state.on('change:traits', _this.__onSelect);
         _this.debounced = [upAll, update];
@@ -47867,8 +50378,40 @@ var navigator_config_config_config = function () { return ({
 }); };
 /* harmony default export */ const navigator_config_config = (navigator_config_config_config);
 
+;// CONCATENATED MODULE: ./src/navigator/types.ts
+/**{START_EVENTS}*/
+var LayerEvents;
+(function (LayerEvents) {
+    /**
+     * @event `layer:root` Root layer changed. The new root component is passed as an argument to the callback.
+     * @example
+     * editor.on('layer:root', (component) => { ... });
+     */
+    LayerEvents["root"] = "layer:root";
+    /**
+     * @event `layer:component` Component layer is updated. The updated component is passed as an argument to the callback.
+     * @example
+     * editor.on('layer:component', (component, opts) => { ... });
+     */
+    LayerEvents["component"] = "layer:component";
+    /**
+     * @event `layer:custom` Custom layer event. Object with container and root is passed as an argument to the callback.
+     * @example
+     * editor.on('layer:custom', ({ container, root }) => { ... });
+     */
+    LayerEvents["custom"] = "layer:custom";
+    /**
+     * @event `layer:render` Component layer rendered. Object with component and rendered layer element is passed as an argument.
+     * @example
+     * editor.on('layer:render', ({ component, el }) => { ... });
+     */
+    LayerEvents["render"] = "layer:render";
+})(LayerEvents || (LayerEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const navigator_types = ((/* unused pure expression or super */ null && (LayerEvents)));
+
 // EXTERNAL MODULE: ./src/utils/sorter/BaseComponentNode.ts
-var BaseComponentNode = __webpack_require__(3253);
+var BaseComponentNode = __webpack_require__(6756);
 ;// CONCATENATED MODULE: ./src/utils/sorter/LayersComponentNode.ts
 var LayersComponentNode_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -48097,17 +50640,18 @@ var ItemsView = /** @class */ (function (_super) {
 /* harmony default export */ const view_ItemsView = (ItemsView);
 
 // EXTERNAL MODULE: ./src/commands/view/CommandAbstract.ts
-var CommandAbstract = __webpack_require__(5301);
+var CommandAbstract = __webpack_require__(9946);
 ;// CONCATENATED MODULE: ./src/commands/config/config.ts
 var commands_config_config_config = function () { return ({
     stylePrefix: 'com-',
     defaults: {},
     strict: true,
+    defaultOptions: {},
 }); };
 /* harmony default export */ const commands_config_config = (commands_config_config_config);
 
 // EXTERNAL MODULE: ./src/commands/types.ts
-var commands_types = __webpack_require__(8351);
+var commands_types = __webpack_require__(1738);
 ;// CONCATENATED MODULE: ./src/commands/index.ts
 /**
  * You can customize the initial state of the module from the editor initialization, by passing the following [Configuration Object](https://github.com/GrapesJS/grapesjs/blob/master/src/commands/config/config.ts)
@@ -48123,7 +50667,7 @@ var commands_types = __webpack_require__(8351);
  *
  * ```js
  * // Listen to events
- * editor.on('run', () => { ... });
+ * editor.on('command:run', () => { ... });
  *
  * // Use the API
  * const commands = editor.Commands;
@@ -48213,8 +50757,8 @@ var commandsDef = [
     ['component-drag', 'ComponentDrag'],
 ];
 var defComOptions = { preserveSelected: 1 };
-var getOnComponentDragStart = function (em) { return function (data) { return em.trigger("".concat(eventDrag, ":start"), data); }; };
-var getOnComponentDrag = function (em) { return function (data) { return em.trigger(eventDrag, data); }; };
+var getOnComponentDragStart = function (em) { return function (data) { return em.trigger(dom_components_types/* ComponentsEvents */.IT.dragStart, data); }; };
+var getOnComponentDrag = function (em) { return function (data) { return em.trigger(dom_components_types/* ComponentsEvents */.IT.drag, data); }; };
 var getOnComponentDragEnd = function (em, targets, opts) {
     if (opts === void 0) { opts = {}; }
     return function (a, b, data) {
@@ -48223,7 +50767,7 @@ var getOnComponentDragEnd = function (em, targets, opts) {
             em.setSelected(targets);
             targets[0].emitUpdate();
         });
-        em.trigger("".concat(eventDrag, ":end"), data);
+        em.trigger(dom_components_types/* ComponentsEvents */.IT.dragEnd, data);
         // Defer selectComponent in order to prevent canvas "freeze" #2692
         setTimeout(function () { return em.runDefault(defComOptions); });
         // Dirty patch to prevent parent selection on drop
@@ -48267,7 +50811,7 @@ var CommandsModule = /** @class */ (function (_super) {
         };
         defaultCommands['tlb-move'] = {
             run: function (ed, s, opts) {
-                var _a;
+                var _a, _b;
                 if (opts === void 0) { opts = {}; }
                 var dragger;
                 var em = ed.getModel();
@@ -48281,7 +50825,7 @@ var CommandsModule = /** @class */ (function (_super) {
                 if (!(target === null || target === void 0 ? void 0 : target.get('draggable'))) {
                     return em.logWarning('The element is not draggable');
                 }
-                var mode = target.get('dmode') || em.get('dmode');
+                var mode = opts.mode || target.get('dmode') || em.get('dmode');
                 var hideTlb = function () { return em.stopDefault(defComOptions); };
                 var altMode = (0,index_all.includes)(modes, mode);
                 targets.forEach(function (trg) { return trg.trigger('disable', { fromMove: true }); });
@@ -48304,7 +50848,7 @@ var CommandsModule = /** @class */ (function (_super) {
                 }
                 else {
                     if (nativeDrag) {
-                        event.dataTransfer.setDragImage((_a = target.view) === null || _a === void 0 ? void 0 : _a.el, 0, 0);
+                        (_a = event === null || event === void 0 ? void 0 : event.dataTransfer) === null || _a === void 0 ? void 0 : _a.setDragImage((_b = target.view) === null || _b === void 0 ? void 0 : _b.el, 0, 0);
                         //sel.set('status', 'freezed');
                     }
                     var cmdMove = ed.Commands.get('move-comp');
@@ -48492,18 +51036,17 @@ var CommandsModule = /** @class */ (function (_super) {
      * @private
      */
     CommandsModule.prototype.runCommand = function (command, options) {
+        var _a, _b;
         if (options === void 0) { options = {}; }
         var result;
-        if (command && command.run) {
-            var _a = this, em = _a.em, config = _a.config;
+        if (command === null || command === void 0 ? void 0 : command.run) {
+            var _c = this, em = _c.em, config = _c.config;
             var id = command.id;
             var editor = em.Editor;
             if (!this.isActive(id) || options.force || !config.strict) {
-                // @ts-ignore
+                var defaultOptionsRunFn = (_b = (_a = config.defaultOptions) === null || _a === void 0 ? void 0 : _a[id]) === null || _b === void 0 ? void 0 : _b.run;
+                (0,index_all.isFunction)(defaultOptionsRunFn) && (options = defaultOptionsRunFn(options));
                 result = editor && command.callRun(editor, options);
-                if (id && command.stop && !command.noStop && !options.abort) {
-                    this.active[id] = result;
-                }
             }
         }
         return result;
@@ -48516,16 +51059,16 @@ var CommandsModule = /** @class */ (function (_super) {
      * @private
      */
     CommandsModule.prototype.stopCommand = function (command, options) {
+        var _a, _b;
         if (options === void 0) { options = {}; }
         var result;
-        if (command && command.run) {
-            var _a = this, em = _a.em, config = _a.config;
+        if (command === null || command === void 0 ? void 0 : command.run) {
+            var _c = this, em = _c.em, config = _c.config;
             var id = command.id;
             var editor = em.Editor;
             if (this.isActive(id) || options.force || !config.strict) {
-                if (id)
-                    delete this.active[id];
-                // @ts-ignore
+                var defaultOptionsStopFn = (_b = (_a = config.defaultOptions) === null || _a === void 0 ? void 0 : _a[id]) === null || _b === void 0 ? void 0 : _b.stop;
+                (0,index_all.isFunction)(defaultOptionsStopFn) && (options = defaultOptionsStopFn(options));
                 result = command.callStop(editor, options);
             }
         }
@@ -48587,6 +51130,7 @@ var ItemView_assign = (undefined && undefined.__assign) || function () {
     };
     return ItemView_assign.apply(this, arguments);
 };
+
 
 
 
@@ -48957,7 +51501,7 @@ var ItemView = /** @class */ (function (_super) {
         var onRender = config.onRender;
         var opt = { component: model, el: el };
         onRender.bind(this)(opt);
-        this.em.trigger('layer:render', opt);
+        this.em.trigger(LayerEvents.render, opt);
     };
     return ItemView;
 }(common/* View */.Ss));
@@ -48975,15 +51519,13 @@ var ItemView = /** @class */ (function (_super) {
  * })
  * ```
  *
- * Once the editor is instantiated you can use its API. Before using these methods you should get the module from the instance
+ * Once the editor is instantiated you can use its API. Before using these methods you should get the module from the instance.
  *
  * ```js
  * const layers = editor.Layers;
  * ```
  *
- * ## Available Events
- * * `layer:root` - Root layer changed. The new root component is passed as an argument to the callback.
- * * `layer:component` - Component layer is updated. The updated component is passed as an argument to the callback.
+ * {REPLACE_EVENTS}
  *
  * ## Methods
  * * [setRoot](#setroot)
@@ -49037,20 +51579,10 @@ var navigator_assign = (undefined && undefined.__assign) || function () {
 
 
 
-var navigator_evAll = 'layer';
-var navigator_evPfx = "".concat(navigator_evAll, ":");
-var evRoot = "".concat(navigator_evPfx, "root");
-var evComponent = "".concat(navigator_evPfx, "component");
-var navigator_evCustom = "".concat(navigator_evPfx, "custom");
-var events = {
-    all: navigator_evAll,
-    root: evRoot,
-    component: evComponent,
-    custom: navigator_evCustom,
-};
+
 var styleOpts = { mediaText: '' };
 var propsToListen = ['open', 'status', 'locked', 'custom-name', 'components', 'classes']
-    .map(function (p) { return "".concat(dom_components_types/* ComponentsEvents */.I.update, ":").concat(p); })
+    .map(function (p) { return "".concat(dom_components_types/* ComponentsEvents */.IT.update, ":").concat(p); })
     .join(' ');
 var isStyleHidden = function (style) {
     if (style === void 0) { style = {}; }
@@ -49060,7 +51592,7 @@ var LayerManager = /** @class */ (function (_super) {
     navigator_extends(LayerManager, _super);
     function LayerManager(em) {
         var _this = _super.call(this, em, 'LayerManager', navigator_config_config()) || this;
-        _this.events = events;
+        _this.events = LayerEvents;
         (0,index_all.bindAll)(_this, 'componentChanged', '__onRootChange', '__onComponent');
         _this.model = new ModuleModel/* default */.A(_this, { opened: {} });
         // @ts-ignore
@@ -49070,7 +51602,7 @@ var LayerManager = /** @class */ (function (_super) {
     LayerManager.prototype.onLoad = function () {
         var _this = this;
         var _a = this, em = _a.em, config = _a.config, model = _a.model;
-        model.listenTo(em, 'component:selected', this.componentChanged);
+        model.listenTo(em, dom_components_types/* ComponentsEvents */.IT.selected, this.componentChanged);
         model.on('change:root', this.__onRootChange);
         model.listenTo(em, propsToListen, this.__onComponent);
         this.componentChanged();
@@ -49161,7 +51693,7 @@ var LayerManager = /** @class */ (function (_super) {
         }
         component.setStyle(style, styleOpts);
         this.updateLayer(component);
-        this.em.trigger('component:toggled'); // Updates Style Manager #2938
+        this.em.trigger(dom_components_types/* ComponentsEvents */.IT.toggled); // Updates Style Manager #2938
     };
     /**
      * Check the layer visibility state of the component.
@@ -49309,9 +51841,10 @@ var LayerManager = /** @class */ (function (_super) {
     };
     LayerManager.prototype.__onRootChange = function () {
         var _a;
+        var _b = this, em = _b.em, events = _b.events;
         var root = this.getRoot();
         (_a = this.view) === null || _a === void 0 ? void 0 : _a.setRoot(root);
-        this.em.trigger(evRoot, root);
+        em.trigger(events.root, root);
         this.__trgCustom();
     };
     LayerManager.prototype.__getLayerFromComponent = function (cmp) {
@@ -49336,7 +51869,8 @@ var LayerManager = /** @class */ (function (_super) {
         });
     };
     LayerManager.prototype.updateLayer = function (component, opts) {
-        this.em.trigger(evComponent, component, opts);
+        var _a = this, em = _a.em, events = _a.events;
+        em.trigger(events.component, component, opts);
     };
     return LayerManager;
 }(abstract_Module));
@@ -49424,7 +51958,7 @@ var Asset = /** @class */ (function (_super) {
      * asset.getSrc(); // -> 'https://.../image.png'
      * */
     Asset.prototype.getSrc = function () {
-        return this.get('src');
+        return this.get('src') || '';
     };
     /**
      * Get filename of the asset (based on `src`).
@@ -49436,7 +51970,7 @@ var Asset = /** @class */ (function (_super) {
      * asset.getFilename(); // -> 'image'
      * */
     Asset.prototype.getFilename = function () {
-        return this.get('src').split('/').pop().split('?').shift();
+        return this.getSrc().split('/').pop().split('?').shift();
     };
     /**
      * Get extension of the asset (based on `src`).
@@ -49951,7 +52485,6 @@ var AssetsEvents;
      */
     AssetsEvents["all"] = "asset";
 })(AssetsEvents || (AssetsEvents = {}));
-/**{END_EVENTS}*/
 // need this to avoid the TS documentation generator to break
 /* harmony default export */ const asset_manager_types = (AssetsEvents);
 
@@ -50172,7 +52705,7 @@ var FileUploaderView = /** @class */ (function (_super) {
         if (opts === void 0) { opts = {}; }
         var _this = _super.call(this, opts) || this;
         _this.options = opts;
-        var c = opts.config || {};
+        var c = (opts.config || {});
         _this.module = opts.module;
         _this.config = c;
         // @ts-ignore
@@ -50259,10 +52792,11 @@ var FileUploaderView = /** @class */ (function (_super) {
      * @return {Promise}
      * @private
      * */
-    FileUploaderView.prototype.uploadFile = function (e, clb) {
+    FileUploaderView.prototype.uploadFile = function (e, clb, opts) {
         var _this = this;
-        // @ts-ignore
-        var files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
+        var _a;
+        opts; // Options are not used here but can be used by the custom uploadFile function
+        var files = e.dataTransfer ? e.dataTransfer.files : (_a = e.target) === null || _a === void 0 ? void 0 : _a.files;
         var config = this.config;
         var beforeUpload = config.beforeUpload;
         var beforeUploadResponse = beforeUpload && beforeUpload(files);
@@ -50932,6 +53466,432 @@ var AssetManager = /** @class */ (function (_super) {
 }(ItemManagerModule));
 /* harmony default export */ const asset_manager = (AssetManager);
 
+;// CONCATENATED MODULE: ./src/device_manager/config/config.ts
+var device_manager_config_config_config = function () { return ({
+    default: '',
+    devices: [
+        {
+            id: 'desktop',
+            name: 'Desktop',
+            width: '',
+        },
+        {
+            id: 'tablet',
+            name: 'Tablet',
+            width: '770px',
+            widthMedia: '992px',
+        },
+        {
+            id: 'mobileLandscape',
+            name: 'Mobile landscape',
+            width: '568px',
+            widthMedia: '768px',
+        },
+        {
+            id: 'mobilePortrait',
+            name: 'Mobile portrait',
+            width: '320px',
+            widthMedia: '480px',
+        },
+    ],
+}); };
+/* harmony default export */ const device_manager_config_config = (device_manager_config_config_config);
+
+;// CONCATENATED MODULE: ./src/device_manager/model/Device.ts
+var Device_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+/**
+ * @typedef Device
+ * @property {String} [name=''] Device type, eg. `Mobile`
+ * @property {String} [width] Width to set for the editor iframe, eg. '900px'
+ * @property {String} [height=''] Height to set for the editor iframe, eg. '600px'
+ * @property {String} [widthMedia=''] The width which will be used in media queries, If empty the width will be used
+ * @property {Number} [priority=null] Setup the order of media queries
+ */
+var Device = /** @class */ (function (_super) {
+    Device_extends(Device, _super);
+    function Device() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Device.prototype.defaults = function () {
+        return {
+            name: '',
+            width: null,
+            height: '',
+            widthMedia: null,
+            priority: null,
+        };
+    };
+    Device.prototype.initialize = function () {
+        var _this = this;
+        this.get('widthMedia') === null && this.set('widthMedia', this.get('width'));
+        this.get('width') === null && this.set('width', this.get('widthMedia'));
+        !this.get('priority') && this.set('priority', parseFloat(this.get('widthMedia')) || 0);
+        var toCheck = ['width', 'height', 'widthMedia'];
+        toCheck.forEach(function (prop) { return _this.checkUnit(prop); });
+    };
+    Device.prototype.checkUnit = function (prop) {
+        var pr = (this.get(prop) || '');
+        var noUnit = (parseFloat(pr) || 0).toString() === pr.toString();
+        noUnit && this.set(prop, "".concat(pr, "px"));
+    };
+    Device.prototype.getName = function () {
+        return this.get('name') || this.get('id');
+    };
+    Device.prototype.getWidthMedia = function () {
+        return this.get('widthMedia') || '';
+    };
+    return Device;
+}(common/* Model */.Kx));
+/* harmony default export */ const model_Device = (Device);
+
+;// CONCATENATED MODULE: ./src/device_manager/model/Devices.ts
+var Devices_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+
+
+var Devices = /** @class */ (function (_super) {
+    Devices_extends(Devices, _super);
+    function Devices() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return Devices;
+}(common/* Collection */.pM));
+/* harmony default export */ const model_Devices = (Devices);
+Devices.prototype.model = model_Device;
+
+;// CONCATENATED MODULE: ./src/device_manager/view/DevicesView.ts
+var DevicesView_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var DevicesView_makeTemplateObject = (undefined && undefined.__makeTemplateObject) || function (cooked, raw) {
+    if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
+    return cooked;
+};
+
+
+var DevicesView = /** @class */ (function (_super) {
+    DevicesView_extends(DevicesView, _super);
+    function DevicesView(o) {
+        var _this = _super.call(this, o) || this;
+        _this.config = o.config || {};
+        _this.em = _this.config.em;
+        _this.ppfx = _this.config.pStylePrefix || '';
+        _this.listenTo(_this.em, 'change:device', _this.updateSelect);
+        return _this;
+    }
+    DevicesView.prototype.template = function (_a) {
+        var ppfx = _a.ppfx, label = _a.label;
+        return html(DevicesView_templateObject_1 || (DevicesView_templateObject_1 = DevicesView_makeTemplateObject(["\n      <div class=\"", "device-label\">", "</div>\n      <div class=\"", "field ", "select\">\n        <span id=\"", "input-holder\">\n          <select class=\"", "devices\"></select>\n        </span>\n        <div class=\"", "sel-arrow\">\n          <div class=\"", "d-s-arrow\"></div>\n        </div>\n      </div>\n      <button style=\"display:none\" class=\"", "add-trasp\" data-add-trasp>+</button>\n    "], ["\n      <div class=\"", "device-label\">", "</div>\n      <div class=\"", "field ", "select\">\n        <span id=\"", "input-holder\">\n          <select class=\"", "devices\"></select>\n        </span>\n        <div class=\"", "sel-arrow\">\n          <div class=\"", "d-s-arrow\"></div>\n        </div>\n      </div>\n      <button style=\"display:none\" class=\"", "add-trasp\" data-add-trasp>+</button>\n    "])), ppfx, label, ppfx, ppfx, ppfx, ppfx, ppfx, ppfx, ppfx);
+    };
+    DevicesView.prototype.events = function () {
+        return {
+            change: 'updateDevice',
+            'click [data-add-trasp]': 'startAdd',
+        };
+    };
+    /**
+     * Start adding new device
+     * @return {[type]} [description]
+     * @private
+     */
+    DevicesView.prototype.startAdd = function () { };
+    /**
+     * Update device of the editor
+     * @private
+     */
+    DevicesView.prototype.updateDevice = function () {
+        var em = this.em;
+        if (em) {
+            var devEl = this.devicesEl;
+            em.set('device', devEl ? devEl.val() : '');
+        }
+    };
+    /**
+     * Update select value on device update
+     * @private
+     */
+    DevicesView.prototype.updateSelect = function () {
+        var _a = this, em = _a.em, devicesEl = _a.devicesEl;
+        if (em && em.getDeviceModel && devicesEl) {
+            var device = em.getDeviceModel();
+            devicesEl.val(device ? device.get('id') : '');
+        }
+    };
+    /**
+     * Return devices options
+     * @return {string} String of options
+     * @private
+     */
+    DevicesView.prototype.getOptions = function () {
+        var _a = this, collection = _a.collection, em = _a.em;
+        var result = '';
+        collection.forEach(function (device) {
+            var _a = device.attributes, name = _a.name, id = _a.id;
+            var label = (em && em.t && em.t("deviceManager.devices.".concat(id))) || name;
+            result += "<option value=\"".concat(id || name, "\">").concat(label, "</option>");
+        });
+        return result;
+    };
+    DevicesView.prototype.render = function () {
+        var _a = this, em = _a.em, ppfx = _a.ppfx, $el = _a.$el, el = _a.el;
+        var label = em && em.t && em.t('deviceManager.device');
+        $el.html(this.template({ ppfx: ppfx, label: label }));
+        this.devicesEl = $el.find(".".concat(ppfx, "devices"));
+        this.devicesEl.append(this.getOptions());
+        this.devicesEl.val(em.get('device'));
+        el.className = "".concat(ppfx, "devices-c");
+        return this;
+    };
+    return DevicesView;
+}(common/* View */.Ss));
+/* harmony default export */ const view_DevicesView = (DevicesView);
+var DevicesView_templateObject_1;
+
+;// CONCATENATED MODULE: ./src/device_manager/index.ts
+var device_manager_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var device_manager_assign = (undefined && undefined.__assign) || function () {
+    device_manager_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return device_manager_assign.apply(this, arguments);
+};
+/**
+ * You can customize the initial state of the module from the editor initialization, by passing the following [Configuration Object](https://github.com/GrapesJS/grapesjs/blob/master/src/device_manager/config/config.ts)
+ * ```js
+ * const editor = grapesjs.init({
+ *  deviceManager: {
+ *    // options
+ *  }
+ * })
+ * ```
+ *
+ * Once the editor is instantiated you can use its API. Before using these methods you should get the module from the instance
+ *
+ * ```js
+ * const deviceManager = editor.Devices;
+ * ```
+ * {REPLACE_EVENTS}
+ *
+ * ## Methods
+ * * [add](#add)
+ * * [get](#get)
+ * * [getDevices](#getdevices)
+ * * [remove](#remove)
+ * * [select](#select)
+ * * [getSelected](#getselected)
+ *
+ * [Device]: device.html
+ *
+ * @module Devices
+ */
+
+
+
+
+
+
+
+var DeviceManager = /** @class */ (function (_super) {
+    device_manager_extends(DeviceManager, _super);
+    function DeviceManager(em) {
+        var _a;
+        var _this = _super.call(this, em, 'DeviceManager', new model_Devices(), types, device_manager_config_config()) || this;
+        _this.Device = model_Device;
+        _this.Devices = model_Devices;
+        _this.storageKey = '';
+        _this.devices = _this.all;
+        (_a = _this.config.devices) === null || _a === void 0 ? void 0 : _a.forEach(function (device) { return _this.add(device, { silent: true }); });
+        _this.select(_this.config.default || _this.devices.at(0));
+        em.on('change:device', _this._onSelect, _this);
+        return _this;
+    }
+    DeviceManager.prototype._onSelect = function (m, deviceId, opts) {
+        var _a = this, em = _a.em, events = _a.events;
+        var prevId = m.previous('device');
+        var newDevice = this.get(deviceId);
+        var ev = events.select;
+        em.trigger(ev, newDevice, this.get(prevId));
+        this.__catchAllEvent(ev, newDevice, opts);
+    };
+    /**
+     * Add new device
+     * @param {Object} props Device properties
+     * @returns {[Device]} Added device
+     * @example
+     * const device1 = deviceManager.add({
+     *  // Without an explicit ID, the `name` will be taken. In case of missing `name`, a random ID will be created.
+     *  id: 'tablet',
+     *  name: 'Tablet',
+     *  width: '900px', // This width will be applied on the canvas frame and for the CSS media
+     * });
+     * const device2 = deviceManager.add({
+     *  id: 'tablet2',
+     *  name: 'Tablet 2',
+     *  width: '800px', // This width will be applied on the canvas frame
+     *  widthMedia: '810px', // This width that will be used for the CSS media
+     *  height: '600px', // Height will be applied on the canvas frame
+     * });
+     */
+    DeviceManager.prototype.add = function (props, options) {
+        if (options === void 0) { options = {}; }
+        var result;
+        var opts = options;
+        // Support old API
+        if ((0,index_all.isString)(props)) {
+            var width = options;
+            opts = arguments[2] || {};
+            result = device_manager_assign(device_manager_assign({}, opts), { id: props, name: opts.name || props, width: width });
+        }
+        else {
+            result = props;
+        }
+        if (!result.id) {
+            result.id = result.name || this._createId();
+        }
+        return this.devices.add(result, opts);
+    };
+    /**
+     * Return device by ID
+     * @param  {String} id ID of the device
+     * @returns {[Device]|null}
+     * @example
+     * const device = deviceManager.get('Tablet');
+     * console.log(JSON.stringify(device));
+     * // {name: 'Tablet', width: '900px'}
+     */
+    DeviceManager.prototype.get = function (id) {
+        // Support old API
+        var byName = this.getAll().filter(function (d) { return d.get('name') === id; })[0];
+        return byName || this.devices.get(id) || null;
+    };
+    /**
+     * Remove device
+     * @param {String|[Device]} device Device or device id
+     * @returns {[Device]} Removed device
+     * @example
+     * const removed = deviceManager.remove('device-id');
+     * // or by passing the Device
+     * const device = deviceManager.get('device-id');
+     * deviceManager.remove(device);
+     */
+    DeviceManager.prototype.remove = function (device, opts) {
+        if (opts === void 0) { opts = {}; }
+        return this.__remove(device, opts);
+    };
+    /**
+     * Return all devices
+     * @returns {Array<[Device]>}
+     * @example
+     * const devices = deviceManager.getDevices();
+     * console.log(JSON.stringify(devices));
+     * // [{name: 'Desktop', width: ''}, ...]
+     */
+    DeviceManager.prototype.getDevices = function () {
+        return this.devices.models;
+    };
+    /**
+     * Change the selected device. This will update the frame in the canvas
+     * @param {String|[Device]} device Device or device id
+     * @example
+     * deviceManager.select('some-id');
+     * // or by passing the page
+     * const device = deviceManager.get('some-id');
+     * deviceManager.select(device);
+     */
+    DeviceManager.prototype.select = function (device, opts) {
+        if (opts === void 0) { opts = {}; }
+        var md = (0,index_all.isString)(device) ? this.get(device) : device;
+        md && this.em.set('device', md.get('id'), opts);
+        return this;
+    };
+    /**
+     * Get the selected device
+     * @returns {[Device]}
+     * @example
+     * const selected = deviceManager.getSelected();
+     */
+    DeviceManager.prototype.getSelected = function () {
+        return this.get(this.em.get('device'));
+    };
+    DeviceManager.prototype.getAll = function () {
+        return this.devices;
+    };
+    DeviceManager.prototype.render = function () {
+        var _a;
+        var em = this.em;
+        (_a = this.view) === null || _a === void 0 ? void 0 : _a.remove();
+        this.view = new view_DevicesView({
+            collection: this.devices,
+            config: device_manager_assign({ em: em }, this.config),
+        });
+        return this.view.render().el;
+    };
+    DeviceManager.prototype.destroy = function () {
+        this.__destroy();
+    };
+    return DeviceManager;
+}(ItemManagerModule));
+/* harmony default export */ const device_manager = (DeviceManager);
+
 ;// CONCATENATED MODULE: ./src/pages/model/Page.ts
 var Page_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -51105,7 +54065,7 @@ var Pages = /** @class */ (function (_super) {
     Pages.prototype.onRemove = function (removed, _p, opts) {
         if (opts === void 0) { opts = {}; }
         // Avoid removing frames if triggered from undo #6142
-        if (opts.fromUndo)
+        if (opts.fromUndo || opts.temporary)
             return;
         removed === null || removed === void 0 ? void 0 : removed.onRemove();
     };
@@ -51159,6 +54119,28 @@ var pages_extends = (undefined && undefined.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var pages_assign = (undefined && undefined.__assign) || function () {
+    pages_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return pages_assign.apply(this, arguments);
+};
+var pages_rest = (undefined && undefined.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var pages_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
         if (ar || !(i in from)) {
@@ -51175,7 +54157,7 @@ var pages_spreadArray = (undefined && undefined.__spreadArray) || function (to, 
 
 
 
-var pages_chnSel = 'change:selected';
+var chnSel = 'change:selected';
 var typeMain = 'main';
 var PageManager = /** @class */ (function (_super) {
     pages_extends(PageManager, _super);
@@ -51193,15 +54175,15 @@ var PageManager = /** @class */ (function (_super) {
      * @param {Object} config Configurations
      */
     function PageManager(em) {
-        var _this = _super.call(this, em, 'PageManager', new model_Pages([], em), types) || this;
-        _this.events = types;
+        var _this = _super.call(this, em, 'PageManager', new model_Pages([], em), pages_types) || this;
+        _this.events = pages_types;
         _this.storageKey = 'pages';
         (0,index_all.bindAll)(_this, '_onPageChange');
         var model = new ModuleModel/* default */.A(_this, { _undo: true });
         _this.model = model;
-        _this.pages.on('reset', function (coll) { return coll.at(0) && _this.select(coll.at(0)); });
+        _this.pages.on('reset', _this.__onReset, _this);
         _this.pages.on('all', _this.__onChange, _this);
-        model.on(pages_chnSel, _this._onPageChange);
+        model.on(chnSel, _this._onPageChange);
         return _this;
     }
     Object.defineProperty(PageManager.prototype, "pages", {
@@ -51220,6 +54202,10 @@ var PageManager = /** @class */ (function (_super) {
         var options = opts || coll;
         em.trigger(events.all, { event: event, page: page, options: options });
     };
+    PageManager.prototype.__onReset = function () {
+        var firstPage = this.pages.at(0);
+        firstPage && this.select(firstPage);
+    };
     PageManager.prototype.onLoad = function () {
         var _a;
         var _b = this, pages = _b.pages, config = _b.config, em = _b.em;
@@ -51235,14 +54221,17 @@ var PageManager = /** @class */ (function (_super) {
         var mainComp = page.getMainComponent();
         lm && mainComp && lm.setRoot(mainComp);
         em.trigger(events.select, page, m.previous('selected'));
-        this.__onChange(pages_chnSel, page, opts);
+        this.__onChange(chnSel, page, opts);
     };
     PageManager.prototype.postLoad = function () {
         var _a = this, em = _a.em, model = _a.model, pages = _a.pages;
         var um = em.UndoManager;
         um.add(model);
         um.add(pages);
-        pages.on('add remove reset change', function (m, c, o) { return em.changesUp(o || c); });
+        pages.on('add remove reset change', function (page, c, o) {
+            var options = o || c;
+            em.changesUp(o || c, { page: page, options: options });
+        });
     };
     /**
      * Add new page
@@ -51290,6 +54279,38 @@ var PageManager = /** @class */ (function (_super) {
         };
         !opts.silent && em.trigger(events.removeBefore, pg, rm, opts);
         return !opts.abort && rm();
+    };
+    /**
+     * Move a page to a specific index in the pages collection.
+     * If the index is out of bounds, the page will not be moved.
+     *
+     * @param {string|[Page]} page Page or page id to move.
+     * @param {Object} [opts] Move options
+     * @param {number} [opts.at] The target index where the page should be moved.
+     * @returns {Page | undefined} The moved page, or `undefined` if the page does not exist or the index is out of bounds.
+     * @example
+     * // Move a page to index 2
+     * const movedPage = pageManager.move('page-id', { at: 2 });
+     * if (movedPage) {
+     *   console.log('Page moved successfully:', movedPage);
+     * } else {
+     *   console.log('Page could not be moved.');
+     * }
+     */
+    PageManager.prototype.move = function (page, opts) {
+        if (opts === void 0) { opts = {}; }
+        var pages = this.pages;
+        var pg = (0,index_all.isString)(page) ? this.get(page) : page;
+        var _a = opts.at, at = _a === void 0 ? 0 : _a, resOpts = pages_rest(opts, ["at"]);
+        if (!pg)
+            return;
+        var currIndex = pages.indexOf(pg);
+        var sameIndex = currIndex === at;
+        if (at < 0 || at >= pages.length || sameIndex)
+            return;
+        this.remove(pg, pages_assign(pages_assign({}, resOpts), { temporary: true }));
+        pages.add(pg, pages_assign(pages_assign({}, resOpts), { at: at }));
+        return pg;
     };
     /**
      * Get page by id
@@ -51364,7 +54385,15 @@ var PageManager = /** @class */ (function (_super) {
         return this.getProjectData();
     };
     PageManager.prototype.load = function (data) {
-        var result = this.loadProjectData(data, { all: this.pages, reset: true });
+        var _this = this;
+        var result = this.loadProjectData(data, {
+            all: this.pages,
+            reset: true,
+            onResult: function (result, opts) {
+                result.forEach(function (pageProps) { return _this.add(pageProps, opts); });
+                _this.__onReset();
+            },
+        });
         this.pages.forEach(function (page) { return page.getFrames().initRefs(); });
         return result;
     };
@@ -51593,7 +54622,6 @@ var I18nEvents;
      */
     I18nEvents["locale"] = "i18n:locale";
 })(I18nEvents || (I18nEvents = {}));
-/**{END_EVENTS}*/
 // need this to avoid the TS documentation generator to break
 /* harmony default export */ const i18n_types = (I18nEvents);
 
@@ -51851,6 +54879,7 @@ var Resizer = /** @class */ (function () {
      */
     function Resizer(opts) {
         if (opts === void 0) { opts = {}; }
+        this.moved = false;
         this.defOpts = {
             ratioDefault: false,
             onUpdateContainer: function () { },
@@ -51975,7 +55004,7 @@ var Resizer = /** @class */ (function () {
      * Returns documents
      */
     Resizer.prototype.getDocumentEl = function () {
-        return [this.el.ownerDocument, document];
+        return this.opts.docs || [this.el.ownerDocument, document];
     };
     /**
      * Return element position
@@ -52015,17 +55044,18 @@ var Resizer = /** @class */ (function () {
      * Start resizing
      * @param  {Event} e
      */
-    Resizer.prototype.start = function (ev) {
-        var e = ev;
-        // @ts-ignore Right or middel click
-        if (e.button !== 0)
+    Resizer.prototype.start = function (e) {
+        var _a;
+        var _b = this, el = _b.el, _c = _b.opts, opts = _c === void 0 ? {} : _c;
+        this.moved = false;
+        if (e.button !== 0 || !el)
             return;
         e.preventDefault();
         e.stopPropagation();
-        var el = this.el;
+        (_a = this.selectedHandler) === null || _a === void 0 ? void 0 : _a.setPointerCapture(e.pointerId);
         var parentEl = this.getParentEl();
         var resizer = this;
-        var config = this.opts || {};
+        var config = opts;
         var mouseFetch = this.mousePosFetcher;
         var attrName = 'data-' + config.prefix + 'handler';
         var rect = this.getElementPos(el, { avoidFrameZoom: true, avoidFrameOffset: true });
@@ -52065,57 +55095,61 @@ var Resizer = /** @class */ (function () {
         (0,dom.on)(docs, 'pointerup', this.stop);
         (0,index_all.isFunction)(this.onStart) && this.onStart(e, { docs: docs, config: config, el: el, resizer: resizer });
         this.toggleFrames(true);
-        this.move(e);
+        !config.updateOnMove && this.move(e);
     };
     /**
      * While resizing
      * @param  {Event} e
      */
     Resizer.prototype.move = function (ev) {
-        var e = ev;
-        var onMove = this.onMove;
-        var mouseFetch = this.mousePosFetcher;
-        var currentPos = mouseFetch
-            ? mouseFetch(e)
-            : {
-                x: e.clientX,
-                y: e.clientY,
-            };
+        var _a, _b;
+        this.moved = true;
+        var el = this.el;
+        var config = this.opts;
+        var docs = this.docs || this.getDocumentEl();
+        var currentPos = ((_a = this.mousePosFetcher) === null || _a === void 0 ? void 0 : _a.call(this, ev)) || {
+            x: ev.clientX,
+            y: ev.clientY,
+        };
         this.currentPos = currentPos;
         this.delta = {
             x: currentPos.x - this.startPos.x,
             y: currentPos.y - this.startPos.y,
         };
         this.keys = {
-            shift: e.shiftKey,
-            ctrl: e.ctrlKey,
-            alt: e.altKey,
+            shift: ev.shiftKey,
+            ctrl: ev.ctrlKey,
+            alt: ev.altKey,
         };
         this.rectDim = this.calc(this);
-        this.updateRect(false);
-        // Move callback
-        onMove && onMove(e);
+        this.updateRect(false, ev);
+        (_b = this.onMove) === null || _b === void 0 ? void 0 : _b.call(this, ev, { docs: docs, config: config, el: el, resizer: this });
     };
     /**
      * Stop resizing
-     * @param  {Event} e
+     * @param  {Event} ev
      */
-    Resizer.prototype.stop = function (e) {
+    Resizer.prototype.stop = function (ev) {
+        var _a, _b;
         var el = this.el;
         var config = this.opts;
         var docs = this.docs || this.getDocumentEl();
         (0,dom/* off */.AU)(docs, 'pointermove', this.move);
         (0,dom/* off */.AU)(docs, 'keydown', this.handleKeyDown);
         (0,dom/* off */.AU)(docs, 'pointerup', this.stop);
-        this.updateRect(true);
+        if (this.moved || !config.updateOnMove) {
+            this.updateRect(true, ev);
+        }
+        ev.pointerId && ((_a = this.selectedHandler) === null || _a === void 0 ? void 0 : _a.releasePointerCapture(ev.pointerId));
         this.toggleFrames();
-        (0,index_all.isFunction)(this.onEnd) && this.onEnd(e, { docs: docs, config: config, el: el, resizer: this });
+        (_b = this.onEnd) === null || _b === void 0 ? void 0 : _b.call(this, ev, { docs: docs, config: config, el: el, resizer: this });
+        this.moved = false;
         delete this.docs;
     };
     /**
      * Update rect
      */
-    Resizer.prototype.updateRect = function (store) {
+    Resizer.prototype.updateRect = function (store, event) {
         var el = this.el;
         var resizer = this;
         var config = this.opts;
@@ -52130,6 +55164,7 @@ var Resizer = /** @class */ (function () {
                 selectedHandler: selectedHandler,
                 resizer: resizer,
                 config: config,
+                event: event,
             });
         }
         else {
@@ -52187,7 +55222,6 @@ var Resizer = /** @class */ (function () {
     };
     /**
      * Handle mousedown to check if it's possible to start resizing
-     * @param  {Event} e
      */
     Resizer.prototype.handleMouseDown = function (e) {
         var el = e.target;
@@ -52215,13 +55249,15 @@ var Resizer = /** @class */ (function () {
         var deltaY = data.delta.y;
         var parentW = this.parentDim.w;
         var parentH = this.parentDim.h;
-        var unitWidth = this.opts.unitWidth;
-        var unitHeight = this.opts.unitHeight;
-        var startW = unitWidth === '%' ? (startDim.w / 100) * parentW : startDim.w;
-        var startH = unitHeight === '%' ? (startDim.h / 100) * parentH : startDim.h;
+        var unitWidth = opts.unitWidth, unitHeight = opts.unitHeight, skipUnitAdjustments = opts.skipUnitAdjustments;
+        var parentRect = this.getParentRect();
+        var isWidthPercent = unitWidth === '%' && !skipUnitAdjustments;
+        var isHeightPercent = unitHeight === '%' && !skipUnitAdjustments;
+        var startW = isWidthPercent ? (startDim.w / 100) * parentW : startDim.w;
+        var startH = isHeightPercent ? (startDim.h / 100) * parentH : startDim.h;
         var box = {
-            t: startDim.t,
-            l: startDim.l,
+            t: startDim.t - parentRect.top,
+            l: startDim.l - parentRect.left,
             w: startW,
             h: startH,
         };
@@ -52229,37 +55265,33 @@ var Resizer = /** @class */ (function () {
             return;
         var attr = data.handlerAttr;
         if (~attr.indexOf('r')) {
-            value =
-                unitWidth === '%'
-                    ? (0,mixins.normalizeFloat)(((startW + deltaX * step) / parentW) * 100, 0.01)
-                    : (0,mixins.normalizeFloat)(startW + deltaX * step, step);
+            value = isWidthPercent
+                ? (0,mixins.normalizeFloat)(((startW + deltaX * step) / parentW) * 100, 0.01)
+                : (0,mixins.normalizeFloat)(startW + deltaX * step, step);
             value = Math.max(minDim, value);
             maxDim && (value = Math.min(maxDim, value));
             box.w = value;
         }
         if (~attr.indexOf('b')) {
-            value =
-                unitHeight === '%'
-                    ? (0,mixins.normalizeFloat)(((startH + deltaY * step) / parentH) * 100, 0.01)
-                    : (0,mixins.normalizeFloat)(startH + deltaY * step, step);
+            value = isHeightPercent
+                ? (0,mixins.normalizeFloat)(((startH + deltaY * step) / parentH) * 100, 0.01)
+                : (0,mixins.normalizeFloat)(startH + deltaY * step, step);
             value = Math.max(minDim, value);
             maxDim && (value = Math.min(maxDim, value));
             box.h = value;
         }
         if (~attr.indexOf('l')) {
-            value =
-                unitWidth === '%'
-                    ? (0,mixins.normalizeFloat)(((startW - deltaX * step) / parentW) * 100, 0.01)
-                    : (0,mixins.normalizeFloat)(startW - deltaX * step, step);
+            value = isWidthPercent
+                ? (0,mixins.normalizeFloat)(((startW - deltaX * step) / parentW) * 100, 0.01)
+                : (0,mixins.normalizeFloat)(startW - deltaX * step, step);
             value = Math.max(minDim, value);
             maxDim && (value = Math.min(maxDim, value));
             box.w = value;
         }
         if (~attr.indexOf('t')) {
-            value =
-                unitHeight === '%'
-                    ? (0,mixins.normalizeFloat)(((startH - deltaY * step) / parentH) * 100, 0.01)
-                    : (0,mixins.normalizeFloat)(startH - deltaY * step, step);
+            value = isHeightPercent
+                ? (0,mixins.normalizeFloat)(((startH - deltaY * step) / parentH) * 100, 0.01)
+                : (0,mixins.normalizeFloat)(startH - deltaY * step, step);
             value = Math.max(minDim, value);
             maxDim && (value = Math.min(maxDim, value));
             box.h = value;
@@ -52286,6 +55318,18 @@ var Resizer = /** @class */ (function () {
             box[i] = parseInt("".concat(box[i]), 10);
         }
         return box;
+    };
+    Resizer.prototype.getParentRect = function () {
+        var parentRect = { left: 0, top: 0, width: 0, height: 0 };
+        var el = this.el;
+        if (!el)
+            return parentRect;
+        var offsetParent = el.offsetParent;
+        // Check if the parent or any ancestor has `position: relative`, `absolute`, `fixed`, or `sticky`
+        if (offsetParent && offsetParent.tagName !== 'BODY') {
+            parentRect = this.getElementPos(offsetParent);
+        }
+        return parentRect;
     };
     return Resizer;
 }());
@@ -52721,17 +55765,6 @@ var DropLocationDeterminer_extends = (undefined && undefined.__extends) || (func
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var DropLocationDeterminer_assign = (undefined && undefined.__assign) || function () {
-    DropLocationDeterminer_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return DropLocationDeterminer_assign.apply(this, arguments);
-};
 
 
 
@@ -52791,30 +55824,46 @@ var DropLocationDeterminer = /** @class */ (function (_super) {
         this.rateLimiter.execute(this.handleMove.bind(this));
     };
     DropLocationDeterminer.prototype.handleMove = function (mouseEvent) {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g;
         this.adjustForScroll();
         var lastTargetNode = this.lastMoveData.targetNode;
         (_b = (_a = this.eventHandlers).onMouseMove) === null || _b === void 0 ? void 0 : _b.call(_a, mouseEvent);
-        var _g = this.getMousePositionRelativeToContainer(mouseEvent.clientX, mouseEvent.clientY), mouseX = _g.mouseXRelative, mouseY = _g.mouseYRelative;
-        var targetNode = this.getTargetNode(mouseEvent);
+        this.cacheContainerPosition();
+        var _h = this.getMousePositionRelativeToContainer(mouseEvent.clientX, mouseEvent.clientY), mouseX = _h.mouseXRelative, mouseY = _h.mouseYRelative;
+        var mouseTargetEl = this.getMouseTargetElement(mouseEvent);
+        var targetEl = this.getFirstElementWithAModel(mouseTargetEl);
+        var hoveredModel = targetEl ? (_c = (0,cash_dom["default"])(targetEl)) === null || _c === void 0 ? void 0 : _c.data('model') : undefined;
+        var hoveredNode = hoveredModel ? this.getOrCreateHoveredNode(hoveredModel) : undefined;
+        var hoveredIndex = hoveredNode
+            ? this.getIndexInParent(hoveredNode, hoveredNode.nodeDimensions, mouseX, mouseY)
+            : 0;
+        var targetNode = hoveredNode ? this.getValidParent(hoveredNode, 0, mouseX, mouseY) : undefined;
         var targetChanged = !(targetNode === null || targetNode === void 0 ? void 0 : targetNode.equals(lastTargetNode));
         if (targetChanged) {
-            (_d = (_c = this.eventHandlers).onTargetChange) === null || _d === void 0 ? void 0 : _d.call(_c, lastTargetNode, targetNode);
+            (_e = (_d = this.eventHandlers).onTargetChange) === null || _e === void 0 ? void 0 : _e.call(_d, lastTargetNode, targetNode);
         }
-        if (!targetNode) {
+        if (!targetNode || !hoveredNode) {
             this.triggerLegacyOnMoveCallback(mouseEvent, 0);
             this.triggerMoveEvent(mouseX, mouseY);
             this.restLastMoveData();
             return;
         }
         // Handle movement over the valid target node
-        var _h = this.getDropPosition(targetNode, mouseX, mouseY), index = _h.index, placement = _h.placement, placeholderDimensions = _h.placeholderDimensions;
+        var _j = this.getDropPosition(targetNode, mouseX, mouseY), index = _j.index, placement = _j.placement, placeholderDimensions = _j.placeholderDimensions;
         var placeHolderMoved = !placeholderDimensions.equals(this.lastMoveData.placeholderDimensions) ||
             placement !== this.lastMoveData.placement;
         if (placeHolderMoved) {
-            (_f = (_e = this.eventHandlers).onPlaceholderPositionChange) === null || _f === void 0 ? void 0 : _f.call(_e, placeholderDimensions, placement);
+            (_g = (_f = this.eventHandlers).onPlaceholderPositionChange) === null || _g === void 0 ? void 0 : _g.call(_f, placeholderDimensions, placement);
         }
-        this.lastMoveData = DropLocationDeterminer_assign(DropLocationDeterminer_assign({}, this.lastMoveData), { targetNode: targetNode, mouseEvent: mouseEvent, index: index, placement: placement, placeholderDimensions: placeholderDimensions });
+        this.lastMoveData = {
+            targetNode: targetNode,
+            hoveredNode: hoveredNode,
+            mouseEvent: mouseEvent,
+            index: index,
+            hoveredIndex: hoveredIndex,
+            placement: placement,
+            placeholderDimensions: placeholderDimensions,
+        };
         this.triggerMoveEvent(mouseX, mouseY);
         this.triggerLegacyOnMoveCallback(mouseEvent, index);
     };
@@ -52904,33 +55953,6 @@ var DropLocationDeterminer = /** @class */ (function (_super) {
         };
     };
     /**
-     * Retrieves the target node based on the mouse event.
-     * Determines the element being hovered, its corresponding model, and
-     * calculates the valid parent node to use as the target node.
-     *
-     * @param mouseEvent - The mouse event containing the cursor position and target element.
-     * @returns The target node if a valid one is found, otherwise undefined.
-     */
-    DropLocationDeterminer.prototype.getTargetNode = function (mouseEvent) {
-        var _a;
-        this.cacheContainerPosition(this.containerContext.container);
-        var _b = this.getMousePositionRelativeToContainer(mouseEvent.clientX, mouseEvent.clientY), mouseXRelative = _b.mouseXRelative, mouseYRelative = _b.mouseYRelative;
-        // Get the element under the mouse
-        var mouseTargetEl = this.getMouseTargetElement(mouseEvent);
-        var targetEl = this.getFirstElementWithAModel(mouseTargetEl);
-        if (!targetEl)
-            return;
-        var hoveredModel = (_a = (0,cash_dom["default"])(targetEl)) === null || _a === void 0 ? void 0 : _a.data('model');
-        if (!hoveredModel)
-            return;
-        var hoveredNode = this.getOrCreateHoveredNode(hoveredModel);
-        // Get the drop position index based on the mouse position
-        var index = this.getDropPosition(hoveredNode, mouseXRelative, mouseYRelative).index;
-        // Determine the valid target node (or its valid parent)
-        var targetNode = this.getValidParent(hoveredNode, index, mouseXRelative, mouseYRelative);
-        return this.getOrReuseTargetNode(targetNode);
-    };
-    /**
      * Creates a new hovered node or reuses the last hovered node if it is the same.
      *
      * @param hoveredModel - The model corresponding to the hovered element.
@@ -52939,19 +55961,12 @@ var DropLocationDeterminer = /** @class */ (function (_super) {
     DropLocationDeterminer.prototype.getOrCreateHoveredNode = function (hoveredModel) {
         var lastHoveredNode = this.lastMoveData.hoveredNode;
         var hoveredNode = new this.treeClass(hoveredModel);
-        var newHoveredNode = hoveredNode.equals(lastHoveredNode) ? lastHoveredNode : hoveredNode;
-        this.lastMoveData.hoveredNode = newHoveredNode;
+        var sameHoveredNode = hoveredNode.equals(lastHoveredNode);
+        var newHoveredNode = sameHoveredNode ? lastHoveredNode : hoveredNode;
+        newHoveredNode.nodeDimensions = sameHoveredNode
+            ? lastHoveredNode.nodeDimensions
+            : this.getDim(hoveredNode.element);
         return newHoveredNode;
-    };
-    /**
-     * Checks if the target node has changed and returns the last one if they are identical.
-     *
-     * @param targetNode - The newly calculated target node.
-     * @returns The new or reused target node.
-     */
-    DropLocationDeterminer.prototype.getOrReuseTargetNode = function (targetNode) {
-        var lastTargetNode = this.lastMoveData.targetNode;
-        return (targetNode === null || targetNode === void 0 ? void 0 : targetNode.equals(lastTargetNode)) ? lastTargetNode : targetNode;
     };
     DropLocationDeterminer.prototype.getMouseTargetElement = function (mouseEvent) {
         var customTarget = this.containerContext.customTarget;
@@ -53026,17 +56041,23 @@ var DropLocationDeterminer = /** @class */ (function (_super) {
         return null;
     };
     DropLocationDeterminer.prototype.getValidParent = function (targetNode, index, mouseX, mouseY) {
+        var _a, _b;
         if (!targetNode)
             return;
-        var lastTargetNode = this.lastMoveData.targetNode;
-        var targetNotChanged = targetNode.equals(lastTargetNode);
-        targetNode.nodeDimensions = targetNotChanged ? lastTargetNode.nodeDimensions : this.getDim(targetNode.element);
-        if (!targetNode.isWithinDropBounds(mouseX, mouseY)) {
+        var _c = this.lastMoveData, lastTargetNode = _c.targetNode, lastHoveredNode = _c.hoveredNode, lastHoveredIndex = _c.hoveredIndex, lastMouseEvent = _c.mouseEvent;
+        var sameHoveredNode = targetNode.equals(lastHoveredNode);
+        targetNode.nodeDimensions = sameHoveredNode ? lastHoveredNode.nodeDimensions : this.getDim(targetNode.element);
+        var hoverIndex = this.getIndexInParent(targetNode, targetNode.nodeDimensions, mouseX, mouseY);
+        var sameHoveredIndex = hoverIndex === lastHoveredIndex;
+        var isWithinDropArea = targetNode.isWithinDropBounds(mouseX, mouseY);
+        var sameHoverPosition = sameHoveredNode &&
+            sameHoveredIndex &&
+            isWithinDropArea === targetNode.isWithinDropBounds((_a = lastMouseEvent === null || lastMouseEvent === void 0 ? void 0 : lastMouseEvent.clientX) !== null && _a !== void 0 ? _a : 0, (_b = lastMouseEvent === null || lastMouseEvent === void 0 ? void 0 : lastMouseEvent.clientY) !== null && _b !== void 0 ? _b : 0);
+        if (sameHoverPosition && lastTargetNode)
+            return lastTargetNode;
+        if (!isWithinDropArea) {
             return this.handleParentTraversal(targetNode, mouseX, mouseY);
         }
-        var positionNotChanged = targetNotChanged && index === this.lastMoveData.index;
-        if (positionNotChanged)
-            return lastTargetNode;
         var canMove = this.sourceNodes.some(function (node) { return targetNode.canMove(node, index); });
         this.triggerDragValidation(canMove, targetNode);
         if (canMove)
@@ -53047,10 +56068,15 @@ var DropLocationDeterminer = /** @class */ (function (_super) {
         var parent = targetNode.getParent();
         if (!parent)
             return;
-        var indexInParent = this.getIndexInParent(parent, targetNode, targetNode.nodeDimensions, mouseX, mouseY);
+        var indexInParent = this.getIndexInParent(targetNode, targetNode.nodeDimensions, mouseX, mouseY);
+        if (indexInParent === undefined)
+            return;
         return this.getValidParent(parent, indexInParent, mouseX, mouseY);
     };
-    DropLocationDeterminer.prototype.getIndexInParent = function (parent, targetNode, nodeDimensions, mouseX, mouseY) {
+    DropLocationDeterminer.prototype.getIndexInParent = function (targetNode, nodeDimensions, mouseX, mouseY) {
+        var parent = targetNode.getParent();
+        if (!parent)
+            return;
         var indexInParent = parent === null || parent === void 0 ? void 0 : parent.indexOfChild(targetNode);
         nodeDimensions.dir = this.getDirection(targetNode.element, parent.element);
         indexInParent = indexInParent + (nodeDimensions.determinePlacement(mouseX, mouseY) == 'after' ? 1 : 0);
@@ -53149,7 +56175,8 @@ var DropLocationDeterminer = /** @class */ (function (_super) {
      *
      * @private
      */
-    DropLocationDeterminer.prototype.cacheContainerPosition = function (container) {
+    DropLocationDeterminer.prototype.cacheContainerPosition = function () {
+        var container = this.containerContext.container;
         var containerOffset = offset(container);
         var containerOffsetTop = this.positionOptions.windowMargin ? Math.abs(containerOffset.top) : containerOffset.top;
         var containerOffsetLeft = this.positionOptions.windowMargin
@@ -53416,9 +56443,9 @@ var Sorter = /** @class */ (function () {
         var _this = this;
         var validSources = sources.filter(function (source) { return !!source.dragSource || _this.findValidSourceElement(source.element); });
         var sourcesWithModel = validSources.map(function (source) {
-            var _a;
+            var _a, _b;
             return {
-                model: (_a = (0,cash_dom["default"])(source.element)) === null || _a === void 0 ? void 0 : _a.data('model'),
+                model: ((_a = source.dragSource) === null || _a === void 0 ? void 0 : _a.model) || ((_b = (0,cash_dom["default"])(source.element)) === null || _b === void 0 ? void 0 : _b.data('model')),
                 content: source.dragSource,
             };
         });
@@ -53486,7 +56513,7 @@ var Sorter = /** @class */ (function () {
     };
     /**
      * Finds the closest valid source element within the container context.
-    
+  
      * @param sourceElement - The initial source element to check.
      * @returns The closest valid source element, or null if none is found.
      */
@@ -53751,7 +56778,7 @@ var ComponentSorter = /** @class */ (function (_super) {
             }
         }
         var addedNode = targetNode.addChildAt(sourceNode, index, { action: 'move-component' });
-        this.triggerEndMoveEvent(addedNode);
+        addedNode && this.triggerEndMoveEvent(addedNode);
         return { addedNode: addedNode, index: index };
     };
     /**
@@ -53788,8 +56815,10 @@ var ComponentSorter = /** @class */ (function (_super) {
         var Canvas = em.Canvas;
         var targetDoc = Canvas.getDocument();
         var range = null;
+        if (!targetDoc)
+            return;
         var poiner = (0,dom/* getPointerEvent */.G2)(e);
-        // @ts-ignore
+        // @ts-ignore not yet widely supported
         if (targetDoc.caretPositionFromPoint) {
             // New standard method
             // @ts-ignore
@@ -54000,7 +57029,7 @@ var Layers = /** @class */ (function (_super) {
 Layers.prototype.model = model_Layer;
 
 // EXTERNAL MODULE: ./src/utils/sorter/SortableTreeNode.ts
-var SortableTreeNode = __webpack_require__(3161);
+var SortableTreeNode = __webpack_require__(3178);
 ;// CONCATENATED MODULE: ./src/utils/sorter/LayerNode.ts
 var LayerNode_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -54620,6 +57649,33 @@ var keymaps_config_config = function () { return ({
 }); };
 /* harmony default export */ const keymaps_config = (keymaps_config_config);
 
+;// CONCATENATED MODULE: ./src/keymaps/types.ts
+/**{START_EVENTS}*/
+var KeymapsEvents;
+(function (KeymapsEvents) {
+    /**
+     * @event `keymap:add` New keymap added. The new keymap object is passed as an argument to the callback.
+     * @example
+     * editor.on('keymap:add', (keymap) => { ... });
+     */
+    KeymapsEvents["add"] = "keymap:add";
+    /**
+     * @event `keymap:remove` Keymap removed. The removed keymap object is passed as an argument to the callback.
+     * @example
+     * editor.on('keymap:remove', (keymap) => { ... });
+     */
+    KeymapsEvents["remove"] = "keymap:remove";
+    /**
+     * @event `keymap:emit` Some keymap emitted. The keymapId, shortcutUsed, and Event are passed as arguments to the callback.
+     * @example
+     * editor.on('keymap:emit', (keymapId, shortcutUsed, event) => { ... });
+     */
+    KeymapsEvents["emit"] = "keymap:emit";
+    KeymapsEvents["emitId"] = "keymap:emit:";
+})(KeymapsEvents || (KeymapsEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const keymaps_types = ((/* unused pure expression or super */ null && (KeymapsEvents)));
+
 ;// CONCATENATED MODULE: ./src/keymaps/index.ts
 /**
  * You can customize the initial state of the module from the editor initialization
@@ -54638,22 +57694,13 @@ var keymaps_config_config = function () { return ({
  * })
  * ```
  *
- * Once the editor is instantiated you can use its API and listen to its events. Before using these methods, you should get the module from the instance.
+ * Once the editor is instantiated you can use its API. Before using these methods you should get the module from the instance.
  *
  * ```js
- * // Listen to events
- * editor.on('keymap:add', () => { ... });
- *
- * // Use the API
  * const keymaps = editor.Keymaps;
- * keymaps.add(...);
  * ```
  *
- * ## Available Events
- * * `keymap:add` - New keymap added. The new keyamp object is passed as an argument
- * * `keymap:remove` - Keymap removed. The removed keyamp object is passed as an argument
- * * `keymap:emit` - Some keymap emitted, in arguments you get keymapId, shortcutUsed, Event
- * * `keymap:emit:{keymapId}` - `keymapId` emitted, in arguments you get keymapId, shortcutUsed, Event
+ * {REPLACE_EVENTS}
  *
  * ## Methods
  * * [getConfig](#getconfig)
@@ -54694,16 +57741,20 @@ var keymaps_spreadArray = (undefined && undefined.__spreadArray) || function (to
 
 
 
+
 (0,mixins.hasWin)() && keymaster.init(window);
 var KeymapsModule = /** @class */ (function (_super) {
     keymaps_extends(KeymapsModule, _super);
     function KeymapsModule(em) {
         var _this = _super.call(this, em, 'Keymaps', keymaps_config()) || this;
         _this.keymaster = keymaster;
+        _this.events = KeymapsEvents;
         _this.keymaps = {};
         return _this;
     }
     KeymapsModule.prototype.onLoad = function () {
+        if (this.em.isHeadless)
+            return;
         var defKeys = this.config.defaults;
         for (var id in defKeys) {
             var value = defKeys[id];
@@ -54743,7 +57794,7 @@ var KeymapsModule = /** @class */ (function (_super) {
      */
     KeymapsModule.prototype.add = function (id, keys, handler, opts) {
         if (opts === void 0) { opts = {}; }
-        var em = this.em;
+        var _a = this, em = _a.em, events = _a.events;
         var cmd = em.Commands;
         var editor = em.getEditor();
         var canvas = em.Canvas;
@@ -54752,19 +57803,22 @@ var KeymapsModule = /** @class */ (function (_super) {
         pk && this.remove(id);
         this.keymaps[id] = keymap;
         keymaster(keys, function (e, h) {
+            var _a;
             // It's safer putting handlers resolution inside the callback
             var opt = { event: e, h: h };
             var handlerRes = (0,index_all.isString)(handler) ? cmd.get(handler) : handler;
             var ableTorun = !em.isEditing() && !editor.Canvas.isInputFocused();
             if (ableTorun || opts.force) {
-                opts.prevent && canvas.getCanvasView().preventDefault(e);
+                opts.prevent && ((_a = canvas.getCanvasView()) === null || _a === void 0 ? void 0 : _a.preventDefault(e));
                 (0,index_all.isFunction)(handlerRes) ? handlerRes(editor, 0, opt) : cmd.runCommand(handlerRes, opt);
                 var args = [id, h.shortcut, e];
-                em.trigger.apply(em, keymaps_spreadArray(['keymap:emit'], args, false));
-                em.trigger.apply(em, keymaps_spreadArray(["keymap:emit:".concat(id)], args, false));
+                // @ts-ignore
+                em.trigger.apply(em, keymaps_spreadArray([events.emit], args, false));
+                // @ts-ignore
+                em.trigger.apply(em, keymaps_spreadArray(["".concat(events.emitId).concat(id)], args, false));
             }
         }, undefined);
-        em.trigger('keymap:add', keymap);
+        em.trigger(events.add, keymap);
         return keymap;
     };
     /**
@@ -54797,7 +57851,7 @@ var KeymapsModule = /** @class */ (function (_super) {
      * // -> {keys, handler};
      */
     KeymapsModule.prototype.remove = function (id) {
-        var em = this.em;
+        var _a = this, em = _a.em, events = _a.events;
         var keymap = this.get(id);
         if (keymap) {
             delete this.keymaps[id];
@@ -54805,7 +57859,7 @@ var KeymapsModule = /** @class */ (function (_super) {
                 // @ts-ignore
                 keymaster.unbind(k.trim());
             });
-            em === null || em === void 0 ? void 0 : em.trigger('keymap:remove', keymap);
+            em === null || em === void 0 ? void 0 : em.trigger(events.remove, keymap);
             return keymap;
         }
     };
@@ -54877,6 +57931,32 @@ var Modal = /** @class */ (function (_super) {
     return Modal;
 }(ModuleModel/* default */.A));
 /* harmony default export */ const model_Modal = (Modal);
+
+;// CONCATENATED MODULE: ./src/modal_dialog/types.ts
+/**{START_EVENTS}*/
+var ModalEvents;
+(function (ModalEvents) {
+    /**
+     * @event `modal:open` Modal is opened
+     * @example
+     * editor.on('modal:open', () => { ... });
+     */
+    ModalEvents["open"] = "modal:open";
+    /**
+     * @event `modal:close` Modal is closed
+     * @example
+     * editor.on('modal:close', () => { ... });
+     */
+    ModalEvents["close"] = "modal:close";
+    /**
+     * @event `modal` Event triggered on any change related to the modal. An object containing all the available data about the triggered event is passed as an argument to the callback.
+     * @example
+     * editor.on('modal', ({ open, title, content, ... }) => { ... });
+     */
+    ModalEvents["all"] = "modal";
+})(ModalEvents || (ModalEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const modal_dialog_types = ((/* unused pure expression or super */ null && (ModalEvents)));
 
 ;// CONCATENATED MODULE: ./src/modal_dialog/view/ModalView.ts
 var ModalView_extends = (undefined && undefined.__extends) || (function () {
@@ -55042,10 +58122,7 @@ var ModalView = /** @class */ (function (_super) {
  * const modal = editor.Modal;
  * ```
  *
- * ## Available Events
- * * `modal:open` - Modal is opened
- * * `modal:close` - Modal is closed
- * * `modal` - Event triggered on any change related to the modal. An object containing all the available data about the triggered event is passed as an argument to the callback.
+ * {REPLACE_EVENTS}
  *
  * ## Methods
  * * [open](#open)
@@ -55081,6 +58158,7 @@ var modal_dialog_extends = (undefined && undefined.__extends) || (function () {
 
 
 
+
 var ModalModule = /** @class */ (function (_super) {
     modal_dialog_extends(ModalModule, _super);
     /**
@@ -55090,16 +58168,18 @@ var ModalModule = /** @class */ (function (_super) {
      */
     function ModalModule(em) {
         var _this = _super.call(this, em, 'Modal', modal_dialog_config_config()) || this;
+        _this.events = ModalEvents;
+        var events = _this.events;
         _this.model = new model_Modal(_this);
         _this.model.on('change:open', function (m, enable) {
-            em.trigger("modal:".concat(enable ? 'open' : 'close'));
+            em.trigger(enable ? events.open : events.close);
         });
         _this.model.on('change', (0,index_all.debounce)(function () {
             var data = _this._evData();
             var custom = _this.config.custom;
             //@ts-ignore
             (0,index_all.isFunction)(custom) && custom(data);
-            em.trigger('modal', data);
+            em.trigger(events.all, data);
         }, 0));
         return _this;
     }
@@ -55169,7 +58249,8 @@ var ModalModule = /** @class */ (function (_super) {
      * });
      */
     ModalModule.prototype.onceClose = function (clb) {
-        this.em.once('modal:close', clb);
+        var _a = this, em = _a.em, events = _a.events;
+        em.once(events.close, clb);
         return this;
     };
     /**
@@ -55183,7 +58264,8 @@ var ModalModule = /** @class */ (function (_super) {
      * });
      */
     ModalModule.prototype.onceOpen = function (clb) {
-        this.em.once('modal:open', clb);
+        var _a = this, em = _a.em, events = _a.events;
+        em.once(events.open, clb);
         return this;
     };
     /**
@@ -56416,21 +59498,21 @@ var HTMLGenerator = /** @class */ (function (_super) {
                 return sel && sel.isId() && sel.get('name');
             })
                 .filter(Boolean);
-            if (!htmlOpts.attributes) {
-                htmlOpts.attributes = function (mod, attrs) {
-                    var id = attrs.id;
-                    if (id &&
-                        id[0] === 'i' && // all autogenerated IDs start with 'i'
-                        !mod.get('script') && // if the component has script, we have to leave the ID
-                        !mod.get('script-export') && // if the component has script, we have to leave the ID
-                        !mod.get('attributes').id && // id is not intentionally in attributes
-                        idRules_1.indexOf(id) < 0 // we shouldn't have any rule with this ID
-                    ) {
-                        delete attrs.id;
-                    }
-                    return attrs;
-                };
-            }
+            var attributes_1 = htmlOpts.attributes;
+            htmlOpts.attributes = function (mod, attrs) {
+                attrs = typeof attributes_1 === 'function' ? attributes_1(mod, attrs) : attrs;
+                var id = attrs.id;
+                if (id &&
+                    id[0] === 'i' && // all autogenerated IDs start with 'i'
+                    !mod.get('script') && // if the component has script, we have to leave the ID
+                    !mod.get('script-export') && // if the component has script, we have to leave the ID
+                    !mod.get('attributes').id && // id is not intentionally in attributes
+                    idRules_1.indexOf(id) < 0 // we shouldn't have any rule with this ID
+                ) {
+                    delete attrs.id;
+                }
+                return attrs;
+            };
         }
         return model.toHTML(htmlOpts);
     };
@@ -57014,6 +60096,7 @@ var EditorEvents;
      * editor.on('update', () => { ... });
      */
     EditorEvents["update"] = "update";
+    EditorEvents["updateBefore"] = "updateBefore";
     /**
      * @event `undo` Undo executed.
      * @example
@@ -57038,6 +60121,21 @@ var EditorEvents;
      * editor.on('project:load', ({ project, initial }) => { ... });
      */
     EditorEvents["projectLoad"] = "project:load";
+    /**
+     * @event `project:loaded` Similar to `project:load`, but triggers only if the project is loaded successfully.
+     * @example
+     * editor.on('project:loaded', ({ project, initial }) => { ... });
+     *
+     * // Loading an empty project, won't trigger this event.
+     * editor.loadProjectData({});
+     */
+    EditorEvents["projectLoaded"] = "project:loaded";
+    /**
+     * @event `project:get` Event triggered on request of the project data. This can be used to extend the project with custom data.
+     * @example
+     * editor.on('project:get', ({ project }) => { project.myCustomKey = 'value' });
+     */
+    EditorEvents["projectGet"] = "project:get";
     /**
      * @event `log` Log message triggered.
      * @example
@@ -57064,6 +60162,8 @@ var EditorEvents;
     EditorEvents["destroyed"] = "destroyed";
 })(EditorEvents || (EditorEvents = {}));
 /**{END_EVENTS}*/
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const editor_types = ((/* unused pure expression or super */ null && (EditorEvents)));
 
 ;// CONCATENATED MODULE: ./src/undo_manager/index.ts
 var undo_manager_extends = (undefined && undefined.__extends) || (function () {
@@ -57892,6 +60992,32 @@ var RichTextEditor = /** @class */ (function () {
 }());
 /* harmony default export */ const model_RichTextEditor = (RichTextEditor);
 
+;// CONCATENATED MODULE: ./src/rich_text_editor/types.ts
+/**{START_EVENTS}*/
+var RichTextEditorEvents;
+(function (RichTextEditorEvents) {
+    /**
+     * @event `rte:enable` RTE enabled. The view, on which RTE is enabled, and the RTE instance are passed as arguments.
+     * @example
+     * editor.on('rte:enable', (view, rte) => { ... });
+     */
+    RichTextEditorEvents["enable"] = "rte:enable";
+    /**
+     * @event `rte:disable` RTE disabled. The view, on which RTE is disabled, and the RTE instance are passed as arguments.
+     * @example
+     * editor.on('rte:disable', (view, rte) => { ... });
+     */
+    RichTextEditorEvents["disable"] = "rte:disable";
+    /**
+     * @event `rte:custom` Custom RTE event. Object with enabled status, container, and actions is passed as an argument.
+     * @example
+     * editor.on('rte:custom', ({ enabled, container, actions }) => { ... });
+     */
+    RichTextEditorEvents["custom"] = "rte:custom";
+})(RichTextEditorEvents || (RichTextEditorEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const rich_text_editor_types = ((/* unused pure expression or super */ null && (RichTextEditorEvents)));
+
 ;// CONCATENATED MODULE: ./src/rich_text_editor/index.ts
 /**
  * This module allows to customize the built-in toolbar of the Rich Text Editor and use commands from the [HTML Editing APIs](https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand).
@@ -57906,20 +61032,13 @@ var RichTextEditor = /** @class */ (function () {
  * })
  * ```
  *
- * Once the editor is instantiated you can use its API and listen to its events. Before using these methods, you should get the module from the instance.
+ * Once the editor is instantiated you can use its API. Before using these methods you should get the module from the instance.
  *
  * ```js
- * // Listen to events
- * editor.on('rte:enable', () => { ... });
- *
- * // Use the API
  * const rte = editor.RichTextEditor;
- * rte.add(...);
  * ```
  *
- * ## Available Events
- * * `rte:enable` - RTE enabled. The view, on which RTE is enabled, is passed as an argument
- * * `rte:disable` - RTE disabled. The view, on which RTE is disabled, is passed as an argument
+ * {REPLACE_EVENTS}
  *
  * ## Methods
  * * [add](#add)
@@ -58011,15 +61130,8 @@ var rich_text_editor_spreadArray = (undefined && undefined.__spreadArray) || fun
 
 
 
-var eventsUp = "".concat(canvas_types.refresh, " frame:scroll ").concat(dom_components_types/* ComponentsEvents */.I.update);
-var evEnable = 'rte:enable';
-var evDisable = 'rte:disable';
-var rich_text_editor_evCustom = 'rte:custom';
-var rich_text_editor_events = {
-    enable: evEnable,
-    disable: evDisable,
-    custom: rich_text_editor_evCustom,
-};
+
+var eventsUp = "".concat(canvas_types/* default */.A.refresh, " frame:scroll ").concat(dom_components_types/* ComponentsEvents */.IT.update);
 var RichTextEditorModule = /** @class */ (function (_super) {
     rich_text_editor_extends(RichTextEditorModule, _super);
     /**
@@ -58030,7 +61142,7 @@ var RichTextEditorModule = /** @class */ (function (_super) {
      */
     function RichTextEditorModule(em) {
         var _this = _super.call(this, em, 'RichTextEditor', rich_text_editor_config_config()) || this;
-        _this.events = rich_text_editor_events;
+        _this.events = RichTextEditorEvents;
         var config = _this.config;
         var ppfx = config.pStylePrefix;
         if (ppfx) {
@@ -58287,12 +61399,12 @@ var RichTextEditorModule = /** @class */ (function (_super) {
      * */
     RichTextEditorModule.prototype.enable = function (view, rte, opts) {
         return rich_text_editor_awaiter(this, void 0, void 0, function () {
-            var _a, customRte, em, el, rteInst;
+            var _a, customRte, em, events, el, rteInst;
             return rich_text_editor_generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         this.lastEl = view.el;
-                        _a = this, customRte = _a.customRte, em = _a.em;
+                        _a = this, customRte = _a.customRte, em = _a.em, events = _a.events;
                         el = view.getChildrenContainer();
                         this.toolbar.style.display = '';
                         return [4 /*yield*/, (customRte ? customRte.enable(el, rte, opts) : this.initRte(el).enable(opts))];
@@ -58302,7 +61414,7 @@ var RichTextEditorModule = /** @class */ (function (_super) {
                             setTimeout(this.updatePosition.bind(this), 0);
                             em.off(eventsUp, this.updatePosition, this);
                             em.on(eventsUp, this.updatePosition, this);
-                            em.trigger('rte:enable', view, rteInst);
+                            em.trigger(events.enable, view, rteInst);
                         }
                         this.model.set({ currentView: view });
                         return [2 /*return*/, rteInst];
@@ -58341,30 +61453,30 @@ var RichTextEditorModule = /** @class */ (function (_super) {
      * */
     RichTextEditorModule.prototype.disable = function (view_1, rte_1) {
         return rich_text_editor_awaiter(this, arguments, void 0, function (view, rte, opts) {
-            var result, em, customRte, res;
+            var result, _a, em, events, customRte, res;
             if (opts === void 0) { opts = {}; }
-            return rich_text_editor_generator(this, function (_a) {
-                switch (_a.label) {
+            return rich_text_editor_generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         result = {};
-                        em = this.em;
+                        _a = this, em = _a.em, events = _a.events;
                         customRte = this.customRte;
                         if (!customRte) return [3 /*break*/, 2];
                         return [4 /*yield*/, customRte.disable(view.getChildrenContainer(), rte, rich_text_editor_assign(rich_text_editor_assign({}, opts), { view: view }))];
                     case 1:
-                        res = _a.sent();
+                        res = _b.sent();
                         if (res) {
                             result = res;
                         }
                         return [3 /*break*/, 3];
                     case 2:
                         rte && rte.disable();
-                        _a.label = 3;
+                        _b.label = 3;
                     case 3:
                         this.hideToolbar();
                         if (em) {
                             em.off(eventsUp, this.updatePosition, this);
-                            !opts.fromMove && em.trigger('rte:disable', view, rte);
+                            !opts.fromMove && em.trigger(events.disable, view, rte);
                         }
                         this.model.unset('currentView');
                         return [2 /*return*/, result];
@@ -58755,7 +61867,7 @@ var Property = /** @class */ (function (_super) {
         return this.parseValue(value, opts);
     };
     Property.prototype.__getClearProps = function () {
-        return { value: '' };
+        return { value: '', important: false };
     };
     /**
      * Update value
@@ -58881,7 +61993,7 @@ var Property = /** @class */ (function (_super) {
         var fn = this.get('functionName');
         var def = this.getDefaultValue();
         var value = (0,index_all.isUndefined)(val) ? this.get('value') : val;
-        var hasValue = !(0,index_all.isUndefined)(value) && value !== '';
+        var hasValue = this.hasValue();
         if (value && def && value === def) {
             return def;
         }
@@ -58910,18 +62022,19 @@ var Property = /** @class */ (function (_super) {
         };
     };
     Property.prototype.__checkVisibility = function (_a) {
-        var target = _a.target, component = _a.component, sectors = _a.sectors;
+        var target = _a.target, component = _a.component, sector = _a.sector, sectors = _a.sectors;
         var trg = component || target;
         if (!trg)
             return false;
         var id = this.getId();
         var property = this.getName();
-        var toRequire = this.get('toRequire');
-        var requires = this.get('requires');
-        var requiresParent = this.get('requiresParent');
+        var _b = this.attributes, requires = _b.requires, requiresParent = _b.requiresParent, toRequire = _b.toRequire, isVisible = _b.isVisible;
         var unstylable = trg.get('unstylable');
         var stylableReq = trg.get('stylable-require');
         var stylable = trg.get('stylable');
+        if ((0,index_all.isFunction)(isVisible)) {
+            return !!isVisible({ property: this, sector: sector, target: target, component: component });
+        }
         // Stylable could also be an array indicating with which property
         // the target could be styled
         if ((0,index_all.isArray)(stylable)) {
@@ -61563,309 +64676,6 @@ var Properties = Properties_TypeableCollectionExt.extend({
 });
 /* harmony default export */ const model_Properties = (Properties);
 
-;// CONCATENATED MODULE: ./src/style_manager/model/Sector.ts
-var Sector_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var Sector_assign = (undefined && undefined.__assign) || function () {
-    Sector_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return Sector_assign.apply(this, arguments);
-};
-var Sector_rest = (undefined && undefined.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
-var Sector_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-
-
-
-/**
- *
- * [Property]: property.html
- *
- * @typedef Sector
- * @property {String} id Sector id, eg. `typography`
- * @property {String} name Sector name, eg. `Typography`
- * @property {Boolean} [open=true] Indicates the open state.
- * @property {Array<Object>} [properties=[]] Indicate an array of Property defintions.
- */
-var Sector = /** @class */ (function (_super) {
-    Sector_extends(Sector, _super);
-    /**
-     * @hideconstructor
-     */
-    function Sector(prp, opts) {
-        if (opts === void 0) { opts = {}; }
-        var _this = _super.call(this, prp) || this;
-        var em = opts.em;
-        _this.em = em;
-        var o = prp || {};
-        var builded = _this.buildProperties(o.buildProps);
-        var name = _this.get('name') || '';
-        var props = [];
-        !_this.get('id') && _this.set('id', name.replace(/ /g, '_').toLowerCase());
-        if (!builded) {
-            props = _this.get('properties')
-                .map(function (prop) { return ((0,index_all.isString)(prop) ? _this.buildProperties(prop)[0] : prop); })
-                .filter(Boolean);
-        }
-        else {
-            props = _this.extendProperties(builded);
-        }
-        props = props.map(function (prop) { return _this.checkExtend(prop); });
-        var propsModel = new model_Properties(props, { em: em });
-        propsModel.sector = _this;
-        _this.set('properties', propsModel);
-        return _this;
-    }
-    Sector.prototype.defaults = function () {
-        return {
-            id: '',
-            name: '',
-            open: true,
-            visible: true,
-            extendBuilded: true,
-            properties: [],
-        };
-    };
-    Object.defineProperty(Sector.prototype, "properties", {
-        get: function () {
-            return this.get('properties');
-        },
-        enumerable: false,
-        configurable: true
-    });
-    /**
-     * Get sector id.
-     * @returns {String}
-     */
-    Sector.prototype.getId = function () {
-        return this.get('id');
-    };
-    /**
-     * Get sector name.
-     * @returns {String}
-     */
-    Sector.prototype.getName = function () {
-        var _a;
-        var id = this.getId();
-        return ((_a = this.em) === null || _a === void 0 ? void 0 : _a.t("styleManager.sectors.".concat(id))) || this.get('name');
-    };
-    /**
-     * Update sector name.
-     * @param {String} value New sector name
-     */
-    Sector.prototype.setName = function (value) {
-        return this.set('name', value);
-    };
-    /**
-     * Check if the sector is open
-     * @returns {Boolean}
-     */
-    Sector.prototype.isOpen = function () {
-        return !!this.get('open');
-    };
-    /**
-     * Update Sector open state
-     * @param {Boolean} value
-     */
-    Sector.prototype.setOpen = function (value) {
-        return this.set('open', value);
-    };
-    /**
-     * Check if the sector is visible
-     * @returns {Boolean}
-     */
-    Sector.prototype.isVisible = function () {
-        return !!this.get('visible');
-    };
-    /**
-     * Get sector properties.
-     * @param {Object} [opts={}] Options
-     * @param {Boolean} [opts.withValue=false] Get only properties with value
-     * @param {Boolean} [opts.withParentValue=false] Get only properties with parent value
-     * @returns {Array<[Property]>}
-     */
-    Sector.prototype.getProperties = function (opts) {
-        if (opts === void 0) { opts = {}; }
-        var props = this.properties;
-        var res = (props.models ? Sector_spreadArray([], props.models, true) : props);
-        return res.filter(function (prop) {
-            var result = true;
-            if (opts.withValue) {
-                result = prop.hasValue({ noParent: true });
-            }
-            if (opts.withParentValue) {
-                var hasVal = prop.hasValue({ noParent: true });
-                result = !hasVal && prop.hasValue();
-            }
-            return result;
-        });
-    };
-    Sector.prototype.getProperty = function (id) {
-        return this.getProperties().filter(function (prop) { return prop.get('id') === id; })[0] || undefined;
-    };
-    Sector.prototype.addProperty = function (property, opts) {
-        return this.properties.add(this.checkExtend(property), opts);
-    };
-    /**
-     * Extend properties
-     * @param {Array<Object>} props Start properties
-     * @param {Array<Object>} moProps Model props
-     * @param {Boolean} ex Returns the same amount of passed model props
-     * @return {Array<Object>} Final props
-     * @private
-     */
-    Sector.prototype.extendProperties = function (props, moProps, ex) {
-        if (ex === void 0) { ex = false; }
-        var pLen = props.length;
-        var mProps = moProps || this.get('properties');
-        var ext = this.get('extendBuilded');
-        var isolated = [];
-        for (var i = 0, len = mProps.length; i < len; i++) {
-            var mProp = mProps[i];
-            var found = 0;
-            for (var j = 0; j < pLen; j++) {
-                var prop = props[j];
-                if (mProp.property == prop.property || mProp.id == prop.property) {
-                    // @ts-ignore Check for nested properties
-                    var mPProps = mProp.properties;
-                    if (mPProps && mPProps.length) {
-                        // @ts-ignore
-                        mProp.properties = this.extendProperties(prop.properties || [], mPProps, 1);
-                    }
-                    props[j] = ext ? (0,index_all.extend)(prop, mProp) : mProp;
-                    isolated[j] = props[j];
-                    found = 1;
-                    continue;
-                }
-            }
-            if (!found) {
-                props.push(mProp);
-                isolated.push(mProp);
-            }
-        }
-        return ex ? isolated.filter(function (i) { return i; }) : props;
-    };
-    Sector.prototype.checkExtend = function (prop) {
-        var _a = ((0,index_all.isString)(prop) ? { extend: prop } : prop) || {}, extend = _a.extend, rest = Sector_rest(_a, ["extend"]);
-        if (extend) {
-            return Sector_assign(Sector_assign({}, (this.buildProperties([extend])[0] || {})), rest);
-        }
-        else {
-            return prop;
-        }
-    };
-    /**
-     * Build properties
-     * @param {Array<string>} propr Array of props as sting
-     * @return {Array<Object>}
-     * @private
-     */
-    Sector.prototype.buildProperties = function (props) {
-        var _a;
-        var buildP = props || [];
-        if (!buildP.length)
-            return [];
-        var builtIn = (_a = this.em) === null || _a === void 0 ? void 0 : _a.Styles.builtIn;
-        return builtIn === null || builtIn === void 0 ? void 0 : builtIn.build(buildP);
-    };
-    return Sector;
-}(common/* Model */.Kx));
-/* harmony default export */ const model_Sector = (Sector);
-
-;// CONCATENATED MODULE: ./src/style_manager/model/Sectors.ts
-var Sectors_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var Sectors_assign = (undefined && undefined.__assign) || function () {
-    Sectors_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return Sectors_assign.apply(this, arguments);
-};
-
-
-var Sectors = /** @class */ (function (_super) {
-    Sectors_extends(Sectors, _super);
-    function Sectors() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Sectors.prototype.initialize = function (prop, opts) {
-        if (opts === void 0) { opts = {}; }
-        var module = opts.module, em = opts.em;
-        this.em = em;
-        this.module = module;
-        this.listenTo(this, 'reset', this.onReset);
-    };
-    /** @ts-ignore */
-    Sectors.prototype.model = function (props, opts) {
-        if (opts === void 0) { opts = {}; }
-        // @ts-ignore
-        var em = opts.collection.em;
-        return new model_Sector(props, Sectors_assign(Sectors_assign({}, opts), { em: em }));
-    };
-    Sectors.prototype.onReset = function (models, opts) {
-        if (opts === void 0) { opts = {}; }
-        var prev = opts.previousModels || [];
-        // @ts-ignore
-        prev.forEach(function (sect) { return sect.get('properties').reset(); });
-    };
-    return Sectors;
-}(common/* Collection */.pM));
-/* harmony default export */ const model_Sectors = (Sectors);
-
 ;// CONCATENATED MODULE: ./src/style_manager/model/PropertyFactory.ts
 var PropertyFactory_assign = (undefined && undefined.__assign) || function () {
     PropertyFactory_assign = Object.assign || function(t) {
@@ -62177,12 +64987,12 @@ var PropertyFactory = /** @class */ (function () {
                             id: 'border-top-right-radius-sub',
                         },
                         {
-                            extend: 'border-bottom-right-radius',
-                            id: 'border-bottom-right-radius-sub',
-                        },
-                        {
                             extend: 'border-bottom-left-radius',
                             id: 'border-bottom-left-radius-sub',
+                        },
+                        {
+                            extend: 'border-bottom-right-radius',
+                            id: 'border-bottom-right-radius-sub',
                         },
                     ]),
                 },
@@ -62385,6 +65195,377 @@ var PropertyFactory = /** @class */ (function () {
 }());
 /* harmony default export */ const model_PropertyFactory = (PropertyFactory);
 
+;// CONCATENATED MODULE: ./src/style_manager/model/Sector.ts
+var Sector_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var Sector_assign = (undefined && undefined.__assign) || function () {
+    Sector_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return Sector_assign.apply(this, arguments);
+};
+var Sector_rest = (undefined && undefined.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+var Sector_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+
+
+
+/**
+ *
+ * [Property]: property.html
+ *
+ * @typedef Sector
+ * @property {String} id Sector id, eg. `typography`
+ * @property {String} name Sector name, eg. `Typography`
+ * @property {Boolean} [open=true] Indicates the open state.
+ * @property {Array<Object>} [properties=[]] Indicate an array of Property definitions.
+ */
+var Sector = /** @class */ (function (_super) {
+    Sector_extends(Sector, _super);
+    /**
+     * @hideconstructor
+     */
+    function Sector(prp, opts) {
+        if (opts === void 0) { opts = {}; }
+        var _this = _super.call(this, prp) || this;
+        var em = opts.em;
+        _this.em = em;
+        var o = prp || {};
+        var builded = _this.buildProperties(o.buildProps);
+        var name = _this.get('name') || '';
+        var props = [];
+        !_this.get('id') && _this.set('id', name.replace(/ /g, '_').toLowerCase());
+        if (!builded) {
+            props = _this.get('properties')
+                .map(function (prop) { return ((0,index_all.isString)(prop) ? _this.buildProperties(prop)[0] : prop); })
+                .filter(Boolean);
+        }
+        else {
+            props = _this.extendProperties(builded);
+        }
+        props = props.map(function (prop) { return _this.checkExtend(prop); });
+        var propsModel = new model_Properties(props, { em: em });
+        propsModel.sector = _this;
+        _this.set('properties', propsModel);
+        return _this;
+    }
+    Sector.prototype.defaults = function () {
+        return {
+            id: '',
+            name: '',
+            open: true,
+            visible: true,
+            extendBuilded: true,
+            properties: [],
+        };
+    };
+    Object.defineProperty(Sector.prototype, "properties", {
+        get: function () {
+            return this.get('properties');
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Get sector id.
+     * @returns {String}
+     */
+    Sector.prototype.getId = function () {
+        return this.get('id');
+    };
+    /**
+     * Get sector name.
+     * @returns {String}
+     */
+    Sector.prototype.getName = function () {
+        var _a;
+        var id = this.getId();
+        return ((_a = this.em) === null || _a === void 0 ? void 0 : _a.t("styleManager.sectors.".concat(id))) || this.get('name');
+    };
+    /**
+     * Update sector name.
+     * @param {String} value New sector name
+     */
+    Sector.prototype.setName = function (value) {
+        return this.set('name', value);
+    };
+    /**
+     * Check if the sector is open
+     * @returns {Boolean}
+     */
+    Sector.prototype.isOpen = function () {
+        return !!this.get('open');
+    };
+    /**
+     * Update Sector open state
+     * @param {Boolean} value
+     */
+    Sector.prototype.setOpen = function (value) {
+        return this.set('open', value);
+    };
+    /**
+     * Check if the sector is visible
+     * @returns {Boolean}
+     */
+    Sector.prototype.isVisible = function () {
+        return !!this.get('visible');
+    };
+    /**
+     * Get sector properties.
+     * @param {Object} [opts={}] Options
+     * @param {Boolean} [opts.withValue=false] Get only properties with value
+     * @param {Boolean} [opts.withParentValue=false] Get only properties with parent value
+     * @returns {Array<[Property]>}
+     */
+    Sector.prototype.getProperties = function (opts) {
+        if (opts === void 0) { opts = {}; }
+        var props = this.properties;
+        var res = (props.models ? Sector_spreadArray([], props.models, true) : props);
+        return res.filter(function (prop) {
+            var result = true;
+            if (opts.withValue) {
+                result = prop.hasValue({ noParent: true });
+            }
+            if (opts.withParentValue) {
+                var hasVal = prop.hasValue({ noParent: true });
+                result = !hasVal && prop.hasValue();
+            }
+            return result;
+        });
+    };
+    Sector.prototype.getProperty = function (id) {
+        return this.getProperties().filter(function (prop) { return prop.get('id') === id; })[0] || undefined;
+    };
+    Sector.prototype.addProperty = function (property, opts) {
+        return this.properties.add(this.checkExtend(property), opts);
+    };
+    /**
+     * Extend properties
+     * @param {Array<Object>} props Start properties
+     * @param {Array<Object>} moProps Model props
+     * @param {Boolean} ex Returns the same amount of passed model props
+     * @return {Array<Object>} Final props
+     * @private
+     */
+    Sector.prototype.extendProperties = function (props, moProps, ex) {
+        if (ex === void 0) { ex = false; }
+        var pLen = props.length;
+        var mProps = moProps || this.get('properties');
+        var ext = this.get('extendBuilded');
+        var isolated = [];
+        for (var i = 0, len = mProps.length; i < len; i++) {
+            var mProp = mProps[i];
+            var found = 0;
+            for (var j = 0; j < pLen; j++) {
+                var prop = props[j];
+                if (mProp.property == prop.property || mProp.id == prop.property) {
+                    // @ts-ignore Check for nested properties
+                    var mPProps = mProp.properties;
+                    if (mPProps && mPProps.length) {
+                        // @ts-ignore
+                        mProp.properties = this.extendProperties(prop.properties || [], mPProps, 1);
+                    }
+                    props[j] = ext ? (0,index_all.extend)(prop, mProp) : mProp;
+                    isolated[j] = props[j];
+                    found = 1;
+                    continue;
+                }
+            }
+            if (!found) {
+                props.push(mProp);
+                isolated.push(mProp);
+            }
+        }
+        return ex ? isolated.filter(function (i) { return i; }) : props;
+    };
+    Sector.prototype.checkExtend = function (prop) {
+        var _a = ((0,index_all.isString)(prop) ? { extend: prop } : prop) || {}, extend = _a.extend, rest = Sector_rest(_a, ["extend"]);
+        if (extend) {
+            return Sector_assign(Sector_assign({}, (this.buildProperties([extend])[0] || {})), rest);
+        }
+        else {
+            return prop;
+        }
+    };
+    /**
+     * Build properties
+     * @param {Array<string>} propr Array of props as sting
+     * @return {Array<Object>}
+     * @private
+     */
+    Sector.prototype.buildProperties = function (props) {
+        var _a;
+        var buildP = props || [];
+        if (!buildP.length)
+            return [];
+        var builtIn = (_a = this.em) === null || _a === void 0 ? void 0 : _a.Styles.builtIn;
+        return builtIn === null || builtIn === void 0 ? void 0 : builtIn.build(buildP);
+    };
+    return Sector;
+}(common/* Model */.Kx));
+/* harmony default export */ const model_Sector = (Sector);
+
+;// CONCATENATED MODULE: ./src/style_manager/model/Sectors.ts
+var Sectors_extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var Sectors_assign = (undefined && undefined.__assign) || function () {
+    Sectors_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return Sectors_assign.apply(this, arguments);
+};
+
+
+var Sectors = /** @class */ (function (_super) {
+    Sectors_extends(Sectors, _super);
+    function Sectors() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Sectors.prototype.initialize = function (prop, opts) {
+        if (opts === void 0) { opts = {}; }
+        var module = opts.module, em = opts.em;
+        this.em = em;
+        this.module = module;
+        this.listenTo(this, 'reset', this.onReset);
+    };
+    /** @ts-ignore */
+    Sectors.prototype.model = function (props, opts) {
+        if (opts === void 0) { opts = {}; }
+        // @ts-ignore
+        var em = opts.collection.em;
+        return new model_Sector(props, Sectors_assign(Sectors_assign({}, opts), { em: em }));
+    };
+    Sectors.prototype.onReset = function (models, opts) {
+        if (opts === void 0) { opts = {}; }
+        var prev = opts.previousModels || [];
+        // @ts-ignore
+        prev.forEach(function (sect) { return sect.get('properties').reset(); });
+    };
+    return Sectors;
+}(common/* Collection */.pM));
+/* harmony default export */ const model_Sectors = (Sectors);
+
+;// CONCATENATED MODULE: ./src/style_manager/types.ts
+/**{START_EVENTS}*/
+var StyleManagerEvents;
+(function (StyleManagerEvents) {
+    /**
+     * @event `style:sector:add` Sector added. The Sector is passed as an argument to the callback.
+     * @example
+     * editor.on('style:sector:add', (sector) => { ... });
+     */
+    StyleManagerEvents["sectorAdd"] = "style:sector:add";
+    /**
+     * @event `style:sector:remove` Sector removed. The Sector is passed as an argument to the callback.
+     * @example
+     * editor.on('style:sector:remove', (sector) => { ... });
+     */
+    StyleManagerEvents["sectorRemove"] = "style:sector:remove";
+    /**
+     * @event `style:sector:update` Sector updated. The Sector and the object containing changes are passed as arguments to the callback.
+     * @example
+     * editor.on('style:sector:update', (sector, changes) => { ... });
+     */
+    StyleManagerEvents["sectorUpdate"] = "style:sector:update";
+    /**
+     * @event `style:property:add` Property added. The Property is passed as an argument to the callback.
+     * @example
+     * editor.on('style:property:add', (property) => { ... });
+     */
+    StyleManagerEvents["propertyAdd"] = "style:property:add";
+    /**
+     * @event `style:property:remove` Property removed. The Property is passed as an argument to the callback.
+     * @example
+     * editor.on('style:property:remove', (property) => { ... });
+     */
+    StyleManagerEvents["propertyRemove"] = "style:property:remove";
+    /**
+     * @event `style:property:update` Property updated. The Property and the object containing changes are passed as arguments to the callback.
+     * @example
+     * editor.on('style:property:update', (property, changes) => { ... });
+     */
+    StyleManagerEvents["propertyUpdate"] = "style:property:update";
+    /**
+     * @event `style:target` Target selection changed. The target (or null in case the target is deselected) is passed as an argument to the callback.
+     * @example
+     * editor.on('style:target', (target) => { ... });
+     */
+    StyleManagerEvents["target"] = "style:target";
+    /**
+     * @event `style:layer:select` Layer selected. Object containing layer data is passed as an argument.
+     * @example
+     * editor.on('style:layer:select', (data) => { ... });
+     */
+    StyleManagerEvents["layerSelect"] = "style:layer:select";
+    /**
+     * @event `style:custom` Custom style event. Object containing all custom data is passed as an argument.
+     * @example
+     * editor.on('style:custom', ({ container }) => { ... });
+     */
+    StyleManagerEvents["custom"] = "style:custom";
+    /**
+     * @event `style` Catch-all event for all the events mentioned above. An object containing all the available data about the triggered event is passed as an argument to the callback.
+     * @example
+     * editor.on('style', ({ event, sector, property, ... }) => { ... });
+     */
+    StyleManagerEvents["all"] = "style";
+})(StyleManagerEvents || (StyleManagerEvents = {}));
+// need this to avoid the TS documentation generator to break
+/* harmony default export */ const style_manager_types = ((/* unused pure expression or super */ null && (StyleManagerEvents)));
+
 ;// CONCATENATED MODULE: ./src/style_manager/view/SectorView.ts
 var SectorView_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -62560,29 +65741,13 @@ var SectorsView = /** @class */ (function (_super) {
  * })
  * ```
  *
- * Once the editor is instantiated you can use its API and listen to its events. Before using these methods, you should get the module from the instance.
+ * Once the editor is instantiated you can use its API. Before using these methods you should get the module from the instance.
  *
  * ```js
- * // Listen to events
- * editor.on('style:sector:add', (sector) => { ... });
- *
- * // Use the API
  * const styleManager = editor.StyleManager;
- * styleManager.addSector(...);
  * ```
- * ## Available Events
- * * `style:sector:add` - Sector added. The [Sector] is passed as an argument to the callback.
- * * `style:sector:remove` - Sector removed. The [Sector] is passed as an argument to the callback.
- * * `style:sector:update` - Sector updated. The [Sector] and the object containing changes are passed as arguments to the callback.
- * * `style:property:add` - Property added. The [Property] is passed as an argument to the callback.
- * * `style:property:remove` - Property removed. The [Property] is passed as an argument to the callback.
- * * `style:property:update` - Property updated. The [Property] and the object containing changes are passed as arguments to the callback.
- * * `style:target` - Target selection changed. The target (or `null` in case the target is deselected) is passed as an argument to the callback.
- * <!--
- * * `styleManager:update:target` - The target (Component or CSSRule) is changed
- * * `styleManager:change` - Triggered on style property change from new selected component, the view of the property is passed as an argument to the callback
- * * `styleManager:change:{propertyName}` - As above but for a specific style property
- * -->
+ *
+ * {REPLACE_EVENTS}
  *
  * ## Methods
  * * [getConfig](#getconfig)
@@ -62659,32 +65824,8 @@ var style_manager_spreadArray = (undefined && undefined.__spreadArray) || functi
 
 
 
-var style_manager_evAll = 'style';
-var style_manager_evPfx = "".concat(style_manager_evAll, ":");
-var evSector = "".concat(style_manager_evPfx, "sector");
-var evSectorAdd = "".concat(evSector, ":add");
-var evSectorRemove = "".concat(evSector, ":remove");
-var evSectorUpdate = "".concat(evSector, ":update");
-var evProp = "".concat(style_manager_evPfx, "property");
-var evPropAdd = "".concat(evProp, ":add");
-var evPropRemove = "".concat(evProp, ":remove");
-var evPropUp = "".concat(evProp, ":update");
-var evLayerSelect = "".concat(style_manager_evPfx, "layer:select");
-var evTarget = "".concat(style_manager_evPfx, "target");
-var style_manager_evCustom = "".concat(style_manager_evPfx, "custom");
+
 var propDef = function (value) { return value || value === 0; };
-var stylesEvents = {
-    all: style_manager_evAll,
-    sectorAdd: evSectorAdd,
-    sectorRemove: evSectorRemove,
-    sectorUpdate: evSectorUpdate,
-    propertyAdd: evPropAdd,
-    propertyRemove: evPropRemove,
-    propertyUpdate: evPropUp,
-    layerSelect: evLayerSelect,
-    target: evTarget,
-    custom: style_manager_evCustom,
-};
 var StyleManager = /** @class */ (function (_super) {
     style_manager_extends(StyleManager, _super);
     /**
@@ -62699,10 +65840,12 @@ var StyleManager = /** @class */ (function (_super) {
      * @private
      */
     function StyleManager(em) {
-        var _this = _super.call(this, em, 'StyleManager', new model_Sectors([], { em: em }), stylesEvents, style_manager_config_config()) || this;
+        var _this = _super.call(this, em, 'StyleManager', new model_Sectors([], { em: em }), StyleManagerEvents, style_manager_config_config()) || this;
+        _this.events = StyleManagerEvents;
         _this.Sector = model_Sector;
         _this.storageKey = '';
         (0,index_all.bindAll)(_this, '__clearStateTarget');
+        var events = _this.events;
         var c = _this.config;
         var ppfx = c.pStylePrefix;
         if (ppfx)
@@ -62713,12 +65856,12 @@ var StyleManager = /** @class */ (function (_super) {
         var model = new common/* Model */.Kx({ targets: [] });
         _this.model = model;
         // Triggers for the selection refresh and properties
-        var eventCmpUpdate = dom_components_types/* ComponentsEvents */.I.update;
-        var ev = "component:toggled ".concat(eventCmpUpdate, ":classes change:state change:device frame:resized selector:type");
+        var eventCmpUpdate = dom_components_types/* ComponentsEvents */.IT.update;
+        var ev = "".concat(dom_components_types/* ComponentsEvents */.IT.toggled, " ").concat(eventCmpUpdate, ":classes change:state change:device frame:resized selector:type");
         _this.upAll = (0,index_all.debounce)(function () { return _this.__upSel(); }, 0);
         model.listenTo(em, ev, _this.upAll);
         // Clear state target on any component selection change, without debounce (#4208)
-        model.listenTo(em, 'component:toggled', _this.__clearStateTarget);
+        model.listenTo(em, dom_components_types/* ComponentsEvents */.IT.toggled, _this.__clearStateTarget);
         // Triggers only for properties (avoid selection refresh)
         var upProps = (0,index_all.debounce)(function () {
             _this.__upProps();
@@ -62727,9 +65870,9 @@ var StyleManager = /** @class */ (function (_super) {
         model.listenTo(em, 'styleable:change undo redo', upProps);
         // Triggers only custom event
         var trgCustom = (0,index_all.debounce)(function () { return _this.__trgCustom(); }, 0);
-        model.listenTo(em, "".concat(evLayerSelect, " ").concat(evTarget), trgCustom);
+        model.listenTo(em, "".concat(events.layerSelect, " ").concat(events.target), trgCustom);
         // Other listeners
-        model.on('change:lastTarget', function () { return em.trigger(evTarget, _this.getSelected()); });
+        model.on('change:lastTarget', function () { return em.trigger(events.target, _this.getSelected()); });
         return _this;
     }
     StyleManager.prototype.__upSel = function () {
@@ -63292,9 +66435,9 @@ var StyleManager = /** @class */ (function (_super) {
             props.forEach(function (prop) {
                 var isVisible = prop.__checkVisibility({
                     target: lastTarget,
+                    sector: sector,
                     component: component,
-                    // @ts-ignore
-                    sectors: sectors,
+                    sectors: sectors.models,
                 });
                 prop.set('visible', isVisible);
             });
@@ -63375,433 +66518,11 @@ var StyleManager = /** @class */ (function (_super) {
 }(ItemManagerModule));
 /* harmony default export */ const style_manager = (StyleManager);
 
-;// CONCATENATED MODULE: ./src/data_sources/model/DataRecord.ts
-/**
- * The `DataRecord` class represents a single record within a data source.
- * It extends the base `Model` class and provides additional methods and properties specific to data records.
- * Each `DataRecord` is associated with a `DataSource` and can trigger events when its properties change.
- *
- * ### DataRecord API
- *
- * * [getPath](#getpath)
- * * [getPaths](#getpaths)
- * * [set](#set)
- *
- * ### Example of Usage
- *
- * ```js
- * const record = new DataRecord({ id: 'record1', name: 'value1' }, { collection: dataRecords });
- * const path = record.getPath(); // e.g., 'SOURCE_ID.record1'
- * record.set('name', 'newValue');
- * ```
- *
- * @module DataRecord
- * @param {DataRecordProps} props - Properties to initialize the data record.
- * @param {Object} opts - Options for initializing the data record.
- * @extends {Model<DataRecordProps>}
- */
-var DataRecord_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var DataRecord_assign = (undefined && undefined.__assign) || function () {
-    DataRecord_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return DataRecord_assign.apply(this, arguments);
-};
-
-
-
-var DataRecord = /** @class */ (function (_super) {
-    DataRecord_extends(DataRecord, _super);
-    function DataRecord(props, opts) {
-        if (opts === void 0) { opts = {}; }
-        var _a;
-        var _this = _super.call(this, props, opts) || this;
-        _this.mutable = (_a = props.mutable) !== null && _a !== void 0 ? _a : true;
-        _this.on('change', _this.handleChange);
-        return _this;
-    }
-    Object.defineProperty(DataRecord.prototype, "cl", {
-        get: function () {
-            return this.collection;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(DataRecord.prototype, "dataSource", {
-        get: function () {
-            return this.cl.dataSource;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(DataRecord.prototype, "em", {
-        get: function () {
-            return this.dataSource.em;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(DataRecord.prototype, "index", {
-        get: function () {
-            return this.cl.indexOf(this);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    /**
-     * Handles changes to the record's attributes.
-     * This method triggers a change event for each property that has been altered.
-     *
-     * @private
-     * @name handleChange
-     */
-    DataRecord.prototype.handleChange = function () {
-        var _this = this;
-        var changed = this.changedAttributes();
-        (0,index_all.keys)(changed).forEach(function (prop) { return _this.triggerChange(prop); });
-    };
-    /**
-     * Get the path of the record.
-     * The path is a string that represents the location of the record within the data source.
-     * Optionally, include a property name to create a more specific path.
-     *
-     * @param {String} [prop] - Optional property name to include in the path.
-     * @param {Object} [opts] - Options for path generation.
-     * @param {Boolean} [opts.useIndex] - Whether to use the index of the record in the path.
-     * @returns {String} - The path of the record.
-     * @name getPath
-     * @example
-     * const pathRecord = record.getPath();
-     * // e.g., 'SOURCE_ID.record1'
-     * const pathRecord2 = record.getPath('myProp');
-     * // e.g., 'SOURCE_ID.record1.myProp'
-     */
-    DataRecord.prototype.getPath = function (prop, opts) {
-        if (opts === void 0) { opts = {}; }
-        var _a = this, dataSource = _a.dataSource, id = _a.id, index = _a.index;
-        var dsId = dataSource.id;
-        var suffix = prop ? ".".concat(prop) : '';
-        return "".concat(dsId, ".").concat(opts.useIndex ? index : id).concat(suffix);
-    };
-    /**
-     * Get both ID-based and index-based paths of the record.
-     * Returns an array containing the paths using both ID and index.
-     *
-     * @param {String} [prop] - Optional property name to include in the paths.
-     * @returns {Array<String>} - An array of paths.
-     * @name getPaths
-     * @example
-     * const paths = record.getPaths();
-     * // e.g., ['SOURCE_ID.record1', 'SOURCE_ID.0']
-     */
-    DataRecord.prototype.getPaths = function (prop) {
-        return [this.getPath(prop), this.getPath(prop, { useIndex: true })];
-    };
-    /**
-     * Trigger a change event for the record.
-     * Optionally, include a property name to trigger a change event for a specific property.
-     *
-     * @param {String} [prop] - Optional property name to trigger a change event for a specific property.
-     * @name triggerChange
-     */
-    DataRecord.prototype.triggerChange = function (prop) {
-        var _a = this, dataSource = _a.dataSource, em = _a.em;
-        var data = { dataSource: dataSource, dataRecord: this };
-        var paths = this.getPaths(prop);
-        paths.forEach(function (path) { return em.trigger("".concat(DataSourcesEvents.path, ":").concat(path), DataRecord_assign(DataRecord_assign({}, data), { path: path })); });
-    };
-    DataRecord.prototype.set = function (attributeName, value, options) {
-        var _this = this;
-        var _a, _b;
-        if (!this.isNew() && this.attributes.mutable === false) {
-            throw new Error('Cannot modify immutable record');
-        }
-        var onRecordSetValue = (_b = (_a = this.dataSource) === null || _a === void 0 ? void 0 : _a.transformers) === null || _b === void 0 ? void 0 : _b.onRecordSetValue;
-        var applySet = function (key, val, opts) {
-            if (opts === void 0) { opts = {}; }
-            var newValue = (opts === null || opts === void 0 ? void 0 : opts.avoidTransformers) || !onRecordSetValue
-                ? val
-                : onRecordSetValue({
-                    id: _this.id,
-                    key: key,
-                    value: val,
-                });
-            _super.prototype.set.call(_this, key, newValue, opts);
-            // This ensures to trigger the change event with partial updates
-            _super.prototype.set.call(_this, { __p: opts.partial ? true : undefined }, opts);
-        };
-        if (typeof attributeName === 'object' && attributeName !== null) {
-            var attributes = attributeName;
-            for (var _i = 0, _c = Object.entries(attributes); _i < _c.length; _i++) {
-                var _d = _c[_i], key = _d[0], val = _d[1];
-                applySet(key, val, value);
-            }
-        }
-        else {
-            applySet(attributeName, value, options);
-        }
-        return this;
-    };
-    return DataRecord;
-}(common/* Model */.Kx));
-/* harmony default export */ const model_DataRecord = (DataRecord);
-
-;// CONCATENATED MODULE: ./src/data_sources/model/DataRecords.ts
-var DataRecords_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-
-
-var DataRecords = /** @class */ (function (_super) {
-    DataRecords_extends(DataRecords, _super);
-    function DataRecords(models, options) {
-        var _this = _super.call(this, models, options) || this;
-        _this.dataSource = options.dataSource;
-        return _this;
-    }
-    return DataRecords;
-}(common/* Collection */.pM));
-/* harmony default export */ const model_DataRecords = (DataRecords);
-DataRecords.prototype.model = model_DataRecord;
-
-;// CONCATENATED MODULE: ./src/data_sources/model/DataSource.ts
-/**
- * The `DataSource` class represents a data source within the editor.
- * It manages a collection of data records and provides methods to interact with them.
- * The `DataSource` can be extended with transformers to modify records during add, read, and delete operations.
- *
- * ### DataSource API
- *
- * * [addRecord](#addrecord)
- * * [getRecord](#getrecord)
- * * [getRecords](#getrecords)
- * * [removeRecord](#removerecord)
- *
- * ### Example of Usage
- *
- * ```js
- * const dataSource = new DataSource({
- *   records: [
- *     { id: 'id1', name: 'value1' },
- *     { id: 'id2', name: 'value2' }
- *   ],
- * }, { em: editor });
- *
- * dataSource.addRecord({ id: 'id3', name: 'value3' });
- * ```
- *
- * @module DataSource
- * @param {DataSourceProps} props - Properties to initialize the data source.
- * @param {DataSourceOptions} opts - Options to initialize the data source.
- * @extends {Model<DataSourceProps>}
- */
-var DataSource_extends = (undefined && undefined.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var DataSource_assign = (undefined && undefined.__assign) || function () {
-    DataSource_assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return DataSource_assign.apply(this, arguments);
-};
-var DataSource_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-
-
-var DataSource = /** @class */ (function (_super) {
-    DataSource_extends(DataSource, _super);
-    /**
-     * Initializes a new instance of the `DataSource` class.
-     * It sets up the transformers and initializes the collection of records.
-     * If the `records` property is not an instance of `DataRecords`, it will be converted into one.
-     *
-     * @param {DataSourceProps<DRProps>} props - Properties to initialize the data source.
-     * @param {DataSourceOptions} opts - Options to initialize the data source.
-     * @name constructor
-     */
-    function DataSource(props, opts) {
-        var _this = _super.call(this, DataSource_assign(DataSource_assign({}, props), { records: [] }), opts) || this;
-        var records = props.records, transformers = props.transformers;
-        _this.transformers = transformers || {};
-        if (!(records instanceof model_DataRecords)) {
-            _this.set({ records: new model_DataRecords(records, { dataSource: _this }) });
-        }
-        _this.listenTo(_this.records, 'add', _this.onAdd);
-        _this.listenTo(_this.records, common/* collectionEvents */.e2, _this.handleChanges);
-        return _this;
-    }
-    /**
-     * Returns the default properties for the data source.
-     * These include an empty array of records and an empty object of transformers.
-     *
-     * @returns {Object} The default attributes for the data source.
-     * @name defaults
-     */
-    DataSource.prototype.defaults = function () {
-        return {
-            records: [],
-            transformers: {},
-        };
-    };
-    Object.defineProperty(DataSource.prototype, "records", {
-        /**
-         * Retrieves the collection of records associated with this data source.
-         *
-         * @returns {DataRecords<DRProps>} The collection of data records.
-         * @name records
-         */
-        get: function () {
-            return this.attributes.records;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(DataSource.prototype, "em", {
-        /**
-         * Retrieves the editor model associated with this data source.
-         *
-         * @returns {EditorModel} The editor model.
-         * @name em
-         */
-        get: function () {
-            return this.collection.em;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    /**
-     * Handles the `add` event for records in the data source.
-     * This method triggers a change event on the newly added record.
-     *
-     * @param {DataRecord<DRProps>} dr - The data record that was added.
-     * @private
-     * @name onAdd
-     */
-    DataSource.prototype.onAdd = function (dr) {
-        dr.triggerChange();
-    };
-    /**
-     * Adds a new record to the data source.
-     *
-     * @param {DRProps} record - The properties of the record to add.
-     * @param {AddOptions} [opts] - Options to apply when adding the record.
-     * @returns {DataRecord} The added data record.
-     * @name addRecord
-     */
-    DataSource.prototype.addRecord = function (record, opts) {
-        return this.records.add(record, opts);
-    };
-    /**
-     * Retrieves a record from the data source by its ID.
-     *
-     * @param {string | number} id - The ID of the record to retrieve.
-     * @returns {DataRecord<DRProps> | undefined} The data record, or `undefined` if no record is found with the given ID.
-     * @name getRecord
-     */
-    DataSource.prototype.getRecord = function (id) {
-        return this.records.get(id);
-    };
-    /**
-     * Retrieves all records from the data source.
-     * Each record is processed with the `getRecord` method to apply any read transformers.
-     *
-     * @returns {Array<DataRecord<DRProps> | undefined>} An array of data records.
-     * @name getRecords
-     */
-    DataSource.prototype.getRecords = function () {
-        var _this = this;
-        return DataSource_spreadArray([], this.records.models, true).map(function (record) { return _this.getRecord(record.id); });
-    };
-    /**
-     * Removes a record from the data source by its ID.
-     *
-     * @param {string | number} id - The ID of the record to remove.
-     * @param {RemoveOptions} [opts] - Options to apply when removing the record.
-     * @returns {DataRecord<DRProps> | undefined} The removed data record, or `undefined` if no record is found with the given ID.
-     * @name removeRecord
-     */
-    DataSource.prototype.removeRecord = function (id, opts) {
-        var record = this.getRecord(id);
-        if ((record === null || record === void 0 ? void 0 : record.mutable) === false && !(opts === null || opts === void 0 ? void 0 : opts.dangerously)) {
-            throw new Error('Cannot remove immutable record');
-        }
-        return this.records.remove(id, opts);
-    };
-    /**
-     * Replaces the existing records in the data source with a new set of records.
-     *
-     * @param {Array<DRProps>} records - An array of data record properties to set.
-     * @returns {Array<DataRecord>} An array of the added data records.
-     * @name setRecords
-     */
-    DataSource.prototype.setRecords = function (records) {
-        var _this = this;
-        this.records.reset([], { silent: true });
-        records.forEach(function (record) {
-            _this.records.add(record);
-        });
-    };
-    DataSource.prototype.handleChanges = function (m, c, o) {
-        this.em.changesUp(o || c);
-    };
-    return DataSource;
-}(common/* Model */.Kx));
-/* harmony default export */ const model_DataSource = (DataSource);
+;// CONCATENATED MODULE: ./src/data_sources/config/config.ts
+var data_sources_config_config_config = function () { return ({
+    autoloadProviders: false,
+}); };
+/* harmony default export */ const data_sources_config_config = (data_sources_config_config_config);
 
 ;// CONCATENATED MODULE: ./src/data_sources/model/DataSources.ts
 var DataSources_extends = (undefined && undefined.__extends) || (function () {
@@ -63851,39 +66572,25 @@ var DataSources = /** @class */ (function (_super) {
 ;// CONCATENATED MODULE: ./src/data_sources/index.ts
 /**
  * This module manages data sources within the editor.
- * You can initialize the module with the editor by passing an instance of `EditorModel`.
- *
- * ```js
- * const editor = new EditorModel();
- * const dsm = new DataSourceManager(editor);
- * ```
- *
  * Once the editor is instantiated, you can use the following API to manage data sources:
  *
  * ```js
+ * const editor = grapesjs.init({ ... });
  * const dsm = editor.DataSources;
  * ```
  *
+ * {REPLACE_EVENTS}
+ *
+ * ## Methods
  * * [add](#add) - Add a new data source.
  * * [get](#get) - Retrieve a data source by its ID.
  * * [getAll](#getall) - Retrieve all data sources.
  * * [remove](#remove) - Remove a data source by its ID.
  * * [clear](#clear) - Remove all data sources.
  *
- * Example of adding a data source:
- *
- * ```js
- * const ds = dsm.add({
- *   id: 'my_data_source_id',
- *   records: [
- *     { id: 'id1', name: 'value1' },
- *     { id: 'id2', name: 'value2' }
- *   ]
- * });
- * ```
+ * [DataSource]: datasource.html
  *
  * @module DataSources
- * @param {EditorModel} em - Editor model.
  */
 var data_sources_extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -63900,6 +66607,80 @@ var data_sources_extends = (undefined && undefined.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var data_sources_assign = (undefined && undefined.__assign) || function () {
+    data_sources_assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return data_sources_assign.apply(this, arguments);
+};
+var data_sources_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var data_sources_generator = (undefined && undefined.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var data_sources_rest = (undefined && undefined.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
+var data_sources_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+
+
+
+
+
+
+
 
 
 
@@ -63909,9 +66690,19 @@ var data_sources_extends = (undefined && undefined.__extends) || (function () {
 var DataSourceManager = /** @class */ (function (_super) {
     data_sources_extends(DataSourceManager, _super);
     function DataSourceManager(em) {
-        var _this = _super.call(this, em, 'DataSources', new model_DataSources([], em), DataSourcesEvents) || this;
+        var _this = _super.call(this, em, 'DataSources', new model_DataSources([], em), DataSourcesEvents, data_sources_config_config()) || this;
         _this.storageKey = 'dataSources';
         _this.events = DataSourcesEvents;
+        _this.dataComponentTypes = DataComponentTypes;
+        _this.dataCollectionKeys = DataCollectionKeys;
+        _this.dataCollectionStateTypes = DataCollectionStateType;
+        _this.dataFieldPrimitiveType = DataFieldPrimitiveType;
+        _this.dataOperationTypes = {
+            any: AnyTypeOperation,
+            boolean: BooleanOperation,
+            number: NumberOperation,
+            string: StringOperation,
+        };
         Object.assign(_this, backbone.Events); // Mixin Backbone.Events
         return _this;
     }
@@ -63946,20 +66737,50 @@ var DataSourceManager = /** @class */ (function (_super) {
         return this.all.get(id);
     };
     /**
-     * Get value from data sources by key
-     * @param {String} key Path to value.
-     * @param {any} defValue
+     * Return all data sources.
+     * @returns {Array<[DataSource]>}
+     * @example
+     * const ds = dsm.getAll();
+     */
+    DataSourceManager.prototype.getAll = function () {
+        return data_sources_spreadArray([], this.all.models, true);
+    };
+    /**
+     * Get value from data sources by path.
+     * @param {String} path Path to value.
+     * @param {any} defValue Default value if the path is not found.
      * @returns {any}
      * const value = dsm.getValue('ds_id.record_id.propName', 'defaultValue');
      */
-    DataSourceManager.prototype.getValue = function (key, defValue) {
-        return (0,mixins.get)(this.getContext(), key, defValue);
+    DataSourceManager.prototype.getValue = function (path, defValue, opts) {
+        return (0,mixins.get)((opts === null || opts === void 0 ? void 0 : opts.context) || this.getContext(), path, defValue);
+    };
+    /**
+     * Set value in data sources by path.
+     * @param {String} path Path to value in format 'dataSourceId.recordId.propName'
+     * @param {any} value Value to set
+     * @returns {Boolean} Returns true if the value was set successfully
+     * @example
+     * dsm.setValue('ds_id.record_id.propName', 'new value');
+     */
+    DataSourceManager.prototype.setValue = function (path, value) {
+        var _a = this.fromPath(path), ds = _a[0], record = _a[1], propPath = _a[2];
+        if (record && (propPath || propPath === '')) {
+            var attrs = data_sources_assign({}, record.attributes);
+            if ((0,mixins.set)(attrs, propPath || '', value)) {
+                record.set(attrs);
+                return true;
+            }
+        }
+        return false;
     };
     DataSourceManager.prototype.getContext = function () {
         return this.all.reduce(function (acc, ds) {
             acc[ds.id] = ds.records.reduce(function (accR, dr, i) {
                 var dataRecord = dr;
-                accR[dataRecord.id || i] = dataRecord.attributes;
+                var attributes = data_sources_assign({}, dataRecord.attributes);
+                delete attributes.__p;
+                accR[dataRecord.id || i] = attributes;
                 return accR;
             }, {});
             return acc;
@@ -63982,7 +66803,7 @@ var DataSourceManager = /** @class */ (function (_super) {
      * The method is useful for accessing nested data within data sources.
      *
      * @param {String} path - The string path in the format 'dataSourceId.recordId.property'.
-     * @returns {[DataSource?, DataRecord?, string]} - An array containing the data source,
+     * @returns {[DataSource?, DataRecord?, String?]} - An array containing the data source,
      * data record, and optional property path.
      * @example
      * const [dataSource, dataRecord, propPath] = dsm.fromPath('my_data_source_id.record_id.myProp');
@@ -64008,14 +66829,9 @@ var DataSourceManager = /** @class */ (function (_super) {
         var _a;
         var data = [];
         this.all.forEach(function (dataSource) {
-            var skipFromStorage = dataSource.get('skipFromStorage');
+            var _a = dataSource.attributes, skipFromStorage = _a.skipFromStorage, transformers = _a.transformers, records = _a.records, schema = _a.schema, rest = data_sources_rest(_a, ["skipFromStorage", "transformers", "records", "schema"]);
             if (!skipFromStorage) {
-                data.push({
-                    id: dataSource.id,
-                    name: dataSource.get('name'),
-                    records: dataSource.records.toJSON(),
-                    skipFromStorage: skipFromStorage,
-                });
+                data.push(data_sources_assign(data_sources_assign({}, rest), { id: rest.id, schema: !(0,index_all.isEmpty)(schema) ? schema : undefined, records: !rest.provider ? records : undefined }));
             }
         });
         return _a = {}, _a[this.storageKey] = data, _a;
@@ -64026,11 +66842,39 @@ var DataSourceManager = /** @class */ (function (_super) {
      * @returns {Object} Loaded data sources.
      */
     DataSourceManager.prototype.load = function (data) {
-        return this.loadProjectData(data);
+        var _this = this;
+        var _a = this, config = _a.config, all = _a.all, events = _a.events, em = _a.em;
+        var result = this.loadProjectData(data);
+        if (config.autoloadProviders) {
+            var dsWithProviders_1 = all.filter(function (ds) { return ds.hasProvider; });
+            if (!!dsWithProviders_1.length) {
+                var loadProviders = function () { return data_sources_awaiter(_this, void 0, void 0, function () {
+                    var providersToLoad;
+                    return data_sources_generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                em.trigger(events.providerLoadAllBefore);
+                                providersToLoad = dsWithProviders_1.map(function (ds) { return ds.loadProvider(); });
+                                return [4 /*yield*/, Promise.all(providersToLoad)];
+                            case 1:
+                                _a.sent();
+                                em.trigger(events.providerLoadAll);
+                                return [2 /*return*/];
+                        }
+                    });
+                }); };
+                loadProviders();
+            }
+        }
+        return result;
     };
     DataSourceManager.prototype.postLoad = function () {
         var _a = this, em = _a.em, all = _a.all;
-        em.listenTo(all, common/* collectionEvents */.e2, function (m, c, o) { return em.changesUp(o || c); });
+        em.listenTo(all, common/* collectionEvents */.e2, function (dataSource, c, o) {
+            var options = o || c;
+            em.changesUp(options, { dataSource: dataSource, options: options });
+        });
+        this.em.UndoManager.add(all);
     };
     return DataSourceManager;
 }(ItemManagerModule));
@@ -64175,11 +67019,12 @@ var deps = [
     data_sources,
 ];
 var storableDeps = [
+    data_sources, // Ensure DS are loaded before other modules
     asset_manager,
     css_composer,
     pages,
     dom_components,
-    data_sources,
+    selector_manager,
 ];
 extender({ $: cash_dom["default"] });
 var logs = {
@@ -64195,9 +67040,12 @@ var EditorModel = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this.Model = common/* Model */.Kx;
         _this.Collection = common/* Collection */.pM;
+        _this.events = EditorEvents;
         _this.__skip = false;
         _this.defaultRunning = false;
+        _this.loadTriggered = false;
         _this.destroyed = false;
+        _this._isStoring = false;
         _this._config = conf;
         var config = _this.config;
         _this.set('Config', conf);
@@ -64230,7 +67078,7 @@ var EditorModel = /** @class */ (function (_super) {
         _this.on('change:readyLoad change:readyCanvas', _this._checkReady, _this);
         toLog.forEach(function (e) { return _this.listenLog(e); });
         // Deprecations
-        [{ from: 'change:selectedComponent', to: 'component:toggled' }].forEach(function (event) {
+        [{ from: 'change:selectedComponent', to: dom_components_types/* ComponentsEvents */.IT.toggled }].forEach(function (event) {
             var eventFrom = event.from;
             var eventTo = event.to;
             _this.listenTo(_this, eventFrom, function () {
@@ -64463,6 +67311,22 @@ var EditorModel = /** @class */ (function (_super) {
         enumerable: false,
         configurable: true
     });
+    EditorModel.prototype.on = function (event, callback, context) {
+        return _super.prototype.on.call(this, event, callback, context);
+    };
+    EditorModel.prototype.once = function (event, callback, context) {
+        return _super.prototype.once.call(this, event, callback, context);
+    };
+    EditorModel.prototype.off = function (event, callback, context) {
+        return _super.prototype.off.call(this, event, callback, context);
+    };
+    EditorModel.prototype.trigger = function (event) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
+        return _super.prototype.trigger.apply(this, Editor_spreadArray([event], args, false));
+    };
     EditorModel.prototype._checkReady = function () {
         if (this.get('readyLoad') && this.get('readyCanvas') && !this.get('ready')) {
             this.set('ready', true);
@@ -64472,8 +67336,17 @@ var EditorModel = /** @class */ (function (_super) {
         return this.config.el;
     };
     EditorModel.prototype.listenLog = function (event) {
-        //@ts-ignore
-        this.listenTo(this, "log:".concat(event), logs[event]);
+        var _this = this;
+        this.listenTo(this, "log:".concat(event), function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            if (!_this.config.log)
+                return;
+            var logFn = logs[event];
+            logFn === null || logFn === void 0 ? void 0 : logFn.apply(void 0, args);
+        });
     };
     Object.defineProperty(EditorModel.prototype, "config", {
         get: function () {
@@ -64490,6 +67363,23 @@ var EditorModel = /** @class */ (function (_super) {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(EditorModel.prototype, "isHeadless", {
+        get: function () {
+            return !!this.config.headless;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(EditorModel.prototype, "isShallow", {
+        get: function () {
+            return !!this.get('isShallow');
+        },
+        enumerable: false,
+        configurable: true
+    });
+    EditorModel.prototype.initModules = function () {
+        this.modules.forEach(function (module) { return module.onInit(); });
+    };
     /**
      * Get configurations
      * @param  {string} [prop] Property name
@@ -64624,13 +67514,14 @@ var EditorModel = /** @class */ (function (_super) {
      * @param  {Object} opt  Options
      * @private
      * */
-    EditorModel.prototype.handleUpdates = function (model, val, opt) {
+    EditorModel.prototype.handleUpdates = function (opt, data) {
         var _this = this;
         if (opt === void 0) { opt = {}; }
         // Component has been added temporarily - do not update storage or record changes
-        if (this.__skip || opt.temporary || opt.noCount || opt.avoidStore || opt.partial || !this.get('ready')) {
+        if (this.__skip || !this.loadTriggered || opt.temporary || opt.noCount || opt.avoidStore || opt.partial) {
             return;
         }
+        this.trigger(this.events.updateBefore, data);
         this.timedInterval && clearTimeout(this.timedInterval);
         this.timedInterval = setTimeout(function () {
             var curr = _this.getDirtyCount() || 0;
@@ -64638,8 +67529,8 @@ var EditorModel = /** @class */ (function (_super) {
             _this.set('changesCount', curr + 1, opts);
         }, 0);
     };
-    EditorModel.prototype.changesUp = function (opts) {
-        this.handleUpdates(0, 0, opts);
+    EditorModel.prototype.changesUp = function (opts, data) {
+        this.handleUpdates(opts, data);
     };
     /**
      * Callback on component hover
@@ -64650,8 +67541,8 @@ var EditorModel = /** @class */ (function (_super) {
      * */
     EditorModel.prototype.componentHovered = function (editor, component, options) {
         var prev = this.previous('componentHovered');
-        prev && this.trigger('component:unhovered', prev, options);
-        component && this.trigger('component:hovered', component, options);
+        prev && this.trigger(dom_components_types/* ComponentsEvents */.IT.unhovered, prev, options);
+        component && this.trigger(dom_components_types/* ComponentsEvents */.IT.hovered, component, options);
     };
     /**
      * Returns model of the selected component
@@ -64692,7 +67583,7 @@ var EditorModel = /** @class */ (function (_super) {
         }
         models.forEach(function (model) {
             if (model) {
-                _this.trigger(dom_components_types/* ComponentsEvents */.I.selectBefore, model, opts);
+                _this.trigger(dom_components_types/* ComponentsEvents */.IT.selectBefore, model, opts);
                 // Check for valid selectable
                 if (!model.get('selectable') || opts.abort) {
                     if (opts.useValid) {
@@ -64706,11 +67597,15 @@ var EditorModel = /** @class */ (function (_super) {
                     }
                 }
             }
-            // Hanlde multiple selection
+            // Handle multiple selection
             if (ctrlKey && mltSel) {
                 return _this.toggleSelected(model);
             }
             else if (shiftKey && mltSel) {
+                if (_this.isEditing()) {
+                    // Fixes #6345 where a shift click while editing text should not assume a selection of a component
+                    return;
+                }
                 _this.clearSelection(_this.Canvas.getWindow());
                 var coll_1 = model.collection;
                 var index_1 = model.index();
@@ -64771,11 +67666,23 @@ var EditorModel = /** @class */ (function (_super) {
             var toDeselect = selected.allComponents().filter(function (cmp) { return (0,index_all.contains)(cmp.parents(), model); });
             toDeselect.forEach(function (cmp) { return _this.removeSelected(cmp, opts); });
             selected.addComponent(model, opts);
-            _this.trigger(dom_components_types/* ComponentsEvents */.I.select, model, opts);
+            _this.trigger(dom_components_types/* ComponentsEvents */.IT.select, model, opts);
             _this.Canvas.addSpot({
                 type: CanvasSpot/* CanvasSpotBuiltInTypes */.F.Select,
                 component: model,
             });
+            if (opts.activate) {
+                var view = model.getView();
+                if (view === null || view === void 0 ? void 0 : view.rendered) {
+                    view.onActive(opts.event);
+                }
+                else {
+                    model.once(dom_components_types/* ComponentsEvents */.IT.render, function (_a) {
+                        var view = _a.view;
+                        return view.onActive(opts.event);
+                    });
+                }
+            }
         });
     };
     /**
@@ -64845,9 +67752,8 @@ var EditorModel = /** @class */ (function (_super) {
         if (!cmp) {
             return upHovered();
         }
-        var ev = 'component:hover';
         opts.forceChange && upHovered();
-        this.trigger("".concat(ev, ":before"), cmp, opts);
+        this.trigger(dom_components_types/* ComponentsEvents */.IT.hoverBefore, cmp, opts);
         // Check for valid hoverable
         if (!cmp.get('hoverable')) {
             if (opts.useValid && !opts.abort) {
@@ -64862,7 +67768,7 @@ var EditorModel = /** @class */ (function (_super) {
         }
         if (!opts.abort) {
             upHovered(cmp, opts);
-            this.trigger(ev, cmp, opts);
+            this.trigger(dom_components_types/* ComponentsEvents */.IT.hover, cmp, opts);
         }
     };
     EditorModel.prototype.getHovered = function () {
@@ -64973,7 +67879,7 @@ var EditorModel = /** @class */ (function (_super) {
         var keepUnusedStyles = !(0,index_all.isUndefined)(opts.keepUnusedStyles) ? opts.keepUnusedStyles : config.keepUnusedStyles;
         var cssc = this.Css;
         var wrp = opts.component || this.Components.getComponent();
-        var protCss = !avoidProt ? config.protectedCss : '';
+        var protCss = !avoidProt ? config.protectedCss || '' : '';
         var css = wrp &&
             this.CodeManager.getCode(wrp, 'css', Editor_assign(Editor_assign({ cssc: cssc, keepUnusedStyles: keepUnusedStyles }, optsCss), opts));
         return wrp ? (opts.json ? css : protCss + css) : '';
@@ -64995,14 +67901,26 @@ var EditorModel = /** @class */ (function (_super) {
     EditorModel.prototype.store = function (options) {
         return Editor_awaiter(this, void 0, void 0, function () {
             var data;
+            var _this = this;
             return Editor_generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        if (this._isStoring)
+                            return [2 /*return*/];
+                        this._isStoring = true;
+                        // We use a 1ms timeout to defer the cleanup to the next tick of the event loop.
+                        // This prevents a race condition where a store operation, like 'sync:content',
+                        // might increase the dirty count before it can be properly cleared.
+                        setTimeout(function () {
+                            _this.clearDirtyCount();
+                        }, 1);
                         data = this.storeData();
                         return [4 /*yield*/, this.Storage.store(data, options)];
                     case 1:
                         _a.sent();
-                        this.clearDirtyCount();
+                        setTimeout(function () {
+                            _this._isStoring = false;
+                        }, 1);
                         return [2 /*return*/, data];
                 }
             });
@@ -65044,18 +67962,22 @@ var EditorModel = /** @class */ (function (_super) {
         this.storables.forEach(function (m) {
             result = Editor_assign(Editor_assign({}, result), m.store(1));
         });
-        return JSON.parse(JSON.stringify(result));
+        var project = JSON.parse(JSON.stringify(result));
+        this.trigger(EditorEvents.projectGet, { project: project });
+        return project;
     };
-    EditorModel.prototype.loadData = function (project, opts) {
+    EditorModel.prototype.loadData = function (project, options) {
         if (project === void 0) { project = {}; }
-        if (opts === void 0) { opts = {}; }
+        if (options === void 0) { options = {}; }
+        var evData = { project: project, options: options, initial: !!options.initial };
         var loaded = false;
         if (!(0,mixins.isEmptyObj)(project)) {
             this.storables.forEach(function (module) { return module.clear(); });
             this.storables.forEach(function (module) { return module.load(project); });
             loaded = true;
         }
-        this.trigger(EditorEvents.projectLoad, { project: project, loaded: loaded, initial: !!opts.initial });
+        this.trigger(EditorEvents.projectLoad, Editor_assign(Editor_assign({}, evData), { loaded: loaded }));
+        loaded && this.trigger(EditorEvents.projectLoaded, evData);
         return project;
     };
     /**
@@ -65074,7 +67996,7 @@ var EditorModel = /** @class */ (function (_super) {
      */
     EditorModel.prototype.runDefault = function (opts) {
         if (opts === void 0) { opts = {}; }
-        var command = this.get('Commands').get(this.config.defaultCommand);
+        var command = this.Commands.get(this.config.defaultCommand);
         if (!command || this.defaultRunning)
             return;
         command.stop(this, this, opts);
@@ -65088,7 +68010,7 @@ var EditorModel = /** @class */ (function (_super) {
      */
     EditorModel.prototype.stopDefault = function (opts) {
         if (opts === void 0) { opts = {}; }
-        var commands = this.get('Commands');
+        var commands = this.Commands;
         if (!commands)
             return;
         var command = commands.get(this.config.defaultCommand);
@@ -65364,7 +68286,6 @@ var EditorView_EditorView = /** @class */ (function (_super) {
         model.once('change:ready', function () {
             Panels.active();
             Panels.disableButtons();
-            UndoManager.clear();
             if (model.getConfig().telemetry) {
                 _this.sendTelemetryData().catch(function () {
                     // Telemetry data silent fail
@@ -65372,6 +68293,8 @@ var EditorView_EditorView = /** @class */ (function (_super) {
             }
             setTimeout(function () {
                 model.trigger(EditorEvents.load, model.Editor);
+                model.loadTriggered = true;
+                UndoManager.clear();
                 model.clearDirtyCount();
             });
         });
@@ -66095,11 +69018,13 @@ var Editor = /** @class */ (function () {
     /**
      * Load data from the JSON project
      * @param {Object} data Project to load
+     * @param {Object} [options] Custom options that could be passed to the project load events.
      * @example
      * editor.loadProjectData({ pages: [...], styles: [...], ... })
      */
-    Editor.prototype.loadProjectData = function (data) {
-        return this.em.loadData(data);
+    Editor.prototype.loadProjectData = function (data, options) {
+        if (options === void 0) { options = {}; }
+        return this.em.loadData(data, options);
     };
     Editor.prototype.storeData = function () {
         return this.em.storeData();
@@ -66490,7 +69415,7 @@ var grapesjs = {
     plugins: plugins,
     usePlugin: usePlugin,
     // @ts-ignore Will be replaced on build
-    version: '0.22.5',
+    version: '0.22.14',
     /**
      * Initialize the editor with passed options
      * @param {Object} config Configuration object
@@ -66516,6 +69441,7 @@ var grapesjs = {
         var initConfig = src_assign(src_assign({ autorender: true, plugins: [], pluginsOpts: {} }, config), { grapesjs: this, el: headless ? undefined : (0,index_all.isElement)(els) ? els : document.querySelector(els) });
         var editor = new src_editor(initConfig, { $: cash_dom["default"] });
         var em = editor.getModel();
+        em.initModules();
         // Load plugins
         initConfig.plugins.forEach(function (pluginId) {
             var plugin = getPlugin(pluginId, plugins);
