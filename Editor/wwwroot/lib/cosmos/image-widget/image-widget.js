@@ -166,7 +166,7 @@ if (typeof window.CCMS_IMAGE_WIDGET_CONFIG === "undefined") {
 }
 
 // Shared GUID generator with fallback if the shared helper is not loaded yet.
-const ccmsGenerateGuid = (typeof window !== 'undefined' && window.ccmsGenerateGuid)
+var ccmsGenerateGuid = (typeof window !== 'undefined' && typeof window.ccmsGenerateGuid === 'function')
     ? window.ccmsGenerateGuid
     : function ccmsGenerateGuidFallback() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {

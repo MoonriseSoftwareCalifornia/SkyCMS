@@ -395,7 +395,7 @@ const TitleEditorConfig = {
 function ccms___createEditor(editorElement) {
 
     if (typeof editorElement.ckeditorInstance !== "undefined" && editorElement.ckeditorInstance !== null) {
-        return; //
+        return Promise.resolve(editorElement.ckeditorInstance);
     }
 
     const isNew = editorElement.getAttribute("data-ccms-new");
@@ -429,7 +429,7 @@ function ccms___createEditor(editorElement) {
         balloonToolbar: [ ...resolvedProfile.balloonToolbar ]
     };
 
-    InlineEditor
+    return InlineEditor
         .create(editorElement, config)
         .then(editor => {
             window.editor = editor;
@@ -453,9 +453,11 @@ function ccms___createEditor(editorElement) {
                 }
             });
             ccms_editors.push(editor);
+            return editor;
         })
         .catch(error => {
             console.error('Failed to create CKEditor instance:', error);
+            return null;
         });
 }
 
@@ -478,6 +480,11 @@ function ccms___createEditors() {
 
 window.createCkEditor = ccms___createEditor;
 window.ccms___destroyAllEditors = ccms___destroyAllEditors;
+
+// Expose factory on the iframe element so parent-hosted integrations can resolve it reliably.
+if (window.frameElement) {
+    window.frameElement.__ccmsCreateCkEditor = ccms___createEditor;
+}
 
 document.addEventListener("DOMContentLoaded", function (event) {
     ccms___createEditors();

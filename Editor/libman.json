@@ -42,69 +42,9 @@
       "destination": "wwwroot/lib/grapesjs-blocks-basic/"
     },
     {
-      "library": "node_modules/grapesjs-component-countdown/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-component-countdown/"
-    },
-    {
-      "library": "node_modules/grapesjs-custom-code/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-custom-code/"
-    },
-    {
-      "library": "node_modules/grapesjs-navbar/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-navbar/"
-    },
-    {
-      "library": "node_modules/grapesjs-parser-postcss/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-parser-postcss/"
-    },
-    {
-      "library": "node_modules/grapesjs-plugin-export/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-plugin-export/"
-    },
-    {
       "library": "node_modules/grapesjs-plugin-forms/dist/",
       "provider": "filesystem",
       "destination": "wwwroot/lib/grapesjs-plugin-forms/"
-    },
-    {
-      "library": "node_modules/grapesjs-preset-webpage/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-preset-webpage/"
-    },
-    {
-      "library": "node_modules/grapesjs-style-bg/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-style-bg/"
-    },
-    {
-      "library": "node_modules/grapesjs-tabs/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-tabs/"
-    },
-    {
-      "library": "node_modules/grapesjs-tooltip/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-tooltip/"
-    },
-    {
-      "library": "node_modules/grapesjs-touch/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-touch/"
-    },
-    {
-      "library": "node_modules/grapesjs-tui-image-editor/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-tui-image-editor/"
-    },
-    {
-      "library": "node_modules/grapesjs-typed/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-typed/"
     },
     {
       "library": "node_modules/grapesjs/dist/",

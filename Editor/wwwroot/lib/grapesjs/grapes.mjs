@@ -61161,14 +61161,19 @@ var RichTextEditorModule = /** @class */ (function (_super) {
             return;
         var config = this.config;
         var ppfx = config.pStylePrefix;
-        var isCustom = config.custom;
         var toolbar = (0,dom/* createEl */.a_)('div', {
-            class: (0,dom.cx)("".concat(ppfx, "rte-toolbar"), !isCustom && "".concat(ppfx, "one-bg ").concat(ppfx, "rte-toolbar-ui")),
+            class: (0,dom.cx)("".concat(ppfx, "rte-toolbar")),
         });
         this.toolbar = toolbar;
-        this.initRte((0,dom/* createEl */.a_)('div'));
         //Avoid closing on toolbar clicking
         (0,dom.on)(toolbar, 'mousedown', function (e) { return e.stopPropagation(); });
+    };
+    RichTextEditorModule.prototype.warnNativeRteRemoved = function () {
+        if (this.nativeRteRemovedWarned) {
+            return;
+        }
+        this.nativeRteRemovedWarned = true;
+        this.em.logWarning('The built-in GrapesJS Rich Text Editor has been disabled in this fork. Register a custom RTE via editor.setCustomRte(...) to enable rich text editing.');
     };
     RichTextEditorModule.prototype.__trgCustom = function () {
         var _a = this, model = _a.model, em = _a.em, events = _a.events;
@@ -61406,14 +61411,28 @@ var RichTextEditorModule = /** @class */ (function (_super) {
                         this.lastEl = view.el;
                         _a = this, customRte = _a.customRte, em = _a.em, events = _a.events;
                         el = view.getChildrenContainer();
+                        rteInst = rte;
+                        if (!customRte) return [3 /*break*/, 2];
                         this.toolbar.style.display = '';
-                        return [4 /*yield*/, (customRte ? customRte.enable(el, rte, opts) : this.initRte(el).enable(opts))];
+                        return [4 /*yield*/, customRte.enable(el, rte, opts)];
                     case 1:
                         rteInst = _b.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        this.warnNativeRteRemoved();
+                        this.hideToolbar();
+                        el.contentEditable = 'false';
+                        _b.label = 3;
+                    case 3:
                         if (em) {
-                            setTimeout(this.updatePosition.bind(this), 0);
-                            em.off(eventsUp, this.updatePosition, this);
-                            em.on(eventsUp, this.updatePosition, this);
+                            if (customRte) {
+                                setTimeout(this.updatePosition.bind(this), 0);
+                                em.off(eventsUp, this.updatePosition, this);
+                                em.on(eventsUp, this.updatePosition, this);
+                            }
+                            else {
+                                em.off(eventsUp, this.updatePosition, this);
+                            }
                             em.trigger(events.enable, view, rteInst);
                         }
                         this.model.set({ currentView: view });
@@ -61470,7 +61489,7 @@ var RichTextEditorModule = /** @class */ (function (_super) {
                         }
                         return [3 /*break*/, 3];
                     case 2:
-                        rte && rte.disable();
+                        view.getChildrenContainer().contentEditable = 'false';
                         _b.label = 3;
                     case 3:
                         this.hideToolbar();

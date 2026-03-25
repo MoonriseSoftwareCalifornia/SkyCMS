@@ -1,5 +1,80 @@
 ﻿/* GrapesJS */
 /* Let's highlight canvas boundaries */
+:root {
+    --gjs-main-color: #323236;
+    --gjs-primary-color: #323236;
+    --gjs-secondary-color: #d0d0d5;
+    --gjs-tertiary-color: #d0d0d5;
+    --gjs-quaternary-color: #d0d0d5;
+    --gjs-secondary-dark-color: #2b2b31;
+    --gjs-main-dark-color: rgba(0, 0, 0, 0.32);
+    --gjs-main-light-color: rgba(255, 255, 255, 0.06);
+    --gjs-soft-light-color: rgba(255, 255, 255, 0.03);
+    --gjs-font-color: #d0d0d5;
+    --gjs-font-color-active: #ffffff;
+    --gjs-secondary-light-color: #d0d0d5;
+    --gjs-light-border: rgba(255, 255, 255, 0.08);
+}
+
+.gjs-pn-commands,
+.gjs-pn-options,
+.gjs-pn-views,
+.gjs-pn-views-container,
+.gjs-blocks-c,
+.gjs-block-categories {
+    background-color: #323236;
+}
+
+.gjs-block-category .gjs-title,
+.gjs-sm-sector-title,
+.gjs-trait-category .gjs-title,
+.gjs-layer-title,
+.gjs-category-title {
+    background-color: #2b2b31;
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.gjs-block {
+    background-color: #323236;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.gjs-one-bg,
+.gjs-one-gb {
+    background-color: #212529 !important;
+}
+
+/* Override icon and text colors for toolbar, panels, and blocks */
+.gjs-one-color,
+.gjs-two-color,
+.gjs-three-color,
+.gjs-four-color {
+    color: #999 !important;
+}
+
+/* Hover states for icon/text colors */
+.gjs-one-color-h:hover,
+.gjs-two-color-h:hover,
+.gjs-three-color-h:hover,
+.gjs-four-color-h:hover {
+    color: #fff !important;
+}
+
+/* SVG icons in blocks and panels use currentColor, so parent color applies */
+.gjs-block svg,
+.gjs-block-svg,
+.gjs-block-svg-path,
+.gjs-pn-btn svg,
+.gjs-toolbar-item svg {
+    fill: currentColor;
+}
+
+/* Ensure proper text color on block labels and titles */
+.gjs-block-label,
+.gjs-block__label {
+    color: #999;
+}
+
 #gjs {
     border: 1px solid #e63900;
 }
