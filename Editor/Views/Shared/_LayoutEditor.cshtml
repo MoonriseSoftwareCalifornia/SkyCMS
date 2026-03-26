@@ -302,22 +302,48 @@
             return $("#swAutoSave").is(":checked") && autoSaveOn;
         }
 
+        let saveStatusResetTimer = null;
+
+        function clearSaveStatusResetTimer() {
+            if (saveStatusResetTimer !== null) {
+                clearTimeout(saveStatusResetTimer);
+                saveStatusResetTimer = null;
+            }
+        }
+
         function showSaving() {
+            clearSaveStatusResetTimer();
+            window.ccmsSaveStatusMode = "saving";
             $("#spSaving").show();
-            $("#btnSavingStatus").removeClass("btn-secondary");
+            $("#btnSavingStatus").removeClass("btn-secondary btn-success btn-danger");
             $("#btnSavingStatus").addClass("btn-primary");
             $("#btnSavingText").html("Saving...");
         }
 
         function showSaved() {
+            clearSaveStatusResetTimer();
+            window.ccmsSaveStatusMode = null;
             $("#spSaving").hide();
-            $("#btnSavingStatus").removeClass("btn-primary");
+            $("#btnSavingStatus").removeClass("btn-primary btn-danger btn-secondary");
             $("#btnSavingStatus").addClass("btn-success");
-            setTimeout(function () {
+            $("#btnSavingText").html("Saved");
+            saveStatusResetTimer = setTimeout(function () {
                 $("#btnSavingStatus").removeClass("btn-success");
                 $("#btnSavingStatus").addClass("btn-secondary");
             }, 1500);
-            $("#btnSavingText").html("Saved");
+        }
+
+        function showSaveError() {
+            clearSaveStatusResetTimer();
+            window.ccmsSaveStatusMode = null;
+            $("#spSaving").hide();
+            $("#btnSavingStatus").removeClass("btn-primary btn-success btn-secondary");
+            $("#btnSavingStatus").addClass("btn-danger");
+            $("#btnSavingText").html("Error");
+            saveStatusResetTimer = setTimeout(function () {
+                $("#btnSavingStatus").removeClass("btn-danger");
+                $("#btnSavingStatus").addClass("btn-secondary");
+            }, 3000);
         }
 
         function getDirectoryName(path) {
@@ -501,18 +527,6 @@
             return false;
         }
 
-        function validatePermissions() {
-            const publishedValue = $('#tbPublished').val();
-            if (typeof (publishedValue) !== "undefined" && publishedValue !== "" && requiresAuthentication && hasPermissionsSet === false) {
-                $('#tbPublished').val("");
-                const rolelist = $("#RoleList").val();
-                modalCheckPermissions.show();
-                return false;
-            } else {
-                return true;
-            }
-        }
-
         function checkForSetPermissions() {
             // Has permissions set?
             if (requiresAuthentication && typeof (hasPermissionsSet) !== "undefined") {
@@ -572,6 +586,11 @@
         }
 
         function doneSaving() {
+            if (window.ccmsSaveStatusMode === "error") {
+                showSaveError();
+                return;
+            }
+
             showSaved();
         }
 

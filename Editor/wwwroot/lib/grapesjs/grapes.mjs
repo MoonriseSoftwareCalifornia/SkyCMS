@@ -63110,6 +63110,251 @@ var PropertyView_spreadArray = (undefined && undefined.__spreadArray) || functio
 
 
 var clearProp = 'data-clear-style';
+var HEX_COLOR_REG = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+var RGB_COLOR_REG = /^rgba?\(([^)]+)\)$/i;
+var NAMED_COLOR_TO_HEX = {
+    black: '#000000',
+    white: '#ffffff',
+};
+var toSixDigitHexColor = function (value) {
+    if (!HEX_COLOR_REG.test(value))
+        return '';
+    var normalized = value.toLowerCase();
+    if (normalized.length === 7)
+        return normalized;
+    var shortHex = normalized.slice(1);
+    return "#".concat(shortHex[0]).concat(shortHex[0]).concat(shortHex[1]).concat(shortHex[1]).concat(shortHex[2]).concat(shortHex[2]);
+};
+var rgbStringToHexColor = function (value) {
+    var match = value.match(RGB_COLOR_REG);
+    if (!match)
+        return '';
+    var channels = match[1]
+        .split(',')
+        .slice(0, 3)
+        .map(function (part) { return parseInt(part.trim(), 10); });
+    if (channels.length !== 3 || channels.some(function (channel) { return Number.isNaN(channel); }))
+        return '';
+    return "#".concat(channels.map(function (channel) { return Math.max(0, Math.min(255, channel)).toString(16).padStart(2, '0'); }).join(''));
+};
+var normalizeColorInputValue = function (value) {
+    var rawValue = value.trim();
+    if (!rawValue)
+        return '';
+    var namedHexColor = NAMED_COLOR_TO_HEX[rawValue.toLowerCase()];
+    if (namedHexColor)
+        return namedHexColor;
+    var hexColor = toSixDigitHexColor(rawValue);
+    if (hexColor)
+        return hexColor;
+    var rgbHexColor = rgbStringToHexColor(rawValue);
+    if (rgbHexColor)
+        return rgbHexColor;
+    if (typeof document === 'undefined')
+        return '';
+    var colorProbe = document.createElement('option');
+    colorProbe.style.color = rawValue;
+    if (!colorProbe.style.color)
+        return '';
+    var parsedHexColor = toSixDigitHexColor(colorProbe.style.color);
+    if (parsedHexColor)
+        return parsedHexColor;
+    return rgbStringToHexColor(colorProbe.style.color);
+};
+var normalizeColorOptions = function (options) {
+    if (!Array.isArray(options))
+        return;
+    options.forEach(function (option, index) {
+        if (typeof option === 'string') {
+            var normalizedColor = normalizeColorInputValue(option);
+            if (normalizedColor) {
+                options[index] = normalizedColor;
+            }
+            return;
+        }
+        if (!option || typeof option !== 'object')
+            return;
+        ['value', 'id', 'color'].forEach(function (key) {
+            var current = option[key];
+            if (typeof current !== 'string')
+                return;
+            var normalizedColor = normalizeColorInputValue(current);
+            if (normalizedColor) {
+                option[key] = normalizedColor;
+            }
+        });
+        if (Array.isArray(option.options)) {
+            normalizeColorOptions(option.options);
+        }
+    });
+};
+var withNormalizedColorPropertyReads = function (property, run) {
+    if (!property || typeof property !== 'object')
+        return run();
+    var originalGet = typeof property.get === 'function' ? property.get : undefined;
+    var originalGetValue = typeof property.getValue === 'function' ? property.getValue : undefined;
+    var originalGetDefaultValue = typeof property.getDefaultValue === 'function' ? property.getDefaultValue : undefined;
+    var originalGetFullValue = typeof property.getFullValue === 'function' ? property.getFullValue : undefined;
+    var originalGetInternalFullValue = typeof property.__getFullValue === 'function' ? property.__getFullValue : undefined;
+    var normalizeColorString = function (candidate) {
+        if (typeof candidate !== 'string')
+            return candidate;
+        return normalizeColorInputValue(candidate) || candidate;
+    };
+    if (originalGet) {
+        property.get = function (key) {
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            var value = originalGet.call.apply(originalGet, PropertyView_spreadArray([this, key], args, false));
+            if (key === 'options') {
+                normalizeColorOptions(value);
+                return value;
+            }
+            if (key === 'value' || key === 'default' || key === 'defaults') {
+                return normalizeColorString(value);
+            }
+            return value;
+        };
+    }
+    if (originalGetValue) {
+        property.getValue = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            return normalizeColorString(originalGetValue.call.apply(originalGetValue, PropertyView_spreadArray([this], args, false)));
+        };
+    }
+    if (originalGetDefaultValue) {
+        property.getDefaultValue = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            return normalizeColorString(originalGetDefaultValue.call.apply(originalGetDefaultValue, PropertyView_spreadArray([this], args, false)));
+        };
+    }
+    if (originalGetFullValue) {
+        property.getFullValue = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            return normalizeColorString(originalGetFullValue.call.apply(originalGetFullValue, PropertyView_spreadArray([this], args, false)));
+        };
+    }
+    if (originalGetInternalFullValue) {
+        property.__getFullValue = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            return normalizeColorString(originalGetInternalFullValue.call.apply(originalGetInternalFullValue, PropertyView_spreadArray([this], args, false)));
+        };
+    }
+    try {
+        return run();
+    }
+    finally {
+        if (originalGet)
+            property.get = originalGet;
+        if (originalGetValue)
+            property.getValue = originalGetValue;
+        if (originalGetDefaultValue)
+            property.getDefaultValue = originalGetDefaultValue;
+        if (originalGetFullValue)
+            property.getFullValue = originalGetFullValue;
+        if (originalGetInternalFullValue)
+            property.__getFullValue = originalGetInternalFullValue;
+    }
+};
+var withColorInputAssignmentNormalization = function (el, run) {
+    var _a;
+    var windows = new Set();
+    var addWindowAndChildren = function (candidate) {
+        if (!candidate || windows.has(candidate))
+            return;
+        windows.add(candidate);
+        try {
+            var frames_1 = candidate.frames;
+            for (var i = 0; i < frames_1.length; i += 1) {
+                addWindowAndChildren(frames_1[i]);
+            }
+        }
+        catch (error) {
+            // Ignore cross-origin frame traversal errors.
+        }
+    };
+    if (typeof window !== 'undefined') {
+        addWindowAndChildren(window);
+        try {
+            addWindowAndChildren(window.top);
+        }
+        catch (error) {
+            // Ignore cross-origin top window access.
+        }
+        try {
+            addWindowAndChildren(window.parent);
+        }
+        catch (error) {
+            // Ignore cross-origin parent window access.
+        }
+    }
+    addWindowAndChildren((_a = el === null || el === void 0 ? void 0 : el.ownerDocument) === null || _a === void 0 ? void 0 : _a.defaultView);
+    var restoreFns = [];
+    windows.forEach(function (currentWindow) {
+        var InputEl = currentWindow.HTMLInputElement;
+        var ElementEl = currentWindow.Element;
+        if (!(InputEl === null || InputEl === void 0 ? void 0 : InputEl.prototype) || !(ElementEl === null || ElementEl === void 0 ? void 0 : ElementEl.prototype))
+            return;
+        var valueDescriptor = Object.getOwnPropertyDescriptor(InputEl.prototype, 'value');
+        var valueSetter = valueDescriptor === null || valueDescriptor === void 0 ? void 0 : valueDescriptor.set;
+        var valueGetter = valueDescriptor === null || valueDescriptor === void 0 ? void 0 : valueDescriptor.get;
+        var setAttribute = ElementEl.prototype.setAttribute;
+        if (!valueDescriptor || !valueSetter || !setAttribute)
+            return;
+        Object.defineProperty(InputEl.prototype, 'value', {
+            configurable: true,
+            enumerable: valueDescriptor.enumerable,
+            get: function () {
+                return valueGetter ? valueGetter.call(this) : '';
+            },
+            set: function (nextValue) {
+                if (this.type === 'color') {
+                    var value = typeof nextValue === 'string' ? nextValue : "".concat(nextValue !== null && nextValue !== void 0 ? nextValue : '');
+                    var normalizedColor = normalizeColorInputValue(value);
+                    if (!normalizedColor)
+                        return;
+                    valueSetter.call(this, normalizedColor);
+                    return;
+                }
+                valueSetter.call(this, nextValue);
+            },
+        });
+        ElementEl.prototype.setAttribute = function (name, value) {
+            if (this instanceof InputEl && this.type === 'color' && String(name).toLowerCase() === 'value') {
+                var normalizedColor = normalizeColorInputValue(typeof value === 'string' ? value : "".concat(value !== null && value !== void 0 ? value : ''));
+                if (!normalizedColor)
+                    return;
+                setAttribute.call(this, name, normalizedColor);
+                return;
+            }
+            setAttribute.call(this, name, value);
+        };
+        restoreFns.push(function () {
+            Object.defineProperty(InputEl.prototype, 'value', valueDescriptor);
+            ElementEl.prototype.setAttribute = setAttribute;
+        });
+    });
+    try {
+        return run();
+    }
+    finally {
+        restoreFns.forEach(function (restore) { return restore(); });
+    }
+};
 var PropertyView = /** @class */ (function (_super) {
     PropertyView_extends(PropertyView, _super);
     function PropertyView(o) {
@@ -63239,12 +63484,27 @@ var PropertyView = /** @class */ (function (_super) {
         var model = this.model;
         var result = (0,index_all.isUndefined)(value) || value === '' ? model.getDefaultValue() : value;
         if (this.update)
-            return this.__update(result);
+            return this.__update(this.__normalizeInputValue(result));
         this.__setValueInput(result);
     };
+    PropertyView.prototype.__normalizeInputValue = function (value) {
+        var normalizedColor = normalizeColorInputValue(value);
+        return normalizedColor || value;
+    };
     PropertyView.prototype.__setValueInput = function (value) {
+        var _a, _b;
         var input = this.getInputEl();
-        input && (input.value = value);
+        if (!input)
+            return;
+        var isColorValue = input.type === 'color' || ((_b = (_a = this.model) === null || _a === void 0 ? void 0 : _a.getType) === null || _b === void 0 ? void 0 : _b.call(_a)) === 'color';
+        if (isColorValue) {
+            var normalizedColor = normalizeColorInputValue(value);
+            if (!normalizedColor)
+                return;
+            input.value = normalizedColor;
+            return;
+        }
+        input.value = value;
     };
     PropertyView.prototype.getInputEl = function () {
         if (!this.input) {
@@ -63265,9 +63525,36 @@ var PropertyView = /** @class */ (function (_super) {
         unset && unset(this._getClbOpts());
     };
     PropertyView.prototype.__update = function (value) {
+        var _this = this;
+        var _a, _b, _c, _d, _e;
         var update = this.update && this.update.bind(this);
+        var input = this.getInputEl();
+        var isColorValue = (input === null || input === void 0 ? void 0 : input.type) === 'color' || ((_b = (_a = this.model) === null || _a === void 0 ? void 0 : _a.getType) === null || _b === void 0 ? void 0 : _b.call(_a)) === 'color';
+        var normalizedValue = isColorValue ? this.__normalizeInputValue(value) : value;
+        if (isColorValue) {
+            var attrs = (_c = this.model) === null || _c === void 0 ? void 0 : _c.attributes;
+            var modelValue = attrs === null || attrs === void 0 ? void 0 : attrs.value;
+            var modelDefault = attrs === null || attrs === void 0 ? void 0 : attrs.default;
+            // Normalize model attributes so direct access reads normalized values
+            if (attrs && modelValue) {
+                var normalizedModel = normalizeColorInputValue(modelValue);
+                if (normalizedModel)
+                    attrs.value = normalizedModel;
+            }
+            if (attrs && modelDefault) {
+                var normalizedDefault = normalizeColorInputValue(modelDefault);
+                if (normalizedDefault)
+                    attrs.default = normalizedDefault;
+            }
+            normalizeColorOptions(attrs === null || attrs === void 0 ? void 0 : attrs.options);
+            normalizeColorOptions((_e = (_d = this.model) === null || _d === void 0 ? void 0 : _d.get) === null || _e === void 0 ? void 0 : _e.call(_d, 'options'));
+        }
         update &&
-            update(PropertyView_assign(PropertyView_assign({}, this._getClbOpts()), { value: value }));
+            withNormalizedColorPropertyReads(this.model, function () {
+                return withColorInputAssignmentNormalization(_this.el, function () {
+                    update(PropertyView_assign(PropertyView_assign({}, _this._getClbOpts()), { value: normalizedValue }));
+                });
+            });
     };
     PropertyView.prototype.__change = function () {
         var args = [];

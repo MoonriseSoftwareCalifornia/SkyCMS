@@ -87,22 +87,21 @@
     var hasPermissionsSet = @hasPermissionsSet.ToString().ToLower();
 
     // Editable areas
-    let ccms_editibleAreas = [];
+    // let ccms_editibleAreas = []; // Currently set but not consumed.
     // Signal R Connection
-    let signalRConnection;
+    // let signalRConnection; // Currently unused.
 
     // Monaco Editor
     let editor;
 
-    let ckeditorSessions = [ ];
+    // let ckeditorSessions = [ ]; // Currently unused.
 
-    let lockedEditors = [ ];
+    // let lockedEditors = [ ]; // Currently write-only in current flow.
 
     // CK Editor
     let ckeditor = null;
     // Explicitly set on window object for iframe accessibility
     window.enableAutoSave = true;
-    var enableAutoSave = window.enableAutoSave;
 
     // Local backup recovery settings
     const backupMaxAgeMs = 72 * 60 * 60 * 1000; // 72 hours
@@ -117,7 +116,6 @@
     });
 
     function bgEditClickCustom(command) {
-        var modelId = $("#Id").val();
         switch (command) {
             case "Close":
                 next = function () {
@@ -147,7 +145,7 @@
             });
         }
 
-        ccms_editibleAreas = getEditableAreas();
+        // ccms_editibleAreas = getEditableAreas(); // Currently set but not consumed.
 
         // Close loading spinner and display saved status
         $("#divTitleGroup").show();
@@ -341,7 +339,7 @@
         $("#btnApply").click(function (e) {
             var data = editor.getValue();
             ckeditor.data.set(data);
-            saveChanges();
+            savePagePropertiesCommand();
         });
 
         $("#btnSave").click(function () {
@@ -399,10 +397,12 @@
         return editor;
     }
 
+    /*
     function handle_error(xhr, status, error) {
         EditorUI.doneSaving();
         EditorUI.showError(xhr.responseText);
     }
+    */
 
     $(window).bind('keydown', function (event) {
         if (event.ctrlKey || event.metaKey) {
@@ -411,7 +411,7 @@
                     event.preventDefault();
                     const ccms_editibleAreas = iframe.contentWindow.ccms_editibleAreas;
                     if (typeof (ccms_editibleAreas) !== "undefined" && ccms_editibleAreas.length > 0) {
-                        saveChanges();
+                        savePagePropertiesCommand();
                     }
                     break;
             }
@@ -481,9 +481,6 @@
             return;
         }
         const inputLinkText = $("#inputLinkText").val();
-        const switchNewWindow = $("#switchNewWindow").prop('checked');
-        const inputLinkCss = $("#inputLinkCss").val();
-        const inputLinkStyle = $("#inputLinkStyle").val();
         if (typeof (inputLinkText) === "undefined" || inputLinkText === null || inputLinkText === "") {
             $("#inputLinkTextError").show();
             return false;
@@ -524,7 +521,6 @@
     }
 
     function addCkeditorSession(id, email) {
-        lockedEditors.push(id);
         let iframe = document.getElementById("ccmsContFrame");
         let editors = iframe.contentWindow.ccms_editors;
         $(editors).each(function (index, ed) {
@@ -546,7 +542,7 @@
     }
 
     function removeCkeditorSession(id, email) {
-        lockedEditors = lockedEditors.filter(item => item !== id);
+        // lockedEditors = lockedEditors.filter(item => item !== id); // Currently write-only in current flow.
         let iframe = document.getElementById("ccmsContFrame");
         let editors = iframe.contentWindow.ccms_editors;
         $(editors).each(function (index, ed) {
@@ -567,6 +563,7 @@
         });
     }
 
+    // Used by dublicator.js
     async function savePageBody(html) {
         EditorUI.saving();
         await EditorSaveService.ensureEncryptionContext();
@@ -587,16 +584,12 @@
             });
         } catch (error) {
             EditorUI.showError(error.message);
+            EditorUI.doneSaving();
         }
     }
 
     async function saveEditorRegion(html, editorId) {
         EditorUI.saving();
-        
-        if (!EditorSaveService.validatePermissions()) {
-            EditorUI.doneSaving();
-            return;
-        }
 
         await EditorSaveService.ensureEncryptionContext();
 
@@ -612,25 +605,19 @@
             EditorSaveService.handleSaveResponse(response, {
                 updateUI: true,
                 onSuccess: () => EditorUI.doneSaving(),
-                onError: (msg) => EditorUI.showError(msg)
+                onError: (msg) => {
+                    EditorUI.showError(msg);
+                    EditorUI.doneSaving();
+                }
             });
         } catch (error) {
             EditorUI.showError(error.message);
-        }
-    }
-
-    // Wrapper function for backwards compatibility (legacy code may call PascalCase version)
-    function SaveEditorRegion(html, editorId) {
-        return saveEditorRegion(html, editorId);
-    }
-
-    async function saveChanges(html, editorId) {
-        EditorUI.saving();
-
-        if (!EditorSaveService.validatePermissions()) {
             EditorUI.doneSaving();
-            return;
         }
+    }
+
+    async function savePagePropertiesCommand(html, editorId) {
+        EditorUI.saving();
 
         savePublishDateTime();
         await EditorSaveService.ensureEncryptionContext();
@@ -687,24 +674,6 @@
                 editor.setData(data.Payload);
             }
         });
-    }
-
-    function savePageProperties(model) {
-        if (model.UrlPath !== undefined && model.UrlPath !== null) $("#UrlPath").val(model.UrlPath);
-        if (model.RoleList !== undefined && model.RoleList !== null) $("#RoleList").val(model.RoleList);
-        if (model.Title !== undefined && model.Title !== null) {
-            $("#Title").val(model.Title);
-            const titleDiv = document.getElementById("divTitle");
-            if (titleDiv) titleDiv.innerText = model.Title;
-        }
-        if (model.Published !== undefined && model.Published !== null) $("#Published").val(model.Published);
-        if (model.Updated !== undefined && model.Updated !== null) $("#Updated").val(model.Updated);
-        if (model.BannerImage !== undefined && model.BannerImage !== null) $("#BannerImage").val(model.BannerImage);
-        if (model.VersionNumber !== undefined && model.VersionNumber !== null) {
-            $("#VersionNumber").val(model.VersionNumber);
-            const versionSpan = document.getElementById("spanWorkingVersionNo");
-            if (versionSpan) versionSpan.innerText = `Working Version: ${model.VersionNumber}`;
-        }
     }
 
 </script>

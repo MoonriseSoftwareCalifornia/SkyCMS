@@ -26,10 +26,7 @@
     */
     var ccmsEditorIsLocked = false;
     // Current user
-    const ccms_editor_userid = "@this.Context.User.Identity.Name";
     const hasModel = @((Model != null).ToString().ToLower());
-    // This needs global scope, so using var
-    var hasPermissionsSet = false;
 
     const cosmos__saveEndpoint = "/Templates/Edit";
 

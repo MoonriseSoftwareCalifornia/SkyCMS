@@ -27,16 +27,7 @@
       Cosmos Configuration.
     */
     var ccmsEditorIsLocked = false;
-    // Current user
-    const ccms_editor_userid = "@this.Context.User.Identity.Name";
     const hasModel = @((Model != null).ToString().ToLower());
-
-    // This needs global scope, so using var
-    var hasPermissionsSet = false;
-
-    function closeEditor() {
-        window.location.href = "@Url.Action("Index", "Editor", new { Model.Id })";
-    }
 
     // Activated from _LayoutEditor.cshtml in multiple locations;
     async function saveChanges() {

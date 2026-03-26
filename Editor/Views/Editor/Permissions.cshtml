@@ -195,17 +195,6 @@
         $("body").addClass("cwps-body");
         $("body").addClass("cwps-editor-container");
 
-        // Disable certain buttons if this is in an IFRAME.
-        if (typeof (parent.hasPermissionsSet) !== "undefined") {
-            $("#btnGoPageList").hide();
-            $("#btnGoVersions").hide();
-        } else {
-            $("#btnGoPageList").click(function () {
-                history.back();
-            });
-        }
-
-
         $(".row-click-ckbox").click(function (e) {
             if (e.target.type != 'checkbox' && e.target.tagName != 'A') {
                 var cb = $(this).find("input[type=checkbox]");
@@ -293,18 +282,6 @@
             clearIdentityObjectIds();
             checkForChanges();
             window.location.href = "@Url.Action("Permissions", "Editor", new { Id = articleNumber})";
-
-            // If applicable, let the parent know what happened.
-            try {
-                if (typeof (parent.hasPermissionsSet) !== "undefined") {
-                    if (identityObjectIds == null || identityObjectIds.length < 1) {
-                        parent.hasPermissionsSet = false;
-                    } else {
-                        parent.hasPermissionsSet = true;
-                    }
-                    parent.checkForSetPermissions();
-                }
-            } catch { }
             modalSaving.hide();
         }).fail(function (data) { modalSaving.hide(); alert(data); });
 

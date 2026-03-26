@@ -207,15 +207,26 @@ const EditorConfig = {
         shouldNotGroupWhenFull: false
     },
     // Autosave configuration for full content editors
-    // Triggers after 3 seconds of inactivity, calls parent.saveChanges()
-    // which sends Command: "SavePageProperties" to the unified endpoint
+    // Triggers after 3 seconds of inactivity and persists the edited content region
+    // through the parent window save bridge
     autosave: {
         waitingTime: 3000, // in ms
         save(editor) {
             // Safety checks: ensure parent context and autosave are enabled
-            if (parent && parent.enableAutoSave === true && typeof parent.saveChanges === 'function') {
+            if (parent && parent.enableAutoSave === true) {
                 try {
-                    return parent.saveChanges(editor.getData(), editor.sourceElement.getAttribute("data-ccms-ceid"));
+                    const editorId = editor.sourceElement.getAttribute("data-ccms-ceid");
+                    if (editorId && typeof parent.saveEditorRegion === 'function') {
+                        return parent.saveEditorRegion(editor.getData(), editorId);
+                    }
+
+                    if (typeof parent.savePagePropertiesCommand === 'function') {
+                        return parent.savePagePropertiesCommand(editor.getData(), editorId);
+                    }
+
+                    if (typeof parent.saveChanges === 'function') {
+                        return parent.saveChanges(editor.getData(), editorId);
+                    }
                 } catch (error) {
                     console.error('EditorConfig autosave failed:', error);
                     return Promise.reject(error);

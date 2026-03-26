@@ -21,9 +21,7 @@
 <script>
     // View-specific constants
     var fieldName;
-    const ccms_editor_userid = "@this.Context.User.Identity.Name";
     const hasModel = @((Model != null).ToString().ToLower());
-    var hasPermissionsSet = false;
     
     // Initialize editFields from model
     var editFields = @Html.Raw(JsonConvert.SerializeObject(Model.EditorFields));

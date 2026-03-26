@@ -1069,25 +1069,13 @@ namespace Sky.Cms.Controllers
                 }
             }
 
-            // Validate Title
-            if (string.IsNullOrEmpty(model.Title))
-            {
-                return Json(new
-                {
-                    ServerSideSuccess = false,
-                    errors = new Dictionary<string, string[]>
-                    {
-                        ["Title"] = new[] { "Title cannot be null or empty." }
-                    }
-                });
-            }
-
             // Get original article
             var article = await mediator.QueryAsync(new GetArticleByArticleNumberQuery { ArticleNumber = model.ArticleNumber });
             if (article == null)
             {
                 throw new NotFoundException($"Could not find article with #: {model.ArticleNumber}.");
             }
+
 
             // Update content if editor region specified
             if (!string.IsNullOrWhiteSpace(model.EditorId))
@@ -1181,9 +1169,27 @@ namespace Sky.Cms.Controllers
             else if (model.Command == "SavePageProperties")
             {
                 // SavePageProperties command: metadata-only update (preserve existing content)
-                // This allows updates to Title, BannerImage, ArticleType, Category, Introduction
+                // This allows updates to Title, BannerImage, Category, Introduction, published
                 // without changing content, scripts, etc.
                 // Content remains unchanged - will be preserved in SaveArticleCommand below
+                article.BannerImage = model.BannerImage;
+                article.Category = model.Category;
+                article.Introduction = model.Introduction;
+                article.Title = model.Title;
+                article.Published = model.Published;
+
+                // Validate Title
+                if (string.IsNullOrEmpty(model.Title))
+                {
+                    return Json(new
+                    {
+                        ServerSideSuccess = false,
+                        errors = new Dictionary<string, string[]>
+                        {
+                            ["Title"] = new[] { "Title cannot be null or empty." }
+                        }
+                    });
+                }
             }
             else if (string.IsNullOrWhiteSpace(model.Command))
             {
@@ -1213,15 +1219,15 @@ namespace Sky.Cms.Controllers
             // NEW: Use SaveArticle command
             var command = new SaveArticleCommand
             {
-                ArticleNumber = model.ArticleNumber,
-                Title = model.Title,
+                ArticleNumber = article.ArticleNumber,
+                Title = article.Title,
+                BannerImage = article.BannerImage,
+                ArticleType = article.ArticleType,
+                Category = article.Category,
+                Introduction = article.Introduction,
                 Content = article.Content,
                 HeadJavaScript = article.HeadJavaScript,
                 FooterJavaScript = article.FooterJavaScript,
-                BannerImage = model.BannerImage,
-                ArticleType = model.ArticleType,
-                Category = model.Category,
-                Introduction = model.Introduction,
                 UrlPath = article.UrlPath,
                 Published = article.Published,
                 UserId = Guid.Parse(await GetUserId())

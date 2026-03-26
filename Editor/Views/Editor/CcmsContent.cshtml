@@ -75,23 +75,38 @@
         var ccms_editors = [];
         var ccms_editorIds = [];
         var focusedEditor;
-        var unmoutCkBox;
+        // var unmoutCkBox; // Currently unused.
         var articleNumber = @Model.ArticleNumber;
-        var articleId = "@Model.Id";
+        // var articleId = "@Model.Id"; // Currently unused.
 
-        let autosaveTimeout = null;
+        // let autosaveTimeout = null; // Currently unused.
 
         // Autosave control flag (accessible from iframe CKEditor)
         window.enableAutoSave = true;
 
         // Save functions for CKEditor autosave support
         // Note: These are stubs that delegate to parent window when in Edit.cshtml iframe context
-        window.saveChanges = async function(html, editorId) {
-            // If we're in an iframe and parent has saveChanges, delegate to it
-            if (window.parent && window.parent !== window && typeof window.parent.saveChanges === 'function') {
-                return window.parent.saveChanges(html, editorId);
+        window.savePagePropertiesCommand = async function(html, editorId) {
+            // If we're in an iframe and parent has the consolidated save entry point, delegate to it
+            if (window.parent && window.parent !== window && typeof window.parent.savePagePropertiesCommand === 'function') {
+                return window.parent.savePagePropertiesCommand(html, editorId);
             }
             // Otherwise, this is standalone CcmsContent view - just resolve
+            console.log('CcmsContent savePagePropertiesCommand called (standalone mode):', editorId);
+            return Promise.resolve();
+        };
+
+        window.saveChanges = async function(html, editorId) {
+            if (window.parent && window.parent !== window) {
+                if (editorId && typeof window.parent.saveEditorRegion === 'function') {
+                    return window.parent.saveEditorRegion(html, editorId);
+                }
+
+                if (typeof window.parent.savePagePropertiesCommand === 'function') {
+                    return window.parent.savePagePropertiesCommand(html, editorId);
+                }
+            }
+
             console.log('CcmsContent saveChanges called (standalone mode):', editorId);
             return Promise.resolve();
         };
@@ -158,7 +173,7 @@
                     case 's':
                         event.preventDefault();
                         if (editor === null) {
-                            parent.saveChanges();
+                            parent.savePagePropertiesCommand();
                         } else {
                             parent.SaveEditorRegion(editor.getData(), editor.sourceElement.getAttribute("data-ccms-ceid"));
                         }

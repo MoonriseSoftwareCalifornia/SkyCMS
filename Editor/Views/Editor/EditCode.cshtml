@@ -4,7 +4,6 @@
     Layout = "_LayoutEditor";
     ViewData["Title"] = $"Editing '{Model.Title}' with the Code Editor.";
     var fields = Model.EditorFields.ToArray();
-    var hasPermissionsSet = Model.ArticlePermissions.Any();
     
     // Pass content to the save form partial via ViewData
     ViewData["Content"] = Model.Content;
@@ -52,11 +51,8 @@
 
 <script>
     // View-specific constants
-    var fieldName;
     const versionNumber = @Model.VersionNumber;
-    const ccms_editor_userid = "@this.Context.User.Identity.Name";
     const hasModel = @((Model != null).ToString().ToLower());
-    var hasPermissionsSet = @hasPermissionsSet.ToString().ToLower();
     
     // Initialize editFields from model
     var editFields = @Html.Raw(JsonConvert.SerializeObject(Model.EditorFields));
@@ -80,10 +76,7 @@
     }
 
     // View-specific save function using unified EditorSaveService
-    async function saveChanges(postProcessing) {
-        if (typeof validatePermissions === 'function' && validatePermissions() === false) {
-            return;
-        }
+    async function saveChanges() {
 
         if (EditorSaveService.state.saveInProgress === true) {
             return;

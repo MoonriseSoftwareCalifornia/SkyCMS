@@ -128,16 +128,6 @@ const EditorSaveService = {
   // ============================================================================
 
   /**
-   * Check if permissions are set (if required).
-   * @returns {boolean}
-   */
-  validatePermissions() {
-    return typeof validatePermissions === 'function' 
-      ? validatePermissions() 
-      : true;
-  },
-
-  /**
    * Check if model state is valid.
    * @returns {boolean}
    */
@@ -321,21 +311,24 @@ const EditorSaveService = {
     } = callbacks;
 
     if (!response) {
-      if (onError) onError("No response from server");
+      const errorMessage = "No response from server.";
+      if (onError) {
+        onError(errorMessage);
+      } else {
+        this.handleSaveError(errorMessage);
+      }
+
       return false;
     }
 
     if (!response.ServerSideSuccess) {
-      // Validation errors
-      if (response.Errors) {
-        const errorMessages = [];
-        for (const [field, messages] of Object.entries(response.Errors)) {
-          errorMessages.push(`${field}: ${messages.join(', ')}`);
-        }
-        if (onError) onError(errorMessages.join('\n'));
-      } else if (response.ErrorMessage) {
-        if (onError) onError(response.ErrorMessage);
+      const errorMessage = this.getErrorMessage(response);
+      if (onError) {
+        onError(errorMessage);
+      } else {
+        this.handleSaveError(errorMessage);
       }
+
       return false;
     }
 
@@ -350,6 +343,31 @@ const EditorSaveService = {
 
     if (onSuccess) onSuccess(response);
     return true;
+  },
+
+  /**
+   * Build a readable error message from a save response.
+   * @param {object} response
+   * @returns {string}
+   */
+  getErrorMessage(response) {
+    const errors = response?.Errors || response?.errors;
+    if (errors && typeof errors === 'object') {
+      const errorMessages = [];
+      for (const [field, messages] of Object.entries(errors)) {
+        const text = Array.isArray(messages) ? messages.join(', ') : String(messages);
+        errorMessages.push(`${field}: ${text}`);
+      }
+
+      if (errorMessages.length > 0) {
+        return errorMessages.join('\n');
+      }
+    }
+
+    return response?.ErrorMessage
+      || response?.errorMessage
+      || response?.message
+      || 'An error occurred while saving.';
   },
 
   /**
@@ -409,9 +427,15 @@ const EditorSaveService = {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorLog = document.getElementById("divErrorLog");
 
+    if (typeof window !== 'undefined') {
+      window.ccmsSaveStatusMode = 'error';
+    }
+
     if (errorLog) {
       errorLog.innerHTML = `<p>Save failed:</p><pre>${this.escapeHtml(errorMessage)}</pre>`;
     }
+
+    window.alert(errorMessage);
 
     const modal = document.getElementById(modalId);
     if (modal && typeof bootstrap !== 'undefined') {

@@ -207,14 +207,3 @@ function setupEditorCleanup() {
         }
     });
 }
-
-/**
- * Validate editor permissions (calls view-specific validation if available)
- * @returns {boolean} True if permissions are valid
- */
-function validateEditorPermissions() {
-    if (typeof validatePermissions === 'function') {
-        return validatePermissions();
-    }
-    return true; // Default to true if no validation function exists
-}

@@ -74,6 +74,5 @@ Provide concise, actionable guidance for AI coding agents working in this reposi
 ## If uncertain, search for these files first
 - `Program.cs`, `Directory.Packages.props`, `docker-compose.yml`, `launchSettings.json`, `UploadSecretsToGithubRepo.ps1`, `AddMigrationScript.ps1`, `Sky.Editor.csproj`, `SkyCMS.sln`.
 
----
-
-Please review and tell me if you'd like any section expanded or if there are other internal conventions I should include.
+## Editor Functionality
+- When rewiring visual editor iframe/autosave save paths, editable content regions should route to `parent.saveEditorRegion` rather than `SavePageProperties`.Please review and tell me if you'd like any section expanded or if there are other internal conventions I should include.
