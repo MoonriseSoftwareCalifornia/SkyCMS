@@ -567,6 +567,196 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
+        #region Copilot Proxy Settings Tests
+
+        [TestMethod]
+        public async Task Copilot_Get_ReturnsViewWithCopilotOptions()
+        {
+            // Act
+            var result = await controller.Copilot();
+
+            // Assert
+            Assert.IsNotNull(result);
+            var viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.IsInstanceOfType(viewResult.Model, typeof(CopilotProxyOptions));
+        }
+
+        [TestMethod]
+        public async Task Copilot_Get_WithInvalidJson_LogsWarningAndReturnsDefaultOptions()
+        {
+            // Arrange
+            dbContext.Settings.Add(new Setting
+            {
+                Group = Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME,
+                Name = nameof(CopilotProxyOptions),
+                Value = "{ invalid json }",
+                Description = "Settings used by the Copilot completion proxy",
+            });
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Copilot();
+
+            // Assert
+            var viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+
+            var model = viewResult.Model as CopilotProxyOptions;
+            Assert.IsNotNull(model);
+            Assert.IsFalse(model.Enabled);
+            Assert.AreEqual("gpt-4o-mini", model.Model);
+
+            loggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => true),
+                    It.IsAny<JsonException>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Copilot_Get_WithEmptyDatabase_ReturnsDefaultOptions()
+        {
+            // Act
+            var result = await controller.Copilot();
+
+            // Assert
+            var viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.IsInstanceOfType(viewResult.Model, typeof(CopilotProxyOptions));
+
+            var model = viewResult.Model as CopilotProxyOptions;
+            Assert.IsFalse(model.Enabled);
+            Assert.AreEqual("gpt-4o-mini", model.Model);
+            Assert.AreEqual(8000, model.TimeoutMs);
+            Assert.AreEqual(0.2, model.Temperature);
+            Assert.AreEqual(160, model.MaxTokens);
+        }
+
+        [TestMethod]
+        public async Task Copilot_Get_WithExistingSetting_LoadsOptionsFromDatabase()
+        {
+            // Arrange
+            var options = new CopilotProxyOptions
+            {
+                Enabled = true,
+                Endpoint = "https://example.ai/v1/chat/completions",
+                Model = "gpt-4.1-mini",
+                AccessToken = "secret-token",
+                TimeoutMs = 12000,
+                Temperature = 0.4,
+                MaxTokens = 256,
+            };
+
+            dbContext.Settings.Add(new Setting
+            {
+                Group = Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME,
+                Name = nameof(CopilotProxyOptions),
+                Value = JsonConvert.SerializeObject(options),
+                Description = "Settings used by the Copilot completion proxy",
+            });
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await controller.Copilot();
+
+            // Assert
+            var viewResult = result as ViewResult;
+            var model = viewResult.Model as CopilotProxyOptions;
+            Assert.IsNotNull(model);
+            Assert.IsTrue(model.Enabled);
+            Assert.AreEqual("https://example.ai/v1/chat/completions", model.Endpoint);
+            Assert.AreEqual("gpt-4.1-mini", model.Model);
+            Assert.AreEqual("secret-token", model.AccessToken);
+            Assert.AreEqual(12000, model.TimeoutMs);
+            Assert.AreEqual(0.4, model.Temperature);
+            Assert.AreEqual(256, model.MaxTokens);
+        }
+
+        [TestMethod]
+        public async Task Copilot_Post_WithValidModel_SavesSettings()
+        {
+            // Arrange
+            var model = new CopilotProxyOptions
+            {
+                Enabled = true,
+                Endpoint = "https://example.ai/v1/chat/completions",
+                Model = "gpt-4o-mini",
+                AccessToken = "abc123",
+                TimeoutMs = 9000,
+                Temperature = 0.3,
+                MaxTokens = 180,
+            };
+
+            // Act
+            var result = await controller.Copilot(model);
+
+            // Assert
+            var viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(model, viewResult.Model);
+            Assert.AreEqual("Saved", viewResult.ViewData["Operation"] as string);
+
+            var savedSetting = await dbContext.Settings
+                .FirstOrDefaultAsync(s => s.Group == Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME);
+            Assert.IsNotNull(savedSetting);
+
+            var savedOptions = JsonConvert.DeserializeObject<CopilotProxyOptions>(savedSetting.Value);
+            Assert.IsNotNull(savedOptions);
+            Assert.IsTrue(savedOptions.Enabled);
+            Assert.AreEqual("https://example.ai/v1/chat/completions", savedOptions.Endpoint);
+            Assert.AreEqual("abc123", savedOptions.AccessToken);
+        }
+
+        [TestMethod]
+        public async Task Copilot_Post_WithInvalidModel_ReturnsViewWithModel()
+        {
+            // Arrange
+            var model = new CopilotProxyOptions();
+            controller.ModelState.AddModelError("Endpoint", "Required");
+
+            // Act
+            var result = await controller.Copilot(model);
+
+            // Assert
+            var viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(model, viewResult.Model);
+            Assert.IsFalse(controller.ModelState.IsValid);
+        }
+
+        [TestMethod]
+        public async Task RemoveCopilot_ClearsSettingsAndRedirects()
+        {
+            // Arrange
+            dbContext.Settings.Add(new Setting
+            {
+                Group = Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME,
+                Name = nameof(CopilotProxyOptions),
+                Value = JsonConvert.SerializeObject(new CopilotProxyOptions { Endpoint = "https://test" }),
+                Description = "Settings used by the Copilot completion proxy",
+            });
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await controller.RemoveCopilot();
+
+            // Assert
+            var redirectResult = result as RedirectToActionResult;
+            Assert.IsNotNull(redirectResult);
+            Assert.AreEqual("Copilot", redirectResult.ActionName);
+
+            var remainingSettings = await dbContext.Settings
+                .Where(s => s.Group == Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME)
+                .ToListAsync();
+            Assert.AreEqual(0, remainingSettings.Count);
+        }
+
+        #endregion
+
         #region Helper Methods
 
         /// <summary>

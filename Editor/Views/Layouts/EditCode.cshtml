@@ -20,8 +20,8 @@
 
 <script>
     // View-specific constants
-    var fieldName;
-    const hasModel = @((Model != null).ToString().ToLower());
+    // var fieldName;
+    // const hasModel = @((Model != null).ToString().ToLower());
     
     // Initialize editFields from model
     var editFields = @Html.Raw(JsonConvert.SerializeObject(Model.EditorFields));
@@ -138,11 +138,11 @@
     }
 
     // Add listener for active document changes
-    if (window.activeDocumentTracker) {
-        window.activeDocumentTracker.addListener((docInfo) => {
-            console.log('Active document changed:', docInfo);
-        });
-    }
+    // if (window.activeDocumentTracker) {
+    //     window.activeDocumentTracker.addListener((docInfo) => {
+    //         console.log('Active document changed:', docInfo);
+    //     });
+    // }
 
     $(document).ready(async function () {
         try {

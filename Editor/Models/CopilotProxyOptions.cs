@@ -1,0 +1,49 @@
+// <copyright file="CopilotProxyOptions.cs" company="Moonrise Software, LLC">
+// Copyright (c) Moonrise Software, LLC. All rights reserved.
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// See https://github.com/CWALabs/SkyCMS
+// for more information concerning the license and the contributors participating to this project.
+// </copyright>
+
+namespace Sky.Editor.Models;
+
+/// <summary>
+/// Configuration for the server-side GitHub Copilot-compatible completion proxy.
+/// </summary>
+public sealed class CopilotProxyOptions
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether proxy calls are enabled.
+    /// </summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the upstream OpenAI-compatible chat completions endpoint.
+    /// </summary>
+    public string Endpoint { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the upstream model identifier.
+    /// </summary>
+    public string Model { get; set; } = "gpt-4o-mini";
+
+    /// <summary>
+    /// Gets or sets the bearer token used to authenticate with the upstream provider.
+    /// </summary>
+    public string AccessToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the request timeout in milliseconds.
+    /// </summary>
+    public int TimeoutMs { get; set; } = 8000;
+
+    /// <summary>
+    /// Gets or sets the completion temperature.
+    /// </summary>
+    public double Temperature { get; set; } = 0.2;
+
+    /// <summary>
+    /// Gets or sets the maximum completion tokens returned by the upstream provider.
+    /// </summary>
+    public int MaxTokens { get; set; } = 160;
+}

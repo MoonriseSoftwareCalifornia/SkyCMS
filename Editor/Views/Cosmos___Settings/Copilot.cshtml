@@ -1,0 +1,98 @@
+@using Sky.Editor.Models
+@model CopilotProxyOptions
+
+@{
+    ViewData["Title"] = "Copilot Proxy Settings";
+    var operation = ViewData["Operation"] as string;
+}
+
+<style>
+    .text-danger {
+        color: white !important;
+        font-style: italic !important;
+        font-weight: bold !important;
+    }
+</style>
+
+<div class="pt-3">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card pb-4 bg-dark text-light">
+                <div class="card-header">
+                    <h3 class="card-title">@ViewData["Title"]</h3>
+                    <p>Configure the server-side proxy used for code editor Copilot completions.</p>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(operation))
+                    {
+                        <div class="alert alert-success" role="alert">
+                            Copilot proxy settings saved.
+                        </div>
+                    }
+
+                    <form id="copilotProxyForm" method="post" asp-action="Copilot" asp-controller="Cosmos___Settings">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3 form-check form-switch">
+                            <input class="form-check-input" asp-for="Enabled" type="checkbox" />
+                            <label asp-for="Enabled" class="form-check-label"></label>
+                            <span asp-validation-for="Enabled" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Endpoint"></label>
+                            <input asp-for="Endpoint" class="form-control" aria-required="true" />
+                            <span class="text-muted">OpenAI-compatible chat completions endpoint URL.</span>
+                            <span asp-validation-for="Endpoint" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Model"></label>
+                            <input asp-for="Model" class="form-control" aria-required="true" />
+                            <span asp-validation-for="Model" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AccessToken"></label>
+                            <input asp-for="AccessToken" type="password" class="form-control" aria-required="true" autocomplete="new-password" />
+                            <span class="text-muted">Stored in the SkyCMS settings table and sent as a bearer token to the upstream provider.</span>
+                            <span asp-validation-for="AccessToken" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="TimeoutMs"></label>
+                                <input asp-for="TimeoutMs" class="form-control" type="number" min="1000" max="60000" />
+                                <span asp-validation-for="TimeoutMs" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="Temperature"></label>
+                                <input asp-for="Temperature" class="form-control" type="number" step="0.1" min="0" max="2" />
+                                <span asp-validation-for="Temperature" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="MaxTokens"></label>
+                                <input asp-for="MaxTokens" class="form-control" type="number" min="16" max="1024" />
+                                <span asp-validation-for="MaxTokens" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <button id="btnSave" type="submit" class="btn btn-sm btn-primary">Save settings <i class="fa-solid fa-circle-arrow-right"></i></button>
+                        <a asp-action="Index" asp-controller="Cosmos___Settings" class="btn btn-sm btn-secondary">Done <i class="fa-solid fa-circle-arrow-right"></i></a>
+                        <a asp-action="RemoveCopilot" asp-controller="Cosmos___Settings" class="btn btn-sm btn-outline-danger">Remove settings <i class="fa-solid fa-circle-arrow-right"></i></a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $("body").addClass("cwps-editor-container");
+    });
+</script>
+
+<partial name="_ValidationScriptsPartial" />

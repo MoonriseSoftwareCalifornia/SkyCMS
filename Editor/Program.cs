@@ -55,9 +55,11 @@ using Sky.Editor.Hubs;
 using Sky.Editor.Infrastructure.SignalR;
 using Sky.Editor.Infrastructure.Time;
 using Sky.Editor.Middleware;
+using Sky.Editor.Models;
 using Sky.Editor.Services.Authors;
 using Sky.Editor.Services.Catalog;
 using Sky.Editor.Services.CDN;
+using Sky.Editor.Services.Copilot;
 using Sky.Editor.Services.Diagnostics;
 using Sky.Editor.Services.EditorSettings;
 using Sky.Editor.Services.Email;
@@ -316,6 +318,7 @@ builder.Services.AddScoped<ISetupService, SetupService>();
 builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 builder.Services.AddScoped<IStorageContext, StorageContext>();
 builder.Services.AddScoped<IEditorSettings, EditorSettings>();
+builder.Services.AddScoped<ICopilotProxyOptionsService, CopilotProxyOptionsService>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
 builder.Services.AddScoped<ILayoutVersioningService, LayoutVersioningService>();
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
@@ -648,6 +651,14 @@ builder.Services.AddRateLimiter(options =>
         }
 
         opt.QueueLimit = 0;   // Reject immediately when limit reached
+    });
+
+    // Copilot inline completion endpoint limiter
+    options.AddFixedWindowLimiter("copilot-inline", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = builder.Environment.IsDevelopment() ? 120 : 60;
+        opt.QueueLimit = 0;
     });
 
     // Add a global rate limiter for general API protection
