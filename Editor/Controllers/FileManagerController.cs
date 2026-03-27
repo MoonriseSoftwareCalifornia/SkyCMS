@@ -87,7 +87,7 @@ namespace Sky.Cms.Controllers
             IMediator mediator,
             IWebHostEnvironment hostEnvironment,
             IViewRenderService viewRenderService,
-            IMemoryCache memoryCache,
+            ICacheService<Layout> memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
@@ -120,8 +120,6 @@ namespace Sky.Cms.Controllers
         /// <param name="mediator">Shared article queries mediator.</param>
         /// <param name="hostEnvironment">Host environment.</param>
         /// <param name="viewRenderService">View rendering service.</param>
-        /// <param name="memoryCache">Memory cache for layout caching.</param>
-        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         /// <param name="layoutCache">Layout cache service.</param>
         public FileManagerController(
             IEditorSettings options,

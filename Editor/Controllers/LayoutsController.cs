@@ -91,7 +91,8 @@ namespace Sky.Cms.Controllers
         /// <param name="logger">Logger instance.</param>
         /// <param name="layoutImportService">Layout import service.</param>
         /// <param name="layoutVersioningService">Layout versioning service.</param>
-        /// <param name="layoutCache">Layout cache service.</param>
+        /// <param name="memoryCache">Layout cache service.</param>
+        /// <param name="configProvider">Configuration provider service.</param>
         public LayoutsController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
@@ -102,7 +103,7 @@ namespace Sky.Cms.Controllers
             ILogger<LayoutsController> logger,
             ILayoutImportService layoutImportService,
             ILayoutVersioningService layoutVersioningService,
-            IMemoryCache memoryCache,
+            ICacheService<Layout> memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {

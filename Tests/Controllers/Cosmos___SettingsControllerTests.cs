@@ -605,7 +605,7 @@ namespace Sky.Tests.Controllers
             var model = viewResult.Model as CopilotProxyOptions;
             Assert.IsNotNull(model);
             Assert.IsFalse(model.Enabled);
-            Assert.AreEqual("gpt-4o-mini", model.Model);
+            Assert.AreEqual("auto", model.Model);
 
             loggerMock.Verify(
                 x => x.Log(
@@ -630,7 +630,7 @@ namespace Sky.Tests.Controllers
 
             var model = viewResult.Model as CopilotProxyOptions;
             Assert.IsFalse(model.Enabled);
-            Assert.AreEqual("gpt-4o-mini", model.Model);
+            Assert.AreEqual("auto", model.Model);
             Assert.AreEqual(8000, model.TimeoutMs);
             Assert.AreEqual(0.2, model.Temperature);
             Assert.AreEqual(160, model.MaxTokens);

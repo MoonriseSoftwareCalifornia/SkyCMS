@@ -26,7 +26,7 @@ namespace Sky.Tests.Controllers
                 Logger, Db, UserManager, RoleManager, Logic, EditorSettings,
                 ViewRenderService, Storage, Hub.Object, PublishingService,
                 ArticleHtmlService, ReservedPaths, TitleChangeService,
-                TemplateService, Mediator, Cache, DynamicConfigurationProvider);
+                TemplateService, Mediator, LayoutCacheService, DynamicConfigurationProvider);
 
             // Setup user context (reuse from EditorControllerSaveTests)
             var user = new System.Security.Claims.ClaimsPrincipal(

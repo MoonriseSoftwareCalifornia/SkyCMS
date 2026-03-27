@@ -7,6 +7,13 @@
 
 namespace Cosmos.BlobService
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Threading.Tasks;
     using Azure.Identity;
     using Cosmos.BlobService.Config;
     using Cosmos.BlobService.Drivers;
@@ -16,13 +23,6 @@ namespace Cosmos.BlobService
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Security.Cryptography;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     ///     Multi cloud blob service context.

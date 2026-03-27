@@ -63,6 +63,7 @@ namespace Sky.Tests
         protected CatalogService CatalogService = null!;
         protected StorageContext Storage = null!;
         protected IMemoryCache Cache = null!;
+        protected ICacheService<Layout> LayoutCacheService = null!;
         protected Guid TestUserId;
         protected ISlugService SlugService = null!;
         protected EditorSettings EditorSettings = null!;
@@ -305,6 +306,11 @@ namespace Sky.Tests
                     return context.Request.Host.Host.ToLowerInvariant();
                 });
             DynamicConfigurationProvider = mockDynamicConfigProvider.Object;
+
+            LayoutCacheService = new CacheService<Layout>(
+                Cache,
+                new NullLogger<CacheService<Layout>>(),
+                DynamicConfigurationProvider);
 
             // CREATE MOCK TENANT ARTICLE LOGIC FACTORY
             var mockTenantArticleLogicFactory = new Mock<ITenantArticleLogicFactory>();

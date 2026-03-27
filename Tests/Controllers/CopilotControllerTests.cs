@@ -134,7 +134,7 @@ public class CopilotControllerTests
             .ReturnsAsync(options);
 
         var httpClient = CreateHttpClient((_, _) => new HttpResponseMessage(HttpStatusCode.BadGateway));
-        httpClientFactoryMock.Setup(f => f.CreateClient()).Returns(httpClient);
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         var request = new CopilotController.CopilotCompletionRequest
         {
@@ -164,7 +164,7 @@ public class CopilotControllerTests
             .ReturnsAsync(options);
 
         var httpClient = CreateHttpClient((_, _) => throw new OperationCanceledException());
-        httpClientFactoryMock.Setup(f => f.CreateClient()).Returns(httpClient);
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         var request = new CopilotController.CopilotCompletionRequest
         {
@@ -206,7 +206,7 @@ public class CopilotControllerTests
             };
         });
 
-        httpClientFactoryMock.Setup(f => f.CreateClient()).Returns(httpClient);
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         var requestModel = new CopilotController.CopilotCompletionRequest
         {
@@ -252,7 +252,7 @@ public class CopilotControllerTests
             Content = new StringContent(responseJson, Encoding.UTF8, "application/json"),
         });
 
-        httpClientFactoryMock.Setup(f => f.CreateClient()).Returns(httpClient);
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         var request = new CopilotController.CopilotCompletionRequest
         {
@@ -284,7 +284,7 @@ public class CopilotControllerTests
             .ReturnsAsync(options);
 
         var httpClient = CreateHttpClient((_, _) => throw new InvalidOperationException("boom"));
-        httpClientFactoryMock.Setup(f => f.CreateClient()).Returns(httpClient);
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
         var request = new CopilotController.CopilotCompletionRequest
         {

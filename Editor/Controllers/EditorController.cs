@@ -97,7 +97,6 @@ namespace Sky.Cms.Controllers
         /// <param name="templateService">Template service.</param>
         /// <param name="mediator">Mediator instance for CQRS commands and queries.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
-        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public EditorController(
             ILogger<EditorController> logger,
             ApplicationDbContext dbContext,
@@ -114,8 +113,8 @@ namespace Sky.Cms.Controllers
             ITitleChangeService titleChangeService,
             ITemplateService templateService,
             IMediator mediator,
-            ICacheService<Layout> layoutCache)
-            : base(dbContext, userManager, mediator, layoutCache)
+            ICacheService<Layout> memoryCache)
+            : base(dbContext, userManager, mediator, memoryCache)
         {
             this.logger = logger;
             this.dbContext = dbContext;
@@ -170,7 +169,7 @@ namespace Sky.Cms.Controllers
             ITitleChangeService titleChangeService,
             ITemplateService templateService,
             IMediator mediator,
-            IMemoryCache memoryCache,
+            ICacheService<Layout> memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
@@ -1175,6 +1174,7 @@ namespace Sky.Cms.Controllers
                 article.Content = decryptedContent;
                 article.HeadJavaScript = DecryptContent(model.HeadJavaScript);
                 article.FooterJavaScript = DecryptContent(model.FooterJavaScript);
+                article.Title = model.Title;
             }
             else if (model.Command == "SaveDesigner")
             {
@@ -1222,6 +1222,12 @@ namespace Sky.Cms.Controllers
                     });
 
                 article.Content = assembledHtml;
+
+                // Update metadata from model
+                article.Title = model.Title;
+                article.BannerImage = model.BannerImage;
+                article.Category = model.Category;
+                article.Introduction = model.Introduction;
             }
             else if (model.Command == "SavePageProperties")
             {
@@ -1296,7 +1302,7 @@ namespace Sky.Cms.Controllers
             {
                 return Json(new
                 {
-                    success = false,
+                    ServerSideSuccess = false,
                     errors = result.Errors ?? new Dictionary<string, string[]>
                     {
                         ["general"] = new[] { result.ErrorMessage ?? "Save failed" }
@@ -1523,7 +1529,7 @@ namespace Sky.Cms.Controllers
                     LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
                     UrlPath = HttpUtility.UrlEncode(s.UrlPath).Replace("%2f", "/"),
                     Updated = s.Updated.UtcDateTime.ToString("o"),
-                    UsesHtmlEditor = (s.EditableRegionCount ?? 0) > 0,
+                    HtmlEditorEnabled = (s.EditableRegionCount ?? 0) > 0,
                 }).OrderBy(o => o.Title).ToList();
 
                 return Json(model);
@@ -1565,7 +1571,7 @@ namespace Sky.Cms.Controllers
                     LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
                     UrlPath = HttpUtility.UrlEncode(s.UrlPath).Replace("%2f", "/"),
                     Updated = s.Updated,
-                    UsesHtmlEditor = s.EditableRegionCount > 0,
+                    HtmlEditorEnabled = s.EditableRegionCount > 0,
                 }).ToList();
 
                 return Json(model);

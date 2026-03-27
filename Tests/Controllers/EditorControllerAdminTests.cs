@@ -46,7 +46,7 @@ namespace Sky.Tests.Controllers
                 TitleChangeService,
                 TemplateService,
                 Mediator,
-                Cache,
+                LayoutCacheService,
                 DynamicConfigurationProvider);
 
             var user = new ClaimsPrincipal(new ClaimsIdentity(new[]

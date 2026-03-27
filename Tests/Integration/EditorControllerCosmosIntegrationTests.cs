@@ -67,7 +67,7 @@ namespace Sky.Tests.Integration
                 TitleChangeService,
                 TemplateService,
                 Mediator,
-                Cache,
+                LayoutCacheService,
                 DynamicConfigurationProvider);
 
             var user = new ClaimsPrincipal(new ClaimsIdentity(new[]

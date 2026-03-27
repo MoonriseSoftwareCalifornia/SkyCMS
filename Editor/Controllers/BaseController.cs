@@ -73,15 +73,13 @@ namespace Sky.Cms.Controllers
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
             IMediator mediator,
-            IMemoryCache memoryCache,
+            ICacheService<Layout> memoryCache,
             IDynamicConfigurationProvider configProvider = null)
             : this(
                 dbContext,
                 userManager,
                 mediator,
-                memoryCache != null
-                    ? new CacheService<Layout>(memoryCache, new NullLogger<CacheService<Layout>>(), configProvider)
-                    : null)
+                memoryCache)
         {
         }
 

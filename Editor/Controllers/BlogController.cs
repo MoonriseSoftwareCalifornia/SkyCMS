@@ -55,7 +55,6 @@ namespace Sky.Editor.Controllers
     public class BlogController : Cms.Controllers.BaseController
     {
         private readonly ApplicationDbContext db;
-        private readonly ArticleEditLogic articleLogic;
         private readonly ISlugService slugService;
         private readonly ITemplateService templateService;
         private readonly IBlogStreamRenderingService blogStreamRenderingService;
@@ -65,7 +64,6 @@ namespace Sky.Editor.Controllers
         /// Initializes a new instance of the <see cref="BlogController"/> class.
         /// </summary>
         /// <param name="db">Application database context.</param>
-        /// <param name="articleLogic">Article editing / publishing logic service.</param>
         /// <param name="slugService">Slug normalization and uniqueness helper.</param>
         /// <param name="templateService">Template management service.</param>
         /// <param name="userManager">User management service.</param>
@@ -75,18 +73,16 @@ namespace Sky.Editor.Controllers
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         public BlogController(
             ApplicationDbContext db,
-            ArticleEditLogic articleLogic,
             ISlugService slugService,
             ITemplateService templateService,
             UserManager<IdentityUser> userManager,
             IBlogStreamRenderingService blogStreamRenderingService,
             IMediator mediator,
-            IMemoryCache memoryCache,
+            ICacheService<Layout> memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(db, userManager, mediator, memoryCache, configProvider)
         {
             this.db = db;
-            this.articleLogic = articleLogic;
             this.slugService = slugService;
             this.templateService = templateService;
             this.blogStreamRenderingService = blogStreamRenderingService;

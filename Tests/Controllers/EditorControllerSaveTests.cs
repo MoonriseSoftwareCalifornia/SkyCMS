@@ -56,7 +56,7 @@ namespace Sky.Tests.Controllers
                 TitleChangeService,
                 TemplateService,
                 Mediator,
-                Cache,
+                LayoutCacheService,
                 DynamicConfigurationProvider);
 
             // Setup user context

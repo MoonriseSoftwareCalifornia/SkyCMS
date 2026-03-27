@@ -74,13 +74,12 @@ namespace Sky.Tests.Features.Blogs
             // Initialize the controller
             controller = new BlogController(
                 Db,
-                Logic,
                 SlugService,
                 TemplateService,
                 UserManager,
                 BlogStreamRenderingService,
                 Mediator,
-                Cache,
+                LayoutCacheService,
                 DynamicConfigurationProvider);
 
             // Set up controller context with authenticated user

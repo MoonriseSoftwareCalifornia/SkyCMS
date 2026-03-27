@@ -71,7 +71,7 @@ namespace Sky.Tests.Controllers
                 mockArticleQueries.Object,
                 mockHostEnvironment.Object,
                 mockViewRenderService.Object,
-                Cache,
+                LayoutCacheService,
                 DynamicConfigurationProvider);
 
             // Setup HttpContext for the controller

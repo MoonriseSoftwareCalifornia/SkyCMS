@@ -47,6 +47,8 @@ namespace Sky.Tests.Editor.Middleware
             services.AddSingleton(_mockSetupService.Object);
             services.AddSingleton(_mockMultiTenantSetupService.Object);
             services.AddSingleton(_mockConfiguration.Object);
+            services.AddLogging(); // Required for CacheService
+            services.AddSingleton(typeof(Cosmos.Common.Services.Caching.ICacheService<>), typeof(Cosmos.Common.Services.Caching.CacheService<>));
 
             _serviceProvider = services.BuildServiceProvider();
         }

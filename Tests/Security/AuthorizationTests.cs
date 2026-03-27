@@ -498,7 +498,7 @@ namespace Sky.Tests.Security
                 TitleChangeService,
                 TemplateService,
                 Mediator,
-                Cache,
+                LayoutCacheService,
                 DynamicConfigurationProvider);
 
             SetupControllerContext(controller, roles, isAuthenticated);
@@ -518,8 +518,8 @@ namespace Sky.Tests.Security
                 ArticleHtmlService,
                 TemplateService,
                 Mediator,
-                Cache,                           // ✅ Add memory cache
-                DynamicConfigurationProvider);   // ✅ Add config provider
+                LayoutCacheService,                  // ✅ Add memory cache
+                DynamicConfigurationProvider);       // ✅ Add config provider
 
             SetupControllerContext(controller, roles, isAuthenticated);
             return controller;

@@ -137,7 +137,7 @@ public class CopilotProxyOptionsServiceTests
 
         Assert.IsFalse(options.Enabled);
         Assert.AreEqual(string.Empty, options.Endpoint);
-        Assert.AreEqual("gpt-4o-mini", options.Model);
+        Assert.AreEqual("auto", options.Model);
         Assert.AreEqual(string.Empty, options.AccessToken);
         Assert.AreEqual(8000, options.TimeoutMs);
         Assert.AreEqual(0.2, options.Temperature);

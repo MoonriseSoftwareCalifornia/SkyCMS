@@ -569,6 +569,7 @@ namespace Sky.Editor.Data.Logic
             }
 
             article.Published = dateTime ?? clock.UtcNow;
+            await DbContext.SaveChangesAsync();
 
             var cdnResults = await publishingService.PublishAsync(article);
             await UpsertCatalogEntry(article);

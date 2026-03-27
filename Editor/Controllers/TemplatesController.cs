@@ -74,7 +74,7 @@ namespace Sky.Cms.Controllers
             IArticleHtmlService htmlService,
             ITemplateService templateServices,
             IMediator mediator,
-            IMemoryCache memoryCache,
+            ICacheService<Layout> memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {

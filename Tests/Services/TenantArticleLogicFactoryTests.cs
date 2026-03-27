@@ -183,6 +183,10 @@ namespace Sky.Tests.Services
             services.AddSingleton<ILogger<ArticleEditLogic>>(NullLogger<ArticleEditLogic>.Instance);
             services.AddSingleton<ILogger<TemplateService>>(NullLogger<TemplateService>.Instance);
             services.AddSingleton<ILogger<Sky.Editor.Services.Layouts.LayoutTemplateService>>(NullLogger<Sky.Editor.Services.Layouts.LayoutTemplateService>.Instance);
+            services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
+
+            // Register ICacheService<T> (required by AuthorInfoService and other services)
+            services.AddScoped(typeof(Cosmos.Common.Services.Caching.ICacheService<>), typeof(Cosmos.Common.Services.Caching.CacheService<>));
 
             // ✅ Add no-op progress reporter for tests
             services.AddSingleton<IPublishingProgressReporter, NoOpPublishingProgressReporter>();

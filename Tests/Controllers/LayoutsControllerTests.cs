@@ -50,7 +50,7 @@ namespace Sky.Tests.Controllers
                 NullLogger<LayoutsController>.Instance,
                 LayoutImportService,  // Use real LayoutImportService from base class
                 layoutVersioningService,
-                Cache,
+                LayoutCacheService,
                 DynamicConfigurationProvider);
 
             // Setup user context

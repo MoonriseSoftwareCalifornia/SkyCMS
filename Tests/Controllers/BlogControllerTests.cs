@@ -80,14 +80,13 @@ namespace Sky.Tests.Controllers
 
             controller = new BlogController(
                 Db,
-                Logic,
                 SlugService,
                 TemplateService,
                 userManagerMock.Object,
                 blogRenderingServiceMock.Object,  // Use mocked BlogRenderingService
                 mediatorMock.Object,
-                Cache,                           // ✅ Add memory cache
-                DynamicConfigurationProvider     // ✅ Add config provider
+                LayoutCacheService,
+                DynamicConfigurationProvider
             );
 
             // Set up controller context with authenticated user
