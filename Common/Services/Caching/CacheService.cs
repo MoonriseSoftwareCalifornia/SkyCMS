@@ -5,12 +5,12 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-using System;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
-
-namespace Cosmos.Common.Services
+namespace Cosmos.Common.Services.Caching
 {
+    using System;
+    using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.Logging;
+
     /// <summary>
     /// Implementation of <see cref="ICacheService{T}"/> using <see cref="IMemoryCache"/>.
     /// Provides generic caching operations with support for absolute and sliding expiration.
@@ -20,16 +20,22 @@ namespace Cosmos.Common.Services
     {
         private readonly IMemoryCache memoryCache;
         private readonly ILogger<CacheService<T>> logger;
+        private readonly DynamicConfig.IDynamicConfigurationProvider dynamicConfigurationProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CacheService{T}"/> class.
         /// </summary>
         /// <param name="memoryCache">The memory cache instance.</param>
         /// <param name="logger">Logger instance for diagnostic information.</param>
-        public CacheService(IMemoryCache memoryCache, ILogger<CacheService<T>> logger)
+        /// <param name="dynamicConfigurationProvider">Optional dynamic tenant configuration provider for tenant-isolated keys.</param>
+        public CacheService(
+            IMemoryCache memoryCache,
+            ILogger<CacheService<T>> logger,
+            DynamicConfig.IDynamicConfigurationProvider dynamicConfigurationProvider = null)
         {
             this.memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.dynamicConfigurationProvider = dynamicConfigurationProvider;
         }
 
         /// <inheritdoc/>
@@ -40,7 +46,7 @@ namespace Cosmos.Common.Services
                 throw new ArgumentNullException(nameof(key));
             }
 
-            return this.memoryCache.Get<T>(key);
+            return this.memoryCache.Get<T>(this.GetScopedKey(key));
         }
 
         /// <inheritdoc/>
@@ -51,7 +57,7 @@ namespace Cosmos.Common.Services
                 throw new ArgumentNullException(nameof(key));
             }
 
-            return this.memoryCache.TryGetValue(key, out value);
+            return this.memoryCache.TryGetValue(this.GetScopedKey(key), out value);
         }
 
         /// <inheritdoc/>
@@ -67,7 +73,7 @@ namespace Cosmos.Common.Services
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(absoluteExpiration);
 
-                this.memoryCache.Set(key, value, cacheOptions);
+                this.memoryCache.Set(this.GetScopedKey(key), value, cacheOptions);
             }
             catch (Exception ex)
             {
@@ -98,7 +104,7 @@ namespace Cosmos.Common.Services
                     cacheOptions.SetSlidingExpiration(slidingExpiration.Value);
                 }
 
-                this.memoryCache.Set(key, value, cacheOptions);
+                this.memoryCache.Set(this.GetScopedKey(key), value, cacheOptions);
             }
             catch (Exception ex)
             {
@@ -122,7 +128,7 @@ namespace Cosmos.Common.Services
 
             try
             {
-                this.memoryCache.Remove(key);
+                this.memoryCache.Remove(this.GetScopedKey(key));
             }
             catch (Exception ex)
             {
@@ -148,34 +154,29 @@ namespace Cosmos.Common.Services
                 throw;
             }
         }
-    }
 
-    /// <summary>
-    /// Implementation of <see cref="ICacheKeyProvider"/> for generating cache keys.
-    /// Provides consistent cache key formatting across the application.
-    /// </summary>
-    public class CacheKeyProvider : ICacheKeyProvider
-    {
-        /// <inheritdoc/>
-        public string GenerateFileKey(string host, string path)
+        private string GetScopedKey(string key)
         {
-            if (string.IsNullOrWhiteSpace(path))
+            if (dynamicConfigurationProvider == null)
             {
-                throw new ArgumentNullException(nameof(path));
+                return key;
             }
 
-            return $"{host}-{path}";
-        }
-
-        /// <inheritdoc/>
-        public string GenerateSpaCheckKey(string articleUrl)
-        {
-            if (string.IsNullOrWhiteSpace(articleUrl))
+            try
             {
-                throw new ArgumentNullException(nameof(articleUrl));
-            }
+                var tenantDomain = dynamicConfigurationProvider.GetTenantDomainNameFromRequest();
+                if (string.IsNullOrWhiteSpace(tenantDomain))
+                {
+                    return key;
+                }
 
-            return $"SPA_CHECK_{articleUrl}";
+                return $"TENANT_CACHE::{tenantDomain.ToLowerInvariant()}::{key}";
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to resolve tenant domain for cache key scoping. Falling back to unscoped key.");
+                return key;
+            }
         }
     }
 }

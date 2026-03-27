@@ -9,6 +9,7 @@ namespace Sky.Tests
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
@@ -268,7 +269,7 @@ namespace Sky.Tests
 
                 Logic = new ArticleEditLogic(
                     DbContext, // Tenant-specific DbContext
-                    Cache,
+                    new CacheService<AuthorInfo>(Cache, new NullLogger<CacheService<AuthorInfo>>(), ConfigurationProvider),
                     storage,
                     new NullLogger<ArticleEditLogic>(),
                     editorSettings,

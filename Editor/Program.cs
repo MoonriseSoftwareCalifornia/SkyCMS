@@ -22,6 +22,7 @@ using Cosmos.Common.Features.Articles.Shared;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Services;
 using Cosmos.Common.Services.BlogPublishing;
+using Cosmos.Common.Services.Caching;
 using Cosmos.Common.Services.Configurations;
 using Cosmos.Common.Services.Email;
 using Cosmos.Common.Services.PublishedBlog;
@@ -37,7 +38,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Cosmos.Common.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,7 +55,6 @@ using Sky.Editor.Hubs;
 using Sky.Editor.Infrastructure.SignalR;
 using Sky.Editor.Infrastructure.Time;
 using Sky.Editor.Middleware;
-using Sky.Editor.Models;
 using Sky.Editor.Services.Authors;
 using Sky.Editor.Services.Catalog;
 using Sky.Editor.Services.CDN;
@@ -249,8 +248,8 @@ if (allowSetup)
 // STEP 2: Register Core Infrastructure (Common to Both Modes)
 // ---------------------------------------------------------------
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped(typeof(ICacheService<>), typeof(CacheService<>));
-builder.Services.AddScoped<ICacheKeyProvider, CacheKeyProvider>();
+builder.Services.AddScoped(typeof(ICacheService<>), typeof(CacheService<>)); // Scoped to allow tenant-specific caching, and prevents potential issues with singleton cache in multi-tenant scenarios.
+builder.Services.AddSingleton<ICacheKeyProvider, CacheKeyProvider>(); // Stateless and thread-safe, can be singleton.
 var defaultAzureCredential = new DefaultAzureCredential();
 builder.Services.AddSingleton(defaultAzureCredential);
 

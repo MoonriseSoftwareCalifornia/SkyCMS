@@ -8,7 +8,7 @@
 namespace Sky.Editor.Services.Copilot;
 
 using Cosmos.Common.Data;
-using Cosmos.Common.Services;
+using Cosmos.Common.Services.Caching;
 using Cosmos.DynamicConfig;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

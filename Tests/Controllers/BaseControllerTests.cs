@@ -1,10 +1,10 @@
 using Cosmos.Common.Data;
 using Cosmos.Common.Features.Shared;
-using Cosmos.DynamicConfig;
+using Cosmos.Common.Services.Caching;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Sky.Cms.Controllers;
 using System.Security.Claims;
 
@@ -23,7 +23,15 @@ namespace Sky.Tests.Controllers
             var testUser = new IdentityUser { Id = TestUserId.ToString(), UserName = "testuser" };
             Db.Users.Add(testUser);
             Db.SaveChanges();
-            _controller = new TestableBaseController(Db, UserManager, Mediator, Cache, DynamicConfigurationProvider);
+            _controller = new TestableBaseController(
+                Db,
+                UserManager,
+                Mediator,
+                new CacheService<Layout>(
+                    Cache,
+                    LoggerFactory.Create(builder => { }).CreateLogger<CacheService<Layout>>(),
+                    DynamicConfigurationProvider));
+
             // Set up a valid ClaimsPrincipal for the controller
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()) };
             var identity = new ClaimsIdentity(claims, "TestAuthType");
@@ -115,9 +123,8 @@ namespace Sky.Tests.Controllers
                 ApplicationDbContext dbContext,
                 UserManager<IdentityUser> userManager,
                 IMediator mediator,
-                IMemoryCache memoryCache = null,
-                IDynamicConfigurationProvider configProvider = null)
-                : base(dbContext, userManager, mediator, memoryCache, configProvider)
+                ICacheService<Layout> layoutCache = null)
+                : base(dbContext, userManager, mediator, layoutCache)
             {
             }
 

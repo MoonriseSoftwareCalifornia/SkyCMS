@@ -16,6 +16,7 @@ namespace Sky.Tests.Services.EditorSettings
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using Sky.Editor.Models;
     using Sky.Editor.Services.EditorSettings;
     using System;
     using System.Collections.Generic;
@@ -926,6 +927,135 @@ namespace Sky.Tests.Services.EditorSettings
             var context = new ApplicationDbContext(options);
             context.Dispose();
             return context;
+        }
+
+        #endregion
+
+        #region Cache Isolation Tests
+
+        /// <summary>
+        /// Verifies that two different tenant domain names produce independent cache entries.
+        /// A config change for tenant A must not affect tenant B's cached value.
+        /// </summary>
+        [TestMethod]
+        public async Task GetEditorConfigAsync_TwoDifferentTenantDomains_CacheEntriesAreIsolated()
+        {
+            // Arrange — two tenant instances sharing one IMemoryCache
+            var connectionA = new Connection
+            {
+                Id = Guid.NewGuid(),
+                DomainNames = new[] { "tenant-a.com" },
+                WebsiteUrl = "https://tenant-a.com",
+                BlobPublicUrl = "/blob-a",
+                PublisherMode = "Dynamic"
+            };
+            var connectionB = new Connection
+            {
+                Id = Guid.NewGuid(),
+                DomainNames = new[] { "tenant-b.com" },
+                WebsiteUrl = "https://tenant-b.com",
+                BlobPublicUrl = "/blob-b",
+                PublisherMode = "Static"
+            };
+
+            mockDynamicConfigProvider
+                .Setup(x => x.GetTenantConnectionAsync("tenant-a.com", default))
+                .ReturnsAsync(connectionA);
+            mockDynamicConfigProvider
+                .Setup(x => x.GetTenantConnectionAsync("tenant-b.com", default))
+                .ReturnsAsync(connectionB);
+
+            var config = CreateConfiguration(new Dictionary<string, string>
+            {
+                ["MultiTenantEditor"] = "true"
+            });
+
+            var services = new ServiceCollection()
+                .AddScoped<IDynamicConfigurationProvider>(_ => mockDynamicConfigProvider.Object)
+                .BuildServiceProvider();
+
+            var settingsA = new EditorSettings(config, Db, mockHttpContextAccessor.Object, memoryCache, services, "tenant-a.com");
+            var settingsB = new EditorSettings(config, Db, mockHttpContextAccessor.Object, memoryCache, services, "tenant-b.com");
+
+            // Act
+            var resultA = await settingsA.GetEditorConfigAsync();
+            var resultB = await settingsB.GetEditorConfigAsync();
+
+            // Assert — each tenant sees only its own values
+            Assert.AreEqual("https://tenant-a.com", resultA.PublisherUrl, "Tenant A should have its own publisher URL");
+            Assert.AreEqual("https://tenant-b.com", resultB.PublisherUrl, "Tenant B should have its own publisher URL");
+            Assert.AreNotEqual(resultA.PublisherUrl, resultB.PublisherUrl, "Tenants must not share cache entries");
+            Assert.IsFalse(resultA.StaticWebPages, "Tenant A mode: Dynamic");
+            Assert.IsTrue(resultB.StaticWebPages, "Tenant B mode: Static");
+        }
+
+        /// <summary>
+        /// Verifies that single-tenant mode always uses a stable, well-known cache key
+        /// regardless of whether a domain name is explicitly passed.
+        /// </summary>
+        [TestMethod]
+        public async Task GetEditorConfigAsync_SingleTenant_AlwaysUsesStableCacheKey()
+        {
+            // Arrange — two instances: one with no domain, one with explicit domain
+            var config = CreateConfiguration(new Dictionary<string, string>
+            {
+                ["MultiTenantEditor"] = "false",
+                ["CosmosPublisherUrl"] = "https://stable.example.com"
+            });
+
+            var services = new ServiceCollection().BuildServiceProvider();
+
+            // Instance 1: no domain name (empty string path)
+            var settingsNoDomain = new EditorSettings(config, Db, mockHttpContextAccessor.Object, memoryCache, services);
+            // Instance 2: explicit domain name (non-empty)
+            var settingsWithDomain = new EditorSettings(config, Db, mockHttpContextAccessor.Object, memoryCache, services, "some-domain.com");
+
+            // Act
+            var resultNoDomain = await settingsNoDomain.GetEditorConfigAsync();
+            // A second instance with a different domain should NOT receive the first one's cache,
+            // because single-tenant uses "single-tenant" key only when domain is empty.
+            var resultWithDomain = await settingsWithDomain.GetEditorConfigAsync();
+
+            // Assert — both resolve the same publisher URL (single-tenant env var wins)
+            Assert.AreEqual("https://stable.example.com", resultNoDomain.PublisherUrl);
+            Assert.AreEqual("https://stable.example.com", resultWithDomain.PublisherUrl);
+
+            // The empty-domain instance should be cached under "edsetting-single-tenant"
+            Assert.IsTrue(memoryCache.TryGetValue("edsetting-single-tenant", out EditorConfig _),
+                "Single-tenant with no domain must write to the 'edsetting-single-tenant' cache key");
+        }
+
+        /// <summary>
+        /// Verifies that multi-tenant mode with an empty domain resolved from the HTTP context
+        /// throws an <see cref="InvalidOperationException"/> rather than silently producing a shared key.
+        /// </summary>
+        [TestMethod]
+        public async Task GetEditorConfigAsync_MultiTenant_EmptyDomainFromRequest_ThrowsInvalidOperation()
+        {
+            // Arrange — no domain name in constructor and provider returns empty string
+            mockDynamicConfigProvider
+                .Setup(x => x.GetTenantDomainNameFromRequest())
+                .Returns(string.Empty);
+
+            var httpContext = new DefaultHttpContext();
+            mockHttpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext);
+
+            var config = CreateConfiguration(new Dictionary<string, string>
+            {
+                ["MultiTenantEditor"] = "true"
+            });
+
+            var services = new ServiceCollection()
+                .AddScoped<IDynamicConfigurationProvider>(_ => mockDynamicConfigProvider.Object)
+                .BuildServiceProvider();
+
+            // No explicit domain name — must resolve from request context
+            var editorSettings = new EditorSettings(config, Db, mockHttpContextAccessor.Object, memoryCache, services);
+
+            // Act & Assert — empty domain must not produce a shared cache key
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(
+                async () => await editorSettings.GetEditorConfigAsync(),
+                "An empty domain from the request must throw, not produce a shared cache key");
         }
 
         #endregion

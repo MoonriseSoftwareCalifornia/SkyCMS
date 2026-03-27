@@ -10,7 +10,7 @@ namespace Cosmos.Cms.Publisher.Controllers;
 using Cosmos.BlobService;
 using Cosmos.Cms.Common;
 using Cosmos.Common.Data;
-using Cosmos.Common.Services;
+using Cosmos.Common.Services.Caching;
 using Cosmos.Publisher.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

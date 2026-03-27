@@ -7,10 +7,16 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using System.Web;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Identity;
@@ -19,13 +25,9 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.Mvc.Rendering;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.Logging.Abstractions;
     using Sky.Cms.Models;
     using Sky.Editor.Features.Templates.Get;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using System.Web;
 
     /// <summary>
     /// Base controller.
@@ -34,9 +36,8 @@ namespace Sky.Cms.Controllers
     {
         private readonly UserManager<IdentityUser> baseUserManager;
         private readonly ApplicationDbContext dbContext;
-        private readonly IMemoryCache? memoryCache;
-        private readonly IDynamicConfigurationProvider configProvider;
         private readonly IMediator mediator;
+        private readonly ICacheService<Layout> layoutCache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseController"/> class.
@@ -44,20 +45,44 @@ namespace Sky.Cms.Controllers
         /// <param name="dbContext">Database context.</param>
         /// <param name="userManager">User manager.</param>
         /// <param name="mediator">Mediator service.</param>
-        /// <param name="memoryCache">Memory cache (optional, for layout caching).</param>
-        /// <param name="configProvider">Dynamic configuration provider (optional, for tenant-aware caching).</param>
+        /// <param name="layoutCache">Tenant-aware cache service for layout caching.</param>
         public BaseController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
             IMediator mediator,
-            IMemoryCache memoryCache = null,
-            IDynamicConfigurationProvider configProvider = null)
+            ICacheService<Layout> layoutCache = null)
         {
             this.dbContext = dbContext;
             baseUserManager = userManager;
-            this.memoryCache = memoryCache;
-            this.configProvider = configProvider;
             this.mediator = mediator;
+            this.layoutCache = layoutCache;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseController"/> class.
+        /// Backward-compatible overload: wraps <paramref name="memoryCache"/> in a tenant-aware
+        /// <see cref="CacheService{Layout}"/> so callers that pass raw <see cref="IMemoryCache"/>
+        /// still get correct tenant isolation.
+        /// </summary>
+        /// <param name="dbContext">Database context.</param>
+        /// <param name="userManager">User manager.</param>
+        /// <param name="mediator">Mediator service.</param>
+        /// <param name="memoryCache">Memory cache; wrapped internally into <see cref="ICacheService{Layout}"/>.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-scoped cache keys.</param>
+        public BaseController(
+            ApplicationDbContext dbContext,
+            UserManager<IdentityUser> userManager,
+            IMediator mediator,
+            IMemoryCache memoryCache,
+            IDynamicConfigurationProvider configProvider = null)
+            : this(
+                dbContext,
+                userManager,
+                mediator,
+                memoryCache != null
+                    ? new CacheService<Layout>(memoryCache, new NullLogger<CacheService<Layout>>(), configProvider)
+                    : null)
+        {
         }
 
         /// <summary>
@@ -128,67 +153,25 @@ namespace Sky.Cms.Controllers
         /// </summary>
         /// <returns>The default layout, or null if no default layout exists.</returns>
         /// <remarks>
-        /// This method supports three caching scenarios:
-        /// <list type="number">
-        /// <item>Multi-tenant with cache: Uses tenant-scoped cache key "default-layout:{tenantId}"</item>
-        /// <item>Single-tenant with cache: Uses global cache key "default-layout"</item>
-        /// <item>No cache: Direct database query (backward compatible)</item>
-        /// </list>
-        /// Cache duration: 30 seconds sliding expiration, 2 minutes absolute expiration.
+        /// Cache duration: 10 seconds absolute expiration.
         /// </remarks>
         protected async Task<Layout?> GetCurrentLayoutAsync()
         {
-            // Scenario 1: Multi-tenant with tenant-aware caching
-            if (memoryCache != null && configProvider != null)
+            const string cacheKey = "default-layout";
+
+            if (layoutCache != null && layoutCache.TryGet(cacheKey, out var cached) && cached != null)
             {
-                var tenantId = await configProvider.GetCurrentTenantIdAsync();
-                var cacheKey = tenantId.HasValue ? $"default-layout:{tenantId.Value}" : "default-layout:no-tenant";
-
-                if (memoryCache.TryGetValue<Layout>(cacheKey, out var cachedLayout))
-                {
-                    return cachedLayout;
-                }
-
-                var layout = await FetchCurrentLayoutAsync();
-
-                if (layout != null)
-                {
-                    var cacheOptions = new MemoryCacheEntryOptions()
-                        .SetAbsoluteExpiration(TimeSpan.FromSeconds(10))
-                        .SetPriority(CacheItemPriority.Normal);
-
-                    memoryCache.Set(cacheKey, layout, cacheOptions);
-                }
-
-                return layout;
+                return cached;
             }
 
-            // Scenario 2: Single-tenant with simple caching (no tenant scoping)
-            if (memoryCache != null)
+            var layout = await FetchCurrentLayoutAsync();
+
+            if (layout != null && layoutCache != null)
             {
-                const string cacheKey = "default-layout";
-
-                if (memoryCache.TryGetValue<Layout>(cacheKey, out var cachedLayout))
-                {
-                    return cachedLayout;
-                }
-
-                var layout = await FetchCurrentLayoutAsync();
-
-                if (layout != null)
-                {
-                    var cacheOptions = new MemoryCacheEntryOptions()
-                        .SetAbsoluteExpiration(TimeSpan.FromSeconds(10))
-                        .SetPriority(CacheItemPriority.Normal);
-
-                    memoryCache.Set(cacheKey, layout, cacheOptions);
-                }
-
-                return layout;
+                layoutCache.Set(cacheKey, layout, TimeSpan.FromSeconds(10));
             }
 
-            // Scenario 3: No caching - direct database query (current behavior, backward compatible)
-            return await FetchCurrentLayoutAsync();
+            return layout;
         }
 
         /// <summary>

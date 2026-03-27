@@ -12,7 +12,7 @@ namespace Cosmos.Publisher.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Queries;
     using Cosmos.Common.Features.Shared;
-    using Cosmos.Common.Services;
+    using Cosmos.Common.Services.Caching;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Logging;
     using System;

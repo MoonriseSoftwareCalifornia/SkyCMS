@@ -11,9 +11,9 @@ namespace Sky.Editor.Data.Logic
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
     using Sky.Cms.Models;
@@ -36,14 +36,15 @@ namespace Sky.Editor.Data.Logic
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Article editing and management logic (editor-facing). 
+    /// Article editing and management logic (editor-facing).
     /// Coordinates persistence, publishing, catalog updates, static artifact generation and title/slug change handling.
     /// </summary>
     public partial class ArticleEditLogic
-    {        private readonly ApplicationDbContext dbContext;
+    {
+        private readonly ApplicationDbContext dbContext;
         private readonly IStorageContext storageContext; // Used only for deleting static artifacts.
         private readonly ILogger<ArticleEditLogic> logger;
-        private readonly IMemoryCache localCache;
+        private readonly ICacheService<AuthorInfo> authorInfoCache;
         private readonly IEditorSettings settings;
         private readonly IDynamicConfigurationProvider configurationProvider;
 
@@ -60,7 +61,7 @@ namespace Sky.Editor.Data.Logic
         /// Initializes a new instance of the <see cref="ArticleEditLogic"/> class.
         /// </summary>
         /// <param name="dbContext">Application database context.</param>
-        /// <param name="memoryCache">Process memory cache for transient items.</param>
+        /// <param name="authorInfoCache">Tenant-aware cache for transient author info items.</param>
         /// <param name="storageContext">Blob/file storage context for static artifacts.</param>
         /// <param name="logger">Logger for diagnostic events.</param>
         /// <param name="settings">Editor (instance) settings.</param>
@@ -75,7 +76,7 @@ namespace Sky.Editor.Data.Logic
         /// <param name="configurationProvider">Dynamic configuration provider for tenant resolution.</param>
         public ArticleEditLogic(
             ApplicationDbContext dbContext,
-            IMemoryCache memoryCache,
+            ICacheService<AuthorInfo> authorInfoCache,
             IStorageContext storageContext, // Used only for deleting static artifacts.
             ILogger<ArticleEditLogic> logger,
             IEditorSettings settings,
@@ -93,7 +94,7 @@ namespace Sky.Editor.Data.Logic
             this.storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext)); // Used only for deleting static artifacts.
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            this.localCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+            this.authorInfoCache = authorInfoCache ?? throw new ArgumentNullException(nameof(authorInfoCache));
             this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
             this.slugService = slugService ?? throw new ArgumentNullException(nameof(slugService));
             this.htmlService = htmlService ?? throw new ArgumentNullException(nameof(htmlService));
@@ -584,7 +585,7 @@ namespace Sky.Editor.Data.Logic
         {
             var key = userId.ToString();
             var cacheKey = "authorinfo:" + key;
-            if (localCache.TryGetValue(cacheKey, out AuthorInfo cached))
+            if (authorInfoCache.TryGet(cacheKey, out var cached) && cached != null)
             {
                 return cached;
             }
@@ -608,7 +609,7 @@ namespace Sky.Editor.Data.Logic
                 await DbContext.SaveChangesAsync();
             }
 
-            localCache.Set(cacheKey, existing, TimeSpan.FromMinutes(10));
+            authorInfoCache.Set(cacheKey, existing, TimeSpan.FromMinutes(10));
             return existing;
         }
 

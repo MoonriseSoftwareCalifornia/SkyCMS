@@ -5,7 +5,7 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-namespace Cosmos.Common.Services
+namespace Cosmos.Common.Services.Caching
 {
     /// <summary>
     /// Provides a generic interface for cache operations.

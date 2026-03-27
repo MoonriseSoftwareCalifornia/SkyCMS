@@ -20,6 +20,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using Cosmos.Editor.Services;
     using HtmlAgilityPack;
@@ -97,6 +98,62 @@ namespace Sky.Cms.Controllers
         /// <param name="mediator">Mediator instance for CQRS commands and queries.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
+        public EditorController(
+            ILogger<EditorController> logger,
+            ApplicationDbContext dbContext,
+            UserManager<IdentityUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ArticleEditLogic articleLogic,
+            IEditorSettings editorSettings,
+            IViewRenderService viewRenderService,
+            IStorageContext storageContext,
+            IHubContext<LiveEditorHub> hub,
+            IPublishingService publishingService,
+            IArticleHtmlService htmlService,
+            IReservedPaths reservedPaths,
+            ITitleChangeService titleChangeService,
+            ITemplateService templateService,
+            IMediator mediator,
+            ICacheService<Layout> layoutCache)
+            : base(dbContext, userManager, mediator, layoutCache)
+        {
+            this.logger = logger;
+            this.dbContext = dbContext;
+            this.editorSettings = editorSettings;
+            this.roleManager = roleManager;
+            this.userManager = userManager;
+            this.articleLogic = articleLogic;
+            this.storageContext = storageContext;
+            this.hub = hub;
+            this.publishingService = publishingService;
+            this.htmlService = htmlService;
+            this.reservedPaths = reservedPaths;
+            this.titleChangeService = titleChangeService;
+            this.templateService = templateService;
+            this.mediator = mediator;
+            this.viewRenderService = viewRenderService;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EditorController"/> class.
+        /// </summary>
+        /// <param name="logger">Logger.</param>
+        /// <param name="dbContext">Database context.</param>
+        /// <param name="userManager">User manager.</param>
+        /// <param name="roleManager">Role manager.</param>
+        /// <param name="articleLogic">Article logic.</param>
+        /// <param name="editorSettings">Editor settings.</param>
+        /// <param name="viewRenderService">View renderer.</param>
+        /// <param name="storageContext">Storage context.</param>
+        /// <param name="hub">Live editor hub.</param>
+        /// <param name="publishingService">Publishing service.</param>
+        /// <param name="htmlService">HTML service.</param>
+        /// <param name="reservedPaths">Reserved paths.</param>
+        /// <param name="titleChangeService">Title change service.</param>
+        /// <param name="templateService">Template service.</param>
+        /// <param name="mediator">Mediator.</param>
+        /// <param name="memoryCache">Memory cache.</param>
+        /// <param name="configProvider">Dynamic configuration provider.</param>
         public EditorController(
             ILogger<EditorController> logger,
             ApplicationDbContext dbContext,
@@ -1832,7 +1889,7 @@ namespace Sky.Cms.Controllers
                     LayoutName = defaultLayout.LayoutName,
                     Description = s.Description,
                     Title = s.Title,
-                    UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
+                    UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid="/**/)
                 });
 
             ViewData["RowCount"] = await query.CountAsync();

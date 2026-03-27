@@ -8,11 +8,11 @@
 namespace Sky.Editor.Areas.Setup.Pages
 {
     using Cosmos.Common.Data;
+    using Cosmos.Common.Services.Caching;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
@@ -30,7 +30,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         private readonly ILogger<CompleteModel> logger;
         private readonly ISetupCheckService setupCheckService;
         private readonly ApplicationDbContext dbContext;
-        private readonly IMemoryCache memoryCache;
+        private readonly ICacheService<bool> setupCache;
 
         private const string SETUP_CACHE_KEY_PREFIX = "SetupComplete";
         private const string HEADER_ORIGIN_HOSTNAME = "x-origin-hostname";
@@ -44,7 +44,7 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <param name="logger">Logger instance.</param>
         /// <param name="setupCheckService">Setup check service.</param>
         /// <param name="dbContext">Database context.</param>
-        /// <param name="memoryCache">Memory cache instance.</param>
+        /// <param name="setupCache">Tenant-aware setup status cache.</param>
         public CompleteModel(
                 ISetupService setupService,
                 IHostApplicationLifetime hostApplicationLifetime,
@@ -52,7 +52,7 @@ namespace Sky.Editor.Areas.Setup.Pages
                 ILogger<CompleteModel> logger,
                 ISetupCheckService setupCheckService,
                 ApplicationDbContext dbContext,
-                IMemoryCache memoryCache)
+                ICacheService<bool> setupCache)
         {
             this.setupService = setupService;
             this.hostApplicationLifetime = hostApplicationLifetime;
@@ -60,7 +60,7 @@ namespace Sky.Editor.Areas.Setup.Pages
             this.logger = logger;
             this.setupCheckService = setupCheckService;
             this.dbContext = dbContext;
-            this.memoryCache = memoryCache;
+            this.setupCache = setupCache;
         }
 
         /// <summary>
@@ -128,12 +128,8 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect result.</returns>
         public IActionResult OnPostCompleteSetup()
         {
-            // Invalidate setup cache - user is committing to the setup configuration
             InvalidateSetupCache();
-
             logger.LogInformation("Setup committed by user, redirecting to login page");
-
-            // Redirect to login page using PRG pattern
             return Redirect("/Identity/Account/Login");
         }
 
@@ -149,7 +145,7 @@ namespace Sky.Editor.Areas.Setup.Pages
             }
 
             var cacheKey = $"{SETUP_CACHE_KEY_PREFIX}:{hostname}";
-            memoryCache.Remove(cacheKey);
+            setupCache.Remove(cacheKey);
 
             logger.LogInformation("Invalidated setup cache for hostname: {Hostname}", hostname);
         }

@@ -11,6 +11,7 @@ namespace Sky.Editor.Services.Scheduling
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Shared;
     using Cosmos.Common.Services.BlogPublishing;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Caching.Memory;
@@ -85,7 +86,7 @@ namespace Sky.Editor.Services.Scheduling
             var dbContext = new ApplicationDbContext(connection.DbConn);
             var storageContext = new StorageContext(connection.StorageConn, memoryCache);
 
-            var authorService = new AuthorInfoService(dbContext, memoryCache);
+            var authorService = new AuthorInfoService(dbContext, scopedServices.GetRequiredService<ICacheService<AuthorInfo>>());
             var blogRenderingService = new BlogStreamRenderingService(dbContext);
             var reservedPaths = new ReservedPaths.ReservedPaths(dbContext);
 
@@ -144,7 +145,7 @@ namespace Sky.Editor.Services.Scheduling
 
             return new ArticleEditLogic(
                 dbContext,
-                memoryCache,
+                scopedServices.GetRequiredService<ICacheService<AuthorInfo>>(),
                 storageContext,
                 scopedServices.GetRequiredService<ILogger<ArticleEditLogic>>(),
                 scopedServices.GetRequiredService<IEditorSettings>(),
@@ -164,7 +165,7 @@ namespace Sky.Editor.Services.Scheduling
         {
             return new ArticleEditLogic(
                 scopedServices.GetRequiredService<ApplicationDbContext>(),
-                memoryCache,
+                scopedServices.GetRequiredService<ICacheService<AuthorInfo>>(),
                 scopedServices.GetRequiredService<IStorageContext>(),
                 scopedServices.GetRequiredService<ILogger<ArticleEditLogic>>(),
                 scopedServices.GetRequiredService<IEditorSettings>(),

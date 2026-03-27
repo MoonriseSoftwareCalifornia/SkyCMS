@@ -8,8 +8,8 @@
 namespace Sky.Editor.Services.Setup
 {
     using Cosmos.Common.Data;
+    using Cosmos.Common.Services.Caching;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using System;
     using System.Threading.Tasks;
@@ -17,21 +17,23 @@ namespace Sky.Editor.Services.Setup
     /// <inheritdoc/>
     public class SetupCheckService : ISetupCheckService
     {
+        private const string SetupCompletedCacheKey = "SetupCompleted";
+
         private readonly ApplicationDbContext dbContext;
         private readonly IConfiguration configuration;
-        private readonly IMemoryCache memoryCache;
+        private readonly ICacheService<bool> cacheService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SetupCheckService"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="configuration">Configuration instance.</param>
-        /// <param name="memoryCache">Memory cache instance.</param>
-        public SetupCheckService(ApplicationDbContext dbContext, IConfiguration configuration, IMemoryCache memoryCache)
+        /// <param name="cacheService">Cache service instance.</param>
+        public SetupCheckService(ApplicationDbContext dbContext, IConfiguration configuration, ICacheService<bool> cacheService)
         {
             this.dbContext = dbContext;
             this.configuration = configuration;
-            this.memoryCache = memoryCache;
+            this.cacheService = cacheService;
         }
 
         /// <inheritdoc/>
@@ -40,7 +42,7 @@ namespace Sky.Editor.Services.Setup
         /// <inheritdoc/>
         public async Task<bool> IsSetup()
         {
-            if (memoryCache.TryGetValue("SetupCompleted", out bool setupCompleted) && setupCompleted)
+            if (cacheService.TryGet(SetupCompletedCacheKey, out var setupCompleted) && setupCompleted)
             {
                 Message = "Setup is completed";
                 return true;
@@ -67,7 +69,7 @@ namespace Sky.Editor.Services.Setup
                     return false;
                 }
 
-                memoryCache.Set("SetupCompleted", true);
+                cacheService.Set(SetupCompletedCacheKey, true, TimeSpan.FromMinutes(5));
                 Message = "Setup is completed";
                 return true;
             }
@@ -81,7 +83,7 @@ namespace Sky.Editor.Services.Setup
         /// <inheritdoc/>
         public void Reset()
         {
-            memoryCache.Remove("SetupCompleted");
+            cacheService.Remove(SetupCompletedCacheKey);
         }
     }
 }

@@ -13,6 +13,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Services;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Hosting;
@@ -89,6 +90,51 @@ namespace Sky.Cms.Controllers
             IMemoryCache memoryCache,
             IDynamicConfigurationProvider configProvider)
             : base(dbContext, userManager, mediator, memoryCache, configProvider)
+        {
+            this.options = options;
+            this.logger = logger;
+            this.storageContext = storageContext;
+
+            this.hostEnvironment = hostEnvironment;
+            this.userManager = userManager;
+            this.articleLogic = articleLogic;
+            this.articleQueries = mediator;
+            this.dbContext = dbContext;
+
+            var htmlUtilities = new HtmlUtilities();
+
+            blobPublicAbsoluteUrl = options.BlobPublicUrl.TrimStart('/');
+
+            this.viewRenderService = viewRenderService;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileManagerController"/> class.
+        /// </summary>
+        /// <param name="options">Cosmos options.</param>
+        /// <param name="logger">Logger service.</param>
+        /// <param name="dbContext">Database context.</param>
+        /// <param name="storageContext">Storage context.</param>
+        /// <param name="userManager">User manager context.</param>
+        /// <param name="articleLogic">Article logic.</param>
+        /// <param name="mediator">Shared article queries mediator.</param>
+        /// <param name="hostEnvironment">Host environment.</param>
+        /// <param name="viewRenderService">View rendering service.</param>
+        /// <param name="memoryCache">Memory cache for layout caching.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
+        /// <param name="layoutCache">Layout cache service.</param>
+        public FileManagerController(
+            IEditorSettings options,
+            ILogger<FileManagerController> logger,
+            ApplicationDbContext dbContext,
+            IStorageContext storageContext,
+            UserManager<IdentityUser> userManager,
+            ArticleEditLogic articleLogic,
+            IMediator mediator,
+            IWebHostEnvironment hostEnvironment,
+            IViewRenderService viewRenderService,
+            ICacheService<Layout> layoutCache)
+            : base(dbContext, userManager, mediator, layoutCache)
         {
             this.options = options;
             this.logger = logger;
@@ -200,7 +246,7 @@ namespace Sky.Cms.Controllers
         /// <param name="sortOrder">Sort order.</param>
         /// <param name="currentSort">Current or selected sort.</param>
         /// <param name="pageNo">Page number to get.</param>
-        /// <param name="pageSize">Size of each page.</param>
+        /// <param name="isNewSession">s a new session.</param>
         /// <param name="directoryOnly">Only return directories.</param>
         /// <param name="imagesOnly">Show only images.</param>
         /// <param name="isNewSession">s a new session.</param>
@@ -618,7 +664,7 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Process a chunched upload.
+        /// Process a chunned upload.
         /// </summary>
         /// <param name="patch">Patch number.</param>
         /// <param name="options">Upload options.</param>

@@ -12,6 +12,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.Common.Services;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;

@@ -12,7 +12,7 @@ namespace Sky.Tests.Controllers
     using Cosmos.BlobService;
     using Cosmos.Cms.Publisher.Controllers;
     using Cosmos.Common.Data;
-    using Cosmos.Common.Services;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.Publisher.Models;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;

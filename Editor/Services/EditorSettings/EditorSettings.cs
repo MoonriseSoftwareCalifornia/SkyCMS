@@ -7,6 +7,10 @@
 
 namespace Sky.Editor.Services.EditorSettings
 {
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Http;
@@ -16,10 +20,6 @@ namespace Sky.Editor.Services.EditorSettings
     using Microsoft.Extensions.DependencyInjection;
     using Sky.Cms.Services;
     using Sky.Editor.Models;
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     ///   Logic for managing settings in the application.
@@ -36,11 +36,11 @@ namespace Sky.Editor.Services.EditorSettings
         private readonly IMemoryCache memoryCache;
         private readonly IConfiguration configuration;
         private readonly bool isMultiTenantEditor;
-        private EditorConfig editorConfig;
         private readonly string backupStorageConnectionString;
         private readonly IDynamicConfigurationProvider dynamicConfigurationProvider;
         private readonly SemaphoreSlim configSemaphore = new SemaphoreSlim(1, 1);
         private readonly string domainName;
+        private EditorConfig editorConfig;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EditorSettings"/> class.
@@ -229,8 +229,11 @@ namespace Sky.Editor.Services.EditorSettings
         /// <returns>Editor configuration.</returns>
         public async Task<EditorConfig> GetEditorConfigAsync()
         {
-            // Check cache first with the correct domain name
-            if (memoryCache.TryGetValue<EditorConfig>(GetNormalizedKeyName(domainName), out var cachedConfig))
+            var cacheDomainName = ResolveCacheDomainName();
+            var cacheKey = GetNormalizedKeyName(cacheDomainName);
+
+            // Check cache first with the resolved domain name.
+            if (memoryCache.TryGetValue<EditorConfig>(cacheKey, out var cachedConfig))
             {
                 return cachedConfig;
             }
@@ -245,17 +248,7 @@ namespace Sky.Editor.Services.EditorSettings
             else
             {
                 // ✅ Multi-tenant: Load from dynamic config database
-                string scopedDomainName = domainName;
-                if (string.IsNullOrWhiteSpace(domainName))
-                {
-                    if (httpContextAccessor.HttpContext == null)
-                    {
-                        throw new InvalidOperationException("No HttpContext available to determine tenant domain name, and the domain name not given.");
-                    }
-
-                    scopedDomainName = dynamicConfigurationProvider.GetTenantDomainNameFromRequest();
-                }
-
+                var scopedDomainName = cacheDomainName;
                 var connection = await dynamicConfigurationProvider.GetTenantConnectionAsync(scopedDomainName);
 
                 if (connection == null)
@@ -276,8 +269,8 @@ namespace Sky.Editor.Services.EditorSettings
                 };
             }
 
-            // Cache for 5 minutes
-            memoryCache.Set(GetNormalizedKeyName(domainName), newConfig, TimeSpan.FromMinutes(5));
+            // Cache for 5 minutes.
+            memoryCache.Set(cacheKey, newConfig, TimeSpan.FromMinutes(5));
 
             return newConfig;
         }
@@ -468,6 +461,32 @@ namespace Sky.Editor.Services.EditorSettings
                     configSemaphore.Release();
                 }
             }
+        }
+
+        private string ResolveCacheDomainName()
+        {
+            if (!isMultiTenantEditor)
+            {
+                return string.IsNullOrWhiteSpace(domainName) ? "single-tenant" : domainName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(domainName))
+            {
+                return domainName;
+            }
+
+            if (httpContextAccessor.HttpContext == null)
+            {
+                throw new InvalidOperationException("No HttpContext available to determine tenant domain name, and the domain name not given.");
+            }
+
+            var scopedDomainName = dynamicConfigurationProvider.GetTenantDomainNameFromRequest();
+            if (string.IsNullOrWhiteSpace(scopedDomainName))
+            {
+                throw new InvalidOperationException("Unable to determine tenant domain name for editor settings cache key generation.");
+            }
+
+            return scopedDomainName;
         }
 
         private string GetNormalizedKeyName(string domainName)

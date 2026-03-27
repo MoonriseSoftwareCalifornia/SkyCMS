@@ -237,7 +237,6 @@ namespace Cosmos.DynamicConfig
         /// <summary>
         /// Gets the tenant website domain name from the request.
         /// </summary>
-        /// <param name="useReferer">Get the domain name from the referer instead of the domain name of website.</param>
         /// <returns>Domain Name.</returns>
         /// <remarks>
         /// <para>Returns the domain name by looking at the incomming request.  Here is the order:</para>

@@ -32,6 +32,8 @@ using Sky.Editor.Services.Copilot;
 [Authorize(Roles = "Reviewers, Administrators, Editors, Authors")]
 public sealed class CopilotController : ControllerBase
 {
+    private const string DefaultCopilotModel = "gpt-4o-mini";
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -55,6 +57,28 @@ public sealed class CopilotController : ControllerBase
         this.httpClientFactory = httpClientFactory;
         this.copilotProxyOptionsService = copilotProxyOptionsService;
         this.logger = logger;
+    }
+
+    /// <summary>
+    /// Returns whether the Copilot proxy is available for the current tenant.
+    /// </summary>
+    /// <returns>Proxy availability status.</returns>
+    [HttpGet("/api/copilot/status")]
+    public async Task<IActionResult> Status()
+    {
+        var options = await this.copilotProxyOptionsService.GetOptionsAsync();
+        var endpointConfigured = !string.IsNullOrWhiteSpace(options.Endpoint);
+        var tokenConfigured = !string.IsNullOrWhiteSpace(options.AccessToken);
+        var configured = endpointConfigured && tokenConfigured;
+        var resolvedModel = ResolveModel(options.Model);
+
+        return this.Ok(new CopilotProxyStatusResponse
+        {
+            Enabled = options.Enabled,
+            Configured = configured,
+            EndpointConfigured = endpointConfigured,
+            Model = resolvedModel,
+        });
     }
 
     /// <summary>
@@ -89,6 +113,7 @@ public sealed class CopilotController : ControllerBase
 
         var language = string.IsNullOrWhiteSpace(request.Language) ? "plaintext" : request.Language;
         var prompt = BuildPrompt(request, language);
+        var resolvedModel = ResolveModel(options.Model);
 
         try
         {
@@ -101,7 +126,7 @@ public sealed class CopilotController : ControllerBase
 
             var upstreamRequest = new UpstreamChatCompletionRequest
             {
-                Model = options.Model,
+                Model = resolvedModel,
                 Messages =
                 [
                     new UpstreamChatMessage
@@ -167,6 +192,18 @@ public sealed class CopilotController : ControllerBase
         return $"Language: {language}\nFieldId: {request.FieldId ?? string.Empty}\n\nPrefix:\n{prefix}\n\nSuffix:\n{suffix}\n\nReturn only inline completion text.";
     }
 
+    private static string ResolveModel(string? configuredModel)
+    {
+        if (string.IsNullOrWhiteSpace(configuredModel))
+        {
+            return DefaultCopilotModel;
+        }
+
+        return configuredModel.Equals("auto", StringComparison.OrdinalIgnoreCase)
+            ? DefaultCopilotModel
+            : configuredModel;
+    }
+
     /// <summary>
     /// Request payload for inline completion.
     /// </summary>
@@ -212,6 +249,32 @@ public sealed class CopilotController : ControllerBase
         /// Gets or sets optional completion alternatives.
         /// </summary>
         public List<string> Completions { get; set; } = [];
+    }
+
+    /// <summary>
+    /// Response payload for Copilot proxy availability checks.
+    /// </summary>
+    public sealed class CopilotProxyStatusResponse
+    {
+        /// <summary>
+        /// Gets or sets a value indicating whether Copilot is enabled for this tenant.
+        /// </summary>
+        public bool Enabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether required proxy settings are configured.
+        /// </summary>
+        public bool Configured { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the upstream endpoint is configured.
+        /// </summary>
+        public bool EndpointConfigured { get; set; }
+
+        /// <summary>
+        /// Gets or sets the configured model name.
+        /// </summary>
+        public string? Model { get; set; }
     }
 
     private sealed class UpstreamChatCompletionRequest

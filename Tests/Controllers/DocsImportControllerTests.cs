@@ -9,19 +9,20 @@ namespace Sky.Tests.Controllers;
 
 using Cosmos.BlobService;
 using Cosmos.BlobService.Models;
-using Cosmos.Cms.Editor.Controllers;
 using Cosmos.Common.Data;
 using Cosmos.Common.Data.Logic;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Models;
+using Cosmos.Common.Services.Caching;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Sky.Cms.Services;
+using Cosmos.Cms.Editor.Controllers;
 using Sky.Editor.Data.Logic;
 using Sky.Editor.Features.Articles.Create;
 using Sky.Editor.Features.Articles.Save;
@@ -35,11 +36,8 @@ using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
 /// <summary>
@@ -499,9 +497,12 @@ public class DocsImportControllerTests
         IStorageContext storageContext,
         IPublishingService publishingService)
     {
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var authorInfoCache = new CacheService<AuthorInfo>(memoryCache, new Mock<ILogger<CacheService<AuthorInfo>>>().Object);
+
         return new ArticleEditLogic(
             context,
-            new MemoryCache(new MemoryCacheOptions()),
+            authorInfoCache,
             storageContext,
             new Mock<ILogger<ArticleEditLogic>>().Object,
             settings,

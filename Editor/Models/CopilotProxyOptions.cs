@@ -24,8 +24,9 @@ public sealed class CopilotProxyOptions
 
     /// <summary>
     /// Gets or sets the upstream model identifier.
+    /// Use "auto" to let the server choose a default model.
     /// </summary>
-    public string Model { get; set; } = "gpt-4o-mini";
+    public string Model { get; set; } = "auto";
 
     /// <summary>
     /// Gets or sets the bearer token used to authenticate with the upstream provider.

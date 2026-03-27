@@ -5,9 +5,9 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using Cosmos.Common.Services.Caching;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sky.Editor.Services.Setup;
@@ -44,11 +44,11 @@ public static class SetupMiddlewareExtensions
 
             // Get hostname for cache key (works for both single and multi-tenant)
             var hostname = GetHostname(context);
-            var cache = context.RequestServices.GetRequiredService<IMemoryCache>();
+            var cache = context.RequestServices.GetRequiredService<ICacheService<bool>>();
             var cacheKey = GetSetupCacheKey(hostname);
             bool requiresSetup;
 
-            if (!cache.TryGetValue(cacheKey, out requiresSetup))
+            if (!cache.TryGet(cacheKey, out requiresSetup))
             {
                 // Call the appropriate service based on deployment mode
                 if (isMultiTenantEditor)
@@ -101,11 +101,11 @@ public static class SetupMiddlewareExtensions
             {
                 // Check if setup is still allowed/needed using cached value
                 var hostname = GetHostname(context);
-                var cache = context.RequestServices.GetRequiredService<IMemoryCache>();
+                var cache = context.RequestServices.GetRequiredService<ICacheService<bool>>();
                 var cacheKey = GetSetupCacheKey(hostname);
 
                 // Try to get cached value first
-                if (cache.TryGetValue(cacheKey, out bool requiresSetup) && !requiresSetup)
+                if (cache.TryGet(cacheKey, out bool requiresSetup) && !requiresSetup)
                 {
                     // Setup is complete (cached) - redirect away from setup wizard
                     context.Response.Redirect("/");

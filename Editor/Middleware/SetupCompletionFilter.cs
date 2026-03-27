@@ -5,12 +5,12 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.DependencyInjection;
-using Sky.Editor.Services.Setup;
 using System;
 using System.Threading.Tasks;
+using Cosmos.Common.Services.Caching;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Sky.Editor.Services.Setup;
 
 namespace Sky.Editor.Middleware;
 
@@ -46,15 +46,12 @@ public class SetupCompletionFilter : IEndpointFilter
     {
         var httpContext = context.HttpContext;
 
-        // Get hostname for cache key
         var hostname = GetHostname(httpContext);
-        var cache = httpContext.RequestServices.GetRequiredService<IMemoryCache>();
+        var cache = httpContext.RequestServices.GetRequiredService<ICacheService<bool>>();
         var cacheKey = GetSetupCacheKey(hostname);
-        bool requiresSetup;
 
-        if (!cache.TryGetValue(cacheKey, out requiresSetup))
+        if (!cache.TryGet(cacheKey, out bool requiresSetup))
         {
-            // Call the appropriate service based on deployment mode
             if (isMultiTenantEditor)
             {
                 var multiTenantSetupService = httpContext.RequestServices.GetService<IMultiTenantSetupService>();

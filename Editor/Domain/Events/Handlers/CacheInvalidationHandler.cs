@@ -9,7 +9,7 @@ namespace Sky.Editor.Domain.Events.Handlers
 {
     using System.Threading.Tasks;
     using Cosmos.Common.Constants;
-    using Microsoft.Extensions.Caching.Memory;
+    using Cosmos.Common.Services.Caching;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -23,19 +23,19 @@ namespace Sky.Editor.Domain.Events.Handlers
         IDomainEventHandler<CatalogEntryUpdatedEvent>,
         IDomainEventHandler<CatalogEntryDeletedEvent>
     {
-        private readonly IMemoryCache memoryCache;
+        private readonly ICacheService<object> cacheService;
         private readonly ILogger<CacheInvalidationHandler> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CacheInvalidationHandler"/> class.
         /// </summary>
-        /// <param name="memoryCache">Memory cache for invalidation operations.</param>
+        /// <param name="cacheService">Tenant-aware cache service for invalidation operations.</param>
         /// <param name="logger">Logger for diagnostic output.</param>
         public CacheInvalidationHandler(
-            IMemoryCache memoryCache,
+            ICacheService<object> cacheService,
             ILogger<CacheInvalidationHandler> logger)
         {
-            this.memoryCache = memoryCache;
+            this.cacheService = cacheService;
             this.logger = logger;
         }
 
@@ -82,9 +82,9 @@ namespace Sky.Editor.Domain.Events.Handlers
                 "Invalidating layout caches for layout {LayoutId} (Published as Default)",
                 @event.LayoutId);
 
-            memoryCache.Remove(CacheKeys.Layout(@event.LayoutId));
-            memoryCache.Remove(CacheKeys.DefaultLayoutExists);
-            memoryCache.Remove(CacheKeys.DefaultLayout);
+            cacheService.Remove(CacheKeys.Layout(@event.LayoutId));
+            cacheService.Remove(CacheKeys.DefaultLayoutExists);
+            cacheService.Remove(CacheKeys.DefaultLayout);
 
             return Task.CompletedTask;
         }
@@ -100,7 +100,7 @@ namespace Sky.Editor.Domain.Events.Handlers
                 "Invalidating catalog cache for article {ArticleNumber} (Catalog Updated)",
                 @event.ArticleNumber);
 
-            memoryCache.Remove(CacheKeys.ArticleCatalog(@event.ArticleNumber));
+            cacheService.Remove(CacheKeys.ArticleCatalog(@event.ArticleNumber));
 
             return Task.CompletedTask;
         }
@@ -116,7 +116,7 @@ namespace Sky.Editor.Domain.Events.Handlers
                 "Invalidating catalog cache for article {ArticleNumber} (Catalog Deleted)",
                 @event.ArticleNumber);
 
-            memoryCache.Remove(CacheKeys.ArticleCatalog(@event.ArticleNumber));
+            cacheService.Remove(CacheKeys.ArticleCatalog(@event.ArticleNumber));
 
             return Task.CompletedTask;
         }
@@ -127,10 +127,10 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// <param name="articleNumber">The article number.</param>
         private void InvalidateArticleCaches(int articleNumber)
         {
-            memoryCache.Remove(CacheKeys.ArticleCatalog(articleNumber));
-            memoryCache.Remove(CacheKeys.LastPublished(articleNumber));
-            memoryCache.Remove(CacheKeys.Sitemap);
-            memoryCache.Remove(CacheKeys.ArticleRedirects);
+            cacheService.Remove(CacheKeys.ArticleCatalog(articleNumber));
+            cacheService.Remove(CacheKeys.LastPublished(articleNumber));
+            cacheService.Remove(CacheKeys.Sitemap);
+            cacheService.Remove(CacheKeys.ArticleRedirects);
         }
     }
 }

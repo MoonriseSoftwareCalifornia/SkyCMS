@@ -13,6 +13,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Features.Articles.EditorQueries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
@@ -90,8 +91,7 @@ namespace Sky.Cms.Controllers
         /// <param name="logger">Logger instance.</param>
         /// <param name="layoutImportService">Layout import service.</param>
         /// <param name="layoutVersioningService">Layout versioning service.</param>
-        /// <param name="memoryCache">Memory cache for layout caching.</param>
-        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
+        /// <param name="layoutCache">Layout cache service.</param>
         public LayoutsController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
