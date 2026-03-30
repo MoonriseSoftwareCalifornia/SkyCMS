@@ -31,6 +31,7 @@ namespace Sky.Cms.Controllers
     using Microsoft.Azure.Cosmos.Serialization.HybridRow;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using SendGrid.Helpers.Errors.Model;
     using Sky.Cms.Hubs;
@@ -77,61 +78,6 @@ namespace Sky.Cms.Controllers
         private readonly IReservedPaths reservedPaths;
         private readonly ITitleChangeService titleChangeService;
         private readonly ITemplateService templateService;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EditorController"/> class.
-        /// </summary>
-        /// <param name="logger">ILogger to use.</param>
-        /// <param name="dbContext">Database context.</param>
-        /// <param name="userManager">User manager.</param>
-        /// <param name="roleManager">Role manager.</param>
-        /// <param name="articleLogic">Article logic.</param>
-        /// <param name="editorSettings">Cosmos options.</param>
-        /// <param name="viewRenderService">View rendering service.</param>
-        /// <param name="storageContext">Storage context.</param>
-        /// <param name="hub">Editor SignalR hub.</param>
-        /// <param name="publishingService">Publishing service.</param>
-        /// <param name="htmlService">HTML service.</param>
-        /// <param name="reservedPaths">Reserved path service.</param>
-        /// <param name="titleChangeService">Title change service.</param>
-        /// <param name="templateService">Template service.</param>
-        /// <param name="mediator">Mediator instance for CQRS commands and queries.</param>
-        /// <param name="memoryCache">Memory cache for layout caching.</param>
-        public EditorController(
-            ILogger<EditorController> logger,
-            ApplicationDbContext dbContext,
-            UserManager<IdentityUser> userManager,
-            RoleManager<IdentityRole> roleManager,
-            ArticleEditLogic articleLogic,
-            IEditorSettings editorSettings,
-            IViewRenderService viewRenderService,
-            IStorageContext storageContext,
-            IHubContext<LiveEditorHub> hub,
-            IPublishingService publishingService,
-            IArticleHtmlService htmlService,
-            IReservedPaths reservedPaths,
-            ITitleChangeService titleChangeService,
-            ITemplateService templateService,
-            IMediator mediator,
-            ICacheService<Layout> memoryCache)
-            : base(dbContext, userManager, mediator, memoryCache)
-        {
-            this.logger = logger;
-            this.dbContext = dbContext;
-            this.editorSettings = editorSettings;
-            this.roleManager = roleManager;
-            this.userManager = userManager;
-            this.articleLogic = articleLogic;
-            this.storageContext = storageContext;
-            this.hub = hub;
-            this.publishingService = publishingService;
-            this.htmlService = htmlService;
-            this.reservedPaths = reservedPaths;
-            this.titleChangeService = titleChangeService;
-            this.templateService = templateService;
-            this.mediator = mediator;
-            this.viewRenderService = viewRenderService;
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EditorController"/> class.

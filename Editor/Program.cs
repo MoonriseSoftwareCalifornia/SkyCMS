@@ -660,6 +660,13 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
 
+    options.AddFixedWindowLimiter("copilot-chat", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = builder.Environment.IsDevelopment() ? 30 : 15;
+        opt.QueueLimit = 0;
+    });
+
     // Add a global rate limiter for general API protection
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {

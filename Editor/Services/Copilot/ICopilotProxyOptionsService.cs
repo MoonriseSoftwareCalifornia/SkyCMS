@@ -20,4 +20,10 @@ public interface ICopilotProxyOptionsService
     /// </summary>
     /// <returns>Copilot proxy options.</returns>
     Task<CopilotProxyOptions> GetOptionsAsync();
+
+    /// <summary>
+    /// Invalidates the cached Copilot proxy options for the current tenant.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task InvalidateCurrentTenantCacheAsync();
 }

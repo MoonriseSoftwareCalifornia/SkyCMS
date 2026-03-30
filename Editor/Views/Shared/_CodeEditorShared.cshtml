@@ -16,6 +16,11 @@
     .code-editor-li {
         display: block !important; /* Override default setting */
     }
+
+    .copilot-status-badge {
+        font-size: 0.65rem;
+        margin-top: 0.4rem;
+    }
 </style>
 
 <nav id="navBar" class="code-tabs navbar" style="display:none">
@@ -32,10 +37,116 @@
     </ul>
 </nav>
 
-<div id="editspace" class="m-editor-container" style="display:none"></div>
+<div id="codeEditorWorkspace" class="code-editor-workspace" style="display:none">
+    <div id="editspace" class="m-editor-container"></div>
 
-<!-- Load Monaco Editor from CDN -->
+    <aside id="copilotChatPanel" class="copilot-chat-panel" aria-label="AI chat panel">
+        <div class="copilot-chat-header">
+            <div>
+                <div class="copilot-chat-title">AI Chat</div>
+                <div id="copilotChatSubtitle" class="copilot-chat-subtitle">Ask about the current editor content.</div>
+            </div>
+            <button id="btnCopilotClearChat" type="button" class="btn btn-sm btn-outline-light">Clear</button>
+        </div>
+
+        <div class="copilot-chat-actions" role="toolbar" aria-label="AI actions">
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="explain-file">Explain File</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="fix-syntax">Fix Syntax</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="improve-selection">Improve Selection</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="generate-section">Generate Section</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="convert-selection">Convert Selection</button>
+        </div>
+
+        <div id="copilotChatMessages" class="copilot-chat-messages">
+            <div class="copilot-chat-empty">AI chat is ready when the editor finishes loading.</div>
+        </div>
+
+        <div id="copilotChatStatus" class="copilot-chat-status" style="display:none"></div>
+
+        <form id="copilotChatForm" class="copilot-chat-form">
+            <label class="visually-hidden" for="copilotChatInput">Ask AI about this editor content</label>
+            <textarea id="copilotChatInput" class="form-control form-control-sm" rows="4" placeholder="Ask AI about the current file, selection, or validation issue."></textarea>
+            <div class="copilot-chat-footer">
+                <span class="copilot-chat-hint">Enter sends. Shift+Enter adds a new line.</span>
+                <button id="btnCopilotSend" type="submit" class="btn btn-sm btn-primary">Send</button>
+            </div>
+        </form>
+    </aside>
+</div>
+
+<!-- Load Monaco Editor -->
 <script src="/lib/monaco/min/vs/loader.js"></script>
 <script src="/js/editors/monaco-loader-modern.js"></script>
 <script src="/js/editors/monaco-editor-core.js"></script>
+<script src="/js/editors/monaco-editor-copilot.js"></script>
+<script src="/js/editors/monaco-editor-chat.js"></script>
 <script src="/js/editors/monaco-editor-insert-helpers.js"></script>
+<script>
+    window.CodeEditorShared = window.CodeEditorShared || {};
+
+    window.CodeEditorShared.initializePage = async function (options) {
+        const config = options || {};
+
+        try {
+            if (typeof $.blockUI === 'function') {
+                $.blockUI();
+            }
+
+            await initializeMonacoEditor({
+                editFields: config.editFields,
+                initialField: config.initialField,
+                autoSaveDelay: config.autoSaveDelay ?? 3500,
+                readOnly: config.readOnly ?? false,
+                basePath: '/lib/monaco/min'
+            });
+
+            if (window.monacoCopilot && typeof window.monacoCopilot.initialize === 'function') {
+                await window.monacoCopilot.initialize(window.monacoEditorCore, {
+                    enableInlineSuggestions: false
+                });
+            }
+
+            if (window.monacoCopilotChat && typeof window.monacoCopilotChat.initialize === 'function') {
+                await window.monacoCopilotChat.initialize(window.monacoEditorCore);
+            }
+
+            $("#spinLoading").hide();
+            $("#navBar").show();
+            $("#codeEditorWorkspace").show();
+
+            if (typeof config.onReady === 'function') {
+                config.onReady();
+            }
+        } catch (error) {
+            console.error('Failed to initialize editor:', error);
+
+            if (typeof $.unblockUI === 'function') {
+                $.unblockUI();
+            }
+
+            alert('Failed to load editor. Please refresh the page and try again.\n\nError: ' + error.message);
+        }
+    };
+
+    window.CodeEditorShared.cleanupOnUnload = function () {
+        if (window.monacoEditorCore) {
+            window.monacoEditorCore.dispose();
+        }
+
+        if (typeof fileMgrPopup !== "undefined" && fileMgrPopup !== null && fileMgrPopup.location) {
+            fileMgrPopup.close();
+        }
+    };
+
+    window.CodeEditorShared.registerActiveDocumentDebugListener = function () {
+        if (!window.activeDocumentTracker || window.CodeEditorShared._debugListenerRegistered) {
+            return;
+        }
+
+        window.activeDocumentTracker.addListener((docInfo) => {
+            console.log('Active document changed:', docInfo);
+        });
+
+        window.CodeEditorShared._debugListenerRegistered = true;
+    };
+</script>

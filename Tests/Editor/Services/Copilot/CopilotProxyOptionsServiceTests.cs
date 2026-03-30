@@ -221,4 +221,16 @@ public class CopilotProxyOptionsServiceTests
                 It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
             Times.Once);
     }
+
+        [TestMethod]
+        public async Task InvalidateCurrentTenantCacheAsync_RemovesCurrentTenantCacheKey()
+        {
+            // Act
+            await service.InvalidateCurrentTenantCacheAsync();
+
+            // Assert
+            cacheMock.Verify(
+                c => c.Remove("COPILOT_PROXY_OPTIONS:tenant-a.example.com"),
+                Times.Once);
+        }
 }

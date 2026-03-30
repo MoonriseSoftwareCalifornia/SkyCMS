@@ -52326,7 +52326,7 @@
             <range source_id="150" start_line="43" end_line="43" start_column="9" end_column="10" covered="yes" />
           </ranges>
         </function>
-        <function id="473652" token="0x6001169" name="Cosmos___SettingsController(Cosmos.Common.Data.ApplicationDbContext, Microsoft.Extensions.Logging.ILogger&lt;Sky.Editor.Controllers.Cosmos___SettingsController&gt;, Sky.Editor.Services.EditorSettings.IEditorSettings, Sky.Editor.Services.CDN.ICdnServiceFactory)" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="14" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
+        <function id="473652" token="0x6001169" name="SkyCmsSettingsController(Cosmos.Common.Data.ApplicationDbContext, Microsoft.Extensions.Logging.ILogger&lt;Sky.Editor.Controllers.SkyCmsSettingsController&gt;, Sky.Editor.Services.EditorSettings.IEditorSettings, Sky.Editor.Services.CDN.ICdnServiceFactory)" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="14" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
           <ranges>
             <range source_id="151" start_line="49" end_line="53" start_column="9" end_column="50" covered="no" />
             <range source_id="151" start_line="54" end_line="54" start_column="9" end_column="10" covered="no" />
@@ -52337,14 +52337,14 @@
             <range source_id="151" start_line="59" end_line="59" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="474628" token="0x6001176" name="CreateCdnSetting&lt;T&gt;(Sky.Editor.Services.CDN.CdnProviderEnum, T, string)" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="13" lines_covered="0" lines_partially_covered="0" lines_not_covered="13">
+        <function id="474628" token="0x6001176" name="CreateCdnSetting&lt;T&gt;(Sky.Editor.Services.CDN.CdnProviderEnum, T, string)" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="13" lines_covered="0" lines_partially_covered="0" lines_not_covered="13">
           <ranges>
             <range source_id="151" start_line="293" end_line="293" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="294" end_line="304" start_column="13" end_column="15" covered="no" />
             <range source_id="151" start_line="305" end_line="305" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="474804" token="0x6001178" name="Cosmos___SettingsController()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="1" lines_covered="0" lines_partially_covered="0" lines_not_covered="1">
+        <function id="474804" token="0x6001178" name="SkyCmsSettingsController()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="1" lines_covered="0" lines_partially_covered="0" lines_not_covered="1">
           <ranges>
             <range source_id="151" start_line="35" end_line="35" start_column="9" end_column="77" covered="no" />
           </ranges>
@@ -60225,7 +60225,7 @@
             <range source_id="318" start_line="4" end_line="4" start_column="5" end_column="51" covered="no" />
           </ranges>
         </function>
-        <function id="779100" token="0x6001b52" name="MoveNext()" namespace="AspNetCoreGeneratedDocument" type_name="Views_Cosmos___Settings_CDN.&lt;ExecuteAsync&gt;d__45" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="15" lines_covered="0" lines_partially_covered="0" lines_not_covered="8">
+        <function id="779100" token="0x6001b52" name="MoveNext()" namespace="AspNetCoreGeneratedDocument" type_name="Views_SkyCmsSettings_CDN.&lt;ExecuteAsync&gt;d__45" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="15" lines_covered="0" lines_partially_covered="0" lines_not_covered="8">
           <ranges>
             <range source_id="319" start_line="8" end_line="8" start_column="5" end_column="40" covered="no" />
             <range source_id="319" start_line="9" end_line="9" start_column="5" end_column="64" covered="no" />
@@ -60240,7 +60240,7 @@
             <range source_id="319" start_line="191" end_line="191" start_column="17" end_column="18" covered="no" />
           </ranges>
         </function>
-        <function id="780960" token="0x6001b58" name="MoveNext()" namespace="AspNetCoreGeneratedDocument" type_name="Views_Cosmos___Settings_Index.&lt;&lt;ExecuteAsync&gt;b__27_1&gt;d" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="10" lines_covered="0" lines_partially_covered="0" lines_not_covered="6">
+        <function id="780960" token="0x6001b58" name="MoveNext()" namespace="AspNetCoreGeneratedDocument" type_name="Views_SkyCmsSettings_Index.&lt;&lt;ExecuteAsync&gt;b__27_1&gt;d" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="10" lines_covered="0" lines_partially_covered="0" lines_not_covered="6">
           <ranges>
             <range source_id="320" start_line="35" end_line="35" start_column="26" end_column="57" covered="no" />
             <range source_id="320" start_line="36" end_line="36" start_column="25" end_column="26" covered="no" />
@@ -60250,7 +60250,7 @@
             <range source_id="320" start_line="80" end_line="80" start_column="25" end_column="26" covered="no" />
           </ranges>
         </function>
-        <function id="793124" token="0x6001b6e" name="MoveNext()" namespace="AspNetCoreGeneratedDocument" type_name="Views_Cosmos___Settings_Index.&lt;ExecuteAsync&gt;d__27" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="3" lines_covered="0" lines_partially_covered="0" lines_not_covered="1">
+        <function id="793124" token="0x6001b6e" name="MoveNext()" namespace="AspNetCoreGeneratedDocument" type_name="Views_SkyCmsSettings_Index.&lt;ExecuteAsync&gt;d__27" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="3" lines_covered="0" lines_partially_covered="0" lines_not_covered="1">
           <ranges>
             <range source_id="320" start_line="7" end_line="7" start_column="5" end_column="40" covered="no" />
           </ranges>
@@ -72063,7 +72063,7 @@
             <range source_id="150" start_line="318" end_line="318" start_column="9" end_column="10" covered="yes" />
           </ranges>
         </function>
-        <function id="1483688" token="0x60024f3" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;AddCdnSettingIfValidAsync&gt;d__14" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="17" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
+        <function id="1483688" token="0x60024f3" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;AddCdnSettingIfValidAsync&gt;d__14" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="17" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
           <ranges>
             <range source_id="151" start_line="229" end_line="229" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="230" end_line="230" start_column="13" end_column="59" covered="no" />
@@ -72075,7 +72075,7 @@
             <range source_id="151" start_line="242" end_line="242" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1484008" token="0x60024f6" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;AddCdnSettingIfValidAsync&gt;d__15" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="13" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
+        <function id="1484008" token="0x60024f6" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;AddCdnSettingIfValidAsync&gt;d__15" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="13" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
           <ranges>
             <range source_id="151" start_line="245" end_line="245" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="246" end_line="246" start_column="13" end_column="56" covered="no" />
@@ -72087,7 +72087,7 @@
             <range source_id="151" start_line="258" end_line="258" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1484312" token="0x60024f9" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;AddCdnSettingIfValidAsync&gt;d__16" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="13" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
+        <function id="1484312" token="0x60024f9" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;AddCdnSettingIfValidAsync&gt;d__16" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="13" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
           <ranges>
             <range source_id="151" start_line="261" end_line="261" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="262" end_line="262" start_column="13" end_column="62" covered="no" />
@@ -72099,7 +72099,7 @@
             <range source_id="151" start_line="274" end_line="274" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1484616" token="0x60024fc" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;AddCdnSettingIfValidAsync&gt;d__17" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="13" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
+        <function id="1484616" token="0x60024fc" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;AddCdnSettingIfValidAsync&gt;d__17" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="13" lines_covered="0" lines_partially_covered="0" lines_not_covered="11">
           <ranges>
             <range source_id="151" start_line="277" end_line="277" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="278" end_line="278" start_column="13" end_column="54" covered="no" />
@@ -72111,7 +72111,7 @@
             <range source_id="151" start_line="290" end_line="290" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1484920" token="0x60024ff" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;CDN&gt;d__8" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="8" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
+        <function id="1484920" token="0x60024ff" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;CDN&gt;d__8" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="8" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
           <ranges>
             <range source_id="151" start_line="105" end_line="105" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="106" end_line="106" start_column="13" end_column="55" covered="no" />
@@ -72120,7 +72120,7 @@
             <range source_id="151" start_line="110" end_line="110" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1485208" token="0x6002502" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;CDN&gt;d__9" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="35" lines_covered="0" lines_partially_covered="0" lines_not_covered="14">
+        <function id="1485208" token="0x6002502" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;CDN&gt;d__9" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="35" lines_covered="0" lines_partially_covered="0" lines_not_covered="14">
           <ranges>
             <range source_id="151" start_line="120" end_line="120" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="121" end_line="121" start_column="13" end_column="37" covered="no" />
@@ -72138,7 +72138,7 @@
             <range source_id="151" start_line="139" end_line="139" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1486312" token="0x6002505" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;ClearCdnSettingsAsync&gt;d__13" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="19" lines_covered="0" lines_partially_covered="0" lines_not_covered="9">
+        <function id="1486312" token="0x6002505" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;ClearCdnSettingsAsync&gt;d__13" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="19" lines_covered="0" lines_partially_covered="0" lines_not_covered="9">
           <ranges>
             <range source_id="151" start_line="217" end_line="217" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="218" end_line="220" start_column="13" end_column="32" covered="no" />
@@ -72149,7 +72149,7 @@
             <range source_id="151" start_line="226" end_line="226" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1486720" token="0x6002508" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;GetOrCreateEditorSettingAsync&gt;d__11" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="23" lines_covered="0" lines_partially_covered="0" lines_not_covered="16">
+        <function id="1486720" token="0x6002508" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;GetOrCreateEditorSettingAsync&gt;d__11" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="23" lines_covered="0" lines_partially_covered="0" lines_not_covered="16">
           <ranges>
             <range source_id="151" start_line="154" end_line="154" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="155" end_line="156" start_column="13" end_column="74" covered="no" />
@@ -72162,7 +72162,7 @@
             <range source_id="151" start_line="171" end_line="171" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1487192" token="0x600250b" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;Index&gt;d__6" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="7" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
+        <function id="1487192" token="0x600250b" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;Index&gt;d__6" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="7" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
           <ranges>
             <range source_id="151" start_line="66" end_line="66" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="67" end_line="67" start_column="13" end_column="64" covered="no" />
@@ -72171,7 +72171,7 @@
             <range source_id="151" start_line="70" end_line="70" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1487496" token="0x600250e" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;Index&gt;d__7" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="20" lines_covered="0" lines_partially_covered="0" lines_not_covered="13">
+        <function id="1487496" token="0x600250e" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;Index&gt;d__7" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="20" lines_covered="0" lines_partially_covered="0" lines_not_covered="13">
           <ranges>
             <range source_id="151" start_line="80" end_line="80" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="81" end_line="81" start_column="13" end_column="37" covered="no" />
@@ -72188,7 +72188,7 @@
             <range source_id="151" start_line="98" end_line="98" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1488012" token="0x6002511" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;LoadCdnViewModelAsync&gt;d__12" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="58" lines_covered="0" lines_partially_covered="0" lines_not_covered="29">
+        <function id="1488012" token="0x6002511" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;LoadCdnViewModelAsync&gt;d__12" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="58" lines_covered="0" lines_partially_covered="0" lines_not_covered="29">
           <ranges>
             <range source_id="151" start_line="174" end_line="174" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="175" end_line="175" start_column="13" end_column="44" covered="no" />
@@ -72222,7 +72222,7 @@
             <range source_id="151" start_line="214" end_line="214" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1488896" token="0x6002514" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;Remove&gt;d__10" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="9" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
+        <function id="1488896" token="0x6002514" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;Remove&gt;d__10" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="9" lines_covered="0" lines_partially_covered="0" lines_not_covered="5">
           <ranges>
             <range source_id="151" start_line="146" end_line="146" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="147" end_line="147" start_column="13" end_column="43" covered="no" />
@@ -72231,7 +72231,7 @@
             <range source_id="151" start_line="151" end_line="151" start_column="9" end_column="10" covered="no" />
           </ranges>
         </function>
-        <function id="1489248" token="0x6002517" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="Cosmos___SettingsController.&lt;TestConnectionAsync&gt;d__19" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="19" lines_covered="0" lines_partially_covered="0" lines_not_covered="17">
+        <function id="1489248" token="0x6002517" name="MoveNext()" namespace="Sky.Editor.Controllers" type_name="SkyCmsSettingsController.&lt;TestConnectionAsync&gt;d__19" block_coverage="0.00" line_coverage="0.00" blocks_covered="0" blocks_not_covered="19" lines_covered="0" lines_partially_covered="0" lines_not_covered="17">
           <ranges>
             <range source_id="151" start_line="308" end_line="308" start_column="9" end_column="10" covered="no" />
             <range source_id="151" start_line="310" end_line="310" start_column="13" end_column="14" covered="no" />
@@ -79684,7 +79684,7 @@
         <source_file id="148" path="D:\source\SkyCMS\Editor\Data\Logic\DesignerUtilities.cs" checksum_type="SHA256" checksum="88FB93C9EA4912BB399CA7651EE0B63B35B222CD63B5F2BCFB15D7DF5F34AC27" />
         <source_file id="149" path="D:\source\SkyCMS\Editor\Controllers\BlogController.cs" checksum_type="SHA256" checksum="D1421E53B8FE75EEAB220BD58914A6E898C9233E461C440418EBA6BC6BED25A2" />
         <source_file id="150" path="D:\source\SkyCMS\Editor\Controllers\ContactsController.cs" checksum_type="SHA256" checksum="69D514580369CA9140394F71F650959F88DBFF0FC23883EBE42ECD3981A0664B" />
-        <source_file id="151" path="D:\source\SkyCMS\Editor\Controllers\Cosmos___SettingsController.cs" checksum_type="SHA256" checksum="6CFEC63536CA3A5B810782326B26300D023E526F90B747F687F91E5FD10D49FB" />
+        <source_file id="151" path="D:\source\SkyCMS\Editor\Controllers\SkyCmsSettingsController.cs" checksum_type="SHA256" checksum="6CFEC63536CA3A5B810782326B26300D023E526F90B747F687F91E5FD10D49FB" />
         <source_file id="152" path="D:\source\SkyCMS\Editor\Controllers\EmailAdminController.cs" checksum_type="SHA256" checksum="2C194806625B7F83176202E2D47A1052DBB901768EB7A72C6ED207F06F9F5DA7" />
         <source_file id="153" path="D:\source\SkyCMS\Editor\Controllers\PubController.cs" checksum_type="SHA256" checksum="53E5D7FFD60A8B25D52C6BBEB1DA8428691E8D748AFF4D48467289951F14FD37" />
         <source_file id="154" path="D:\source\SkyCMS\Editor\Controllers\RolesController.cs" checksum_type="SHA256" checksum="A4E984D1D6E84FFE0F87FDFBD58146C4D868B3B0FE95E5CE058508D5B75E85D3" />
@@ -79852,8 +79852,8 @@
         <source_file id="316" path="D:\source\SkyCMS\Editor\Views\Blog\Post.cshtml" checksum_type="SHA256" checksum="8B899E2B3F4EDF1D7B548115EE1F9709B7DB0EF929534200A699914CE59CFC7C" />
         <source_file id="317" path="D:\source\SkyCMS\Editor\Views\Cosmos___Contacts\Index.cshtml" checksum_type="SHA256" checksum="9986CE564B0ACF6CF0F45AA677ABEC069F37969A24F346129DE78FBE34A49A22" />
         <source_file id="318" path="D:\source\SkyCMS\Editor\Views\Cosmos___Contacts\MailChimp.cshtml" checksum_type="SHA256" checksum="2FC4074AD6E759E8288AC8915BDA1F2B3D9EAB3AFB6EE87B31E684371BBC7B87" />
-        <source_file id="319" path="D:\source\SkyCMS\Editor\Views\Cosmos___Settings\CDN.cshtml" checksum_type="SHA256" checksum="E34C0792274A8DBB245A4E521F92BBE632C2D62219DFDC6E8C55C7C8B976E20E" />
-        <source_file id="320" path="D:\source\SkyCMS\Editor\Views\Cosmos___Settings\Index.cshtml" checksum_type="SHA256" checksum="963CB05C46C5F3DC066F394B6977392F320CECB878B8E9BBA0153A531E624AE9" />
+        <source_file id="319" path="D:\source\SkyCMS\Editor\Views\SkyCmsSettings\CDN.cshtml" checksum_type="SHA256" checksum="E34C0792274A8DBB245A4E521F92BBE632C2D62219DFDC6E8C55C7C8B976E20E" />
+        <source_file id="320" path="D:\source\SkyCMS\Editor\Views\SkyCmsSettings\Index.cshtml" checksum_type="SHA256" checksum="963CB05C46C5F3DC066F394B6977392F320CECB878B8E9BBA0153A531E624AE9" />
         <source_file id="321" path="D:\source\SkyCMS\Editor\Views\Editor\CcmsContent.cshtml" checksum_type="SHA256" checksum="A6A46F51CEC0F71D5EA00D4D60E9B61C31133819AD0551AE409B47EE84FD0319" />
         <source_file id="322" path="D:\source\SkyCMS\Editor\Views\Editor\Clone.cshtml" checksum_type="SHA256" checksum="C934DBD7A69F14350878F304CCB1FF8FF51FCC50AD00C50D372FB9D044722BD2" />
         <source_file id="323" path="D:\source\SkyCMS\Editor\Views\Editor\Compare.cshtml" checksum_type="SHA256" checksum="CC30A5EF62E087D82D31CD43BABC89442D404C4A314A71116499164EFE77B606" />

@@ -1,10 +1,11 @@
-// <copyright file="Cosmos___SettingsControllerTests.cs" company="Moonrise Software, LLC">
+// <copyright file="SkyCmsSettingsControllerTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
 
 namespace Sky.Tests.Controllers
 {
+    using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
@@ -14,27 +15,32 @@ namespace Sky.Tests.Controllers
     using Moq;
     using Newtonsoft.Json;
     using Sky.Editor.Controllers;
+    using Sky.Editor.Features.Copilot.GetSettings;
+    using Sky.Editor.Features.Copilot.RemoveSettings;
+    using Sky.Editor.Features.Copilot.SaveSettings;
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Unit tests for <see cref="Cosmos___SettingsController"/>.
+    /// Unit tests for <see cref="SkyCmsSettingsController"/>.
     /// Tests editor settings and CDN configuration management.
     /// Thread-safe for parallel execution using unique in-memory databases per test.
     /// </summary>
     [TestClass]
-    public class Cosmos___SettingsControllerTests
+    public class SkyCmsSettingsControllerTests
     {
         private ApplicationDbContext dbContext;
-        private Mock<ILogger<Cosmos___SettingsController>> loggerMock;
+        private Mock<ILogger<SkyCmsSettingsController>> loggerMock;
+        private Mock<IMediator> mediatorMock;
         private Mock<IEditorSettings> editorSettingsMock;
         private Mock<ICdnServiceFactory> cdnServiceFactoryMock;
-        private Cosmos___SettingsController controller;
+        private SkyCmsSettingsController controller;
 
         [TestInitialize]
         public void Setup()
@@ -46,9 +52,23 @@ namespace Sky.Tests.Controllers
             dbContext = new ApplicationDbContext(options);
 
             // Setup mocks
-            loggerMock = new Mock<ILogger<Cosmos___SettingsController>>();
+            loggerMock = new Mock<ILogger<SkyCmsSettingsController>>();
+            mediatorMock = new Mock<IMediator>();
             editorSettingsMock = new Mock<IEditorSettings>();
             cdnServiceFactoryMock = new Mock<ICdnServiceFactory>();
+
+            mediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<GetCopilotProxyOptionsQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CommandResult<CopilotProxyOptions>.Success(new CopilotProxyOptions()));
+
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<SaveCopilotProxyOptionsCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((SaveCopilotProxyOptionsCommand cmd, CancellationToken _) =>
+                    CommandResult<CopilotProxyOptions>.Success(cmd.Options));
+
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<RemoveCopilotProxyOptionsCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CommandResult<bool>.Success(true));
 
             // Setup default editor settings mock behavior
             editorSettingsMock.Setup(s => s.GetEditorConfigAsync())
@@ -68,8 +88,9 @@ namespace Sky.Tests.Controllers
                     new CdnService(new List<CdnSetting>(), log, ctx));
 
             // Create controller
-            controller = new Cosmos___SettingsController(
+            controller = new SkyCmsSettingsController(
                 dbContext,
+                mediatorMock.Object,
                 loggerMock.Object,
                 editorSettingsMock.Object,
                 cdnServiceFactoryMock.Object);
@@ -94,7 +115,15 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new Cosmos___SettingsController(null, loggerMock.Object, editorSettingsMock.Object, cdnServiceFactoryMock.Object));
+                new SkyCmsSettingsController(null, mediatorMock.Object, loggerMock.Object, editorSettingsMock.Object, cdnServiceFactoryMock.Object));
+        }
+
+        [TestMethod]
+        public void Constructor_WithNullMediator_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            _ = Assert.Throws<ArgumentNullException>(() =>
+                new SkyCmsSettingsController(dbContext, null, loggerMock.Object, editorSettingsMock.Object, cdnServiceFactoryMock.Object));
         }
 
         [TestMethod]
@@ -102,7 +131,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new Cosmos___SettingsController(dbContext, null, editorSettingsMock.Object, cdnServiceFactoryMock.Object));
+                new SkyCmsSettingsController(dbContext, mediatorMock.Object, null, editorSettingsMock.Object, cdnServiceFactoryMock.Object));
         }
 
         [TestMethod]
@@ -110,7 +139,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new Cosmos___SettingsController(dbContext, loggerMock.Object, null, cdnServiceFactoryMock.Object));
+                new SkyCmsSettingsController(dbContext, mediatorMock.Object, loggerMock.Object, null, cdnServiceFactoryMock.Object));
         }
 
         [TestMethod]
@@ -118,7 +147,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new Cosmos___SettingsController(dbContext, loggerMock.Object, editorSettingsMock.Object, null));
+                new SkyCmsSettingsController(dbContext, mediatorMock.Object, loggerMock.Object, editorSettingsMock.Object, null));
         }
 
         #endregion
@@ -586,14 +615,9 @@ namespace Sky.Tests.Controllers
         public async Task Copilot_Get_WithInvalidJson_LogsWarningAndReturnsDefaultOptions()
         {
             // Arrange
-            dbContext.Settings.Add(new Setting
-            {
-                Group = Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME,
-                Name = nameof(CopilotProxyOptions),
-                Value = "{ invalid json }",
-                Description = "Settings used by the Copilot completion proxy",
-            });
-            await dbContext.SaveChangesAsync();
+            mediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<GetCopilotProxyOptionsQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CommandResult<CopilotProxyOptions>.Failure("Load failed"));
 
             // Act
             var result = await controller.Copilot();
@@ -606,20 +630,17 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(model);
             Assert.IsFalse(model.Enabled);
             Assert.AreEqual("auto", model.Model);
-
-            loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => true),
-                    It.IsAny<JsonException>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
-                Times.Once);
+            Assert.IsFalse(controller.ModelState.IsValid);
         }
 
         [TestMethod]
         public async Task Copilot_Get_WithEmptyDatabase_ReturnsDefaultOptions()
         {
+            // Arrange
+            mediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<GetCopilotProxyOptionsQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CommandResult<CopilotProxyOptions>.Success(new CopilotProxyOptions()));
+
             // Act
             var result = await controller.Copilot();
 
@@ -651,14 +672,9 @@ namespace Sky.Tests.Controllers
                 MaxTokens = 256,
             };
 
-            dbContext.Settings.Add(new Setting
-            {
-                Group = Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME,
-                Name = nameof(CopilotProxyOptions),
-                Value = JsonConvert.SerializeObject(options),
-                Description = "Settings used by the Copilot completion proxy",
-            });
-            await dbContext.SaveChangesAsync();
+            mediatorMock
+                .Setup(m => m.QueryAsync(It.IsAny<GetCopilotProxyOptionsQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CommandResult<CopilotProxyOptions>.Success(options));
 
             // Act
             var result = await controller.Copilot();
@@ -697,18 +713,18 @@ namespace Sky.Tests.Controllers
             // Assert
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult);
-            Assert.AreEqual(model, viewResult.Model);
             Assert.AreEqual("Saved", viewResult.ViewData["Operation"] as string);
 
-            var savedSetting = await dbContext.Settings
-                .FirstOrDefaultAsync(s => s.Group == Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME);
-            Assert.IsNotNull(savedSetting);
+            var returnedModel = viewResult.Model as CopilotProxyOptions;
+            Assert.IsNotNull(returnedModel);
+            Assert.IsTrue(returnedModel.Enabled);
+            Assert.AreEqual("https://example.ai/v1/chat/completions", returnedModel.Endpoint);
 
-            var savedOptions = JsonConvert.DeserializeObject<CopilotProxyOptions>(savedSetting.Value);
-            Assert.IsNotNull(savedOptions);
-            Assert.IsTrue(savedOptions.Enabled);
-            Assert.AreEqual("https://example.ai/v1/chat/completions", savedOptions.Endpoint);
-            Assert.AreEqual("abc123", savedOptions.AccessToken);
+            mediatorMock.Verify(
+                m => m.SendAsync(
+                    It.Is<SaveCopilotProxyOptionsCommand>(c => c.Options.Endpoint == "https://example.ai/v1/chat/completions"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [TestMethod]
@@ -726,21 +742,43 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(viewResult);
             Assert.AreEqual(model, viewResult.Model);
             Assert.IsFalse(controller.ModelState.IsValid);
+
+            mediatorMock.Verify(
+                m => m.SendAsync(It.IsAny<SaveCopilotProxyOptionsCommand>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [TestMethod]
-        public async Task RemoveCopilot_ClearsSettingsAndRedirects()
+        public async Task Copilot_Post_WithMediatorFailure_ReturnsViewWithModelAndError()
         {
             // Arrange
-            dbContext.Settings.Add(new Setting
+            var model = new CopilotProxyOptions
             {
-                Group = Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME,
-                Name = nameof(CopilotProxyOptions),
-                Value = JsonConvert.SerializeObject(new CopilotProxyOptions { Endpoint = "https://test" }),
-                Description = "Settings used by the Copilot completion proxy",
-            });
-            await dbContext.SaveChangesAsync();
+                Enabled = true,
+                Endpoint = "https://example.ai/v1/chat/completions",
+            };
 
+            mediatorMock
+                .Setup(m => m.SendAsync(It.IsAny<SaveCopilotProxyOptionsCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CommandResult<CopilotProxyOptions>.Failure(new Dictionary<string, string[]>
+                {
+                    ["Endpoint"] = new[] { "Endpoint is required when Copilot is enabled." },
+                }));
+
+            // Act
+            var result = await controller.Copilot(model);
+
+            // Assert
+            var viewResult = result as ViewResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(model, viewResult.Model);
+            Assert.IsFalse(controller.ModelState.IsValid);
+            Assert.IsTrue(controller.ModelState.ContainsKey("Endpoint"));
+        }
+
+        [TestMethod]
+        public async Task RemoveCopilot_UsesMediatorAndRedirects()
+        {
             // Act
             var result = await controller.RemoveCopilot();
 
@@ -749,10 +787,9 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(redirectResult);
             Assert.AreEqual("Copilot", redirectResult.ActionName);
 
-            var remainingSettings = await dbContext.Settings
-                .Where(s => s.Group == Cosmos___SettingsController.COPILOTPROXYSETGROUPNAME)
-                .ToListAsync();
-            Assert.AreEqual(0, remainingSettings.Count);
+            mediatorMock.Verify(
+                m => m.SendAsync(It.IsAny<RemoveCopilotProxyOptionsCommand>(), It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         #endregion

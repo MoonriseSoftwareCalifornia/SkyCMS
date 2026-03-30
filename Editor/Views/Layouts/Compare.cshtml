@@ -141,7 +141,7 @@
         $("#EditingField").val(null);
 
         // Monaco AMD Editor  - https://microsoft.github.io/monaco-editor/
-        require.config({ paths: { 'vs': '/lib/monaco-editor/min/vs' } });
+        require.config({ paths: { 'vs': '/lib/monaco/min/vs' } });
 
         require(['vs/editor/editor.main'], function () {
 
@@ -166,4 +166,4 @@
 
 </script>
 
-<script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+<script src="/lib/monaco/min/vs/loader.js"></script>

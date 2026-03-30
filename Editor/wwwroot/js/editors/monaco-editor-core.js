@@ -86,7 +86,7 @@ class MonacoEditorCore {
             this.config = {
                 autoSaveDelay: 1200,
                 readOnly: false,
-                basePath: '/lib/monaco-editor/min',
+                basePath: '/lib/monaco/min',
                 ...config
             };
 

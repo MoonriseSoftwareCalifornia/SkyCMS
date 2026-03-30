@@ -30,7 +30,7 @@
                         </div>
                     }
 
-                    <form id="copilotProxyForm" method="post" asp-action="Copilot" asp-controller="Cosmos___Settings">
+                    <form id="copilotProxyForm" method="post" asp-action="Copilot" asp-controller="SkyCmsSettings">
                         @Html.AntiForgeryToken()
 
                         <div class="mb-3 form-check form-switch">
@@ -41,7 +41,8 @@
 
                         <div class="mb-3">
                             <label asp-for="Endpoint"></label>
-                            <input asp-for="Endpoint" class="form-control" aria-required="true" />
+                            <input asp-for="Endpoint" class="form-control"
+                                   placeholder="Choose an endpoint or type in a new one." aria-required="true" autocomplete="off" />
                             <span class="text-muted">OpenAI-compatible chat completions endpoint URL.</span>
                             <span asp-validation-for="Endpoint" class="text-danger"></span>
                         </div>
@@ -80,8 +81,8 @@
                         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
                         <button id="btnSave" type="submit" class="btn btn-sm btn-primary">Save settings <i class="fa-solid fa-circle-arrow-right"></i></button>
-                        <a asp-action="Index" asp-controller="Cosmos___Settings" class="btn btn-sm btn-secondary">Done <i class="fa-solid fa-circle-arrow-right"></i></a>
-                        <a asp-action="RemoveCopilot" asp-controller="Cosmos___Settings" class="btn btn-sm btn-outline-danger">Remove settings <i class="fa-solid fa-circle-arrow-right"></i></a>
+                        <a asp-action="Index" asp-controller="SkyCmsSettings" class="btn btn-sm btn-secondary">Done <i class="fa-solid fa-circle-arrow-right"></i></a>
+                        <a asp-action="RemoveCopilot" asp-controller="SkyCmsSettings" class="btn btn-sm btn-outline-danger">Remove settings <i class="fa-solid fa-circle-arrow-right"></i></a>
                     </form>
                 </div>
             </div>
@@ -92,6 +93,57 @@
 <script>
     $(document).ready(function () {
         $("body").addClass("cwps-editor-container");
+
+        const endpointSuggestions = [
+            {
+                label: "GitHub Models (Azure) w/Chat",
+                value: "https://models.inference.ai.azure.com/chat/completions"
+            },
+            {
+                label: "OpenAI API w/Chat",
+                value: "https://api.openai.com/v1/chat/completions"
+            },
+            {
+                label: "Azure OpenAI (replace <> in URL with your values)",
+                value: "https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=2024-02-01"
+            },
+            {
+                label: "Local (Ollama)",
+                value: "http://localhost:11434/v1/chat/completions"
+            },
+        ];
+
+        const $endpoint = $("#Endpoint");
+        if ($endpoint.length) {
+            $endpoint.autocomplete({
+                minLength: 0,
+                source: function (request, response) {
+                    const term = (request.term || "").toLowerCase();
+                    const matches = endpointSuggestions.filter(item =>
+                        item.label.toLowerCase().includes(term)
+                        || item.value.toLowerCase().includes(term));
+                    response(matches);
+                },
+                focus: function (event, ui) {
+                    $endpoint.val(ui.item.value);
+                    return false;
+                },
+                select: function (event, ui) {
+                    $endpoint.val(ui.item.value);
+                    return false;
+                }
+            }).autocomplete("instance")._renderItem = function (ul, item) {
+                return $("<li>")
+                    .append($("<div>")
+                        .append($("<div>").text(item.label))
+                        .append($("<small>").addClass("text-muted").text(item.value)))
+                    .appendTo(ul);
+            };
+
+            $endpoint.on("focus", function () {
+                $(this).autocomplete("search", $(this).val());
+            });
+        }
     });
 </script>
 

@@ -75,3 +75,196 @@
     color: #fff;
     border-bottom: 2px solid #007acc;
 }
+
+.code-editor-workspace {
+    position: absolute;
+    top: 87px;
+    bottom: 1px;
+    left: 1px;
+    right: 1px;
+    display: flex;
+    gap: 12px;
+    padding: 8px;
+    background-color: #111315;
+}
+
+.code-editor-workspace .m-editor-container {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 1px solid #3e3e42;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.copilot-chat-panel {
+    width: 390px;
+    max-width: 38vw;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #3e3e42;
+    border-radius: 6px;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    overflow: hidden;
+}
+
+.copilot-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid #333;
+    background-color: #252526;
+}
+
+.copilot-chat-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.copilot-chat-subtitle {
+    font-size: 0.75rem;
+    color: #a9b1ba;
+}
+
+.copilot-chat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #333;
+    background-color: #1a1a1a;
+}
+
+.copilot-chat-actions .btn {
+    font-size: 0.72rem;
+}
+
+.copilot-chat-messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.copilot-chat-empty {
+    font-size: 0.82rem;
+    color: #9da5af;
+}
+
+.copilot-chat-message {
+    max-width: 92%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.copilot-chat-message-content {
+    white-space: pre-wrap;
+}
+
+.copilot-chat-message-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 6px;
+}
+
+.copilot-chat-message-actions .btn {
+    font-size: 0.7rem;
+    line-height: 1.15;
+    padding: 2px 7px;
+}
+
+.copilot-chat-message.user {
+    align-self: flex-end;
+    background-color: #264f78;
+    color: #fff;
+}
+
+.copilot-chat-message.assistant {
+    align-self: flex-start;
+    background-color: #2d2d30;
+}
+
+.copilot-chat-message.system {
+    align-self: stretch;
+    background-color: #202428;
+    color: #b8c1cc;
+    font-size: 0.8rem;
+}
+
+.copilot-chat-status {
+    padding: 8px 12px;
+    border-top: 1px solid #333;
+    font-size: 0.78rem;
+    color: #c8d1dc;
+    background-color: #202428;
+}
+
+.copilot-chat-form {
+    padding: 12px;
+    border-top: 1px solid #333;
+    background-color: #1a1a1a;
+}
+
+.copilot-chat-form textarea {
+    resize: vertical;
+    min-height: 84px;
+    background-color: #252526;
+    color: #f3f3f3;
+    border-color: #3e3e42;
+}
+
+.copilot-chat-form textarea::placeholder {
+    color: #9da5af;
+}
+
+.copilot-chat-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.copilot-chat-hint {
+    font-size: 0.72rem;
+    color: #9da5af;
+}
+
+@media (max-width: 1100px) {
+    .code-editor-workspace {
+        flex-direction: column;
+    }
+
+    .copilot-chat-panel {
+        width: auto;
+        max-width: none;
+        min-width: 0;
+        min-height: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    .code-editor-workspace {
+        padding: 4px;
+        gap: 6px;
+    }
+
+    .copilot-chat-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

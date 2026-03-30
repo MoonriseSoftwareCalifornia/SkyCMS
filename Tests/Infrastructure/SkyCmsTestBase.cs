@@ -1106,9 +1106,8 @@ namespace Sky.Tests
                 new CacheService<Layout>(
                     Cache,
                     new NullLogger<CacheService<Layout>>(),
-                    DynamicConfigurationProvider));
-
-// TODO: continue updating the tests
+                    DynamicConfigurationProvider),
+                DynamicConfigurationProvider);
         }
     }
 }

@@ -6,6 +6,9 @@
 - When updating EF queries, preserve cross-provider compatibility for SQLite, MySQL, and MS SQL; avoid provider-specific behavior.
 - Provide clear in-chat progress updates in small steps while working so the user can tell the task is still active.
 
+## Testing Guidelines
+- Create richer Copilot integration tests with varied request types; a single simple hello-world style test is not sufficient.
+
 ## Architecture Overview
 - The SkyCMS multi-tenant architecture utilizes the following components:
   - **IDynamicConfigurationProvider** (singleton) for tenant resolution via headers (x-origin-hostname priority over Host header).

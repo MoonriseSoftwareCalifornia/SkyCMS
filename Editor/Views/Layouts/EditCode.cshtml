@@ -137,60 +137,22 @@
         });
     }
 
-    // Add listener for active document changes
-    // if (window.activeDocumentTracker) {
-    //     window.activeDocumentTracker.addListener((docInfo) => {
-    //         console.log('Active document changed:', docInfo);
-    //     });
-    // }
+    window.CodeEditorShared.registerActiveDocumentDebugListener();
 
     $(document).ready(async function () {
-        try {
-            // Block user action until loaded
-            if (typeof $.blockUI === 'function') {
-                $.blockUI();
+        await window.CodeEditorShared.initializePage({
+            editFields: editFields,
+            initialField: "@Model.EditingField",
+            onReady: function () {
+                $("#liInsert").show();
+                $('#btnCcmsGrapesJsEditor').show();
+                $("#tbTitle").val("@Model.EditorTitle");
+                $("#btnSaveAsDraft").hide();
             }
-
-            // Initialize Monaco editor with modern loader
-            await initializeMonacoEditor({
-                editFields: editFields,
-                initialField: "@Model.EditingField",
-                autoSaveDelay: 3500,
-                readOnly: false,
-                basePath: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min'
-            });
-            
-            // Close loading spinner and display saved status
-            $("#spinLoading").hide();
-            
-            // View-specific initialization
-            $("#liInsert").show();
-            $('#btnCcmsGrapesJsEditor').show();
-            $("#tbTitle").val("@Model.EditorTitle");
-            $("#btnSaveAsDraft").hide();
-            $("#navBar").show();
-            $("#editspace").show();
-
-        } catch (error) {
-            console.error('Failed to initialize editor:', error);
-            
-            if (typeof $.unblockUI === 'function') {
-                $.unblockUI();
-            }
-            
-            alert('Failed to load editor. Please refresh the page and try again.\n\nError: ' + error.message);
-        }
+        });
     });
 
     $(document).on("unload", function () {
-        // Cleanup editor
-        if (window.monacoEditorCore) {
-            window.monacoEditorCore.dispose();
-        }
-
-        // Cleanup file manager popup
-        if (typeof fileMgrPopup !== "undefined" && fileMgrPopup !== null && fileMgrPopup.location) {
-            fileMgrPopup.close();
-        }
+        window.CodeEditorShared.cleanupOnUnload();
     });
 </script>

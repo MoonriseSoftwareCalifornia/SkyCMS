@@ -5,6 +5,8 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System.ComponentModel.DataAnnotations;
+
 namespace Sky.Editor.Models;
 
 /// <summary>
@@ -20,6 +22,7 @@ public sealed class CopilotProxyOptions
     /// <summary>
     /// Gets or sets the upstream OpenAI-compatible chat completions endpoint.
     /// </summary>
+    [Url]
     public string Endpoint { get; set; } = string.Empty;
 
     /// <summary>

@@ -22,9 +22,6 @@ class MonacoLoader {
 
         this.loading = true;
         
-        // Configure worker paths BEFORE loading Monaco
-        this._configureWorkerPaths(config.basePath || '/lib/monaco-editor/min');
-        
         this.loadPromise = this._loadMonaco(config);
         
         try {
@@ -39,32 +36,9 @@ class MonacoLoader {
         }
     }
 
-    _configureWorkerPaths(basePath) {
-        // Set up the Monaco environment to properly resolve worker paths
-        window.MonacoEnvironment = {
-            getWorkerUrl: function(moduleId, label) {
-                // Use relative paths from the base path
-                if (label === 'json') {
-                    return `${basePath}/vs/language/json/json.worker.js`;
-                }
-                if (label === 'css' || label === 'scss' || label === 'less') {
-                    return `${basePath}/vs/language/css/css.worker.js`;
-                }
-                if (label === 'html' || label === 'handlebars' || label === 'razor') {
-                    return `${basePath}/vs/language/html/html.worker.js`;
-                }
-                if (label === 'typescript' || label === 'javascript') {
-                    return `${basePath}/vs/language/typescript/ts.worker.js`;
-                }
-                // Default editor worker
-                return `${basePath}/vs/editor/editor.worker.js`;
-            }
-        };
-    }
-
     async _loadMonaco(config) {
         return new Promise((resolve, reject) => {
-            const basePath = config.basePath || '/lib/monaco-editor/min';
+            const basePath = config.basePath || '/lib/monaco/min';
             const timeout = config.timeout || 10000;
             
             // Set timeout for loading

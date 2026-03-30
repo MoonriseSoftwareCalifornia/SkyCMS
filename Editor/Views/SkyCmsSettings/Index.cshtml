@@ -25,11 +25,11 @@
                 <div class="card-header">
                     <h3 class="card-title">@ViewData["Title"]</h3>
                     <p>Website configuration settings.</p>
-                    <a class="btn btn-sm btn-primary" asp-action="CDN" asp-controller="Cosmos___Settings">CDN Settings <i class="fa-solid fa-circle-arrow-right"></i></a>
-                    <a class="btn btn-sm btn-primary" asp-action="Copilot" asp-controller="Cosmos___Settings">Copilot Settings <i class="fa-solid fa-circle-arrow-right"></i></a>
+                    <a class="btn btn-sm btn-primary" asp-action="CDN" asp-controller="SkyCmsSettings">CDN Settings <i class="fa-solid fa-circle-arrow-right"></i></a>
+                    <a class="btn btn-sm btn-primary" asp-action="Copilot" asp-controller="SkyCmsSettings">Copilot Settings <i class="fa-solid fa-circle-arrow-right"></i></a>
                 </div>
                 <div class="card-body">
-                    <form id="form1" method="post" asp-action="Index" asp-controller="Cosmos___Settings">
+                    <form id="form1" method="post" asp-action="Index" asp-controller="SkyCmsSettings">
                         @Html.AntiForgeryToken()
                         <h2>Configuration Settings</h2>
                         <hr />

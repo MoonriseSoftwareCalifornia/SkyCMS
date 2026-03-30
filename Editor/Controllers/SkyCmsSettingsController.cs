@@ -1,4 +1,4 @@
-// <copyright file="Cosmos___SettingsController.cs" company="Moonrise Software, LLC">
+// <copyright file="SkyCmsSettingsController.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -12,11 +12,15 @@ namespace Sky.Editor.Controllers
     using System.Linq;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
+    using Sky.Editor.Features.Copilot.GetSettings;
+    using Sky.Editor.Features.Copilot.RemoveSettings;
+    using Sky.Editor.Features.Copilot.SaveSettings;
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
@@ -26,37 +30,36 @@ namespace Sky.Editor.Controllers
     /// </summary>
     [Authorize(Roles = "Administrators")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "The URL must be unique and not have a changes of conflicting with user authored web page URLs.")]
-    public class Cosmos___SettingsController : Controller
+    public class SkyCmsSettingsController : Controller
     {
         /// <summary>
         /// Editor settings group name.
         /// </summary>
         public static readonly string EDITORSETGROUPNAME = "EDITORSETTINGS";
 
-        /// <summary>
-        /// Copilot settings group name.
-        /// </summary>
-        public static readonly string COPILOTPROXYSETGROUPNAME = "COPILOTPROXYSETTINGS";
-
         private readonly ApplicationDbContext dbContext;
-        private readonly ILogger<Cosmos___SettingsController> logger;
+        private readonly IMediator mediator;
+        private readonly ILogger<SkyCmsSettingsController> logger;
         private readonly IEditorSettings settings;
         private readonly ICdnServiceFactory cdnServiceFactory;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Cosmos___SettingsController"/> class.
+        /// Initializes a new instance of the <see cref="SkyCmsSettingsController"/> class.
         /// </summary>
         /// <param name="dbContext">Sets the database context.</param>
+        /// <param name="mediator">Mediator service.</param>
         /// <param name="logger">Log service.</param>
         /// <param name="settings">Editor settings.</param>
         /// <param name="cdnServiceFactory">CDN service factory.</param>
-        public Cosmos___SettingsController(
+        public SkyCmsSettingsController(
             ApplicationDbContext dbContext,
-            ILogger<Cosmos___SettingsController> logger,
+            IMediator mediator,
+            ILogger<SkyCmsSettingsController> logger,
             IEditorSettings settings,
             ICdnServiceFactory cdnServiceFactory)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
             this.cdnServiceFactory = cdnServiceFactory ?? throw new ArgumentNullException(nameof(cdnServiceFactory));
@@ -159,31 +162,63 @@ namespace Sky.Editor.Controllers
         /// <returns>The Copilot proxy settings view.</returns>
         public async Task<IActionResult> Copilot()
         {
-            var model = await LoadCopilotProxyOptionsAsync();
-            return View(model);
+            var result = await mediator.QueryAsync(new GetCopilotProxyOptionsQuery());
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                {
+                    ModelState.AddModelError(string.Empty, result.ErrorMessage);
+                }
+
+                return View(new CopilotProxyOptions());
+            }
+
+            return View(result.Data);
         }
 
         /// <summary>
         /// Updates the Copilot proxy configuration.
         /// </summary>
-        /// <param name="model">Copilot proxy options.</param>
+        /// <param name="options">Copilot proxy options.</param>
         /// <returns>The Copilot proxy settings view.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Copilot(CopilotProxyOptions model)
+        public async Task<IActionResult> Copilot(CopilotProxyOptions options)
         {
             if (!ModelState.IsValid)
             {
-                return View(model);
+                return View(options);
             }
 
-            var setting = await GetOrCreateCopilotSettingAsync();
-            setting.Value = JsonConvert.SerializeObject(model);
+            var result = await mediator.SendAsync(new SaveCopilotProxyOptionsCommand
+            {
+                Options = options,
+            });
 
-            await dbContext.SaveChangesAsync();
+            if (!result.IsSuccess)
+            {
+                if (result.Errors != null)
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        foreach (var message in error.Value)
+                        {
+                            ModelState.AddModelError(error.Key, message);
+                        }
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                {
+                    ModelState.AddModelError(string.Empty, result.ErrorMessage);
+                }
+
+                return View(options);
+            }
+
             ViewData["Operation"] = "Saved";
 
-            return View(model);
+            return View(result.Data ?? options);
         }
 
         /// <summary>
@@ -192,8 +227,18 @@ namespace Sky.Editor.Controllers
         /// <returns>A redirect to the Copilot settings page.</returns>
         public async Task<IActionResult> RemoveCopilot()
         {
-            await ClearCopilotSettingsAsync();
-            await dbContext.SaveChangesAsync();
+            var result = await mediator.SendAsync(new RemoveCopilotProxyOptionsCommand());
+
+            if (!result.IsSuccess)
+            {
+                if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                {
+                    ModelState.AddModelError(string.Empty, result.ErrorMessage);
+                }
+
+                var model = await mediator.QueryAsync(new GetCopilotProxyOptionsQuery());
+                return View(nameof(Copilot), model.Data ?? new CopilotProxyOptions());
+            }
 
             return RedirectToAction(nameof(Copilot));
         }
@@ -374,57 +419,5 @@ namespace Sky.Editor.Controllers
             }
         }
 
-        private async Task<Setting> GetOrCreateCopilotSettingAsync()
-        {
-            var setting = await dbContext.Settings
-                .FirstOrDefaultAsync(f => f.Group == COPILOTPROXYSETGROUPNAME);
-
-            if (setting == null)
-            {
-                setting = new Setting
-                {
-                    Group = COPILOTPROXYSETGROUPNAME,
-                    Name = nameof(CopilotProxyOptions),
-                    Value = string.Empty,
-                    Description = "Settings used by the Copilot completion proxy",
-                };
-                dbContext.Settings.Add(setting);
-            }
-
-            return setting;
-        }
-
-        private async Task<CopilotProxyOptions> LoadCopilotProxyOptionsAsync()
-        {
-            var setting = await dbContext.Settings
-                .FirstOrDefaultAsync(f => f.Group == COPILOTPROXYSETGROUPNAME);
-
-            if (setting == null || string.IsNullOrWhiteSpace(setting.Value))
-            {
-                return new CopilotProxyOptions();
-            }
-
-            try
-            {
-                return JsonConvert.DeserializeObject<CopilotProxyOptions>(setting.Value) ?? new CopilotProxyOptions();
-            }
-            catch (JsonException ex)
-            {
-                logger.LogWarning(ex, "Failed to deserialize Copilot setting with ID: {SettingId}", setting.Id);
-                return new CopilotProxyOptions();
-            }
-        }
-
-        private async Task ClearCopilotSettingsAsync()
-        {
-            var copilotSettings = await dbContext.Settings
-                .Where(f => f.Group == COPILOTPROXYSETGROUPNAME)
-                .ToListAsync();
-
-            if (copilotSettings.Any())
-            {
-                dbContext.Settings.RemoveRange(copilotSettings);
-            }
-        }
     }
 }

@@ -64,6 +64,13 @@ public class CopilotProxyOptionsService : ICopilotProxyOptionsService
         return result;
     }
 
+    /// <inheritdoc/>
+    public Task InvalidateCurrentTenantCacheAsync()
+    {
+        cacheService.Remove(this.GetCacheKey());
+        return Task.CompletedTask;
+    }
+
     private string GetCacheKey()
     {
         var tenantDomain = dynamicConfigurationProvider.GetTenantDomainNameFromRequest();

@@ -15,9 +15,11 @@ using Moq;
 using Sky.Editor.Models;
 using Sky.Editor.Services.Copilot;
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,6 +29,14 @@ using System.Threading.Tasks;
 [TestClass]
 public class CopilotControllerTests
 {
+    private const string LiveCopilotEnabledEnvVar = "SKYCMS_COPILOT_LIVE_TESTS";
+    private const string LiveCopilotEndpointEnvVar = "SKYCMS_COPILOT_ENDPOINT";
+    private const string LiveCopilotTokenEnvVar = "SKYCMS_COPILOT_TOKEN";
+    private const string LiveCopilotModelEnvVar = "SKYCMS_COPILOT_MODEL";
+    private const string DefaultLiveCopilotEndpoint = "https://models.inference.ai.azure.com/chat/completions";
+    private const string DefaultLiveCopilotModel = "gpt-4o-mini";
+    private const string UserSecretsId = "c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1";
+
     private Mock<IHttpClientFactory> httpClientFactoryMock = null!;
     private Mock<ICopilotProxyOptionsService> optionsServiceMock = null!;
     private Mock<ILogger<CopilotController>> loggerMock = null!;
@@ -298,10 +308,200 @@ public class CopilotControllerTests
         Assert.AreEqual(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
     }
 
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task Complete_WithLiveGitHubCopilotConnection_ReturnsCompletion()
+    {
+        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        {
+            Prefix = "public static int Add(int a, int b)\n{\n    ",
+            Language = "csharp",
+            FieldId = "live-test-basic",
+        });
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(payload.Completion));
+    }
+
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task Complete_WithLiveGitHubCopilotRazorScenario_ReturnsCompletion()
+    {
+        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        {
+            Prefix = "@if (Model.Items?.Any() == true)\n{\n    <ul>\n        ",
+            Suffix = "\n    </ul>\n}",
+            Language = "razor",
+            FieldId = "live-test-razor",
+        });
+
+        Assert.IsTrue(payload.Completion!.Contains("<", StringComparison.Ordinal)
+            || payload.Completion.Contains("@", StringComparison.Ordinal)
+            || payload.Completion.Contains("li", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task Complete_WithLiveGitHubCopilotUnitTestScenario_ReturnsCompletion()
+    {
+        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        {
+            Prefix = "[TestMethod]\npublic void Add_WhenPositiveValues_ReturnsSum()\n{\n    var result = Add(2, 3);\n    ",
+            Language = "csharp",
+            FieldId = "live-test-unit",
+        });
+
+        Assert.IsTrue(payload.Completion!.Contains("Assert", StringComparison.OrdinalIgnoreCase)
+            || payload.Completion.Contains("AreEqual", StringComparison.OrdinalIgnoreCase)
+            || payload.Completion.Contains("IsTrue", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task Complete_WithLiveGitHubCopilotNullSafetyScenario_ReturnsCompletion()
+    {
+        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        {
+            Prefix = "public static string GetDisplayName(User? user)\n{\n    ",
+            Language = "csharp",
+            FieldId = "live-test-null-safety",
+        });
+
+        Assert.IsTrue(payload.Completion!.Contains("user", StringComparison.OrdinalIgnoreCase)
+            || payload.Completion.Contains("null", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task Complete_WithLiveGitHubCopilotSuffixAwareScenario_ReturnsCompletion()
+    {
+        const string suffixMarker = "/* END_MARKER */";
+
+        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        {
+            Prefix = "public static int Multiply(int x, int y)\n{\n    var result = x * y;\n    ",
+            Suffix = $"\n{suffixMarker}\n}}",
+            Language = "csharp",
+            FieldId = "live-test-suffix",
+        });
+
+        Assert.IsFalse(payload.Completion!.Contains(suffixMarker, StringComparison.Ordinal));
+    }
+
     private static HttpClient CreateHttpClient(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> send)
     {
         var handler = new DelegateHttpMessageHandler(send);
         return new HttpClient(handler);
+    }
+
+    private async Task<CopilotController.CopilotCompletionResponse> ExecuteLiveCompletionAsync(
+        CopilotController.CopilotCompletionRequest request)
+    {
+        if (!IsLiveTestEnabled())
+        {
+            Assert.Inconclusive($"Set {LiveCopilotEnabledEnvVar}=true to run live Copilot integration tests.");
+        }
+
+        var token = ResolveLiveCopilotToken();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Assert.Inconclusive(
+                $"Live token not found. Set {LiveCopilotTokenEnvVar} or CoPilotAccessToken in user secrets.");
+        }
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(new CopilotProxyOptions
+            {
+                Enabled = true,
+                Endpoint = ResolveLiveCopilotEndpoint(),
+                AccessToken = token,
+                Model = ResolveLiveCopilotModel(),
+                TimeoutMs = 30000,
+                MaxTokens = 96,
+                Temperature = 0.1,
+            });
+
+        httpClientFactoryMock
+            .Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(new HttpClient());
+
+        var result = await controller.Complete(request);
+
+        if (result is ObjectResult error && error.StatusCode >= StatusCodes.Status400BadRequest)
+        {
+            Assert.Fail($"Live Copilot request failed with status {error.StatusCode}.");
+        }
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+
+        var payload = ok.Value as CopilotController.CopilotCompletionResponse;
+        Assert.IsNotNull(payload);
+
+        AssertLiveCompletionShape(payload);
+        return payload;
+    }
+
+    private static void AssertLiveCompletionShape(CopilotController.CopilotCompletionResponse payload)
+    {
+        Assert.IsFalse(string.IsNullOrWhiteSpace(payload.Completion));
+        Assert.IsTrue(payload.Completions.Count > 0);
+        Assert.AreEqual(payload.Completion, payload.Completions[0]);
+        Assert.IsFalse(payload.Completion!.Contains("```", StringComparison.Ordinal));
+    }
+
+    private static bool IsLiveTestEnabled()
+    {
+        var value = Environment.GetEnvironmentVariable(LiveCopilotEnabledEnvVar);
+        return value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static string ResolveLiveCopilotEndpoint()
+    {
+        return Environment.GetEnvironmentVariable(LiveCopilotEndpointEnvVar) ?? DefaultLiveCopilotEndpoint;
+    }
+
+    private static string ResolveLiveCopilotModel()
+    {
+        return Environment.GetEnvironmentVariable(LiveCopilotModelEnvVar) ?? DefaultLiveCopilotModel;
+    }
+
+    private static string? ResolveLiveCopilotToken()
+    {
+        var token = Environment.GetEnvironmentVariable(LiveCopilotTokenEnvVar);
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            return token;
+        }
+
+        return TryReadTokenFromUserSecrets();
+    }
+
+    private static string? TryReadTokenFromUserSecrets()
+    {
+        try
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var secretsPath = Path.Combine(appData, "Microsoft", "UserSecrets", UserSecretsId, "secrets.json");
+            if (!File.Exists(secretsPath))
+            {
+                return null;
+            }
+
+            using var stream = File.OpenRead(secretsPath);
+            using var document = JsonDocument.Parse(stream);
+            if (document.RootElement.TryGetProperty("CoPilotAccessToken", out var tokenElement))
+            {
+                var token = tokenElement.GetString();
+                return string.IsNullOrWhiteSpace(token) ? null : token;
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
     }
 
     private sealed class DelegateHttpMessageHandler : HttpMessageHandler
