@@ -46,13 +46,13 @@ public class GetSitemapQueryHandler(IApplicationDbContext dbContext, IMemoryCach
         var items = await dbContext.ArticleCatalog
             .AsNoTracking()
             .Where(t => t.Published <= dt)
-            .Select(t => new 
-            { 
-                t.UrlPath, 
-                t.Title, 
-                t.Published, 
-                t.Updated, 
-                t.BannerImage 
+            .Select(t => new
+            {
+                t.UrlPath,
+                t.Title,
+                t.Published,
+                t.Updated,
+                t.BannerImage
             })
             .ToListAsync(cancellationToken);
 
@@ -82,8 +82,8 @@ public class GetSitemapQueryHandler(IApplicationDbContext dbContext, IMemoryCach
                 {
                     new Image
                     {
-                        Location = home.BannerImage.StartsWith("http") 
-                            ? home.BannerImage 
+                        Location = home.BannerImage.StartsWith("http")
+                            ? home.BannerImage
                             : publicUrl.TrimEnd('/') + "/" + home.BannerImage.TrimStart('/'),
                         Title = home.Title
                     }
@@ -114,8 +114,8 @@ public class GetSitemapQueryHandler(IApplicationDbContext dbContext, IMemoryCach
                 {
                     new Image
                     {
-                        Location = other.BannerImage.StartsWith("http") 
-                            ? other.BannerImage 
+                        Location = other.BannerImage.StartsWith("http")
+                            ? other.BannerImage
                             : publicUrl.TrimEnd('/') + "/" + other.BannerImage.TrimStart('/'),
                         Title = other.Title
                     }

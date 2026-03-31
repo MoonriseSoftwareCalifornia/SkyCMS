@@ -100,7 +100,7 @@ namespace Cosmos.Common.Services.PublishedBlog
 
             return await _dbContext.Pages
                 .Where(p => p.BlogKey == blogKey
-                    && p.ArticleType == blogPostType  // Exclude the blog stream article itself
+                    && p.ArticleType == blogPostType // Exclude the blog stream article itself
                     && p.Published.HasValue
                     && p.Published <= now
                     && (p.Expires == null || p.Expires > now))
@@ -147,10 +147,10 @@ namespace Cosmos.Common.Services.PublishedBlog
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue
-                    && p.Published < publishedDate  // Strictly less than (earlier)
+                    && p.Published < publishedDate // Strictly less than (earlier)
                     && p.Published <= now
                     && (p.Expires == null || p.Expires > now))
-                .OrderByDescending(p => p.Published)  // Most recent older entry
+                .OrderByDescending(p => p.Published) // Most recent older entry
                 .FirstOrDefaultAsync();
         }
 
@@ -170,10 +170,10 @@ namespace Cosmos.Common.Services.PublishedBlog
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue
-                    && p.Published > publishedDate  // Strictly greater than (newer)
+                    && p.Published > publishedDate // Strictly greater than (newer)
                     && p.Published <= now
                     && (p.Expires == null || p.Expires > now))
-                .OrderBy(p => p.Published)  // Earliest newer entry
+                .OrderBy(p => p.Published) // Earliest newer entry
                 .FirstOrDefaultAsync();
         }
     }

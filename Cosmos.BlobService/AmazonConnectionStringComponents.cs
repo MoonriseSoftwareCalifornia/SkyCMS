@@ -20,7 +20,7 @@ public class AmazonConnectionStringComponents
     /// <summary>
     /// Gets or sets the AWS region (optional for Cloudflare R2).
     /// </summary>
-    public string? Region { get; set; }
+    public string Region { get; set; }
 
     /// <summary>
     /// Gets or sets the access key ID.
@@ -35,5 +35,5 @@ public class AmazonConnectionStringComponents
     /// <summary>
     /// Gets or sets the Cloudflare account ID (for R2 only).
     /// </summary>
-    public string? AccountId { get; set; }
+    public string AccountId { get; set; }
 }
