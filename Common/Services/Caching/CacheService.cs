@@ -77,7 +77,8 @@ namespace Cosmos.Common.Services.Caching
             }
             catch (Exception ex)
             {
-                this.logger.LogError(ex, "Error setting cache entry for key {CacheKey} with absolute expiration {Expiration}", key, absoluteExpiration);
+                var safeKey = key?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+                this.logger.LogError(ex, "Error setting cache entry for key {CacheKey} with absolute expiration {Expiration}", safeKey, absoluteExpiration);
                 throw;
             }
         }
@@ -108,10 +109,11 @@ namespace Cosmos.Common.Services.Caching
             }
             catch (Exception ex)
             {
+                var safeKey = key?.Replace("\r", string.Empty).Replace("\n", string.Empty);
                 this.logger.LogError(
                     ex,
                     "Error setting cache entry for key {CacheKey} with absolute expiration {AbsoluteExpiration} and sliding expiration {SlidingExpiration}",
-                    key,
+                    safeKey,
                     absoluteExpiration,
                     slidingExpiration);
                 throw;
@@ -132,7 +134,8 @@ namespace Cosmos.Common.Services.Caching
             }
             catch (Exception ex)
             {
-                this.logger.LogError(ex, "Error removing cache entry for key {CacheKey}", key);
+                var safeKey = key?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+                this.logger.LogError(ex, "Error removing cache entry for key {CacheKey}", safeKey);
                 throw;
             }
         }
