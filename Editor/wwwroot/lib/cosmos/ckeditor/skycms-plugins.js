@@ -1,11 +1,68 @@
-import { Plugin as s, ButtonView as c, IconBrowseFiles as I, ImageInsertUI as h, IconImageUpload as m, MenuBarMenuListItemButtonView as f, IconImageUrl as b, IconImageAssetManager as k, createDropdown as F, IconLink as p, addToolbarToDropdown as x, IconCode as L } from "ckeditor5";
-
-const aiAssistIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1 4 4 0 0 0 4 4 1 1 0 1 1 0 2 4 4 0 0 0-4 4 1 1 0 1 1-2 0 4 4 0 0 0-4-4 1 1 0 1 1 0-2 4 4 0 0 0 4-4 1 1 0 0 1 1-1zm6.5 11a.75.75 0 0 1 .75.75A2.75 2.75 0 0 0 22 16.5a.75.75 0 0 1 0 1.5 2.75 2.75 0 0 0-2.75 2.75.75.75 0 0 1-1.5 0A2.75 2.75 0 0 0 15 18a.75.75 0 0 1 0-1.5 2.75 2.75 0 0 0 2.75-2.75.75.75 0 0 1 .75-.75zM6 13a1 1 0 0 1 .98.8l.12.61a2.5 2.5 0 0 0 1.96 1.96l.61.12a1 1 0 0 1 0 1.96l-.61.12a2.5 2.5 0 0 0-1.96 1.96l-.12.61a1 1 0 0 1-1.96 0l-.12-.61a2.5 2.5 0 0 0-1.96-1.96l-.61-.12a1 1 0 0 1 0-1.96l.61-.12A2.5 2.5 0 0 0 4.9 14.4l.12-.61A1 1 0 0 1 6 13z"/></svg>';
+import { Plugin as s, ButtonView as c, IconBrowseFiles as I, ImageInsertUI as h, IconImageUpload as m, MenuBarMenuListItemButtonView as f, IconImageUrl as p, IconImageAssetManager as k, createDropdown as x, IconLink as b, addToolbarToDropdown as C, IconCode as F } from "ckeditor5";
 /**
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class T extends s {
+const T = [
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">',
+  [
+    '<path d="',
+    "M12 2a1 1 0 0 1 1 1 4 4 0 0 0 4 4 1 1 0 1 1 0 2 4 4 0 0 0-4 4 1 1 0 1 1-2 0 ",
+    "4 4 0 0 0-4-4 1 1 0 1 1 0-2 4 4 0 0 0 4-4 1 1 0 0 1 1-1zm6.5 11a.75.75 0 0 1 .75.75A2.75 ",
+    "2.75 0 0 0 22 16.5a.75.75 0 0 1 0 1.5 2.75 2.75 0 0 0-2.75 2.75.75.75 0 0 1-1.5 0A2.75 ",
+    "2.75 0 0 0 15 18a.75.75 0 0 1 0-1.5 2.75 2.75 0 0 0 2.75-2.75.75.75 0 0 1 .75-.75zM6 13a1 1 ",
+    "0 0 1 .98.8l.12.61a2.5 2.5 0 0 0 1.96 1.96l.61.12a1 1 0 0 1 0 1.96l-.61.12a2.5 2.5 0 0 0-1.96 ",
+    "1.96l-.12.61a1 1 0 0 1-1.96 0l-.12-.61a2.5 2.5 0 0 0-1.96-1.96l-.61-.12a1 1 0 0 1 0-1.96l.61-.12A2.5 ",
+    '2.5 0 0 0 4.9 14.4l.12-.61A1 1 0 0 1 6 13z"/>'
+  ].join(""),
+  "</svg>"
+].join("");
+class L extends s {
+  static get pluginName() {
+    return "Copilot";
+  }
+  init() {
+    const e = this.editor, t = e.t;
+    e.ui.componentFactory.add("copilotAssist", (o) => {
+      const i = new c(o);
+      return i.set({
+        label: t("Open AI writing assistant."),
+        icon: T,
+        tooltip: !0
+      }), this.listenTo(i, "execute", () => {
+        const n = globalThis.window, a = n?.parent?.openCkEditorCopilot || n?.openCkEditorCopilot;
+        if (a) {
+          a(e);
+          return;
+        }
+        const l = globalThis.alert;
+        l && l("No host AI assistant bridge detected.");
+      }), i;
+    });
+  }
+}
+/**
+ * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
+ */
+class B extends s {
+  init() {
+  }
+}
+/**
+ * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
+ */
+class D extends s {
+  static get requires() {
+    return [L, B];
+  }
+}
+/**
+ * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
+ */
+class y extends s {
   init() {
     const e = this.editor, t = e.t;
     e.ui.componentFactory.add("fileLink", (o) => {
@@ -30,7 +87,7 @@ class T extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class B extends s {
+class U extends s {
   init() {
   }
 }
@@ -38,22 +95,22 @@ class B extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class W extends s {
+class z extends s {
   static get requires() {
-    return [T, B];
+    return [y, U];
   }
 }
 /**
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class C extends s {
+class E extends s {
   static get requires() {
     return [h];
   }
   init() {
     const e = this.editor, t = e.t;
-    e.ui.componentFactory.add("skyCmsInsertImage", (o) => this._createSkyCmsButton(c, {
+    e.ui.componentFactory.add("skyCmsInsertImage", () => this._createSkyCmsButton(c, {
       label: t("From website"),
       withText: !1,
       tooltip: !0
@@ -104,13 +161,13 @@ class C extends s {
       observable: () => e.commands.get("insertImage"),
       buttonViewCreator: () => this._createForwardingButton("insertImageViaUrl", {
         label: t("From another website"),
-        icon: b,
+        icon: p,
         withText: !1,
         tooltip: !0
       }),
       formViewCreator: () => this._createForwardingButton("insertImageViaUrl", {
         label: t("From another website"),
-        icon: b,
+        icon: p,
         withText: !0,
         closeImageInsertDropdown: !0
       }),
@@ -171,41 +228,41 @@ class C extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class y extends s {
-  init() {
-  }
-}
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
-class q extends s {
-  static get requires() {
-    return [C, y];
-  }
-}
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
-class U extends s {
-  init() {
-  }
-}
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class _ extends s {
+  init() {
+  }
+}
+/**
+ * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
+ */
+class j extends s {
+  static get requires() {
+    return [E, _];
+  }
+}
+/**
+ * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
+ */
+class S extends s {
+  init() {
+  }
+}
+/**
+ * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
+ */
+class v extends s {
   init() {
     const e = this.editor, t = e.t;
     e.ui.componentFactory.add("skyCmsLink", (o) => {
-      const i = F(o);
+      const i = x(o);
       return i.buttonView.set({
         label: t("Insert link"),
-        icon: p,
+        icon: b,
         tooltip: !0
-      }), x(
+      }), C(
         i,
         () => [
           this._createPageLinkButton(o, {
@@ -248,7 +305,7 @@ class _ extends s {
     const a = new c(e);
     return a.set({
       label: t,
-      icon: p,
+      icon: b,
       withText: o,
       tooltip: i
     }), this.listenTo(a, "execute", () => {
@@ -269,16 +326,16 @@ class _ extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class D extends s {
+class N extends s {
   static get requires() {
-    return [U, _];
+    return [S, v];
   }
 }
 /**
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class S extends s {
+class V extends s {
   static get pluginName() {
     return "SignalR";
   }
@@ -300,7 +357,7 @@ class S extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class E extends s {
+class P extends s {
   init() {
   }
 }
@@ -308,16 +365,16 @@ class E extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class A extends s {
+class Q extends s {
   static get requires() {
-    return [S, E];
+    return [V, P];
   }
 }
 /**
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class V extends s {
+class M extends s {
   init() {
     const e = this.editor, t = e.t;
     e.ui.componentFactory.add("titleModeIndicator", (o) => {
@@ -335,16 +392,16 @@ class V extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class z extends s {
+class K extends s {
   static get requires() {
-    return [V];
+    return [M];
   }
 }
 /**
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class P extends s {
+class A extends s {
   init() {
   }
 }
@@ -352,35 +409,7 @@ class P extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class G extends s {
-  static get pluginName() {
-    return "CkEditorCopilot";
-  }
-  init() {
-    const e = this.editor, t = e.t;
-    e.ui.componentFactory.add("copilotAssist", (o) => {
-      const i = new c(o);
-      return i.set({
-        label: t("Open AI writing assistant."),
-        icon: aiAssistIcon,
-        tooltip: !0
-      }), this.listenTo(i, "execute", () => {
-        const a = globalThis.window?.parent?.openCkEditorCopilot;
-        if (a)
-          a(e);
-        else {
-          const l = globalThis.alert;
-          l && l("No host AI assistant bridge detected.");
-        }
-      }), i;
-    });
-  }
-}
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
-class v extends s {
+class O extends s {
   static get pluginName() {
     return "VSCodeEditor";
   }
@@ -390,7 +419,7 @@ class v extends s {
       const i = new c(o);
       return i.set({
         label: t("Open code editor."),
-        icon: L,
+        icon: F,
         tooltip: !0
       }), this.listenTo(i, "execute", () => {
         const a = globalThis.window?.parent?.openVsCodeBlockEditor;
@@ -408,9 +437,9 @@ class v extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
-class Q extends s {
+class Y extends s {
   static get requires() {
-    return [P, v];
+    return [A, O];
   }
 }
 /**
@@ -510,7 +539,7 @@ const u = {
       "numberedList"
     ]
   }
-}, M = {
+}, R = {
   title: "title",
   heading: "title",
   simple: "simple",
@@ -521,40 +550,40 @@ const u = {
   advanced: "advanced",
   skycms: "advanced"
 };
-function O(r = "standard", {
+function W(r = "standard", {
   tagName: e = null,
   fallbackProfile: t = "standard"
 } = {}) {
   const o = e ? e.toLowerCase() : null;
   if (o && /^(h[1-6])$/.test(o))
     return "title";
-  const i = typeof r == "string" ? r.toLowerCase() : "", n = M[i] || i;
+  const i = typeof r == "string" ? r.toLowerCase() : "", n = R[i] || i;
   return u[n] ? n : u[t] ? t : "standard";
 }
 function w(r = "standard", e = {}) {
-  const t = O(r, e);
+  const t = W(r, e);
   return u[t];
 }
-function j(r = "standard", e = {}) {
+function $(r = "standard", e = {}) {
   return w(r, e).toolbar;
 }
-function K(r = "standard", e = {}) {
+function G(r = "standard", e = {}) {
   return w(r, e).balloonToolbar;
 }
-const Y = u;
+const H = u;
 export {
-  G as CkEditorCopilot,
-  W as FileLink,
-  q as InsertImage,
-  D as PageLink,
+  D as Copilot,
+  z as FileLink,
+  j as InsertImage,
+  N as PageLink,
   u as SKYCMS_EDITOR_PROFILES,
-  M as SKYCMS_EDITOR_PROFILE_ALIASES,
-  A as SignalR,
-  Y as TOOLBAR_PROFILES,
-  z as TitleModeIndicator,
-  Q as VSCodeEditor,
-  K as getBalloonToolbarProfile,
+  R as SKYCMS_EDITOR_PROFILE_ALIASES,
+  Q as SignalR,
+  H as TOOLBAR_PROFILES,
+  K as TitleModeIndicator,
+  Y as VSCodeEditor,
+  G as getBalloonToolbarProfile,
   w as getEditorProfile,
-  j as getToolbarProfile,
-  O as resolveEditorProfileName
+  $ as getToolbarProfile,
+  W as resolveEditorProfileName
 };
