@@ -493,13 +493,13 @@
           "AWSSDK.S3": "[4.0.18.4, )",
           "Azure.Extensions.AspNetCore.DataProtection.Blobs": "[1.5.1, 2.0.0)",
           "Azure.Storage.Files.Shares": "[12.25.0, )",
-          "Cosmos.DynamicConfig": "[10.0.5.1, )"
+          "Cosmos.DynamicConfig": "[12.0.1, )"
         }
       },
       "cosmos.dynamicconfig": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[10.0.5.1, )",
+          "AspNetCore.Identity.FlexDb": "[12.0.1, )",
           "IPAddressRange": "[6.3.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.5, )",
           "Microsoft.EntityFrameworkCore.Cosmos": "[10.0.5, )"
