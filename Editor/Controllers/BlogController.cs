@@ -190,7 +190,7 @@ namespace Sky.Editor.Controllers
         /// <param name="id">Blog identifier (GUID).</param>
         /// <returns>Edit view or 404 if not found.</returns>
         [HttpGet("{id:guid}/edit")]
-        public async Task<IActionResult> Edit(Guid id)
+        public new async Task<IActionResult> Edit(Guid id)
         {
             var query = new GetBlogStreamQuery
             {

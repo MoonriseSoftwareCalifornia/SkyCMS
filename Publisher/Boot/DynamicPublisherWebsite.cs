@@ -4,7 +4,7 @@
 // See https://github.com/CWALabs/SkyCMS
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
-using AspNetCore.Identity.FlexDb;
+using System.Text.RegularExpressions;
 using AspNetCore.Identity.FlexDb.Extensions;
 using Azure.Identity;
 using Cosmos.BlobService;
@@ -13,7 +13,6 @@ using Cosmos.EmailServices;
 using Cosmos.MicrosoftGraph;
 using Cosmos.Publisher.Configuration;
 using Microsoft.AspNetCore.Identity;
-using System.Text.RegularExpressions;
 
 namespace Cosmos.Publisher.Boot
 {

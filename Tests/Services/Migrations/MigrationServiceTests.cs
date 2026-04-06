@@ -82,7 +82,9 @@ namespace Sky.Tests.Services.Migrations
 
             // Assert - Verify database schema was created
             var layoutsTableExists = await TableExistsAsync(context, "Layouts");
+            var passkeysTableExists = await TableExistsAsync(context, "AspNetUserPasskeys");
             Assert.IsTrue(layoutsTableExists, "Layouts table should be created by EnsureCreated");
+            Assert.IsTrue(passkeysTableExists, "AspNetUserPasskeys table should be created by EnsureCreated");
 
             // Assert - Verify Migration 000 was recorded
             var migration000 = await context.Set<MigrationHistory>()
@@ -91,6 +93,11 @@ namespace Sky.Tests.Services.Migrations
             Assert.AreEqual("Initial schema created via EnsureCreated (includes all schema up to current DbContext model)",
                 migration000.Description);
             Assert.AreEqual("Sqlite", migration000.Provider);
+
+            // Assert - Verify M002 passkey migration was discovered and recorded
+            var migration002 = await context.Set<MigrationHistory>()
+                .FirstOrDefaultAsync(m => m.MigrationId == "002" && m.Provider == "Sqlite");
+            Assert.IsNotNull(migration002, "Migration 002 should be recorded");
 
             // Assert - Verify all discovered migrations were pre-applied
             var allMigrations = await context.Set<MigrationHistory>()

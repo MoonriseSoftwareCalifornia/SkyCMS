@@ -1,19 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<Version>9.3.0.1</Version>
-		<AssemblyVersion>9.3.0.1</AssemblyVersion>
-		<FileVersion>9.3.0.1</FileVersion>
-		<PackageVersion>9.3.0.1</PackageVersion>
+		<TargetFramework>net10.0</TargetFramework>
+		<Version>12.0.1</Version>
+		<AssemblyVersion>12.0.1</AssemblyVersion>
+		<FileVersion>12.0.1</FileVersion>
+		<PackageVersion>12.0.1</PackageVersion>
 		<Authors>toiyabe62</Authors>
 		<Nullable>enable</Nullable>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>Cosmos,CosmosDB,MySQL,SQL Server,SQLite,Identity,Provider,AspNetCore,Membership,Roles,AspNetCore.Identity,Microsoft.AspNetCore.Identity,aspnet,efcore,Azure Cosmos DB</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AspNetCore.Identity.FlexDb</PackageId>
-		<RepositoryUrl>https://github.com/CosmosSoftware/AspNetCore.Identity.FlexDb</RepositoryUrl>
-		<PackageProjectUrl>https://github.com/CosmosSoftware/AspNetCore.Identity.FlexDb</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/CWALabs/SkyCMS</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/CWALabs/SkyCMS/tree/main/AspNetCore.Identity.FlexDb</PackageProjectUrl>
+		<PackageReadmeFile>NUGET.md</PackageReadmeFile>
 		<PackageIcon>B2C_BrandIcon_Black.png</PackageIcon>
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -40,15 +41,19 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="AspNetCore.Identity.CosmosDb" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" />
+		<PackageReference Include="Microting.EntityFrameworkCore.MySql" />
 		<PackageReference Include="Roslynator.Analyzers">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
-		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
+		<!-- MySQL provider disabled for .NET 10 upgrade - Pomelo incompatible with EF Core 10 -->
+		<!-- <PackageReference Include="MySqlConnector" /> -->
+		<!-- <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" /> -->
 		<PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" />
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" />
 	</ItemGroup>
@@ -59,6 +64,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Include="NUGET.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
 		<None Include="_res\icons\nuget-icon.png">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>

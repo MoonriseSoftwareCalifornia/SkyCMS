@@ -1,6 +1,6 @@
-using AspNetCore.Identity.FlexDb.Contracts;
-using AspNetCore.Identity.FlexDb.Repositories;
-using AspNetCore.Identity.FlexDb.Stores;
+using AspNetCore.Identity.CosmosDb.Contracts;
+using AspNetCore.Identity.CosmosDb.Repositories;
+using AspNetCore.Identity.CosmosDb.Stores;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -41,7 +41,7 @@ namespace AspNetCore.Identity.FlexDb.Extensions
             this IServiceCollection services,
             Action<IdentityOptions> setupAction
         )
-            where TDbContext : CosmosIdentityDbContext<TUser, TRole, TKey>
+            where TDbContext : AspNetCore.Identity.FlexDb.CosmosIdentityDbContext<TUser, TRole, TKey>
             where TUser : IdentityUser<TKey>, new()
             where TRole : IdentityRole<TKey>, new()
             where TKey : IEquatable<TKey>
@@ -67,7 +67,7 @@ namespace AspNetCore.Identity.FlexDb.Extensions
             TimeSpan cookieExpireTimeSpan,
             bool slidingExpiration = false
         )
-            where TDbContext : CosmosIdentityDbContext<TUser, TRole, TKey>
+            where TDbContext : AspNetCore.Identity.FlexDb.CosmosIdentityDbContext<TUser, TRole, TKey>
             where TUser : IdentityUser<TKey>, new()
             where TRole : IdentityRole<TKey>, new()
             where TKey : IEquatable<TKey>
@@ -121,7 +121,7 @@ namespace AspNetCore.Identity.FlexDb.Extensions
 
             // Data stores
             services.TryAddScoped<IUserStore<TUser>, CosmosUserStore<TUser, TRole, TKey>>();
-            services.TryAddScoped<IRoleStore<TRole>, CosmosRoleStore<TUser, TRole, TKey>>();
+            services.TryAddScoped<IRoleStore<TRole>, CosmosRoleStore<TRole, TKey>>();
 
             // Identity services
             services.TryAddScoped<IUserValidator<TUser>, UserValidator<TUser>>();

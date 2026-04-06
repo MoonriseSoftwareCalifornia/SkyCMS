@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Deterministic>true</Deterministic>
-		<TargetFrameworks>net9.0</TargetFrameworks>
+		<TargetFrameworks>net10.0</TargetFrameworks>
 		<Authors>toiyabe62</Authors>
 		<Company>Moonrise Software LLC</Company>
 		<Product>Sky CMS</Product>
@@ -15,9 +15,9 @@
 		<SignAssembly>false</SignAssembly>
 		<AnalysisLevel>latest</AnalysisLevel>
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-		<Version>9.3.0.1</Version>
-		<AssemblyVersion>9.3.0.1</AssemblyVersion>
-		<FileVersion>9.3.0.1</FileVersion>
+		<Version>12.0.1</Version>
+		<AssemblyVersion>12.0.1</AssemblyVersion>
+		<FileVersion>12.0.1</FileVersion>
 		<UserSecretsId>498e495c-d772-4d44-870d-92009f01de57</UserSecretsId>
 		<PackageProjectUrl>https://www.moonrise.net/cosmos</PackageProjectUrl>
 		<NeutralLanguage></NeutralLanguage>

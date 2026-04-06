@@ -1,5 +1,3 @@
-using AspNetCore.Identity.FlexDb.Containers;
-
 namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
 {
     /// <summary>
@@ -11,7 +9,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
     {
 
         private static TestUtilities utils;
-        private static ContainerUtilities containerUtilities;
+        private static CosmosDb.Containers.ContainerUtilities containerUtilities;
 
         /// <summary>
         /// Class initialize

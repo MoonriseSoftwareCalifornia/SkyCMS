@@ -1,7 +1,7 @@
+using AspNetCore.Identity.CosmosDb.Containers;
+using AspNetCore.Identity.CosmosDb.Repositories;
+using AspNetCore.Identity.CosmosDb.Stores;
 using AspNetCore.Identity.FlexDb;
-using AspNetCore.Identity.FlexDb.Containers;
-using AspNetCore.Identity.FlexDb.Repositories;
-using AspNetCore.Identity.FlexDb.Stores;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -144,14 +144,26 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// <returns></returns>
         public DbContextOptions GetDbOptions(string connectionString, string databaseName)
         {
-            // For Cosmos DB, append database name to connection string if not already present
-            if (connectionString.Contains("AccountEndpoint=", StringComparison.InvariantCultureIgnoreCase) &&
-                !connectionString.Contains("Database=", StringComparison.InvariantCultureIgnoreCase))
+            Console.WriteLine($"[DEBUG-GetDbOptions] Called with connection string (first 50 chars): {connectionString.Substring(0, Math.Min(50, connectionString.Length))}");
+            Console.WriteLine($"[DEBUG-GetDbOptions] Database name parameter: {databaseName}");
+
+            // For Cosmos DB, ensure we use the specified databaseName parameter
+            // Remove any existing Database= from connection string and append the correct one
+            if (connectionString.Contains("AccountEndpoint=", StringComparison.InvariantCultureIgnoreCase))
             {
-                connectionString = $"{connectionString.TrimEnd(';')};Database={databaseName}";
+                // Parse and rebuild connection string with correct database name
+                var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                    .Where(p => !p.TrimStart().StartsWith("Database=", StringComparison.InvariantCultureIgnoreCase))
+                    .ToList();
+
+                connectionString = string.Join(";", parts).TrimEnd(';') + $";Database={databaseName};";
+                Console.WriteLine($"[DEBUG-GetDbOptions] Rebuilt Cosmos connection string with database: {databaseName}");
             }
 
-            return CosmosDbOptionsBuilder.GetDbOptions<CosmosIdentityDbContext<IdentityUser, IdentityRole, string>>(connectionString);
+            Console.WriteLine($"[DEBUG-GetDbOptions] Calling CosmosDbOptionsBuilder.GetDbOptions...");
+            var options = CosmosDbOptionsBuilder.GetDbOptions<CosmosIdentityDbContext<IdentityUser, IdentityRole, string>>(connectionString);
+            Console.WriteLine($"[DEBUG-GetDbOptions] Options created successfully");
+            return options;
         }
 
         /// <summary>
@@ -198,7 +210,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             var repository =
                 new CosmosIdentityRepository<CosmosIdentityDbContext<IdentityUser, IdentityRole, string>, IdentityUser,
                     IdentityRole, string>(GetDbContext(connectionString, databaseName));
-            var userStore = new CosmosUserStore<IdentityUser, IdentityRole, string>(repository, new UpperInvariantLookupNormalizer());
+            var userStore = new CosmosUserStore<IdentityUser, IdentityRole, string>(repository);
             return userStore;
         }
 
@@ -208,12 +220,12 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// <param name="connectionString">Connection string for any supported provider</param>
         /// <param name="databaseName">Database name (used for Cosmos DB)</param>
         /// <returns></returns>
-        public CosmosRoleStore<IdentityUser, IdentityRole, string> GetRoleStore(string connectionString, string databaseName)
+        public CosmosRoleStore<IdentityRole, string> GetRoleStore(string connectionString, string databaseName)
         {
             var repository =
                 new CosmosIdentityRepository<CosmosIdentityDbContext<IdentityUser, IdentityRole, string>, IdentityUser,
                     IdentityRole, string>(GetDbContext(connectionString, databaseName));
-            var rolestore = new CosmosRoleStore<IdentityUser, IdentityRole, string>(repository, new UpperInvariantLookupNormalizer());
+            var rolestore = new CosmosRoleStore<IdentityRole, string>(repository);
             return rolestore;
         }
 

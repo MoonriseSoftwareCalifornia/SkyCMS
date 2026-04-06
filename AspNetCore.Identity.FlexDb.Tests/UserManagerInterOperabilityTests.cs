@@ -37,6 +37,128 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             return await userManager.FindByIdAsync(user.Id);
         }
 
+        // Creates a passkey info payload for add/update passkey lifecycle tests.
+        private static UserPasskeyInfo CreatePasskeyInfo(byte[] credentialId, uint signCount = 0, string? name = null, bool isBackedUp = false)
+        {
+            var passkey = new UserPasskeyInfo(
+                credentialId,
+                publicKey: new byte[] { 10, 20, 30, 40, 50 },
+                createdAt: DateTimeOffset.UtcNow,
+                signCount: signCount,
+                transports: new[] { "internal", "hybrid" },
+                isUserVerified: true,
+                isBackupEligible: true,
+                isBackedUp: isBackedUp,
+                attestationObject: new byte[] { 1, 2, 3, 4 },
+                clientDataJson: new byte[] { 5, 6, 7, 8 });
+
+            passkey.Name = name;
+            return passkey;
+        }
+
+        /// <summary>
+        /// Ensures test configuration can execute a full four-provider passkey matrix when all providers are configured.
+        /// </summary>
+        [TestMethod]
+        public void PasskeyMatrix_Configuration_IncludesAllFourProviders()
+        {
+            var providers = TestUtilities.GetAvailableProviders().Select(p => p.Provider).ToHashSet();
+            var expected = new[] { DatabaseProvider.CosmosDb, DatabaseProvider.SqlServer, DatabaseProvider.MySql, DatabaseProvider.Sqlite };
+            var missing = expected.Where(p => !providers.Contains(p)).ToArray();
+
+            if (missing.Length > 0)
+            {
+                Assert.Inconclusive($"Full four-provider matrix not configured. Missing: {string.Join(", ", missing)}");
+            }
+
+            Assert.AreEqual(4, providers.Count, "Expected all four providers for passkey matrix coverage.");
+        }
+
+        private static void InitializeForProviderOrInconclusive(TestDatabaseProvider provider)
+        {
+            try
+            {
+                InitializeForProvider(provider);
+            }
+            catch (Exception ex)
+            {
+                Assert.Inconclusive($"Provider '{provider.DisplayName}' is not available for passkey matrix run: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Validates passkey entity mapping exists for each provider and key shape is correct.
+        /// </summary>
+        [TestMethod]
+        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        public void PasskeyMapping_ModelShape_IsValid(TestDatabaseProvider provider)
+        {
+            InitializeForProviderOrInconclusive(provider);
+
+            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
+            var entityType = dbContext.Model.FindEntityType(typeof(IdentityUserPasskey<string>));
+
+            Assert.IsNotNull(entityType, $"Failed for provider: {provider.DisplayName}");
+
+            var primaryKey = entityType.FindPrimaryKey();
+            Assert.IsNotNull(primaryKey, $"Failed for provider: {provider.DisplayName}");
+            Assert.AreEqual(1, primaryKey.Properties.Count, $"Failed for provider: {provider.DisplayName}");
+            Assert.AreEqual("CredentialId", primaryKey.Properties[0].Name, $"Failed for provider: {provider.DisplayName}");
+        }
+
+        /// <summary>
+        /// Verifies passkey add/update/get/find/remove lifecycle via UserManager across all configured providers.
+        /// </summary>
+        [TestMethod]
+        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        public async Task PasskeyLifecycle_UserManager_Test(TestDatabaseProvider provider)
+        {
+            InitializeForProviderOrInconclusive(provider);
+
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+
+            var password = $"A1a{Guid.NewGuid()}";
+            var user = await GetMockRandomUserAsync(null, false);
+            var createUserResult = await userManager.CreateAsync(user, password);
+            Assert.IsTrue(createUserResult.Succeeded, $"User creation failed for provider: {provider.DisplayName}");
+
+            Assert.IsTrue(userManager.SupportsUserPasskey, $"Passkeys not supported for provider: {provider.DisplayName}");
+
+            var credentialId = Guid.NewGuid().ToByteArray();
+            var originalPasskey = CreatePasskeyInfo(credentialId, signCount: 1, name: "primary", isBackedUp: false);
+
+            var addResult = await userManager.AddOrUpdatePasskeyAsync(user, originalPasskey);
+            Assert.IsTrue(addResult.Succeeded, $"AddOrUpdate failed for provider: {provider.DisplayName}");
+
+            var passkeys = await userManager.GetPasskeysAsync(user);
+            Assert.AreEqual(1, passkeys.Count, $"GetPasskeys count failed for provider: {provider.DisplayName}");
+            Assert.IsTrue(passkeys[0].CredentialId.SequenceEqual(credentialId), $"CredentialId mismatch for provider: {provider.DisplayName}");
+            Assert.AreEqual((uint)1, passkeys[0].SignCount, $"SignCount mismatch for provider: {provider.DisplayName}");
+            Assert.AreEqual("primary", passkeys[0].Name, $"Name mismatch for provider: {provider.DisplayName}");
+
+            var found = (await userManager.GetPasskeysAsync(user))
+                .FirstOrDefault(p => p.CredentialId.SequenceEqual(credentialId));
+            Assert.IsNotNull(found, $"Passkey lookup failed for provider: {provider.DisplayName}");
+
+            var updatedPasskey = CreatePasskeyInfo(credentialId, signCount: 7, name: "updated", isBackedUp: true);
+            var updateResult = await userManager.AddOrUpdatePasskeyAsync(user, updatedPasskey);
+            Assert.IsTrue(updateResult.Succeeded, $"Update passkey failed for provider: {provider.DisplayName}");
+
+            var updated = (await userManager.GetPasskeysAsync(user))
+                .FirstOrDefault(p => p.CredentialId.SequenceEqual(credentialId));
+            Assert.IsNotNull(updated, $"Updated passkey not found for provider: {provider.DisplayName}");
+            Assert.AreEqual((uint)7, updated.SignCount, $"Updated SignCount mismatch for provider: {provider.DisplayName}");
+            Assert.AreEqual("updated", updated.Name, $"Updated Name mismatch for provider: {provider.DisplayName}");
+            Assert.IsTrue(updated.IsBackedUp, $"Updated IsBackedUp mismatch for provider: {provider.DisplayName}");
+
+            var removeResult = await userManager.RemovePasskeyAsync(user, credentialId);
+            Assert.IsTrue(removeResult.Succeeded, $"Remove passkey failed for provider: {provider.DisplayName}");
+
+            var afterDelete = (await userManager.GetPasskeysAsync(user))
+                .FirstOrDefault(p => p.CredentialId.SequenceEqual(credentialId));
+            Assert.IsNull(afterDelete, $"Passkey should be removed for provider: {provider.DisplayName}");
+        }
+
         [TestInitialize]
         public void TestInitialize()
         {
@@ -826,10 +948,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             var result3 = await roleManager.CreateAsync(role3);
             Assert.IsTrue(result3.Succeeded, $"Failed for provider: {provider.DisplayName}");
             var roles = new string[] { role1.Name, role2.Name, role3.Name };
-
-            // ✅ FIXED: Add users to roles first
-            var result4 = await userManager.AddToRolesAsync(user, roles);
-            Assert.IsTrue(result4.Succeeded, $"Failed for provider: {provider.DisplayName}");
+            Assert.IsTrue((await userManager.AddToRolesAsync(user, roles)).Succeeded, $"Failed for provider: {provider.DisplayName}");
 
             // Act
             var result5 = await userManager.RemoveFromRolesAsync(user, roles);

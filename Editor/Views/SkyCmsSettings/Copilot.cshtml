@@ -33,6 +33,24 @@
                     <form id="copilotProxyForm" method="post" asp-action="Copilot" asp-controller="SkyCmsSettings">
                         @Html.AntiForgeryToken()
 
+                        <div class="mb-3">
+                            <label for="providerPreset">Provider Preset</label>
+                            <select id="providerPreset" class="form-select">
+                                <option value="custom" selected>Custom (do not change current values)</option>
+                                <option value="copilot">Copilot (GitHub Models)</option>
+                                <option value="openai">OpenAI API</option>
+                                <option value="azureai">Azure AI (Azure OpenAI)</option>
+                            </select>
+                            <span class="text-muted">Choosing a preset fills endpoint/model/timeout/temperature/max tokens. Access token is never auto-filled.</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <span class="d-block mb-1">Token documentation:</span>
+                            <a href="https://docs.github.com/en/copilot/how-tos/provide-context/use-github-models/prototyping-with-ai-models" target="_blank" rel="noopener noreferrer" class="d-block">Copilot / GitHub Models token docs</a>
+                            <a href="https://platform.openai.com/docs/quickstart#create-and-export-an-api-key" target="_blank" rel="noopener noreferrer" class="d-block">OpenAI API key docs</a>
+                            <a href="https://learn.microsoft.com/azure/ai-services/openai/how-to/create-resource?pivots=web-portal" target="_blank" rel="noopener noreferrer" class="d-block">Azure OpenAI key docs</a>
+                        </div>
+
                         <div class="mb-3 form-check form-switch">
                             <input class="form-check-input" asp-for="Enabled" type="checkbox" />
                             <label asp-for="Enabled" class="form-check-label"></label>
@@ -113,7 +131,53 @@
             },
         ];
 
+        const providerPresets = {
+            copilot: {
+                endpoint: "https://models.inference.ai.azure.com/chat/completions",
+                model: "gpt-4o-mini",
+                timeoutMs: 30000,
+                temperature: 0.2,
+                maxTokens: 512
+            },
+            openai: {
+                endpoint: "https://api.openai.com/v1/chat/completions",
+                model: "gpt-4o-mini",
+                timeoutMs: 30000,
+                temperature: 0.2,
+                maxTokens: 512
+            },
+            azureai: {
+                endpoint: "https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=2024-02-01",
+                model: "<deployment>",
+                timeoutMs: 30000,
+                temperature: 0.2,
+                maxTokens: 512
+            }
+        };
+
         const $endpoint = $("#Endpoint");
+        const $model = $("#Model");
+        const $timeoutMs = $("#TimeoutMs");
+        const $temperature = $("#Temperature");
+        const $maxTokens = $("#MaxTokens");
+        const $providerPreset = $("#providerPreset");
+
+        if ($providerPreset.length) {
+            $providerPreset.on("change", function () {
+                const selected = $(this).val();
+                const preset = providerPresets[selected];
+                if (!preset) {
+                    return;
+                }
+
+                $endpoint.val(preset.endpoint);
+                $model.val(preset.model);
+                $timeoutMs.val(preset.timeoutMs);
+                $temperature.val(preset.temperature);
+                $maxTokens.val(preset.maxTokens);
+            });
+        }
+
         if ($endpoint.length) {
             $endpoint.autocomplete({
                 minLength: 0,

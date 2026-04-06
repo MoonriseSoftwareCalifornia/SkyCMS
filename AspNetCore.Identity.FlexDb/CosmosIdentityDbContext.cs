@@ -1,4 +1,5 @@
-using AspNetCore.Identity.FlexDb.Extensions;
+using AspNetCore.Identity.CosmosDb;
+using AspNetCore.Identity.CosmosDb.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +14,8 @@ namespace AspNetCore.Identity.FlexDb
     /// <summary>
     /// Cosmos Identity Database Context
     /// </summary>
-    /// <typeparam name="TUserEntity"></typeparam>
     public class CosmosIdentityDbContext<TUser, TRole, TKey> :
-        IdentityDbContext<TUser, TRole, TKey>
+        AspNetCore.Identity.CosmosDb.CosmosIdentityDbContext<TUser, TRole, TKey>
         where TUser : IdentityUser<TKey>
         where TRole : IdentityRole<TKey>
         where TKey : IEquatable<TKey>
@@ -32,8 +32,6 @@ namespace AspNetCore.Identity.FlexDb
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="options"></param>
-        /// <param name="createDbAndContainers">Context with create the database and containers upon model creating.</param>
         public CosmosIdentityDbContext(
             DbContextOptions options,
             bool backwardCompatibility = false)

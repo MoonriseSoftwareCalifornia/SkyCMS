@@ -166,6 +166,11 @@ namespace Sky.Editor.Controllers
         [HttpPost]
         public async Task<ActionResult> Delete(string[] ids)
         {
+            if (ids == null)
+            {
+                throw new ArgumentNullException(nameof(ids));
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);

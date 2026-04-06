@@ -49,12 +49,14 @@ namespace Sky.Editor.Data
                     break;
 
                 case "mysql":
+
                     var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
                     optionsBuilder.UseMySql(connectionString, serverVersion, mySqlOptions =>
                     {
                         mySqlOptions.MigrationsAssembly(typeof(ApplicationDbContextFactory).Assembly.FullName);
                         mySqlOptions.MigrationsHistoryTable("__EFMigrationsHistory");
                     });
+
                     break;
 
                 case "sqlite":

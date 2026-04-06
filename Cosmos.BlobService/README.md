@@ -1,30 +1,16 @@
-# Cosmos.BlobService — Developer README
+# Cosmos.BlobService - Multi-Cloud Blob Storage Provider
 
-Purpose
-- Blob storage helpers and abstractions for storing binary assets in Cosmos/Blob-backed stores.
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![NuGet](https://img.shields.io/nuget/v/Cosmos.BlobService.svg)](https://www.nuget.org/packages/Cosmos.BlobService/)
 
-Quick start
-```powershell
-dotnet build SkyCMS.sln
-```
-
-Where to look
-- Storage context and helpers: `Cosmos.BlobService/StorageContext.cs` and related classes.
-
-Notes
-- Review storage configuration and container/partition strategies before making changes.
-README.md
-# Cosmos.BlobService - Sky CMS Azure Storage Provider
-
-**Version:** 9.2.0.2  
-**License:** MIT  
-**Repository:** [https://github.com/CWALabs/Cosmos.BlobService](https://github.com/CWALabs/Cosmos.BlobService)
+**Part of the [SkyCMS](https://github.com/CWALabs/SkyCMS) Project**
 
 ## Overview
 
 Cosmos.BlobService is a comprehensive multi-cloud blob storage abstraction layer that provides a unified interface for managing files across different cloud storage providers. It supports Azure Blob Storage, Amazon S3, and Cloudflare R2 (S3-compatible), allowing applications to seamlessly switch between providers or use multiple providers simultaneously.
 
-This library is part of the [Sky CMS ecosystem](https://sky-cms.com) and is built on .NET 9.0.
+This library is part of the SkyCMS ecosystem and is built on .NET 10.0.
 
 ## Features
 
@@ -86,22 +72,24 @@ The service uses automatic driver selection based on connection string format:
 
 ## Installation
 
-### From Source
-
-This package can be obtained by cloning the [Sky CMS GitHub repository](https://github.com/CWALabs/SkyCMS):
-
 ### NuGet Package
 
-The package can be built and referenced directly from your project or published to your private NuGet feed.
+```bash
+dotnet add package Cosmos.BlobService
+```
+
+### From Source
+
+This package can be obtained by cloning the [SkyCMS GitHub repository](https://github.com/CWALabs/SkyCMS):
 
 ## Dependencies
 
-- **.NET 9.0**: Target framework
+- **.NET 10.0**: Target framework
 - **Azure.Storage.Blobs**: Azure Blob Storage SDK
-- **Azure.Storage.Files.Shares** (v12.24.0): Azure Files Share SDK
+- **Azure.Storage.Files.Shares** (v12.25.0): Azure Files Share SDK
 - **Azure.Extensions.AspNetCore.DataProtection.Blobs** (v1.5.1): Data protection integration
 - **Azure.Identity** (v1.17.0): Azure authentication
-- **AWSSDK.S3** (v4.0.9): Amazon S3 SDK
+- **AWSSDK.S3** (v4.0.18.4): Amazon S3 SDK
 - **Microsoft.Extensions.Caching.Memory**: Memory caching
 - **StyleCop.Analyzers** (v1.1.118): Code style enforcement
 
@@ -517,18 +505,43 @@ The service provides a unified approach to cloud storage with several benefits:
 
 ## Contributing
 
-This project is part of the Sky CMS ecosystem. For contribution guidelines and more information, visit:
-- **Sky CMS Repository**: [https://github.com/CWALabs/SkyCMS](https://github.com/CWALabs/SkyCMS)
-- **Project Website**: [https://sky-cms.com](https://sky-cms.com)
+This project is part of the SkyCMS ecosystem. For contribution guidelines and more information, visit:
+- **SkyCMS Repository**: [https://github.com/CWALabs/SkyCMS](https://github.com/CWALabs/SkyCMS)
 
 ## License
 
-Licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the **MIT License**.
 
-## Copyright
+```
+MIT License
 
-Copyright © 2025 Moonrise Software LLC. All rights reserved.
+Copyright (c) Moonrise Software, LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## Support
 
-For issues, questions, or contributions, please visit the GitHub repository or the project website.
+For issues, questions, or contributions:
+- **GitHub Issues**: [https://github.com/CWALabs/SkyCMS/issues](https://github.com/CWALabs/SkyCMS/issues)
+- **GitHub Discussions**: [https://github.com/CWALabs/SkyCMS/discussions](https://github.com/CWALabs/SkyCMS/discussions)
+
+---
+
+**Cosmos.BlobService** - Multi-Cloud Storage Made Simple 🚀

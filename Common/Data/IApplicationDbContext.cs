@@ -7,7 +7,6 @@
 
 namespace Cosmos.Common.Data
 {
-    using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using System.Threading.Tasks;
@@ -59,12 +58,6 @@ namespace Cosmos.Common.Data
         /// Gets or sets the contact form submissions and related contact entities.
         /// </summary>
         DbSet<Contact> Contacts { get; set; }
-
-        /// <summary>
-        /// Gets or sets the data protection key store used by
-        /// <see cref="IDataProtectionKeyContext"/>.
-        /// </summary>
-        DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
         /// <summary>
         /// Gets or sets the website layout definitions (chrome containers).

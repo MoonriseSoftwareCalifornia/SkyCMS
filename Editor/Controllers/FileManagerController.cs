@@ -1044,7 +1044,7 @@ namespace Sky.Cms.Controllers
             catch (Exception e)
             {
                 ModelState.AddModelError("file", e.Message);
-                logger.LogError("Web page import failed.", e);
+                logger.LogError(e, "Web page import failed.");
                 uploadResult.Errors = SerializeErrors(ModelState);
             }
 
@@ -1829,11 +1829,7 @@ namespace Sky.Cms.Controllers
                 }
 
                 part = $"{part}/{parts[i]}";
-                if (part != "/pub")
-                {
-                    var folder = part.Trim('/');
-                    await storageContext.CreateFolder(folder);
-                }
+                await storageContext.CreateFolder(part.Trim('/'));
             }
 
             await using (var stream = file.OpenReadStream())

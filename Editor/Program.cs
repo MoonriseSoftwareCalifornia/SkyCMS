@@ -85,6 +85,7 @@ const string CONFIG_ALLOW_SETUP = "CosmosAllowSetup";
 const string CONFIG_ENABLE_DIAGNOSTICS = "EnableDiagnostics";
 const string CONFIG_REQUIRES_AUTH = "CosmosRequiresAuthentication";
 const string CONFIG_ALLOW_LOCAL_ACCOUNTS = "AllowLocalAccounts";
+const string CONFIG_PASSKEY_SERVER_DOMAIN = "IdentityPasskey:ServerDomain";
 const string CONNECTIONSTRING_APP_DB = "ApplicationDbContextConnection";
 const string CONNECTIONSTRING_CONFIG_DB = "ConfigDbConnectionString";
 
@@ -417,6 +418,23 @@ builder.Services.AddCosmosIdentity<ApplicationDbContext, IdentityUser, IdentityR
     .AddDefaultUI()
     .AddDefaultTokenProviders();
 
+builder.Services.Configure<IdentityPasskeyOptions>(options =>
+{
+    options.AuthenticatorTimeout = TimeSpan.FromMinutes(3);
+    options.ChallengeSize = 64;
+
+    // Single-tenant: allow explicit RP ID configuration.
+    // Multi-tenant: leave unset so Identity derives host per request.
+    if (!isMultiTenantEditor)
+    {
+        var configuredServerDomain = builder.Configuration.GetValue<string>(CONFIG_PASSKEY_SERVER_DOMAIN);
+        if (!string.IsNullOrWhiteSpace(configuredServerDomain))
+        {
+            options.ServerDomain = configuredServerDomain.Trim().ToLowerInvariant();
+        }
+    }
+});
+
 // ---------------------------------------------------------------
 // STEP 11: Configure OAuth Providers
 // ---------------------------------------------------------------
@@ -593,7 +611,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 

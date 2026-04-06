@@ -1,28 +1,12 @@
-# AspNetCore.Identity.FlexDb — Developer README
-
-Purpose
-- Identity store implementation and related tests for Azure Cosmos DB, MySQL, SQL Server, and SQLite.
-
-Quick start
-```powershell
-dotnet build SkyCMS.sln
-dotnet test AspNetCore.Identity.FlexDb.Tests\AspNetCore.Identity.FlexDb.Tests.csproj
-```
-
-Where to look
-- Store implementations: `AspNetCore.Identity.FlexDb/Stores`.
-- Containers & utilities: `AspNetCore.Identity.FlexDb/Containers`.
-
-Notes
-- Identity changes are sensitive; add tests and check for compatibility with ASP.NET Identity abstractions.
-
 # AspNetCore.Identity.FlexDb - Flexible Database Provider for ASP.NET Core Identity
 
-[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![NuGet](https://img.shields.io/nuget/v/AspNetCore.Identity.FlexDb.svg)](https://www.nuget.org/packages/AspNetCore.Identity.FlexDb/)
 
 A flexible, multi-database implementation of ASP.NET Core Identity that **automatically selects the appropriate database provider** based on your connection string. Supports Azure Cosmos DB, SQL Server, MySQL, and SQLite with seamless switching between providers.
+
+**Part of the [SkyCMS](https://github.com/CWALabs/SkyCMS) Project** - An open-source, multi-tenant content management system built on ASP.NET Core.
 
 ---
 
@@ -47,9 +31,9 @@ A flexible, multi-database implementation of ASP.NET Core Identity that **automa
 
 ## What's New
 
-### Version 9.0+
+### Version 10.0+
 
-- **.NET 9** support with C# 13.0 features
+- **.NET 10** support with C# 14.0 features
 - **Enhanced Strategy Pattern** with improved provider detection
 - **Thread-safe** stateless strategy implementations
 - **Improved documentation** with comprehensive XML comments
@@ -449,7 +433,7 @@ Install the NuGet package:
 dotnet add package AspNetCore.Identity.FlexDb
 ```
 
-### Basic Configuration (Minimal hosting, .NET 9)
+### Basic Configuration (Minimal hosting, .NET 10)
 
 ```csharp
 using AspNetCore.Identity.FlexDb;
@@ -792,14 +776,17 @@ public class MultiTenantDbContext : CosmosIdentityDbContext<IdentityUser, Identi
 ## NuGet Package Information
 
 - **Package ID**: `AspNetCore.Identity.FlexDb`
-- **Target Framework**: .NET 9.0
-- **Repository**: [GitHub](https://github.com/CWALabs/SkyCMS)
-- **License**: MIT License
+- **Target Framework**: .NET 10.0
+- **Repository**: [SkyCMS on GitHub](https://github.com/CWALabs/SkyCMS)
+- **Project Home**: [AspNetCore.Identity.FlexDb](https://github.com/CWALabs/SkyCMS/tree/main/AspNetCore.Identity.FlexDb)
+- **License**: [MIT License](https://opensource.org/licenses/MIT)
+- **Part of**: [SkyCMS Project](https://github.com/CWALabs/SkyCMS) - Multi-tenant content management system
 - **Dependencies**:
-  - Microsoft.AspNetCore.Identity.EntityFrameworkCore
-  - Microsoft.EntityFrameworkCore.Cosmos
-  - Microsoft.EntityFrameworkCore.SqlServer
-  - MySql.EntityFrameworkCore
+  - Microsoft.AspNetCore.Identity.EntityFrameworkCore (10.0.5)
+  - Microsoft.EntityFrameworkCore.Cosmos (10.0.5)
+  - Microsoft.EntityFrameworkCore.SqlServer (10.0.5)
+  - Microting.EntityFrameworkCore.MySql (10.0.5)
+  - AspNetCore.Identity.CosmosDb (10.0.5.1)
 
 ## Troubleshooting
 
@@ -864,13 +851,37 @@ public async Task MigrateFromCosmosToSql()
 
 ## License
 
-This project is licensed under the MIT License. See the license file for details.
+This project is licensed under the MIT License. 
+
+```
+MIT License
+
+Copyright (c) Moonrise Software, LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## 🔗 Related Projects
 
-- **[SkyCMS](../README.md)**: Content management system using this identity provider
-- **[SkyCMS Editor](../Editor/README.md)**: Content editing interface
-- **[SkyCMS Publisher](../Publisher/README.md)**: Public website engine
+- **[SkyCMS](https://github.com/CWALabs/SkyCMS)**: Multi-tenant content management system using this identity provider
+- **[SkyCMS Editor](https://github.com/CWALabs/SkyCMS/tree/main/Editor)**: Content editing interface
+- **[SkyCMS Publisher](https://github.com/CWALabs/SkyCMS/tree/main/Publisher)**: Public website engine
 
 ## 📞 Support
 

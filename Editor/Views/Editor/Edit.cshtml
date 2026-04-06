@@ -20,7 +20,99 @@
     }" />
 </form>
 
+<style>
+    .ckeditor-copilot-window {
+        position: fixed;
+        top: 88px;
+        right: 24px;
+        z-index: 10000;
+        max-height: calc(100vh - 120px);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+    }
+
+    .ckeditor-copilot-window.is-hidden {
+        display: none;
+    }
+
+    .ckeditor-copilot-window.is-minimized {
+        width: 320px;
+        min-width: 260px;
+    }
+
+    .ckeditor-copilot-window.is-minimized .ckeditor-copilot-body {
+        display: none;
+    }
+
+    .ckeditor-copilot-window .copilot-chat-header {
+        cursor: move;
+        user-select: none;
+    }
+
+    .ckeditor-copilot-window-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .ckeditor-copilot-window .copilot-chat-form textarea {
+        min-height: 72px;
+    }
+
+    @@media (max-width: 768px) {
+        .ckeditor-copilot-window {
+            left: 12px;
+            right: 12px;
+            top: 74px;
+            width: auto;
+            min-width: 0;
+            max-width: none;
+            max-height: calc(100vh - 92px);
+        }
+    }
+</style>
+
 <iframe id="ccmsContFrame" src="/Editor/CcmsContent/@Model.ArticleNumber" style="position: absolute; top: 52px; width: 100%; margin:0px; padding:0px;z-index:1;" onload="setupFrame()" frameBorder="0" scrolling="yes"></iframe>
+
+<aside id="ckeditorCopilotWindow" class="copilot-chat-panel ckeditor-copilot-window is-hidden" aria-label="AI writing assistant">
+    <div id="ckeditorCopilotHeader" class="copilot-chat-header">
+        <div>
+            <div class="copilot-chat-title">AI Writing Assistant</div>
+            <div id="ckeditorCopilotSubtitle" class="copilot-chat-subtitle">Scoped to the current editor region.</div>
+        </div>
+        <div class="ckeditor-copilot-window-actions">
+            <button id="btnCkeditorCopilotMinimize" type="button" class="btn btn-sm btn-outline-light" aria-label="Minimize AI assistant">_</button>
+            <button id="btnCkeditorCopilotClose" type="button" class="btn btn-sm btn-outline-light" aria-label="Close AI assistant">Close</button>
+        </div>
+    </div>
+
+    <div class="ckeditor-copilot-body">
+        <div class="copilot-chat-actions" role="toolbar" aria-label="AI writing actions">
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="improve-selection">Improve selection</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="rewrite-selection">Rewrite</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="shorten-selection">Shorten</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="expand-selection">Expand</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="replace-block">Replace block</button>
+        </div>
+
+        <div id="ckeditorCopilotMessages" class="copilot-chat-messages">
+            <div class="copilot-chat-empty">Open the assistant from a CKEditor toolbar button to start a region-scoped chat.</div>
+        </div>
+
+        <div id="ckeditorCopilotStatus" class="copilot-chat-status" style="display:none"></div>
+
+        <form id="ckeditorCopilotForm" class="copilot-chat-form">
+            <label class="visually-hidden" for="ckeditorCopilotInput">Ask AI about this editor region</label>
+            <textarea id="ckeditorCopilotInput" class="form-control form-control-sm" rows="4" placeholder="Ask for grammar help, a rewrite, or improved copy for this region."></textarea>
+            <div class="copilot-chat-footer">
+                <span class="copilot-chat-hint">Enter sends. Shift+Enter adds a new line.</span>
+                <div class="d-flex gap-2">
+                    <button id="btnCkeditorCopilotClear" type="button" class="btn btn-sm btn-outline-light">Clear</button>
+                    <button id="btnCkeditorCopilotSend" type="submit" class="btn btn-sm btn-primary">Send</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</aside>
 
 <div class="toast-container position-fixed top-0 end-0 p-3">
     <div id="linksToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="3000">
@@ -77,6 +169,7 @@
 
 <!-- Include shared editor infrastructure -->
 <partial name="_EditorCommonScripts" />
+<script src="~/js/editors/ckeditor-copilot-chat.js"></script>
 
 <script>
     // Global variables
@@ -109,6 +202,15 @@
 
     // Modals
     const linksToast = new bootstrap.Toast(document.getElementById('linksToast'));
+
+    function openCkEditorCopilot(ed) {
+        if (!window.ckeditorCopilotChat || typeof window.ckeditorCopilotChat.open !== 'function') {
+            alert("Error: Could not open the AI writing assistant.");
+            return;
+        }
+
+        window.ckeditorCopilotChat.open(ed);
+    }
 
     $("#frmSave").submit(function (e) {
         e.preventDefault();
@@ -313,6 +415,10 @@
 
     $(document).ready(function (e) {
         EditorSaveService.ensureEncryptionContext();
+
+        if (window.ckeditorCopilotChat && typeof window.ckeditorCopilotChat.initialize === 'function') {
+            window.ckeditorCopilotChat.initialize();
+        }
 
         // Check for unsaved data
         const backupModel = getRecoverableBackupModel();

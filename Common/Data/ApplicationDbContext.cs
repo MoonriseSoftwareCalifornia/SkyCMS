@@ -7,24 +7,24 @@
 
 namespace Cosmos.Common.Data
 {
+    using System;
+    using System.Linq;
+    using System.Text.Json;
+    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data.SQlite;
     using Cosmos.DynamicConfig;
-    using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Azure.Cosmos;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore.Diagnostics;
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Database Context for Sky CMS.
     /// Includes identity, content (articles, pages, templates, layouts),
     /// operational metadata (metrics, logs) and now multi-blog support via <see cref="BlobService"/>.
     /// </summary>
-    public class ApplicationDbContext : CosmosIdentityDbContext<IdentityUser, IdentityRole, string>, IDataProtectionKeyContext, IApplicationDbContext
+    public class ApplicationDbContext : CosmosIdentityDbContext<IdentityUser, IdentityRole, string>, IApplicationDbContext
     {
         private readonly IDynamicConfigurationProvider? _configurationProvider;
 
@@ -144,14 +144,14 @@ namespace Cosmos.Common.Data
         public DbSet<TotpToken> TotpTokens { get; set; } = null!;
 
         /// <summary>
-        /// Gets or sets data protection keys.
-        /// </summary>
-        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
-
-        /// <summary>
         /// Gets or sets migration history tracking.
         /// </summary>
         public DbSet<MigrationHistory> MigrationHistory { get; set; } = null!;
+
+        /// <summary>
+        /// Gets or sets the identity user passkeys for users.
+        /// </summary>
+        public DbSet<IdentityUserPasskey<string>> IdentityUserPasskeys { get; set; } = null!;
 
         /// <summary>
         /// Ensure database exists and returns status.
@@ -307,11 +307,15 @@ namespace Cosmos.Common.Data
             {
                 SQLiteUtils.OnModelCreating(modelBuilder);
                 base.OnModelCreating(modelBuilder);
+                ConfigureRelationalPasskeyMapping(modelBuilder);
                 return;
             }
 
             if (this.Database.IsCosmos())
             {
+                // Call base to configure Identity entities (IdentityUserLogin, etc.)
+                base.OnModelCreating(modelBuilder);
+
                 // DEFAULT CONTAINER ENTITIES
                 modelBuilder.HasDefaultContainer("CosmosCms");
 
@@ -395,11 +399,6 @@ namespace Cosmos.Common.Data
                     .HasPartitionKey(k => k.Id)
                     .HasKey(k => k.Id);
 
-                modelBuilder.Entity<DataProtectionKey>()
-                    .ToContainer("DataProtection")
-                    .HasPartitionKey(k => k.Id)
-                    .HasKey(k => k.Id);
-
                 modelBuilder.Entity<MigrationHistory>()
                     .ToContainer("MigrationHistory")
                     .HasPartitionKey(k => k.Id)
@@ -407,6 +406,9 @@ namespace Cosmos.Common.Data
             }
             else
             {
+                base.OnModelCreating(modelBuilder);
+                ConfigureRelationalPasskeyMapping(modelBuilder);
+
                 // Relational Database Indexes (SQL Server, MySQL, SQLite)
                 // Layout versioning indexes for efficient querying by family and version
                 modelBuilder.Entity<Layout>()
@@ -440,6 +442,9 @@ namespace Cosmos.Common.Data
                     .HasDatabaseName("IX_MigrationHistory_Provider");
 
                 // MySQL-specific prefix length constraints
+                // NOTE: Disabled for .NET 10 upgrade - MySQL provider (Pomelo) not compatible with EF Core 10
+                // Will be restored when Pomelo releases EF Core 10 support
+                // MySQL provider disabled for this upgrade cycle
                 if (Database.IsMySql())
                 {
                     modelBuilder.Entity<PublishedPage>()
@@ -456,10 +461,37 @@ namespace Cosmos.Common.Data
                 modelBuilder.Entity<CatalogEntry>().Property(e => e.RowVersion).IsETagConcurrency();
                 modelBuilder.Entity<PublishedPage>().Property(e => e.RowVersion).IsETagConcurrency();
                 modelBuilder.Entity<PageDesignVersion>().Property(e => e.RowVersion).IsETagConcurrency();
-
             }
+        }
 
-            base.OnModelCreating(modelBuilder);
+        private static void ConfigureRelationalPasskeyMapping(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Ignore<IdentityPasskeyData>();
+
+            modelBuilder.Entity<IdentityUserPasskey<string>>(entity =>
+            {
+                entity.ToTable("AspNetUserPasskeys");
+                entity.HasKey(p => p.CredentialId);
+
+                entity.Property(p => p.CredentialId).HasMaxLength(1024);
+                entity.Property(p => p.UserId).IsRequired();
+                entity.Property(p => p.Data)
+                    .HasConversion(
+                        value => JsonSerializer.Serialize(value, (JsonSerializerOptions?)null),
+                        value => JsonSerializer.Deserialize<IdentityPasskeyData>(value, (JsonSerializerOptions?)null)!
+                    )
+                    .HasColumnName("Data")
+                    .IsRequired();
+
+                entity.HasIndex(p => p.UserId)
+                    .HasDatabaseName("IX_AspNetUserPasskeys_UserId");
+
+                entity.HasOne<IdentityUser>()
+                    .WithMany()
+                    .HasForeignKey(p => p.UserId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+            });
         }
 
         /// <summary>

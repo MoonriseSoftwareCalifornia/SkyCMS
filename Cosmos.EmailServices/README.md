@@ -1,32 +1,17 @@
-﻿# Cosmos.EmailServices — Developer README
+﻿# Cosmos.EmailServices - Multi-Service Email Provider
 
-Purpose
-- Email/smtp integration helpers and services that integrate with Azure Cosmos-backed configuration.
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![NuGet](https://img.shields.io/nuget/v/Cosmos.EmailServices.svg)](https://www.nuget.org/packages/Cosmos.EmailServices/)
 
-Quick start
-```powershell
-dotnet build SkyCMS.sln
-```
-
-Where to look
-- Service implementations: `Cosmos.EmailServices/Services`.
-- Configuration wiring and DI: check project `Program` or consuming projects.
-
-Notes
-- Review how secrets and SMTP credentials are loaded; avoid committing credentials.
-- Add unit tests for new features and ensure they do not require external email providers in CI.
-# Cosmos.EmailServices - Multi-service IEmailSender
-
-This is an IEmailSender implementation for [Cosmos CMS](https://github.com/MoonriseSoftwareCalifornia/CosmosCMS)
-and for use with any ASP.NET Core Identity web app. Instructions for setting up
-each of these email services are provided in [this documentation](https://cosmos.moonrise.net/install).
+This is an IEmailSender implementation for **ASP.NET Core Identity** supporting multiple email service providers. Part of the [SkyCMS](https://github.com/CWALabs/SkyCMS) project.
 
 In one package it provides the following services:
 
-* Azure Communication Services - Email Services.
+* Azure Communication Services - Email Services
 * SendGrid (Twilio)
-* SMTP service that supports TLS, user name and password.
-* NoOp Email, an email service for dev/test that does nothing.
+* SMTP service that supports TLS, user name and password
+* NoOp Email, an email service for dev/test that does nothing
 
 ## Installation
 
@@ -112,7 +97,7 @@ builder.Services.AddCosmosEmailServices(builder.Configuration);
 
 ## Example
 
-For a full working example of this package, see the [Cosmos CMS](https://github.com/MoonriseSoftwareCalifornia/CosmosCMS) source code.
+For a full working example of this package, see the [SkyCMS](https://github.com/CWALabs/SkyCMS) source code.
 
 In the mean time, here is an example of how to use the email service in a Razor Page:
 

@@ -33,6 +33,25 @@ namespace Cosmos.Common.Tests.Data
         }
 
         [TestMethod]
+        public void ApplicationDbContext_ShouldNotImplementDataProtectionKeyContext()
+        {
+            Assert.IsFalse(typeof(IDataProtectionKeyContext).IsAssignableFrom(typeof(ApplicationDbContext)));
+            Assert.IsNull(typeof(ApplicationDbContext).GetProperty(nameof(DataProtectionDbContext.DataProtectionKeys)));
+        }
+
+        [TestMethod]
+        public void ApplicationDbContext_ModelShouldNotContainDataProtectionKey()
+        {
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase($"app-{Guid.NewGuid():N}")
+                .Options;
+
+            using var context = new ApplicationDbContext(options);
+
+            Assert.IsNull(context.Model.FindEntityType(typeof(DataProtectionKey)));
+        }
+
+        [TestMethod]
         public async Task DataProtectionKeys_CanPersistAndRetrieveKey()
         {
             var options = new DbContextOptionsBuilder<DataProtectionDbContext>()

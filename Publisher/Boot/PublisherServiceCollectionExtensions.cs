@@ -221,7 +221,7 @@ namespace Microsoft.Extensions.DependencyInjection
                                            ForwardedHeaders.XForwardedProto;
 
                 // Allow all proxies (configured explicitly for Docker/load balancer scenarios)
-                options.KnownNetworks.Clear();
+                options.KnownIPNetworks.Clear();
                 options.KnownProxies.Clear();
             });
 

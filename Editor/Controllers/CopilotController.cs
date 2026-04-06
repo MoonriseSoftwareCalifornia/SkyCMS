@@ -346,7 +346,7 @@ public sealed class CopilotController : ControllerBase
             new()
             {
                 Role = "system",
-                Content = "You are an AI coding assistant embedded in the SkyCMS Monaco editor. Help with code explanations, fixes, refactors, and generation. Be concise, practical, and preserve the user's existing architecture unless the request clearly asks for a redesign. When returning code, prefer the smallest relevant snippet. Use markdown when useful.",
+                Content = BuildChatSystemPrompt(request),
             },
         };
 
@@ -374,6 +374,7 @@ public sealed class CopilotController : ControllerBase
         }
 
         var promptBuilder = new StringBuilder();
+        promptBuilder.AppendLine($"EditorKind: {request.EditorKind ?? "monaco"}");
         promptBuilder.AppendLine($"Action: {request.Action ?? "chat"}");
         promptBuilder.AppendLine($"Language: {request.Language ?? "plaintext"}");
         promptBuilder.AppendLine($"Field: {request.FieldName ?? string.Empty}");
@@ -383,14 +384,14 @@ public sealed class CopilotController : ControllerBase
         if (!string.IsNullOrWhiteSpace(request.Selection))
         {
             promptBuilder.AppendLine();
-            promptBuilder.AppendLine("Selected text:");
+            promptBuilder.AppendLine(IsCkeditorRequest(request) ? "Selected HTML fragment:" : "Selected text:");
             promptBuilder.AppendLine(TrimForPrompt(request.Selection, 4000));
         }
 
         if (!string.IsNullOrWhiteSpace(request.CurrentCode))
         {
             promptBuilder.AppendLine();
-            promptBuilder.AppendLine("Current editor content:");
+            promptBuilder.AppendLine(IsCkeditorRequest(request) ? "Current editor HTML fragment:" : "Current editor content:");
             promptBuilder.AppendLine(TrimForPrompt(request.CurrentCode, 12000));
         }
 
@@ -405,6 +406,21 @@ public sealed class CopilotController : ControllerBase
         });
 
         return messages;
+    }
+
+    private static string BuildChatSystemPrompt(CopilotChatRequest request)
+    {
+        if (IsCkeditorRequest(request))
+        {
+            return "You are an AI writing assistant embedded in the SkyCMS CKEditor experience. The active context is a single rich-text editor region only, not the full page. Help with grammar, tone, clarity, structure, rewriting, summarization, and generating polished copy while preserving the author's intent. Preserve existing HTML structure unless the request explicitly asks to change it. Do not return a full HTML document. When suggesting concrete edits, explain briefly and include the proposed result in a fenced ```html``` block that can be applied directly to the current region, selection, or cursor position.";
+        }
+
+        return "You are an AI coding assistant embedded in the SkyCMS Monaco editor. Help with code explanations, fixes, refactors, and generation. Be concise, practical, and preserve the user's existing architecture unless the request clearly asks for a redesign. When returning code, prefer the smallest relevant snippet. Use markdown when useful.";
+    }
+
+    private static bool IsCkeditorRequest(CopilotChatRequest request)
+    {
+        return string.Equals(request.EditorKind, "ckeditor", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? NormalizeConversationRole(string? role)
@@ -495,6 +511,11 @@ public sealed class CopilotController : ControllerBase
     /// </summary>
     public sealed class CopilotChatRequest
     {
+        /// <summary>
+        /// Gets or sets the editor surface originating the request.
+        /// </summary>
+        public string? EditorKind { get; set; }
+
         /// <summary>
         /// Gets or sets the explicit action invoked from the UI.
         /// </summary>
