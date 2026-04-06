@@ -164,9 +164,17 @@ The main controller handling content editing operations:
           "BackupStorageConnectionString": "DefaultEndpointsProtocol=https;AccountName=backupacct;AccountKey=...;EndpointSuffix=core.windows.net"
        },
        "CosmosPublisherUrl": "https://your-publisher-url.com",
-       "MultiTenantEditor": false
+       "MultiTenantEditor": false,
+       "IdentityPasskey": {
+          "ServerDomain": "yourdomain.com"
+       }
     }
     ```
+
+    Passkey notes (`IdentityPasskey:ServerDomain`):
+    - Single-tenant: set this to your RP ID/domain (for example `yourdomain.com`).
+    - Multi-tenant: leave it unset; SkyCMS lets ASP.NET Core Identity derive host per request.
+    - HTTPS is required for passkey registration and sign-in.
 
     Notes:
     - For S3, use: `Bucket={bucket};Region={region};KeyId={access-key-id};Key={secret};`

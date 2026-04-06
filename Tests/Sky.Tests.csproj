@@ -1,18 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
 		<UserSecretsId>c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1</UserSecretsId>
-		<Version>9.3.0.1</Version>
+		<Version>12.0.1</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<!-- Suppress CS0618: Using obsolete SaveArticle method for legacy integration tests -->
 		<!-- Suppress MSTEST0006: Keep ExpectedException attributes for now, will migrate later -->
 		<NoWarn>$(NoWarn);CS0618;MSTEST0006</NoWarn>
+		<FileVersion>12.0.1</FileVersion>
+		<AssemblyVersion>12.0.1</AssemblyVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

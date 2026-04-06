@@ -309,6 +309,118 @@ public class CopilotControllerTests
     }
 
     [TestMethod]
+    public async Task Chat_WithCkeditorRequest_UsesRichTextSystemPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+            Model = "gpt-4o-mini",
+            MaxTokens = 512,
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        string? capturedJson = null;
+
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Here is an improved version.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var requestModel = new CopilotController.CopilotChatRequest
+        {
+            EditorKind = "ckeditor",
+            Action = "improve-selection",
+            Message = "Improve this paragraph.",
+            Selection = "<p>This are rough copy.</p>",
+            CurrentCode = "<p>This are rough copy.</p><p>Second paragraph.</p>",
+            Language = "html",
+            FieldName = "Body",
+            Title = "Demo",
+            ArticleNumber = "123",
+        };
+
+        var result = await controller.Chat(requestModel);
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var messages = document.RootElement.GetProperty("messages");
+        var systemPrompt = messages[0].GetProperty("content").GetString();
+        var userPrompt = messages[1].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("AI writing assistant", StringComparison.Ordinal));
+        Assert.IsTrue(systemPrompt.Contains("```html```", StringComparison.Ordinal));
+
+        Assert.IsNotNull(userPrompt);
+        Assert.IsTrue(userPrompt.Contains("EditorKind: ckeditor", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("Selected HTML fragment", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("Current editor HTML fragment", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithMonacoRequest_KeepsCodingPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+            Model = "gpt-4o-mini",
+            MaxTokens = 512,
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        string? capturedJson = null;
+
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Use a guard clause.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        {
+            Action = "fix-syntax",
+            Message = "Fix this method.",
+            CurrentCode = "public void Run() {",
+            Language = "csharp",
+        });
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+    Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+
+    using var document = JsonDocument.Parse(capturedJson!);
+        var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("AI coding assistant", StringComparison.Ordinal));
+        Assert.IsFalse(systemPrompt.Contains("single rich-text editor region only", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     [TestCategory("Integration")]
     public async Task Complete_WithLiveGitHubCopilotConnection_ReturnsCompletion()
     {

@@ -1,4 +1,6 @@
 import { Plugin as s, ButtonView as c, IconBrowseFiles as I, ImageInsertUI as h, IconImageUpload as m, MenuBarMenuListItemButtonView as f, IconImageUrl as b, IconImageAssetManager as k, createDropdown as F, IconLink as p, addToolbarToDropdown as x, IconCode as L } from "ckeditor5";
+
+const aiAssistIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1 4 4 0 0 0 4 4 1 1 0 1 1 0 2 4 4 0 0 0-4 4 1 1 0 1 1-2 0 4 4 0 0 0-4-4 1 1 0 1 1 0-2 4 4 0 0 0 4-4 1 1 0 0 1 1-1zm6.5 11a.75.75 0 0 1 .75.75A2.75 2.75 0 0 0 22 16.5a.75.75 0 0 1 0 1.5 2.75 2.75 0 0 0-2.75 2.75.75.75 0 0 1-1.5 0A2.75 2.75 0 0 0 15 18a.75.75 0 0 1 0-1.5 2.75 2.75 0 0 0 2.75-2.75.75.75 0 0 1 .75-.75zM6 13a1 1 0 0 1 .98.8l.12.61a2.5 2.5 0 0 0 1.96 1.96l.61.12a1 1 0 0 1 0 1.96l-.61.12a2.5 2.5 0 0 0-1.96 1.96l-.12.61a1 1 0 0 1-1.96 0l-.12-.61a2.5 2.5 0 0 0-1.96-1.96l-.61-.12a1 1 0 0 1 0-1.96l.61-.12A2.5 2.5 0 0 0 4.9 14.4l.12-.61A1 1 0 0 1 6 13z"/></svg>';
 /**
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
@@ -350,6 +352,34 @@ class P extends s {
  * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
  */
+class G extends s {
+  static get pluginName() {
+    return "CkEditorCopilot";
+  }
+  init() {
+    const e = this.editor, t = e.t;
+    e.ui.componentFactory.add("copilotAssist", (o) => {
+      const i = new c(o);
+      return i.set({
+        label: t("Open AI writing assistant."),
+        icon: aiAssistIcon,
+        tooltip: !0
+      }), this.listenTo(i, "execute", () => {
+        const a = globalThis.window?.parent?.openCkEditorCopilot;
+        if (a)
+          a(e);
+        else {
+          const l = globalThis.alert;
+          l && l("No host AI assistant bridge detected.");
+        }
+      }), i;
+    });
+  }
+}
+/**
+ * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
+ */
 class v extends s {
   static get pluginName() {
     return "VSCodeEditor";
@@ -423,6 +453,8 @@ const u = {
       "italic",
       "underline",
       "|",
+      "copilotAssist",
+      "|",
       "skyCmsLink",
       "fileLink",
       "|",
@@ -447,6 +479,8 @@ const u = {
   advanced: {
     toolbar: [
       "heading",
+      "|",
+      "copilotAssist",
       "|",
       "skyCmsLink",
       "imageInsert",
@@ -509,6 +543,7 @@ function K(r = "standard", e = {}) {
 }
 const Y = u;
 export {
+  G as CkEditorCopilot,
   W as FileLink,
   q as InsertImage,
   D as PageLink,

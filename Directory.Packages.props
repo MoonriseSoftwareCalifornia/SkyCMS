@@ -6,7 +6,8 @@
     <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Core .NET 9 packages with version constraints -->
+    <!-- Core .NET 10 packages with version constraints -->
+    <PackageVersion Include="AspNetCore.Identity.CosmosDb" Version="10.0.5.1" />
     <PackageVersion Include="AWSSDK.CloudFront" Version="4.0.10.3" />
     <PackageVersion Include="AWSSDK.SecretsManager" Version="4.0.4.1" />
     <PackageVersion Include="Azure.Communication.Email" Version="1.1.0" />
@@ -15,44 +16,48 @@
     <PackageVersion Include="IPAddressRange" Version="6.3.0" />
     <PackageVersion Include="MediatR" Version="14.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Antiforgery" Version="2.3.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="[9,10)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.5" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.3.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Cosmos" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="[9.0.10,10)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="[9,10)" />
-    <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="[9,10)" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Cosmos" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
+    <!-- MySQL: Pomelo 9.0 is not compatible with EF Core 10. Disabled for this upgrade cycle. -->
+    <!-- Will be restored when Pomelo releases EF Core 10 support (expected Q1-Q2 2025) -->
+    <!-- <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" /> -->
+	<!-- Microting is a fast-update verion of Pomelo, might stay with this. -->
+	<PackageVersion Include="Microting.EntityFrameworkCore.MySql" Version="10.0.5"  />
     <!-- ASP.NET Core Identity packages -->
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="[9,10)" />
-    <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.4.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.5" />
+    <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.4.7" />
     <!-- ASP.NET Core Authentication packages -->
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Facebook" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Twitter" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="[9,10)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Facebook" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.5" />
     <!-- ASP.NET Core Common packages -->
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="[9,10)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="[9,10)" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.5" />
     <!-- Azure packages -->
     <PackageVersion Include="Azure.Storage.Blobs" Version="[12.24.0,13.0)" />
     <PackageVersion Include="Azure.Storage.Files.Shares" Version="12.25.0" />
@@ -104,13 +109,13 @@
     <PackageVersion Include="RestSharp" Version="[112.1.0,113.0)" />
     <PackageVersion Include="SixLabors.ImageSharp" Version="[3.1.12,4.0)" />
     <PackageVersion Include="MimeTypeMapOfficial" Version="[1.0.17,2.0)" />
-    <PackageVersion Include="System.Drawing.Common" Version="[9,10)" />
+    <PackageVersion Include="System.Drawing.Common" Version="10.0.5" />
     <PackageVersion Include="System.Private.Uri" Version="4.3.2" />
     <!-- Visual Studio Tools -->
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="[9.0.10,10)" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.5" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Cosmos" Version="[1.8.0,2.0)" />
     <!-- Cosmos/Sky Custom Packages -->
-    <PackageVersion Include="Cosmos.MicrosoftGraph" Version="[9,10)" />
+    <PackageVersion Include="Cosmos.MicrosoftGraph" Version="10.0.5" />
   </ItemGroup>
 </Project>

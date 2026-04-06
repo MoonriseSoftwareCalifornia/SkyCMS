@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Data
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using AspNetCore.Identity.FlexDb.Strategies;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Helper service for applying database migrations across different providers.
@@ -601,16 +601,21 @@ namespace Sky.Editor.Data
 
             public bool CanHandle(string connectionString)
             {
-                return new MySqlConfigurationStrategy().CanHandle(connectionString);
+                // MySQL provider disabled for .NET 10 upgrade - not compatible with Pomelo/EF Core 10
+                return false; // new MySqlConfigurationStrategy().CanHandle(connectionString);
             }
 
             public void Configure(DbContextOptionsBuilder optionsBuilder, string connectionString)
             {
+                throw new NotSupportedException("MySQL provider is not supported in .NET 10 upgrade. Use Cosmos DB, SQL Server, or SQLite.");
+                // MySQL provider configuration disabled
+                /*
                 var serverVersion = ServerVersion.AutoDetect(connectionString);
                 optionsBuilder.UseMySql(connectionString, serverVersion, options =>
                 {
                     options.MigrationsAssembly(migrationsAssembly);
                 });
+                */
             }
         }
 

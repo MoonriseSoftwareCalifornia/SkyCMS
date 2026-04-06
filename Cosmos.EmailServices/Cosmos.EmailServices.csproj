@@ -1,23 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Company>Moonrise Software LLC</Company>
-		<Version>9.3.0.1</Version>
-		<AssemblyVersion>9.3.0.1</AssemblyVersion>
-		<FileVersion>9.3.0.1</FileVersion>
+		<Version>12.0.1</Version>
+		<AssemblyVersion>12.0.1</AssemblyVersion>
+		<FileVersion>12.0.1</FileVersion>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<RepositoryUrl>https://github.com/MoonriseSoftwareCalifornia/Cosmos.EmailServices</RepositoryUrl>
+		<RepositoryUrl>https://github.com/CWALabs/SkyCMS</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<PackageTags>SMTP, SendGrid, Azure Email, Email Provider, Identity, ASP.NET Identity</PackageTags>
-		<Description>This is a SendGrid, SMTP, and Azure Communications Email Provider for ASP.NET Core Identity.</Description>
-		<PackageProjectUrl>https://github.com/MoonriseSoftwareCalifornia/CosmosCMS</PackageProjectUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>SMTP, SendGrid, Azure Email, Email Provider, Identity, ASP.NET Identity, SkyCMS</PackageTags>
+		<Description>Multi-service email provider (SendGrid, SMTP, Azure Communication Services) for ASP.NET Core Identity. Part of the SkyCMS project.</Description>
+		<PackageProjectUrl>https://github.com/CWALabs/SkyCMS/tree/main/Cosmos.EmailServices</PackageProjectUrl>
+		<PackageReadmeFile>NUGET.md</PackageReadmeFile>
 		<PackageReleaseNotes>Documentation dependencies updated.</PackageReleaseNotes>
 		<Title>Cosmos CMS Email Services</Title>
 		<Copyright>Copyright 2023 (c) Moonrise Software, LLC.</Copyright>
@@ -35,8 +35,15 @@
 
 	<ItemGroup>
 	  <None Include="B2C_BrandIcon_Black.png">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
+		<Pack>True</Pack>
+		<PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="NUGET.md">
+		<Pack>True</Pack>
+		<PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="README.md">
+		<Pack>False</Pack>
 	  </None>
 	</ItemGroup>
 
@@ -45,8 +52,8 @@
 	  <PackageReference Include="Azure.Identity" />
 	  <PackageReference Include="HtmlAgilityPack" />
 	  <PackageReference Include="Roslynator.Analyzers">
-	    <PrivateAssets>all</PrivateAssets>
-	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		<PrivateAssets>all</PrivateAssets>
+		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
 	  <PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
 	  <PackageReference Include="Microsoft.Extensions.Logging" />
@@ -75,8 +82,7 @@
 
 	<ItemGroup>
 		<None Update="README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
+			<Pack>False</Pack>
 		</None>
 	</ItemGroup>
 

@@ -1,20 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<AssemblyVersion>9.3.0.1</AssemblyVersion>
-		<FileVersion>9.3.0.1</FileVersion>
-		<Version>9.3.0.1</Version>
-		<Title>Sky CMS Azure Storage Provider</Title>
+		<TargetFramework>net10.0</TargetFramework>
+		<AssemblyVersion>12.0.1</AssemblyVersion>
+		<FileVersion>12.0.1</FileVersion>
+		<Version>12.0.1</Version>
+		<Title>Sky CMS Multi-Cloud Storage Provider</Title>
 		<Authors>toiyabe62</Authors>
 		<Company>Moonrise Software LLC</Company>
-		<Description>Manages BLOB objects in Azure.</Description>
+		<Description>Multi-cloud blob storage abstraction layer supporting Azure Blob Storage, Amazon S3, and Cloudflare R2. Part of the SkyCMS project.</Description>
 		<Copyright>Moonrise Software LLC</Copyright>
-		<PackageProjectUrl>https://sky-cms.com</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/CWALabs/SkyCMS/tree/main/Cosmos.BlobService</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageReleaseNotes></PackageReleaseNotes>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageReleaseNotes>Updated for .NET 10</PackageReleaseNotes>
+		<PackageReadmeFile>NUGET.md</PackageReadmeFile>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
@@ -27,8 +27,8 @@
 	<PropertyGroup>
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<PackageIcon>B2C_BrandIcon_Black.png</PackageIcon>
-		<RepositoryUrl>https://github.com/CWALabs/Cosmos.BlobService</RepositoryUrl>
-		<PackageTags>Azure Storage;Azure Blob Storage;Blob Storage</PackageTags>
+		<RepositoryUrl>https://github.com/CWALabs/SkyCMS</RepositoryUrl>
+		<PackageTags>Azure Storage;Azure Blob Storage;Blob Storage;AWS S3;Amazon S3;Cloudflare R2;Multi-Cloud;SkyCMS</PackageTags>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<IncludeSymbols>True</IncludeSymbols>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
@@ -61,9 +61,12 @@
 		  <Pack>True</Pack>
 		  <PackagePath>\</PackagePath>
 		</None>
+		<None Update="NUGET.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
 		<None Update="Readme.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
+			<Pack>False</Pack>
 		</None>
 	</ItemGroup>
 
