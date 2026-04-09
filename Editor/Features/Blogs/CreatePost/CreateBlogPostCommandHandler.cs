@@ -82,11 +82,13 @@ namespace Sky.Editor.Features.Blogs.CreatePost
             try
             {
                 var blogStreamType = (int)ArticleType.BlogStream;
+                var statusCode = (int)StatusCodeEnum.Deleted;
+                var blogKey = command.BlogKey.Trim();
                 var parentStream = await dbContext.Articles
                     .FirstOrDefaultAsync(
-                        a => a.BlogKey == command.BlogKey &&
+                        a => a.BlogKey == blogKey &&
                              a.ArticleType == blogStreamType &&
-                             a.StatusCode != (int)StatusCodeEnum.Deleted,
+                             a.StatusCode != statusCode,
                         cancellationToken);
 
                 if (parentStream == null)

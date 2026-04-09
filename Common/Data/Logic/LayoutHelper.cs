@@ -26,12 +26,12 @@ namespace Cosmos.Common.Data.Logic
         /// <returns>The current default layout, or null if none exists.</returns>
         /// <remarks>
         /// This method finds the default layout by:
-        /// 1. Filtering for layouts marked as default (IsDefault = true)
-        /// 2. Filtering for layouts that are published and active (Published &lt;= now)
+        /// 1. Filtering for layouts that have a Published date (Published != null)
+        /// 2. Filtering for layouts that are active (Published &lt;= now)
         /// 3. Ordering by version number
         /// 4. Taking the last (highest version) layout
         /// 
-        /// This ensures we get the most recent published version of the default layout.
+        /// This ensures we get the most recent published version of the layout.
         /// </remarks>
         public static async Task<Layout> GetCurrentDefaultLayoutAsync(ApplicationDbContext dbContext)
         {
@@ -41,10 +41,32 @@ namespace Cosmos.Common.Data.Logic
             }
 
             var now = DateTimeOffset.UtcNow;
-            return await dbContext.Layouts
-                .Where(l => l.IsDefault && l.Published <= now)
+
+            // Fast path: layout explicitly marked as default and published.
+            var layout = await dbContext.Layouts
+                .Where(l => l.IsDefault && l.Published != null && l.Published <= now)
                 .OrderBy(l => l.Version)
                 .LastOrDefaultAsync();
+
+            if (layout != null)
+            {
+                return layout;
+            }
+
+            // Self-healing fallback: find any published layout, mark it as
+            // default, persist the fix, and return it.
+            layout = await dbContext.Layouts
+                .Where(l => l.Published != null && l.Published <= now)
+                .OrderBy(l => l.Version)
+                .LastOrDefaultAsync();
+
+            if (layout != null)
+            {
+                layout.IsDefault = true;
+                await dbContext.SaveChangesAsync();
+            }
+
+            return layout;
         }
 
         /// <summary>
@@ -53,11 +75,11 @@ namespace Cosmos.Common.Data.Logic
         /// <param name="dbContext">Database context.</param>
         /// <returns>True if a default layout exists, false otherwise.</returns>
         /// <remarks>
-        /// This method checks for the existence of a default layout by:
-        /// 1. Filtering for layouts marked as default (IsDefault = true)
-        /// 2. Filtering for layouts that are published and active (Published &lt;= now)
+        /// This method checks for the existence of a published layout by:
+        /// 1. Filtering for layouts that have a Published date (Published != null)
+        /// 2. Filtering for layouts that are active (Published &lt;= now)
         /// 
-        /// Useful for setup/initialization scenarios to determine if a default layout needs to be created.
+        /// Useful for setup/initialization scenarios to determine if a published layout exists.
         /// </remarks>
         public static async Task<bool> HasDefaultLayoutAsync(ApplicationDbContext dbContext)
         {
@@ -67,9 +89,31 @@ namespace Cosmos.Common.Data.Logic
             }
 
             var now = DateTimeOffset.UtcNow;
-            return await dbContext.Layouts
-                .Where(l => l.IsDefault && l.Published <= now)
-                .AnyAsync();
+
+            // Fast path: check for an explicitly-defaulted, published layout.
+            var exists = await dbContext.Layouts
+                .Where(l => l.IsDefault && l.Published != null && l.Published <= now)
+                .CosmosAnyAsync();
+
+            if (exists)
+            {
+                return true;
+            }
+
+            // Self-healing fallback: find any published layout and promote it.
+            var layout = await dbContext.Layouts
+                .Where(l => l.Published != null && l.Published <= now)
+                .OrderBy(l => l.Version)
+                .LastOrDefaultAsync();
+
+            if (layout != null)
+            {
+                layout.IsDefault = true;
+                await dbContext.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>

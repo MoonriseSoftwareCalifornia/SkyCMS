@@ -84,10 +84,12 @@ namespace Sky.Editor.Features.Blogs.UpdatePost
             try
             {
                 // Get the latest version of this blog post
+                var blogPostType = (int)ArticleType.BlogPost;
+                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
                 var currentArticle = await dbContext.Articles
                     .Where(a => a.ArticleNumber == command.ArticleNumber &&
-                                a.ArticleType == (int)ArticleType.BlogPost &&
-                                a.StatusCode != (int)StatusCodeEnum.Deleted)
+                                a.ArticleType == blogPostType &&
+                                a.StatusCode != deletedStatusCode)
                     .OrderByDescending(a => a.VersionNumber)
                     .FirstOrDefaultAsync(cancellationToken);
 

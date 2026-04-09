@@ -118,8 +118,9 @@ public class DeploymentController : ControllerBase
         try
         {
             // 1. Load the SPA article from PublishedPages
+            var spaAppType = (int)ArticleType.SpaApp;
             var article = await dbContext.Pages
-                .FirstOrDefaultAsync(p => p.Id == articleId && p.ArticleType == (int)ArticleType.SpaApp);
+                .FirstOrDefaultAsync(p => p.Id == articleId && p.ArticleType == spaAppType);
 
             if (article == null)
             {

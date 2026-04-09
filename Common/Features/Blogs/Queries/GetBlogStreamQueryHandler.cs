@@ -67,10 +67,12 @@ namespace Cosmos.Common.Features.Blogs.Queries
 
             // Fetch the blog stream from database
             var now = DateTimeOffset.UtcNow;
+            var blogStreamType = (int)Cosmos.Cms.Common.ArticleType.BlogStream;
+            var blogPostType = (int)Cosmos.Cms.Common.ArticleType.BlogPost;
             var blogStream = await dbContext.Articles
                 .AsNoTracking()
                 .Where(a => (a.BlogKey == normalizedBlogKey || a.UrlPath == normalizedBlogKey) &&
-                            a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogStream &&
+                            a.ArticleType == blogStreamType &&
                             a.Published.HasValue &&
                             a.Published <= now)
                 .OrderByDescending(a => a.Published)
@@ -85,7 +87,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
             var latestPost = await dbContext.Articles
                 .AsNoTracking()
                 .Where(a => a.BlogKey == normalizedBlogKey &&
-                            a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogPost &&
+                            a.ArticleType == blogPostType &&
                             a.Published.HasValue &&
                             a.Published <= now)
                 .OrderByDescending(a => a.Published)
@@ -94,7 +96,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
             // Count published posts
             var publishedPostCount = await dbContext.Articles
                 .Where(a => a.BlogKey == normalizedBlogKey &&
-                            a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogPost &&
+                            a.ArticleType == blogPostType &&
                             a.Published.HasValue &&
                             a.Published <= now)
                 .CountAsync(cancellationToken);

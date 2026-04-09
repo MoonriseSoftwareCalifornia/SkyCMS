@@ -44,11 +44,7 @@ public class CheckDefaultLayoutExistsQueryHandler(IApplicationDbContext dbContex
                 return cachedResult;
             }
 
-            var now = DateTimeOffset.UtcNow;
-            var exists = await dbContext.Layouts
-                .AsNoTracking()
-                .Where(l => l.IsDefault && l.Published <= now)
-                .AnyAsync(cancellationToken);
+            var exists = await CheckOrHealDefaultAsync(cancellationToken);
 
             // Cache the result
             memoryCache.Set(CacheKeys.DefaultLayoutExists, exists, query.CacheDuration.Value);
@@ -57,10 +53,42 @@ public class CheckDefaultLayoutExistsQueryHandler(IApplicationDbContext dbContex
         }
 
         // No caching - direct query
-        var currentTime = DateTimeOffset.UtcNow;
-        return await dbContext.Layouts
+        return await CheckOrHealDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Fast-path check for an explicitly-defaulted published layout, with a
+    /// self-healing fallback that promotes any published layout to default.
+    /// </summary>
+    private async Task<bool> CheckOrHealDefaultAsync(CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        // Fast path: layout already marked as default and published.
+        var exists = await dbContext.Layouts
             .AsNoTracking()
-            .Where(l => l.IsDefault && l.Published <= currentTime)
-            .AnyAsync(cancellationToken);
+            .Where(l => l.IsDefault && l.Published != null && l.Published <= now)
+            .CosmosAnyAsync();
+
+        if (exists)
+        {
+            return true;
+        }
+
+        // Self-healing fallback: find any actually-published layout and promote it to default.
+        var layout = await dbContext.Layouts
+            .Where(l => l.Published != null && l.Published <= now)
+            .OrderBy(l => l.Version)
+            .LastOrDefaultAsync(cancellationToken);
+
+        if (layout != null)
+        {
+            layout.Published = now;
+            layout.IsDefault = true;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+        return false;
     }
 }

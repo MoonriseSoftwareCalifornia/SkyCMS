@@ -44,13 +44,30 @@ public class GetDefaultLayoutQueryHandler(
             }
         }
 
-        // Fetch from database
+        // Fetch from database - try the fast path first: a layout explicitly
+        // marked as default that is also published and active.
         var now = DateTimeOffset.UtcNow;
         var entity = await dbContext.Layouts
-            .Where(l => l.IsDefault && l.Published <= now)
+            .Where(l => l.IsDefault && l.Published != null && l.Published <= now)
             .OrderBy(l => l.Version)
             .AsNoTracking()
             .LastOrDefaultAsync(cancellationToken);
+
+        // Self-healing fallback: if no IsDefault layout found, look for any
+        // published layout, auto-set IsDefault = true, save, and return it.
+        if (entity == null)
+        {
+            entity = await dbContext.Layouts
+                .Where(l => l.Published != null && l.Published <= now)
+                .OrderBy(l => l.Version)
+                .LastOrDefaultAsync(cancellationToken);
+
+            if (entity != null)
+            {
+                entity.IsDefault = true;
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
 
         if (entity == null)
         {

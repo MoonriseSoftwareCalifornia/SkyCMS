@@ -517,10 +517,11 @@ namespace Sky.Editor.Data.Logic
             }
 
             var title = redeemed.First().Title.ToLower();
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
             if (await DbContext.Articles.Where(a =>
                     a.Title.ToLower() == title &&
                     a.ArticleNumber != articleNumber &&
-                    a.StatusCode == (int)StatusCodeEnum.Deleted).CosmosAnyAsync())
+                    a.StatusCode == deletedStatusCode).CosmosAnyAsync())
             {
                 var newTitle = title + " (" + await DbContext.Articles.CountAsync() + ")";
                 var url = slugService.Normalize(newTitle);

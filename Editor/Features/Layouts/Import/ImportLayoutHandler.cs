@@ -83,11 +83,13 @@ namespace Sky.Editor.Features.Layouts.Import
                 {
                     layout.Version = 1;
                     layout.IsDefault = true;
+                    layout.Published = DateTimeOffset.UtcNow;
                 }
                 else
                 {
                     layout.Version = (await dbContext.Layouts.CountAsync(cancellationToken)) + 1;
                     layout.IsDefault = false;
+                    layout.Published = null;
                 }
 
                 dbContext.Layouts.Add(layout);

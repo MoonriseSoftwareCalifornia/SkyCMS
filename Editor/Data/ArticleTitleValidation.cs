@@ -102,11 +102,13 @@ namespace Cosmos.Cms.Data
 
             var articleNumber = (int)property.GetValue(validationContext.ObjectInstance, null);
 
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
+            var redirectStatusCode = (int)StatusCodeEnum.Redirect;
             var result = dbContext.Articles.Where(a =>
                 a.Title.ToLower() == title &&
                 a.ArticleNumber != articleNumber &&
-                a.StatusCode != (int)StatusCodeEnum.Deleted &&
-                a.StatusCode != (int)StatusCodeEnum.Redirect).ToListAsync().Result;
+                a.StatusCode != deletedStatusCode &&
+                a.StatusCode != redirectStatusCode).ToListAsync().Result;
 
             foreach (var item in result)
             {

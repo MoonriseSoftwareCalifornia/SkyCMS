@@ -70,12 +70,14 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
             try
             {
                 // Retrieve the blog stream article
+                var blogStreamType = (int)ArticleType.BlogStream;
+                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
                 var article = await dbContext.Articles
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
                         b => b.Id == command.Id &&
-                             b.ArticleType == (int)ArticleType.BlogStream &&
-                             b.StatusCode != (int)StatusCodeEnum.Deleted,
+                             b.ArticleType == blogStreamType &&
+                             b.StatusCode != deletedStatusCode,
                         cancellationToken);
 
                 if (article == null)
@@ -97,7 +99,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                 var entryArticleNumbers = await dbContext.Articles
                     .Where(c => c.BlogKey == blogKey &&
                                 c.ArticleNumber != streamArticleNumber &&
-                                c.StatusCode != (int)StatusCodeEnum.Deleted)
+                                c.StatusCode != deletedStatusCode)
                     .Select(c => c.ArticleNumber)
                     .Distinct()
                     .ToListAsync(cancellationToken);

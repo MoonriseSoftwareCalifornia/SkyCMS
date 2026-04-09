@@ -71,10 +71,11 @@ namespace Cosmos.Common.Services.BlogPublishing
             }
 
             var now = DateTimeOffset.UtcNow;
+            var blogPostType = (int)ArticleType.BlogPost;
 
             var posts = await _db.Pages
                 .Where(p => p.BlogKey == blogKey
-                    && p.ArticleType == (int)ArticleType.BlogPost
+                    && p.ArticleType == blogPostType
                     && p.Published.HasValue
                     && p.Published <= now
                     && (p.Expires == null || p.Expires > now))

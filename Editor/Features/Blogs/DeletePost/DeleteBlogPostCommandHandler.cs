@@ -77,11 +77,13 @@ namespace Sky.Editor.Features.Blogs.DeletePost
             try
             {
                 // Get all versions of this blog post
+                var blogPostType = (int)ArticleType.BlogPost;
+                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
                 var articleVersions = await dbContext.Articles
                     .Where(a => a.ArticleNumber == command.ArticleNumber &&
-                                a.ArticleType == (int)ArticleType.BlogPost &&
+                                a.ArticleType == blogPostType &&
                                 a.BlogKey == command.BlogKey &&
-                                a.StatusCode != (int)StatusCodeEnum.Deleted)
+                                a.StatusCode != deletedStatusCode)
                     .ToListAsync(cancellationToken);
 
                 if (articleVersions.Count == 0)

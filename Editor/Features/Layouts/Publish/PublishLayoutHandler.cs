@@ -60,9 +60,9 @@ namespace Sky.Editor.Features.Layouts.Publish
                     return CommandResult<bool>.Failure($"Layout with ID {command.LayoutId} not found");
                 }
 
-                if (layout.IsDefault)
+                if (layout.Published.HasValue)
                 {
-                    // Return true to indicate layout was already default (no action needed)
+                    // Return true to indicate layout was already published (no action needed)
                     return CommandResult<bool>.Success(true);
                 }
 
@@ -70,7 +70,7 @@ namespace Sky.Editor.Features.Layouts.Publish
                 layout.Published = DateTimeOffset.UtcNow;
 
                 var others = await dbContext.Layouts
-                    .Where(w => w.Id != command.LayoutId && w.IsDefault)
+                    .Where(w => w.Id != command.LayoutId && w.Published != null)
                     .ToListAsync(cancellationToken);
 
                 foreach (var item in others)

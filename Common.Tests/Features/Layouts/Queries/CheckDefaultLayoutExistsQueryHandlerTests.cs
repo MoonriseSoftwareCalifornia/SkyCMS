@@ -125,15 +125,41 @@ namespace Cosmos.Common.Tests.Features.Layouts.Queries
         }
 
         [TestMethod]
-        public async Task HandleAsync_WithNonDefaultLayout_ShouldReturnFalse()
+        public async Task HandleAsync_WithPublishedLayoutButIsDefaultFalse_ShouldSelfHealAndReturnTrue()
         {
             using var context = GetIsolatedContext();
             var layout = new Layout
             {
                 Id = Guid.NewGuid(),
-                LayoutName = "Non-Default Layout",
+                LayoutName = "Published Layout",
                 IsDefault = false,
                 Published = DateTimeOffset.UtcNow.AddDays(-1)
+            };
+            context.Layouts.Add(layout);
+            await context.SaveChangesAsync();
+
+            var handler = new CheckDefaultLayoutExistsQueryHandler(context);
+            var query = new CheckDefaultLayoutExistsQuery();
+
+            var result = await handler.HandleAsync(query);
+
+            Assert.IsTrue(result);
+
+            // Verify self-healing: IsDefault should now be true in the database
+            var healed = await context.Layouts.FindAsync(layout.Id);
+            Assert.IsTrue(healed.IsDefault, "Self-healing should set IsDefault to true");
+        }
+
+        [TestMethod]
+        public async Task HandleAsync_WithUnpublishedLayout_ShouldReturnFalse()
+        {
+            using var context = GetIsolatedContext();
+            var layout = new Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutName = "Draft Layout",
+                IsDefault = false,
+                Published = null
             };
             context.Layouts.Add(layout);
             await context.SaveChangesAsync();

@@ -92,11 +92,13 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
             try
             {
                 // Retrieve the article
+                var blogStreamType = (int)ArticleType.BlogStream;
+                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
                 var article = await dbContext.Articles
                     .FirstOrDefaultAsync(
                         f => f.Id == command.Id &&
-                             f.ArticleType == (int)ArticleType.BlogStream &&
-                             f.StatusCode != (int)StatusCodeEnum.Deleted,
+                             f.ArticleType == blogStreamType &&
+                             f.StatusCode != deletedStatusCode,
                         cancellationToken);
 
                 if (article == null)
@@ -207,10 +209,12 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
             CancellationToken cancellationToken)
         {
             // Get all blog posts that belong to this stream (by old BlogKey)
+            var blogPostType = (int)ArticleType.BlogPost;
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
             var blogPosts = await dbContext.Articles
                 .Where(a => a.BlogKey == oldBlogKey &&
-                            a.ArticleType == (int)ArticleType.BlogPost &&
-                            a.StatusCode != (int)StatusCodeEnum.Deleted)
+                            a.ArticleType == blogPostType &&
+                            a.StatusCode != deletedStatusCode)
                 .ToListAsync(cancellationToken);
 
             foreach (var post in blogPosts)
@@ -243,10 +247,12 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
             await articleLogic.PublishArticle(blogStream.Id, publishDate);
 
             // Publish all child blog posts with the same publish date
+            var blogPostType = (int)ArticleType.BlogPost;
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
             var blogPosts = await dbContext.Articles
                 .Where(a => a.BlogKey == blogStream.BlogKey &&
-                            a.ArticleType == (int)ArticleType.BlogPost &&
-                            a.StatusCode != (int)StatusCodeEnum.Deleted)
+                            a.ArticleType == blogPostType &&
+                            a.StatusCode != deletedStatusCode)
                 .ToListAsync(cancellationToken);
 
             foreach (var post in blogPosts)
@@ -270,10 +276,12 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
             CancellationToken cancellationToken)
         {
             // Get all blog posts that belong to this stream
+            var blogPostType = (int)ArticleType.BlogPost;
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
             var blogPosts = await dbContext.Articles
                 .Where(a => a.BlogKey == blogKey &&
-                            a.ArticleType == (int)ArticleType.BlogPost &&
-                            a.StatusCode != (int)StatusCodeEnum.Deleted)
+                            a.ArticleType == blogPostType &&
+                            a.StatusCode != deletedStatusCode)
                 .ToListAsync(cancellationToken);
 
             // Unpublish all posts

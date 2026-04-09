@@ -360,8 +360,9 @@ namespace Sky.Cms.Controllers
                 return Json(await queryService.QueryWithGroupByAsync(query));
             }
 
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
             var data = await dbContext.Articles
-                .Where(w => w.StatusCode == (int)StatusCodeEnum.Deleted)
+                .Where(w => w.StatusCode == deletedStatusCode)
                 .GroupBy(g => new { g.ArticleNumber, g.Title, g.UrlPath })
                 .Select(s => new
                 {
@@ -986,6 +987,7 @@ namespace Sky.Cms.Controllers
         public async Task<IActionResult> CcmsContent(int id)
         {
             var invalidModelState = GetInvalidModelStateResult();
+
             if (invalidModelState != null)
             {
                 return invalidModelState;
@@ -1482,10 +1484,11 @@ namespace Sky.Cms.Controllers
             }
             else
             {
+                var activeStatusCode = (int)StatusCodeEnum.Active;
                 var query = publishedOnly ? dbContext.Articles
-                    .Where(a => a.Published != null && a.StatusCode == (int)StatusCodeEnum.Active && a.ArticleType != blogPostArticleType) :
+                    .Where(a => a.Published != null && a.StatusCode == activeStatusCode && a.ArticleType != blogPostArticleType) :
                     dbContext.Articles
-                    .Where(a => a.StatusCode == (int)StatusCodeEnum.Active && a.ArticleType == 0);
+                    .Where(a => a.StatusCode == activeStatusCode && a.ArticleType == 0);
 
                 if (!string.IsNullOrEmpty(term))
                 {
@@ -1724,7 +1727,8 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            var redirect = await dbContext.Articles.FirstOrDefaultAsync(f => f.Id == id && f.StatusCode == (int)StatusCodeEnum.Redirect);
+            var redirectStatusCode = (int)StatusCodeEnum.Redirect;
+            var redirect = await dbContext.Articles.FirstOrDefaultAsync(f => f.Id == id && f.StatusCode == redirectStatusCode);
             if (redirect == null)
             {
                 return NotFound();
@@ -1829,7 +1833,8 @@ namespace Sky.Cms.Controllers
             PopulateSortPagingViewData(sortOrder, currentSort, pageNo, pageSize);
 
             var reserved = await reservedPaths.GetReservedPaths();
-            var existingUrls = await dbContext.Articles.Where(w => w.StatusCode == (int)StatusCodeEnum.Active).Select(s => s.Title).Distinct().ToListAsync();
+            var activeStatusCode = (int)StatusCodeEnum.Active;
+            var existingUrls = await dbContext.Articles.Where(w => w.StatusCode == activeStatusCode).Select(s => s.Title).Distinct().ToListAsync();
             existingUrls.AddRange(reserved.Select(s => s.Path));
             ViewData["reservedPaths"] = existingUrls;
 

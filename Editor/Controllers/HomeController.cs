@@ -10,6 +10,7 @@ namespace Sky.Cms.Controllers
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Articles.EditorQueries;
+    using Cosmos.Common.Features.Layouts.Queries;
     using Cosmos.Common.Models;
     using HtmlAgilityPack;
     using Microsoft.AspNetCore.Authorization;
@@ -169,6 +170,27 @@ namespace Sky.Cms.Controllers
             // This is NOT a preview, so we need to load the article by URL. If it doesn't exist, we need to load the not found page.
             if (string.IsNullOrEmpty(previewType))
             {
+                // Ensure a default layout is configured before attempting to render.
+                var hasDefaultLayout = await articleQueries.QueryAsync(new CheckDefaultLayoutExistsQuery());
+                if (!hasDefaultLayout)
+                {
+                    var layoutCount = await dbContext.Layouts.Where(w => w.Published != null).CountAsync();
+                    if (layoutCount == 1)
+                    {
+                        // Auto-heal: exactly one layout exists but isn't published — publish it now.
+                        var singleLayout = await dbContext.Layouts.FirstAsync();
+                        singleLayout.IsDefault = true;
+                        singleLayout.Published = DateTimeOffset.UtcNow;
+                        await dbContext.SaveChangesAsync();
+                    }
+                    else if (layoutCount > 1)
+                    {
+                        // Multiple layouts with no published layout — ask the user to choose one.
+                        TempData["StatusMessage"] = "Please publish a layout before using the editor.";
+                        return Redirect("/Layouts/Index");
+                    }
+                }
+
                 ViewData["LoadEditList"] = true;
                 ViewData["IsPreview"] = false;
 

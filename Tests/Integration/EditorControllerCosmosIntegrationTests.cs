@@ -17,6 +17,8 @@ namespace Sky.Tests.Integration
     using System;
     using System.Collections;
     using System.Linq;
+    using System.Net.Http;
+    using System.Net;
     using System.Security.Claims;
     using System.Threading.Tasks;
 
@@ -48,8 +50,32 @@ namespace Sky.Tests.Integration
                 Assert.Inconclusive("Cosmos integration test skipped: 'ConnectionStrings:CosmosDB' is not configured.");
             }
 
+            // Fast DNS pre-check: avoid waiting for Cosmos SDK's slow retry mechanism
+            var endpointMatch = System.Text.RegularExpressions.Regex.Match(
+                cosmosConnectionString!, @"AccountEndpoint=https?://([^:/]+)");
+            if (endpointMatch.Success)
+            {
+                var host = endpointMatch.Groups[1].Value;
+                try
+                {
+                    await Dns.GetHostEntryAsync(host);
+                }
+                catch (System.Net.Sockets.SocketException ex)
+                {
+                    Assert.Inconclusive($"Cosmos integration test skipped: DNS resolution failed for '{host}'. {ex.Message}");
+                }
+            }
+
             cosmosDb = new ApplicationDbContext(cosmosConnectionString!);
-            await cosmosDb.Database.EnsureCreatedAsync();
+
+            try
+            {
+                await cosmosDb.Database.EnsureCreatedAsync();
+            }
+            catch (HttpRequestException ex)
+            {
+                Assert.Inconclusive($"Cosmos integration test skipped: endpoint unreachable. {ex.Message}");
+            }
 
             controller = new EditorController(
                 Logger,
@@ -90,17 +116,26 @@ namespace Sky.Tests.Integration
         {
             if (cosmosDb != null)
             {
-                var testArticles = await cosmosDb.Articles
-                    .Where(a => a.Title.StartsWith(testTitlePrefix))
-                    .ToListAsync();
-
-                if (testArticles.Count > 0)
+                try
                 {
-                    cosmosDb.Articles.RemoveRange(testArticles);
-                    await cosmosDb.SaveChangesAsync();
-                }
+                    var testArticles = await cosmosDb.Articles
+                        .Where(a => a.Title.StartsWith(testTitlePrefix))
+                        .ToListAsync();
 
-                await cosmosDb.DisposeAsync();
+                    if (testArticles.Count > 0)
+                    {
+                        cosmosDb.Articles.RemoveRange(testArticles);
+                        await cosmosDb.SaveChangesAsync();
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    // Cosmos DB endpoint unreachable — nothing to clean up.
+                }
+                finally
+                {
+                    await cosmosDb.DisposeAsync();
+                }
             }
         }
 

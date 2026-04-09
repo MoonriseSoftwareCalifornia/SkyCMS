@@ -55,10 +55,11 @@ namespace Sky.Editor.Services.Redirects
             }
 
             // Check if a redirect from this fromSlug already exists
+            var redirectStatusCode = (int)StatusCodeEnum.Redirect;
             var existingRedirect = await db.Articles
                 .FirstOrDefaultAsync(a =>
                     a.UrlPath == fromSlug.TrimEnd('/') &&
-                    a.StatusCode == (int)StatusCodeEnum.Redirect);
+                    a.StatusCode == redirectStatusCode);
 
             if (existingRedirect != null)
             {

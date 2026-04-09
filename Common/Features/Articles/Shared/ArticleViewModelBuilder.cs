@@ -130,16 +130,16 @@ public class ArticleViewModelBuilder : IArticleViewModelBuilder
     {
         if (memoryCache == null || layoutCache == null)
         {
-            return await mediator.QueryAsync(new GetDefaultLayoutQuery());
+            return await mediator.QueryAsync(new GetDefaultLayoutQuery()) ?? new LayoutViewModel();
         }
 
         if (!memoryCache.TryGetValue("defLayout", out LayoutViewModel model))
         {
-            model = await mediator.QueryAsync(new GetDefaultLayoutQuery());
+            model = await mediator.QueryAsync(new GetDefaultLayoutQuery()) ?? new LayoutViewModel();
             memoryCache.Set("defLayout", model, layoutCache.Value);
         }
 
-        return model;
+        return model ?? new LayoutViewModel();
     }
 
     /// <summary>

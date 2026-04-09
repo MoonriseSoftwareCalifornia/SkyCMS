@@ -176,10 +176,11 @@ namespace Sky.Editor.Services.Scheduling
             // Note: EF Core for Cosmos DB does not support grouping and counting directly in the database for
             // this scenario, so we retrieve the article numbers first and then filter in-memory.
             // Find all article numbers that have 2+ versions with non-null Published dates
+            var deletedStatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted;
             var articleNumbers = await dbContext.Articles
                 .Where(a => a.Published != null
                             && a.Published <= now
-                            && a.StatusCode != (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted)
+                            && a.StatusCode != deletedStatusCode)
                 .Select(a => a.ArticleNumber)
                 .ToListAsync();
 
@@ -218,10 +219,11 @@ namespace Sky.Editor.Services.Scheduling
         {
             try
             {
+                var deletedStatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted;
                 var versions = await dbContext.Articles
                     .Where(a => a.ArticleNumber == articleNumber
                     && a.Published != null && a.Published <= now
-                    && a.StatusCode != (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted)
+                    && a.StatusCode != deletedStatusCode)
                     .OrderByDescending(a => a.Published)
                     .ThenByDescending(a => a.VersionNumber)
                     .ToListAsync();

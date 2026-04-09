@@ -63,7 +63,8 @@ namespace Sky.Editor.Features.Layouts.Create
 
                 var layout = new Layout
                 {
-                    IsDefault = false,
+                    IsDefault = layoutCount == 0,
+                    Published = layoutCount == 0 ? DateTimeOffset.UtcNow : (DateTimeOffset?)null,
                     LayoutName = $"{NewLayoutPrefix} {layoutCount}",
                     Notes = NewLayoutNotes,
                     LayoutNumber = maxLayoutNumber + 1,

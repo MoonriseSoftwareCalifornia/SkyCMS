@@ -68,10 +68,11 @@ namespace Cosmos.Common.Features.Blogs.Queries
 
             // Fetch the blog post from database
             var now = DateTimeOffset.UtcNow;
+            var blogPostType = (int)Cosmos.Cms.Common.ArticleType.BlogPost;
             var blogPost = await dbContext.Articles
                 .AsNoTracking()
                 .Where(a => a.UrlPath == normalizedUrlPath &&
-                            a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogPost &&
+                            a.ArticleType == blogPostType &&
                             a.Published.HasValue &&
                             a.Published <= now)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -99,10 +100,11 @@ namespace Cosmos.Common.Features.Blogs.Queries
             // Fetch the parent blog stream info
             if (!string.IsNullOrWhiteSpace(blogPost.BlogKey))
             {
+                var blogStreamType = (int)Cosmos.Cms.Common.ArticleType.BlogStream;
                 var parentStream = await dbContext.Articles
                     .AsNoTracking()
                     .Where(a => a.BlogKey == blogPost.BlogKey &&
-                                a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogStream &&
+                                a.ArticleType == blogStreamType &&
                                 a.Published.HasValue &&
                                 a.Published <= now)
                     .FirstOrDefaultAsync(cancellationToken);
@@ -142,12 +144,13 @@ namespace Cosmos.Common.Features.Blogs.Queries
         {
             var navigation = new BlogPostNavigation();
             var now = DateTimeOffset.UtcNow;
+            var blogPostType = (int)Cosmos.Cms.Common.ArticleType.BlogPost;
 
             // Get previous post (newer - published after current)
             var previousPost = await dbContext.Articles
                 .AsNoTracking()
                 .Where(a => a.BlogKey == blogKey &&
-                            a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogPost &&
+                            a.ArticleType == blogPostType &&
                             a.Published.HasValue &&
                             a.Published <= now &&
                             a.Published > currentPostDate)
@@ -168,7 +171,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
             var nextPost = await dbContext.Articles
                 .AsNoTracking()
                 .Where(a => a.BlogKey == blogKey &&
-                            a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogPost &&
+                            a.ArticleType == blogPostType &&
                             a.Published.HasValue &&
                             a.Published < currentPostDate)
                 .OrderByDescending(a => a.Published)

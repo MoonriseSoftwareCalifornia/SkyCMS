@@ -65,10 +65,11 @@ namespace Cosmos.Common.Features.Blogs.Queries
 
             // Fetch all published posts in this blog stream, ordered by publication date (newest first)
             var now = DateTimeOffset.UtcNow;
+            var blogPostType = (int)Cosmos.Cms.Common.ArticleType.BlogPost;
             var allPosts = await dbContext.Pages
                 .AsNoTracking()
                 .Where(a => a.BlogKey == normalizedBlogKey &&
-                            a.ArticleType == (int)Cosmos.Cms.Common.ArticleType.BlogPost &&
+                            a.ArticleType == blogPostType &&
                             a.Published.HasValue &&
                             a.Published <= now)
                 .OrderByDescending(a => a.Published)

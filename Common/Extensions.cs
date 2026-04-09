@@ -11,8 +11,11 @@ namespace Cosmos.Common
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.DataProtection;
+    using Microsoft.AspNetCore.DataProtection.KeyManagement.Internal;
+    using Microsoft.AspNetCore.DataProtection.Repositories;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Service collection extensions for FlexDb data protection.
@@ -36,11 +39,29 @@ namespace Cosmos.Common
             }
 
             var builder = CosmosDbOptionsBuilder.GetDbOptionsBuilder<DataProtectionDbContext>(connectionString);
-            var dbContext = new DataProtectionDbContext(builder.Options);
-            _ = dbContext.Database.EnsureCreatedAsync().GetAwaiter().GetResult();
-            services.AddSingleton<DataProtectionDbContext>(dbContext);
+            
+            // Ensure database schema exists (one-time initialization)
+            using (var initContext = new DataProtectionDbContext(builder.Options))
+            {
+                _ = initContext.Database.EnsureCreatedAsync().GetAwaiter().GetResult();
+            }
+
+            // Register as singleton. Singleton is required by the data protection framework.
+            var contextInstance = new DataProtectionDbContext(builder.Options);
+            services.AddSingleton<DataProtectionDbContext>(contextInstance);
+            
+            // Configure data protection with the context AND register resilient XML repository
+            // to handle Cosmos DB conflicts gracefully (409 errors when concurrent requests
+            // try to create the same key).
             services.AddDataProtection()
-                .PersistKeysToDbContext<DataProtectionDbContext>();
+                .PersistKeysToDbContext<DataProtectionDbContext>()
+                .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
+
+            // Override with resilient repository that handles 409 conflicts
+            services.AddSingleton<IXmlRepository>(sp =>
+                new ResilientEntityFrameworkCoreXmlRepository<DataProtectionDbContext>(
+                    sp,
+                    sp.GetRequiredService<ILoggerFactory>()));
         }
     }
 }

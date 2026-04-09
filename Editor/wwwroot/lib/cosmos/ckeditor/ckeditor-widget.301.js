@@ -45,7 +45,7 @@ import {
 } from 'ckeditor5';
 
 import {
-    CkEditorCopilot,
+    Copilot,
     FileLink,
     InsertImage,
     PageLink,
@@ -178,7 +178,7 @@ const EditorConfig = {
         TextTransformation,
         TodoList,
         Underline,
-        CkEditorCopilot,
+        Copilot,
         FileLink,
         InsertImage,
         PageLink,

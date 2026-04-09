@@ -34,11 +34,11 @@ namespace Sky.Editor.Extensions
         }
 
         /// <summary>
-        /// Gets only published (default) layouts.
+        /// Gets only published layouts (those with a Published date set).
         /// </summary>
         public static IQueryable<Layout> Published(this IQueryable<Layout> query)
         {
-            return query.Where(l => l.IsDefault && l.Published.HasValue);
+            return query.Where(l => l.Published.HasValue);
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Sky.Editor.Extensions
         /// </summary>
         public static IQueryable<Layout> Drafts(this IQueryable<Layout> query)
         {
-            return query.Where(l => !l.IsDefault || !l.Published.HasValue);
+            return query.Where(l => !l.Published.HasValue);
         }
 
         /// <summary>

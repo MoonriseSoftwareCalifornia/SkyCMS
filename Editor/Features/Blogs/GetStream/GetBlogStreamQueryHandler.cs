@@ -63,10 +63,12 @@ namespace Sky.Editor.Features.Blogs.GetStream
             try
             {
                 // Get the latest version of the blog stream article
+                var blogStreamType = (int)ArticleType.BlogStream;
+                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
                 var article = await dbContext.Articles
                     .Where(a => a.Id == query.Id &&
-                                a.ArticleType == (int)ArticleType.BlogStream &&
-                                a.StatusCode != (int)StatusCodeEnum.Deleted)
+                                a.ArticleType == blogStreamType &&
+                                a.StatusCode != deletedStatusCode)
                     .OrderByDescending(a => a.VersionNumber)
                     .FirstOrDefaultAsync(cancellationToken);
 

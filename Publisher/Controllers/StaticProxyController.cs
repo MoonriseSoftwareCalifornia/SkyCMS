@@ -206,6 +206,7 @@ public class StaticProxyController : Controller
 
         // Check if this could be a SPA route by examining segments
         // We need to check multiple potential article URLs as the path could be nested
+        var spaAppType = (int)ArticleType.SpaApp;
         for (int i = segments.Length; i > 0; i--)
         {
             var potentialArticleUrl = "/" + string.Join("/", segments.Take(i));
@@ -226,7 +227,7 @@ public class StaticProxyController : Controller
             {
                 // Query database to check if this URL is a SPA article
                 var publishedPage = await this.dbContext.Pages
-                    .Where(p => p.UrlPath == potentialArticleUrl && p.ArticleType == (int)ArticleType.SpaApp)
+                    .Where(p => p.UrlPath == potentialArticleUrl && p.ArticleType == spaAppType)
                     .Select(p => new { p.UrlPath, p.ArticleType })
                     .FirstOrDefaultAsync();
 

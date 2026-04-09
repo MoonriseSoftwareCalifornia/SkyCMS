@@ -105,7 +105,7 @@ namespace Sky.Editor.Services.Layout
                 var layouts = await GetLayoutFamilyAsync(layoutNumber);
                 if (!layouts.Any()) return null;
 
-                var publishedVersion = layouts.FirstOrDefault(l => l.IsDefault);
+                var publishedVersion = layouts.FirstOrDefault(l => l.Published.HasValue);
                 var latestVersion = layouts.OrderByDescending(l => l.Version).First();
 
                 return new LayoutFamilyInfo
@@ -179,7 +179,7 @@ namespace Sky.Editor.Services.Layout
                     return false;
                 }
 
-                if (layout.IsDefault && layout.Published.HasValue) return true;
+                if (layout.Published.HasValue) return true;
 
                 var familyLayouts = await GetLayoutFamilyAsync(layout.LayoutNumber);
                 foreach (var familyLayout in familyLayouts.Where(l => l.Id != layoutId))
@@ -217,7 +217,7 @@ namespace Sky.Editor.Services.Layout
                     return false;
                 }
 
-                if (layout.IsDefault)
+                if (layout.Published.HasValue)
                 {
                     logger.LogWarning(
                         "Cannot delete published layout {LayoutId} (LayoutNumber: {LayoutNumber})",
@@ -262,13 +262,13 @@ namespace Sky.Editor.Services.Layout
                     {
                         LayoutNumber = g.Key,
                         FamilyName = g.First().LayoutName ?? $"Layout {g.Key}",
-                        IsActive = g.Any(l => l.IsDefault),
+                        IsActive = g.Any(l => l.Published.HasValue),
                         Versions = g.Select(v => new LayoutVersionOption
                         {
                             Id = v.Id,
                             Version = v.Version ?? 0,
                             DisplayName = $"{v.LayoutName} (v{v.Version})",
-                            IsPublished = v.IsDefault,
+                            IsPublished = v.Published.HasValue,
                             LastModified = v.LastModified ?? DateTimeOffset.MinValue
                         }).ToList()
                     })

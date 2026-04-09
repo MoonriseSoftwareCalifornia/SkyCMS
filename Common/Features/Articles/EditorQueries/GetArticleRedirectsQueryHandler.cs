@@ -44,6 +44,8 @@ public class GetArticleRedirectsQueryHandler : IQueryHandler<GetArticleRedirects
         GetArticleRedirectsQuery query,
         CancellationToken cancellationToken = default)
     {
+        var redirectStatusCode = (int)StatusCodeEnum.Redirect;
+
         if (memoryCache != null && query.CacheDuration != null)
         {
             var cacheKey = CacheKeys.ArticleRedirects;
@@ -53,7 +55,7 @@ public class GetArticleRedirectsQueryHandler : IQueryHandler<GetArticleRedirects
             }
 
             var redirects = await dbContext.Articles
-                .Where(p => p.StatusCode == (int)StatusCodeEnum.Redirect)
+                .Where(p => p.StatusCode == redirectStatusCode)
                 .Select(p => new RedirectItemViewModel
                 {
                     Id = p.Id,
@@ -68,7 +70,7 @@ public class GetArticleRedirectsQueryHandler : IQueryHandler<GetArticleRedirects
         }
 
         return await dbContext.Articles
-            .Where(p => p.StatusCode == (int)StatusCodeEnum.Redirect)
+            .Where(p => p.StatusCode == redirectStatusCode)
             .Select(p => new RedirectItemViewModel
             {
                 Id = p.Id,

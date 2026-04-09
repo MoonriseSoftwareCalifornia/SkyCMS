@@ -77,8 +77,9 @@ namespace Sky.Editor.Services.BlogPublishing
         {
             logger.LogInformation("Publishing blog stream for blog key: {BlogKey}", blog.BlogKey);
 
+            var blogStreamType = (int)ArticleType.BlogStream;
             var article = await context.Database.Articles
-                .Where(a => a.BlogKey == blog.BlogKey && a.ArticleType == (int)ArticleType.BlogStream)
+                .Where(a => a.BlogKey == blog.BlogKey && a.ArticleType == blogStreamType)
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync(cancellationToken);
 

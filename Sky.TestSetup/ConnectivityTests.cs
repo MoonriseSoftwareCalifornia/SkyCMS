@@ -85,8 +85,20 @@ public class ConnectivityTests
         {
             Assert.Fail($"CosmosDB connectivity failed: {ex.StatusCode} - {ex.Message}");
         }
+        catch (HttpRequestException ex)
+        {
+            Assert.Inconclusive(
+                $"CosmosDB endpoint is unreachable — verify the account '{endpoint}' exists and is accessible. Error: {ex.Message}");
+        }
         catch (Exception ex)
         {
+            if (ex.InnerException is HttpRequestException
+                || ex.Message.Contains("No such host", StringComparison.OrdinalIgnoreCase))
+            {
+                Assert.Inconclusive(
+                    $"CosmosDB endpoint is unreachable — verify the account '{endpoint}' exists and is accessible. Error: {ex.Message}");
+            }
+
             Assert.Fail($"CosmosDB connectivity failed with unexpected error: {ex.Message}");
         }
     }

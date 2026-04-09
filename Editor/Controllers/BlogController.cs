@@ -338,31 +338,50 @@ namespace Sky.Editor.Controllers
                 return BadRequest();
             }
 
-            var blog = await db.Articles.FirstOrDefaultAsync(b => b.BlogKey == blogKey);
+            var blog = await GetLatestStreamArticleAsync(blogKey);
             if (blog == null)
             {
                 return NotFound();
             }
 
-            var entries = await db.ArticleCatalog
-                .Where(c => c.BlogKey == blogKey)
-                .Join(db.Articles,
-                    catalog => catalog.ArticleNumber,
-                    article => article.ArticleNumber,
-                    (catalog, article) => new { Catalog = catalog, Article = article })
-                .Where(x => x.Article.ArticleType == (int)ArticleType.BlogPost)
-                .Select(x => new BlogEntryListItem
+            // Cosmos DB does not support cross-entity joins. Query Articles directly
+            // (same pattern as GetEntries), group by ArticleNumber, and take the
+            // latest version of each blog post.
+            var deletedEnum = (int)StatusCodeEnum.Deleted;
+            var blogStreamArticleNumber = blog.ArticleNumber;
+            var rawEntries = await db.Articles
+                .Where(c => c.BlogKey == blogKey
+                    && c.ArticleNumber != blogStreamArticleNumber
+                    && c.StatusCode != deletedEnum)
+                .Select(c => new
                 {
-                    BlogKey = x.Catalog.BlogKey,
-                    ArticleNumber = x.Catalog.ArticleNumber,
-                    Title = x.Catalog.Title,
-                    Published = x.Catalog.Published,
-                    Updated = x.Catalog.Updated,
-                    UrlPath = x.Catalog.UrlPath,
-                    Introduction = x.Catalog.Introduction,
-                    BannerImage = x.Catalog.BannerImage
+                    c.BlogKey,
+                    c.ArticleNumber,
+                    c.Title,
+                    c.Published,
+                    c.Updated,
+                    c.UrlPath,
+                    c.Introduction,
+                    c.BannerImage,
+                    c.VersionNumber
                 })
                 .ToListAsync();
+
+            var entries = rawEntries
+                .GroupBy(e => e.ArticleNumber)
+                .Select(g => g.OrderByDescending(e => e.VersionNumber).First())
+                .Select(c => new BlogEntryListItem
+                {
+                    BlogKey = c.BlogKey,
+                    ArticleNumber = c.ArticleNumber,
+                    Title = c.Title,
+                    Published = c.Published,
+                    Updated = c.Updated,
+                    UrlPath = c.UrlPath,
+                    Introduction = c.Introduction,
+                    BannerImage = c.BannerImage
+                })
+                .ToList();
 
             var vm = new BlogEntriesListViewModel
             {

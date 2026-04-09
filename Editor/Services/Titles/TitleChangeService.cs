@@ -160,11 +160,12 @@ namespace Sky.Editor.Services.Titles
                 }
 
                 // Validate that the new slug doesn't conflict with existing articles
+                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
                 var slugConflict = await db.Articles
                     .AnyAsync(a =>
                         a.ArticleNumber != article.ArticleNumber &&
                         a.UrlPath == newSlug &&
-                        a.StatusCode != (int)StatusCodeEnum.Deleted);
+                        a.StatusCode != deletedStatusCode);
 
                 if (slugConflict)
                 {
@@ -333,14 +334,15 @@ namespace Sky.Editor.Services.Titles
             }
 
             // Check for title conflicts with other existing articles
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
             Article existingArticle = articleNumber.HasValue
                 ? await db.Articles.FirstOrDefaultAsync(a =>
                     a.ArticleNumber != articleNumber &&
                     a.Title.ToLower() == normalizedTitle.ToLower() &&
-                    a.StatusCode != (int)StatusCodeEnum.Deleted)
+                    a.StatusCode != deletedStatusCode)
                 : await db.Articles.FirstOrDefaultAsync(a =>
                     a.Title.ToLower() == normalizedTitle.ToLower() &&
-                    a.StatusCode != (int)StatusCodeEnum.Deleted);
+                    a.StatusCode != deletedStatusCode);
 
             return existingArticle == null;
         }
@@ -391,8 +393,9 @@ namespace Sky.Editor.Services.Titles
             List<UrlChange> changedUrls)
         {
             // Find all blog posts associated with the old blog key
+            var blogPostType = (int)ArticleType.BlogPost;
             var blogEntries = await db.Articles
-                .Where(a => a.BlogKey == oldBlogKey && a.ArticleType == (int)ArticleType.BlogPost)
+                .Where(a => a.BlogKey == oldBlogKey && a.ArticleType == blogPostType)
                 .ToListAsync();
 
             // Update each blog entry to use the new blog key and recalculated URL
@@ -636,8 +639,9 @@ namespace Sky.Editor.Services.Titles
 
                     // Update any existing redirects that point TO the old URL to point to the final destination
                     // This prevents redirect chains when an article's title changes multiple times
+                    var redirectStatusCode = (int)StatusCodeEnum.Redirect;
                     var incomingRedirects = await db.Articles
-                        .Where(a => a.StatusCode == (int)StatusCodeEnum.Redirect &&
+                        .Where(a => a.StatusCode == redirectStatusCode &&
                                    a.RedirectTarget == change.OldUrl)
                         .ToListAsync();
 
@@ -721,8 +725,9 @@ namespace Sky.Editor.Services.Titles
         private async Task HandleTitleChangesForChildren(Article article, string oldSlug, string newSlug, List<UrlChange> changedUrls)
         {
             // Find all articles that have the old slug as a parent (URL path starts with old slug)
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
             var childArticles = await db.Articles
-                .Where(a => a.UrlPath.StartsWith(oldSlug + "/") && a.StatusCode != (int)StatusCodeEnum.Deleted)
+                .Where(a => a.UrlPath.StartsWith(oldSlug + "/") && a.StatusCode != deletedStatusCode)
                 .ToListAsync();
 
             if (!childArticles.Any())
@@ -870,12 +875,13 @@ namespace Sky.Editor.Services.Titles
             var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var current = targetUrl;
             const int maxDepth = 10;
+            var redirectStatusCode = (int)StatusCodeEnum.Redirect;
 
             while (visited.Add(current) && visited.Count <= maxDepth)
             {
                 var redirect = await db.Articles
                     .Where(a => a.UrlPath == current &&
-                               a.StatusCode == (int)StatusCodeEnum.Redirect)
+                               a.StatusCode == redirectStatusCode)
                     .FirstOrDefaultAsync();
 
                 if (redirect == null || string.IsNullOrWhiteSpace(redirect.RedirectTarget))

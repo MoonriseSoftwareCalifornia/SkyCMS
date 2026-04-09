@@ -124,8 +124,9 @@ namespace Sky.Editor.Services.Publishing
         /// </remarks>
         public async Task<List<CdnResult>> PublishBlogStreamAsync(Article blog, CancellationToken cancellationToken = default)
         {
+            var blogStreamType = (int)ArticleType.BlogStream;
             var article = await db.Articles
-                .Where(a => a.BlogKey == blog.BlogKey && a.ArticleType == (int)ArticleType.BlogStream)
+                .Where(a => a.BlogKey == blog.BlogKey && a.ArticleType == blogStreamType)
                 .OrderByDescending(a => a.VersionNumber)
                 .FirstOrDefaultAsync();
 
@@ -227,8 +228,9 @@ namespace Sky.Editor.Services.Publishing
             await UnpublishEalierVersions(article);
 
             // Remove prior published (non-redirect) pages for this article number
+            var redirectStatusCode = (int)StatusCodeEnum.Redirect;
             var prior = await db.Pages
-                .Where(p => p.ArticleNumber == article.ArticleNumber && p.StatusCode != (int)StatusCodeEnum.Redirect)
+                .Where(p => p.ArticleNumber == article.ArticleNumber && p.StatusCode != redirectStatusCode)
                 .ToListAsync();
 
             if (prior.Any())
@@ -698,8 +700,9 @@ namespace Sky.Editor.Services.Publishing
                 v.Published = null;
             }
 
+            var redirectStatusCode = (int)StatusCodeEnum.Redirect;
             var pages = await db.Pages
-                .Where(p => p.ArticleNumber == articleNumber && p.StatusCode != (int)StatusCodeEnum.Redirect)
+                .Where(p => p.ArticleNumber == articleNumber && p.StatusCode != redirectStatusCode)
                 .ToListAsync();
 
             db.Pages.RemoveRange(pages);
