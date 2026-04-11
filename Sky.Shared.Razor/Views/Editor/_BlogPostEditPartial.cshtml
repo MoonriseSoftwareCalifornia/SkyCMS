@@ -4,7 +4,7 @@
 }
 <style>
     /* This is required only for CKEditor */
-    section[data-ccms-ceid="skycms-blog-post-content"] {
+    section[class="ck-content"] {
         display: block !important;
     }
 </style>
@@ -43,8 +43,10 @@
             <img src="@Model.BannerImage" alt="Banner image for @Model.Title" />
         }
     </figure>
-    <section ccms-content-id="@Model.Id" class="ck-content">
-        @Html.Raw(Model.Content)
+    <section class="ck-content">
+        <div data-ccms-ceid="@Model.Id">
+            @Html.Raw(Model.Content)
+        </div>
     </section>
 </article>
 <script>

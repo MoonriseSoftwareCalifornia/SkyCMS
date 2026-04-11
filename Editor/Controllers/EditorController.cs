@@ -1080,20 +1080,22 @@ namespace Sky.Cms.Controllers
                 throw new NotFoundException($"Could not find article with #: {model.ArticleNumber}.");
             }
 
+            var decryptedPayload = DecryptContent(model.Payload);
 
-            // Update content if editor region specified
-            if (!string.IsNullOrWhiteSpace(model.EditorId))
+            if (model.Command == "SaveRegion")
             {
-                var decryptedPayload = DecryptContent(model.Payload);
-                article.Content = UpdateRegionInDocument(
-                    model.EditorId,
-                    article.Content,
-                    decryptedPayload);
-            }
-            else if (model.Command == "SaveRegion")
-            {
-                // SaveRegion command without EditorId: keep content unchanged
-                // This is a no-op case - content is already loaded in 'article'
+                if (article.ArticleType == ArticleType.BlogPost)
+                {
+                    article.Content = decryptedPayload;
+                    article.BannerImage = model.BannerImage;
+                }
+                else
+                {
+                    article.Content = UpdateRegionInDocument(
+                        model.EditorId,
+                        article.Content,
+                        decryptedPayload);
+                }
             }
             else if (model.Command == "SaveBody")
             {
