@@ -1080,153 +1080,34 @@ namespace Sky.Cms.Controllers
                 throw new NotFoundException($"Could not find article with #: {model.ArticleNumber}.");
             }
 
-            var decryptedPayload = DecryptContent(model.Payload);
-
-            if (model.Command == "SaveRegion")
+            IActionResult? commandResult = model.Command switch
             {
-                if (article.ArticleType == ArticleType.BlogPost)
-                {
-                    article.Content = decryptedPayload;
-                    article.BannerImage = model.BannerImage;
-                }
-                else
-                {
-                    article.Content = UpdateRegionInDocument(
-                        model.EditorId,
-                        article.Content,
-                        decryptedPayload);
-                }
-            }
-            else if (model.Command == "SaveBody")
-            {
-                // SaveBody command: replace entire content (empty or null payload is valid)
-                article.Content = DecryptContent(model.Payload);
-            }
-            else if (model.Command == "SaveCode")
-            {
-                // SaveCode command: update content and scripts from Code Editor
-                var decryptedContent = DecryptContent(model.Payload);
-
-                // Validate no nested editable regions
-                var nestedRegionError = ValidateNoNestedEditableRegions(decryptedContent);
-                if (nestedRegionError != null)
-                {
-                    return Json(new
-                    {
-                        ServerSideSuccess = false,
-                        errors = new Dictionary<string, string[]>
-                        {
-                            ["Payload"] = new[] { nestedRegionError }
-                        }
-                    });
-                }
-
-                article.Content = decryptedContent;
-                article.HeadJavaScript = DecryptContent(model.HeadJavaScript);
-                article.FooterJavaScript = DecryptContent(model.FooterJavaScript);
-                article.Title = model.Title;
-            }
-            else if (model.Command == "SaveDesigner")
-            {
-                // SaveDesigner command: GrapesJS designer output
-                // Payload (HTML) and CssContent are encrypted in the model
-                var htmlContent = string.Empty;
-                var cssContent = string.Empty;
-
-                if (model.Payload != null)
-                {
-                    htmlContent = DecryptContent(model.Payload);
-                }
-
-                if (model.CssContent != null)
-                {
-                    cssContent = DecryptContent(model.CssContent);
-                }
-
-                // Validate no nested editable regions in HTML content
-                var nestedRegionError = ValidateNoNestedEditableRegions(htmlContent);
-                if (nestedRegionError != null)
-                {
-                    return Json(new
-                    {
-                        ServerSideSuccess = false,
-                        errors = new Dictionary<string, string[]>
-                        {
-                            ["Payload"] = new[] { nestedRegionError }
-                        }
-                    });
-                }
-
-                // Add editable markers if needed
-                htmlContent = htmlService.EnsureEditableMarkers(htmlContent);
-
-                // Assemble the final HTML output (HTML + CSS combined)
-                var designerUtils = new DesignerUtilities();
-                var assembledHtml = designerUtils.AssembleDesignerOutput(
-                    new DesignerDataViewModel
-                    {
-                        CssContent = cssContent,
-                        HtmlContent = htmlContent,
-                        Title = model.Title,
-                        Id = model.Id
-                    });
-
-                article.Content = assembledHtml;
-
-                // Update metadata from model
-                article.Title = model.Title;
-                article.BannerImage = model.BannerImage;
-                article.Category = model.Category;
-                article.Introduction = model.Introduction;
-            }
-            else if (model.Command == "SavePageProperties")
-            {
-                // SavePageProperties command: metadata-only update (preserve existing content)
-                // This allows updates to Title, BannerImage, Category, Introduction, published
-                // without changing content, scripts, etc.
-                // Content remains unchanged - will be preserved in SaveArticleCommand below
-                article.BannerImage = model.BannerImage;
-                article.Category = model.Category;
-                article.Introduction = model.Introduction;
-                article.Title = model.Title;
-                article.Published = model.Published;
-
-                // Validate Title
-                if (string.IsNullOrEmpty(model.Title))
-                {
-                    return Json(new
-                    {
-                        ServerSideSuccess = false,
-                        errors = new Dictionary<string, string[]>
-                        {
-                            ["Title"] = new[] { "Title cannot be null or empty." }
-                        }
-                    });
-                }
-            }
-            else if (string.IsNullOrWhiteSpace(model.Command))
-            {
-                // Invalid/empty command
-                return Json(new
+                "SaveRegion" => HandleSaveRegionCommand(article, model),
+                "SaveBody" => HandleSaveBodyCommand(article, model),
+                "SaveCode" => HandleSaveCodeCommand(article, model),
+                "SaveDesigner" => HandleSaveDesignerCommand(article, model),
+                "SavePageProperties" => HandleSavePagePropertiesCommand(article, model),
+                _ when string.IsNullOrWhiteSpace(model.Command) => Json(new
                 {
                     ServerSideSuccess = false,
                     errors = new Dictionary<string, string[]>
                     {
                         ["Command"] = new[] { "Command cannot be null or empty." }
                     }
-                });
-            }
-            else
-            {
-                // Unrecognized command
-                return Json(new
+                }),
+                _ => Json(new
                 {
                     ServerSideSuccess = false,
                     errors = new Dictionary<string, string[]>
                     {
                         ["Command"] = new[] { $"Unrecognized command: '{model.Command}'. Valid commands are: SaveRegion, SaveBody, SaveCode, SaveDesigner, SavePageProperties." }
                     }
-                });
+                })
+            };
+
+            if (commandResult != null)
+            {
+                return commandResult;
             }
 
             // NEW: Use SaveArticle command
@@ -2033,7 +1914,150 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Updates the HTML within an editor region no a web page.
+        /// Handles the <c>SaveRegion</c> command: updates a single editable region in the page body
+        /// or, for blog posts, replaces the entire content.
+        /// </summary>
+        /// <param name="article">Article to update.</param>
+        /// <param name="model">Editor post model.</param>
+        /// <returns><see langword="null"/> on success; an <see cref="IActionResult"/> error response otherwise.</returns>
+        private IActionResult? HandleSaveRegionCommand(ArticleViewModel article, EditPostViewModel model)
+        {
+            var decryptedPayload = DecryptContent(model.Payload);
+
+            if (article.ArticleType == ArticleType.BlogPost)
+            {
+                article.Content = decryptedPayload;
+                article.BannerImage = model.BannerImage;
+            }
+            else
+            {
+                article.Content = UpdateRegionInDocument(
+                    model.EditorId,
+                    article.Content,
+                    decryptedPayload);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Handles the <c>SaveBody</c> command: replaces the entire page content.
+        /// </summary>
+        /// <param name="article">Article to update.</param>
+        /// <param name="model">Editor post model.</param>
+        /// <returns>Always <see langword="null"/> (no early-exit errors possible).</returns>
+        private IActionResult? HandleSaveBodyCommand(ArticleViewModel article, EditPostViewModel model)
+        {
+            article.Content = DecryptContent(model.Payload);
+            return null;
+        }
+
+        /// <summary>
+        /// Handles the <c>SaveCode</c> command: updates content and script fields from the code editor.
+        /// </summary>
+        /// <param name="article">Article to update.</param>
+        /// <param name="model">Editor post model.</param>
+        /// <returns><see langword="null"/> on success; a validation error <see cref="IActionResult"/> if nested regions are detected.</returns>
+        private IActionResult? HandleSaveCodeCommand(ArticleViewModel article, EditPostViewModel model)
+        {
+            var decryptedContent = DecryptContent(model.Payload);
+
+            var nestedRegionError = ValidateNoNestedEditableRegions(decryptedContent);
+            if (nestedRegionError != null)
+            {
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    errors = new Dictionary<string, string[]>
+                    {
+                        ["Payload"] = new[] { nestedRegionError }
+                    }
+                });
+            }
+
+            article.Content = decryptedContent;
+            article.HeadJavaScript = DecryptContent(model.HeadJavaScript);
+            article.FooterJavaScript = DecryptContent(model.FooterJavaScript);
+            article.Title = model.Title;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Handles the <c>SaveDesigner</c> command: processes GrapesJS designer output and assembles the final HTML.
+        /// </summary>
+        /// <param name="article">Article to update.</param>
+        /// <param name="model">Editor post model.</param>
+        /// <returns><see langword="null"/> on success; a validation error <see cref="IActionResult"/> if nested regions are detected.</returns>
+        private IActionResult? HandleSaveDesignerCommand(ArticleViewModel article, EditPostViewModel model)
+        {
+            var htmlContent = model.Payload != null ? DecryptContent(model.Payload) : string.Empty;
+            var cssContent = model.CssContent != null ? DecryptContent(model.CssContent) : string.Empty;
+
+            var nestedRegionError = ValidateNoNestedEditableRegions(htmlContent);
+            if (nestedRegionError != null)
+            {
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    errors = new Dictionary<string, string[]>
+                    {
+                        ["Payload"] = new[] { nestedRegionError }
+                    }
+                });
+            }
+
+            htmlContent = htmlService.EnsureEditableMarkers(htmlContent);
+
+            var designerUtils = new DesignerUtilities();
+            article.Content = designerUtils.AssembleDesignerOutput(
+                new DesignerDataViewModel
+                {
+                    CssContent = cssContent,
+                    HtmlContent = htmlContent,
+                    Title = model.Title,
+                    Id = model.Id
+                });
+
+            article.Title = model.Title;
+            article.BannerImage = model.BannerImage;
+            article.Category = model.Category;
+            article.Introduction = model.Introduction;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Handles the <c>SavePageProperties</c> command: updates article metadata without touching content or scripts.
+        /// </summary>
+        /// <param name="article">Article to update.</param>
+        /// <param name="model">Editor post model.</param>
+        /// <returns><see langword="null"/> on success; a validation error <see cref="IActionResult"/> if the title is empty.</returns>
+        private IActionResult? HandleSavePagePropertiesCommand(ArticleViewModel article, EditPostViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.Title))
+            {
+                return Json(new
+                {
+                    ServerSideSuccess = false,
+                    errors = new Dictionary<string, string[]>
+                    {
+                        ["Title"] = new[] { "Title cannot be null or empty." }
+                    }
+                });
+            }
+
+            article.BannerImage = model.BannerImage;
+            article.Category = model.Category;
+            article.Introduction = model.Introduction;
+            article.Title = model.Title;
+            article.Published = model.Published;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Updates the HTML within an editor region on a web page.
         /// </summary>
         /// <param name="editorId">Editor ID on page.</param>
         /// <param name="pageBody">Page body.</param>
