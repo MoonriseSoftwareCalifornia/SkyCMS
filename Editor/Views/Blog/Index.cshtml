@@ -207,7 +207,7 @@
         modal.show();
 
         // Handle confirm button click
-        $("#confirmCreateEntry").on("click", function () {
+        $("#confirmCreateEntry").on("click", async function () {
             const titleInput = $("#entryTitle");
             const title = titleInput.val().trim();
 
@@ -218,8 +218,29 @@
 
             titleInput.removeClass("is-invalid");
 
-            // Navigate to create entry endpoint
-            window.location.href = "/editor/blogs/" + blogKey + "/entries/create/" + encodeURIComponent(title);
+            const btn = $(this);
+            btn.prop("disabled", true);
+
+            // Submit via POST to avoid GET side-effects
+            const formData = new FormData();
+            formData.append("title", title);
+
+            try {
+                const response = await fetch("/editor/blogs/" + blogKey + "/entries/create", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if ((response.ok || response.redirected) && response.url) {
+                    window.location.href = response.url;
+                } else {
+                    alert("Failed to create blog entry (HTTP " + response.status + "). Please try again.");
+                    btn.prop("disabled", false);
+                }
+            } catch (e) {
+                alert("Failed to create blog entry. Please try again.");
+                btn.prop("disabled", false);
+            }
         });
 
         // Remove validation error on input

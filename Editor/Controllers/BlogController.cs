@@ -396,13 +396,13 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Displays create entry form for a given blog.
+        /// Creates a new blog entry for a given blog.
         /// </summary>
         /// <param name="blogKey">Blog key.</param>
         /// <param name="title">Title of the blog entry.</param>
-        /// <returns>Create entry view or 404 if blog not found.</returns>
-        [HttpGet("{blogKey}/entries/create/{title}")]
-        public async Task<IActionResult> CreateEntry(string blogKey, string title)
+        /// <returns>Redirect to editor on success, or 404/400/500 on failure.</returns>
+        [HttpPost("{blogKey}/entries/create")]
+        public async Task<IActionResult> CreateEntry(string blogKey, [FromForm] string title)
         {
             var blogStreamType = (int)ArticleType.BlogStream;
             var blog = await db.Articles.FirstOrDefaultAsync(b => b.BlogKey == blogKey && b.ArticleType == blogStreamType);
