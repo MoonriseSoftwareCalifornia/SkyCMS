@@ -476,7 +476,7 @@
         "type": "CentralTransitive",
         "requested": "[10.0.5.1, )",
         "resolved": "10.0.5.1",
-        "contentHash": "57CJHsKR/1QBo7uHNrx/eRHwHlPCyJmEeCPDiIbxpLUc9OnpbvKElFuVefaS2GYxUzUxWMmeVFZx9jtmJCJN6w==",
+        "contentHash": "IhD0HhPzuxzBk3JmWHCIgxFia5SxiC4iMwkpRo5cOaw0P7rL/Flwz5QJqC3i/kR1JOJO54DVt2ZKrbz84EFD9A==",
         "dependencies": {
           "Duende.IdentityServer.EntityFramework.Storage": "7.3.1",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "10.0.5",
