@@ -498,7 +498,9 @@ function ccms___showAltTextEditor(imageElement, widgetContainer) {
  * @param {Function} onSelect - Callback when image is selected
  */
 async function ccms___showImageLibrary(widgetContainer, onSelect) {
-    const id = widgetContainer.getAttribute('data-ccms-ceid');
+    const id = widgetContainer.getAttribute('data-ccms-ceid') || '';
+    // Sanitize id for safe use in an HTML id attribute
+    const safeId = id.replace(/[^A-Za-z0-9\-\_\:\.]/g, '_');
 
     // Create modal
     const modal = document.createElement('div');
@@ -518,7 +520,7 @@ async function ccms___showImageLibrary(widgetContainer, onSelect) {
                         <input 
                             type="text" 
                             class="form-control" 
-                            id="ccms-library-search-${id}" 
+                            id="ccms-library-search-${safeId}" 
                             placeholder="Search images..."
                         />
                     </div>
