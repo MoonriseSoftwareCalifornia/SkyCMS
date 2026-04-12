@@ -48,6 +48,7 @@
 </style>
 
 <div class="pt-3">
+    @Html.AntiForgeryToken()
     <div class="container">
         <div class="row">
             <div class="col">
@@ -118,7 +119,13 @@
     }
 
     async function sendToTrash(articleNumber) {
-        const result = await fetch("@Url.Action("TrashArticle", "Editor")/" + articleNumber);
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        const result = await fetch("@Url.Action("TrashArticle", "Editor")/" + articleNumber, {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': token ?? ''
+            }
+        });
         if (result.ok) {
             pageTable.setData();
         }

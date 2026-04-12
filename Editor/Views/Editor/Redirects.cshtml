@@ -154,8 +154,19 @@
                 return true;
             }
 
-            function sendToTrash() {
-                window.location.href = "/Edit/RedirectDelete/" + redirectId;
+            async function sendToTrash() {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const result = await fetch('@Url.Action("RedirectDelete", "Editor")/' + redirectId, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': token ?? ''
+                    }
+                });
+                if (result.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to delete redirect.');
+                }
             }
         </script>
 
