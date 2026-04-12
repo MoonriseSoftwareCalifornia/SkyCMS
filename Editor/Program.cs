@@ -828,6 +828,7 @@ app.MapRazorPages();
 app.MapControllers();
 app.MapHub<PublishingProgressHub>("/hubs/publishing-progress");
 app.MapHub<LiveEditorHub>("/___cwps_hubs_live_editor");
+app.MapHub<ChatHub>("/chat");
 
 // Add this catch-all route for dynamic pages (blog streams, articles, etc.)
 app.MapFallbackToController("Index", "Home");
