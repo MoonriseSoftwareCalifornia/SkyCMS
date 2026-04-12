@@ -6,7 +6,7 @@
     "eslint": "^8.46.0"
   },
   "dependencies": {
-    "grapesjs": "^0.22.5",
+    "grapesjs": "^0.22.15",
     "grapesjs-blocks-basic": "^1.0.2",
     "grapesjs-component-code-editor": "^1.0.20",
     "grapesjs-component-countdown": "^1.0.2",
