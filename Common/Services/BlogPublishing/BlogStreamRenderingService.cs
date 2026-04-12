@@ -63,11 +63,16 @@ namespace Cosmos.Common.Services.BlogPublishing
         }
 
         /// <inheritdoc/>
-        public async Task<string> GenerateBlogPostMetadataJsonAsync(string blogKey)
+        public async Task<string> GenerateBlogPostMetadataJsonAsync(string blogKey, int maxPosts = 500)
         {
             if (string.IsNullOrWhiteSpace(blogKey))
             {
                 throw new ArgumentException("Blog key cannot be null or empty.", nameof(blogKey));
+            }
+
+            if (maxPosts <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxPosts), "maxPosts must be greater than zero.");
             }
 
             var now = DateTimeOffset.UtcNow;
@@ -81,6 +86,7 @@ namespace Cosmos.Common.Services.BlogPublishing
                     && (p.Expires == null || p.Expires > now))
                 .OrderByDescending(p => p.Published)
                 .ThenBy(p => p.Title)
+                .Take(maxPosts)
                 .Select(p => new
                 {
                     urlPath = p.UrlPath,

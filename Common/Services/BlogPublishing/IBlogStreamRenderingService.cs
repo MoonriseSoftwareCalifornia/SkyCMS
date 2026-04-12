@@ -43,6 +43,7 @@ namespace Cosmos.Common.Services.BlogPublishing
         /// Generates a JSON array of blog post metadata for a given blog stream.
         /// </summary>
         /// <param name="blogKey">The blog stream key.</param>
+        /// <param name="maxPosts">Maximum number of posts to include. Must be greater than zero. Defaults to 500.</param>
         /// <returns>JSON string with array of post metadata objects.</returns>
         /// <remarks>
         /// Returns JSON with structure:
@@ -60,8 +61,9 @@ namespace Cosmos.Common.Services.BlogPublishing
         /// ```
         /// Posts are ordered by published date (newest first), then by title for stability.
         /// Only published, non-expired posts are included.
+        /// At most <paramref name="maxPosts"/> posts are returned; defaults to 500.
         /// </remarks>
-        Task<string> GenerateBlogPostMetadataJsonAsync(string blogKey);
+        Task<string> GenerateBlogPostMetadataJsonAsync(string blogKey, int maxPosts = 500);
 
         /// <summary>
         /// Generates a standalone `<article>` snippet for a blog post.

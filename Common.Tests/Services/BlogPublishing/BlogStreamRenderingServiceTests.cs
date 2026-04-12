@@ -127,6 +127,56 @@ namespace Cosmos.Common.Tests.Services.BlogPublishing
         }
 
         [TestMethod]
+        public async Task GenerateBlogPostMetadataJsonAsync_WithZeroMaxPosts_ShouldThrowArgumentOutOfRangeException()
+        {
+            using var context = GetIsolatedContext();
+            var service = new BlogStreamRenderingService(context);
+
+            try
+            {
+                await service.GenerateBlogPostMetadataJsonAsync("blog-a", 0);
+                Assert.Fail("Expected ArgumentOutOfRangeException was not thrown");
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                Assert.AreEqual("maxPosts", ex.ParamName);
+            }
+        }
+
+        [TestMethod]
+        public async Task GenerateBlogPostMetadataJsonAsync_ShouldRespectMaxPostsLimit()
+        {
+            using var context = GetIsolatedContext();
+            var now = DateTimeOffset.UtcNow;
+
+            for (int i = 1; i <= 5; i++)
+            {
+                context.Pages.Add(new PublishedPage
+                {
+                    Id = Guid.NewGuid(),
+                    ArticleNumber = 100 + i,
+                    UrlPath = $"blog-limit/p{i}",
+                    Title = $"Post {i}",
+                    BlogKey = "blog-limit",
+                    ArticleType = (int)ArticleType.BlogPost,
+                    Published = now.AddDays(-i),
+                    Updated = now,
+                    StatusCode = 1,
+                    VersionNumber = 1
+                });
+            }
+
+            await context.SaveChangesAsync();
+
+            var service = new BlogStreamRenderingService(context);
+            var result = await service.GenerateBlogPostMetadataJsonAsync("blog-limit", 3);
+
+            var parsed = Newtonsoft.Json.JsonConvert.DeserializeObject<System.Collections.Generic.List<dynamic>>(result);
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual(3, parsed.Count);
+        }
+
+        [TestMethod]
         public async Task GenerateBlogPostMetadataJsonAsync_WithNoPosts_ShouldReturnEmptyArray()
         {
             using var context = GetIsolatedContext();
