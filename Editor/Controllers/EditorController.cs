@@ -28,7 +28,6 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.SignalR;
-    using Microsoft.Azure.Cosmos.Serialization.HybridRow;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.DependencyInjection;
@@ -348,7 +347,7 @@ namespace Sky.Cms.Controllers
         /// Gets the article trash list.
         /// </summary>
         /// <returns>Trask list.</returns>
-        [Authorize(Roles = " Administrators, Editors, Authors")]
+        [Authorize(Roles = "Administrators, Editors, Authors")]
         public async Task<IActionResult> GetTrashList()
         {
             if (dbContext.Database.IsCosmos())
@@ -650,14 +649,14 @@ namespace Sky.Cms.Controllers
                     "/Templates/Designer"
                 };
 
-                // Parse and validate the URL
-                if (!Uri.TryCreate(editorUrl, UriKind.RelativeOrAbsolute, out var uri))
+                // Reject absolute URIs to prevent open redirect attacks
+                if (Uri.TryCreate(editorUrl, UriKind.RelativeOrAbsolute, out var uri) && uri.IsAbsoluteUri)
                 {
-                    logger.LogWarning("Invalid URL format: {EditorUrl}", editorUrl);
+                    logger.LogWarning("Absolute URL rejected for redirect: {EditorUrl}", editorUrl);
                     return RedirectToAction("Index", "Editor");
                 }
 
-                var path = uri.IsAbsoluteUri ? uri.AbsolutePath : editorUrl.Split('?')[0];
+                var path = editorUrl.Split('?')[0];
 
                 if (!allowedPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -665,12 +664,18 @@ namespace Sky.Cms.Controllers
                     return RedirectToAction("Index", "Editor");
                 }
 
+                if (!Url.IsLocalUrl(editorUrl))
+                {
+                    logger.LogWarning("Non-local redirect blocked: {EditorUrl}", editorUrl);
+                    return RedirectToAction("Index", "Editor");
+                }
+
                 await articleLogic.PublishArticle(articleId, datetime);
-                return Redirect(editorUrl);
+                return LocalRedirect(editorUrl);
             }
 
             await articleLogic.PublishArticle(articleId, datetime);
-            return Redirect("/Editor/Index");
+            return LocalRedirect("/Editor/Index");
         }
 
         /// <summary>
@@ -776,6 +781,8 @@ namespace Sky.Cms.Controllers
             {
                 return invalidModelState;
             }
+
+            identityObjectIds ??= Array.Empty<string>();
 
             try
             {
@@ -1483,7 +1490,8 @@ namespace Sky.Cms.Controllers
         /// </summary>
         /// <param name="id">Article number.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpGet]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> TrashArticle(int id)
         {
             var invalidModelState = GetInvalidModelStateResult();
@@ -1578,7 +1586,8 @@ namespace Sky.Cms.Controllers
         /// </summary>
         /// <param name="id">Article ID.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpGet]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> RedirectDelete(Guid id)
         {
             var invalidModelState = GetInvalidModelStateResult();
@@ -1588,6 +1597,11 @@ namespace Sky.Cms.Controllers
             }
 
             var article = await dbContext.Articles.FirstOrDefaultAsync(f => f.Id == id);
+
+            if (article == null)
+            {
+                return NotFound();
+            }
 
             await articleLogic.DeleteArticle(article.ArticleNumber);
 
@@ -2069,6 +2083,11 @@ namespace Sky.Cms.Controllers
             originalHtmlDoc.LoadHtml(pageBody);
             var originalEditableDivs = originalHtmlDoc.DocumentNode.SelectNodes("//*[@data-ccms-ceid]");
 
+            if (originalEditableDivs == null || originalEditableDivs.Count == 0)
+            {
+                return originalHtmlDoc.DocumentNode.OuterHtml;
+            }
+
             var target = originalEditableDivs.FirstOrDefault(w => w.Attributes["data-ccms-ceid"].Value == editorId);
             if (target != null)
             {
@@ -2145,7 +2164,8 @@ namespace Sky.Cms.Controllers
         /// </summary>
         /// <param name="id">Article number.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpGet]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrators, Editors")]
         public async Task<IActionResult> TrashPermanently(int id)
         {
