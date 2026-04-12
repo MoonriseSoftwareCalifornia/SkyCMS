@@ -2057,7 +2057,7 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Updates the HTML within an editor region no a web page.
+        /// Updates the HTML within an editor region on a web page.
         /// </summary>
         /// <param name="editorId">Editor ID on page.</param>
         /// <param name="pageBody">Page body.</param>
