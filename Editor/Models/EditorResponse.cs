@@ -53,7 +53,7 @@ namespace Sky.Cms.Models
         public string ProviderName { get; set; }
 
         /// <summary>
-        /// Gets or sets success status.
+        /// Gets or sets a value indicating whether this response represents a success status code.
         /// </summary>
         public bool IsSuccessStatusCode { get; set; }
 

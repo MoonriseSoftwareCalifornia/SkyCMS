@@ -19,7 +19,7 @@ using Cosmos.Common.Features.Shared;
 public record GetLayoutByIdQuery(Guid LayoutId) : IQuery<Layout?>
 {
     /// <summary>
-    /// Gets or sets the optional cache duration for the layout.
+    /// Gets the optional cache duration for the layout.
     /// </summary>
     /// <remarks>
     /// When set, the layout will be cached for the specified duration.

@@ -21,7 +21,7 @@ namespace Sky.Cms.Models
         public bool IncludeContent { get; set; }
 
         /// <summary>
-        /// 
+        /// Gets or sets a value indicating whether to include the title in search and replace.
         /// </summary>
         [Display(Name = "Include title in search and replace?")]
         public bool IncludeTitle { get; set; }

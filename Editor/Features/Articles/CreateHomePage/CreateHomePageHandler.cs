@@ -52,6 +52,9 @@ namespace Sky.Editor.Features.Articles.CreateHomePage
         /// <summary>
         /// Handles the create home page command.
         /// </summary>
+        /// <param name="command">The command containing parameters for creating the home page.</param>
+        /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
+        /// <returns>A command result indicating success or failure.</returns>
         public async Task<CommandResult<Unit>> HandleAsync(CreateHomePageCommand command, CancellationToken cancellationToken = default)
         {
             if (command == null)

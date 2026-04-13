@@ -15,26 +15,26 @@ using System.ComponentModel.DataAnnotations;
 public class OAuth
 {
     /// <summary>
-    /// Gets or sets the client Id (Application Id) of the app.
+    /// Gets the client Id (Application Id) of the app.
     /// </summary>
     [Display(Name = "Client ID")]
     public string ClientId { get; init; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Client Secret (App Secret) of the app.
+    /// Gets the Client Secret (App Secret) of the app.
     /// </summary>
     [Display(Name = "Client Secret")]
     public string ClientSecret { get; init; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Microsoft Tenant Id.
+    /// Gets the Microsoft Tenant Id.
     /// </summary>
     /// <remarks>For single-tenant apps, this is the tenant id of the app registration.</remarks>
     [Display(Name = "Tenant ID")]
     public string TenantId { get; init; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the Callback Domain.
+    /// Gets the Callback Domain.
     /// </summary>
     /// <remarks>
     /// If you are using a proxy or firewall, such as Front Door, you may need to set this to the return domain.

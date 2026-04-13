@@ -17,37 +17,37 @@ namespace Sky.Editor.Features.Templates.Create
     public sealed class CreatePageDesignVersionCommand : ICommand<CommandResult<PageDesignVersion>>
     {
         /// <summary>
-        /// Gets or sets the template ID this version belongs to.
+        /// Gets the template ID this version belongs to.
         /// </summary>
         public Guid TemplateId { get; init; }
 
         /// <summary>
-        /// Gets or sets the layout ID.
+        /// Gets the layout ID.
         /// </summary>
         public Guid? LayoutId { get; init; }
 
         /// <summary>
-        /// Gets or sets the community layout ID.
+        /// Gets the community layout ID.
         /// </summary>
         public string CommunityLayoutId { get; init; }
 
         /// <summary>
-        /// Gets or sets the title.
+        /// Gets the title.
         /// </summary>
         public string Title { get; init; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the description.
+        /// Gets the description.
         /// </summary>
         public string Description { get; init; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the HTML content.
+        /// Gets the HTML content.
         /// </summary>
         public string Content { get; init; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the page type.
+        /// Gets the page type.
         /// </summary>
         public string PageType { get; init; } = string.Empty;
     }

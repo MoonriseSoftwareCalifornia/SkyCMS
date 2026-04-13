@@ -16,7 +16,7 @@ namespace Sky.Editor.Features.Copilot.SaveSettings
     public class SaveCopilotProxyOptionsCommand : ICommand<CommandResult<CopilotProxyOptions>>
     {
         /// <summary>
-        /// Gets or sets the options to save.
+        /// Gets the options to save.
         /// </summary>
         public CopilotProxyOptions Options { get; init; } = new CopilotProxyOptions();
     }

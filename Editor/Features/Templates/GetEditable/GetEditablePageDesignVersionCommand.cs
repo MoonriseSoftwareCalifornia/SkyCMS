@@ -17,7 +17,7 @@ namespace Sky.Editor.Features.Templates.GetEditable
     public sealed class GetEditablePageDesignVersionCommand : ICommand<CommandResult<GetEditablePageDesignVersionResult>>
     {
         /// <summary>
-        /// Gets or sets the template ID.
+        /// Gets the template ID.
         /// </summary>
         public Guid TemplateId { get; init; }
     }

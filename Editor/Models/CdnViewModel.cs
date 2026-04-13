@@ -26,7 +26,7 @@ namespace Sky.Editor.Models
         /// <summary>
         /// Initializes a new instance of the <see cref="CdnViewModel"/> class.
         /// </summary>
-        /// <param name="settings">CDN Settings List</param>
+        /// <param name="settings">CDN Settings List.</param>
         public CdnViewModel(List<CdnSetting> settings)
         {
             if (settings == null)

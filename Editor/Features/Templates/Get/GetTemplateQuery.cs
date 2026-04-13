@@ -21,17 +21,17 @@ namespace Sky.Editor.Features.Templates.Get
     public sealed class GetTemplateQuery : IQuery<CommandResult<GetTemplateQueryResult>>
     {
         /// <summary>
-        /// Gets or sets the template ID to retrieve.
+        /// Gets the template ID to retrieve.
         /// </summary>
         public Guid TemplateId { get; init; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to include page design versions.
+        /// Gets a value indicating whether to include page design versions.
         /// </summary>
         public bool IncludeVersions { get; init; } = false;
 
         /// <summary>
-        /// Gets or sets a value indicating whether to include only the latest version when IncludeVersions is true.
+        /// Gets a value indicating whether to include only the latest version when IncludeVersions is true.
         /// </summary>
         public bool LatestVersionOnly { get; init; } = false;
     }

@@ -54,7 +54,7 @@ namespace Sky.Editor.Services.CDN
         /// Purges the specified list of URLs from the CDN.
         /// </summary>
         /// <param name="purgeUrls">List of URLs to purge.</param>
-        /// <returns>CDN purge results</returns>
+        /// <returns>CDN purge results.</returns>
         /// <exception cref="ArgumentNullException">Thrown when purgeUrls is null.</exception>
         public async Task<List<CdnResult>> PurgeCdn(List<string> purgeUrls)
         {
