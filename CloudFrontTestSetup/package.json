@@ -10,7 +10,7 @@
   "devDependencies": {
     "aws-cdk": "^2.115.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^6.0.2"
   },
   "dependencies": {
     "aws-cdk-lib": "^2.248.0",
