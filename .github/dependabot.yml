@@ -1,0 +1,51 @@
+version: 2
+updates:
+  # Editor npm packages
+  - package-ecosystem: "npm"
+    directory: "/Editor"
+    schedule:
+      interval: "weekly"
+
+  # JestTests npm packages
+  - package-ecosystem: "npm"
+    directory: "/JestTests"
+    schedule:
+      interval: "weekly"
+
+  # CloudFrontTestSetup npm packages - brace-expansion is bundled inside
+  # aws-cdk-lib and cannot be updated independently; ignore it to prevent
+  # Dependabot from crashing on the bundled (no 'resolved' URL) entry.
+  - package-ecosystem: "npm"
+    directory: "/CloudFrontTestSetup"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "brace-expansion"
+
+  # AWS CDK install scripts npm packages - brace-expansion is bundled inside
+  # aws-cdk-lib and cannot be updated independently; ignore it to prevent
+  # Dependabot from crashing on the bundled (no 'resolved' URL) entry.
+  - package-ecosystem: "npm"
+    directory: "/InstallScripts/AWS/cdk"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "brace-expansion"
+
+  # CloudFlare Worker npm packages
+  - package-ecosystem: "npm"
+    directory: "/Scripts/CloudFlare/Workers/ContactUsApi"
+    schedule:
+      interval: "weekly"
+
+  # NuGet packages for .NET projects
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
