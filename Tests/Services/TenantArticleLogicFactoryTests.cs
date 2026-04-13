@@ -107,7 +107,7 @@ namespace Sky.Tests.Services
             // Use valid storage connection strings from configuration or fallback to valid formats
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             context.Connections.AddRange(
                 new Connection
@@ -166,7 +166,7 @@ namespace Sky.Tests.Services
             // Register StorageContext for single-tenant mode
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             services.AddSingleton<StorageContext>(sp => new StorageContext(
                 storageConnectionString,
@@ -333,7 +333,7 @@ namespace Sky.Tests.Services
 
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             var connection = new Connection
             {
@@ -372,7 +372,7 @@ namespace Sky.Tests.Services
 
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             var connection1 = new Connection
             {
@@ -426,7 +426,7 @@ namespace Sky.Tests.Services
             var domainName = "tenant1.com";
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             var connection = new Connection
             {
@@ -553,7 +553,7 @@ namespace Sky.Tests.Services
 
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             var connections = Enumerable.Range(1, 5).Select(i => new Connection
             {
@@ -606,7 +606,7 @@ namespace Sky.Tests.Services
 
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             var connection = new Connection
             {
@@ -655,7 +655,7 @@ namespace Sky.Tests.Services
 
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             var connection = new Connection
             {
@@ -705,7 +705,7 @@ namespace Sky.Tests.Services
 
             var storageConnectionString = _configuration.GetConnectionString("StorageConnectionString")
                 ?? _configuration.GetConnectionString("AzureBlobStorageConnectionString")
-                ?? "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+                ?? SkyCmsTestBase.AzuriteConnectionString;
 
             var connection = new Connection
             {

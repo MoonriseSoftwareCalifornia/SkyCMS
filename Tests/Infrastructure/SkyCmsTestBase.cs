@@ -57,6 +57,15 @@ namespace Sky.Tests
     /// </summary>
     public abstract class SkyCmsTestBase : IAsyncDisposable
     {
+        /// <summary>
+        /// Well-known Azurite (local Azure Storage emulator) connection string.
+        /// Used as the default storage connection when no real connection string is configured.
+        /// Azurite listens on http://127.0.0.1:10000 by default.
+        /// </summary>
+        public const string AzuriteConnectionString =
+            "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;" +
+            "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;" +
+            "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
         protected AuthorInfoService AuthorInfoService = null!;
         protected ApplicationDbContext Db;
         protected ArticleEditLogic Logic = null!;
@@ -211,29 +220,12 @@ namespace Sky.Tests
             webHostEnvironmentMock.Setup(m => m.ContentRootPath).Returns(path);
             var webHostEnvironment = webHostEnvironmentMock.Object;
 
-            // ✅ UPDATED: Configure Azure Blob Storage - use connection string from config or fail
-            var storageConnectionString = configuration.GetConnectionString("StorageConnectionString");
+            // Configure Azure Blob Storage - fall back to Azurite when no real connection string is set.
+            var storageConnectionString = configuration.GetConnectionString("StorageConnectionString")
+                ?? configuration.GetConnectionString("AzureBlobStorageConnectionString")
+                ?? AzuriteConnectionString;
 
-            // Fail fast if no connection string is provided
-            if (string.IsNullOrEmpty(storageConnectionString))
-            {
-                throw new InvalidOperationException(
-                    "Storage connection string is required. " +
-                    "Set CONNECTIONSTRINGS__STORAGECONNECTIONSTRING environment variable or add it to user secrets.");
-            }
-
-            // Initialize Storage with connection validation
-            try
-            {
-                Storage = new StorageContext(storageConnectionString, Cache);
-                Console.WriteLine("✅ Successfully connected to Azure Blob Storage");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ ERROR: Storage initialization failed: {ex.Message}");
-                Console.WriteLine($"   Connection string starts with: {storageConnectionString.Substring(0, Math.Min(50, storageConnectionString.Length))}...");
-                throw; // Fail the test immediately
-            }
+            Storage = new StorageContext(storageConnectionString, Cache);
 
             // Core service graph.
             SlugService = new SlugService();
