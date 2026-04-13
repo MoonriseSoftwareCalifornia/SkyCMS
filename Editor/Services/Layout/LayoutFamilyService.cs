@@ -24,6 +24,11 @@ namespace Sky.Editor.Services.Layout
         private readonly ApplicationDbContext dbContext;
         private readonly ILogger<LayoutFamilyService> logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LayoutFamilyService"/> class.
+        /// </summary>
+        /// <param name="dbContext">The application database context.</param>
+        /// <param name="logger">The logger instance.</param>
         public LayoutFamilyService(
             ApplicationDbContext dbContext,
             ILogger<LayoutFamilyService> logger)
@@ -32,6 +37,7 @@ namespace Sky.Editor.Services.Layout
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <inheritdoc/>
         public async Task<List<Cosmos.Common.Data.Layout>> GetLayoutFamilyAsync(int layoutNumber)
         {
             try
@@ -48,6 +54,7 @@ namespace Sky.Editor.Services.Layout
             }
         }
 
+        /// <inheritdoc/>
         public async Task<Cosmos.Common.Data.Layout?> GetLatestVersionAsync(int layoutNumber)
         {
             try
@@ -64,6 +71,7 @@ namespace Sky.Editor.Services.Layout
             }
         }
 
+        /// <inheritdoc/>
         public async Task<Cosmos.Common.Data.Layout?> GetPublishedVersionAsync(int layoutNumber)
         {
             try
@@ -80,6 +88,7 @@ namespace Sky.Editor.Services.Layout
             }
         }
 
+        /// <inheritdoc/>
         public async Task<List<int>> GetAllLayoutNumbersAsync()
         {
             try
@@ -98,12 +107,16 @@ namespace Sky.Editor.Services.Layout
             }
         }
 
+        /// <inheritdoc/>
         public async Task<LayoutFamilyInfo?> GetFamilyInfoAsync(int layoutNumber)
         {
             try
             {
                 var layouts = await GetLayoutFamilyAsync(layoutNumber);
-                if (!layouts.Any()) return null;
+                if (!layouts.Any())
+                {
+                    return null;
+                }
 
                 var publishedVersion = layouts.FirstOrDefault(l => l.Published.HasValue);
                 var latestVersion = layouts.OrderByDescending(l => l.Version).First();
@@ -125,6 +138,7 @@ namespace Sky.Editor.Services.Layout
             }
         }
 
+        /// <inheritdoc/>
         public async Task<Cosmos.Common.Data.Layout> CreateNewVersionAsync(int layoutNumber, string? userId = null)
         {
             try
@@ -157,7 +171,9 @@ namespace Sky.Editor.Services.Layout
 
                 logger.LogInformation(
                     "Created new version {Version} for layout family {LayoutNumber} (ID: {LayoutId})",
-                    newVersion.Version, layoutNumber, newVersion.Id);
+                    newVersion.Version,
+                    layoutNumber,
+                    newVersion.Id);
 
                 return newVersion;
             }
@@ -168,6 +184,7 @@ namespace Sky.Editor.Services.Layout
             }
         }
 
+        /// <inheritdoc/>
         public async Task<bool> PublishVersionAsync(Guid layoutId)
         {
             try
@@ -179,7 +196,10 @@ namespace Sky.Editor.Services.Layout
                     return false;
                 }
 
-                if (layout.Published.HasValue) return true;
+                if (layout.Published.HasValue)
+                {
+                    return true;
+                }
 
                 var familyLayouts = await GetLayoutFamilyAsync(layout.LayoutNumber);
                 foreach (var familyLayout in familyLayouts.Where(l => l.Id != layoutId))
@@ -195,7 +215,9 @@ namespace Sky.Editor.Services.Layout
 
                 logger.LogInformation(
                     "Published layout {LayoutId} (LayoutNumber: {LayoutNumber}, Version: {Version})",
-                    layoutId, layout.LayoutNumber, layout.Version);
+                    layoutId,
+                    layout.LayoutNumber,
+                    layout.Version);
 
                 return true;
             }
@@ -206,6 +228,7 @@ namespace Sky.Editor.Services.Layout
             }
         }
 
+        /// <inheritdoc/>
         public async Task<bool> DeleteVersionAsync(Guid layoutId)
         {
             try
@@ -221,7 +244,8 @@ namespace Sky.Editor.Services.Layout
                 {
                     logger.LogWarning(
                         "Cannot delete published layout {LayoutId} (LayoutNumber: {LayoutNumber})",
-                        layoutId, layout.LayoutNumber);
+                        layoutId,
+                        layout.LayoutNumber);
                     return false;
                 }
 
@@ -236,7 +260,10 @@ namespace Sky.Editor.Services.Layout
 
                 logger.LogInformation(
                     "Deleted layout {LayoutId} (LayoutNumber: {LayoutNumber}, Version: {Version}) and {TemplateCount} templates",
-                    layoutId, layout.LayoutNumber, layout.Version, templates.Count);
+                    layoutId,
+                    layout.LayoutNumber,
+                    layout.Version,
+                    templates.Count);
 
                 return true;
             }
@@ -247,6 +274,7 @@ namespace Sky.Editor.Services.Layout
             }
         }
 
+        /// <inheritdoc/>
         public async Task<List<LayoutFamilyGroup>> GetLayoutsGroupedByFamilyAsync()
         {
             try

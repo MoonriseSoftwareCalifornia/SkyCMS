@@ -17,7 +17,7 @@ using Cosmos.Common.Features.Shared;
 public record CheckDefaultLayoutExistsQuery : IQuery<bool>
 {
     /// <summary>
-    /// Gets or sets the optional cache duration for the layout existence check.
+    /// Gets the optional cache duration for the layout existence check.
     /// </summary>
     /// <remarks>
     /// When set, the result will be cached for the specified duration.

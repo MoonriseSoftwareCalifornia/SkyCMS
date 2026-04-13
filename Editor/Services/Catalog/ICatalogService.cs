@@ -32,7 +32,7 @@ namespace Sky.Editor.Services.Catalog
         /// Must contain a valid <c>ArticleNumber</c> and any fields required to project catalog metadata
         /// (e.g. Title, StatusCode, UrlPath, Published, Updated, BannerImage, Introduction, TemplateId, permissions, etc.).
         /// </param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
         /// <returns>
         /// A task that resolves to the up-to-date <see cref="CatalogEntry" /> snapshot after persistence.
         /// </returns>

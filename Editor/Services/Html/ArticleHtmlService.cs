@@ -167,7 +167,14 @@ namespace Sky.Editor.Services.Html
             }
 
             var doc = new HtmlDocument();
-            try { doc.LoadHtml(headerFragment); } catch { return headerFragment; }
+            try
+            {
+                doc.LoadHtml(headerFragment);
+            }
+            catch
+            {
+                return headerFragment;
+            }
 
             var meta = doc.DocumentNode.SelectSingleNode("//meta[@name='ccms:framework']");
             if (meta == null ||

@@ -15,14 +15,14 @@ using System.ComponentModel.DataAnnotations;
 public class AzureAD : OAuth
 {
     /// <summary>
-    /// Gets or sets the instance of the Azure AD service (if needed).
+    /// Gets the instance of the Azure AD service (if needed).
     /// </summary>
     /// <example>https://login.microsoftonline.com/.</example>
     [Display(Name = "Azure AD Instance")]
     public string Instance { get; init; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the domain of the Azure AD service (if needed).
+    /// Gets the domain of the Azure AD service (if needed).
     /// </summary>
     [Display(Name = "Domain")]
     public string Domain { get; init; } = string.Empty;

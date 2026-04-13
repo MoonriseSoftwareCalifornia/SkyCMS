@@ -58,7 +58,7 @@ namespace Sky.Editor.Services.CDN
         public static async Task<CdnService> GetCdnServiceAsync(ApplicationDbContext dbContext, ILogger logger, HttpContext context)
         {
             var data = await dbContext.Settings
-                .Where(f => f.Group == CDNGROUPNAME && f.Value != null && f.Value != "").ToListAsync();
+                .Where(f => f.Group == CDNGROUPNAME && f.Value != null && f.Value != string.Empty).ToListAsync();
 
             var cdnSettings = new List<CdnSetting>();
 

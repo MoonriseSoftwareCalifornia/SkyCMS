@@ -26,12 +26,12 @@ namespace Sky.Editor.Features.Templates.Publishing
     public sealed class PublishPageDesignVersionCommand : ICommand<CommandResult<Template>>
     {
         /// <summary>
-        /// Gets or sets the page design version ID to publish.
+        /// Gets the page design version ID to publish.
         /// </summary>
         public Guid Id { get; init; }
 
         /// <summary>
-        /// Gets or sets the user ID performing the publish operation.
+        /// Gets the user ID performing the publish operation.
         /// </summary>
         public Guid UserId { get; init; }
     }

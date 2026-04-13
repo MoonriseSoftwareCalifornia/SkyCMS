@@ -174,7 +174,7 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// File extensions that are not allowed for upload due to security concerns.
+        /// Gets the file extensions that are not allowed for upload due to security concerns.
         /// </summary>
         public static string[] DangerousFileExtensions
         {

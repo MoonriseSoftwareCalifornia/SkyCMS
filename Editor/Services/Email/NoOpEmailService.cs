@@ -28,14 +28,29 @@ namespace Sky.Editor.Services.Email
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Sends an email asynchronously. In setup mode, logs a warning and returns success without sending.
+        /// </summary>
+        /// <param name="to">The recipient email address.</param>
+        /// <param name="subject">The email subject.</param>
+        /// <param name="htmlMessage">The HTML email body.</param>
+        /// <param name="textMessage">The optional plain-text email body.</param>
+        /// <returns>A task that returns <c>true</c> to indicate the (no-op) send succeeded.</returns>
         public Task<bool> SendEmailAsync(string to, string subject, string htmlMessage, string textMessage = null)
         {
             logger.LogWarning("Email service not configured (setup mode). Email to {To} not sent: {Subject}", to, subject);
             return Task.FromResult(true); // Return success to avoid blocking setup
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Sends an email asynchronously with an explicit sender. In setup mode, logs a warning and returns success without sending.
+        /// </summary>
+        /// <param name="from">The sender email address.</param>
+        /// <param name="to">The recipient email address.</param>
+        /// <param name="subject">The email subject.</param>
+        /// <param name="htmlMessage">The HTML email body.</param>
+        /// <param name="textMessage">The optional plain-text email body.</param>
+        /// <returns>A task that returns <c>true</c> to indicate the (no-op) send succeeded.</returns>
         public Task<bool> SendEmailAsync(string from, string to, string subject, string htmlMessage, string textMessage = null)
         {
             logger.LogWarning("Email service not configured (setup mode). Email from {From} to {To} not sent: {Subject}", from, to, subject);

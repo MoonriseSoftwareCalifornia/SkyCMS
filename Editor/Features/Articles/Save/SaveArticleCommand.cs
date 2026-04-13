@@ -17,62 +17,62 @@ namespace Sky.Editor.Features.Articles.Save
     public sealed class SaveArticleCommand : ICommand<CommandResult<ArticleUpdateResult>>
     {
         /// <summary>
-        /// Gets or sets the article number (logical identifier across versions).
+        /// Gets the article number (logical identifier across versions).
         /// </summary>
         public int ArticleNumber { get; init; }
 
         /// <summary>
-        /// Gets or sets the article title.
+        /// Gets the article title.
         /// </summary>
         public string Title { get; init; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the HTML content.
+        /// Gets the HTML content.
         /// </summary>
         public string Content { get; init; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the URL path/slug.
+        /// Gets the URL path/slug.
         /// </summary>
         public string UrlPath { get; init; }
 
         /// <summary>
-        /// Gets or sets the header JavaScript.
+        /// Gets the header JavaScript.
         /// </summary>
         public string HeadJavaScript { get; init; }
 
         /// <summary>
-        /// Gets or sets the footer JavaScript.
+        /// Gets the footer JavaScript.
         /// </summary>
         public string FooterJavaScript { get; init; }
 
         /// <summary>
-        /// Gets or sets the banner image URL.
+        /// Gets the banner image URL.
         /// </summary>
         public string BannerImage { get; init; }
 
         /// <summary>
-        /// Gets or sets the article type.
+        /// Gets the article type.
         /// </summary>
         public ArticleType ArticleType { get; init; }
 
         /// <summary>
-        /// Gets or sets the category (for blog posts).
+        /// Gets the category (for blog posts).
         /// </summary>
         public string Category { get; init; }
 
         /// <summary>
-        /// Gets or sets the introduction/summary text.
+        /// Gets the introduction/summary text.
         /// </summary>
         public string Introduction { get; init; }
 
         /// <summary>
-        /// Gets or sets the published timestamp (null for unpublished).
+        /// Gets the published timestamp (null for unpublished).
         /// </summary>
         public DateTimeOffset? Published { get; init; }
 
         /// <summary>
-        /// Gets or sets the user performing the save.
+        /// Gets the user performing the save.
         /// </summary>
         public Guid UserId { get; init; }
     }

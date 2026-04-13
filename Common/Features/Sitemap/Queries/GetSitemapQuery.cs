@@ -22,7 +22,7 @@ using X.Web.Sitemap;
 public record GetSitemapQuery : IQuery<Sitemap>
 {
     /// <summary>
-    /// Gets or sets the optional cache duration for the sitemap.
+    /// Gets the optional cache duration for the sitemap.
     /// </summary>
     /// <remarks>
     /// When set, the sitemap will be cached for the specified duration.

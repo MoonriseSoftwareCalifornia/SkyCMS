@@ -19,12 +19,12 @@ namespace Sky.Editor.Features.Articles.Create
     public sealed class CreateArticleCommand : ICommand<CommandResult<ArticleViewModel>>
     {
         /// <summary>
-        /// Gets or sets the article title.
+        /// Gets the article title.
         /// </summary>
         public string Title { get; init; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the user ID of the article creator.
+        /// Gets the user ID of the article creator.
         /// </summary>
         public Guid UserId { get; init; }
 
