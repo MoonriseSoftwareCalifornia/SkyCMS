@@ -67,7 +67,7 @@ namespace Cosmos.Common.Tests.Utilities
             // Assert
             Assert.IsNotNull(password);
             var specialChars = "!@#$%^&*-_+=";
-            Assert.IsTrue(password.Any(c => specialChars.Contains(c)), 
+            Assert.IsTrue(password.Any(c => specialChars.Contains(c)),
                 "Password should contain at least one special character");
         }
 
@@ -83,7 +83,7 @@ namespace Cosmos.Common.Tests.Utilities
                 // Assert
                 Assert.IsNotNull(password);
                 var specialChars = "!@#$%^&*-_+=";
-                Assert.IsFalse(password.Any(c => specialChars.Contains(c)), 
+                Assert.IsFalse(password.Any(c => specialChars.Contains(c)),
                     $"Password should not contain special characters: {password}");
             }
         }
@@ -95,7 +95,7 @@ namespace Cosmos.Common.Tests.Utilities
             var password = SecurePasswordGenerator.GeneratePassword(32);
 
             // Assert
-            Assert.IsTrue(password.Any(c => char.IsUpper(c)), 
+            Assert.IsTrue(password.Any(c => char.IsUpper(c)),
                 "Password should contain at least one uppercase letter");
         }
 
@@ -106,7 +106,7 @@ namespace Cosmos.Common.Tests.Utilities
             var password = SecurePasswordGenerator.GeneratePassword(32);
 
             // Assert
-            Assert.IsTrue(password.Any(c => char.IsLower(c)), 
+            Assert.IsTrue(password.Any(c => char.IsLower(c)),
                 "Password should contain at least one lowercase letter");
         }
 
@@ -117,7 +117,7 @@ namespace Cosmos.Common.Tests.Utilities
             var password = SecurePasswordGenerator.GeneratePassword(32);
 
             // Assert
-            Assert.IsTrue(password.Any(c => char.IsDigit(c)), 
+            Assert.IsTrue(password.Any(c => char.IsDigit(c)),
                 "Password should contain at least one digit");
         }
 
@@ -133,7 +133,7 @@ namespace Cosmos.Common.Tests.Utilities
             Assert.IsTrue(password.Any(c => char.IsUpper(c)), "Should have uppercase");
             Assert.IsTrue(password.Any(c => char.IsLower(c)), "Should have lowercase");
             Assert.IsTrue(password.Any(c => char.IsDigit(c)), "Should have digit");
-            
+
             var specialChars = "!@#$%^&*-_+=";
             Assert.IsTrue(password.Any(c => specialChars.Contains(c)), "Should have special char");
         }
@@ -242,7 +242,7 @@ namespace Cosmos.Common.Tests.Utilities
             var allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*-_+=";
             foreach (var c in password)
             {
-                Assert.IsTrue(allowedChars.Contains(c), 
+                Assert.IsTrue(allowedChars.Contains(c),
                     $"Character '{c}' is not in the allowed character set");
             }
         }
@@ -257,7 +257,7 @@ namespace Cosmos.Common.Tests.Utilities
             var allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             foreach (var c in password)
             {
-                Assert.IsTrue(allowedChars.Contains(c), 
+                Assert.IsTrue(allowedChars.Contains(c),
                     $"Character '{c}' is not alphanumeric");
             }
         }
@@ -315,7 +315,7 @@ namespace Cosmos.Common.Tests.Utilities
             // Assert
             // URL-safe base64 uses: A-Z, a-z, 0-9, -, _
             var urlSafePattern = new Regex("^[A-Za-z0-9_-]+$");
-            Assert.IsTrue(urlSafePattern.IsMatch(token), 
+            Assert.IsTrue(urlSafePattern.IsMatch(token),
                 $"Token contains invalid characters: {token}");
         }
 
@@ -396,7 +396,7 @@ namespace Cosmos.Common.Tests.Utilities
             }
 
             // Assert - all tokens should be unique
-            Assert.AreEqual(tokenCount, tokens.Count, 
+            Assert.AreEqual(tokenCount, tokens.Count,
                 "All generated tokens should be unique (no collisions)");
         }
 
@@ -412,12 +412,12 @@ namespace Cosmos.Common.Tests.Utilities
 
             // Assert
             Assert.AreEqual(16, password.Length);
-            
+
             // Even with minimum length, should meet all complexity requirements
             Assert.IsTrue(password.Any(c => char.IsUpper(c)), "Should have uppercase");
             Assert.IsTrue(password.Any(c => char.IsLower(c)), "Should have lowercase");
             Assert.IsTrue(password.Any(c => char.IsDigit(c)), "Should have digit");
-            
+
             var specialChars = "!@#$%^&*-_+=";
             Assert.IsTrue(password.Any(c => specialChars.Contains(c)), "Should have special char");
         }
@@ -436,9 +436,9 @@ namespace Cosmos.Common.Tests.Utilities
                 Assert.IsTrue(password.Any(c => char.IsUpper(c)), $"Iteration {i}: Missing uppercase");
                 Assert.IsTrue(password.Any(c => char.IsLower(c)), $"Iteration {i}: Missing lowercase");
                 Assert.IsTrue(password.Any(c => char.IsDigit(c)), $"Iteration {i}: Missing digit");
-                
+
                 var specialChars = "!@#$%^&*-_+=";
-                Assert.IsTrue(password.Any(c => specialChars.Contains(c)), 
+                Assert.IsTrue(password.Any(c => specialChars.Contains(c)),
                     $"Iteration {i}: Missing special char");
             }
         }

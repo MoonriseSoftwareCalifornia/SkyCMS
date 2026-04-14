@@ -1,4 +1,4 @@
-// <copyright file="EditCodeViewModel.cs" company="Moonrise Software, LLC">
+// <copyright file="EditCodePostModel.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -7,14 +7,14 @@
 
 namespace Sky.Cms.Models
 {
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
     using Cosmos.Cms.Common;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
     using Sky.Cms.Models.Interfaces;
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
 
     /// <summary>
     /// Edit code post view model.

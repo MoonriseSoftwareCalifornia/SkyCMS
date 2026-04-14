@@ -7,12 +7,12 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account
 {
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Registration confirmation page model.
@@ -70,6 +70,7 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
             }
 
             Email = email;
+
             // Once you add a real email sender, you should remove this code that lets you confirm the account
             // DisplayConfirmAccountLink = true;
             // if (DisplayConfirmAccountLink)

@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Layouts.Publish
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Command to publish a layout as the default layout.

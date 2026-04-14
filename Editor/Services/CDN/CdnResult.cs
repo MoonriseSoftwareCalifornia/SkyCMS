@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Services.CDN
 {
-    using Azure;
-    using Azure.ResourceManager;
     using System;
     using System.Net;
+    using Azure;
+    using Azure.ResourceManager;
 
     /// <summary>
     /// Cdn purge result.

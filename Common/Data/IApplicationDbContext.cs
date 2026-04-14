@@ -7,10 +7,10 @@
 
 namespace Cosmos.Common.Data
 {
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.EntityFrameworkCore;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Identity;
+    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Abstraction over the Sky CMS application database context.

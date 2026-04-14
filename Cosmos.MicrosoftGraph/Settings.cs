@@ -7,8 +7,8 @@
 
 namespace Cosmos.MicrosoftGraph
 {
-    using Microsoft.Extensions.Configuration;
     using System.Reflection;
+    using Microsoft.Extensions.Configuration;
 
     /// <summary>
     /// Configuration settings.

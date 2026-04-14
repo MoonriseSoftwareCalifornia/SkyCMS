@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Services.Catalog
 {
-    using Cosmos.Common.Data;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
 
     /// <summary>
     /// Defines operations for creating, updating, and removing catalog entries

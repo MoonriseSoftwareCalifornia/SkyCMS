@@ -7,14 +7,14 @@
 
 namespace Cosmos.Editor.Services
 {
-    using Azure.Storage.Blobs;
-    using Azure.Storage.Blobs.Models;
-    using Azure.Storage.Blobs.Specialized;
-    using Microsoft.AspNetCore.Hosting;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading.Tasks;
+    using Azure.Storage.Blobs;
+    using Azure.Storage.Blobs.Models;
+    using Azure.Storage.Blobs.Specialized;
+    using Microsoft.AspNetCore.Hosting;
 
     /// <summary>
     /// Service implementation for running startup tasks asynchronously.

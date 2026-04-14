@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Extensions
 {
-    using Cosmos.Common.Features.Shared;
-    using Microsoft.Extensions.DependencyInjection;
     using System.Linq;
     using System.Reflection;
+    using Cosmos.Common.Features.Shared;
+    using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
     /// Extension methods for registering mediator, command handlers, and query handlers.

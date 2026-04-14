@@ -7,6 +7,9 @@
 
 namespace Cosmos.Publisher.Controllers
 {
+    using System;
+    using System.IO;
+    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common;
     using Cosmos.Common.Data;
@@ -15,9 +18,6 @@ namespace Cosmos.Publisher.Controllers
     using Cosmos.Common.Services.Caching;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.IO;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Secure file access controller and proxy.
@@ -240,7 +240,7 @@ namespace Cosmos.Publisher.Controllers
             {
                 return new Microsoft.Net.Http.Headers.EntityTagHeaderValue(quotedETag);
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 // If the ETag is still invalid, create a weak ETag from hash
                 var validETag = $"\"{Math.Abs(etag.GetHashCode())}\"";

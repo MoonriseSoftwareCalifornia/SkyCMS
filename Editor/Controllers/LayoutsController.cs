@@ -7,6 +7,13 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Web;
     using Cosmos.BlobService;
     using Cosmos.Cms.Data.Logic;
     using Cosmos.Common.Data;
@@ -35,13 +42,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Models.GrapesJs;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Layouts;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
 
     /// <summary>
     /// Layouts controller.
@@ -357,7 +357,7 @@ namespace Sky.Cms.Controllers
                 var layout = await GetLayoutForEdit();
                 var htmlContent = BuildDesignerHtml(layout);
 
-                return Json(new project(htmlContent));
+                return Json(new Project(htmlContent));
             }
             catch (Exception ex)
             {

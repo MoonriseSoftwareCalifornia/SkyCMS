@@ -7,6 +7,7 @@
 
 namespace Cosmos.BlobService
 {
+    using System;
     using Azure.Identity;
     using Azure.Storage.Blobs;
     using Microsoft.AspNetCore.Builder;
@@ -15,7 +16,6 @@ namespace Cosmos.BlobService
     using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
-    using System;
 
     /// <summary>
     /// Adds the Cosmos Storage Context to the Services Collection.
@@ -93,8 +93,8 @@ namespace Cosmos.BlobService
 
         private static string GetConnectionString(IConfiguration config)
         {
-            return config.GetConnectionString(StorageConstants.ConnectionStringKey_Storage) ??
-                   config.GetConnectionString(StorageConstants.ConnectionStringKey_AzureBlob);
+            return config.GetConnectionString(StorageConstants.ConnectionStringKeyStorage) ??
+                   config.GetConnectionString(StorageConstants.ConnectionStringKeyAzureBlob);
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace Cosmos.BlobService
             var isMultiTenant = config.GetValue<bool?>("MultiTenantEditor") ?? false;
 
             return isMultiTenant
-                ? config.GetConnectionString(StorageConstants.ConnectionStringKey_DataProtection)
+                ? config.GetConnectionString(StorageConstants.ConnectionStringKeyDataProtection)
                 : GetConnectionString(config);
         }
 

@@ -114,7 +114,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             using var context = GetIsolatedContext();
             var mockBuilder = new Mock<IArticleViewModelBuilder>();
 
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             Assert.IsNotNull(service);
         }
@@ -124,7 +124,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
         {
             using var context = GetIsolatedContext();
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync("nonexistent");
 
@@ -143,7 +143,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync("test-article");
 
@@ -163,7 +163,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync("/");
 
@@ -182,7 +182,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync(string.Empty);
 
@@ -200,7 +200,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync("TEST-ARTICLE");
 
@@ -218,7 +218,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync("unpublished");
 
@@ -236,7 +236,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync("future-article");
 
@@ -264,7 +264,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync("article");
 
@@ -309,7 +309,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result1 = await service.GetPublishedPageByUrlAsync("uncached-article", cacheSpan: TimeSpan.FromMinutes(10));
             var result2 = await service.GetPublishedPageByUrlAsync("uncached-article", cacheSpan: TimeSpan.FromMinutes(10));
@@ -365,7 +365,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = CreateMockViewModelBuilder();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageByUrlAsync("test", lang: "es-ES");
 
@@ -386,7 +386,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = new Mock<IArticleViewModelBuilder>();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageHeaderByUrlAsync("test-header");
 
@@ -400,7 +400,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
         {
             using var context = GetIsolatedContext();
             var mockBuilder = new Mock<IArticleViewModelBuilder>();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageHeaderByUrlAsync("nonexistent");
 
@@ -419,7 +419,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = new Mock<IArticleViewModelBuilder>();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageHeaderByUrlAsync("/");
 
@@ -444,7 +444,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Shared
             await context.SaveChangesAsync();
 
             var mockBuilder = new Mock<IArticleViewModelBuilder>();
-            var service = new PublishedPageQueryService(context, null, mockBuilder.Object);
+            var service = new PublishedPageQueryService(context, null!, mockBuilder.Object);
 
             var result = await service.GetPublishedPageHeaderByUrlAsync("header-test");
 

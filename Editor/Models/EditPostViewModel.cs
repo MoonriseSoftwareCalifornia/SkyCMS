@@ -7,8 +7,8 @@
 
 namespace Sky.Cms.Models
 {
-    using Cosmos.Cms.Common;
     using System;
+    using Cosmos.Cms.Common;
 
     /// <summary>
     /// Unified editor post view model for all editor types (Live, Code, Designer).

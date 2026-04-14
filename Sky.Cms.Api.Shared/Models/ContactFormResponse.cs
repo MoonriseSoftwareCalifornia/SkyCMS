@@ -20,11 +20,11 @@ namespace Sky.Cms.Api.Shared.Models
         /// <summary>
         /// Gets or sets the response message.
         /// </summary>
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets any error details.
         /// </summary>
-        public string Error { get; set; }
+        public string Error { get; set; } = string.Empty;
     }
 }

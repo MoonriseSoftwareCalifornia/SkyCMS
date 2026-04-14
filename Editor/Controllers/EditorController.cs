@@ -242,7 +242,7 @@ namespace Sky.Cms.Controllers
 
             var htmlContent = htmlService.EnsureEditableMarkers(article.Content);
 
-            return Json(new project(htmlContent));
+            return Json(new Project(htmlContent));
         }
 
         /// <summary>
@@ -530,7 +530,7 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Create initial home page
+        /// Create initial home page.
         /// </summary>
         /// <param name="model">Model used to create a the first home page.</param>
         /// <returns>Returns <see cref="IActionResult"/>.</returns>
@@ -1165,7 +1165,7 @@ namespace Sky.Cms.Controllers
 
         /// <summary>
         /// Edit web page code with Monaco editor.
-        /// </param>
+        /// </summary>
         /// <param name="id">Article Number (not ID).</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [Authorize(Roles = "Administrators, Editors")]
@@ -1603,7 +1603,11 @@ namespace Sky.Cms.Controllers
                 return NotFound();
             }
 
-            await articleLogic.DeleteArticle(article.ArticleNumber);
+            var deleteArticleCommand = new DeleteArticleCommand
+            {
+                ArticleNumber = article.ArticleNumber
+            };
+            await mediator.SendAsync(deleteArticleCommand);
 
             return RedirectToAction("Redirects");
         }
@@ -1743,7 +1747,7 @@ namespace Sky.Cms.Controllers
                     LayoutName = defaultLayout.LayoutName,
                     Description = s.Description,
                     Title = s.Title,
-                    UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid="/**/)
+                    UsesHtmlEditor = s.Content.ToLower().Contains(" contenteditable=") || s.Content.ToLower().Contains(" data-ccms-ceid=")
                 });
 
             ViewData["RowCount"] = await query.CountAsync();

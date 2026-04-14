@@ -25,7 +25,7 @@ using Microsoft.Extensions.Caching.Memory;
 /// <param name="memoryCache">Optional memory cache for layout caching.</param>
 public class GetDefaultLayoutQueryHandler(
     IApplicationDbContext dbContext,
-    IMemoryCache? memoryCache = null) : IQueryHandler<GetDefaultLayoutQuery, LayoutViewModel>
+    IMemoryCache? memoryCache = null): IQueryHandler<GetDefaultLayoutQuery, LayoutViewModel>
 {
     private readonly IApplicationDbContext dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     private readonly IMemoryCache? memoryCache = memoryCache;
@@ -36,7 +36,7 @@ public class GetDefaultLayoutQueryHandler(
         CancellationToken cancellationToken = default)
     {
         // Try cache first if caching is enabled
-        if (memoryCache != null && query.CacheDuration != null)
+        if (memoryCache != null && query.cacheDuration != null)
         {
             if (memoryCache.TryGetValue(CacheKeys.DefaultLayout, out LayoutViewModel? cachedLayout) && cachedLayout != null)
             {
@@ -78,9 +78,9 @@ public class GetDefaultLayoutQueryHandler(
         var viewModel = new LayoutViewModel(entity);
 
         // Cache if caching is enabled
-        if (memoryCache != null && query.CacheDuration != null)
+        if (memoryCache != null && query.cacheDuration != null)
         {
-            memoryCache.Set(CacheKeys.DefaultLayout, viewModel, query.CacheDuration.Value);
+            memoryCache.Set(CacheKeys.DefaultLayout, viewModel, query.cacheDuration.Value);
         }
 
         return viewModel;

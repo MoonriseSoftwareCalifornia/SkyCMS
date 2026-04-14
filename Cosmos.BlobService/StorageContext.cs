@@ -151,7 +151,7 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="path">Path to file.</param>
         /// <remarks>
-        /// This is a synchronous wrapper around <see cref="DeleteFileAsync"/>. 
+        /// This is a synchronous wrapper around <see cref="DeleteFileAsync"/>.
         /// Consider using <see cref="DeleteFileAsync"/> instead to avoid blocking.
         /// </remarks>
         [Obsolete("Use DeleteFileAsync instead to avoid blocking. This method will be removed in a future version.")]
@@ -378,7 +378,7 @@ namespace Cosmos.BlobService
         /// langword="true"/>, the source objects will be deleted; otherwise, they will be retained.</param>
         /// <returns>Task.</returns>
         /// <exception cref="StorageException">Thrown if the <paramref name="target"/> is null or empty, if the root folder is specified as the target, or
-/// if a destination object already exists.</exception>
+        /// if a destination object already exists.</exception>
         private async Task CopyObjectsAsync(string target, string destination, bool deleteSource)
         {
             // Make sure leading slashes are removed.

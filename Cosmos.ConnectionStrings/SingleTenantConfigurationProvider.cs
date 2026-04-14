@@ -77,8 +77,8 @@ namespace Cosmos.DynamicConfig
             {
                 Id = Guid.Empty,
                 DomainNames = new[] { domainName },
-                DbConn = _configuration.GetConnectionString("ApplicationDbContextConnection"),
-                StorageConn = _configuration.GetConnectionString("StorageConnectionString")
+                DbConn = _configuration.GetConnectionString("ApplicationDbContextConnection") ?? string.Empty,
+                StorageConn = _configuration.GetConnectionString("StorageConnectionString") ?? string.Empty
             };
             return Task.FromResult<Connection?>(connection);
         }

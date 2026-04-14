@@ -7,8 +7,8 @@
 
 namespace Sky.Cms.Models
 {
-    using Cosmos.EmailServices;
     using System.ComponentModel.DataAnnotations;
+    using Cosmos.EmailServices;
 
     /// <summary>
     /// User created view model.
@@ -48,7 +48,7 @@ namespace Sky.Cms.Models
         /// <summary>
         /// Gets or sets user's phone number (can be SMS).
         /// </summary>
-        [Phone()]
+        [Phone]
         [Display(Name = "Telephone #")]
         public string PhoneNumber { get; set; }
 

@@ -7,6 +7,14 @@
 
 namespace Sky.Editor.Services.Publishing
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Net.Http;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Cms.Common;
@@ -25,14 +33,6 @@ namespace Sky.Editor.Services.Publishing
     using Sky.Editor.Services.Authors;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net.Http;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Orchestrates publishing of articles and blog content.
@@ -105,7 +105,7 @@ namespace Sky.Editor.Services.Publishing
 
         private LayoutViewModel defaultLayout;
 
-        private Guid userId => Guid.Parse(httpContextAccessor.HttpContext.User.Claims
+        private Guid UserId => Guid.Parse(httpContextAccessor.HttpContext.User.Claims
             .FirstOrDefault(f => f.Type == "sub")?.Value ?? Guid.Empty.ToString());
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace Sky.Editor.Services.Publishing
                     BannerImage = blog.BannerImage,
                     HeaderJavaScript = string.Empty,
                     FooterJavaScript = string.Empty,
-                    UserId = userId.ToString(),
+                    UserId = UserId.ToString(),
                     StatusCode = (int)StatusCodeEnum.Active,
                     ArticleType = (int)ArticleType.BlogStream,
                     Category = "blog-stream",
@@ -166,7 +166,7 @@ namespace Sky.Editor.Services.Publishing
                 article.Updated = blog.Updated;
                 article.BannerImage = blog.BannerImage;
                 article.Introduction = blog.Introduction;
-                article.UserId = userId.ToString();
+                article.UserId = UserId.ToString();
                 article.StatusCode = (int)StatusCodeEnum.Active;
                 article.VersionNumber += 1;
             }
@@ -547,18 +547,26 @@ namespace Sky.Editor.Services.Publishing
                 }
                 catch (Exception ex) when (attempt < maxRetries && IsTransientException(ex))
                 {
-                    logger.LogWarning(ex,
+                    logger.LogWarning(
+                        ex,
                         "Transient error creating static file for page {PageId} ({UrlPath}). Attempt {Attempt} of {MaxAttempts}. Retrying in {Delay}ms...",
-                        page.Id, page.UrlPath, attempt + 1, maxRetries + 1, currentDelay);
+                        page.Id,
+                        page.UrlPath,
+                        attempt + 1,
+                        maxRetries + 1,
+                        currentDelay);
 
                     await Task.Delay(currentDelay, cancellationToken);
                     currentDelay *= 2;
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex,
+                    logger.LogError(
+                        ex,
                         "Failed to create static file for page {PageId} ({UrlPath}) after {Attempts} attempt(s). Skipping this page.",
-                        page.Id, page.UrlPath, attempt + 1);
+                        page.Id,
+                        page.UrlPath,
+                        attempt + 1);
 
                     return; // Don't throw - allow other pages to continue
                 }

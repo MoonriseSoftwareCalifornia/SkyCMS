@@ -21,12 +21,12 @@ namespace Sky.Editor.Services.Titles
         /// <summary>
         /// Gets or sets the old URL path before the title change.
         /// </summary>
-        public required string OldUrl { get; set; }
+        required public string OldUrl { get; set; }
 
         /// <summary>
         /// Gets or sets the new URL path after the title change.
         /// </summary>
-        public required string NewUrl { get; set; }
+        required public string NewUrl { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the article is currently published.
@@ -36,11 +36,11 @@ namespace Sky.Editor.Services.Titles
         /// less than or equal to the current time. Only published articles should have
         /// redirects created for their URL changes.
         /// </remarks>
-        public required bool IsPublished { get; set; }
+        required public bool IsPublished { get; set; }
 
         /// <summary>
         /// Gets or sets the article number for diagnostic and logging purposes.
         /// </summary>
-        public required int ArticleNumber { get; set; }
+        required public int ArticleNumber { get; set; }
     }
 }

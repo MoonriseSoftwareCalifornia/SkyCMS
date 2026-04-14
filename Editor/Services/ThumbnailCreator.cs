@@ -7,13 +7,13 @@
 
 namespace Sky.Cms.Services
 {
-    using Sky.Cms.Models;
     using System;
     using System.Collections.Generic;
     using System.Drawing;
     using System.Drawing.Drawing2D;
     using System.Drawing.Imaging;
     using System.IO;
+    using Sky.Cms.Models;
 
     /// <summary>
     /// Image thumbnail creator.
@@ -137,13 +137,13 @@ namespace Sky.Cms.Services
                 {
                     nPercent = nPercentH;
                     destX = (int)Math.Round((width -
-                                              sourceWidth * nPercent) / 2);
+                                              (sourceWidth * nPercent)) / 2);
                 }
                 else
                 {
                     nPercent = nPercentW;
                     destY = (int)Math.Round((height -
-                                              sourceHeight * nPercent) / 2);
+                                              (sourceHeight * nPercent)) / 2);
                 }
             }
 
@@ -166,7 +166,8 @@ namespace Sky.Cms.Services
             grPhoto.CompositingQuality = CompositingQuality.HighQuality;
             grPhoto.SmoothingMode = SmoothingMode.AntiAlias;
 
-            grPhoto.DrawImage(imgPhoto,
+            grPhoto.DrawImage(
+                imgPhoto,
                 new Rectangle(destX, destY, destWidth, destHeight),
                 new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight),
                 GraphicsUnit.Pixel);

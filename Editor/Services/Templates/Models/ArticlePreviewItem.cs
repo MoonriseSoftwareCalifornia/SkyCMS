@@ -1,4 +1,4 @@
-// <copyright file="TemplateApplicationModels.cs" company="Moonrise Software, LLC">
+// <copyright file="ArticlePreviewItem.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -60,7 +60,7 @@ namespace Sky.Editor.Services.Templates.Models
         /// Set to false if:
         /// - Template has fewer editable regions than the article (content would be lost)
         /// - Critical editable region IDs don't match
-        /// - Article content is corrupted or unparseable
+        /// - Article content is corrupted or unparseable.
         /// </remarks>
         public bool CanMerge { get; set; }
 
@@ -71,7 +71,7 @@ namespace Sky.Editor.Services.Templates.Models
         /// Example warnings:
         /// - "Template is missing 2 editable regions present in the article"
         /// - "Article has 3 regions that won't be preserved in the new template"
-        /// - "Region IDs don't match - manual review recommended"
+        /// - "Region IDs don't match - manual review recommended".
         /// </remarks>
         public string MergeWarning { get; set; }
     }

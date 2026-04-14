@@ -15,11 +15,11 @@ namespace Sky.Cms.Models
         /// <summary>
         /// Gets or sets a value indicating whether file is uploaded.
         /// </summary>
-        public bool uploaded { get; set; }
+        public bool Uploaded { get; set; }
 
         /// <summary>
         /// Gets or sets file upload unique ID.
         /// </summary>
-        public string fileUid { get; set; }
+        public string FileUid { get; set; }
     }
 }

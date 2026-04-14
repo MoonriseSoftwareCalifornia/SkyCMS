@@ -222,15 +222,15 @@ public class CopilotProxyOptionsServiceTests
             Times.Once);
     }
 
-        [TestMethod]
-        public async Task InvalidateCurrentTenantCacheAsync_RemovesCurrentTenantCacheKey()
-        {
-            // Act
-            await service.InvalidateCurrentTenantCacheAsync();
+    [TestMethod]
+    public async Task InvalidateCurrentTenantCacheAsync_RemovesCurrentTenantCacheKey()
+    {
+        // Act
+        await service.InvalidateCurrentTenantCacheAsync();
 
-            // Assert
-            cacheMock.Verify(
-                c => c.Remove("COPILOT_PROXY_OPTIONS:tenant-a.example.com"),
-                Times.Once);
-        }
+        // Assert
+        cacheMock.Verify(
+            c => c.Remove("COPILOT_PROXY_OPTIONS:tenant-a.example.com"),
+            Times.Once);
+    }
 }

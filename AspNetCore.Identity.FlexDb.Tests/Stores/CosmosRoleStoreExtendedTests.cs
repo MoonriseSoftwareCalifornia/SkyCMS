@@ -44,7 +44,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region CreateAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsync_WithValidRole_CreatesRole(TestDatabaseProvider provider)
         {
             // Arrange
@@ -70,7 +70,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsync_WithNullRole_ThrowsArgumentNullException(TestDatabaseProvider provider)
         {
             // Arrange
@@ -90,7 +90,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsync_WithDuplicateRoleName_ReturnsFailed(TestDatabaseProvider provider)
         {
             // Arrange
@@ -123,7 +123,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region UpdateAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsync_WithValidChanges_UpdatesRole(TestDatabaseProvider provider)
         {
             // Arrange
@@ -146,7 +146,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsync_WithNullRole_ThrowsArgumentNullException(TestDatabaseProvider provider)
         {
             // Arrange
@@ -170,7 +170,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region DeleteAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_WithValidRole_DeletesRole(TestDatabaseProvider provider)
         {
             // Arrange
@@ -192,7 +192,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_WithNullRole_ThrowsArgumentNullException(TestDatabaseProvider provider)
         {
             // Arrange
@@ -212,7 +212,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_RemovesAssociatedUserRoles(TestDatabaseProvider provider)
         {
             // Arrange
@@ -243,7 +243,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_RemovesAssociatedRoleClaims(TestDatabaseProvider provider)
         {
             // Arrange
@@ -276,7 +276,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region FindByNameAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsync_WithValidName_ReturnsCorrectRole(TestDatabaseProvider provider)
         {
             // Arrange
@@ -295,7 +295,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsync_IsCaseInsensitive(TestDatabaseProvider provider)
         {
             // Arrange
@@ -316,7 +316,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsync_WithNonExistentName_ReturnsNull(TestDatabaseProvider provider)
         {
             // Arrange
@@ -337,7 +337,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region Claims Management Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task AddClaimAsync_AddsClaimToRole(TestDatabaseProvider provider)
         {
             // Arrange
@@ -358,7 +358,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task RemoveClaimAsync_RemovesClaimFromRole(TestDatabaseProvider provider)
         {
             // Arrange
@@ -381,7 +381,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetClaimsAsync_ForRoleWithoutClaims_ReturnsEmptyList(TestDatabaseProvider provider)
         {
             // Arrange
@@ -399,7 +399,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task AddMultipleClaims_AllClaimsArePersisted(TestDatabaseProvider provider)
         {
             // Arrange
@@ -426,7 +426,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region Additional Role Property Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetRoleIdAsync_ReturnsCorrectId(TestDatabaseProvider provider)
         {
             // Arrange
@@ -443,7 +443,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetRoleNameAsync_ReturnsCorrectName(TestDatabaseProvider provider)
         {
             // Arrange
@@ -460,7 +460,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetNormalizedRoleNameAsync_ReturnsNormalizedName(TestDatabaseProvider provider)
         {
             // Arrange

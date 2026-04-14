@@ -7,14 +7,14 @@
 
 namespace Cosmos.Common.Data.SQlite
 {
-    using Microsoft.EntityFrameworkCore;
     using System;
     using System.Linq;
+    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// SQLite utilities.
     /// </summary>
-    public class SQLiteUtils
+    public static class SQLiteUtils
     {
         /// <summary>
         /// Handles the model creating for SQLite.

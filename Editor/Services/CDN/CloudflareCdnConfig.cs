@@ -7,7 +7,6 @@
 
 namespace Sky.Editor.Services.CDN
 {
-
     /// <summary>
     /// Cloudflare settings.
     /// </summary>

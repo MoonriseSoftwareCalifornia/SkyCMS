@@ -106,7 +106,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_WithAnonymousRolePermission_ShouldReturnTrueForAnyUser()
         {
             using var context = GetIsolatedContext();
-            
+
             var anonymousRole = new IdentityRole
             {
                 Id = Guid.NewGuid().ToString(),
@@ -175,7 +175,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_WithAuthenticatedRolePermission_ShouldReturnTrueForAuthenticatedUser()
         {
             using var context = GetIsolatedContext();
-            
+
             var authenticatedRole = new IdentityRole
             {
                 Id = Guid.NewGuid().ToString(),
@@ -210,7 +210,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_WithUserSpecificPermission_ShouldReturnTrueForThatUser()
         {
             using var context = GetIsolatedContext();
-            
+
             var userId = Guid.NewGuid().ToString();
             var catalog = TestDataBuilder.CreateCatalogEntry();
             catalog.ArticlePermissions = new List<ArticlePermission>
@@ -238,7 +238,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_WithUserSpecificPermission_ShouldReturnFalseForDifferentUser()
         {
             using var context = GetIsolatedContext();
-            
+
             var allowedUserId = Guid.NewGuid().ToString();
             var differentUserId = Guid.NewGuid().ToString();
 
@@ -268,10 +268,10 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_WithRoleBasedPermission_ShouldReturnTrueForUserInRole()
         {
             using var context = GetIsolatedContext();
-            
+
             var userId = Guid.NewGuid().ToString();
             var roleId = Guid.NewGuid().ToString();
-            
+
             var role = new IdentityRole { Id = roleId, Name = "Editor", NormalizedName = "EDITOR" };
             context.Roles.Add(role);
 
@@ -304,10 +304,10 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_WithRoleBasedPermission_ShouldReturnFalseForUserNotInRole()
         {
             using var context = GetIsolatedContext();
-            
+
             var userId = Guid.NewGuid().ToString();
             var roleId = Guid.NewGuid().ToString();
-            
+
             var role = new IdentityRole { Id = roleId, Name = "Editor", NormalizedName = "EDITOR" };
             context.Roles.Add(role);
 
@@ -337,11 +337,11 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_WithMultipleRoles_ShouldReturnTrueIfUserHasAnyRole()
         {
             using var context = GetIsolatedContext();
-            
+
             var userId = Guid.NewGuid().ToString();
             var role1Id = Guid.NewGuid().ToString();
             var role2Id = Guid.NewGuid().ToString();
-            
+
             context.Roles.Add(new IdentityRole { Id = role1Id, Name = "Editor", NormalizedName = "EDITOR" });
             context.Roles.Add(new IdentityRole { Id = role2Id, Name = "Admin", NormalizedName = "ADMIN" });
 
@@ -369,10 +369,10 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_WithMixedPermissions_AnonymousShouldTakePrecedence()
         {
             using var context = GetIsolatedContext();
-            
+
             var anonymousRoleId = Guid.NewGuid().ToString();
             var adminRoleId = Guid.NewGuid().ToString();
-            
+
             context.Roles.Add(new IdentityRole { Id = anonymousRoleId, Name = "Anonymous", NormalizedName = "ANONYMOUS" });
             context.Roles.Add(new IdentityRole { Id = adminRoleId, Name = "Admin", NormalizedName = "ADMIN" });
 
@@ -411,7 +411,7 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_UserIdComparison_ShouldBeCaseInsensitive()
         {
             using var context = GetIsolatedContext();
-            
+
             var userId = "USER-ID-123";
             var catalog = TestDataBuilder.CreateCatalogEntry();
             catalog.ArticlePermissions = new List<ArticlePermission>

@@ -7,6 +7,11 @@
 
 namespace Sky.Editor.Features.Articles.Clone
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
@@ -16,11 +21,6 @@ namespace Sky.Editor.Features.Articles.Clone
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Titles;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Handles cloning of existing articles with new titles.
@@ -128,7 +128,8 @@ namespace Sky.Editor.Features.Articles.Clone
 
                 if (!result.IsSuccess)
                 {
-                    logger.LogError("CreateArticleCommand failed for clone: {Errors}",
+                    logger.LogError(
+                        "CreateArticleCommand failed for clone: {Errors}",
                         string.Join(", ", result.Errors?.SelectMany(e => e.Value) ?? Array.Empty<string>()));
 
                     return CommandResult<ArticleViewModel>.Failure(

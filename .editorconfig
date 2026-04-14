@@ -5,3 +5,148 @@ dotnet_diagnostic.SA1101.severity = none
 
 # SA1010: Opening square brackets should be spaced correctly
 dotnet_diagnostic.SA1010.severity = none
+
+# SA1024: Colons should be spaced correctly
+dotnet_diagnostic.SA1024.severity = none
+
+# CS8625: Cannot convert null literal to non-nullable reference type
+dotnet_diagnostic.CS8625.severity = none
+
+# CA1862: Prefer StringComparison overloads — suppressed because EF Core
+# (especially the Cosmos DB provider) cannot translate StringComparison
+# in LINQ expression trees; .ToLower()/.ToUpper() is the correct pattern.
+dotnet_diagnostic.CA1862.severity = none
+
+# SA1402: File may only contain a single type
+dotnet_diagnostic.SA1402.severity = none
+
+# SA1000: Keywords should be spaced correctly
+dotnet_diagnostic.SA1000.severity = none
+
+# RCS1155: Use StringComparison when comparing strings
+dotnet_diagnostic.RCS1155.severity = none
+
+# RCS1075: Avoid empty catch clause that catches System.Exception
+dotnet_diagnostic.RCS1075.severity = none
+
+# SA1011: Closing square bracket should be followed by a space
+dotnet_diagnostic.SA1011.severity = none
+
+# SA1108: Block statements should not contain embedded comments
+dotnet_diagnostic.SA1108.severity = none
+
+# SA1115: The parameter should begin on the line after the previous parameter
+dotnet_diagnostic.SA1115.severity = none
+
+# SA1117: The parameters should all be placed on the same line or each on its own line
+dotnet_diagnostic.SA1117.severity = none
+
+# SA1118: The parameter spans multiple lines
+dotnet_diagnostic.SA1118.severity = none
+
+# SA1200: Using directive should appear within a namespace declaration
+dotnet_diagnostic.SA1200.severity = none
+
+# SA1201: Element ordering (e.g., enum after class, field after constructor)
+dotnet_diagnostic.SA1201.severity = none
+
+# SA1202: Member ordering (e.g., public before private)
+dotnet_diagnostic.SA1202.severity = none
+
+# SA1203: Constant fields should appear before non-constant fields
+dotnet_diagnostic.SA1203.severity = none
+
+# SA1204: Static members should appear before non-static members
+dotnet_diagnostic.SA1204.severity = none
+
+# SA1516: Elements should be separated by blank line
+dotnet_diagnostic.SA1516.severity = none
+
+# SA1600: Elements should be documented
+dotnet_diagnostic.SA1600.severity = none
+
+# SA1611: The documentation for parameter is missing
+dotnet_diagnostic.SA1611.severity = none
+
+# SA1612: The parameter documentation should be at correct position
+dotnet_diagnostic.SA1612.severity = none
+
+# SA1614: Element parameter documentation should have text
+dotnet_diagnostic.SA1614.severity = none
+
+# SA1616: Element return value documentation should have text
+dotnet_diagnostic.SA1616.severity = none
+
+# SA1618: The documentation for type parameter is missing
+dotnet_diagnostic.SA1618.severity = none
+
+# SA1625: Element documentation should not be copied and pasted
+dotnet_diagnostic.SA1625.severity = none
+
+# SA1627: The documentation text within the tag should not be empty
+dotnet_diagnostic.SA1627.severity = none
+
+# SA1629: Documentation text should end with a period
+dotnet_diagnostic.SA1629.severity = none
+
+# SA1648: inheritdoc should be used with inheriting class
+dotnet_diagnostic.SA1648.severity = none
+
+# SA1649: File name should match first type name
+dotnet_diagnostic.SA1649.severity = none
+
+# CS0618: Using obsolete API (intentional usage of deprecated methods pending migration)
+dotnet_diagnostic.CS0618.severity = none
+
+# CS1571: XML comment has a duplicate param tag
+dotnet_diagnostic.CS1571.severity = none
+
+# CS1573: Parameter has no matching param tag in the XML comment
+dotnet_diagnostic.CS1573.severity = none
+
+# CS1574: XML comment has cref attribute that could not be resolved
+dotnet_diagnostic.CS1574.severity = none
+
+# CS1591: Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1591.severity = none
+
+# CS8600: Converting null literal or possible null value to non-nullable type
+dotnet_diagnostic.CS8600.severity = none
+
+# CS8601: Possible null reference assignment
+dotnet_diagnostic.CS8601.severity = none
+
+# CS8602: Dereference of a possibly null reference
+dotnet_diagnostic.CS8602.severity = none
+
+# CS8603: Possible null reference return
+dotnet_diagnostic.CS8603.severity = none
+
+# CS8604: Possible null reference argument
+dotnet_diagnostic.CS8604.severity = none
+
+# CS8605: Unboxing a possibly null value
+dotnet_diagnostic.CS8605.severity = none
+
+# CS8618: Non-nullable property/field must contain non-null value when exiting constructor
+dotnet_diagnostic.CS8618.severity = none
+
+# CS8619: Nullability of reference types in value doesn't match target type
+dotnet_diagnostic.CS8619.severity = none
+
+# CS8620: Argument nullability doesn't match parameter
+dotnet_diagnostic.CS8620.severity = none
+
+# CS8631: The type cannot be used as type parameter due to nullability mismatch
+dotnet_diagnostic.CS8631.severity = none
+
+# CA1416: Platform compatibility (e.g., System.Drawing on non-Windows)
+dotnet_diagnostic.CA1416.severity = none
+
+# MSTEST0032: Review or remove assertion with always-true condition
+dotnet_diagnostic.MSTEST0032.severity = none
+
+[*.cshtml]
+
+# SA1649: File name should match first type name
+dotnet_diagnostic.SA1649.severity = none

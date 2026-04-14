@@ -7,12 +7,12 @@
 
 namespace Cosmos.BlobService
 {
-    using Cosmos.BlobService.Drivers;
-    using Cosmos.BlobService.Models;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading.Tasks;
+    using Cosmos.BlobService.Drivers;
+    using Cosmos.BlobService.Models;
 
     /// <summary>
     /// Azure File Share storage context for file-based operations.
@@ -169,8 +169,6 @@ namespace Cosmos.BlobService
             await this.driver.AppendBlobAsync(stream.ToArray(), fileMetaData, DateTimeOffset.UtcNow, mode);
         }
 
-        #region Legacy Methods (Obsolete - For Backward Compatibility)
-
         /// <summary>
         /// Gets the metadata for a file or folder object.
         /// </summary>
@@ -243,7 +241,5 @@ namespace Cosmos.BlobService
 
             return await GetFilesAndDirectories(path);
         }
-
-        #endregion
     }
 }

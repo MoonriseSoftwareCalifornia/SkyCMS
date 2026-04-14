@@ -7,6 +7,10 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
@@ -34,10 +38,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
     using Sky.Editor.Services.Templates;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Templates controller.
@@ -342,7 +342,6 @@ namespace Sky.Cms.Controllers
             // 1. Changing Cosmos partition keys to a common value (e.g., TenantId)
             // 2. Removing transactions and implementing cleanup/idempotency
             // 3. Detecting database type and using conditional logic
-
             if (!dbContext.Database.IsCosmos())
             {
                 // Relational databases: Use transaction
@@ -375,7 +374,8 @@ namespace Sky.Cms.Controllers
                             await transaction.RollbackAsync();
 
                             // Return user-friendly error message
-                            ModelState.AddModelError("",
+                            ModelState.AddModelError(
+                                string.Empty,
                                 $"Failed to create template version: {versionResult.ErrorMessage}");
                             return BadRequest(ModelState);
                         }
@@ -394,7 +394,8 @@ namespace Sky.Cms.Controllers
                         await transaction.RollbackAsync();
 
                         // Log the error and return to user
-                        ModelState.AddModelError("",
+                        ModelState.AddModelError(
+                            string.Empty,
                             $"Error creating template: {ex.Message}");
                         return BadRequest(ModelState);
                     }
@@ -425,7 +426,7 @@ namespace Sky.Cms.Controllers
                     {
                         // ⚠️ WARNING: Template exists but version creation failed
                         // This is a known limitation of Cosmos DB's current partition key design
-                        ModelState.AddModelError("", $"Failed to create template version: {versionResult.ErrorMessage}");
+                        ModelState.AddModelError(string.Empty, $"Failed to create template version: {versionResult.ErrorMessage}");
                         return BadRequest(ModelState);
                     }
 
@@ -434,7 +435,7 @@ namespace Sky.Cms.Controllers
                 catch (Exception ex)
                 {
                     // ⚠️ WARNING: Partial data may exist in Cosmos DB
-                    ModelState.AddModelError("", $"Error creating template: {ex.Message}");
+                    ModelState.AddModelError(string.Empty, $"Error creating template: {ex.Message}");
                     return BadRequest(ModelState);
                 }
             }
@@ -594,7 +595,7 @@ namespace Sky.Cms.Controllers
 
             var htmlContent = htmlService.EnsureEditableMarkers(editableVersion.Content);
 
-            return Json(new project(htmlContent));
+            return Json(new Project(htmlContent));
         }
 
         /// <summary>

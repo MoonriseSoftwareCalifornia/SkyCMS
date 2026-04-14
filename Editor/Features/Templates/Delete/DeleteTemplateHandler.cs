@@ -7,13 +7,13 @@
 
 namespace Sky.Editor.Features.Templates.Delete
 {
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using Microsoft.EntityFrameworkCore;
     using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Handler for deleting a template and its associated page design versions.

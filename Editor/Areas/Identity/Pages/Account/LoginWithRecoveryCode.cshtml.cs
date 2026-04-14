@@ -7,14 +7,14 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Login with recovery code model.
@@ -31,7 +31,8 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
         /// </summary>
         /// <param name="signInManager"></param>
         /// <param name="logger"></param>
-        public LoginWithRecoveryCodeModel(SignInManager<IdentityUser> signInManager,
+        public LoginWithRecoveryCodeModel(
+            SignInManager<IdentityUser> signInManager,
             ILogger<LoginWithRecoveryCodeModel> logger)
         {
             this.signInManager = signInManager;

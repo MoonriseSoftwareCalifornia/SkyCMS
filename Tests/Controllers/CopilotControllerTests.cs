@@ -410,9 +410,9 @@ public class CopilotControllerTests
 
         var ok = result as OkObjectResult;
         Assert.IsNotNull(ok);
-    Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
 
-    using var document = JsonDocument.Parse(capturedJson!);
+        using var document = JsonDocument.Parse(capturedJson!);
         var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
 
         Assert.IsNotNull(systemPrompt);

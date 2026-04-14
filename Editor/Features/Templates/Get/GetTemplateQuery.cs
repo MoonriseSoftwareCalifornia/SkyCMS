@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Templates.Get
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Query to retrieve a template by ID with optional inclusion of page design versions.

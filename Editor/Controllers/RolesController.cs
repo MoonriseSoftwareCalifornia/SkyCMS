@@ -7,6 +7,9 @@
 
 namespace Sky.Editor.Controllers
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Authorization;
@@ -14,9 +17,6 @@ namespace Sky.Editor.Controllers
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Sky.Cms.Models;
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Role management controller.
@@ -38,8 +38,7 @@ namespace Sky.Editor.Controllers
         public RolesController(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext dbContext
-            )
+            ApplicationDbContext dbContext)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
@@ -215,8 +214,8 @@ namespace Sky.Editor.Controllers
                   {
                       s.Id,
                       s.Email
-                  }
-                ).AsQueryable();
+                  })
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(startsWith))
             {
@@ -370,8 +369,8 @@ namespace Sky.Editor.Controllers
                 {
                     Id = s.Id,
                     Email = s.Email
-                }
-                ).ToListAsync();
+                })
+                .ToListAsync();
 
             return View(model);
         }

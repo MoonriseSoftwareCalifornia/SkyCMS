@@ -7,16 +7,16 @@
 
 namespace Sky.Editor.Services.Migrations
 {
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Migrations.Core;
     using System;
     using System.Collections.Generic;
     using System.Data.Common;
     using System.Linq;
     using System.Reflection;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Migrations.Core;
 
     /// <summary>
     /// Discovers and executes database migrations across all supported database providers.
@@ -168,8 +168,10 @@ namespace Sky.Editor.Services.Migrations
         /// </summary>
         private async Task ApplyMigrationAsync(MigrationContext context, IMigration migration)
         {
-            logger.LogInformation("Applying migration {Id}: {Description}",
-                migration.MigrationId, migration.Description);
+            logger.LogInformation(
+                "Applying migration {Id}: {Description}",
+                migration.MigrationId,
+                migration.Description);
 
             try
             {
@@ -187,14 +189,17 @@ namespace Sky.Editor.Services.Migrations
                 await migration.ApplyAsync(context);
                 await RecordMigrationAsync(context, migration);
 
-                logger.LogInformation("✅ Migration {Id} completed successfully",
+                logger.LogInformation(
+                    "✅ Migration {Id} completed successfully",
                     migration.MigrationId);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex,
+                logger.LogError(
+                    ex,
                     "❌ Migration {Id} failed: {Message}",
-                    migration.MigrationId, ex.Message);
+                    migration.MigrationId,
+                    ex.Message);
                 throw new InvalidOperationException(
                     $"Migration {migration.MigrationId} ({migration.Description}) failed. " +
                     $"See inner exception for details.", ex);

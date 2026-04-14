@@ -6,12 +6,14 @@
 // </copyright>
 namespace Sky.Editor.Services.CDN
 {
+    using System;
     using System.ComponentModel.DataAnnotations;
     using System.Linq;
 
     /// <summary>
     ///  Checks if all specified properties are either all filled or all empty.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property)]
     public class AllOrNoneRequiredAttribute : ValidationAttribute
     {
         private readonly string[] propertyNames;

@@ -45,7 +45,7 @@ using System.Threading.Tasks;
 ///   <item>Comprehensive audit logging</item>
 /// </list>
 /// </para>
-/// <para>Endpoint: POST /api/spa/deploy</para>
+/// <para>Endpoint: POST /api/spa/deploy.</para>
 /// </remarks>
 [Route("api/spa/deploy")]
 [ApiController]
@@ -142,7 +142,8 @@ public class DeploymentController : ControllerBase
             // 3. Verify deployment password (check current + previous for rotation grace period)
             if (!VerifyPassword(password, metadata))
             {
-                logger.LogWarning("Deployment attempt with invalid password. Article: {ArticleId}, IP: {IP}",
+                logger.LogWarning(
+                    "Deployment attempt with invalid password. Article: {ArticleId}, IP: {IP}",
                     articleId, HttpContext.Connection.RemoteIpAddress);
                 return Unauthorized(new { success = false, error = "Invalid deployment key" });
             }
@@ -350,6 +351,7 @@ public class DeploymentController : ControllerBase
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to purge CDN cache for {UrlPath}", urlPath);
+
             // Don't fail the deployment if CDN purge fails
             return false;
         }

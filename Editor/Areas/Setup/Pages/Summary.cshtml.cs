@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
+    using System;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Authorization;
     using Sky.Editor.Services.Setup;
-    using System;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard summary page.

@@ -22,7 +22,7 @@ namespace Sky.Editor.Services.BlogPublishing
     /// This service handles blog-specific publishing operations including:
     /// - Blog stream wrapper generation and publishing
     /// - Blog post full-page rendering with layouts
-    /// - Versioned wrapper file management for cache busting
+    /// - Versioned wrapper file management for cache busting.
     /// </remarks>
     public interface IBlogPublishingService
     {

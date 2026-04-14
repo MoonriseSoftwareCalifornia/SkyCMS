@@ -7,6 +7,10 @@
 
 namespace Sky.Editor.Features.Blogs.CreatePost
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -15,10 +19,6 @@ namespace Sky.Editor.Features.Blogs.CreatePost
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Features.Articles.Create;
-    using System;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for creating a new blog post within a blog stream.

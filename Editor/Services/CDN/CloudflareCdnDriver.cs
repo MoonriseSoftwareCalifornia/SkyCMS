@@ -7,8 +7,6 @@
 
 namespace Sky.Editor.Services.CDN
 {
-    using Microsoft.Extensions.Logging;
-    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -16,6 +14,8 @@ namespace Sky.Editor.Services.CDN
     using System.Net.Http.Headers;
     using System.Text;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Cloudflare CDN Service for cache management.

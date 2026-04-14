@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Blogs.UpdatePost
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Command to update an existing blog post.

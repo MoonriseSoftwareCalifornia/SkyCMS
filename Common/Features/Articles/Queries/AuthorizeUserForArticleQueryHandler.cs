@@ -22,7 +22,7 @@ using Microsoft.EntityFrameworkCore;
 /// Checks anonymous access, authenticated access, user-specific permissions, and role-based permissions.
 /// </summary>
 /// <param name="dbContext">Database context for querying article permissions.</param>
-public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext) : IQueryHandler<AuthorizeUserForArticleQuery, bool>
+public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext): IQueryHandler<AuthorizeUserForArticleQuery, bool>
 {
     private readonly IApplicationDbContext dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
@@ -38,7 +38,7 @@ public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext
         try
         {
             permissions = dbContext.ArticleCatalog
-                .FirstOrDefault(l => l.ArticleNumber == query.ArticleNumber)
+                .FirstOrDefault(l => l.ArticleNumber == query.articleNumber)
                 ?.ArticlePermissions;
 
             if (permissions == null || permissions.Count == 0)
@@ -61,7 +61,7 @@ public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext
             return true; // Anonymous users can view, so that means everyone.
         }
 
-        if (query.User.Identity.IsAuthenticated &&
+        if (query.user.Identity.IsAuthenticated &&
             await dbContext.Roles
                 .Where(w => roleIds.Contains(w.Id) && w.NormalizedName == "AUTHENTICATED")
                 .AnyAsync(cancellationToken))
@@ -70,7 +70,7 @@ public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext
         }
 
         // Get the current user ID and see if this person has user-specific access.
-        var userId = query.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = query.user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (permissions.Exists(a => a.IdentityObjectId.Equals(userId, StringComparison.OrdinalIgnoreCase)))
         {
             return true; // Current user has access.

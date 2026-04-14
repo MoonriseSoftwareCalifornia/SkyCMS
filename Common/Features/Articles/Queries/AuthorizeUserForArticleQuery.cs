@@ -14,8 +14,8 @@ using Cosmos.Common.Features.Shared;
 /// Query to check if a user is authorized to access an article based on article permissions.
 /// Replaces CosmosUtilities.AuthUser() method.
 /// </summary>
-/// <param name="User">The claims principal representing the current user.</param>
-/// <param name="ArticleNumber">The article number to check authorization for.</param>
+/// <param name="user">The claims principal representing the current user.</param>
+/// <param name="articleNumber">The article number to check authorization for.</param>
 public record AuthorizeUserForArticleQuery(
-    ClaimsPrincipal User,
-    int ArticleNumber) : IQuery<bool>;
+    ClaimsPrincipal user,
+    int articleNumber): IQuery<bool>;

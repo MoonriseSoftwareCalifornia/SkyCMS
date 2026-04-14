@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Services.CDN
 {
-    using Microsoft.Extensions.Logging;
-    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Sucuri CDN service API class.
@@ -104,6 +104,5 @@ namespace Sky.Editor.Services.CDN
                 ProviderName = ProviderName
             };
         }
-
     }
 }

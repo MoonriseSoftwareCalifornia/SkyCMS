@@ -7,9 +7,9 @@
 
 namespace Sky.Cms.Models
 {
-    using Cosmos.Common.Data;
     using System;
     using System.ComponentModel.DataAnnotations;
+    using Cosmos.Common.Data;
 
     /// <summary>
     ///     Article version list info item.

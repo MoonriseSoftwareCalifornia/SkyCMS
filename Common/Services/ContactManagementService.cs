@@ -7,6 +7,9 @@
 
 namespace Cosmos.Common.Services
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
     using MailChimp.Net;
@@ -15,9 +18,6 @@ namespace Cosmos.Common.Services
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for managing contacts, including adding and updating contact information, and integrating with MailChimp for email marketing.
@@ -30,7 +30,7 @@ namespace Cosmos.Common.Services
         private readonly IHttpContextAccessor httpContextAccessor;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IContactManagementService"/> class.
+        /// Initializes a new instance of the <see cref="ContactManagementService"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
         /// <param name="emailSender">Email sender.</param>
@@ -60,7 +60,7 @@ namespace Cosmos.Common.Services
                 throw new ArgumentException("Invalid email address", nameof(model.Email));
             }
 
-            var contact = await dbContext.Contacts.FirstOrDefaultAsync(f => f.Email.ToLower() == model.Email.ToLower());
+            var contact = await dbContext.Contacts.FirstOrDefaultAsync(f => f.Email.Equals(model.Email, StringComparison.CurrentCultureIgnoreCase));
 
             if (contact == null)
             {

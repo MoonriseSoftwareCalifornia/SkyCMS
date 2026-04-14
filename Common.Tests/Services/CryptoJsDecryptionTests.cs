@@ -40,7 +40,7 @@ namespace Cosmos.Common.Tests.Services
         public void Encrypt_WithNullText_ReturnsEmptyString()
         {
             // Arrange
-            string plainText = null;
+            string plainText = null!;
 
             // Act
             var encrypted = CryptoJsDecryption.Encrypt(plainText);
@@ -124,7 +124,7 @@ namespace Cosmos.Common.Tests.Services
             string plainText = "Test message";
 
             // Act
-            var encrypted = CryptoJsDecryption.Encrypt(plainText, null);
+            var encrypted = CryptoJsDecryption.Encrypt(plainText, null!);
 
             // Assert
             Assert.IsNotNull(encrypted);
@@ -334,7 +334,7 @@ namespace Cosmos.Common.Tests.Services
             // Arrange - Create JSON envelope format (iv + ct)
             string plainText = "Envelope test";
             var encrypted = CryptoJsDecryption.Encrypt(plainText);
-            
+
             // Create envelope format
             var envelope = $"{{\"iv\":\"{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(DefaultKey))}\",\"ct\":\"{encrypted}\"}}";
 

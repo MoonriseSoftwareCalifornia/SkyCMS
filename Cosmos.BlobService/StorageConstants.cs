@@ -75,15 +75,15 @@ public static class StorageConstants
     /// <summary>
     /// Connection string key for primary storage.
     /// </summary>
-    public const string ConnectionStringKey_Storage = "StorageConnectionString";
+    public const string ConnectionStringKeyStorage = "StorageConnectionString";
 
     /// <summary>
     /// Connection string key for Azure blob storage.
     /// </summary>
-    public const string ConnectionStringKey_AzureBlob = "AzureBlobStorageConnectionString";
+    public const string ConnectionStringKeyAzureBlob = "AzureBlobStorageConnectionString";
 
     /// <summary>
     /// Connection string key for data protection storage.
     /// </summary>
-    public const string ConnectionStringKey_DataProtection = "DataProtectionStorage";
+    public const string ConnectionStringKeyDataProtection = "DataProtectionStorage";
 }

@@ -22,7 +22,7 @@ public static class FileTypeConstants
     /// - Markup: .htm, .html
     /// - Video: .mov, .webm, .avi, .mp4, .mpeg, .ts
     /// - Vector Graphics: .svg
-    /// - Data: .json
+    /// - Data: .json.
     /// </remarks>
     public const string DefaultAllowedFileTypes = ".js,.css,.htm,.html,.mov,.webm,.avi,.mp4,.mpeg,.ts,.svg,.json";
 

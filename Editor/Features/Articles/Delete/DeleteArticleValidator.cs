@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Features.Articles.Delete
 {
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Validates DeleteArticleCommand requests.
@@ -31,6 +31,7 @@ namespace Sky.Editor.Features.Articles.Delete
         /// <summary>
         /// Validates the delete article command.
         /// </summary>
+        /// <returns></returns>
         public Dictionary<string, string[]> Validate(DeleteArticleCommand command)
         {
             var errors = new Dictionary<string, string[]>();
@@ -46,6 +47,7 @@ namespace Sky.Editor.Features.Articles.Delete
         /// <summary>
         /// Validates article exists and is not root page.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<Dictionary<string, string[]>> ValidateAsync(
             DeleteArticleCommand command,
             CancellationToken ct = default)

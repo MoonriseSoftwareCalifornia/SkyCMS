@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Features.Shared
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Multi-tenant aware mediator decorator that validates user authorization before executing commands.
@@ -194,7 +194,7 @@ namespace Sky.Editor.Features.Shared
                 return;
             }
 
-            var userId = (Guid)userIdProperty.GetValue(command)!;
+            var userId = (Guid)userIdProperty.GetValue(command) !;
 
             // Validate user exists and belongs to tenant
             var user = await dbContext.Users

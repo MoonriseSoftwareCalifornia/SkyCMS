@@ -75,10 +75,10 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
                 FooterHtmlContent = "<footer></footer>",
                 Notes = "Test layout"
             };
-            
+
             mockMediator.Setup(m => m.QueryAsync(It.IsAny<GetDefaultLayoutQuery>(), default))
                 .ReturnsAsync(mockLayout);
-            
+
             return mockMediator;
         }
 
@@ -170,8 +170,8 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             var config = CreateMockConfiguration();
 
             var handler = new GetArticleByArticleNumberQueryHandler(mockMediator.Object, context, memoryCache, config);
-            var query = new GetArticleByArticleNumberQuery 
-            { 
+            var query = new GetArticleByArticleNumberQuery
+            {
                 ArticleNumber = 12345,
                 VersionNumber = 1
             };
@@ -222,8 +222,8 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             var config = CreateMockConfiguration();
 
             var handler = new GetArticleByArticleNumberQueryHandler(mockMediator.Object, context, memoryCache, config);
-            var query = new GetArticleByArticleNumberQuery 
-            { 
+            var query = new GetArticleByArticleNumberQuery
+            {
                 ArticleNumber = 12345,
                 VersionNumber = 999
             };

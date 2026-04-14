@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Models
 {
-    using Cosmos.Cms.Common.Services.Configurations;
     using System.ComponentModel.DataAnnotations;
+    using Cosmos.Cms.Common.Services.Configurations;
 
     /// <summary>
     /// Configuration view model for setup wizard.
@@ -95,6 +95,5 @@ namespace Sky.Editor.Models
         /// Gets a value indicating whether secrets can be saved.
         /// </summary>
         public bool CanSaveSecrets { get; private set; }
-
     }
 }

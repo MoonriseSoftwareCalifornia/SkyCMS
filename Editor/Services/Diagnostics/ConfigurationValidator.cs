@@ -7,18 +7,18 @@
 
 namespace Sky.Editor.Services.Diagnostics
 {
-    using AspNetCore.Identity.FlexDb;
-    using Azure.Storage.Blobs;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
     using System.Linq;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
+    using AspNetCore.Identity.FlexDb;
+    using Azure.Storage.Blobs;
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Validates configuration settings for single-tenant and multi-tenant modes.

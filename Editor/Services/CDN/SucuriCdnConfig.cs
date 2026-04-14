@@ -7,7 +7,6 @@
 
 namespace Sky.Editor.Services.CDN
 {
-
     /// <summary>
     /// Settings for Sucuri CDN/Firewall.
     /// </summary>

@@ -7,8 +7,8 @@
 
 namespace Cosmos.Cms.Common.Services.Configurations
 {
-    using Cosmos.Cms.Common.Services.Configurations.Storage;
     using System.Collections.Generic;
+    using Cosmos.Cms.Common.Services.Configurations.Storage;
 
     /// <summary>
     ///     Storage provider configuration.

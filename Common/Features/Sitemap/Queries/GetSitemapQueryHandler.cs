@@ -23,7 +23,7 @@ using X.Web.Sitemap;
 /// </summary>
 /// <param name="dbContext">Database context.</param>
 /// <param name="memoryCache">Optional memory cache for caching sitemap results.</param>
-public class GetSitemapQueryHandler(IApplicationDbContext dbContext, IMemoryCache? memoryCache = null) : IQueryHandler<GetSitemapQuery, X.Web.Sitemap.Sitemap>
+public class GetSitemapQueryHandler(IApplicationDbContext dbContext, IMemoryCache? memoryCache = null): IQueryHandler<GetSitemapQuery, X.Web.Sitemap.Sitemap>
 {
     private readonly IApplicationDbContext dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     private readonly IMemoryCache? memoryCache = memoryCache;

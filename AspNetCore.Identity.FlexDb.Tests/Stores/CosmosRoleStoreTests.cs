@@ -60,7 +60,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// of roles is present in the database for the provider.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -82,7 +82,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Deletes a role and verifies related role claims and user-role links are removed.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -113,7 +113,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Finds a role by id and asserts the returned role id matches.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByIdAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -133,7 +133,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Finds a role by normalized name and asserts the expected role is returned.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -153,7 +153,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Ensures that retrieving a role by normalized name returns the expected role id.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetNormalizedRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -173,7 +173,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves a role's id via the store API and asserts it matches the role.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetRoleIdAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -193,7 +193,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves a role's name via the store API and asserts it matches the role.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -213,7 +213,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets a role's normalized name and verifies the change via the store.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetNormalizedRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -235,7 +235,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets a role's name and verifies the persisted value.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -257,7 +257,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Updates a role's name and normalized name and verifies the persisted values.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -284,7 +284,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Adds multiple claims to a role and asserts they are returned by GetClaimsAsync.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetClaimsAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -308,7 +308,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Adds a claim to a role and asserts the claim is persisted.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task AddClaimAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -330,7 +330,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Removes a claim from a role and verifies it is no longer returned.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task RemoveClaimAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -355,7 +355,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Removes only the exact matching claim when multiple claims share the same value.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task RemoveClaimAsync_RemovesOnlyMatchingClaimTypeAndValue(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -382,7 +382,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Queries the role set and asserts that at least one role exists.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task QueryRolesTest(TestDatabaseProvider provider)
         {
 

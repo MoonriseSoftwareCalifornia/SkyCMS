@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
+    using System;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Configuration;
     using Sky.Editor.Authorization;
     using Sky.Editor.Services.Setup;
-    using System;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard welcome page.
@@ -135,14 +135,14 @@ namespace Sky.Editor.Areas.Setup.Pages
 
             if (!allowSetup)
             {
-                return RedirectToPage("/Index", new { area = "" });
+                return RedirectToPage("/Index", new { area = string.Empty });
             }
 
             // Check if setup is already complete
             var existingConfig = await setupService.GetCurrentSetupAsync();
             if (existingConfig?.IsComplete == true)
             {
-                return RedirectToPage("/Index", new { area = "" });
+                return RedirectToPage("/Index", new { area = string.Empty });
             }
 
             return Page();
@@ -176,7 +176,7 @@ namespace Sky.Editor.Areas.Setup.Pages
 
                 return RedirectToPage("./Step1_Storage");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 ErrorMessage = $"There was an error initializing the setup, restarting.";
                 await setupService.InitializeSetupAsync(true);

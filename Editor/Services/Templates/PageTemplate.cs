@@ -9,7 +9,6 @@ using System.Collections.Generic;
 
 namespace Sky.Editor.Services.Templates
 {
-
     /// <summary>
     /// Represents metadata for a page template.
     /// </summary>

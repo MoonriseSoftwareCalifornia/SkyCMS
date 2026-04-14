@@ -7,6 +7,8 @@
 
 namespace Sky.Editor.Services.Migrations
 {
+    using System;
+    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data;
     using Cosmos.DynamicConfig;
@@ -17,8 +19,6 @@ namespace Sky.Editor.Services.Migrations
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Layout;
     using Sky.Editor.Services.Migrations.Core;
-    using System;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for running database migrations during application startup.
@@ -342,6 +342,7 @@ namespace Sky.Editor.Services.Migrations
                 System.Console.WriteLine($"      ❌ {domainName}: Migration failed - {tenantEx.Message}");
                 result.IsSuccess = false;
                 result.ErrorMessage = tenantEx.Message;
+
                 // Continue with next tenant - don't halt startup
             }
 

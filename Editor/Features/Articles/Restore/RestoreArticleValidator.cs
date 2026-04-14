@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Features.Articles.Restore
 {
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
-    using Microsoft.EntityFrameworkCore;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
+    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Validates RestoreArticleCommand requests.
@@ -32,6 +32,7 @@ namespace Sky.Editor.Features.Articles.Restore
         /// <summary>
         /// Validates the restore article command.
         /// </summary>
+        /// <returns></returns>
         public Dictionary<string, string[]> Validate(RestoreArticleCommand command)
         {
             var errors = new Dictionary<string, string[]>();
@@ -47,6 +48,7 @@ namespace Sky.Editor.Features.Articles.Restore
         /// <summary>
         /// Validates article exists in deleted state.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<Dictionary<string, string[]>> ValidateAsync(
             RestoreArticleCommand command,
             CancellationToken ct = default)

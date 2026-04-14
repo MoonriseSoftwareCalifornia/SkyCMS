@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Domain.Events.Handlers
 {
-    using Microsoft.Extensions.Logging;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Domain event handler that reacts to <see cref="RedirectCreatedEvent"/> occurrences.

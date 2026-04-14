@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Features.Articles.Save
 {
+    using System.Collections.Generic;
     using Cosmos.Common.Models;
     using Sky.Editor.Services.CDN;
-    using System.Collections.Generic;
 
     /// <summary>
     /// Result of an article update operation including CDN purge results.

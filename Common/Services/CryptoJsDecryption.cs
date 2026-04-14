@@ -16,13 +16,13 @@ namespace Cosmos.Common.Services
     /// <summary>
     /// AesDecryption utility for CryptoJS.
     /// </summary>
-    public class CryptoJsDecryption
+    public static class CryptoJsDecryption
     {
         private sealed class CryptoEnvelope
         {
-            public string iv { get; set; }
+            public string Iv { get; set; }
 
-            public string ct { get; set; }
+            public string Ct { get; set; }
         }
 
         /// <summary>
@@ -48,10 +48,10 @@ namespace Cosmos.Common.Services
             try
             {
                 var envelope = JsonSerializer.Deserialize<CryptoEnvelope>(encryptedText);
-                if (envelope != null && !string.IsNullOrWhiteSpace(envelope.ct) && !string.IsNullOrWhiteSpace(envelope.iv))
+                if (envelope != null && !string.IsNullOrWhiteSpace(envelope.Ct) && !string.IsNullOrWhiteSpace(envelope.Iv))
                 {
-                    var encryptedBytes = Convert.FromBase64String(envelope.ct);
-                    var ivBytes = Convert.FromBase64String(envelope.iv);
+                    var encryptedBytes = Convert.FromBase64String(envelope.Ct);
+                    var ivBytes = Convert.FromBase64String(envelope.Iv);
                     return DecryptInternal(encryptedBytes, key, ivBytes);
                 }
             }

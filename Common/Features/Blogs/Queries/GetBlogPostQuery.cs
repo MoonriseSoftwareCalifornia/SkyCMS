@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Features.Blogs.Queries
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Query to retrieve a single blog post by its URL path.
@@ -18,7 +18,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
     {
         /// <summary>
         /// Gets or sets the blog post URL path.
-        /// Example: "cat-wash/shampo" or "cat_wash/shampo"
+        /// Example: "cat-wash/shampo" or "cat_wash/shampo".
         /// </summary>
         public string UrlPath { get; set; } = string.Empty;
 

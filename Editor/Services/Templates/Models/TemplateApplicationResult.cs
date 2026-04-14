@@ -1,4 +1,4 @@
-// <copyright file="TemplateApplicationModels.cs" company="Moonrise Software, LLC">
+// <copyright file="TemplateApplicationResult.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -58,7 +58,7 @@ namespace Sky.Editor.Services.Templates.Models
         /// <remarks>
         /// Examples:
         /// - "Editable region 'sidebar' from original content could not be preserved"
-        /// - "Template has new regions that were not in the original"
+        /// - "Template has new regions that were not in the original".
         /// </remarks>
         public List<string> Warnings { get; set; } = new List<string>();
     }

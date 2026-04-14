@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Features.Blogs.Queries
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Query to retrieve navigation information for blog posts within a stream.
@@ -19,13 +19,13 @@ namespace Cosmos.Common.Features.Blogs.Queries
     {
         /// <summary>
         /// Gets or sets the blog key (stream identifier).
-        /// Example: "cat-wash" or "cat_wash"
+        /// Example: "cat-wash" or "cat_wash".
         /// </summary>
         public string BlogKey { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the current blog post URL path.
-        /// Example: "cat-wash/shampo" or "cat_wash/shampo"
+        /// Example: "cat-wash/shampo" or "cat_wash/shampo".
         /// </summary>
         public string CurrentPostUrlPath { get; set; } = string.Empty;
 

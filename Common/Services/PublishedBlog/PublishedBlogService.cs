@@ -7,13 +7,13 @@
 
 namespace Cosmos.Common.Services.PublishedBlog
 {
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Cosmos.Cms.Common;
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
 
     /// <summary>
     /// Service for accessing published blog content from the database.
@@ -25,7 +25,7 @@ namespace Cosmos.Common.Services.PublishedBlog
     /// </remarks>
     public class PublishedBlogService : IPublishedBlogService
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly ApplicationDbContext dbContext;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PublishedBlogService"/> class.
@@ -33,7 +33,7 @@ namespace Cosmos.Common.Services.PublishedBlog
         /// <param name="dbContext">The application database context.</param>
         public PublishedBlogService(ApplicationDbContext dbContext)
         {
-            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
         /// <inheritdoc/>
@@ -47,7 +47,7 @@ namespace Cosmos.Common.Services.PublishedBlog
             var now = DateTimeOffset.UtcNow;
             var blogStreamType = (int)ArticleType.BlogStream;
 
-            return await _dbContext.Pages
+            return await dbContext.Pages
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogStreamType
                     && p.Published.HasValue
@@ -68,7 +68,7 @@ namespace Cosmos.Common.Services.PublishedBlog
             var now = DateTimeOffset.UtcNow;
             var blogPostType = (int)ArticleType.BlogPost;
 
-            return await _dbContext.Pages
+            return await dbContext.Pages
                 .Where(p => p.UrlPath == urlPath
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue
@@ -94,11 +94,10 @@ namespace Cosmos.Common.Services.PublishedBlog
 
             var now = DateTimeOffset.UtcNow;
             var blogPostType = (int)ArticleType.BlogPost;
-            var blogStreamType = (int)ArticleType.BlogStream;
 
             var skip = (pageNumber - 1) * pageSize;
 
-            return await _dbContext.Pages
+            return await dbContext.Pages
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType // Exclude the blog stream article itself
                     && p.Published.HasValue
@@ -122,7 +121,7 @@ namespace Cosmos.Common.Services.PublishedBlog
             var now = DateTimeOffset.UtcNow;
             var blogPostType = (int)ArticleType.BlogPost;
 
-            return await _dbContext.Pages
+            return await dbContext.Pages
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue
@@ -143,7 +142,7 @@ namespace Cosmos.Common.Services.PublishedBlog
             var blogPostType = (int)ArticleType.BlogPost;
 
             // Get the most recent published entry with a date earlier than the reference date
-            return await _dbContext.Pages
+            return await dbContext.Pages
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue
@@ -166,7 +165,7 @@ namespace Cosmos.Common.Services.PublishedBlog
             var blogPostType = (int)ArticleType.BlogPost;
 
             // Get the earliest published entry with a date later than the reference date
-            return await _dbContext.Pages
+            return await dbContext.Pages
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue

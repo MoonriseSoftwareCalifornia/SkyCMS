@@ -7,6 +7,12 @@
 
 namespace Sky.Editor.Services.Layouts
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net.Http;
+    using System.Text;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Data.Logic;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -14,12 +20,6 @@ namespace Sky.Editor.Services.Layouts
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net.Http;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for importing layouts and templates from external sources.
@@ -27,7 +27,7 @@ namespace Sky.Editor.Services.Layouts
     public class LayoutImportService : ILayoutImportService
     {
         private const string COSMOSLAYOUTSREPO = "https://cwalabs.github.io/Cosmos.Starter.Designs";
-        private const string CATALOG_CACHE_KEY = "LayoutCatalog";
+        private const string CATALOGCACHEKEY = "LayoutCatalog";
         private static readonly TimeSpan CatalogCacheDuration = TimeSpan.FromHours(1);
 
         private readonly IHttpClientFactory httpClientFactory;
@@ -53,7 +53,7 @@ namespace Sky.Editor.Services.Layouts
         /// <inheritdoc/>
         public async Task<Root> GetCommunityCatalogAsync()
         {
-            if (cache.TryGetValue(CATALOG_CACHE_KEY, out Root cachedCatalog))
+            if (cache.TryGetValue(CATALOGCACHEKEY, out Root cachedCatalog))
             {
                 return cachedCatalog;
             }
@@ -66,7 +66,7 @@ namespace Sky.Editor.Services.Layouts
                 var data = await client.GetStringAsync(url);
                 var catalog = JsonConvert.DeserializeObject<Root>(data);
 
-                cache.Set(CATALOG_CACHE_KEY, catalog, CatalogCacheDuration);
+                cache.Set(CATALOGCACHEKEY, catalog, CatalogCacheDuration);
                 return catalog;
             }
             catch (Exception ex)

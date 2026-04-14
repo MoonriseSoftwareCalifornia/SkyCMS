@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Templates.Get
 {
-    using Cosmos.Common.Data;
     using System.Collections.Generic;
+    using Cosmos.Common.Data;
 
     /// <summary>
     /// Result data transfer object for template retrieval queries.

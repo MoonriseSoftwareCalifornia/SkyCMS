@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Authorization
 {
+    using System;
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.Filters;
     using Sky.Editor.Services.Setup;
-    using System;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Authorization attribute for setup wizard pages.

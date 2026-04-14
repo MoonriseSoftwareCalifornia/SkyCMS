@@ -7,16 +7,16 @@
 
 namespace Sky.Editor.Features.Blogs.GetStream
 {
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for retrieving blog stream articles for editing or display.

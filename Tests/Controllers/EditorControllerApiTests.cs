@@ -86,7 +86,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             Assert.IsNotNull(jsonResult.Value);
-            Assert.IsInstanceOfType(jsonResult.Value, typeof(project));
+            Assert.IsInstanceOfType(jsonResult.Value, typeof(Project));
         }
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
-            var projectData = (project)jsonResult.Value!;
+            var projectData = (Project)jsonResult.Value!;
 
             // The ArticleHtmlService should have processed the content
             Assert.IsNotNull(projectData);

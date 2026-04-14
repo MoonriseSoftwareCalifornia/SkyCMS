@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Data
 {
+    using System;
     using Cosmos.Common.Data;
     using Cosmos.DynamicConfig;
     using Microsoft.Extensions.DependencyInjection;
-    using System;
 
     /// <summary>
     /// Utilities for the ApplicationDbContext class.
@@ -32,7 +32,7 @@ namespace Sky.Editor.Data
         /// </summary>
         /// <param name="domainName">Domain name.</param>
         /// <param name="services">Services provider.</param>
-        /// <returns>ApplicationDbContext</returns>
+        /// <returns>ApplicationDbContext.</returns>
         public static ApplicationDbContext GetDbContextForDomain(string domainName, IServiceProvider services)
         {
             if (string.IsNullOrWhiteSpace(domainName))

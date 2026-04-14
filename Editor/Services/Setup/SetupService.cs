@@ -7,6 +7,10 @@
 
 namespace Sky.Editor.Services.Setup
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -19,10 +23,6 @@ namespace Sky.Editor.Services.Setup
     using Newtonsoft.Json;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Services.Layouts;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
@@ -751,6 +751,7 @@ namespace Sky.Editor.Services.Setup
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to record configuration change audit log");
+
                 // Don't throw - audit log failure should not block the operation
             }
         }
@@ -776,7 +777,9 @@ namespace Sky.Editor.Services.Setup
             {
                 // Skip non-public, sensitive, or metadata properties
                 if (!prop.CanRead || !prop.CanWrite)
+                {
                     continue;
+                }
 
                 var oldValue = prop.GetValue(oldConfig)?.ToString() ?? string.Empty;
                 var newValue = prop.GetValue(newConfig)?.ToString() ?? string.Empty;
@@ -982,7 +985,6 @@ namespace Sky.Editor.Services.Setup
                     config.SmtpUsername = smtpUsername;
                     config.SmtpPassword = smtpPassword;
                 }
-
 
                 await SaveDraftStateAsync(config);
 

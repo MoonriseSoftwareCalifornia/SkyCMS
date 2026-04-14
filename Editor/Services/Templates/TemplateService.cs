@@ -7,13 +7,6 @@
 
 namespace Sky.Editor.Services.Templates
 {
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
-    using Cosmos.DynamicConfig;
-    using Microsoft.AspNetCore.Hosting;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Templates.Models;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -22,13 +15,19 @@ namespace Sky.Editor.Services.Templates
     using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
+    using Cosmos.DynamicConfig;
+    using Microsoft.AspNetCore.Hosting;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Templates.Models;
 
     /// <summary>
     /// Implementation of the template service.
     /// </summary>
     public class TemplateService : ITemplateService
     {
-
         /// <summary>
         /// Tracks which tenants have had templates seeded to avoid redundant DB checks.
         /// Key: Tenant ID (Connection.Id), Value: true when seeded.
@@ -140,7 +139,8 @@ namespace Sky.Editor.Services.Templates
                     dbContext.Templates.Add(dbTemplate);
                     templatesCreated++;
 
-                    logger.LogInformation("Created template '{PageType}' ({Title})",
+                    logger.LogInformation(
+                        "Created template '{PageType}' ({Title})",
                         template.Key, template.Name);
                 }
                 else if (dbTemplate.LayoutId != layoutId)
@@ -162,7 +162,8 @@ namespace Sky.Editor.Services.Templates
                 {
                     // Template exists and is already using the current default layout
                     templatesSkipped++;
-                    logger.LogDebug("Template '{PageType}' already exists with correct layout",
+                    logger.LogDebug(
+                        "Template '{PageType}' already exists with correct layout",
                         template.Key);
                 }
             }
@@ -492,7 +493,10 @@ namespace Sky.Editor.Services.Templates
                 foreach (var templateRegion in templateEditableRegions)
                 {
                     var regionId = templateRegion.GetAttributeValue("data-ccms-ceid", null);
-                    if (string.IsNullOrEmpty(regionId)) continue;
+                    if (string.IsNullOrEmpty(regionId))
+                    {
+                        continue;
+                    }
 
                     if (articleRegionsById.TryGetValue(regionId, out var articleRegion))
                     {
@@ -855,7 +859,10 @@ namespace Sky.Editor.Services.Templates
                     .OrderByDescending(a => a.VersionNumber)
                     .FirstOrDefaultAsync();
 
-                if (latestArticle == null) continue;
+                if (latestArticle == null)
+                {
+                    continue;
+                }
 
                 // Check if article has published version
                 var publishedVersion = await dbContext.Articles

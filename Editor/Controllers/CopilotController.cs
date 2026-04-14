@@ -343,7 +343,7 @@ public sealed class CopilotController : ControllerBase
     {
         var messages = new List<UpstreamChatMessage>
         {
-            new()
+            new ()
             {
                 Role = "system",
                 Content = BuildChatSystemPrompt(request),

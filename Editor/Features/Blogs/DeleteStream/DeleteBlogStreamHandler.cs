@@ -7,6 +7,10 @@
 
 namespace Sky.Editor.Features.Blogs.DeleteStream
 {
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -14,10 +18,6 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Data.Logic;
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for deleting blog streams with cascade deletion of all associated blog entries.
@@ -130,6 +130,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                             "Error deleting blog entry {ArticleNumber} from stream {BlogKey}",
                             entryNumber,
                             blogKey);
+
                         // Continue with other entries even if one fails
                     }
                 }

@@ -7,6 +7,9 @@
 
 namespace Sky.Cms.Services
 {
+    using System;
+    using System.IO;
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -15,9 +18,6 @@ namespace Sky.Cms.Services
     using Microsoft.AspNetCore.Mvc.Rendering;
     using Microsoft.AspNetCore.Mvc.ViewFeatures;
     using Microsoft.AspNetCore.Routing;
-    using System;
-    using System.IO;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// View render service interface.
@@ -57,7 +57,8 @@ namespace Sky.Cms.Services
         /// <param name="razorViewEngine">View engine.</param>
         /// <param name="tempDataProvider">Temp data provider.</param>
         /// <param name="serviceProvider">Services provider.</param>
-        public ViewRenderService(IRazorViewEngine razorViewEngine,
+        public ViewRenderService(
+            IRazorViewEngine razorViewEngine,
             ITempDataProvider tempDataProvider,
             IServiceProvider serviceProvider)
         {
@@ -98,8 +99,7 @@ namespace Sky.Cms.Services
                     viewDictionary,
                     new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
                     sw,
-                    new HtmlHelperOptions()
-                );
+                    new HtmlHelperOptions());
 
                 await viewResult.View.RenderAsync(viewContext);
                 return sw.ToString();

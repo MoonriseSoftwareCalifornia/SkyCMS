@@ -7,11 +7,13 @@
 
 namespace Cosmos.Common.Models
 {
+    using System;
     using System.ComponentModel.DataAnnotations;
 
     /// <summary>
     /// Validates if a URL is a valid redirect URL.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
     public class RedirectUrlAttribute : ValidationAttribute
     {
         /// <summary>

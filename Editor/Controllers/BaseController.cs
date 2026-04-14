@@ -180,7 +180,9 @@ namespace Sky.Cms.Controllers
         {
             var layoutViewModel = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
             if (layoutViewModel == null)
+            {
                 return null;
+            }
 
             // GetDefaultLayoutQuery returns LayoutViewModel, but we need Layout entity
             // Query the database directly for the Layout entity using the Id from the ViewModel
@@ -209,7 +211,6 @@ namespace Sky.Cms.Controllers
                 .Where(t => t.LayoutNumber == layout.LayoutNumber ||
                             (t.LayoutNumber == 0 && t.LayoutId == layout.Id)); // Handles unmigrated data
         }
-
 
         /// <summary>
         /// Builds save result JSON model.

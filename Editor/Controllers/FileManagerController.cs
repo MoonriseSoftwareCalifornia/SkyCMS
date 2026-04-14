@@ -7,6 +7,13 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Web;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Common.Data;
@@ -35,13 +42,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
 
     /// <summary>
     /// File manager controller.
@@ -213,7 +213,7 @@ namespace Sky.Cms.Controllers
 
         /// <summary>
         /// Gets images for the design editor.
-        /// /// </summary>
+        /// ///. </summary>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="path">Path to retrieve images.</param>
         /// <param name="exclude">Path to exclude images.</param>
@@ -909,8 +909,8 @@ namespace Sky.Cms.Controllers
 
             var uploadResult = new PageImportResult
             {
-                uploaded = fileMetaData.TotalChunks - 1 <= fileMetaData.ChunkIndex,
-                fileUid = fileMetaData.UploadUid
+                Uploaded = fileMetaData.TotalChunks - 1 <= fileMetaData.ChunkIndex,
+                FileUid = fileMetaData.UploadUid
             };
 
             try
@@ -939,17 +939,17 @@ namespace Sky.Cms.Controllers
                     var originalBodyNode = originalHtmlDoc.DocumentNode.SelectSingleNode("//body");
 
                     var layoutHeadNodes =
-                        SelectNodesBetweenComments(originalHeadNode, PageImportConstants.COSMOS_HEAD_START, PageImportConstants.COSMOS_HEAD_END);
+                        SelectNodesBetweenComments(originalHeadNode, PageImportConstants.COSMOSHEADSTART, PageImportConstants.COSMOSHEADEND);
                     var layoutHeadScriptsNodes =
-                        SelectNodesBetweenComments(originalHeadNode, PageImportConstants.COSMOS_HEAD_SCRIPTS_START, PageImportConstants.COSMOS_HEAD_SCRIPTS_END);
+                        SelectNodesBetweenComments(originalHeadNode, PageImportConstants.COSMOSHEADSCRIPTSSTART, PageImportConstants.COSMOSHEADSCRIPTSEND);
                     var layoutBodyHeaderNodes =
-                        SelectNodesBetweenComments(originalBodyNode, PageImportConstants.COSMOS_BODY_HEADER_START, PageImportConstants.COSMOS_BODY_HEADER_END);
+                        SelectNodesBetweenComments(originalBodyNode, PageImportConstants.COSMOSBODYHEADERSTART, PageImportConstants.COSMOSBODYHEADEREND);
                     var layoutBodyFooterNodes =
-                        SelectNodesBetweenComments(originalBodyNode, PageImportConstants.COSMOS_BODY_FOOTER_START, PageImportConstants.COSMOS_BODY_FOOTER_END);
+                        SelectNodesBetweenComments(originalBodyNode, PageImportConstants.COSMOSBODYFOOTERSTART, PageImportConstants.COSMOSBODYFOOTEREND);
                     var layoutBodyGoogleTranslateNodes =
-                        SelectNodesBetweenComments(originalBodyNode, PageImportConstants.COSMOS_GOOGLE_TRANSLATE_START, PageImportConstants.COSMOS_GOOGLE_TRANSLATE_END);
+                        SelectNodesBetweenComments(originalBodyNode, PageImportConstants.COSMOSGOOGLETRANSLATESTART, PageImportConstants.COSMOSGOOGLETRANSLATEEND);
                     var layoutBodyEndScriptsNodes =
-                        SelectNodesBetweenComments(originalBodyNode, PageImportConstants.COSMOS_BODY_END_SCRIPTS_START, PageImportConstants.COSMOS_BODY_END_SCRIPTS_END);
+                        SelectNodesBetweenComments(originalBodyNode, PageImportConstants.COSMOSBODYENDSCRIPTSSTART, PageImportConstants.COSMOSBODYENDSCRIPTSEND);
 
                     // NOTES
                     // https://stackoverflow.com/questions/3844208/html-agility-pack-find-comment-node?msclkid=b885cfabc88011ecbf75531a66703f70
@@ -1571,7 +1571,7 @@ namespace Sky.Cms.Controllers
                 IsValid = ModelState.IsValid
             };
 
-            if (!resultMode.uploaded)
+            if (!resultMode.Uploaded)
             {
                 ModelState.AddModelError(string.Empty, $"Error saving {Path.GetFileName(model.Path)}");
             }
@@ -1640,7 +1640,7 @@ namespace Sky.Cms.Controllers
             //             quantity = form["quantity"]
             //     };
             // Convert base 64 string to byte[]
-            var data = model.imageBase64.Split(',')[1];
+            var data = model.ImageBase64.Split(',')[1];
 
             byte[] imageBytes = Convert.FromBase64String(data);
 
@@ -1651,7 +1651,7 @@ namespace Sky.Cms.Controllers
 
             using var output = new MemoryStream();
 
-            switch (model.extension)
+            switch (model.Extension)
             {
                 case "jpg":
                     await image.SaveAsJpegAsync(output);
@@ -1667,7 +1667,7 @@ namespace Sky.Cms.Controllers
                     break;
             }
 
-            var contentType = MimeTypeMap.GetMimeType(Path.GetExtension(model.fullName));
+            var contentType = MimeTypeMap.GetMimeType(Path.GetExtension(model.FullName));
 
             try
             {
@@ -1675,13 +1675,13 @@ namespace Sky.Cms.Controllers
                 {
                     ChunkIndex = 0,
                     ContentType = contentType,
-                    FileName = model.fullName,
-                    RelativePath = model.folder + "/" + model.fullName,
+                    FileName = model.FullName,
+                    RelativePath = model.Folder + "/" + model.FullName,
                     TotalChunks = 1,
                     TotalFileSize = output.Length,
                     UploadUid = Guid.NewGuid().ToString(),
-                    ImageHeight = model.height,
-                    ImageWidth = model.width
+                    ImageHeight = model.Height,
+                    ImageWidth = model.Width
                 };
 
                 await storageContext.AppendBlob(output, metaData);
@@ -1800,8 +1800,8 @@ namespace Sky.Cms.Controllers
             {
                 return Json(new FileUploadResult
                 {
-                    uploaded = false,
-                    fileUid = fileMetaData.UploadUid
+                    Uploaded = false,
+                    FileUid = fileMetaData.UploadUid
                 });
             }
 
@@ -1848,8 +1848,8 @@ namespace Sky.Cms.Controllers
 
             var fileBlob = new FileUploadResult
             {
-                uploaded = fileMetaData.TotalChunks - 1 <= fileMetaData.ChunkIndex,
-                fileUid = fileMetaData.UploadUid
+                Uploaded = fileMetaData.TotalChunks - 1 <= fileMetaData.ChunkIndex,
+                FileUid = fileMetaData.UploadUid
             };
             return Json(fileBlob);
         }

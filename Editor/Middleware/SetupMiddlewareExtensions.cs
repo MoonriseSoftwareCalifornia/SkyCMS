@@ -5,13 +5,13 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System;
 using Cosmos.Common.Services.Caching;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sky.Editor.Services.Setup;
-using System;
 
 namespace Sky.Editor.Middleware;
 
@@ -20,8 +20,8 @@ namespace Sky.Editor.Middleware;
 /// </summary>
 public static class SetupMiddlewareExtensions
 {
-    private const string SETUP_CACHE_KEY_PREFIX = "SetupComplete";
-    private const string HEADER_ORIGIN_HOSTNAME = "x-origin-hostname";
+    private const string SETUPCACHEKEYPREFIX = "SetupComplete";
+    private const string HEADERORIGINHOSTNAME = "x-origin-hostname";
 
     /// <summary>
     /// Adds middleware that redirects users to the setup wizard if setup is incomplete.
@@ -139,7 +139,7 @@ public static class SetupMiddlewareExtensions
     /// <returns>The hostname in lowercase.</returns>
     private static string GetHostname(HttpContext context)
     {
-        var hostname = context.Request.Headers[HEADER_ORIGIN_HOSTNAME].ToString().ToLowerInvariant();
+        var hostname = context.Request.Headers[HEADERORIGINHOSTNAME].ToString().ToLowerInvariant();
         return string.IsNullOrWhiteSpace(hostname)
             ? context.Request.Host.Host.ToLowerInvariant()
             : hostname;
@@ -150,7 +150,7 @@ public static class SetupMiddlewareExtensions
     /// </summary>
     /// <param name="hostname">The hostname.</param>
     /// <returns>The cache key.</returns>
-    private static string GetSetupCacheKey(string hostname) => $"{SETUP_CACHE_KEY_PREFIX}:{hostname}";
+    private static string GetSetupCacheKey(string hostname) => $"{SETUPCACHEKEYPREFIX}:{hostname}";
 
     /// <summary>
     /// Determines if a request path should skip setup detection checks.

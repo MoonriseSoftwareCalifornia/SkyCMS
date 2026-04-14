@@ -22,7 +22,7 @@ using Microsoft.EntityFrameworkCore;
 /// Handler for retrieving all articles accessible to a user based on their roles and permissions.
 /// </summary>
 /// <param name="dbContext">Database context for querying articles and permissions.</param>
-public class GetArticlesForUserQueryHandler(IApplicationDbContext dbContext) : IQueryHandler<GetArticlesForUserQuery, List<TableOfContentsItem>>
+public class GetArticlesForUserQueryHandler(IApplicationDbContext dbContext): IQueryHandler<GetArticlesForUserQuery, List<TableOfContentsItem>>
 {
     private readonly IApplicationDbContext dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
@@ -34,7 +34,7 @@ public class GetArticlesForUserQueryHandler(IApplicationDbContext dbContext) : I
             throw new ArgumentNullException(nameof(query));
         }
 
-        var userId = query.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = query.user.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var objectIds = await dbContext.UserRoles
             .Where(w => w.UserId == userId)

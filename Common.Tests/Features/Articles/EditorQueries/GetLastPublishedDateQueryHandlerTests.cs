@@ -147,7 +147,7 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var handler = new GetLastPublishedDateQueryHandler(context, memoryCache);
             var query = new GetLastPublishedDateQuery
-            { 
+            {
                 ArticleNumber = 12345,
                 CacheDuration = TimeSpan.FromMinutes(5)
             };

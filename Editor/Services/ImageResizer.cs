@@ -7,8 +7,8 @@
 
 namespace Sky.Cms.Services
 {
-    using Sky.Cms.Models;
     using System;
+    using Sky.Cms.Models;
 
     /// <summary>
     /// Image resize utility.

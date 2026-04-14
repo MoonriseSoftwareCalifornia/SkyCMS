@@ -23,7 +23,7 @@ namespace Cosmos.Common.Tests.Utilities
         public void Serialize_WithNull_ReturnsNull()
         {
             // Arrange
-            object obj = null;
+            object obj = null!;
 
             // Act
             var result = ArticleLogicUtilities.Serialize(obj);
@@ -449,7 +449,7 @@ namespace Cosmos.Common.Tests.Utilities
             // Act & Assert
             for (int i = 0; i < 100; i++)
             {
-                Assert.IsTrue(ArticleLogicUtilities.GetPublisherHealth(), 
+                Assert.IsTrue(ArticleLogicUtilities.GetPublisherHealth(),
                     $"Health check failed on iteration {i}");
             }
         }

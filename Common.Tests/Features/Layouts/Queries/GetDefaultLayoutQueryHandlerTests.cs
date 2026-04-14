@@ -223,7 +223,7 @@ namespace Cosmos.Common.Tests.Features.Layouts.Queries
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var handler = new GetDefaultLayoutQueryHandler(context, memoryCache);
-            var query = new GetDefaultLayoutQuery { CacheDuration = TimeSpan.FromMinutes(10) };
+            var query = new GetDefaultLayoutQuery { cacheDuration = TimeSpan.FromMinutes(10) };
 
             var result1 = await handler.HandleAsync(query);
             var result2 = await handler.HandleAsync(query);
@@ -271,7 +271,7 @@ namespace Cosmos.Common.Tests.Features.Layouts.Queries
             await context.SaveChangesAsync();
 
             var handler = new GetDefaultLayoutQueryHandler(context, null);
-            var query = new GetDefaultLayoutQuery { CacheDuration = TimeSpan.FromMinutes(10) };
+            var query = new GetDefaultLayoutQuery { cacheDuration = TimeSpan.FromMinutes(10) };
 
             var result = await handler.HandleAsync(query);
 

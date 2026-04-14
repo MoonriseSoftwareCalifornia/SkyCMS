@@ -39,7 +39,7 @@ namespace Cosmos.Common
             }
 
             var builder = CosmosDbOptionsBuilder.GetDbOptionsBuilder<DataProtectionDbContext>(connectionString);
-            
+
             // Ensure database schema exists (one-time initialization)
             using (var initContext = new DataProtectionDbContext(builder.Options))
             {
@@ -49,7 +49,7 @@ namespace Cosmos.Common
             // Register as singleton. Singleton is required by the data protection framework.
             var contextInstance = new DataProtectionDbContext(builder.Options);
             services.AddSingleton<DataProtectionDbContext>(contextInstance);
-            
+
             // Configure data protection with the context AND register resilient XML repository
             // to handle Cosmos DB conflicts gracefully (409 errors when concurrent requests
             // try to create the same key).

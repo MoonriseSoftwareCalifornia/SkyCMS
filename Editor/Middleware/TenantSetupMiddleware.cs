@@ -5,11 +5,11 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Sky.Editor.Services.Setup;
-using System.Threading.Tasks;
 
 namespace Sky.Editor.Middleware
 {
@@ -31,6 +31,7 @@ namespace Sky.Editor.Middleware
         /// <summary>
         /// Invokes the middleware.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task InvokeAsync(HttpContext context)
         {
             // Skip for static files, health checks, diagnostics, and setup pages
@@ -73,6 +74,7 @@ namespace Sky.Editor.Middleware
         /// <summary>
         /// Adds the TenantSetupMiddleware to the application pipeline.
         /// </summary>
+        /// <returns></returns>
         public static IApplicationBuilder UseTenantSetupRedirect(this IApplicationBuilder builder)
         {
             return builder.UseMiddleware<TenantSetupMiddleware>();

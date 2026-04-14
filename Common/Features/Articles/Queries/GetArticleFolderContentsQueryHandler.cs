@@ -18,7 +18,7 @@ using Cosmos.Common.Features.Shared;
 /// Handler for retrieving folder contents for an article from storage.
 /// </summary>
 /// <param name="storageContext">File storage context for accessing article files.</param>
-public class GetArticleFolderContentsQueryHandler(IStorageContext storageContext) : IQueryHandler<GetArticleFolderContentsQuery, List<FileManagerEntry>>
+public class GetArticleFolderContentsQueryHandler(IStorageContext storageContext): IQueryHandler<GetArticleFolderContentsQuery, List<FileManagerEntry>>
 {
     private readonly IStorageContext storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext));
 
@@ -30,7 +30,7 @@ public class GetArticleFolderContentsQueryHandler(IStorageContext storageContext
             throw new ArgumentNullException(nameof(query));
         }
 
-        var path = $"/pub/articles/{query.ArticleNumber}/{query.Path.TrimStart('/')}";
+        var path = $"/pub/articles/{query.articleNumber}/{query.path.TrimStart('/')}";
 
         var contents = await storageContext.GetFilesAndDirectories(path);
 

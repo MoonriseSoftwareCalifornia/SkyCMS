@@ -27,8 +27,8 @@ namespace Sky.Editor.Middleware;
 /// </remarks>
 public class SetupCompletionFilter : IEndpointFilter
 {
-    private const string SETUP_CACHE_KEY_PREFIX = "SetupComplete";
-    private const string HEADER_ORIGIN_HOSTNAME = "x-origin-hostname";
+    private const string SETUPCACHEKEYPREFIX = "SetupComplete";
+    private const string HEADERORIGINHOSTNAME = "x-origin-hostname";
 
     private readonly bool isMultiTenantEditor;
 
@@ -85,11 +85,11 @@ public class SetupCompletionFilter : IEndpointFilter
 
     private static string GetHostname(HttpContext context)
     {
-        var hostname = context.Request.Headers[HEADER_ORIGIN_HOSTNAME].ToString().ToLowerInvariant();
+        var hostname = context.Request.Headers[HEADERORIGINHOSTNAME].ToString().ToLowerInvariant();
         return string.IsNullOrWhiteSpace(hostname)
             ? context.Request.Host.Host.ToLowerInvariant()
             : hostname;
     }
 
-    private static string GetSetupCacheKey(string hostname) => $"{SETUP_CACHE_KEY_PREFIX}:{hostname}";
+    private static string GetSetupCacheKey(string hostname) => $"{SETUPCACHEKEYPREFIX}:{hostname}";
 }

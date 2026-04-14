@@ -7,15 +7,15 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Login with two factor authentication page model.
@@ -60,10 +60,10 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
         /// <summary>
         /// On get method handler.
         /// </summary>
-        /// <param name="rememberMe"></param>
-        /// <param name="returnUrl"></param>
+        /// <param name="rememberMe">Remember user?</param>
+        /// <param name="returnUrl">Return URL.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="InvalidOperationException">Invalid operation exception.</exception>
         public async Task<IActionResult> OnGetAsync(bool rememberMe, string returnUrl = null)
         {
             // Ensure the user has gone through the username & password screen first

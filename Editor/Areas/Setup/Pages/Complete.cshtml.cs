@@ -7,6 +7,8 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
+    using System;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Services.Caching;
     using Microsoft.AspNetCore.Hosting;
@@ -16,14 +18,15 @@ namespace Sky.Editor.Areas.Setup.Pages
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
-    using System;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup completion page.
     /// </summary>
     public class CompleteModel : PageModel
     {
+        private const string SETUPCACHEKEYPREFIX = "SetupComplete";
+        private const string HEADERORIGINHOSTNAME = "x-origin-hostname";
+
         private readonly ISetupService setupService;
         private readonly IHostApplicationLifetime hostApplicationLifetime;
         private readonly IWebHostEnvironment webHostEnvironment;
@@ -31,9 +34,6 @@ namespace Sky.Editor.Areas.Setup.Pages
         private readonly ISetupCheckService setupCheckService;
         private readonly ApplicationDbContext dbContext;
         private readonly ICacheService<bool> setupCache;
-
-        private const string SETUP_CACHE_KEY_PREFIX = "SetupComplete";
-        private const string HEADER_ORIGIN_HOSTNAME = "x-origin-hostname";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CompleteModel"/> class.
@@ -138,13 +138,13 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// </summary>
         private void InvalidateSetupCache()
         {
-            var hostname = Request.Headers[HEADER_ORIGIN_HOSTNAME].ToString().ToLowerInvariant();
+            var hostname = Request.Headers[HEADERORIGINHOSTNAME].ToString().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(hostname))
             {
                 hostname = Request.Host.Host.ToLowerInvariant();
             }
 
-            var cacheKey = $"{SETUP_CACHE_KEY_PREFIX}:{hostname}";
+            var cacheKey = $"{SETUPCACHEKEYPREFIX}:{hostname}";
             setupCache.Remove(cacheKey);
 
             logger.LogInformation("Invalidated setup cache for hostname: {Hostname}", hostname);

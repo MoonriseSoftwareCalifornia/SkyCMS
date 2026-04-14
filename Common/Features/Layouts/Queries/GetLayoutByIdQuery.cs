@@ -15,8 +15,8 @@ using Cosmos.Common.Features.Shared;
 /// Query to get a layout by its unique identifier.
 /// Replaces LayoutHelper.GetLayoutByIdAsync() method.
 /// </summary>
-/// <param name="LayoutId">The layout ID to find.</param>
-public record GetLayoutByIdQuery(Guid LayoutId) : IQuery<Layout?>
+/// <param name="layoutId">The layout ID to find.</param>
+public record GetLayoutByIdQuery(Guid layoutId): IQuery<Layout?>
 {
     /// <summary>
     /// Gets the optional cache duration for the layout.

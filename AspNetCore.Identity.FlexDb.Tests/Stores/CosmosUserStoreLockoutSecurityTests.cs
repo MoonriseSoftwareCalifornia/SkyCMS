@@ -40,7 +40,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region Lockout End Date Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetLockoutEndDateAsync_WithFutureDate_LocksAccount(TestDatabaseProvider provider)
         {
             // Arrange
@@ -63,7 +63,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetLockoutEndDateAsync_WithNull_UnlocksAccount(TestDatabaseProvider provider)
         {
             // Arrange
@@ -87,7 +87,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetLockoutEndDateAsync_ForNewUser_ReturnsNull(TestDatabaseProvider provider)
         {
             // Arrange
@@ -104,7 +104,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetLockoutEnabledAsync_ForNewUser_ReturnsTrue(TestDatabaseProvider provider)
         {
             // Arrange
@@ -121,7 +121,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetLockoutEnabledAsync_ToFalse_DisablesLockout(TestDatabaseProvider provider)
         {
             // Arrange
@@ -146,7 +146,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region Access Failed Count Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task IncrementAccessFailedCountAsync_IncrementsCounter(TestDatabaseProvider provider)
         {
             // Arrange
@@ -169,7 +169,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task IncrementAccessFailedCount_MultipleIncrements_TracksCorrectly(TestDatabaseProvider provider)
         {
             // Arrange
@@ -196,7 +196,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task ResetAccessFailedCountAsync_ResetsToZero(TestDatabaseProvider provider)
         {
             // Arrange
@@ -222,7 +222,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetAccessFailedCountAsync_ForNewUser_ReturnsZero(TestDatabaseProvider provider)
         {
             // Arrange
@@ -243,7 +243,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region Integration Scenario Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task AccountLockout_AfterMaxFailedAttempts_LocksAccount(TestDatabaseProvider provider)
         {
             // Arrange
@@ -280,7 +280,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SuccessfulLogin_ResetsAccessFailedCount(TestDatabaseProvider provider)
         {
             // Arrange
@@ -309,7 +309,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task LockoutDisabled_AllowsLoginDespiteFailedAttempts(TestDatabaseProvider provider)
         {
             // Arrange
@@ -339,7 +339,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task ExpiredLockout_AllowsLogin(TestDatabaseProvider provider)
         {
             // Arrange

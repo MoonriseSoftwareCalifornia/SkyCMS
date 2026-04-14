@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>annotations</Nullable>
 		<UserSecretsId>aspnet-CDT.Cosmos.Cms-7EA5716F-3AA0-40C0-B742-C20FE7803177</UserSecretsId>
 		<AnalysisLevel>latest</AnalysisLevel>
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>

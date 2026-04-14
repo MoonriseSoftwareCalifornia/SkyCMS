@@ -3,13 +3,13 @@
 <!DOCTYPE HTML>
 <html lang="@Model.LanguageCode">
 <head>
-@Html.Raw(PageImportConstants.COSMOS_HEAD_START)
+@Html.Raw(PageImportConstants.COSMOSHEADSTART)
 <meta name="cwps-meta-path-title" content="@Model.Title" />
 <meta name="cwps-meta-path-url" content="@Model.UrlPath" />
 <meta name="cwps-meta-path-updated" content="@Model.Updated" />
 <title>@Model.Title</title>
 @Html.Raw(Model.Layout.Head)
-@Html.Raw(PageImportConstants.COSMOS_HEAD_END)
+@Html.Raw(PageImportConstants.COSMOSHEADEND)
 
 <!--
     START: ADD YOUR HEAD CONTENT HERE
@@ -21,14 +21,14 @@
     END: ADD YOUR HEAD CONTENT HERE
     Note: This comment block can be removed.
 -->
-@Html.Raw(PageImportConstants.COSMOS_HEAD_SCRIPTS_START)
-@Html.Raw(PageImportConstants.COSMOS_HEAD_SCRIPTS_END)
+@Html.Raw(PageImportConstants.COSMOSHEADSCRIPTSSTART)
+@Html.Raw(PageImportConstants.COSMOSHEADSCRIPTSEND)
 </head>
 <body>
 @RenderBody()
-@Html.Raw(PageImportConstants.COSMOS_BODY_END_SCRIPTS_START)
+@Html.Raw(PageImportConstants.COSMOSBODYENDSCRIPTSSTART)
 @await RenderSectionAsync("Scripts", false)
-@Html.Raw(PageImportConstants.COSMOS_BODY_END_SCRIPTS_END)
+@Html.Raw(PageImportConstants.COSMOSBODYENDSCRIPTSEND)
 @await RenderSectionAsync("Scripts", false)
 <script>
 window.addEventListener("load", () => {

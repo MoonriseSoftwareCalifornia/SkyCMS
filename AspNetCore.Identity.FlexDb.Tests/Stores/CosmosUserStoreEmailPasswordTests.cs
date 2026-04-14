@@ -40,7 +40,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region FindByEmailAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByEmailAsync_WithValidEmail_ReturnsCorrectUser(TestDatabaseProvider provider)
         {
             // Arrange
@@ -59,7 +59,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByEmailAsync_WithLowercaseEmail_FindsUser(TestDatabaseProvider provider)
         {
             // Arrange
@@ -77,7 +77,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByEmailAsync_WithNonExistentEmail_ReturnsNull(TestDatabaseProvider provider)
         {
             // Arrange
@@ -94,7 +94,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByEmailAsync_WithNullEmail_ReturnsNull(TestDatabaseProvider provider)
         {
             // Arrange
@@ -113,7 +113,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region FindByNameAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsync_WithValidUsername_ReturnsCorrectUser(TestDatabaseProvider provider)
         {
             // Arrange
@@ -132,7 +132,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsync_IsCaseInsensitive(TestDatabaseProvider provider)
         {
             // Arrange
@@ -153,7 +153,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsync_WithNonExistentUsername_ReturnsNull(TestDatabaseProvider provider)
         {
             // Arrange
@@ -174,7 +174,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region Password Hash Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetPasswordHashAsync_WithValidHash_SetsPassword(TestDatabaseProvider provider)
         {
             // Arrange
@@ -194,7 +194,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetPasswordHashAsync_ForUserWithoutPassword_ReturnsNull(TestDatabaseProvider provider)
         {
             // Arrange
@@ -211,7 +211,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task HasPasswordAsync_WithPassword_ReturnsTrue(TestDatabaseProvider provider)
         {
             // Arrange
@@ -231,7 +231,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task HasPasswordAsync_WithoutPassword_ReturnsFalse(TestDatabaseProvider provider)
         {
             // Arrange
@@ -252,7 +252,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region Email Confirmation Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetEmailConfirmedAsync_ForNewUser_ReturnsFalse(TestDatabaseProvider provider)
         {
             // Arrange
@@ -269,7 +269,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetEmailConfirmedAsync_ToTrue_UpdatesEmailConfirmation(TestDatabaseProvider provider)
         {
             // Arrange
@@ -291,7 +291,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetEmailConfirmedAsync_ToFalse_UpdatesEmailConfirmation(TestDatabaseProvider provider)
         {
             // Arrange
@@ -313,7 +313,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetEmailAsync_UpdatesEmailAddress(TestDatabaseProvider provider)
         {
             // Arrange
@@ -334,7 +334,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetNormalizedEmailAsync_ReturnsNormalizedEmail(TestDatabaseProvider provider)
         {
             // Arrange
@@ -352,7 +352,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetNormalizedEmailAsync_UpdatesNormalizedEmail(TestDatabaseProvider provider)
         {
             // Arrange

@@ -30,6 +30,7 @@ public class GetArticleByArticleNumberQueryHandler : IQueryHandler<GetArticleByA
     /// <summary>
     /// Initializes a new instance of the <see cref="GetArticleByArticleNumberQueryHandler"/> class.
     /// </summary>
+    /// <param name="mediator">Mediator service.</param>
     /// <param name="dbContext">Database context.</param>
     /// <param name="memoryCache">Memory cache.</param>
     /// <param name="configuration">Configuration for publisher settings.</param>

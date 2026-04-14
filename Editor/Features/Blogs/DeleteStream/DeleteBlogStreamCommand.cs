@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Blogs.DeleteStream
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Command to delete a blog stream and all its associated blog entries (cascade delete).

@@ -7,11 +7,11 @@
 
 namespace CosmosCMS.Editor.Services
 {
-    using Azure.Identity;
-    using RestSharp;
     using System;
     using System.IO;
     using System.Threading.Tasks;
+    using Azure.Identity;
+    using RestSharp;
 
     /// <summary>
     /// A service for publishing files to the wwwroot directory of an Azure Web App using the Kudu API.

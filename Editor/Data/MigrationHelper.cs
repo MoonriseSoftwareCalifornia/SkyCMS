@@ -273,7 +273,8 @@ namespace Sky.Editor.Data
 
                     if (providerMigrations.Any())
                     {
-                        logger.LogInformation("📋 Marking {Count} migration(s) for {Provider} as applied:",
+                        logger.LogInformation(
+                            "📋 Marking {Count} migration(s) for {Provider} as applied:",
                             providerMigrations.Count, provider);
 
                         // Mark all provider-specific migrations as applied
@@ -298,7 +299,8 @@ namespace Sky.Editor.Data
 
                     if (otherProviderMigrations.Any())
                     {
-                        logger.LogInformation("ℹ️ Marking {Count} migration(s) for other providers as applied:",
+                        logger.LogInformation(
+                            "ℹ️ Marking {Count} migration(s) for other providers as applied:",
                             otherProviderMigrations.Count);
 
                         foreach (var migration in otherProviderMigrations)
@@ -326,7 +328,8 @@ namespace Sky.Editor.Data
                     var otherProviderMigrations = pendingList.Except(providerSpecificMigrations).ToList();
                     if (otherProviderMigrations.Any())
                     {
-                        logger.LogInformation("ℹ️ Marking {Count} migration(s) for other providers as applied (not applicable to {Provider}):",
+                        logger.LogInformation(
+                            "ℹ️ Marking {Count} migration(s) for other providers as applied (not applicable to {Provider}):",
                             otherProviderMigrations.Count, provider);
 
                         var providerName = provider switch
@@ -608,6 +611,7 @@ namespace Sky.Editor.Data
             public void Configure(DbContextOptionsBuilder optionsBuilder, string connectionString)
             {
                 throw new NotSupportedException("MySQL provider is not supported in .NET 10 upgrade. Use Cosmos DB, SQL Server, or SQLite.");
+
                 // MySQL provider configuration disabled
                 /*
                 var serverVersion = ServerVersion.AutoDetect(connectionString);

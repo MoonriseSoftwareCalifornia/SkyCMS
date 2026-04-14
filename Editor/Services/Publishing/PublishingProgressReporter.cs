@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Services.Publishing
 {
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.SignalR;
-    using Sky.Editor.Hubs;
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.SignalR;
+    using Sky.Editor.Hubs;
 
     /// <summary>
     /// SignalR-based implementation of publishing progress reporting.

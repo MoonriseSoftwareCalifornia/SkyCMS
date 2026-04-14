@@ -7,11 +7,11 @@
 
 namespace Cosmos.BlobService
 {
+    using System;
+    using System.Collections.Generic;
     using Azure.Identity;
     using Azure.Storage.Blobs;
     using Cosmos.BlobService.Exceptions;
-    using System;
-    using System.Collections.Generic;
 
     /// <summary>
     /// Provides utility methods for parsing cloud storage connection strings.

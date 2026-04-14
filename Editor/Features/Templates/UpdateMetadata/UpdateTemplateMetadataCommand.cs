@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Features.Templates.UpdateMetadata
 {
+    using System;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
-    using System;
 
     /// <summary>
     /// Command to update template metadata (title and description).

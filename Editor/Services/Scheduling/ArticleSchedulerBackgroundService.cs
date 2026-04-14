@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Services.Scheduling
 {
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Hosting;
-    using Microsoft.Extensions.Logging;
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Hosting;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Background service that executes the ArticleScheduler at regular intervals.

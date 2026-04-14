@@ -86,7 +86,7 @@ public class CommandResult<T> : CommandResult
     /// </summary>
     /// <param name="errorMessage">The error message.</param>
     /// <returns>A failed command result.</returns>
-    public new static CommandResult<T> Failure(string errorMessage) =>
+    public static new CommandResult<T> Failure(string errorMessage) =>
         new() { IsSuccess = false, ErrorMessage = errorMessage };
 
     /// <summary>
@@ -94,6 +94,6 @@ public class CommandResult<T> : CommandResult
     /// </summary>
     /// <param name="errors">The validation errors.</param>
     /// <returns>A failed command result.</returns>
-    public new static CommandResult<T> Failure(Dictionary<string, string[]> errors) =>
+    public static new CommandResult<T> Failure(Dictionary<string, string[]> errors) =>
         new() { IsSuccess = false, Errors = errors };
 }

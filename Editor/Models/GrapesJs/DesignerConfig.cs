@@ -7,18 +7,16 @@
 
 namespace Sky.Editor.Models.GrapesJs
 {
-    using Cosmos.Common.Data;
-    using Sky.Editor.Data.Logic;
     using System.Collections.Generic;
     using System.Linq;
+    using Cosmos.Common.Data;
+    using Sky.Editor.Data.Logic;
 
     /// <summary>
     /// Designer configuration.
     /// </summary>
     public class DesignerConfig
     {
-        private string htmlContent;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="DesignerConfig"/> class.
         /// </summary>
@@ -93,7 +91,6 @@ namespace Sky.Editor.Models.GrapesJs
         /// <summary>
         /// Gets or sets the CSS content.
         /// </summary>
-
         public string CssContent { get; set; }
 
         /// <summary>

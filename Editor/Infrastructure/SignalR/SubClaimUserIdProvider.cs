@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Infrastructure.SignalR
 {
-    using Microsoft.AspNetCore.SignalR;
     using System.Linq;
+    using Microsoft.AspNetCore.SignalR;
 
     /// <summary>
     /// Maps SignalR connections to users based on the "sub" claim.

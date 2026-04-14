@@ -7,6 +7,9 @@
 
 namespace Cosmos.Common
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.Queries;
@@ -19,9 +22,6 @@ namespace Cosmos.Common
     using Microsoft.AspNetCore.RateLimiting;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Methods common to both the editor and publisher home controllers.
@@ -180,7 +180,7 @@ namespace Cosmos.Common
                 var query = url.Query.Split('=');
                 return int.Parse(query[1]);
             }
-            else if (url.PathAndQuery.ToLower().Contains("editor/ccmscontent"))
+            else if (url.PathAndQuery.Contains("editor/ccmscontent", StringComparison.CurrentCultureIgnoreCase))
             {
                 var query = url.PathAndQuery.Split('/');
                 return int.Parse(query.LastOrDefault());

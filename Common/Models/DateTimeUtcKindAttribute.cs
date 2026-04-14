@@ -13,6 +13,7 @@ namespace Cosmos.Common.Models
     /// <summary>
     ///     Ensures that a DateTime object is of kind UTC.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
     public class DateTimeUtcKindAttribute : ValidationAttribute
     {
         /// <summary>

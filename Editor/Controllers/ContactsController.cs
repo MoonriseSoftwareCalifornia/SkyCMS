@@ -119,7 +119,7 @@ namespace Sky.Editor.Controllers
                     .OrderBy(o => o.Email)
                     .ToListAsync();
 
-                return Json(new ContactsListResponse { data = contacts });
+                return Json(new ContactsListResponse { Data = contacts });
             }
             catch (Exception ex)
             {
@@ -335,7 +335,7 @@ namespace Sky.Editor.Controllers
         /// </summary>
         private class ContactsListResponse
         {
-            public List<Contact> data { get; set; } = new();
+            public List<Contact> Data { get; set; } = new();
         }
     }
 }

@@ -7,6 +7,12 @@
 
 namespace Sky.Cms.Hubs
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Articles.EditorQueries;
@@ -16,12 +22,6 @@ namespace Sky.Cms.Hubs
     using Newtonsoft.Json;
     using Sky.Cms.Models;
     using Sky.Editor.Data.Logic;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
@@ -50,8 +50,6 @@ namespace Sky.Cms.Hubs
             this.storageContext = storageContext;
             this.articleQueries = articleQueries;
         }
-
-        #region CHAT METHODS
 
         /// <summary>
         /// Chat send method.
@@ -86,10 +84,6 @@ namespace Sky.Cms.Hubs
             // Broadcast the typing notification to all clients except the sender
             await Clients.Others.SendAsync("stoptyping", sender);
         }
-
-        #endregion
-
-        #region ARTICLE EDITING
 
         /// <summary>
         /// Signal other members of the group that a page was just saved, and to reload page.
@@ -279,8 +273,6 @@ namespace Sky.Cms.Hubs
                 await NotifyRoomOfLock(id, editorType);
             }
         }
-
-        #endregion
 
         /// <summary>
         /// Handles when a client disconnects.

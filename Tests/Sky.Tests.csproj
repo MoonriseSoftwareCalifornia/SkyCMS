@@ -4,7 +4,7 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>disable</Nullable>
+		<Nullable>annotations</Nullable>
 		<UserSecretsId>c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1</UserSecretsId>
 		<Version>12.0.1</Version>
 	</PropertyGroup>

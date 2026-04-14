@@ -7,6 +7,9 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Data;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
@@ -14,9 +17,6 @@ namespace Sky.Editor.Areas.Setup.Pages
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 3: Admin account creation.
@@ -77,7 +77,8 @@ namespace Sky.Editor.Areas.Setup.Pages
         [BindProperty]
         [Required(ErrorMessage = "Password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters")]
-        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$",
+        [RegularExpression(
+            @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$",
             ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")]
         [Display(Name = "Password")]
         public string AdminPassword { get; set; }
@@ -137,7 +138,8 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect to next step.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            logger.LogInformation("Step2_AdminAccount POST - SetupId: {SetupId}, AdminEmail: {Email}",
+            logger.LogInformation(
+                "Step2_AdminAccount POST - SetupId: {SetupId}, AdminEmail: {Email}",
                 SetupId, AdminEmail);
 
             // Check if setup has been completed
@@ -157,11 +159,13 @@ namespace Sky.Editor.Areas.Setup.Pages
                     {
                         foreach (var error in state.Errors)
                         {
-                            logger.LogError("Step2_AdminAccount POST - Validation error for {Field}: {Error}",
+                            logger.LogError(
+                                "Step2_AdminAccount POST - Validation error for {Field}: {Error}",
                                 key, error.ErrorMessage ?? error.Exception?.Message);
                         }
                     }
                 }
+
                 return Page();
             }
 

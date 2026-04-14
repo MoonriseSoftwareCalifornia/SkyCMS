@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Blogs.CreatePost
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Command to create a new blog post within an existing blog stream.
@@ -18,7 +18,7 @@ namespace Sky.Editor.Features.Blogs.CreatePost
         /// <summary>
         /// Gets or sets the blog key (stream identifier) this post belongs to.
         /// Must reference an existing blog stream.
-        /// Example: "cat-wash"
+        /// Example: "cat-wash".
         /// </summary>
         public string BlogKey { get; set; } = string.Empty;
 
@@ -83,7 +83,7 @@ namespace Sky.Editor.Features.Blogs.CreatePost
 
         /// <summary>
         /// Gets or sets the URL path of the created blog post.
-        /// Format: "stream-key/post-slug"
+        /// Format: "stream-key/post-slug".
         /// </summary>
         public string UrlPath { get; set; } = string.Empty;
 

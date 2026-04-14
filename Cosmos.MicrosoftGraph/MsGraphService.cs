@@ -89,7 +89,7 @@ namespace Cosmos.MicrosoftGraph
         /// Gets the user's object from the Microsoft Graph API by email address.
         /// </summary>
         /// <param name="emailAddress">Email address to search.</param>
-        /// <returns>List<User>.</returns>
+        /// <returns>List of <see cref="User"/> objects.</returns>
         public async Task<List<User>?> GetGraphUserByEmailAddress(string emailAddress)
         {
             var response = await this.graphServiceClient.Users

@@ -55,7 +55,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Adds then removes a claim for a role and verifies claim counts during the sequence.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task Consolidated_ClaimsAsync_Tests(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -86,7 +86,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Creates a role via RoleManager.CreateAsync and asserts the call succeeds.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -110,7 +110,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Deletes a role and verifies it can no longer be found by id.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -133,7 +133,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Finds a role by id and asserts the returned role matches the created role.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByIdAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -155,7 +155,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Finds a role by name and asserts the returned role has the expected name.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -177,7 +177,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Adds multiple claims to a role and verifies GetClaimsAsync returns them.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetClaimsAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -203,7 +203,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Retrieves the role id using the RoleManager API and asserts it matches.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetRoleIdAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -223,7 +223,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Retrieves the role name using the RoleManager API and asserts it matches.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -243,7 +243,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Verifies the RoleManager.NormalizeKey function returns an upper-case key.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task NormalizeKeyTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -264,7 +264,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Checks RoleExistsAsync returns true for a role that was created.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task RoleExistsAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -284,7 +284,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Sets a role's name via RoleManager and verifies the persisted value.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -307,7 +307,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Calls UpdateAsync on a role and asserts the operation succeeds.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -327,7 +327,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Updates a role's normalized name and verifies the normalized value persisted.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateNormalizedRoleNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -353,7 +353,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         /// Mutates a role's name and normalized name, updates it, and verifies changes persisted.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateRoleAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);

@@ -15,10 +15,10 @@ using Cosmos.Common.Models;
 /// Query to build an ArticleViewModel from an Article entity.
 /// Replaces ArticleLogic.BuildArticleViewModel(Article) method.
 /// </summary>
-/// <param name="Article">Source article entity.</param>
-/// <param name="LanguageCode">Language code (e.g., "en-US").</param>
-/// <param name="IncludeLayout">Whether to include layout information.</param>
+/// <param name="article">Source article entity.</param>
+/// <param name="languageCode">Language code (e.g., "en-US").</param>
+/// <param name="includeLayout">Whether to include layout information.</param>
 public record BuildArticleViewModelQuery(
-    Article Article,
-    string LanguageCode = "en",
-    bool IncludeLayout = true) : IQuery<ArticleViewModel>;
+    Article article,
+    string languageCode = "en",
+    bool includeLayout = true): IQuery<ArticleViewModel>;

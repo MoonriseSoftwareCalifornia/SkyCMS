@@ -22,6 +22,9 @@ on:
           - detailed
           - diagnostic
 
+permissions:
+  contents: write
+
 jobs:
   sky-tests:
     name: Run Sky.Tests
@@ -113,6 +116,15 @@ jobs:
         sudo update-ca-certificates
         echo "✅ Cosmos DB Emulator certificate trusted"
 
+    - name: Install mssql-tools18
+      run: |
+        curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc > /dev/null
+        sudo add-apt-repository "$(wget -qO- https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list)"
+        sudo apt-get update
+        sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18
+        echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
+        echo "✅ mssql-tools18 installed"
+
     - name: Wait for SQL Server
       run: |
         echo "⏳ Waiting for SQL Server..."
@@ -163,14 +175,23 @@ jobs:
         echo "  Cosmos DB: Local Emulator (localhost:8081)"
         echo "  SQL Server: Local Container (localhost:1433)"
         echo "  MySQL: Local Container (localhost:3306)"
+        echo "  SQLite: File-based (local)"
         echo "  Blob Storage: Azurite (localhost:10000)"
         echo "  Storage (Azure/S3/R2): Real cloud services via secrets"
         
     - name: Restore dependencies
-      run: dotnet restore $TEST_PROJECT
+      run: |
+        dotnet restore $TEST_PROJECT
+        if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
+          dotnet restore "${ADDITIONAL_TEST_PROJECT}"
+        fi
       
-    - name: Build Sky.Tests
-      run: dotnet build $TEST_PROJECT --no-restore --configuration Release
+    - name: Build test projects
+      run: |
+        dotnet build $TEST_PROJECT --no-restore --configuration Release
+        if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
+          dotnet build "${ADDITIONAL_TEST_PROJECT}" --no-restore --configuration Release
+        fi
 
     - name: Debug .NET environment
       if: always()
@@ -208,6 +229,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
+        test_failed=0
         echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
         echo "Running primary tests: $TEST_PROJECT"
         dotnet test $TEST_PROJECT \
@@ -216,7 +238,7 @@ jobs:
           --collect:"XPlat Code Coverage" \
           --logger "console;verbosity=${{ inputs.verbosity }}" \
           --logger "trx;LogFileName=sky-test-results.trx" \
-          --results-directory ./TestResults || true
+          --results-directory ./TestResults || test_failed=1
 
         # If the additional test project exists, run it too (coverage will be merged by ReportGenerator)
         if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
@@ -227,9 +249,15 @@ jobs:
             --collect:"XPlat Code Coverage" \
             --logger "console;verbosity=${{ inputs.verbosity }}" \
             --logger "trx;LogFileName=sky-test-results-additional.trx" \
-            --results-directory ./TestResults || true
+            --results-directory ./TestResults || test_failed=1
         else
           echo "Additional test project not found: ${ADDITIONAL_TEST_PROJECT}"
+        fi
+
+        # Fail the step after all test projects have run (so coverage is still collected for both)
+        if [ $test_failed -ne 0 ]; then
+          echo "❌ One or more test projects had failures"
+          exit 1
         fi
       
     - name: Run Sky.Tests (Filtered)
@@ -256,6 +284,7 @@ jobs:
         CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
         CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
       run: |
+        test_failed=0
         echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
         echo "Running primary tests (filtered): $TEST_PROJECT"
         dotnet test $TEST_PROJECT \
@@ -265,7 +294,7 @@ jobs:
           --collect:"XPlat Code Coverage" \
           --logger "console;verbosity=${{ inputs.verbosity }}" \
           --logger "trx;LogFileName=sky-test-results.trx" \
-          --results-directory ./TestResults || true
+          --results-directory ./TestResults || test_failed=1
 
         if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
           echo "Running additional tests (filtered): ${ADDITIONAL_TEST_PROJECT}"
@@ -276,9 +305,14 @@ jobs:
             --collect:"XPlat Code Coverage" \
             --logger "console;verbosity=${{ inputs.verbosity }}" \
             --logger "trx;LogFileName=sky-test-results-additional.trx" \
-            --results-directory ./TestResults || true
+            --results-directory ./TestResults || test_failed=1
         else
           echo "Additional test project not found: ${ADDITIONAL_TEST_PROJECT}"
+        fi
+
+        if [ $test_failed -ne 0 ]; then
+          echo "❌ One or more test projects had failures"
+          exit 1
         fi
 
     - name: Ensure coverage files exist
@@ -357,7 +391,7 @@ jobs:
         echo "**Configuration:**" >> $GITHUB_STEP_SUMMARY
         echo "- Test Filter: \`${{ inputs.test_filter || 'All tests' }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- Verbosity: \`${{ inputs.verbosity }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- Databases: Local containers (Cosmos DB Emulator, SQL Server 2022, MySQL 8)" >> $GITHUB_STEP_SUMMARY
+        echo "- Databases: Local containers (Cosmos DB Emulator, SQL Server 2022, MySQL 8, SQLite)" >> $GITHUB_STEP_SUMMARY
         echo "- Storage: Azurite (local) + cloud S3/R2 via secrets" >> $GITHUB_STEP_SUMMARY
         echo "- Status: **${{ job.status }}**" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -386,6 +420,7 @@ jobs:
         echo "  - CosmosDB" >> $GITHUB_STEP_SUMMARY
         echo "  - SQL Server" >> $GITHUB_STEP_SUMMARY
         echo "  - MySQL" >> $GITHUB_STEP_SUMMARY
+        echo "  - SQLite" >> $GITHUB_STEP_SUMMARY
         echo "- 🌐 **CDN Integration:**" >> $GITHUB_STEP_SUMMARY
         echo "  - Cloudflare CDN" >> $GITHUB_STEP_SUMMARY
         echo "  - Cache purging" >> $GITHUB_STEP_SUMMARY

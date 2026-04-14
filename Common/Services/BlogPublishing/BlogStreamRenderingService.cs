@@ -7,14 +7,14 @@
 
 namespace Cosmos.Common.Services.BlogPublishing
 {
-    using Cosmos.Cms.Common;
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Cosmos.Cms.Common;
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Renders blog streams and posts using a client-side orchestration model.
@@ -23,7 +23,7 @@ namespace Cosmos.Common.Services.BlogPublishing
     /// This service supports both static site generation and dynamic rendering modes:
     /// - Static: Generates versioned wrapper files with embedded JSON, individual post snippets
     /// - Dynamic: Generates wrappers and post content on-demand
-    /// 
+    ///
     /// The architecture minimizes server-side rendering overhead by:
     /// - Embedding post metadata as JSON (no fetch required).
     /// - Rendering individual posts as standalone snippets.
@@ -31,7 +31,7 @@ namespace Cosmos.Common.Services.BlogPublishing
     /// </remarks>
     public class BlogStreamRenderingService : IBlogStreamRenderingService
     {
-        private readonly ApplicationDbContext _db;
+        private readonly ApplicationDbContext db;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BlogStreamRenderingService"/> class.
@@ -39,7 +39,7 @@ namespace Cosmos.Common.Services.BlogPublishing
         /// <param name="db">The application database context.</param>
         public BlogStreamRenderingService(ApplicationDbContext db)
         {
-            _db = db ?? throw new ArgumentNullException(nameof(db));
+            this.db = db ?? throw new ArgumentNullException(nameof(db));
         }
 
         /// <inheritdoc/>
@@ -78,7 +78,7 @@ namespace Cosmos.Common.Services.BlogPublishing
             var now = DateTimeOffset.UtcNow;
             var blogPostType = (int)ArticleType.BlogPost;
 
-            var posts = await _db.Pages
+            var posts = await db.Pages
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue

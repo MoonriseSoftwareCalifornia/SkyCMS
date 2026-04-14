@@ -63,7 +63,7 @@ namespace Sky.Editor.Domain.Events
     /// - Explicit interface implementations provide legacy overloads without
     ///   cancellation tokens; they delegate internally to the newer APIs.
     ///
-    /// Example:
+    /// Example:.
     /// <example>
     /// <![CDATA[
     /// var dispatcher = new DomainEventDispatcher(type =>
@@ -136,6 +136,7 @@ namespace Sky.Editor.Domain.Events
         /// No-op when <paramref name="domainEvent"/> is null or no handlers are registered.
         /// Exceptions from handlers are aggregated (see class remarks).
         /// </remarks>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task DispatchAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default)
         {
             if (domainEvent == null)
@@ -214,6 +215,7 @@ namespace Sky.Editor.Domain.Events
         /// <remarks>
         /// Null collections result in a no-op. Cancellation is checked before each event dispatch.
         /// </remarks>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task DispatchAsync(IEnumerable<IDomainEvent> events, CancellationToken cancellationToken = default)
         {
             if (events == null)

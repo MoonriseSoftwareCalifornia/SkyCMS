@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Features.Blogs.GetStream
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Query to retrieve a blog stream by ID for editing or display.

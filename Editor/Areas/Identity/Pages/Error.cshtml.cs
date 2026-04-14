@@ -7,10 +7,10 @@
 
 namespace Sky.Cms.Areas.Identity.Pages
 {
+    using System.Diagnostics;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
-    using System.Diagnostics;
 
     /// <summary>
     /// Error page model.

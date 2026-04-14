@@ -15,11 +15,11 @@ namespace Sky.Cms.Api.Shared.Models
         /// <summary>
         /// Gets or sets the CAPTCHA response token from the client.
         /// </summary>
-        public string Token { get; set; }
+        public string Token { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the user's IP address.
         /// </summary>
-        public string RemoteIp { get; set; }
+        public string RemoteIp { get; set; } = string.Empty;
     }
 }

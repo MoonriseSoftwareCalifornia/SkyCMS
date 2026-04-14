@@ -7,15 +7,15 @@
 
 namespace Cosmos.Common.Features.Blogs.EditorQueries
 {
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
 
     /// <summary>
     /// Handler for retrieving navigation information for blog posts within a stream.

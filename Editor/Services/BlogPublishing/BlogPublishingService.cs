@@ -69,7 +69,7 @@ namespace Sky.Editor.Services.BlogPublishing
             this.logger = logger;
         }
 
-        private Guid userId => Guid.Parse(context.HttpContextAccessor.HttpContext.User.Claims
+        private Guid UserId => Guid.Parse(context.HttpContextAccessor.HttpContext.User.Claims
             .FirstOrDefault(f => f.Type == "sub")?.Value ?? Guid.Empty.ToString());
 
         /// <inheritdoc/>
@@ -103,7 +103,7 @@ namespace Sky.Editor.Services.BlogPublishing
                     BannerImage = blog.BannerImage,
                     HeaderJavaScript = string.Empty,
                     FooterJavaScript = string.Empty,
-                    UserId = userId.ToString(),
+                    UserId = UserId.ToString(),
                     StatusCode = (int)StatusCodeEnum.Active,
                     ArticleType = (int)ArticleType.BlogStream,
                     Category = "blog-stream",
@@ -123,7 +123,7 @@ namespace Sky.Editor.Services.BlogPublishing
                 article.Updated = blog.Updated;
                 article.BannerImage = blog.BannerImage;
                 article.Introduction = blog.Introduction;
-                article.UserId = userId.ToString();
+                article.UserId = UserId.ToString();
                 article.StatusCode = (int)StatusCodeEnum.Active;
                 article.VersionNumber += 1;
             }

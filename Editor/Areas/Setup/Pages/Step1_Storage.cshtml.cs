@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
     using Azure.Storage.Blobs;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Authorization;
     using Sky.Editor.Services.Setup;
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 1: Storage configuration.
@@ -145,7 +145,8 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect to next step.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            logger.LogInformation("Step1_Storage POST - SetupId: {SetupId}, StorageType: {StorageType}, BlobPublicUrl: {BlobPublicUrl}",
+            logger.LogInformation(
+                "Step1_Storage POST - SetupId: {SetupId}, StorageType: {StorageType}, BlobPublicUrl: {BlobPublicUrl}",
                 SetupId, StorageType, BlobPublicUrl);
 
             // Check if setup has been completed
@@ -165,11 +166,13 @@ namespace Sky.Editor.Areas.Setup.Pages
                     {
                         foreach (var error in state.Errors)
                         {
-                            logger.LogError("Step1_Storage POST - Validation error for {Field}: {Error}",
+                            logger.LogError(
+                                "Step1_Storage POST - Validation error for {Field}: {Error}",
                                 key, error.ErrorMessage ?? error.Exception?.Message);
                         }
                     }
                 }
+
                 return Page();
             }
 
@@ -373,4 +376,3 @@ namespace Sky.Editor.Areas.Setup.Pages
         }
     }
 }
-

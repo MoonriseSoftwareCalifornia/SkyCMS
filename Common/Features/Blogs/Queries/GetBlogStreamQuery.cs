@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Features.Blogs.Queries
 {
-    using Cosmos.Common.Features.Shared;
     using System;
+    using Cosmos.Common.Features.Shared;
 
     /// <summary>
     /// Query to retrieve a blog stream by its key or URL path.
@@ -18,7 +18,7 @@ namespace Cosmos.Common.Features.Blogs.Queries
     {
         /// <summary>
         /// Gets or sets the blog key (slugified title) or URL path.
-        /// Example: "cat_wash" or "cat-wash"
+        /// Example: "cat_wash" or "cat-wash".
         /// </summary>
         public string BlogKey { get; set; } = string.Empty;
 

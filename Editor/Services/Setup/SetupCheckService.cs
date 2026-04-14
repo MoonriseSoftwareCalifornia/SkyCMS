@@ -1,4 +1,4 @@
-﻿// <copyright file="SetupCheck.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="SetupCheckService.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Services.Setup
 {
+    using System;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Services.Caching;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
-    using System;
-    using System.Threading.Tasks;
 
     /// <inheritdoc/>
     public class SetupCheckService : ISetupCheckService

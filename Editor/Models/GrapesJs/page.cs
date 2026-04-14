@@ -13,57 +13,57 @@ namespace Sky.Editor.Models.GrapesJs
     /// Represents a project in GrapesJs.
     /// </summary>
 #pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
-    public class project
+    public class Project
 #pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="project"/> class.
+        /// Initializes a new instance of the <see cref="Project"/> class.
         /// </summary>
-        public project()
+        public Project()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="project"/> class with HTML content.
+        /// Initializes a new instance of the <see cref="Project"/> class with HTML content.
         /// </summary>
         /// <param name="html">HTML content.</param>
-        public project(string html)
+        public Project(string html)
         {
-            pages.Add(new page(html));
+            Pages.Add(new Page(html));
         }
 
         /// <summary>
         /// Gets or sets the project pages.
         /// </summary>
-        public List<page> pages { get; set; } = new List<page>();
+        public List<Page> Pages { get; set; } = new List<Page>();
     }
 
     /// <summary>
     /// Represents a page in GrapesJs.
     /// </summary>
 #pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
-    public class page
+    public class Page
 #pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="page"/> class.
+        /// Initializes a new instance of the <see cref="Page"/> class.
         /// </summary>
-        public page()
+        public Page()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="page"/> class with content.
+        /// Initializes a new instance of the <see cref="Page"/> class with content.
         /// </summary>
         /// <param name="html">HTML content.</param>
-        public page(string html)
+        public Page(string html)
         {
-            component = html;
+            Component = html;
         }
 
         /// <summary>
         /// Gets or sets the page component (HTML content).
         /// </summary>
-        public string component { get; set; } = string.Empty;
+        public string Component { get; set; } = string.Empty;
     }
 }

@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Features.Blogs.UpdateStream
 {
+    using System;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
-    using System;
 
     /// <summary>
     /// Command to update blog stream metadata and properties.

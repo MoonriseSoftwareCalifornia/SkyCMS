@@ -7,6 +7,9 @@
 
 namespace Sky.Editor.Services.Setup
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
@@ -20,9 +23,6 @@ namespace Sky.Editor.Services.Setup
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Services.Layouts;
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
@@ -43,6 +43,15 @@ namespace Sky.Editor.Services.Setup
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiTenantSetupService"/> class.
         /// </summary>
+        /// <param name="applicationDbContext">The application database context.</param>
+        /// <param name="configDbContext">The dynamic configuration database context.</param>
+        /// <param name="userManager">The user manager.</param>
+        /// <param name="roleManager">The role manager.</param>
+        /// <param name="layoutImportService">The layout import service.</param>
+        /// <param name="articleEditLogic">The article edit logic.</param>
+        /// <param name="mediator">The mediator for handling commands and queries.</param>
+        /// <param name="configuration">The configuration provider.</param>
+        /// <param name="logger">The logger instance.</param>
         public MultiTenantSetupService(
             ApplicationDbContext applicationDbContext,
             DynamicConfigDbContext configDbContext,
@@ -291,7 +300,7 @@ namespace Sky.Editor.Services.Setup
                     // Special home page properties
                     Published = DateTimeOffset.UtcNow,      // Auto-publish
                     StatusCode = StatusCodeEnum.Active,     // Active status
-                    UrlPathOverride = "root"                // Home page must be "root"
+                    UrlPathOverride = "root" // Home page must be "root"
                 };
 
                 var result = await mediator.SendAsync(createCommand);

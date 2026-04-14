@@ -7,10 +7,10 @@
 
 namespace Sky.Editor.Services.Publishing
 {
-    using Cosmos.BlobService;
-    using Microsoft.Extensions.Logging;
     using System;
     using System.Reflection;  // ✅ ADD THIS LINE
+    using Cosmos.BlobService;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Determines optimal parallelism for static page generation based on storage backend characteristics.
@@ -63,7 +63,7 @@ namespace Sky.Editor.Services.Publishing
                 StorageType.AwsS3 => 8,                // Similar to Azure production
                 StorageType.CloudflareR2 => 8,      // ✅ ADD THIS
                 StorageType.LocalFileSystem => 4,       // Disk I/O bound
-                _ => 4                                  // Conservative default
+                _ => 4 // Conservative default
             };
 
             logger.LogInformation(

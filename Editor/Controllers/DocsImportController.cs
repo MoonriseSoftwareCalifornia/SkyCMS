@@ -25,6 +25,7 @@ using Sky.Cms.Controllers;
 using Sky.Cms.Services;
 using Sky.Editor.Data.Logic;
 using Sky.Editor.Features.Articles.Create;
+using Sky.Editor.Features.Articles.Delete;
 using Sky.Editor.Features.Articles.Save;
 using Sky.Editor.Services.EditorSettings;
 using System;
@@ -308,7 +309,12 @@ public class DocsImportController : ControllerBase
             return NotFound();
         }
 
-        await articleLogic.DeleteArticle(catalogEntry.ArticleNumber);
+        var deleteArticleCommand = new DeleteArticleCommand()
+        {
+            ArticleNumber = catalogEntry.ArticleNumber,
+        };
+
+        await mediator.SendAsync(deleteArticleCommand);
 
         stopwatch.Stop();
         logger.LogInformation(

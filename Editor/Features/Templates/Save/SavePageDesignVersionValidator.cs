@@ -25,7 +25,6 @@ namespace Sky.Editor.Features.Templates.Save
 
             // Currently no validation required per requirements
             // This can be extended later as needed
-
             return errors;
         }
     }

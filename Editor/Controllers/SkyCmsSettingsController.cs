@@ -418,6 +418,5 @@ namespace Sky.Editor.Controllers
                 };
             }
         }
-
     }
 }

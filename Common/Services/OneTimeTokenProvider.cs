@@ -7,12 +7,12 @@
 
 namespace Cosmos.Common.Services
 {
+    using System;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// One time token provider with default set to 15 minutes.

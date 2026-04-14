@@ -7,6 +7,13 @@
 
 namespace Sky.Cms.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Text;
+    using System.Text.Encodings.Web;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Editor.Services;
     using Cosmos.EmailServices;
@@ -18,13 +25,6 @@ namespace Sky.Cms.Controllers
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Cms.Models;
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Text;
-    using System.Text.Encodings.Web;
-    using System.Threading.Tasks;
 
     // See: https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/areas?view=aspnetcore-3.1
 
@@ -96,6 +96,7 @@ namespace Sky.Cms.Controllers
             var ids = await dbContext.AuthorInfos.Select(s => s.Id).ToArrayAsync();
             var check = await dbContext.Users.Select(s => new AuthorInfo { Id = s.Id, EmailAddress = s.Email }).ToListAsync();
             var missing = check.Where(w => !ids.Contains(w.Id)).ToList();
+
             // Get missing infos and add them
             dbContext.AuthorInfos.AddRange(missing);
             await dbContext.SaveChangesAsync();
@@ -480,7 +481,8 @@ namespace Sky.Cms.Controllers
                 {
                     // Confirm email if set.
                     var emailCode = await userManager.GenerateEmailConfirmationTokenAsync(user);
-                    var result2 = await userManager.ConfirmEmailAsync(user,
+                    var result2 = await userManager.ConfirmEmailAsync(
+                        user,
                         Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(emailCode)));
                 }
 
@@ -707,17 +709,17 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Resends a user's email confirmation.
         /// </summary>
-        /// <param name="Id">User ID value.</param>
+        /// <param name="id">User ID value.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpPost]
-        public async Task<IActionResult> ResendEmailConfirmation(string Id)
+        public async Task<IActionResult> ResendEmailConfirmation(string id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var user = await userManager.FindByIdAsync(Id);
+            var user = await userManager.FindByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
@@ -732,7 +734,7 @@ namespace Sky.Cms.Controllers
                 var callbackUrl = Url.Page(
                     "/Account/ConfirmEmail",
                     pageHandler: null,
-                    values: new { userId = Id, code },
+                    values: new { userId = id, code },
                     protocol: Request.Scheme);
 
                 await emailSender.SendEmailAsync(

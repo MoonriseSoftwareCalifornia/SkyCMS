@@ -7,15 +7,15 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account.Manage
 {
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.AspNetCore.Mvc.RazorPages;
-    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text.Json;
     using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Identity;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Mvc.RazorPages;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Download personal data page model.
@@ -51,7 +51,8 @@ namespace Sky.Cms.Areas.Identity.Pages.Account.Manage
                 return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
             }
 
-            logger.LogInformation("User with ID '{UserId}' asked for their personal data.",
+            logger.LogInformation(
+                "User with ID '{UserId}' asked for their personal data.",
                 userManager.GetUserId(User));
 
             // Only include personal data for download

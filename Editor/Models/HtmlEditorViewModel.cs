@@ -7,14 +7,14 @@
 
 namespace Sky.Cms.Models
 {
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
     using Cosmos.Cms.Common;
     using Cosmos.Cms.Data;
     using Cosmos.Common.Data;
     using Cosmos.Common.Models;
     using Microsoft.AspNetCore.Mvc;
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
 
     /// <summary>
     ///     Article edit model returned when an article has been saved.

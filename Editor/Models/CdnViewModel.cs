@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Models
 {
+    using System.Collections.Generic;
     using Newtonsoft.Json;
     using Sky.Editor.Services.CDN;
-    using System.Collections.Generic;
 
     /// <summary>
     /// CDN View Model.

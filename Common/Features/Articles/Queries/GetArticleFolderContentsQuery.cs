@@ -15,9 +15,9 @@ using Cosmos.Common.Features.Shared;
 /// Query to get folder contents for an article.
 /// Replaces CosmosUtilities.GetArticleFolderContents() method.
 /// </summary>
-/// <param name="ArticleNumber">Article number (not ID).</param>
-/// <param name="Path">Path to article folder (default is root).</param>
+/// <param name="articleNumber">Article number (not ID).</param>
+/// <param name="path">Path to article folder (default is root).</param>
 /// <remarks>Does NOT authenticate the user. Authorization must be performed separately.</remarks>
 public record GetArticleFolderContentsQuery(
-    int ArticleNumber,
-    string Path = "") : IQuery<List<FileManagerEntry>>;
+    int articleNumber,
+    string path = ""): IQuery<List<FileManagerEntry>>;

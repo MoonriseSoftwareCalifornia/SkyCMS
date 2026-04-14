@@ -14,5 +14,5 @@ using Cosmos.Common.Models;
 /// <summary>
 /// Query to retrieve the current default layout with optional caching.
 /// </summary>
-/// <param name="CacheDuration">Optional cache duration. If null, no caching is applied.</param>
-public record GetDefaultLayoutQuery(TimeSpan? CacheDuration = null) : IQuery<LayoutViewModel>;
+/// <param name="cacheDuration">Optional cache duration. If null, no caching is applied.</param>
+public record GetDefaultLayoutQuery(TimeSpan? cacheDuration = null): IQuery<LayoutViewModel>;

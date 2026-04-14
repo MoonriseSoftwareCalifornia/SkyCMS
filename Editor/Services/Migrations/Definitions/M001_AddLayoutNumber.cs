@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Services.Migrations.Definitions
 {
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Migrations.Core;
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Migrations.Core;
 
     /// <summary>
     /// Adds LayoutNumber column to Layouts and Templates tables to support layout versioning.
@@ -100,7 +100,8 @@ namespace Sky.Editor.Services.Migrations.Definitions
         /// <inheritdoc/>
         public async Task RollbackAsync(MigrationContext context)
         {
-            context.Logger.LogWarning("Rolling back migration {MigrationId} for {Provider}",
+            context.Logger.LogWarning(
+                "Rolling back migration {MigrationId} for {Provider}",
                 MigrationId, context.Provider);
 
             switch (context.Provider)

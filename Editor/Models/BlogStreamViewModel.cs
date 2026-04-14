@@ -1,4 +1,4 @@
-// <copyright file="BlogViewModels.cs" company="Moonrise Software, LLC">
+// <copyright file="BlogStreamViewModel.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -61,7 +61,7 @@ namespace Sky.Editor.Models.Blogs
         /// </summary>
         /// <remarks>This property is optional; store a URL or application-relative path to an image.</remarks>
         [Display(Name = "Hero Image (URL / Path)")]
-        public string HeroImage { get; set; }  // not [Required]
+        public string HeroImage { get; set; } // not [Required]
 
         /// <summary>
         /// Gets or sets the published date/time for the blog stream.
@@ -143,7 +143,8 @@ namespace Sky.Editor.Models.Blogs
         /// Gets or sets the entry title.
         /// </summary>
         /// <remarks>Required with a maximum length of 254 characters.</remarks>
-        [Required, MaxLength(254)]
+        [Required]
+        [MaxLength(254)]
         public string Title { get; set; }
 
         /// <summary>

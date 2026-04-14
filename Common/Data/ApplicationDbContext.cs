@@ -26,7 +26,7 @@ namespace Cosmos.Common.Data
     /// </summary>
     public class ApplicationDbContext : CosmosIdentityDbContext<IdentityUser, IdentityRole, string>, IApplicationDbContext
     {
-        private readonly IDynamicConfigurationProvider? _configurationProvider;
+        private readonly IDynamicConfigurationProvider? configurationProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationDbContext"/> class.
@@ -48,8 +48,8 @@ namespace Cosmos.Common.Data
             IDynamicConfigurationProvider? configurationProvider)
             : base(options, true)
         {
-            _configurationProvider = configurationProvider;
-            CurrentTenantDomain = _configurationProvider?.GetTenantDomainNameFromRequest();
+            this.configurationProvider = configurationProvider;
+            CurrentTenantDomain = this.configurationProvider?.GetTenantDomainNameFromRequest();
         }
 
         /// <summary>
@@ -478,8 +478,7 @@ namespace Cosmos.Common.Data
                 entity.Property(p => p.Data)
                     .HasConversion(
                         value => JsonSerializer.Serialize(value, (JsonSerializerOptions?)null),
-                        value => JsonSerializer.Deserialize<IdentityPasskeyData>(value, (JsonSerializerOptions?)null)!
-                    )
+                        value => JsonSerializer.Deserialize<IdentityPasskeyData>(value, (JsonSerializerOptions?)null) !)
                     .HasColumnName("Data")
                     .IsRequired();
 

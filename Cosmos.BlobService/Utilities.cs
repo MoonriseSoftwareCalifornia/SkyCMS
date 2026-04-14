@@ -7,10 +7,10 @@
 
 namespace Cosmos.BlobService
 {
-    using Cosmos.BlobService.Models;
     using System.Collections.Generic;
     using System.IO;
     using System.Web;
+    using Cosmos.BlobService.Models;
 
     /// <summary>
     ///     Utility functions.

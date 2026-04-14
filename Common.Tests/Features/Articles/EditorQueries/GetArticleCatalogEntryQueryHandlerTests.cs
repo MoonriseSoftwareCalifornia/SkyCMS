@@ -101,8 +101,8 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var handler = new GetArticleCatalogEntryQueryHandler(context, memoryCache);
-            var query = new GetArticleCatalogEntryQuery 
-            { 
+            var query = new GetArticleCatalogEntryQuery
+            {
                 ArticleNumber = 12345,
                 CacheDuration = TimeSpan.FromMinutes(5)
             };
@@ -133,8 +133,8 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var handler = new GetArticleCatalogEntryQueryHandler(context);
-            var query = new GetArticleCatalogEntryQuery 
-            { 
+            var query = new GetArticleCatalogEntryQuery
+            {
                 ArticleNumber = 12345,
                 CacheDuration = null // No caching
             };
@@ -164,8 +164,8 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             await context.SaveChangesAsync();
 
             var handler = new GetArticleCatalogEntryQueryHandler(context);
-            var query = new GetArticleCatalogEntryQuery 
-            { 
+            var query = new GetArticleCatalogEntryQuery
+            {
                 ArticleNumber = 12345,
                 CacheDuration = TimeSpan.FromMinutes(5) // Duration specified but no cache
             };
@@ -192,8 +192,8 @@ namespace Cosmos.Common.Tests.Features.Articles.EditorQueries
             using var context = GetIsolatedContext();
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var handler = new GetArticleCatalogEntryQueryHandler(context, memoryCache);
-            var query = new GetArticleCatalogEntryQuery 
-            { 
+            var query = new GetArticleCatalogEntryQuery
+            {
                 ArticleNumber = 999999,
                 CacheDuration = TimeSpan.FromMinutes(5)
             };

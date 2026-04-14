@@ -53,6 +53,7 @@ namespace Sky.Editor.Features.Articles.Publish
         /// <summary>
         /// Validates article exists asynchronously.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<Dictionary<string, string[]>> ValidateAsync(
             PublishArticleCommand command,
             CancellationToken ct = default)

@@ -7,15 +7,15 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account.Manage
 {
+    using System.ComponentModel.DataAnnotations;
+    using System.Text;
+    using System.Text.Encodings.Web;
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Identity.UI.Services;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.AspNetCore.WebUtilities;
-    using System.ComponentModel.DataAnnotations;
-    using System.Text;
-    using System.Text.Encodings.Web;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// User email page model.
@@ -24,8 +24,8 @@ namespace Sky.Cms.Areas.Identity.Pages.Account.Manage
     {
         private readonly IEmailSender emailSender;
 
-        /// private readonly SignInManager
-        /// IdentityUser _signInManager;
+        // private readonly SignInManager
+        // IdentityUser _signInManager;
         private readonly UserManager<IdentityUser> userManager;
 
         /// <summary>
@@ -36,10 +36,12 @@ namespace Sky.Cms.Areas.Identity.Pages.Account.Manage
         /// <param name="emailSender"></param>
         public EmailModel(
             UserManager<IdentityUser> userManager,
+
             // SignInManager<IdentityUser> signInManager,
             IEmailSender emailSender)
         {
             this.userManager = userManager;
+
             // _signInManager = signInManager;
             this.emailSender = emailSender;
         }

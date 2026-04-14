@@ -30,7 +30,7 @@ namespace Cosmos.Common.Data.Logic
         /// 2. Filtering for layouts that are active (Published &lt;= now)
         /// 3. Ordering by version number
         /// 4. Taking the last (highest version) layout
-        /// 
+        ///
         /// This ensures we get the most recent published version of the layout.
         /// </remarks>
         public static async Task<Layout> GetCurrentDefaultLayoutAsync(ApplicationDbContext dbContext)
@@ -78,7 +78,7 @@ namespace Cosmos.Common.Data.Logic
         /// This method checks for the existence of a published layout by:
         /// 1. Filtering for layouts that have a Published date (Published != null)
         /// 2. Filtering for layouts that are active (Published &lt;= now)
-        /// 
+        ///
         /// Useful for setup/initialization scenarios to determine if a published layout exists.
         /// </remarks>
         public static async Task<bool> HasDefaultLayoutAsync(ApplicationDbContext dbContext)

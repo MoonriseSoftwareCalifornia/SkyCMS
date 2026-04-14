@@ -7,6 +7,10 @@
 
 namespace Sky.Editor.Controllers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -29,10 +33,6 @@ namespace Sky.Editor.Controllers
     using Sky.Editor.Models.Blogs;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Editor-facing controller for managing blog streams (multi-blog support) and their entries (blog posts).
@@ -654,6 +654,5 @@ namespace Sky.Editor.Controllers
 
             return entity;
         }
-
     }
 }

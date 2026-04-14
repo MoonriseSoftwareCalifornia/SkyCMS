@@ -7,8 +7,8 @@
 
 namespace Sky.Editor.Services.Html
 {
-    using HtmlAgilityPack;
     using System;
+    using HtmlAgilityPack;
 
     /// <summary>
     /// Concrete implementation of <see cref="IArticleHtmlService"/> using HtmlAgilityPack
@@ -247,6 +247,7 @@ namespace Sky.Editor.Services.Html
             {
                 return false;
             }
+
             try
             {
                 var doc = new HtmlDocument();

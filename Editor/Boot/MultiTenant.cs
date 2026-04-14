@@ -209,7 +209,8 @@ namespace Sky.Editor.Boot
                 {
                     try
                     {
-                        logger.LogInformation("Checking schema for tenant: {TenantName} (ID: {TenantId})",
+                        logger.LogInformation(
+                            "Checking schema for tenant: {TenantName} (ID: {TenantId})",
                             tenantConfig.DomainNames, tenantConfig.Id);
 
                         // Get the tenant's database connection string

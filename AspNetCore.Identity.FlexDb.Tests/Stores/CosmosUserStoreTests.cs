@@ -45,7 +45,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Create an IdentityUser test
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -92,7 +92,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Deletes a user and verifies related user claims, logins, and role links are removed.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -125,7 +125,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Finds a user by email (case-insensitive via normalized email) and asserts match.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByEmailAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -146,7 +146,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Finds a user by id and asserts the returned user matches the created user.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByIdAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -167,7 +167,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Finds a user by normalized username and asserts the returned user matches.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -188,7 +188,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Finds a user by normalized email (via FindByNameAsync in this test) and asserts username match.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByNameEmailAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -209,7 +209,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves a user's email via the store API and asserts it matches the persisted email.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetEmailAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -230,7 +230,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Verifies the email confirmed flag can be read and set via the store API.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetEmailConfirmedAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -239,7 +239,6 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             var user = await GetMockRandomUserAsync(userStore);
             var result = await userStore.GetEmailConfirmedAsync(user);
-            Assert.IsNotNull(result);
             Assert.IsFalse(result);
 
             // Arrange - user name and email are the same with this test
@@ -249,7 +248,6 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             result = await userStore.GetEmailConfirmedAsync(user);
 
             // Assert
-            Assert.IsNotNull(result);
             Assert.IsTrue(result);
         }
 
@@ -257,7 +255,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Duplicate/emphasis test for email confirmed behavior; verifies set and get semantics.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetEmailConfirmedAsyncTestFail(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -266,7 +264,6 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
             var user = await GetMockRandomUserAsync(userStore);
             var result = await userStore.GetEmailConfirmedAsync(user);
-            Assert.IsNotNull(result);
             Assert.IsFalse(result);
             await userStore.SetEmailConfirmedAsync(user, true);
 
@@ -274,7 +271,6 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             result = await userStore.GetEmailConfirmedAsync(user);
 
             // Assert
-            Assert.IsNotNull(result);
             Assert.IsTrue(result);
         }
 
@@ -282,7 +278,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves the normalized email for a user and asserts it matches the expected value.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetNormalizedEmailAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -303,7 +299,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves the normalized username for a user and asserts it matches the expected value.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetNormalizedUserNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -324,7 +320,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Verifies get/set behavior for password hash on the user store.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetPasswordHashAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -349,7 +345,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets and retrieves a user's phone number, asserting persisted equality.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetPhoneNumberAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -373,7 +369,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Verifies phone number confirmed flag can be set and retrieved.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetPhoneNumberConfirmedAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -397,7 +393,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves a user's id via the store API and asserts it matches the created user's id.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetUserIdAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -418,7 +414,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves a user's username via the store API and asserts equality.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetUserNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -439,7 +435,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Verifies HasPasswordAsync returns true after setting a password hash.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task HasPasswordAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -464,7 +460,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets a user's email via the store and verifies persistence.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetEmailAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -489,7 +485,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets the email confirmed flag and verifies it via the store API.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetEmailConfirmedAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -514,7 +510,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets a user's normalized email and verifies the persisted normalized value.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetNormalizedEmailAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -537,7 +533,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets a user's normalized username and verifies the persisted normalized value.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetNormalizedUserNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -559,7 +555,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets a user's password hash and verifies it is persisted.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetPasswordHashAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -582,7 +578,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets a user's phone number and verifies persistence via GetPhoneNumberAsync.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetPhoneNumberAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -604,7 +600,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets the phone number confirmed flag and verifies it via the store API.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetPhoneNumberConfirmedAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -628,7 +624,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets a user's username and verifies the persisted value.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetUserNameAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -652,7 +648,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Updates several user fields (email, normalized email, phone) and verifies persistence.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -685,7 +681,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Adds an external login to a user and verifies it appears in GetLoginsAsync.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task AddLoginAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -709,7 +705,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Removes an external login from a user and verifies it no longer appears in GetLoginsAsync.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task RemoveLoginAsyncTest(TestDatabaseProvider provider)
         {
 
@@ -735,7 +731,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves external logins for a user and asserts expected providers are present.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetLoginsAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -758,7 +754,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Finds a user by external login provider and provider key, asserting the correct user is returned.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task FindByLoginAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -783,7 +779,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Adds a user to a role and verifies membership and users-in-role behavior using normalized names.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task AddToRoleAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -810,7 +806,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Removes a user from a role and verifies the user is no longer reported in that role.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task RemoveFromRoleAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -841,7 +837,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Retrieves roles assigned to a user and asserts expected role names are returned.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetRolesAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -880,7 +876,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Verifies IsInRoleAsync returns true for a user after adding to the role.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task IsInRoleAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -905,7 +901,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Verifies GetUsersInRoleAsync returns all users assigned to a given normalized role name.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetUsersInRoleAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -933,7 +929,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Queries the user set and verifies the store exposes an IQueryable and returns results.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task QueryUsersTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -954,7 +950,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// Sets and updates the authenticator key for a user and verifies the latest value is persisted.
         /// </summary>
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task SetAndGetAuthenticatorKeyAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);

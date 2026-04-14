@@ -7,6 +7,11 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.EmailServices;
     using Microsoft.AspNetCore.Authorization;
@@ -18,11 +23,6 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
     using Microsoft.AspNetCore.WebUtilities;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Reset password page model.

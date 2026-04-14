@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Features.Templates.Get
 {
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Handles template retrieval queries.
@@ -27,7 +27,7 @@ namespace Sky.Editor.Features.Templates.Get
     /// Performance Notes:
     /// - Uses <see cref="AsNoTracking"/> for read-only operations to reduce memory overhead
     /// - Avoids N+1 queries by using conditional includes
-    /// - Applies ordering at the database level when possible
+    /// - Applies ordering at the database level when possible.
     /// </remarks>
     public class GetTemplateQueryHandler : IQueryHandler<GetTemplateQuery, CommandResult<GetTemplateQueryResult>>
     {

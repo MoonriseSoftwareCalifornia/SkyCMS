@@ -7,13 +7,13 @@
 
 namespace Sky.Editor.Services.CDN
 {
-    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net.Http;
     using System.Text.Json;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Fastly CDN driver implementation using native HTTP APIs.
@@ -139,7 +139,7 @@ namespace Sky.Editor.Services.CDN
                 Message = response.IsSuccessStatusCode
                     ? $"Successfully purged: {url}"
                     : $"Failed to purge {url}: {response.ReasonPhrase}",
-                Id = purgeResponse?.id,
+                Id = purgeResponse?.Id,
                 EstimatedFlushDateTime = DateTimeOffset.UtcNow.AddSeconds(5) // Fastly purges are typically very fast (5-150ms)
             };
         }
@@ -167,7 +167,7 @@ namespace Sky.Editor.Services.CDN
                 ProviderName = ProviderName,
                 IsSuccessStatusCode = response.IsSuccessStatusCode,
                 Message = response.IsSuccessStatusCode
-                    ? $"Successfully purged all content (status: {purgeResponse?.status})"
+                    ? $"Successfully purged all content (status: {purgeResponse?.Status})"
                     : $"Failed to purge all: {response.ReasonPhrase}",
                 EstimatedFlushDateTime = DateTimeOffset.UtcNow.AddSeconds(5)
             };
@@ -178,8 +178,9 @@ namespace Sky.Editor.Services.CDN
         /// </summary>
         private class FastlyPurgeResponse
         {
-            public string status { get; set; }
-            public string id { get; set; }
+            public string Status { get; set; }
+
+            public string Id { get; set; }
         }
 
         /// <summary>
@@ -187,7 +188,7 @@ namespace Sky.Editor.Services.CDN
         /// </summary>
         private class FastlyPurgeAllResponse
         {
-            public string status { get; set; }
+            public string Status { get; set; }
         }
     }
 }

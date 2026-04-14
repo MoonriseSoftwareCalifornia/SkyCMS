@@ -21,6 +21,7 @@
 		<PackageReleaseNotes>Documentation dependencies updated.</PackageReleaseNotes>
 		<Title>Microsoft Graph Utilities for Cosmos</Title>
 		<Copyright>Copyright 2024 (c) Moonrise Software, LLC.</Copyright>
+		<NoWarn>NU5104</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -7,12 +7,12 @@
 
 namespace Sky.Editor.Services.Migrations.Definitions
 {
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Migrations.Core;
     using System;
     using System.Data.Common;
     using System.Threading.Tasks;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Migrations.Core;
 
     /// <summary>
     /// Adds ASP.NET Core Identity passkey persistence schema for relational databases.
@@ -51,7 +51,9 @@ namespace Sky.Editor.Services.Migrations.Definitions
         {
             context.Logger.LogInformation(
                 "Applying migration {MigrationId}: {Description} for provider {Provider}",
-                MigrationId, Description, context.Provider);
+                MigrationId,
+                Description,
+                context.Provider);
 
             switch (context.Provider)
             {

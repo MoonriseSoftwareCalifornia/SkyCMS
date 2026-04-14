@@ -46,7 +46,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region CreateAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsync_WithValidUser_CreatesUser(TestDatabaseProvider provider)
         {
             // Arrange
@@ -82,7 +82,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsync_WithNullUser_ThrowsArgumentNullException(TestDatabaseProvider provider)
         {
             // Arrange
@@ -102,7 +102,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsync_WithNullEmail_ThrowsArgumentNullException(TestDatabaseProvider provider)
         {
             // Arrange
@@ -128,7 +128,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsync_WithNullUserName_ThrowsArgumentNullException(TestDatabaseProvider provider)
         {
             // Arrange
@@ -155,7 +155,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task CreateAsync_WithDuplicateEmail_ReturnsFailed(TestDatabaseProvider provider)
         {
             // Arrange
@@ -195,7 +195,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region UpdateAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsync_WithValidChanges_UpdatesUser(TestDatabaseProvider provider)
         {
             // Arrange
@@ -221,7 +221,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsync_WithNullUser_ThrowsArgumentNullException(TestDatabaseProvider provider)
         {
             // Arrange
@@ -241,7 +241,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsync_EmailConfirmation_UpdatesSuccessfully(TestDatabaseProvider provider)
         {
             // Arrange
@@ -263,7 +263,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task UpdateAsync_SecurityStamp_UpdatesSuccessfully(TestDatabaseProvider provider)
         {
             // Arrange
@@ -289,7 +289,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         #region DeleteAsync Tests
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_WithValidUser_DeletesUser(TestDatabaseProvider provider)
         {
             // Arrange
@@ -314,7 +314,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_WithNullUser_ThrowsArgumentNullException(TestDatabaseProvider provider)
         {
             // Arrange
@@ -334,7 +334,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_RemovesAssociatedClaims(TestDatabaseProvider provider)
         {
             // Arrange
@@ -362,7 +362,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_RemovesAssociatedRoles(TestDatabaseProvider provider)
         {
             // Arrange
@@ -391,7 +391,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task DeleteAsync_RemovesAssociatedLogins(TestDatabaseProvider provider)
         {
             // Arrange

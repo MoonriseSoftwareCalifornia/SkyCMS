@@ -39,6 +39,7 @@ namespace Sky.Editor.Boot
             if (string.IsNullOrEmpty(connectionString))
             {
                 logger.LogWarning("No connection string configured - database will be configured during setup");
+
                 // Don't add DbContext here - it will be added after setup completes
                 return;
             }

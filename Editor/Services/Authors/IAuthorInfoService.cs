@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Services.Authors
 {
-    using Cosmos.Common.Data;
     using System;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
 
     /// <summary>
     /// Service contract for retrieving or creating <see cref="AuthorInfo"/> records

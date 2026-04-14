@@ -19,7 +19,7 @@ using Cosmos.Common.Models;
 /// Delegates to IArticleViewModelBuilder service for layout integration and OG metadata generation.
 /// </summary>
 /// <param name="viewModelBuilder">Service for building article view models.</param>
-public class BuildPublishedPageViewModelQueryHandler(IArticleViewModelBuilder viewModelBuilder) : IQueryHandler<BuildPublishedPageViewModelQuery, ArticleViewModel>
+public class BuildPublishedPageViewModelQueryHandler(IArticleViewModelBuilder viewModelBuilder): IQueryHandler<BuildPublishedPageViewModelQuery, ArticleViewModel>
 {
     private readonly IArticleViewModelBuilder viewModelBuilder = viewModelBuilder ?? throw new ArgumentNullException(nameof(viewModelBuilder));
 
@@ -32,9 +32,9 @@ public class BuildPublishedPageViewModelQueryHandler(IArticleViewModelBuilder vi
         }
 
         return await viewModelBuilder.BuildFromPublishedPageAsync(
-            query.PublishedPage,
-            query.LanguageCode,
-            query.LayoutCacheDuration,
-            query.IncludeLayout);
+            query.publishedPage,
+            query.languageCode,
+            query.layoutCacheDuration,
+            query.includeLayout);
     }
 }

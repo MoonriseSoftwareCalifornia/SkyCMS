@@ -7,6 +7,13 @@
 
 namespace Cosmos.BlobService.Drivers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Text;
+    using System.Threading.Tasks;
     using Amazon;
     using Amazon.Runtime;
     using Amazon.S3;
@@ -18,13 +25,6 @@ namespace Cosmos.BlobService.Drivers
     using Microsoft.Extensions.Caching.Distributed;
     using Microsoft.Extensions.Caching.Memory;
     using Newtonsoft.Json;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     ///     AWS S3 and Cloudflare S2 storage driver.

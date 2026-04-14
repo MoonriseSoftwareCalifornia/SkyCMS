@@ -7,11 +7,11 @@
 
 namespace Sky.Editor.Pages.Diagnostics
 {
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Diagnostics;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Diagnostic page model for configuration validation.

@@ -7,13 +7,13 @@
 
 namespace Sky.Editor.Features.Copilot.GetSettings
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Common.Features.Shared;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Models;
     using Sky.Editor.Services.Copilot;
-    using System;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Handles loading Copilot proxy options.

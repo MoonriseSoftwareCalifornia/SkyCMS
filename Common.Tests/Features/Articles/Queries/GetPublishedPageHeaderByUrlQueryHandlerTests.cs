@@ -129,8 +129,8 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_ReturnsServiceResult()
         {
             var urlPath = "/about-us";
-            var expectedResult = new ArticleViewModel 
-            { 
+            var expectedResult = new ArticleViewModel
+            {
                 Title = "About Us",
                 UrlPath = "/about-us",
                 ArticleNumber = 12345

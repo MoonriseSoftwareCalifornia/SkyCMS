@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Domain.Events.Handlers
 {
-    using Microsoft.Extensions.Logging;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Generic, no-op style domain event handler that logs a trace-level entry whenever

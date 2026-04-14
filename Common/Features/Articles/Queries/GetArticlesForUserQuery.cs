@@ -16,5 +16,5 @@ using Cosmos.Common.Models;
 /// Query to get all articles accessible to a given user based on their roles and permissions.
 /// Replaces CosmosUtilities.GetArticlesForUser() method.
 /// </summary>
-/// <param name="User">The claims principal representing the current user.</param>
-public record GetArticlesForUserQuery(ClaimsPrincipal User) : IQuery<List<TableOfContentsItem>>;
+/// <param name="user">The claims principal representing the current user.</param>
+public record GetArticlesForUserQuery(ClaimsPrincipal user): IQuery<List<TableOfContentsItem>>;

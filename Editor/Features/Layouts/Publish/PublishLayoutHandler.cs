@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Features.Layouts.Publish
 {
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Shared;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
     using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Handles publishing a layout as the default layout.

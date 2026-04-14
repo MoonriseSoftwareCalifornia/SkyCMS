@@ -32,7 +32,7 @@ namespace Sky.Cms.Models
         /// Gets or sets user's phone number (can be SMS).
         /// </summary>
         [Display(Name = "Telephone #")]
-        [Phone()]
+        [Phone]
         public string PhoneNumber { get; set; }
 
         /// <summary>

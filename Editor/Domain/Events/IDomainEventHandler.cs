@@ -14,12 +14,14 @@ namespace Sky.Editor.Domain.Events
     /// Defines a handler for a specific domain event type.
     /// </summary>
     /// <typeparam name="TEvent">Concrete domain event type.</typeparam>
-    public interface IDomainEventHandler<in TEvent> where TEvent : IDomainEvent
+    public interface IDomainEventHandler<in TEvent>
+        where TEvent : IDomainEvent
     {
         /// <summary>
         /// Handles the specified domain event.
         /// </summary>
         /// <param name="event">Event instance.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task HandleAsync(TEvent @event);
 
         /// <summary>
@@ -31,6 +33,7 @@ namespace Sky.Editor.Domain.Events
         /// <remarks>
         /// The dispatcher will invoke either this overload (if present) or the single-parameter version.
         /// </remarks>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task HandleAsync(TEvent @event, CancellationToken cancellationToken) =>
             HandleAsync(@event);
     }

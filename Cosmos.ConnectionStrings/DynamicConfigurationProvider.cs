@@ -32,7 +32,7 @@ namespace Cosmos.DynamicConfig
         private readonly IMemoryCache memoryCache;
         private readonly StringBuilder errorMessages = new();
         private readonly string connectionString;
-        private readonly ILogger<DynamicConfigurationProvider> _logger;
+        private readonly ILogger<DynamicConfigurationProvider> _logger = null!;
         private readonly ProxySettings proxySettings;
         private readonly HashSet<IPAddress> trustedProxyIPs;
         private readonly List<IPAddressRange> trustedProxyRanges;
@@ -76,6 +76,7 @@ namespace Cosmos.DynamicConfig
             ILogger<DynamicConfigurationProvider> logger,
             IOptions<ProxySettings> proxyOptions)
         {
+            _logger = logger;
             this.configuration = configuration;
             this.proxySettings = proxyOptions.Value;
             this.httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
@@ -87,7 +88,6 @@ namespace Cosmos.DynamicConfig
             }
 
             this.memoryCache = memoryCache;
-            _logger = logger;
 
             // Parse trusted proxy IPs (IPv4 and IPv6 supported), also accept CIDR and ranges
             trustedProxyIPs = new HashSet<IPAddress>();

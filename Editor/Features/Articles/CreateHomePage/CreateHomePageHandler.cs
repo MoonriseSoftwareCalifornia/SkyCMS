@@ -1,10 +1,16 @@
 // <copyright file="CreateHomePageHandler.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// See https://github.com/CWALabs/SkyCMS
+// for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
 namespace Sky.Editor.Features.Articles.CreateHomePage
 {
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
@@ -13,10 +19,6 @@ namespace Sky.Editor.Features.Articles.CreateHomePage
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Slugs;
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for CreateHomePageCommand. Reassigns the home page and republishes both old and new.
@@ -33,6 +35,12 @@ namespace Sky.Editor.Features.Articles.CreateHomePage
         /// <summary>
         /// Initializes a new instance of the <see cref="CreateHomePageHandler"/> class.
         /// </summary>
+        /// <param name="dbContext">The database context for accessing articles.</param>
+        /// <param name="slugService">Service for generating URL slugs.</param>
+        /// <param name="publishingService">Service for publishing articles.</param>
+        /// <param name="catalogService">Service for managing the article catalog.</param>
+        /// <param name="clock">Service for accessing the current time.</param>
+        /// <param name="logger">Logger for logging information and errors.</param>
         public CreateHomePageHandler(
             ApplicationDbContext dbContext,
             ISlugService slugService,
@@ -92,6 +100,7 @@ namespace Sky.Editor.Features.Articles.CreateHomePage
                 {
                     article.UrlPath = newUrl;
                 }
+
                 await dbContext.SaveChangesAsync(cancellationToken);
 
                 // Reassign new home page to root
@@ -99,6 +108,7 @@ namespace Sky.Editor.Features.Articles.CreateHomePage
                 {
                     article.UrlPath = "root";
                 }
+
                 await dbContext.SaveChangesAsync(cancellationToken);
 
                 // Get published versions

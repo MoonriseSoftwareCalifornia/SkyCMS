@@ -7,11 +7,11 @@
 
 namespace Cosmos.BlobService
 {
-    using Cosmos.BlobService.Models;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading.Tasks;
+    using Cosmos.BlobService.Models;
 
     /// <summary>
     /// Defines an abstraction over storage operations for files and folders.

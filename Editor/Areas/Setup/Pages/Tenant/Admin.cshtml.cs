@@ -5,11 +5,11 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Sky.Editor.Services.Setup;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
 
 namespace Sky.Editor.Areas.Setup.Pages.Tenant
 {
@@ -62,6 +62,7 @@ namespace Sky.Editor.Areas.Setup.Pages.Tenant
         /// <summary>
         /// Handles GET requests.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> OnGetAsync()
         {
             var status = await setupService.GetTenantSetupStatusAsync();
@@ -83,6 +84,7 @@ namespace Sky.Editor.Areas.Setup.Pages.Tenant
         /// <summary>
         /// Handles POST requests.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)

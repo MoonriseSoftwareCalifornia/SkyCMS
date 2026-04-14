@@ -7,10 +7,6 @@
 
 namespace Cosmos.Cms.Data.Logic
 {
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Data.Logic;
-    using HtmlAgilityPack;
-    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
@@ -18,6 +14,10 @@ namespace Cosmos.Cms.Data.Logic
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
+    using HtmlAgilityPack;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Loads external layouts and associated page templates into Comsos CMS.
@@ -215,7 +215,8 @@ namespace Cosmos.Cms.Data.Logic
                 catch (Exception e)
                 {
                     var t = e; // Debugging
-                    //throw;
+
+                    // throw;
                 }
             }
 

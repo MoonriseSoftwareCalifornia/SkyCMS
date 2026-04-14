@@ -7,8 +7,8 @@
 
 namespace Cosmos.Common.Services.BlogPublishing
 {
-    using Cosmos.Common.Data;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
 
     /// <summary>
     /// Service for rendering blog streams and posts with client-side orchestration.
@@ -31,11 +31,11 @@ namespace Cosmos.Common.Services.BlogPublishing
         /// <remarks>
         /// The wrapper HTML includes:
         /// - Stream header with title, introduction, and optional banner image
-        /// - Embedded `<script type="application/json">` containing post metadata array
-        /// - Empty `<div id="post-list">` for dynamic content insertion
-        /// - Pagination nav container `<ul id="pagination">`
+        /// - Embedded script element (type="application/json") containing post metadata array
+        /// - Empty div (id="post-list") for dynamic content insertion
+        /// - Pagination nav container (ul id="pagination")
         /// - Script reference to `/js/blog-stream-loader.js`
-        /// - No layout/master page wrapping (suitable for both static and dynamic modes)
+        /// - No layout/master page wrapping (suitable for both static and dynamic modes).
         /// </remarks>
         Task<string> GenerateBlogStreamWrapperAsync(Article article, string blogKey);
 
@@ -66,10 +66,10 @@ namespace Cosmos.Common.Services.BlogPublishing
         Task<string> GenerateBlogPostMetadataJsonAsync(string blogKey, int maxPosts = 500);
 
         /// <summary>
-        /// Generates a standalone `<article>` snippet for a blog post.
+        /// Generates a standalone article snippet for a blog post.
         /// </summary>
         /// <param name="article">The article to render.</param>
-        /// <returns>HTML `<article>` element containing the post content.</returns>
+        /// <returns>HTML article element containing the post content.</returns>
         /// <remarks>
         /// The snippet includes:
         /// - Optional banner image
@@ -77,7 +77,7 @@ namespace Cosmos.Common.Services.BlogPublishing
         /// - Content (pre-rendered HTML)
         /// - Author and date information
         /// - No outer layout/wrapper
-        /// 
+        ///
         /// This is suitable for dynamic insertion into a blog stream wrapper.
         /// </remarks>
         Task<string> GenerateBlogPostSnippetAsync(Article article);

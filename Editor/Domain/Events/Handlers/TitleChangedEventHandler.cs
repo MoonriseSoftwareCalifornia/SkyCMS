@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Domain.Events.Handlers
 {
-    using Microsoft.Extensions.Logging;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Logs title changes. Could also enqueue slug update tasks or invalidate caches.
@@ -55,7 +55,8 @@ namespace Sky.Editor.Domain.Events.Handlers
         /// </remarks>
         public Task HandleAsync(TitleChangedEvent @event, CancellationToken cancellationToken)
         {
-            logger.LogInformation("Title changed: ArticleNumber={ArticleNumber} '{Old}' -> '{New}'",
+            logger.LogInformation(
+                "Title changed: ArticleNumber={ArticleNumber} '{Old}' -> '{New}'",
                 @event.ArticleNumber, @event.OldTitle, @event.NewTitle);
             return Task.CompletedTask;
         }

@@ -16,12 +16,12 @@ using Cosmos.Common.Models;
 /// Query to build an ArticleViewModel from a PublishedPage entity.
 /// Replaces ArticleLogic.BuildArticleViewModel(PublishedPage) method.
 /// </summary>
-/// <param name="PublishedPage">Source published page entity.</param>
-/// <param name="LanguageCode">Language code (e.g., "en-US").</param>
-/// <param name="LayoutCacheDuration">Optional layout cache duration.</param>
-/// <param name="IncludeLayout">Whether to include layout information.</param>
+/// <param name="publishedPage">Source published page entity.</param>
+/// <param name="languageCode">Language code (e.g., "en-US").</param>
+/// <param name="layoutCacheDuration">Optional layout cache duration.</param>
+/// <param name="includeLayout">Whether to include layout information.</param>
 public record BuildPublishedPageViewModelQuery(
-    PublishedPage PublishedPage,
-    string LanguageCode = "en",
-    TimeSpan? LayoutCacheDuration = null,
-    bool IncludeLayout = true) : IQuery<ArticleViewModel>;
+    PublishedPage publishedPage,
+    string languageCode = "en",
+    TimeSpan? layoutCacheDuration = null,
+    bool includeLayout = true): IQuery<ArticleViewModel>;

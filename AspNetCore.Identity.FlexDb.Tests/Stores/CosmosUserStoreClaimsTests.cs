@@ -44,7 +44,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// and remove claims, verifying expected claim sets after each operation.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task Consolidated_ClaimsAsync_CRUD_Tests(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);
@@ -97,7 +97,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         /// returns all users that have the claim.
         /// </summary>
         [TestMethod()]
-        [DynamicData(nameof(GetTestProviders), DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetTestProviders))]
         public async Task GetUsersForClaimAsyncTest(TestDatabaseProvider provider)
         {
             InitializeForProvider(provider);

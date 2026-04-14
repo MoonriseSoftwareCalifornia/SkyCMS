@@ -1,4 +1,4 @@
-// <copyright file="FileManagerController.cs" company="Moonrise Software, LLC">
+// <copyright file="LayoutImportConstants.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -15,31 +15,31 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Marks the start of the head injection.
         /// </summary>
-        public const string COSMOS_HEAD_START = "<!--  BEGIN: Cosmos Layout HEAD content. -->";
+        public const string COSMOSHEADSTART = "<!--  BEGIN: Cosmos Layout HEAD content. -->";
 
         /// <summary>
         /// Marks the end of the head injection.
         /// </summary>
-        public const string COSMOS_HEAD_END = "<!--  END: Cosmos Layout HEAD content. -->";
+        public const string COSMOSHEADEND = "<!--  END: Cosmos Layout HEAD content. -->";
 
         /// <summary>
         /// Marks the beginning of the header injection.
         /// </summary>
-        public const string COSMOS_BODY_HEADER_START = "<!-- BEGIN: Cosmos Layout BODY HEADER content -->";
+        public const string COSMOSBODYHEADERSTART = "<!-- BEGIN: Cosmos Layout BODY HEADER content -->";
 
         /// <summary>
         /// Marks the end of the header injection.
         /// </summary>
-        public const string COSMOS_BODY_HEADER_END = "<!-- END: Cosmos Layout BODY HEADER content -->";
+        public const string COSMOSBODYHEADEREND = "<!-- END: Cosmos Layout BODY HEADER content -->";
 
         /// <summary>
         /// Marks the start of the footer injection.
         /// </summary>
-        public const string COSMOS_BODY_FOOTER_START = "<!-- BEGIN: Cosmos Layout BODY FOOTER content -->";
+        public const string COSMOSBODYFOOTERSTART = "<!-- BEGIN: Cosmos Layout BODY FOOTER content -->";
 
         /// <summary>
         /// Marks the end of the footer injection.
         /// </summary>
-        public const string COSMOS_BODY_FOOTER_END = "<!-- END: Cosmos Layout BODY FOOTER content -->";
+        public const string COSMOSBODYFOOTEREND = "<!-- END: Cosmos Layout BODY FOOTER content -->";
     }
 }

@@ -15,11 +15,11 @@ namespace Sky.Editor.Models
         /// <summary>
         /// Gets or sets a value indicating whether the operation was successful.
         /// </summary>
-        public bool success { get; set; }
+        public bool Success { get; set; }
 
         /// <summary>
         /// Gets or sets the message (typically used for error messages).
         /// </summary>
-        public string? message { get; set; }
+        public string? Message { get; set; }
     }
 }

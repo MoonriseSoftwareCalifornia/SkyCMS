@@ -7,6 +7,12 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account
 {
+    using System.ComponentModel.DataAnnotations;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Text;
+    using System.Text.Encodings.Web;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Data;
     using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Authorization;
@@ -17,12 +23,6 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
     using Microsoft.AspNetCore.RateLimiting;
     using Microsoft.AspNetCore.WebUtilities;
     using Microsoft.Extensions.Logging;
-    using System.ComponentModel.DataAnnotations;
-    using System.Linq;
-    using System.Security.Claims;
-    using System.Text;
-    using System.Text.Encodings.Web;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// External login page model.
@@ -189,6 +189,7 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostConfirmationAsync(string returnUrl = null)
         {
             returnUrl = returnUrl ?? Url.Content("~/");
+
             // Get the information about the user from the external login provider
             var info = await signInManager.GetExternalLoginInfoAsync();
             if (info == null)

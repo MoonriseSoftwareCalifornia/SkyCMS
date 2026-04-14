@@ -7,6 +7,11 @@
 
 namespace Sky.Editor.Features.Blogs.UpdateStream
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -17,11 +22,6 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Titles;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Handler for updating blog stream metadata and properties.
@@ -199,7 +199,7 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
 
         /// <summary>
         /// Updates all child blog posts' UrlPath when the parent stream's UrlPath changes.
-        /// Maintains the format: stream_path/post_slug
+        /// Maintains the format: stream_path/post_slug.
         /// </summary>
         private async Task UpdateChildBlogPostsUrlPath(
             string oldStreamUrlPath,

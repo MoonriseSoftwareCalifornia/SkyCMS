@@ -7,6 +7,10 @@
 
 namespace Sky.Editor.Services.Setup
 {
+    using System;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -16,10 +20,6 @@ namespace Sky.Editor.Services.Setup
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Features.Articles.Create;
-    using System;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using CommonMediator = Cosmos.Common.Features.Shared.IMediator;
 
     /// <summary>
@@ -57,6 +57,7 @@ namespace Sky.Editor.Services.Setup
                 if (isMultiTenant)
                 {
                     logger.LogInformation("Multi-tenant mode detected. Post-setup initialization will be handled per-tenant on first request.");
+
                     // Don't process here - let middleware handle it per tenant
                     return;
                 }
@@ -164,6 +165,7 @@ namespace Sky.Editor.Services.Setup
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to complete post-setup initialization");
+
                 // Don't throw - this shouldn't prevent application startup
             }
         }

@@ -7,9 +7,9 @@
 
 namespace Sky.Cms.Areas.Identity.Pages.Account.Manage
 {
-    using Microsoft.AspNetCore.Mvc.Rendering;
     using System;
     using System.IO;
+    using Microsoft.AspNetCore.Mvc.Rendering;
 
     /// <summary>
     /// Manage navigation pages class.

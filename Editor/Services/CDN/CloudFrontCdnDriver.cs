@@ -7,8 +7,6 @@
 
 namespace Sky.Editor.Services.CDN
 {
-    using Microsoft.Extensions.Logging;
-    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -17,6 +15,8 @@ namespace Sky.Editor.Services.CDN
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Amazon CloudFront CDN Service for cache invalidation management.
@@ -283,6 +283,7 @@ namespace Sky.Editor.Services.CDN
             var uri = new Uri(endpoint);
             var canonicalUri = uri.AbsolutePath;
             var canonicalQueryString = string.Empty;
+
             // Headers must be sorted alphabetically and lowercase
             var canonicalHeaders = $"content-type:{contentType}\nhost:{uri.Host}\nx-amz-date:{amzDate}\n";
             var signedHeaders = "content-type;host;x-amz-date";

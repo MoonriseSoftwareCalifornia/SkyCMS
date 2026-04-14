@@ -1,4 +1,4 @@
-// <copyright file="Step4_Publisher.cshtml.cs" company="Moonrise Software, LLC">
+// <copyright file="Step3_Publisher.cshtml.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Setup;
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 3: Publisher configuration.
@@ -142,7 +142,7 @@ namespace Sky.Editor.Areas.Setup.Pages
             if (await setupCheckService.IsSetup())
             {
                 // Redirect to home page if setup is already completed
-                return RedirectToPage("/Index", new { area = "" });
+                return RedirectToPage("/Index", new { area = string.Empty });
             }
 
             var config = await setupService.GetCurrentSetupAsync();
@@ -175,7 +175,8 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect to next step.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            logger.LogInformation("Step3_Publisher POST - SetupId: {SetupId}, PublisherUrl: {Url}, WebsiteTitle: {Title}, SiteDesignId: {DesignId}",
+            logger.LogInformation(
+                "Step3_Publisher POST - SetupId: {SetupId}, PublisherUrl: {Url}, WebsiteTitle: {Title}, SiteDesignId: {DesignId}",
                 SetupId, PublisherUrl, WebsiteTitle, SiteDesignId);
 
             // Check if setup has been completed
@@ -195,7 +196,8 @@ namespace Sky.Editor.Areas.Setup.Pages
                     {
                         foreach (var error in state.Errors)
                         {
-                            logger.LogError("Step3_Publisher POST - Validation error for {Field}: {Error}",
+                            logger.LogError(
+                                "Step3_Publisher POST - Validation error for {Field}: {Error}",
                                 key, error.ErrorMessage ?? error.Exception?.Message);
                         }
                     }
@@ -268,17 +270,17 @@ namespace Sky.Editor.Areas.Setup.Pages
         public class SiteDesignOption
         {
             /// <summary>
-            /// Gets or sets the layout ID.
+            /// Gets the layout ID.
             /// </summary>
             public string Id { get; internal set; }
 
             /// <summary>
-            /// Gets or sets the layout title.
+            /// Gets the layout title.
             /// </summary>
             public string Title { get; internal set; }
 
             /// <summary>
-            /// Gets or sets the layout description.
+            /// Gets the layout description.
             /// </summary>
             public string Description { get; internal set; }
         }

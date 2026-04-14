@@ -9,13 +9,6 @@
 
 namespace Cosmos.BlobService.Drivers
 {
-    using Azure;
-    using Azure.Identity;
-    using Azure.Storage.Blobs;
-    using Azure.Storage.Blobs.Models;
-    using Azure.Storage.Blobs.Specialized;
-    using Cosmos.BlobService.Config;
-    using Cosmos.BlobService.Models;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -23,6 +16,13 @@ namespace Cosmos.BlobService.Drivers
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Azure;
+    using Azure.Identity;
+    using Azure.Storage.Blobs;
+    using Azure.Storage.Blobs.Models;
+    using Azure.Storage.Blobs.Specialized;
+    using Cosmos.BlobService.Config;
+    using Cosmos.BlobService.Models;
 
     /// <summary>
     ///     Azure blob storage driver.
@@ -56,6 +56,7 @@ namespace Cosmos.BlobService.Drivers
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="AzureStorage"/> class.
         /// Internal constructor for testing: allows injection of a mock BlobServiceClient.
         /// </summary>
         /// <param name="mockBlobServiceClient">Mock BlobServiceClient instance.</param>
@@ -105,7 +106,6 @@ namespace Cosmos.BlobService.Drivers
             }
 
             var blobClient = this.GetBlobClient(fileMetaData.RelativePath);
-
 
             var appendClient = this.GetAppendBlobClient(fileMetaData.RelativePath);
 

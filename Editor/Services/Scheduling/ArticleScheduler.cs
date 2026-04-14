@@ -7,6 +7,10 @@
 
 namespace Sky.Editor.Services.Scheduling
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
@@ -20,10 +24,6 @@ namespace Sky.Editor.Services.Scheduling
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.EditorSettings;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <inheritdoc/>
     /// <remarks>
@@ -71,8 +71,8 @@ namespace Sky.Editor.Services.Scheduling
         public async Task ExecuteAsync()
         {
             var now = clock.UtcNow;
-            // logger.LogInformation("ArticleScheduler: Starting scheduled execution at {ExecutionTime}", now);
 
+            // logger.LogInformation("ArticleScheduler: Starting scheduled execution at {ExecutionTime}", now);
             if (!settings.IsMultiTenantEditor)
             {
                 try

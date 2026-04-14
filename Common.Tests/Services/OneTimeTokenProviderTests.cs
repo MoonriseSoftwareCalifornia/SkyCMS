@@ -97,7 +97,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -117,7 +117,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -139,7 +139,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -158,7 +158,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -167,7 +167,7 @@ namespace Cosmos.Common.Tests.Services
             var token = await provider.GenerateAsync(user);
 
             // Assert
-            Assert.IsTrue(token.All(c => char.IsLetterOrDigit(c)), 
+            Assert.IsTrue(token.All(c => char.IsLetterOrDigit(c)),
                 "Token should only contain alphanumeric characters");
         }
 
@@ -178,7 +178,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -201,7 +201,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -227,7 +227,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -255,7 +255,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -277,7 +277,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -290,7 +290,7 @@ namespace Cosmos.Common.Tests.Services
 
             // Assert
             Assert.AreEqual(TokenVerificationResult.Valid, result);
-            
+
             var tokenStillExists = await context.TotpTokens.AnyAsync(t => t.Token == token);
             Assert.IsFalse(tokenStillExists, "Token should be removed after validation");
         }
@@ -302,7 +302,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -315,7 +315,7 @@ namespace Cosmos.Common.Tests.Services
 
             // Assert
             Assert.AreEqual(TokenVerificationResult.Valid, result);
-            
+
             var tokenStillExists = await context.TotpTokens.AnyAsync(t => t.Token == token);
             Assert.IsTrue(tokenStillExists, "Token should not be removed when removeToken is false");
         }
@@ -331,14 +331,14 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
             // Act
-            var result = await provider.ValidateAsync(null, user);
+            var result = await provider.ValidateAsync(null!, user);
 
             // Assert
             Assert.AreEqual(TokenVerificationResult.Invalid, result);
@@ -351,7 +351,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -371,7 +371,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -411,7 +411,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -431,7 +431,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = false; // Email not confirmed
             context.Users.Add(user);
@@ -453,7 +453,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             user.LockoutEnabled = true;
@@ -477,7 +477,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             user.LockoutEnabled = true;
@@ -501,12 +501,12 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user1 = TestDataBuilder.CreateUser();
             user1.EmailConfirmed = true;
             var user2 = TestDataBuilder.CreateUser();
             user2.EmailConfirmed = true;
-            
+
             context.Users.Add(user1);
             context.Users.Add(user2);
             await context.SaveChangesAsync();
@@ -531,7 +531,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -567,7 +567,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -596,7 +596,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = false;
             context.Users.Add(user);
@@ -625,7 +625,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             user.LockoutEnabled = true;
@@ -656,7 +656,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);
@@ -683,7 +683,7 @@ namespace Cosmos.Common.Tests.Services
             var context = GetIsolatedContext();
             var mockLogger = new Mock<ILogger>();
             var provider = new OneTimeTokenProvider<IdentityUser>(context, mockLogger.Object);
-            
+
             var user = TestDataBuilder.CreateUser();
             user.EmailConfirmed = true;
             context.Users.Add(user);

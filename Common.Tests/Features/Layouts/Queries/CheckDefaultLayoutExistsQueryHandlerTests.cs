@@ -218,8 +218,8 @@ namespace Cosmos.Common.Tests.Features.Layouts.Queries
 
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var handler = new CheckDefaultLayoutExistsQueryHandler(context, memoryCache);
-            var query = new CheckDefaultLayoutExistsQuery 
-            { 
+            var query = new CheckDefaultLayoutExistsQuery
+            {
                 CacheDuration = TimeSpan.FromMinutes(5)
             };
 

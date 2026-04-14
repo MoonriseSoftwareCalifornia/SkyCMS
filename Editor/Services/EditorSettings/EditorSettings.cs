@@ -500,11 +500,17 @@ namespace Sky.Editor.Services.EditorSettings
         private class ConfigurationSource
         {
             public bool? AllowSetup { get; set; }
+
             public string BlobPublicUrl { get; set; }
+
             public bool? CosmosRequiresAuthentication { get; set; }
+
             public string MicrosoftAppId { get; set; }
+
             public string PublisherUrl { get; set; }
+
             public bool? StaticWebPages { get; set; }
+
             public string AllowedFileTypes { get; set; }
         }
     }

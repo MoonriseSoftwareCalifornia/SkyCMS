@@ -7,15 +7,15 @@
 
 namespace Sky.Editor.Services.Redirects
 {
+    using System;
+    using System.Text;
+    using System.Threading.Tasks;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Sky.Editor.Infrastructure.Time;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Slugs;
-    using System;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Implements redirect management by storing redirects as special <see cref="Article"/> records (StatusCode = Redirect).

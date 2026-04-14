@@ -23,7 +23,7 @@ using Microsoft.Extensions.Caching.Memory;
 /// </summary>
 /// <param name="dbContext">Database context for layout queries.</param>
 /// <param name="memoryCache">Optional memory cache for caching layout existence checks.</param>
-public class CheckDefaultLayoutExistsQueryHandler(IApplicationDbContext dbContext, IMemoryCache? memoryCache = null) : IQueryHandler<CheckDefaultLayoutExistsQuery, bool>
+public class CheckDefaultLayoutExistsQueryHandler(IApplicationDbContext dbContext, IMemoryCache? memoryCache = null): IQueryHandler<CheckDefaultLayoutExistsQuery, bool>
 {
     private readonly IApplicationDbContext dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     private readonly IMemoryCache? memoryCache = memoryCache;

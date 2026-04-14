@@ -1,6 +1,8 @@
 // <copyright file="PublishArticleHandler.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// See https://github.com/CWALabs/SkyCMS
+// for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
 namespace Sky.Editor.Features.Articles.Publish
@@ -48,6 +50,7 @@ namespace Sky.Editor.Features.Articles.Publish
         /// <summary>
         /// Handles the publish article command.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<CommandResult<PublishArticleCommandResult>> HandleAsync(PublishArticleCommand command, CancellationToken cancellationToken = default)
         {
             if (command == null)
@@ -58,7 +61,7 @@ namespace Sky.Editor.Features.Articles.Publish
             try
             {
                 var article = await dbContext.Articles.FirstOrDefaultAsync(a => a.Id == command.ArticleId, cancellationToken);
-                
+
                 if (article == null)
                 {
                     logger.LogWarning("Article with ID {ArticleId} not found for publishing", command.ArticleId);
@@ -68,10 +71,10 @@ namespace Sky.Editor.Features.Articles.Publish
                 // Set the publish timestamp
                 var publishTime = command.PublishTime ?? clock.UtcNow;
                 article.Published = publishTime;
-                
+
                 // Save the article with updated publish time
                 await dbContext.SaveChangesAsync(cancellationToken);
-                
+
                 logger.LogInformation(
                     "Article {ArticleNumber} version {VersionNumber} published at {PublishedTime}",
                     article.ArticleNumber,

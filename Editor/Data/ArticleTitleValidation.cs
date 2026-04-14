@@ -7,15 +7,15 @@
 
 namespace Cosmos.Cms.Data
 {
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
+    using System.Linq;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json;
     using Sky.Cms.Models;
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
-    using System.Linq;
 
     /// <summary>
     ///     Validates that a title is valid.

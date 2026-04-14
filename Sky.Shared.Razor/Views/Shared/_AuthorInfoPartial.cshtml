@@ -24,7 +24,7 @@
 @{
     // Determine if model is JSON string or AuthorInfo object
     var isJsonString = ViewData["IsJsonString"] as bool? ?? false;
-    Cosmos.Common.Data.AuthorInfo authorInfo = null;
+    Cosmos.Common.Data.AuthorInfo authorInfo = null!;
 
     if (Model == null)
     {
@@ -39,7 +39,7 @@
             {
                 // Handle single-quoted JSON format from ArticleViewModelBuilder
                 var normalized = jsonString.Replace("'", "\"");
-                authorInfo = JsonSerializer.Deserialize<Cosmos.Common.Data.AuthorInfo>(normalized);
+                authorInfo = JsonSerializer.Deserialize<Cosmos.Common.Data.AuthorInfo>(normalized)!;
 
             }
             catch

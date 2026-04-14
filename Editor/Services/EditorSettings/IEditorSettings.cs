@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Services.EditorSettings
 {
-    using Sky.Editor.Models;
     using System;
     using System.Threading.Tasks;
+    using Sky.Editor.Models;
 
     /// <summary>
     /// Interface for editor settings.

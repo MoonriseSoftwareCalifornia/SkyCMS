@@ -15,46 +15,46 @@ namespace Sky.Cms.Models
         /// <summary>
         /// Gets or sets file name without extension.
         /// </summary>
-        public string name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets file name with extension.
         /// </summary>
-        public string fullName { get; set; }
+        public string FullName { get; set; }
 
         /// <summary>
         /// Gets or sets file extension.
         /// </summary>
-        public string extension { get; set; }
+        public string Extension { get; set; }
 
         /// <summary>
         /// Gets or sets mime type.
         /// </summary>
-        public string mimeType { get; set; }
+        public string MimeType { get; set; }
 
         /// <summary>
         /// Gets or sets base 64 image data.
         /// </summary>
-        public string imageBase64 { get; set; }
+        public string ImageBase64 { get; set; }
 
         /// <summary>
         /// Gets or sets quantity.
         /// </summary>
-        public double? quantity { get; set; } = null;
+        public double? Quantity { get; set; } = null;
 
         /// <summary>
         /// Gets or sets image width.
         /// </summary>
-        public string width { get; set; }
+        public string Width { get; set; }
 
         /// <summary>
         /// Gets or sets image height.
         /// </summary>
-        public string height { get; set; }
+        public string Height { get; set; }
 
         /// <summary>
         /// Gets or sets folder where image should reside.
         /// </summary>
-        public string folder { get; set; }
+        public string Folder { get; set; }
     }
 }

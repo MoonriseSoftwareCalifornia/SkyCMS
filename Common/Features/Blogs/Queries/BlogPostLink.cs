@@ -1,4 +1,4 @@
-// <copyright file="GetBlogPostQueryResult.cs" company="Moonrise Software, LLC">
+// <copyright file="BlogPostLink.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS

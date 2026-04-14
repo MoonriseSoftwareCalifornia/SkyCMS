@@ -7,9 +7,9 @@
 
 namespace Sky.Editor.Services.Layouts
 {
-    using Sky.Editor.Services.Templates;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using Sky.Editor.Services.Templates;
 
     /// <summary>
     /// Provides methods for retrieving layout page templates.

@@ -10,14 +10,14 @@
     ViewData["Title"] = Model.Title;
 }
 
-@Html.Raw(PageImportConstants.COSMOS_BODY_HEADER_START)
+@Html.Raw(PageImportConstants.COSMOSBODYHEADERSTART)
 @Html.Raw(Model.Layout.HtmlHeader)
-@Html.Raw(PageImportConstants.COSMOS_BODY_HEADER_END)
+@Html.Raw(PageImportConstants.COSMOSBODYHEADEREND)
 
 @Html.Raw(Model.Content)
 
-@Html.Raw(PageImportConstants.COSMOS_BODY_FOOTER_START)
+@Html.Raw(PageImportConstants.COSMOSBODYFOOTERSTART)
 @Html.Raw(Model.Layout.FooterHtmlContent)
-@Html.Raw(PageImportConstants.COSMOS_BODY_FOOTER_END)
+@Html.Raw(PageImportConstants.COSMOSBODYFOOTEREND)
 
 @Html.Raw(Model.FooterJavaScript)

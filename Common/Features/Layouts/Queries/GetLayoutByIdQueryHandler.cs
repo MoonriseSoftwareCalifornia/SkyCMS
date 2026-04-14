@@ -21,7 +21,7 @@ using Microsoft.Extensions.Caching.Memory;
 /// </summary>
 /// <param name="dbContext">Database context for layout queries.</param>
 /// <param name="memoryCache">Optional memory cache for caching layout results.</param>
-public class GetLayoutByIdQueryHandler(IApplicationDbContext dbContext, IMemoryCache? memoryCache = null) : IQueryHandler<GetLayoutByIdQuery, Layout?>
+public class GetLayoutByIdQueryHandler(IApplicationDbContext dbContext, IMemoryCache? memoryCache = null): IQueryHandler<GetLayoutByIdQuery, Layout?>
 {
     private readonly IApplicationDbContext dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     private readonly IMemoryCache? memoryCache = memoryCache;
@@ -34,7 +34,7 @@ public class GetLayoutByIdQueryHandler(IApplicationDbContext dbContext, IMemoryC
             throw new ArgumentNullException(nameof(query));
         }
 
-        if (query.LayoutId == Guid.Empty)
+        if (query.layoutId == Guid.Empty)
         {
             return null;
         }
@@ -42,17 +42,17 @@ public class GetLayoutByIdQueryHandler(IApplicationDbContext dbContext, IMemoryC
         // Check cache first if caching is enabled
         if (memoryCache != null && query.CacheDuration.HasValue)
         {
-            if (memoryCache.TryGetValue<Layout?>(CacheKeys.Layout(query.LayoutId), out var cachedLayout))
+            if (memoryCache.TryGetValue<Layout?>(CacheKeys.Layout(query.layoutId), out var cachedLayout))
             {
                 return cachedLayout;
             }
 
             var layout = await dbContext.Layouts
                 .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.Id == query.LayoutId, cancellationToken);
+                .FirstOrDefaultAsync(l => l.Id == query.layoutId, cancellationToken);
 
             // Cache the result (including null to avoid repeated queries for non-existent layouts)
-            memoryCache.Set(CacheKeys.Layout(query.LayoutId), layout, query.CacheDuration.Value);
+            memoryCache.Set(CacheKeys.Layout(query.layoutId), layout, query.CacheDuration.Value);
 
             return layout;
         }
@@ -60,6 +60,6 @@ public class GetLayoutByIdQueryHandler(IApplicationDbContext dbContext, IMemoryC
         // No caching - direct query
         return await dbContext.Layouts
             .AsNoTracking()
-            .FirstOrDefaultAsync(l => l.Id == query.LayoutId, cancellationToken);
+            .FirstOrDefaultAsync(l => l.Id == query.layoutId, cancellationToken);
     }
 }

@@ -7,14 +7,14 @@
 
 namespace Sky.Editor.Services.Layout
 {
-    using Cosmos.Common.Data;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Logging;
-    using Sky.Editor.Services.Migrations.Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Cosmos.Common.Data;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Migrations.Core;
 
     /// <summary>
     /// Service for migrating existing layouts to use LayoutNumber versioning.
@@ -41,7 +41,6 @@ namespace Sky.Editor.Services.Layout
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
 
         /// <summary>
         /// Determines whether the database needs layout number migration.

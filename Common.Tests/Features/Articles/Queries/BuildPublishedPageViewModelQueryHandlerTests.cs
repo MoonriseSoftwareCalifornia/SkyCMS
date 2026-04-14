@@ -205,8 +205,8 @@ namespace Cosmos.Common.Tests.Features.Articles.Queries
         public async Task HandleAsync_ReturnsBuilderResult()
         {
             var publishedPage = new PublishedPage { Title = "Test Page" };
-            var expectedResult = new ArticleViewModel 
-            { 
+            var expectedResult = new ArticleViewModel
+            {
                 Title = "Test Page",
                 ArticleNumber = 12345,
                 LanguageCode = "en-US"

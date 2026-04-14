@@ -1,4 +1,4 @@
-// <copyright file="Step5a_Cdn.cshtml.cs" company="Moonrise Software, LLC">
+// <copyright file="Step5_Cdn.cshtml.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -7,13 +7,13 @@
 
 namespace Sky.Editor.Areas.Setup.Pages
 {
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Services.Setup;
-    using System;
-    using System.ComponentModel.DataAnnotations;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Setup wizard step 5a: CDN configuration (optional).
@@ -246,7 +246,8 @@ namespace Sky.Editor.Areas.Setup.Pages
         /// <returns>Redirect to next step.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            logger.LogInformation("Step5_Cdn POST - SetupId: {SetupId}, SelectedProvider: {Provider}",
+            logger.LogInformation(
+                "Step5_Cdn POST - SetupId: {SetupId}, SelectedProvider: {Provider}",
                 SetupId, SelectedProvider);
 
             // Check if setup has been completed

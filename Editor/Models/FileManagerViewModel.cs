@@ -7,8 +7,8 @@
 
 namespace Sky.Cms.Models
 {
-    using Microsoft.AspNetCore.Mvc.Rendering;
     using System.Collections.Generic;
+    using Microsoft.AspNetCore.Mvc.Rendering;
 
     /// <summary>
     /// File manager view model.

@@ -1,4 +1,4 @@
-// <copyright file="TemplateApplicationModels.cs" company="Moonrise Software, LLC">
+// <copyright file="TemplateApplicationPreview.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS

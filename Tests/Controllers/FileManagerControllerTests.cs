@@ -271,7 +271,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = result as JsonResult;
             var uploadResult = jsonResult.Value as FileUploadResult;
-            Assert.IsTrue(uploadResult.uploaded);
+            Assert.IsTrue(uploadResult.Uploaded);
         }
 
         /// <summary>
@@ -1008,7 +1008,7 @@ namespace Sky.Tests.Controllers
                 Assert.IsInstanceOfType(result, typeof(JsonResult));
                 var jsonResult = result as JsonResult;
                 var uploadResult = jsonResult.Value as FileUploadResult;
-                Assert.IsFalse(uploadResult.uploaded, "Dangerous files should not be uploaded");
+                Assert.IsFalse(uploadResult.Uploaded, "Dangerous files should not be uploaded");
             }
         }
 
@@ -1101,7 +1101,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = result as JsonResult;
             var uploadResult = jsonResult.Value as FileUploadResult;
-            Assert.IsTrue(uploadResult.uploaded);
+            Assert.IsTrue(uploadResult.Uploaded);
         }
 
         /// <summary>

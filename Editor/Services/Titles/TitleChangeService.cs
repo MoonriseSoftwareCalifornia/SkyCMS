@@ -7,6 +7,10 @@
 
 namespace Sky.Editor.Services.Titles
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
@@ -19,10 +23,6 @@ namespace Sky.Editor.Services.Titles
     using Sky.Editor.Services.Redirects;
     using Sky.Editor.Services.ReservedPaths;
     using Sky.Editor.Services.Slugs;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Coordinates updates required when an article title changes: slug normalization, child URL adjustments,
@@ -523,7 +523,7 @@ namespace Sky.Editor.Services.Titles
                 else
                 {
                     version.UrlPath = version.ArticleType == (int)ArticleType.BlogPost
-                       ? slugs.Normalize(version.Title, article.BlogKey)  // Use article.BlogKey
+                       ? slugs.Normalize(version.Title, article.BlogKey) // Use article.BlogKey
                        : slugs.Normalize(version.Title);
                 }
 

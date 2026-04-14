@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<Deterministic>true</Deterministic>
 		<TargetFrameworks>net10.0</TargetFrameworks>
+		<Nullable>annotations</Nullable>
 		<Authors>toiyabe62</Authors>
 		<Company>Moonrise Software LLC</Company>
 		<Product>Sky CMS</Product>

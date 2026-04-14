@@ -9,6 +9,7 @@ namespace Sky.Editor.Services.Setup
 {
     using System;
     using System.Collections.Generic;
+
     /// <summary>
     /// Helper utility for masking and managing sensitive field display in setup wizard.
     /// Provides methods to mask passwords, API keys, and connection strings in the UI.
