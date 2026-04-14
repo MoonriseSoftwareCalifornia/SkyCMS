@@ -20,7 +20,7 @@ jobs:
 
       - name: Find latest artifact archive URL
         id: find_artifact
-        uses: actions/github-script@v6
+        uses: actions/github-script@v9
         with:
           script: |
             const prefix = process.env.INPUT_ARTIFACT_PREFIX || 'sky-test-results'
