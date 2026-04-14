@@ -36,7 +36,7 @@ jobs:
 
       - name: Upload duplicate test audit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: duplicate-test-audit-${{ github.run_number }}
           path: TestResults/DuplicateTestAudit/
