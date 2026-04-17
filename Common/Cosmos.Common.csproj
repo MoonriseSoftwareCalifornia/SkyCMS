@@ -113,7 +113,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="X.Web.Sitemap" />
-		<PackageReference Include="Azure.Monitor.Query" />
+		<PackageReference Include="Azure.Monitor.Query.Logs" />
 	</ItemGroup>
 
 	<ItemGroup>
