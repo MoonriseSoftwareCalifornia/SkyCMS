@@ -110,8 +110,9 @@ jobs:
         echo "⏳ Waiting for Cosmos DB Emulator data plane to be ready..."
         for i in $(seq 1 30); do
           HTTP_STATUS=$(curl -ks -o /dev/null -w "%{http_code}" https://localhost:8081/) || true
-          if [ "$HTTP_STATUS" = "200" ]; then
-            echo "✅ Cosmos DB Emulator is fully ready!"
+          # 200 = open access, 401 = auth required (data plane is up and enforcing auth)
+          if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "401" ]; then
+            echo "✅ Cosmos DB Emulator is fully ready! (status: $HTTP_STATUS)"
             exit 0
           fi
           echo "  Attempt $i/30 — status: $HTTP_STATUS — waiting 10s..."
@@ -378,11 +379,15 @@ jobs:
         if (Test-Path "./coverage-badge.svg") { $files += 'coverage-badge.svg' }
         if (Test-Path "./coverage-results.json") { $files += 'coverage-results.json' }
         if ($files.Count -gt 0) {
-          git add $files
+          # Use --force to add files even if they match .gitignore patterns
+          git add --force $files
           git diff --staged --quiet
           if ($LASTEXITCODE -ne 0) {
             git commit -m "docs: update test/coverage badges [skip ci]"
-            git push
+            git push 2>&1 | ForEach-Object { Write-Host $_ }
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "⚠️  Push failed (branch may be protected). Badge update skipped."
+            }
           } else {
             Write-Host "No staged changes to commit"
           }
