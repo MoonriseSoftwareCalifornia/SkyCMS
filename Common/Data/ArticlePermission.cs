@@ -23,7 +23,7 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets role or user ID.
         /// </summary>
-        public string IdentityObjectId { get; set; }
+        public string IdentityObjectId { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets permission (Read or Upload).

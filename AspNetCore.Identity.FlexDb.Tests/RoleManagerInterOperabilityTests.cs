@@ -61,7 +61,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             var claim = new Claim(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
 
@@ -92,7 +92,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
+            var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString);
             using var roleManager = GetTestRoleManager(roleStore);
             var role = new IdentityRole();
             role.Name = Guid.NewGuid().ToString();
@@ -116,7 +116,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             var id = role.Id;
 
@@ -139,7 +139,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             var id = role.Id;
 
@@ -161,7 +161,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             var name = role.Name;
 
@@ -183,7 +183,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             var claim1 = new Claim(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
             var claim2 = new Claim(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
@@ -209,7 +209,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
 
             // Act
@@ -229,7 +229,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
 
             // Act
@@ -249,7 +249,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             var key = Guid.NewGuid().ToString();
 
@@ -270,7 +270,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
 
             // Act
@@ -290,7 +290,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             var name = Guid.NewGuid().ToString();
 
@@ -313,7 +313,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
 
             // Act
@@ -333,7 +333,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             var name = Guid.NewGuid().ToString();
             var result = await roleManager.SetRoleNameAsync(role, name);
@@ -359,7 +359,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var role = await GetTestRole(roleManager);
             role.Name = role.Name + "-A";
             role.NormalizedName = role.NormalizedName + "-A";

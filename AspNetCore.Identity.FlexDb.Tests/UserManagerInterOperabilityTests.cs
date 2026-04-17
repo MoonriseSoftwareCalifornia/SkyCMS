@@ -95,7 +95,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         {
             InitializeForProviderOrInconclusive(provider);
 
-            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
+            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString);
             var entityType = dbContext.Model.FindEntityType(typeof(IdentityUserPasskey<string>));
 
             Assert.IsNotNull(entityType, $"Failed for provider: {provider.DisplayName}");
@@ -115,7 +115,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         {
             InitializeForProviderOrInconclusive(provider);
 
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
 
             var password = $"A1a{Guid.NewGuid()}";
             var user = await GetMockRandomUserAsync(null, false);
@@ -183,7 +183,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -203,7 +203,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -223,7 +223,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetMockRandomUserAsync(null, false);
 
             // Act
@@ -244,7 +244,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             user.PhoneNumber = "9998884444";
 
@@ -266,7 +266,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var id = user.Id;
             user = await userManager.FindByIdAsync(id);
@@ -291,7 +291,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -311,7 +311,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -331,7 +331,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
 
             // Act
             var user = await GetTestUser(userManager);
@@ -353,7 +353,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var userName = "Az" + user.UserName;
             user.UserName = userName;
@@ -376,7 +376,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -396,7 +396,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var userName = "Az" + user.UserName;
 
@@ -418,7 +418,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -438,7 +438,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var originalPassword = $"A1a{Guid.NewGuid()}";
             var user = await GetTestUser(userManager, originalPassword);
 
@@ -465,7 +465,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -485,7 +485,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange - fail
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -515,7 +515,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         {
             InitializeForProvider(provider);
 
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var originalPassword = $"A1a{Guid.NewGuid()}";
             var user = await GetTestUser(userManager, originalPassword);
 
@@ -536,7 +536,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             Assert.IsTrue(await userManager.HasPasswordAsync(user), $"Failed for provider: {provider.DisplayName}");
 
@@ -558,7 +558,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -579,7 +579,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var stamp1 = user.SecurityStamp;
 
@@ -602,7 +602,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var loginInfo = GetMockLoginInfoAsync();
             await userManager.AddLoginAsync(user, loginInfo);
@@ -627,7 +627,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var loginInfo = GetMockLoginInfoAsync();
             await userManager.AddLoginAsync(user, loginInfo);
@@ -656,7 +656,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var loginInfo = GetMockLoginInfoAsync();
 
@@ -679,7 +679,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var loginInfo = GetMockLoginInfoAsync();
             await userManager.AddLoginAsync(user, loginInfo);
@@ -702,7 +702,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var claim = new Claim(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
 
@@ -725,7 +725,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var claims = new Claim[] { new Claim(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()), new Claim(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()), new Claim(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()) };
 
@@ -748,7 +748,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var claim = new Claim("1", "1");
             var newClaim = new Claim("1", "2");
@@ -774,7 +774,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var claim = new Claim("1", "1");
             var result1 = await userManager.AddClaimAsync(user, claim);
@@ -799,7 +799,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var claims = new Claim[] { new Claim("1", "1"), new Claim("2", "2"), new Claim("3", "3") };
             var result1 = await userManager.AddClaimsAsync(user, claims);
@@ -824,7 +824,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var claims = new Claim[] { new Claim("1", "1"), new Claim("2", "2"), new Claim("3", "3") };
             var result1 = await userManager.AddClaimsAsync(user, claims);
@@ -847,8 +847,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var role = await GetMockRandomRoleAsync(null, false);
             var result1 = await roleManager.CreateAsync(role);
@@ -873,8 +873,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var role1 = await GetMockRandomRoleAsync(null, false);
             var role2 = await GetMockRandomRoleAsync(null, false);
@@ -906,8 +906,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var role = await GetMockRandomRoleAsync(null, false);
             var result1 = await roleManager.CreateAsync(role);
@@ -935,8 +935,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var role1 = await GetMockRandomRoleAsync(null, false);
             var role2 = await GetMockRandomRoleAsync(null, false);
@@ -969,8 +969,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var role1 = await GetMockRandomRoleAsync(null, false);
             var role2 = await GetMockRandomRoleAsync(null, false);
@@ -1001,8 +1001,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var role = await GetMockRandomRoleAsync(null, false);
             var result1 = await roleManager.CreateAsync(role);
@@ -1028,7 +1028,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -1048,7 +1048,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var emailAddress = "bb" + user.Email;
 
@@ -1071,7 +1071,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -1091,7 +1091,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var emailAddress = "Bb" + user.Email;
             user.Email = emailAddress;
@@ -1114,7 +1114,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var phoneNumber = "3334445555";
             var result1 = await userManager.SetPhoneNumberAsync(user, phoneNumber);
@@ -1137,7 +1137,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var phoneNumber = "3334445555";
 
@@ -1160,7 +1160,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -1184,7 +1184,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act - Placeholder test (requires token provider registration)
@@ -1206,7 +1206,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act - Placeholder test (requires token provider registration)
@@ -1225,7 +1225,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -1245,7 +1245,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -1267,7 +1267,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -1287,7 +1287,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -1309,7 +1309,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var result1 = await userManager.SetLockoutEnabledAsync(user, true);
             Assert.IsTrue(result1.Succeeded, $"Failed for provider: {provider.DisplayName}");
@@ -1333,7 +1333,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act - Placeholder test
@@ -1352,7 +1352,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var dateTime = DateTimeOffset.Now.AddMinutes(15);
 
@@ -1375,7 +1375,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
 
             // Act
@@ -1397,7 +1397,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
             var user = await GetTestUser(userManager);
             var result1 = await userManager.AccessFailedAsync(user);
             var result2 = await userManager.AccessFailedAsync(user);
@@ -1423,8 +1423,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             InitializeForProvider(provider);
 
             // Arrange
-            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName));
-            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName));
+            using var userManager = GetTestUserManager(_testUtilities.GetUserStore(provider.ConnectionString));
+            using var roleManager = GetTestRoleManager(_testUtilities.GetRoleStore(provider.ConnectionString));
             var user1 = await GetTestUser(userManager);
             var user2 = await GetTestUser(userManager);
             var user3 = await GetTestUser(userManager);

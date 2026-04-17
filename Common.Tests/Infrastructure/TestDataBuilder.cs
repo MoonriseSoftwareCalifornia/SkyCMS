@@ -40,6 +40,9 @@ namespace Cosmos.Common.Tests.Infrastructure
                 VersionNumber = 1,
                 ArticleType = (int)articleType,
                 StatusCode = (int)StatusCodeEnum.Active,
+               HeaderJavaScript = string.Empty,
+               FooterJavaScript = string.Empty,
+               UserId = uniqueId.ToString(),
             };
         }
 
@@ -63,6 +66,10 @@ namespace Cosmos.Common.Tests.Infrastructure
                 Content = $"<p>Published content for {uniqueId}</p>",
                 Published = DateTimeOffset.UtcNow.AddDays(-1),
                 VersionNumber = 1,
+                AuthorInfo = string.Empty,
+                FooterJavaScript = string.Empty,
+                HeaderJavaScript = string.Empty,
+                ParentUrlPath = string.Empty,
             };
         }
 

@@ -120,7 +120,7 @@ namespace AspNetCore.Identity.FlexDb.Extensions
             services.TryAddScoped<IRepository, CosmosIdentityRepository<TDbContext, TUser, TRole, TKey>>();
 
             // Data stores
-            services.TryAddScoped<IUserStore<TUser>, CosmosUserStore<TUser, TRole, TKey>>();
+            services.TryAddScoped<IUserStore<TUser>, FlexDbUserStore<TUser, TRole, TKey>>();
             services.TryAddScoped<IRoleStore<TRole>, CosmosRoleStore<TRole, TKey>>();
 
             // Identity services

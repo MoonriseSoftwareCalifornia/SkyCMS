@@ -50,7 +50,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             InitializeForProvider(provider);
 
             // Arrange
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
             var user1 = await GetMockRandomUserAsync(userStore);
 
             // Clean up claims before starting
@@ -106,20 +106,20 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             var val = Guid.NewGuid().ToString();
             var claims = new Claim[] { new Claim(val, val) };
 
-            using (var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName))
+            using (var userStore = _testUtilities.GetUserStore(provider.ConnectionString))
             {
                 ;
                 var user1 = await GetMockRandomUserAsync(userStore);
                 await userStore.AddClaimsAsync(user1, claims, default);
             }
 
-            using (var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName))
+            using (var userStore = _testUtilities.GetUserStore(provider.ConnectionString))
             {
                 var user2 = await GetMockRandomUserAsync(userStore);
                 await userStore.AddClaimsAsync(user2, claims, default);
             }
 
-            using (var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName))
+            using (var userStore = _testUtilities.GetUserStore(provider.ConnectionString))
             {
                 // Act
                 var result1 = await userStore.GetUsersForClaimAsync(claims.FirstOrDefault(), default);

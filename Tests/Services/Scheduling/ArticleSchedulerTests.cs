@@ -1589,7 +1589,7 @@ namespace Sky.Tests.Services.Scheduling
                 Published = now.AddDays(-5),
                 StatusCode = (int)StatusCodeEnum.Active,
                 UserId = TestUserId.ToString(),
-                UrlPath = null // Invalid URL path - might cause issues
+                UrlPath = string.Empty // Invalid URL path - might cause issues
             };
 
             var article2 = new Article
@@ -1600,7 +1600,7 @@ namespace Sky.Tests.Services.Scheduling
                 Published = now.AddDays(-1),
                 StatusCode = (int)StatusCodeEnum.Active,
                 UserId = TestUserId.ToString(),
-                UrlPath = null // Invalid URL path
+                UrlPath = string.Empty // Invalid URL path
             };
 
             Db.Articles.AddRange(article1, article2);

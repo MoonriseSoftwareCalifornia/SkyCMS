@@ -29,7 +29,7 @@ namespace Sky.Editor.Features.Templates.Save
         /// <summary>
         /// Gets the community layout ID.
         /// </summary>
-        public string CommunityLayoutId { get; init; }
+        public string CommunityLayoutId { get; init; } = string.Empty;
 
         /// <summary>
         /// Gets the title.

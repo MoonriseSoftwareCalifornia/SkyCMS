@@ -850,7 +850,7 @@ namespace Sky.Tests.Controllers
                 UrlPath = "/null-metadata-spa",
                 ArticleType = (int)ArticleType.SpaApp,
                 StatusCode = (int)StatusCodeEnum.Active,
-                Content = null, // Null metadata
+                Content = string.Empty, // Empty metadata (non-nullable string)
                 Published = DateTimeOffset.UtcNow,
                 Updated = DateTimeOffset.UtcNow,
                 VersionNumber = 1

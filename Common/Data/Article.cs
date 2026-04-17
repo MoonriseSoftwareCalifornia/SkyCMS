@@ -55,7 +55,7 @@ namespace Cosmos.Common.Data
         /// Examples: "/", "about/company-history", "blog/my-first-post".
         /// </remarks>
         [MaxLength(1999)]
-        public string UrlPath { get; set; }
+        public string UrlPath { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the monotonically increasing version number for the article.
@@ -88,14 +88,14 @@ namespace Cosmos.Common.Data
         /// Gets or sets the display title (page heading) shown in navigation, listings, and the browser title (if applied).
         /// </summary>
         [MaxLength(254)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the HTML (or HTML-fragment) body content.
         /// </summary>
         /// <remarks>Should be sanitized or trusted prior to rendering to prevent injection issues.</remarks>
         [DataType(DataType.Html)]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the UTC timestamp of the most recent update to this stored version.
@@ -109,14 +109,14 @@ namespace Cosmos.Common.Data
         /// </summary>
         /// <remarks>Intended for page-level enhancements; prefer shared bundling where possible.</remarks>
         [DataType(DataType.Html)]
-        public string HeaderJavaScript { get; set; }
+        public string HeaderJavaScript { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets optional JavaScript to inject into the page footer when this article is rendered.
         /// </summary>
         /// <remarks>Executed after main content; useful for deferred scripts.</remarks>
         [DataType(DataType.Html)]
-        public string FooterJavaScript { get; set; }
+        public string FooterJavaScript { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the URL (relative or absolute) to a banner or hero image associated with this article.
@@ -128,7 +128,7 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets the identifier of the user (author or editor) who owns or last modified this version.
         /// </summary>
-        public string UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets an optional template identifier used to vary page layout or rendering logic.

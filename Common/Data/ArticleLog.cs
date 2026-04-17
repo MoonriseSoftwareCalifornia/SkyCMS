@@ -24,7 +24,7 @@ namespace Cosmos.Common.Data
         /// <summary>
         ///     Gets or sets user ID of the person who triggered the activity.
         /// </summary>
-        public string IdentityUserId { get; set; }
+        public string IdentityUserId { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets iD of the Article associated with this event.
@@ -34,12 +34,12 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets title of the article.
         /// </summary>
-        public string ArticleTitle { get; set; }
+        public string ArticleTitle { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets notes regarding what happened.
         /// </summary>
-        public string ActivityNotes { get; set; }
+        public string ActivityNotes { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets date and Time (UTC by default).

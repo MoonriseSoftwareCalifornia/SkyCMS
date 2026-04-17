@@ -43,7 +43,7 @@ namespace Cosmos.Common.Data
         /// Gets or sets the community layout ID.
         /// </summary>
         [Display(Name = "Community Layout Id")]
-        public string CommunityLayoutId { get; set; }
+        public string CommunityLayoutId { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets a value indicating whether if true this is the default layout for website.
@@ -55,42 +55,42 @@ namespace Cosmos.Common.Data
         /// </summary>
         [Display(Name = "Layout Name")]
         [StringLength(128)]
-        public string LayoutName { get; set; }
+        public string LayoutName { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets notes about the layout.
         /// </summary>
         [Display(Name = "Notes")]
         [DataType(DataType.Html)]
-        public string Notes { get; set; }
+        public string Notes { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets content injected into the web page HEAD.
         /// </summary>
         [Display(Name = "HEAD Content")]
         [DataType(DataType.Html)]
-        public string Head { get; set; }
+        public string Head { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets body tag attributes.
         /// </summary>
         [Display(Name = "BODY Html Attributes", GroupName = "Body")]
         [StringLength(256)]
-        public string BodyHtmlAttributes { get; set; }
+        public string BodyHtmlAttributes { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets web page header content.
         /// </summary>
         [Display(Name = "Header Html Content", GroupName = "Header")]
         [DataType(DataType.Html)]
-        public string HtmlHeader { get; set; }
+        public string HtmlHeader { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets content injected into the web site footer.
         /// </summary>
         [Display(Name = "Footer Html Content", GroupName = "Footer")]
         [DataType(DataType.Html)]
-        public string FooterHtmlContent { get; set; }
+        public string FooterHtmlContent { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the date and time when the object was last modified.

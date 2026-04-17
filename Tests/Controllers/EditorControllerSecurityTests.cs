@@ -12,6 +12,7 @@ namespace Sky.Tests.Controllers
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
     using Sky.Cms.Controllers;
     using System;
     using System.Linq;
@@ -63,6 +64,12 @@ namespace Sky.Tests.Controllers
             {
                 HttpContext = new DefaultHttpContext { User = user }
             };
+
+            // Setup IUrlHelper for URL validation in PublishPage
+            var urlHelper = new Mock<IUrlHelper>();
+            urlHelper.Setup(x => x.IsLocalUrl(It.IsAny<string>()))
+                .Returns((string url) => url != null && url.StartsWith("/"));
+            controller.Url = urlHelper.Object;
         }
 
         #region Permissions GET Tests
@@ -312,8 +319,8 @@ namespace Sky.Tests.Controllers
                 "/Editor/Index");
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectResult));
-            var redirectResult = (RedirectResult)result;
+            Assert.IsInstanceOfType(result, typeof(LocalRedirectResult));
+            var redirectResult = (LocalRedirectResult)result;
             Assert.AreEqual("/Editor/Index", redirectResult.Url);
         }
 
@@ -336,8 +343,8 @@ namespace Sky.Tests.Controllers
                 "/Editor/Versions?id=1");
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectResult));
-            var redirectResult = (RedirectResult)result;
+            Assert.IsInstanceOfType(result, typeof(LocalRedirectResult));
+            var redirectResult = (LocalRedirectResult)result;
             Assert.AreEqual("/Editor/Versions?id=1", redirectResult.Url);
         }
 
@@ -433,7 +440,7 @@ namespace Sky.Tests.Controllers
                 null!);
 
             // Assert - Should not throw and redirect to null URL
-            Assert.IsInstanceOfType(result, typeof(RedirectResult));
+            Assert.IsInstanceOfType(result, typeof(LocalRedirectResult));
         }
 
         /// <summary>
@@ -455,8 +462,8 @@ namespace Sky.Tests.Controllers
                 "/Templates/EditCode");
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectResult));
-            var redirectResult = (RedirectResult)result;
+            Assert.IsInstanceOfType(result, typeof(LocalRedirectResult));
+            var redirectResult = (LocalRedirectResult)result;
             Assert.AreEqual("/Templates/EditCode", redirectResult.Url);
         }
 

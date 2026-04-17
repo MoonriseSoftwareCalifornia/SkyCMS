@@ -6,6 +6,7 @@ using Cosmos.Common.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Sky.Cms.Controllers;
 using Sky.Cms.Models;
 using Sky.Editor.Models;
@@ -40,6 +41,12 @@ namespace Sky.Tests.Controllers
             {
                 HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = user }
             };
+
+            // Setup IUrlHelper for URL validation in PublishPage
+            var urlHelper = new Mock<IUrlHelper>();
+            urlHelper.Setup(x => x.IsLocalUrl(It.IsAny<string>()))
+                .Returns((string url) => url != null && url.StartsWith("/"));
+            controller.Url = urlHelper.Object;
         }
 
         [TestMethod]
@@ -166,8 +173,8 @@ namespace Sky.Tests.Controllers
             var result = await controller.PublishPage(article.Id, DateTimeOffset.UtcNow, editorUrl);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(RedirectResult));
-            var redirect = (RedirectResult)result;
+            Assert.IsInstanceOfType(result, typeof(LocalRedirectResult));
+            var redirect = (LocalRedirectResult)result;
             Assert.AreEqual(editorUrl, redirect.Url);
 
             // Verify article was published

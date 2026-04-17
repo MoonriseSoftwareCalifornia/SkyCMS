@@ -29,17 +29,17 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets the name of the website domain.
         /// </summary>
-        public string WebsiteUrl { get; set; }
+        public string WebsiteUrl { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the email address of the website author.
         /// </summary>
-        public string EmailAddress { get; set; }
+        public string EmailAddress { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the path to the website author's profile or content.
         /// </summary>
-        public string Path { get; set; }
+        public string Path { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the unique identifier for the template associated with the website author.
@@ -49,6 +49,6 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets the name of the template associated with the website author.
         /// </summary>
-        public string TemplateName { get; set; }
+        public string TemplateName { get; set; } = string.Empty;
     }
 }

@@ -25,6 +25,7 @@ using Sky.Cms.Services;
 using Cosmos.Cms.Editor.Controllers;
 using Sky.Editor.Data.Logic;
 using Sky.Editor.Features.Articles.Create;
+using Sky.Editor.Features.Articles.Delete;
 using Sky.Editor.Features.Articles.Save;
 using Sky.Editor.Infrastructure.Time;
 using Sky.Editor.Services.Catalog;
@@ -374,6 +375,23 @@ public class DocsImportControllerTests
             Updated = DateTimeOffset.UtcNow
         });
         await dbContext.SaveChangesAsync();
+
+        mediatorMock
+            .Setup(x => x.SendAsync(It.IsAny<DeleteArticleCommand>(), It.IsAny<CancellationToken>()))
+            .Returns<ICommand<CommandResult<Unit>>, CancellationToken>(async (cmd, ct) =>
+            {
+                var deleteCmd = (DeleteArticleCommand)cmd;
+                var articles = await dbContext.Articles
+                    .Where(a => a.ArticleNumber == deleteCmd.ArticleNumber)
+                    .ToListAsync(ct);
+                foreach (var a in articles)
+                {
+                    a.StatusCode = (int)StatusCodeEnum.Deleted;
+                }
+
+                await dbContext.SaveChangesAsync(ct);
+                return CommandResult<Unit>.Success(Unit.Value);
+            });
 
         publishingServiceMock
             .Setup(x => x.WriteTocAsync(It.IsAny<string>()))

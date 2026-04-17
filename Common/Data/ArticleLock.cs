@@ -24,12 +24,12 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets unique SignalR Connection Id.
         /// </summary>
-        public string ConnectionId { get; set; }
+        public string ConnectionId { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets user ID for this lock.
         /// </summary>
-        public string UserEmail { get; set; }
+        public string UserEmail { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets article RECORD ID for this lock (Not the Article ID).
@@ -44,11 +44,11 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets editor type for this lock.
         /// </summary>
-        public string EditorType { get; set; }
+        public string EditorType { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets file path for this lock (if applicable).
         /// </summary>
-        public string FilePath { get; set; }
+        public string FilePath { get; set; } = string.Empty;
     }
 }

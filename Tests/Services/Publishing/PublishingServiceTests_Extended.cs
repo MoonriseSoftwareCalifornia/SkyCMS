@@ -98,12 +98,11 @@ namespace Sky.Tests.Services.Publishing
         [TestCategory("Publishing.Validation")]
         public async Task PublishAsync_ThrowsArgumentException_WhenUserIdIsNull()
         {
-            // Arrange
+            // Arrange - Create article in memory without saving to DB
+            // (saving with null UserId would fail EF non-nullable constraint)
             var article = CreateTestArticle();
             article.UserId = null;
             article.Published = Clock.UtcNow;
-            Db.Articles.Add(article);
-            await Db.SaveChangesAsync();
 
             // Act & Assert
             try

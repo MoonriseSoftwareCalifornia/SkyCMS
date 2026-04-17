@@ -45,7 +45,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var lockoutEnd = DateTimeOffset.UtcNow.AddHours(1);
@@ -68,7 +68,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var lockoutEnd = DateTimeOffset.UtcNow.AddHours(1);
@@ -92,7 +92,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 
@@ -109,7 +109,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 
@@ -126,7 +126,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 
@@ -151,7 +151,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var initialCount = await userStore.GetAccessFailedCountAsync(user, CancellationToken.None);
@@ -174,7 +174,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 
@@ -201,7 +201,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 
@@ -227,7 +227,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 
@@ -248,7 +248,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             const int maxFailedAttempts = 5;
@@ -285,7 +285,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 
@@ -314,7 +314,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 
@@ -344,7 +344,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
 

@@ -535,11 +535,11 @@ namespace Sky.Editor.Tests.Features.Templates
             {
                 Id = Guid.NewGuid(),
                 Title = "Minimal Template",
-                Description = null, // Nullable
+                Description = string.Empty, // Empty but not null
                 Content = string.Empty, // Empty but not null
                 PageType = "minimal",
                 LayoutId = testLayout.Id,
-                CommunityLayoutId = null // Nullable
+                CommunityLayoutId = string.Empty // Empty but not null
             };
             Db.Templates.Add(templateWithNulls);
             await Db.SaveChangesAsync();
@@ -551,9 +551,9 @@ namespace Sky.Editor.Tests.Features.Templates
 
             // Assert
             Assert.IsTrue(result.IsSuccess);
-            Assert.IsNull(result.Data.Template.Description);
+            Assert.AreEqual(string.Empty, result.Data.Template.Description);
             Assert.AreEqual(string.Empty, result.Data.Template.Content);
-            Assert.IsNull(result.Data.Template.CommunityLayoutId);
+            Assert.AreEqual(string.Empty, result.Data.Template.CommunityLayoutId);
         }
 
         #endregion

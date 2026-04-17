@@ -170,12 +170,19 @@ namespace Sky.Editor.Controllers
             if (!result.IsSuccess)
             {
                 // Title validation errors will be in result.Errors["Title"]
-                foreach (var error in result.Errors)
+                if (result.Errors != null)
                 {
-                    foreach (var message in error.Value)
+                    foreach (var error in result.Errors)
                     {
-                        ModelState.AddModelError(error.Key, message);
+                        foreach (var message in error.Value)
+                        {
+                            ModelState.AddModelError(error.Key, message);
+                        }
                     }
+                }
+                else if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    ModelState.AddModelError(string.Empty, result.ErrorMessage);
                 }
 
                 return View("Create", model);

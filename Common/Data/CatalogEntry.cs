@@ -69,7 +69,7 @@ namespace Cosmos.Common.Data
         /// Also serves as the basis for generating a slug for <see cref="UrlPath"/> if not explicitly set.
         /// </remarks>
         [Display(Name = "Title")]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets a short summary or teaser for the article.
@@ -78,7 +78,7 @@ namespace Cosmos.Common.Data
         /// Intended for list views, search previews, and meta descriptions.
         /// </remarks>
         [Display(Name = "Introduction")]
-        public string Introduction { get; set; }
+        public string Introduction { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the lifecycle status of the article (e.g., Draft, Review, Published, Archived).
@@ -87,7 +87,7 @@ namespace Cosmos.Common.Data
         /// Not constrained here; enforcing an allowed set (enum or lookup) is left to the application layer.
         /// </remarks>
         [Display(Name = "Status")]
-        public string Status { get; set; }
+        public string Status { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the timestamp (UTC) when the article content or metadata was last modified.
@@ -96,7 +96,7 @@ namespace Cosmos.Common.Data
         /// This should be updated whenever any material change occurs (content or metadata affecting rendering or permissions).
         /// </remarks>
         [Display(Name = "Updated")]
-        public DateTimeOffset Updated { get; set; }
+        public DateTimeOffset Updated { get; set; } = DateTimeOffset.Now;
 
         /// <summary>
         /// Gets or sets the publication timestamp (UTC) if the article is published and publicly visible.
@@ -116,7 +116,7 @@ namespace Cosmos.Common.Data
         /// </remarks>
         [MaxLength(1999)]
         [Display(Name = "Url")]
-        public string UrlPath { get; set; }
+        public string UrlPath { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the identifier of the rendering template associated with this article, if any.

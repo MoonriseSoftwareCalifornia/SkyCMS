@@ -71,7 +71,7 @@ namespace Sky.Editor.Services.Authors
                     Id = key,
                     AuthorName = identity.UserName ?? identity.Email ?? key,
                     AuthorDescription = string.Empty,
-                    EmailAddress = identity.Email,
+                    EmailAddress = identity.Email ?? string.Empty,
                     InstagramUrl = string.Empty,
                     TwitterHandle = string.Empty,
                     Website = string.Empty

@@ -271,8 +271,8 @@ namespace Sky.Tests.DynamicConfig
 
             // Assert
             Assert.IsNotNull(result);
-            Assert.IsNull(result.DbConn);
-            Assert.IsNull(result.StorageConn);
+            Assert.AreEqual(string.Empty, result.DbConn);
+            Assert.AreEqual(string.Empty, result.StorageConn);
         }
 
         [TestMethod]

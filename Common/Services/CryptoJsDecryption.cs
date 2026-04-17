@@ -20,8 +20,10 @@ namespace Cosmos.Common.Services
     {
         private sealed class CryptoEnvelope
         {
+            [System.Text.Json.Serialization.JsonPropertyName("iv")]
             public string Iv { get; set; }
 
+            [System.Text.Json.Serialization.JsonPropertyName("ct")]
             public string Ct { get; set; }
         }
 

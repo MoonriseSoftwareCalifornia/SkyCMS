@@ -244,7 +244,7 @@ namespace Sky.Tests.Controllers
             var json = JsonSerializer.Serialize(jsonResult.Value);
             var response = JsonSerializer.Deserialize<ContactsListResponse>(json);
             Assert.IsNotNull(response);
-            Assert.IsEmpty(response.data); // FIX: Remove .Count.ToList()
+            Assert.IsEmpty(response.Data); // FIX: Remove .Count.ToList()
         }
 
         /// <summary>
@@ -287,10 +287,10 @@ namespace Sky.Tests.Controllers
             var json = JsonSerializer.Serialize(jsonResult.Value);
             var response = JsonSerializer.Deserialize<ContactsListResponse>(json);
 
-            Assert.AreEqual(3, response!.data.Count);
-            Assert.AreEqual("alice@example.com", response.data[0].Email);
-            Assert.AreEqual("bob@example.com", response.data[1].Email);
-            Assert.AreEqual("charlie@example.com", response.data[2].Email);
+            Assert.AreEqual(3, response!.Data.Count);
+            Assert.AreEqual("alice@example.com", response.Data[0].Email);
+            Assert.AreEqual("bob@example.com", response.Data[1].Email);
+            Assert.AreEqual("charlie@example.com", response.Data[2].Email);
         }
 
         /// <summary>
@@ -423,8 +423,8 @@ namespace Sky.Tests.Controllers
             var contact = new Contact
             {
                 Email = "test@example.com",
-                FirstName = null,
-                LastName = null,
+                FirstName = string.Empty,
+                LastName = string.Empty,
                 Phone = string.Empty // Required but can be empty
             };
             Db.Contacts.Add(contact);
@@ -787,7 +787,7 @@ namespace Sky.Tests.Controllers
 
         private class ContactsListResponse
         {
-            public List<Contact> data { get; set; } = new();
+            public List<Contact> Data { get; set; } = new();
         }
 
         private class EnableAlertsResponse
@@ -918,7 +918,7 @@ namespace Sky.Tests.Controllers
             var jsonResult = (JsonResult)result;
             var json = JsonSerializer.Serialize(jsonResult.Value);
             var response = JsonSerializer.Deserialize<ContactsListResponse>(json);
-            Assert.AreEqual(100, response!.data.Count);
+            Assert.AreEqual(100, response!.Data.Count);
         }
 
         /// <summary>
@@ -945,8 +945,8 @@ namespace Sky.Tests.Controllers
             var jsonResult = (JsonResult)result;
             var json = JsonSerializer.Serialize(jsonResult.Value);
             var response = JsonSerializer.Deserialize<ContactsListResponse>(json);
-            Assert.AreEqual(1, response!.data.Count);
-            Assert.AreEqual("test+special@example.com", response.data[0].Email);
+            Assert.AreEqual(1, response!.Data.Count);
+            Assert.AreEqual("test+special@example.com", response.Data[0].Email);
         }
 
         /// <summary>
@@ -976,10 +976,10 @@ namespace Sky.Tests.Controllers
             var response = JsonSerializer.Deserialize<ContactsListResponse>(json);
 
             // Verify alphabetical order
-            Assert.AreEqual("user@example.com", response.data[0].Email);
-            Assert.AreEqual("user1@example.com", response.data[1].Email);
-            Assert.AreEqual("user10@example.com", response.data[2].Email);
-            Assert.AreEqual("user2@example.com", response.data[3].Email);
+            Assert.AreEqual("user@example.com", response.Data[0].Email);
+            Assert.AreEqual("user1@example.com", response.Data[1].Email);
+            Assert.AreEqual("user10@example.com", response.Data[2].Email);
+            Assert.AreEqual("user2@example.com", response.Data[3].Email);
         }
 
         #endregion

@@ -73,7 +73,7 @@ namespace Cosmos.Common.Data
         /// Max length enforced by <see cref="MaxLengthAttribute"/>.
         /// </remarks>
         [MaxLength(1999)]
-        public string UrlPath { get; set; }
+        public string UrlPath { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the parent page's URL path (if this content is hierarchically nested).
@@ -82,7 +82,7 @@ namespace Cosmos.Common.Data
         /// May be null or empty for root-level content. Used for breadcrumb generation and hierarchical navigation.
         /// </remarks>
         [MaxLength(1999)]
-        public string ParentUrlPath { get; set; }
+        public string ParentUrlPath { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the version number for this article content variant.
@@ -117,7 +117,7 @@ namespace Cosmos.Common.Data
         /// </summary>
         /// <remarks>Should be concise and descriptive. Max length enforced.</remarks>
         [MaxLength(254)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the rendered (or render-ready) HTML body/content fragment.
@@ -126,7 +126,7 @@ namespace Cosmos.Common.Data
         /// This may already include layout-aware markup or may be injected into a template region.
         /// Sanitization / trust level should be enforced by upstream pipelines.
         /// </remarks>
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the last modified timestamp (UTC) of this record's persisted representation.
@@ -151,7 +151,7 @@ namespace Cosmos.Common.Data
         /// <remarks>
         /// Use sparingly. Prefer global or modular script registration where possible.
         /// </remarks>
-        public string HeaderJavaScript { get; set; }
+        public string HeaderJavaScript { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets raw JavaScript to be appended just before the closing body tag for this page only.
@@ -159,7 +159,7 @@ namespace Cosmos.Common.Data
         /// <remarks>
         /// Commonly used for deferred scripts or analytics specific to this content.
         /// </remarks>
-        public string FooterJavaScript { get; set; }
+        public string FooterJavaScript { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets display-ready author information (e.g., name, byline, credits).
@@ -167,7 +167,7 @@ namespace Cosmos.Common.Data
         /// <remarks>
         /// May include markup or structured data, depending on consumption conventions.
         /// </remarks>
-        public string AuthorInfo { get; set; }
+        public string AuthorInfo { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the template identifier used to render this page.

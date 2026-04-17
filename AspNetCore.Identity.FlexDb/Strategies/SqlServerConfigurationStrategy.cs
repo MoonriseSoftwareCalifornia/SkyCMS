@@ -55,12 +55,12 @@ namespace AspNetCore.Identity.FlexDb.Strategies
                 // Enable retry on failure for transient errors
                 // This handles temporary network issues, database unavailability, etc.
                 sqlServerOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorNumbersToAdd: null);
 
                 // Set command timeout (optional, but recommended for CI/CD)
-                sqlServerOptions.CommandTimeout(60); // 60 seconds
+                sqlServerOptions.CommandTimeout(30); // 30 seconds
             });
         }
     }

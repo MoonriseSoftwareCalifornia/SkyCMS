@@ -148,8 +148,8 @@ namespace Sky.Editor.Features.Articles.Create
                     Category = command.Category ?? string.Empty,
                     Introduction = command.Introduction ?? string.Empty,
                     BannerImage = command.BannerImage ?? string.Empty,
-                    HeaderJavaScript = command.HeadJavaScript,
-                    FooterJavaScript = command.FooterJavaScript
+                    HeaderJavaScript = command.HeadJavaScript ?? string.Empty,
+                    FooterJavaScript = command.FooterJavaScript ?? string.Empty
                 };
 
                 // Generate URL path: explicit override > "root" for first > generated from title

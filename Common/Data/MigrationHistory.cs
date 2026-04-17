@@ -41,7 +41,7 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets human-readable description of the migration.
         /// </summary>
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets when the migration was applied.
@@ -56,6 +56,6 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets application version that applied the migration.
         /// </summary>
-        public string ApplicationVersion { get; set; }
+        public string ApplicationVersion { get; set; } = string.Empty;
     }
 }

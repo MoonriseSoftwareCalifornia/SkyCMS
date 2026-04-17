@@ -18,14 +18,12 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
     {
         public DatabaseProvider Provider { get; set; }
         public string ConnectionString { get; set; }
-        public string DatabaseName { get; set; }
         public string DisplayName { get; set; }
 
-        public TestDatabaseProvider(DatabaseProvider provider, string connectionString, string databaseName)
+        public TestDatabaseProvider(DatabaseProvider provider, string connectionString)
         {
             Provider = provider;
             ConnectionString = connectionString;
-            DatabaseName = databaseName;
             DisplayName = provider.ToString();
         }
 

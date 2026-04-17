@@ -49,27 +49,27 @@ namespace Cosmos.Common.Data
         /// Gets or sets the community layout ID.
         /// </summary>
         [Display(Name = "Community Layout Id")]
-        public string CommunityLayoutId { get; set; }
+        public string CommunityLayoutId { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets friendly name or title of this page template.
         /// </summary>
         [Display(Name = "Template Title")]
         [StringLength(128)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets description or notes about how to use this template.
         /// </summary>
         [Display(Name = "Description/Notes")]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets the HTML content of this page template.
         /// </summary>
         [Display(Name = "HTML Content")]
         [DataType(DataType.Html)]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
 
         /// <summary>
         ///    Gets or sets the template page type.
@@ -78,6 +78,6 @@ namespace Cosmos.Common.Data
         /// This is either 'home' or 'content'.
         /// </remarks>
         [Display(Name = "Page Type")]
-        public string PageType { get; set; }
+        public string PageType { get; set; } = string.Empty;
     }
 }

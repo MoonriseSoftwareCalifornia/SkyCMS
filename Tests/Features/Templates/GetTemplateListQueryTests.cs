@@ -262,7 +262,7 @@ namespace Sky.Tests.Features.Templates
             {
                 Id = Guid.NewGuid(),
                 Title = "Test Template",
-                Description = null,
+                Description = string.Empty,
                 Content = "<p>Content</p>",
                 LayoutId = layout.Id
             });

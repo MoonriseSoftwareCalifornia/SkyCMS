@@ -24,18 +24,18 @@ namespace Cosmos.Common.Data
         /// <summary>
         /// Gets or sets customer first name.
         /// </summary>
-        public string FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets customer last name.
         /// </summary>
-        public string LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets a customer's email address.
         /// </summary>
         [Required(AllowEmptyStrings = false)]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the customer's phone number.

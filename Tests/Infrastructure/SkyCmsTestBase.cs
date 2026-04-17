@@ -119,7 +119,7 @@ namespace Sky.Tests
                     Id = Guid.NewGuid(),
                     Title = "Blog Stream Template",
                     PageType = "blog-stream",
-                    Content = t.Content,
+                    Content = t.Content ?? string.Empty,
                     LayoutId = defaultLayout?.Id ?? Guid.Empty
                 };
                 Db.Templates.Add(template);
@@ -141,7 +141,7 @@ namespace Sky.Tests
                     Id = Guid.NewGuid(),
                     Title = "Blog Post Template",
                     PageType = "blog-post",
-                    Content = t.Content,
+                    Content = t.Content ?? string.Empty,
                     LayoutId = defaultLayout?.Id ?? Guid.Empty
                 };
                 Db.Templates.Add(template);

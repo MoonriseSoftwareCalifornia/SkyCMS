@@ -51,7 +51,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var uniqueEmail = $"createtest_{Guid.NewGuid():N}@testdomain.com";
             var user = new IdentityUser(uniqueEmail)
@@ -87,7 +87,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             // Act & Assert
             try
@@ -107,7 +107,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = new IdentityUser($"user_{Guid.NewGuid():N}")
             {
@@ -133,7 +133,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = new IdentityUser
             {
@@ -160,7 +160,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var duplicateEmail = $"duplicate_{Guid.NewGuid():N}@testdomain.com";
             var user1 = new IdentityUser(duplicateEmail)
@@ -200,8 +200,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
+            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var originalEmail = user.Email;
@@ -226,7 +226,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             // Act & Assert
             try
@@ -246,7 +246,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             Assert.IsFalse(user.EmailConfirmed, $"Failed for provider: {provider.DisplayName}");
@@ -268,7 +268,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var newSecurityStamp = Guid.NewGuid().ToString();
@@ -294,8 +294,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
+            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var userId = user.Id;
@@ -319,7 +319,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
 
             // Act & Assert
             try
@@ -339,8 +339,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
+            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var userId = user.Id;
@@ -367,9 +367,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString, provider.DatabaseName);
-            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
+            using var roleStore = _testUtilities.GetRoleStore(provider.ConnectionString);
+            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var userId = user.Id;
@@ -396,8 +396,8 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
         {
             // Arrange
             InitializeForProvider(provider);
-            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString, provider.DatabaseName);
-            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString, provider.DatabaseName);
+            using var userStore = _testUtilities.GetUserStore(provider.ConnectionString);
+            using var dbContext = _testUtilities.GetDbContext(provider.ConnectionString);
 
             var user = await GetMockRandomUserAsync(userStore);
             var userId = user.Id;
