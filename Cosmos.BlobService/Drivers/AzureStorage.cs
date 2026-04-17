@@ -306,13 +306,12 @@ namespace Cosmos.BlobService.Drivers
             var fullPath = Utilities.GetBlobName(path, "folder.stubxx").TrimStart('/');
 
             var blobClient = await this.GetBlobAsync(fullPath);
+            var byteArray = Encoding.ASCII.GetBytes($"This is a folder stub file for {path}.");
+            await using var stream = new MemoryStream(byteArray);
 
-            if (!await blobClient.ExistsAsync())
-            {
-                var byteArray = Encoding.ASCII.GetBytes($"This is a folder stub file for {path}.");
-                await using var stream = new MemoryStream(byteArray);
-                await blobClient.UploadAsync(stream);
-            }
+            // Chunked uploads can attempt to ensure the same folder multiple times in quick succession.
+            // Overwriting the stub makes folder creation idempotent and avoids BlobAlreadyExists races.
+            await blobClient.UploadAsync(stream, overwrite: true);
         }
 
         /// <summary>
