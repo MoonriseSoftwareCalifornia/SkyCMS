@@ -116,18 +116,18 @@ jobs:
         sudo update-ca-certificates
         echo "✅ Cosmos DB Emulator certificate trusted"
 
-    - name: Install mssql-tools18
+    - name: Install mssql-tools18 and mysql-client
       run: |
-        # Import Microsoft GPG key (dearmored for Ubuntu 24.04+)
-        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
-        # Register Microsoft repo using signed-by (modern approach)
+        # Import Microsoft GPG key (pipe through tee to handle pre-existing file on ubuntu-latest)
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /usr/share/keyrings/microsoft-prod.gpg > /dev/null
+        # Register Microsoft repo using signed-by (modern approach for Ubuntu 24.04+)
         UBUNTU_VERSION=$(lsb_release -rs)
         curl -fsSL "https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION}/prod.list" | \
-          sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
         sudo apt-get update
-        sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18
+        sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 mysql-client
         echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
-        echo "✅ mssql-tools18 installed"
+        echo "✅ mssql-tools18 and mysql-client installed"
 
     - name: Wait for SQL Server
       run: |
@@ -153,7 +153,7 @@ jobs:
       run: |
         echo "⏳ Waiting for MySQL..."
         for i in $(seq 1 12); do
-          if mysqladmin ping -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD" --silent 2>/dev/null; then
+          if mysqladmin ping -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" --silent 2>/dev/null; then
             echo "✅ MySQL is ready!"
             exit 0
           fi
