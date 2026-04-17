@@ -192,9 +192,9 @@ jobs:
       
     - name: Build test projects
       run: |
-        dotnet build $TEST_PROJECT --no-restore --configuration Release
+        dotnet build $TEST_PROJECT --configuration Release
         if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
-          dotnet build "${ADDITIONAL_TEST_PROJECT}" --no-restore --configuration Release
+          dotnet build "${ADDITIONAL_TEST_PROJECT}" --configuration Release
         fi
 
     - name: Debug .NET environment
@@ -207,7 +207,7 @@ jobs:
       
 
     - name: Run Sky.Tests (All tests)
-      if: ${{ inputs.test_filter == '' }}
+      if: ${{ success() && inputs.test_filter == '' }}
       env:
         DOTNET_NO_GLOBAL_JSON: true
         # CRITICAL: These environment variable names must match what your PowerShell script uploads
@@ -265,7 +265,7 @@ jobs:
         fi
       
     - name: Run Sky.Tests (Filtered)
-      if: ${{ inputs.test_filter != '' }}
+      if: ${{ success() && inputs.test_filter != '' }}
       env:
         DOTNET_NO_GLOBAL_JSON: true
         ADMINEMAIL: ${{ secrets.ADMINEMAIL }}
