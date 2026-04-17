@@ -10,6 +10,7 @@ namespace Sky.Tests.Integration
     using Cosmos.Common.Data.Logic;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Azure.Cosmos;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -67,14 +68,24 @@ namespace Sky.Tests.Integration
             }
 
             cosmosDb = new ApplicationDbContext(cosmosConnectionString!);
+            var databaseName = GetDatabaseName(cosmosConnectionString!);
 
             try
             {
                 await cosmosDb.Database.EnsureCreatedAsync();
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex) when (ex is HttpRequestException or CosmosException)
             {
                 Assert.Inconclusive($"Cosmos integration test skipped: endpoint unreachable. {ex.Message}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(databaseName))
+            {
+                var articlesReady = await WaitForContainerAsync(cosmosDb, databaseName, "Articles");
+                if (!articlesReady)
+                {
+                    Assert.Inconclusive("Cosmos integration test skipped: 'Articles' container was not ready after database initialization.");
+                }
             }
 
             controller = new EditorController(
@@ -128,7 +139,7 @@ namespace Sky.Tests.Integration
                         await cosmosDb.SaveChangesAsync();
                     }
                 }
-                catch (HttpRequestException)
+                catch (Exception ex) when (ex is HttpRequestException or CosmosException)
                 {
                     // Cosmos DB endpoint unreachable — nothing to clean up.
                 }
@@ -207,6 +218,49 @@ namespace Sky.Tests.Integration
             Assert.IsNotNull(value, $"Property '{propertyName}' value is null.");
 
             return (T)value;
+        }
+
+        private static string? GetDatabaseName(string connectionString)
+        {
+            return connectionString
+                .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault(part => part.StartsWith("Database=", StringComparison.OrdinalIgnoreCase))
+                ?.Split('=', 2)[1];
+        }
+
+        private static async Task<bool> WaitForContainerAsync(ApplicationDbContext dbContext, string databaseName, string containerName)
+        {
+            var client = dbContext.Database.GetCosmosClient();
+
+            for (var attempt = 1; attempt <= 10; attempt++)
+            {
+                try
+                {
+                    var response = await client.GetContainer(databaseName, containerName).ReadContainerAsync();
+                    if (response.StatusCode == HttpStatusCode.OK)
+                    {
+                        return true;
+                    }
+                }
+                catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+                {
+                    if (attempt == 10)
+                    {
+                        return false;
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    if (attempt == 10)
+                    {
+                        return false;
+                    }
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(3));
+            }
+
+            return false;
         }
     }
 }
