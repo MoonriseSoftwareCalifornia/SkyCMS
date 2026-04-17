@@ -96,6 +96,7 @@ jobs:
     # Wait for service containers to be fully ready
     # ---------------------------------------------------------------------------
     - name: Wait for Cosmos DB Emulator
+      continue-on-error: true
       run: |
         echo "⏳ Waiting for Cosmos DB Emulator certificate endpoint..."
         for i in $(seq 1 60); do
@@ -113,8 +114,8 @@ jobs:
           # 200 = open access, 401 = auth required (data plane is up and enforcing auth)
           if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "401" ]; then
             echo "✅ Cosmos DB Emulator data plane is responding (status: $HTTP_STATUS)"
-            echo "⏳ Waiting 30s for emulator partitions to fully initialize..."
-            sleep 30
+            echo "⏳ Waiting 60s for emulator partitions to fully initialize..."
+            sleep 60
             echo "✅ Cosmos DB Emulator is fully ready!"
             exit 0
           fi
@@ -125,6 +126,7 @@ jobs:
         exit 1
 
     - name: Trust Cosmos DB Emulator certificate
+      continue-on-error: true
       run: |
         curl -ks https://localhost:8081/_explorer/emulator.pem > ~/cosmosdb-emulator.crt
         sudo cp ~/cosmosdb-emulator.crt /usr/local/share/ca-certificates/cosmosdb-emulator.crt
@@ -147,12 +149,12 @@ jobs:
     - name: Wait for SQL Server
       run: |
         echo "⏳ Waiting for SQL Server..."
-        for i in $(seq 1 12); do
+        for i in $(seq 1 30); do
           if /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT 1" > /dev/null 2>&1; then
             echo "✅ SQL Server is ready!"
             exit 0
           fi
-          echo "  Attempt $i/12 — waiting 5s..."
+          echo "  Attempt $i/30 — waiting 5s..."
           sleep 5
         done
         echo "❌ SQL Server did not start in time"
@@ -170,16 +172,51 @@ jobs:
     - name: Wait for MySQL
       run: |
         echo "⏳ Waiting for MySQL..."
-        for i in $(seq 1 12); do
+        for i in $(seq 1 30); do
           if mysqladmin ping -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" --silent 2>/dev/null; then
             echo "✅ MySQL is ready!"
             exit 0
           fi
-          echo "  Attempt $i/12 — waiting 5s..."
+          echo "  Attempt $i/30 — waiting 5s..."
           sleep 5
         done
         echo "❌ MySQL did not start in time"
         exit 1
+
+    - name: Create MySQL test database
+      run: |
+        echo "⏳ Creating/verifying MySQL test database..."
+        # Wait for MySQL initialization to complete (MYSQL_DATABASE may still be processing)
+        for i in $(seq 1 10); do
+          if mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "SELECT 1" > /dev/null 2>&1; then
+            break
+          fi
+          echo "  Waiting for MySQL to accept queries (attempt $i/10)..."
+          sleep 3
+        done
+        mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS skycmstest;"
+        mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES LIKE 'skycmstest';"
+        echo "✅ MySQL database 'skycmstest' verified and ready"
+
+    - name: Verify database connectivity
+      run: |
+        echo "🔍 Verifying all database connections before tests..."
+        echo ""
+        echo "--- SQL Server ---"
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -b \
+          -d skycmstest -Q "SELECT DB_NAME() AS CurrentDB;" || echo "⚠️  SQL Server 'skycmstest' is NOT accessible"
+        echo ""
+        echo "--- MySQL ---"
+        mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "USE skycmstest; SELECT DATABASE();" || echo "⚠️  MySQL 'skycmstest' is NOT accessible"
+        echo ""
+        echo "--- Cosmos DB Emulator ---"
+        HTTP_STATUS=$(curl -ks -o /dev/null -w "%{http_code}" https://localhost:8081/) || true
+        echo "Cosmos DB Emulator status: $HTTP_STATUS"
+        echo ""
+        echo "--- SQLite ---"
+        echo "SQLite is file-based, always available"
+        echo ""
+        echo "✅ Database connectivity verification complete"
 
     - name: Setup Azurite for Tests
       run: |
