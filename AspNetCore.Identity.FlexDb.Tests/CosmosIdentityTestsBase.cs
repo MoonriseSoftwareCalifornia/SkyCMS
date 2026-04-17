@@ -111,6 +111,37 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
                                         EXEC sp_executesql @sql;
                                         """);
                                 }
+                                else if (string.Equals(providerName, "MySQL", StringComparison.Ordinal))
+                                {
+                                    var connection = dbContext.Database.GetDbConnection();
+                                    var wasOpen = connection.State == System.Data.ConnectionState.Open;
+
+                                    if (!wasOpen)
+                                    {
+                                        connection.Open();
+                                    }
+
+                                    try
+                                    {
+                                        using var command = connection.CreateCommand();
+                                        command.CommandText =
+                                            "SET FOREIGN_KEY_CHECKS = 0; " +
+                                            "SELECT GROUP_CONCAT(CONCAT('`', table_name, '`') SEPARATOR ',') INTO @tables " +
+                                            "FROM information_schema.tables WHERE table_schema = DATABASE(); " +
+                                            "SET @tables = IFNULL(@tables, ''); " +
+                                            "SET @sql = IF(@tables = '', 'SELECT 1', CONCAT('DROP TABLE ', @tables)); " +
+                                            "PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt; " +
+                                            "SET FOREIGN_KEY_CHECKS = 1;";
+                                        command.ExecuteNonQuery();
+                                    }
+                                    finally
+                                    {
+                                        if (!wasOpen)
+                                        {
+                                            connection.Close();
+                                        }
+                                    }
+                                }
                                 else
                                 {
                                     dbContext.Database.EnsureDeleted();
