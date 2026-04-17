@@ -118,8 +118,12 @@ jobs:
 
     - name: Install mssql-tools18
       run: |
-        curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc > /dev/null
-        sudo add-apt-repository "$(wget -qO- https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list)"
+        # Import Microsoft GPG key (dearmored for Ubuntu 24.04+)
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+        # Register Microsoft repo using signed-by (modern approach)
+        UBUNTU_VERSION=$(lsb_release -rs)
+        curl -fsSL "https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION}/prod.list" | \
+          sudo tee /etc/apt/sources.list.d/mssql-release.list
         sudo apt-get update
         sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18
         echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
