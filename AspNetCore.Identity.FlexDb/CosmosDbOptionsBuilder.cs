@@ -109,6 +109,8 @@ namespace AspNetCore.Identity.FlexDb
 
             var orderedStrategies = strategies.OrderBy(s => s.Priority).ToList();
 
+            // Find the first strategy that can handle the connection string
+            // The method .CanHandle should be implemented by each strategy to determine if it can configure the options based on the connection string format or content
             var strategy = orderedStrategies.FirstOrDefault(s => s.CanHandle(connectionString));
 
             if (strategy == null)

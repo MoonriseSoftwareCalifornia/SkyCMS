@@ -117,6 +117,55 @@ AspNetCore.Identity.FlexDb **eliminates the need to choose a specific database p
 
 FlexDb uses a sophisticated detection system to automatically select the appropriate database provider based on connection string patterns.
 
+**Implementation classes:**
+
+- Strategy selection entry point: [CosmosDbOptionsBuilder](./CosmosDbOptionsBuilder.cs)
+- Strategy contract: [IDatabaseConfigurationStrategy](./Strategies/IDatabaseConfigurationStrategy.cs)
+- Provider inference helpers: [Utilities](./Utilities.cs)
+- Cosmos DB detection: [CosmosDbConfigurationStrategy](./Strategies/CosmosDbConfigurationStrategy.cs)
+- SQL Server detection: [SqlServerConfigurationStrategy](./Strategies/SqlServerConfigurationStrategy.cs)
+- MySQL detection: [MySqlConfigurationStrategy](./Strategies/MySqlConfigurationStrategy.cs)
+- SQLite detection: [SqliteConfigurationStrategy](./Strategies/SqliteConfigurationStrategy.cs)
+
+#### Where Detection Happens In Code
+
+If you need to debug provider detection or fully understand how FlexDb chooses a provider, start with [CosmosDbOptionsBuilder](./CosmosDbOptionsBuilder.cs).
+
+The detection flow is implemented there in four steps:
+
+1. `DefaultStrategies` loads the built-in provider strategies in priority order:
+    - `CosmosDbConfigurationStrategy`
+    - `SqlServerConfigurationStrategy`
+    - `MySqlConfigurationStrategy`
+    - `SqliteConfigurationStrategy`
+2. `ConfigureDbOptions(DbContextOptionsBuilder optionsBuilder, string connectionString)` delegates to the overload that accepts a strategy collection, passing `DefaultStrategies`.
+3. `ConfigureDbOptions(DbContextOptionsBuilder optionsBuilder, string connectionString, IEnumerable<IDatabaseConfigurationStrategy> strategies)` orders the strategies by `Priority`, then evaluates each strategy's `CanHandle(connectionString)` method.
+4. The first strategy whose `CanHandle(...)` returns `true` is selected, and then its `Configure(...)` method is executed to wire up the EF Core provider.
+
+In other words, the actual detection decision is not hardcoded in a single `if/else` chain in production code. Instead, FlexDb asks each registered strategy whether it can handle the connection string, picks the first match by priority, and then lets that strategy configure the provider.
+
+#### Code Map For Debugging
+
+When debugging provider selection, these are the most useful files to inspect:
+
+- [CosmosDbOptionsBuilder](./CosmosDbOptionsBuilder.cs): entry point for provider selection, strategy ordering, first-match lookup, and final `Configure(...)` call.
+- [IDatabaseConfigurationStrategy](./Strategies/IDatabaseConfigurationStrategy.cs): contract that defines `Priority`, `ProviderName`, `CanHandle(...)`, and `Configure(...)`.
+- [CosmosDbConfigurationStrategy](./Strategies/CosmosDbConfigurationStrategy.cs): Cosmos DB connection-string detection and EF Core Cosmos configuration.
+- [SqlServerConfigurationStrategy](./Strategies/SqlServerConfigurationStrategy.cs): SQL Server detection and EF Core SQL Server configuration.
+- [MySqlConfigurationStrategy](./Strategies/MySqlConfigurationStrategy.cs): MySQL detection and EF Core MySQL configuration.
+- [SqliteConfigurationStrategy](./Strategies/SqliteConfigurationStrategy.cs): SQLite detection and EF Core SQLite configuration.
+- [Utilities](./Utilities.cs): helper methods such as `InferDatabaseProvider(...)` and `InferDatabaseProviderShortName(...)`, which use the same strategy-selection mechanism and are useful when you want to inspect what provider FlexDb thinks a connection string maps to.
+
+#### Practical Debugging Sequence
+
+If detection is not behaving as expected, this is the quickest way to trace it:
+
+1. Open [CosmosDbOptionsBuilder](./CosmosDbOptionsBuilder.cs) and inspect `DefaultStrategies` to confirm which strategies are registered and in what order.
+2. Inspect `ConfigureDbOptions(...)` to see how the incoming connection string is passed through the ordered strategies.
+3. Open the relevant strategy class and inspect its `CanHandle(...)` implementation to verify the exact string patterns it expects.
+4. If a provider is selected unexpectedly, compare its `Priority` against the other matching strategies. Lower priority numbers are evaluated first.
+5. If you only want to inspect the inferred provider without configuring EF Core, use the helper methods in [Utilities](./Utilities.cs).
+
 **Detection Algorithm:**
 
 ```csharp

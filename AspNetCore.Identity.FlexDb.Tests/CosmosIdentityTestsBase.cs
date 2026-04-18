@@ -27,14 +27,15 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             _testUtilities = new TestUtilities();
             _random = new Random();
 
-            // Detect provider for logging
-            string providerName = "Unknown";
-            if (connectionString.Contains("AccountEndpoint=", StringComparison.InvariantCultureIgnoreCase))
-                providerName = "CosmosDb";
-            else if (connectionString.Contains("Server=", StringComparison.InvariantCultureIgnoreCase))
-                providerName = connectionString.Contains("mysql", StringComparison.InvariantCultureIgnoreCase) ? "MySQL" : "SQL Server";
-            else if (connectionString.Contains("Data Source=", StringComparison.InvariantCultureIgnoreCase))
-                providerName = "SQLite";
+            // Detect provider from the FlexDb strategy resolver rather than brittle string matching.
+            var providerName = Utilities.InferDatabaseProviderShortName(connectionString) switch
+            {
+                "Cosmos" => "CosmosDb",
+                "SQL Server" => "SQL Server",
+                "MySQL" => "MySQL",
+                "SQLite" => "SQLite",
+                _ => "Unknown",
+            };
 
             // Create a unique key for this provider configuration
             var providerKey = $"{connectionString}_{providerName}";

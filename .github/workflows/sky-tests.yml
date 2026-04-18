@@ -217,10 +217,15 @@ jobs:
       run: |
         /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -b \
           -Q "IF DB_ID('skycmstest') IS NULL CREATE DATABASE [skycmstest];"
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -b \
+          -Q "IF DB_ID('flexdbtest') IS NULL CREATE DATABASE [flexdbtest];"
         # Verify the database was actually created and is accessible
         /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -b \
           -d skycmstest -Q "SELECT 1;"
         echo "✅ SQL Server database 'skycmstest' verified and ready"
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -b \
+          -d flexdbtest -Q "SELECT 1;"
+        echo "✅ SQL Server database 'flexdbtest' verified and ready"
 
     - name: Wait for MySQL
       run: |
@@ -248,8 +253,11 @@ jobs:
           sleep 3
         done
         mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS skycmstest;"
+        mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS flexdbtest;"
         mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES LIKE 'skycmstest';"
         echo "✅ MySQL database 'skycmstest' verified and ready"
+        mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES LIKE 'flexdbtest';"
+        echo "✅ MySQL database 'flexdbtest' verified and ready"
 
     - name: Verify database connectivity
       run: |
@@ -258,9 +266,12 @@ jobs:
         echo "--- SQL Server ---"
         /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -b \
           -d skycmstest -Q "SELECT DB_NAME() AS CurrentDB;" || echo "⚠️  SQL Server 'skycmstest' is NOT accessible"
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -b \
+          -d flexdbtest -Q "SELECT DB_NAME() AS CurrentDB;" || echo "⚠️  SQL Server 'flexdbtest' is NOT accessible"
         echo ""
         echo "--- MySQL ---"
         mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "USE skycmstest; SELECT DATABASE();" || echo "⚠️  MySQL 'skycmstest' is NOT accessible"
+        mysql -h 127.0.0.1 -u root --password="$MYSQL_ROOT_PASSWORD" -e "USE flexdbtest; SELECT DATABASE();" || echo "⚠️  MySQL 'flexdbtest' is NOT accessible"
         echo ""
         echo "--- Cosmos DB Emulator ---"
         HTTP_STATUS=$(curl -ks -o /dev/null -w "%{http_code}" https://localhost:8081/) || true
@@ -331,6 +342,9 @@ jobs:
         CONNECTIONSTRINGS__CLOUDFLARER2CONNECTIONSTRING: ${{ secrets.CONNECTIONSTRINGS__CLOUDFLARER2CONNECTIONSTRING }}
         
         # Database Connections (LOCAL containers — no secrets needed)
+        # These shapes are intentional because FlexDb auto-detects the provider from
+        # the connection string alone: Cosmos -> AccountEndpoint, SQL Server -> User ID,
+        # MySQL -> uid=, SQLite -> Data Source with a .db filename.
         CONNECTIONSTRINGS__COSMOSDB: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;Database=localtests"
         CONNECTIONSTRINGS__SQLSERVER: "Server=localhost,1433;Initial Catalog=skycmstest;User ID=sa;Password=YourStr0ng!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;Encrypt=True;Connection Timeout=30;"
         CONNECTIONSTRINGS__MYSQL: "Server=localhost;Port=3306;Database=skycmstest;uid=root;pwd=YourStr0ng!Passw0rd;"
@@ -344,6 +358,8 @@ jobs:
         test_failed=0
         echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
         echo "Running primary tests: $TEST_PROJECT"
+        CONNECTIONSTRINGS__SQLSERVER="Server=localhost,1433;Initial Catalog=skycmstest;User ID=sa;Password=YourStr0ng!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;Encrypt=True;Connection Timeout=30;" \
+        CONNECTIONSTRINGS__MYSQL="Server=localhost;Port=3306;Database=skycmstest;uid=root;pwd=YourStr0ng!Passw0rd;" \
         dotnet test $TEST_PROJECT \
           --no-build \
           --configuration Release \
@@ -355,6 +371,8 @@ jobs:
         # If the additional test project exists, run it too (coverage will be merged by ReportGenerator)
         if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
           echo "Running additional tests: ${ADDITIONAL_TEST_PROJECT}"
+          CONNECTIONSTRINGS__SQLSERVER="Server=localhost,1433;Initial Catalog=flexdbtest;User ID=sa;Password=YourStr0ng!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;Encrypt=True;Connection Timeout=30;" \
+          CONNECTIONSTRINGS__MYSQL="Server=localhost;Port=3306;Database=flexdbtest;uid=root;pwd=YourStr0ng!Passw0rd;" \
           dotnet test "${ADDITIONAL_TEST_PROJECT}" \
             --no-build \
             --configuration Release \
@@ -386,6 +404,9 @@ jobs:
         CONNECTIONSTRINGS__CLOUDFLARER2CONNECTIONSTRING: ${{ secrets.CONNECTIONSTRINGS__CLOUDFLARER2CONNECTIONSTRING }}
         
         # Database Connections (LOCAL containers)
+        # These shapes are intentional because FlexDb auto-detects the provider from
+        # the connection string alone: Cosmos -> AccountEndpoint, SQL Server -> User ID,
+        # MySQL -> uid=, SQLite -> Data Source with a .db filename.
         CONNECTIONSTRINGS__COSMOSDB: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;Database=localtests"
         CONNECTIONSTRINGS__SQLSERVER: "Server=localhost,1433;Initial Catalog=skycmstest;User ID=sa;Password=YourStr0ng!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;Encrypt=True;Connection Timeout=30;"
         CONNECTIONSTRINGS__MYSQL: "Server=localhost;Port=3306;Database=skycmstest;uid=root;pwd=YourStr0ng!Passw0rd;"
@@ -399,6 +420,8 @@ jobs:
         test_failed=0
         echo "DOTNET_NO_GLOBAL_JSON=$DOTNET_NO_GLOBAL_JSON"
         echo "Running primary tests (filtered): $TEST_PROJECT"
+        CONNECTIONSTRINGS__SQLSERVER="Server=localhost,1433;Initial Catalog=skycmstest;User ID=sa;Password=YourStr0ng!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;Encrypt=True;Connection Timeout=30;" \
+        CONNECTIONSTRINGS__MYSQL="Server=localhost;Port=3306;Database=skycmstest;uid=root;pwd=YourStr0ng!Passw0rd;" \
         dotnet test $TEST_PROJECT \
           --no-build \
           --configuration Release \
@@ -410,6 +433,8 @@ jobs:
 
         if [ -f "${ADDITIONAL_TEST_PROJECT}" ]; then
           echo "Running additional tests (filtered): ${ADDITIONAL_TEST_PROJECT}"
+          CONNECTIONSTRINGS__SQLSERVER="Server=localhost,1433;Initial Catalog=flexdbtest;User ID=sa;Password=YourStr0ng!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True;Encrypt=True;Connection Timeout=30;" \
+          CONNECTIONSTRINGS__MYSQL="Server=localhost;Port=3306;Database=flexdbtest;uid=root;pwd=YourStr0ng!Passw0rd;" \
           dotnet test "${ADDITIONAL_TEST_PROJECT}" \
             --no-build \
             --configuration Release \

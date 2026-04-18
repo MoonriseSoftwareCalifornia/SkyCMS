@@ -109,7 +109,7 @@ namespace Sky.Tests.DatabaseProviders
 
             var mySqlStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["MySQL"]));
             Assert.IsNotNull(mySqlStrategy, "MySQL strategy should be found");
-            Assert.AreEqual("MySql.EntityFrameworkCore", mySqlStrategy.ProviderName);
+            Assert.AreEqual("Pomelo.EntityFrameworkCore.MySql", mySqlStrategy.ProviderName);
 
             var sqliteStrategy = strategies.FirstOrDefault(s => s.CanHandle(_connectionStrings["SQLite"]));
             Assert.IsNotNull(sqliteStrategy, "SQLite strategy should be found");
@@ -131,7 +131,7 @@ namespace Sky.Tests.DatabaseProviders
             // Assert
             Assert.AreEqual("Microsoft.EntityFrameworkCore.Cosmos", orderedStrategies[0].ProviderName);
             Assert.AreEqual("Microsoft.EntityFrameworkCore.SqlServer", orderedStrategies[1].ProviderName);
-            Assert.AreEqual("MySql.EntityFrameworkCore", orderedStrategies[2].ProviderName);
+            Assert.AreEqual("Pomelo.EntityFrameworkCore.MySql", orderedStrategies[2].ProviderName);
             Assert.AreEqual("Microsoft.EntityFrameworkCore.Sqlite", orderedStrategies[3].ProviderName);
         }
 
