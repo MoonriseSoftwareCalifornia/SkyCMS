@@ -56,7 +56,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
         [TestMethod()]
         public async Task A1_DeleteDatabaseIfExistsTest()
         {
-            ItemResponse<dynamic>? result;
+            DatabaseResponse? result;
 
             try
             {
@@ -107,7 +107,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
         [TestMethod()]
         public async Task A3_CreateRequiredContainersTest()
         {
-            List<ContainerProperties> containers;
+            List<Container> containers;
 
             try
             {
