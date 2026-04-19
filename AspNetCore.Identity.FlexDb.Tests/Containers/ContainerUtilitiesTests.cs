@@ -131,9 +131,17 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
 
         private static bool IsTransientCosmosEmulatorFailure(Exception ex)
         {
-            if (ex is TaskCanceledException || ex is TimeoutException)
+            if (ex is TaskCanceledException || ex is TimeoutException || ex is HttpRequestException)
             {
                 return true;
+            }
+
+            if (ex is System.Net.Sockets.SocketException socketException)
+            {
+                return socketException.SocketErrorCode == System.Net.Sockets.SocketError.ConnectionRefused ||
+                    socketException.SocketErrorCode == System.Net.Sockets.SocketError.TimedOut ||
+                    socketException.SocketErrorCode == System.Net.Sockets.SocketError.HostNotFound ||
+                    socketException.SocketErrorCode == System.Net.Sockets.SocketError.NetworkUnreachable;
             }
 
             if (ex is CosmosException cosmosException)
