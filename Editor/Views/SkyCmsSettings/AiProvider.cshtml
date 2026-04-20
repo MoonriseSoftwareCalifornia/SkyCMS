@@ -2,7 +2,7 @@
 @model CopilotProxyOptions
 
 @{
-    ViewData["Title"] = "Copilot Proxy Settings";
+    ViewData["Title"] = "AI Provider Settings";
     var operation = ViewData["Operation"] as string;
 }
 
@@ -20,17 +20,17 @@
             <div class="card pb-4 bg-dark text-light">
                 <div class="card-header">
                     <h3 class="card-title">@ViewData["Title"]</h3>
-                    <p>Configure the server-side proxy used for code editor Copilot completions.</p>
+                    <p>Configure the server-side proxy used for code editor AI completions.</p>
                 </div>
                 <div class="card-body">
                     @if (!string.IsNullOrWhiteSpace(operation))
                     {
                         <div class="alert alert-success" role="alert">
-                            Copilot proxy settings saved.
+                            AI provider settings saved.
                         </div>
                     }
 
-                    <form id="copilotProxyForm" method="post" asp-action="Copilot" asp-controller="SkyCmsSettings">
+                    <form id="copilotProxyForm" method="post" asp-action="AiProvider" asp-controller="SkyCmsSettings">
                         @Html.AntiForgeryToken()
 
                         <div class="mb-3">
@@ -100,7 +100,7 @@
 
                         <button id="btnSave" type="submit" class="btn btn-sm btn-primary">Save settings <i class="fa-solid fa-circle-arrow-right"></i></button>
                         <a asp-action="Index" asp-controller="SkyCmsSettings" class="btn btn-sm btn-secondary">Done <i class="fa-solid fa-circle-arrow-right"></i></a>
-                        <a asp-action="RemoveCopilot" asp-controller="SkyCmsSettings" class="btn btn-sm btn-outline-danger">Remove settings <i class="fa-solid fa-circle-arrow-right"></i></a>
+                        <a asp-action="RemoveAiProvider" asp-controller="SkyCmsSettings" class="btn btn-sm btn-outline-danger">Remove settings <i class="fa-solid fa-circle-arrow-right"></i></a>
                     </form>
                 </div>
             </div>

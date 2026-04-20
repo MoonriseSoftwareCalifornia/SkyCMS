@@ -157,10 +157,10 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Gets the Copilot proxy configuration page.
+        /// Gets the AI provider configuration page.
         /// </summary>
-        /// <returns>The Copilot proxy settings view.</returns>
-        public async Task<IActionResult> Copilot()
+        /// <returns>The AI provider settings view.</returns>
+        public async Task<IActionResult> AiProvider()
         {
             var result = await mediator.QueryAsync(new GetCopilotProxyOptionsQuery());
 
@@ -178,13 +178,13 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Updates the Copilot proxy configuration.
+        /// Updates the AI provider configuration.
         /// </summary>
-        /// <param name="options">Copilot proxy options.</param>
-        /// <returns>The Copilot proxy settings view.</returns>
+        /// <param name="options">AI provider proxy options.</param>
+        /// <returns>The AI provider settings view.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Copilot(CopilotProxyOptions options)
+        public async Task<IActionResult> AiProvider(CopilotProxyOptions options)
         {
             if (!ModelState.IsValid)
             {
@@ -222,10 +222,10 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Removes the Copilot proxy configuration.
+        /// Removes the AI provider configuration.
         /// </summary>
-        /// <returns>A redirect to the Copilot settings page.</returns>
-        public async Task<IActionResult> RemoveCopilot()
+        /// <returns>A redirect to the AI provider settings page.</returns>
+        public async Task<IActionResult> RemoveAiProvider()
         {
             var result = await mediator.SendAsync(new RemoveCopilotProxyOptionsCommand());
 
@@ -237,10 +237,10 @@ namespace Sky.Editor.Controllers
                 }
 
                 var model = await mediator.QueryAsync(new GetCopilotProxyOptionsQuery());
-                return View(nameof(Copilot), model.Data ?? new CopilotProxyOptions());
+                return View(nameof(AiProvider), model.Data ?? new CopilotProxyOptions());
             }
 
-            return RedirectToAction(nameof(Copilot));
+            return RedirectToAction(nameof(AiProvider));
         }
 
         private async Task<Setting> GetOrCreateEditorSettingAsync()

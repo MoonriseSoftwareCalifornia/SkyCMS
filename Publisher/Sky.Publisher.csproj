@@ -11,7 +11,7 @@
 		<EnableSdkContainerSupport>true</EnableSdkContainerSupport>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Version>12.0.1</Version>
-		<DockerfileContext>..\..\..</DockerfileContext>
+		<DockerfileContext>..</DockerfileContext>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -27,9 +27,9 @@
 	</PropertyGroup>
 	
 	<ItemGroup>
-		<None Include="..\..\Editor\Cosmos.Editor\wwwroot\ccms\js\cosmosUtils.js" Link="wwwroot\ccms\js\cosmosUtils.js" />
-		<None Include="..\..\Editor\Cosmos.Editor\wwwroot\ccms\js\GoogleTranslations.js" Link="wwwroot\ccms\js\GoogleTranslations.js" />
-		<None Include="..\..\Editor\Cosmos.Editor\wwwroot\ccms\js\TimeUtils.js" Link="wwwroot\ccms\js\TimeUtils.js" />
+		<None Include="..\Editor\wwwroot\ccms\js\cosmosUtils.js" Link="wwwroot\ccms\js\cosmosUtils.js" />
+		<None Include="..\Editor\wwwroot\ccms\js\GoogleTranslations.js" Link="wwwroot\ccms\js\GoogleTranslations.js" />
+		<None Include="..\Editor\wwwroot\ccms\js\TimeUtils.js" Link="wwwroot\ccms\js\TimeUtils.js" />
 		<None Include="Areas\Identity\Pages\_ViewStart.cshtml" />
 		<None Include="wwwroot\images\logos\angular.webp" />
 		<None Include="wwwroot\images\logos\bootstrap.webp" />

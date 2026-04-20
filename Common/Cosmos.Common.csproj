@@ -90,7 +90,8 @@
 		<Content Include="README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
 		</Content>
 	</ItemGroup>
 
@@ -126,6 +127,7 @@
 		<None Update=".\README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
 		</None>
 	</ItemGroup>
 

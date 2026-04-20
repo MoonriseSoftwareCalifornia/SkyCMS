@@ -599,10 +599,10 @@ namespace Sky.Tests.Controllers
         #region Copilot Proxy Settings Tests
 
         [TestMethod]
-        public async Task Copilot_Get_ReturnsViewWithCopilotOptions()
+        public async Task AiProvider_Get_ReturnsViewWithCopilotOptions()
         {
             // Act
-            var result = await controller.Copilot();
+            var result = await controller.AiProvider();
 
             // Assert
             Assert.IsNotNull(result);
@@ -612,7 +612,7 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task Copilot_Get_WithInvalidJson_LogsWarningAndReturnsDefaultOptions()
+        public async Task AiProvider_Get_WithInvalidJson_LogsWarningAndReturnsDefaultOptions()
         {
             // Arrange
             mediatorMock
@@ -620,7 +620,7 @@ namespace Sky.Tests.Controllers
                 .ReturnsAsync(CommandResult<CopilotProxyOptions>.Failure("Load failed"));
 
             // Act
-            var result = await controller.Copilot();
+            var result = await controller.AiProvider();
 
             // Assert
             var viewResult = result as ViewResult;
@@ -634,7 +634,7 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task Copilot_Get_WithEmptyDatabase_ReturnsDefaultOptions()
+        public async Task AiProvider_Get_WithEmptyDatabase_ReturnsDefaultOptions()
         {
             // Arrange
             mediatorMock
@@ -642,7 +642,7 @@ namespace Sky.Tests.Controllers
                 .ReturnsAsync(CommandResult<CopilotProxyOptions>.Success(new CopilotProxyOptions()));
 
             // Act
-            var result = await controller.Copilot();
+            var result = await controller.AiProvider();
 
             // Assert
             var viewResult = result as ViewResult;
@@ -658,7 +658,7 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task Copilot_Get_WithExistingSetting_LoadsOptionsFromDatabase()
+        public async Task AiProvider_Get_WithExistingSetting_LoadsOptionsFromDatabase()
         {
             // Arrange
             var options = new CopilotProxyOptions
@@ -677,7 +677,7 @@ namespace Sky.Tests.Controllers
                 .ReturnsAsync(CommandResult<CopilotProxyOptions>.Success(options));
 
             // Act
-            var result = await controller.Copilot();
+            var result = await controller.AiProvider();
 
             // Assert
             var viewResult = result as ViewResult;
@@ -693,7 +693,7 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task Copilot_Post_WithValidModel_SavesSettings()
+        public async Task AiProvider_Post_WithValidModel_SavesSettings()
         {
             // Arrange
             var model = new CopilotProxyOptions
@@ -708,7 +708,7 @@ namespace Sky.Tests.Controllers
             };
 
             // Act
-            var result = await controller.Copilot(model);
+            var result = await controller.AiProvider(model);
 
             // Assert
             var viewResult = result as ViewResult;
@@ -728,14 +728,14 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task Copilot_Post_WithInvalidModel_ReturnsViewWithModel()
+        public async Task AiProvider_Post_WithInvalidModel_ReturnsViewWithModel()
         {
             // Arrange
             var model = new CopilotProxyOptions();
             controller.ModelState.AddModelError("Endpoint", "Required");
 
             // Act
-            var result = await controller.Copilot(model);
+            var result = await controller.AiProvider(model);
 
             // Assert
             var viewResult = result as ViewResult;
@@ -749,7 +749,7 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task Copilot_Post_WithMediatorFailure_ReturnsViewWithModelAndError()
+        public async Task AiProvider_Post_WithMediatorFailure_ReturnsViewWithModelAndError()
         {
             // Arrange
             var model = new CopilotProxyOptions
@@ -766,7 +766,7 @@ namespace Sky.Tests.Controllers
                 }));
 
             // Act
-            var result = await controller.Copilot(model);
+            var result = await controller.AiProvider(model);
 
             // Assert
             var viewResult = result as ViewResult;
@@ -777,15 +777,15 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task RemoveCopilot_UsesMediatorAndRedirects()
+        public async Task RemoveAiProvider_UsesMediatorAndRedirects()
         {
             // Act
-            var result = await controller.RemoveCopilot();
+            var result = await controller.RemoveAiProvider();
 
             // Assert
             var redirectResult = result as RedirectToActionResult;
             Assert.IsNotNull(redirectResult);
-            Assert.AreEqual("Copilot", redirectResult.ActionName);
+            Assert.AreEqual("AiProvider", redirectResult.ActionName);
 
             mediatorMock.Verify(
                 m => m.SendAsync(It.IsAny<RemoveCopilotProxyOptionsCommand>(), It.IsAny<CancellationToken>()),

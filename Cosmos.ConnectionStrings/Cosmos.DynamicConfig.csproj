@@ -10,6 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="stylecop.json" />
+    <None Remove="stylecop.json" />
     <AdditionalFiles Include="stylecop.json" />
   </ItemGroup>
 

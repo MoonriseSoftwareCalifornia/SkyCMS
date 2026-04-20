@@ -1,12 +1,22 @@
 services:
   sky.editor:
-    image: ${DOCKER_REGISTRY-}skyeditor
+    image: ${DOCKER_REGISTRY-}sky-editor
     volumes:
-          - /absolute/path/on/host/skycms:/data/skycms
+      - ${SKYCMS_EDITOR_DATA_PATH:-./.data/editor}:/data/skycms
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       # Optional: if your app uses an env var for DB path
       - SKYCMS_DB_PATH=/data/skycms/
     build:
-      context: ../..
-      dockerfile: Repos/CosmosCMS/Editor/Dockerfile
+      context: .
+      dockerfile: Editor/Dockerfile
+
+  sky.publisher:
+    image: ${DOCKER_REGISTRY-}sky-publisher
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ${SKYCMS_PUBLISHER_DATA_PATH:-./.data/publisher}:/data/skycms
+    build:
+      context: .
+      dockerfile: Publisher/Dockerfile

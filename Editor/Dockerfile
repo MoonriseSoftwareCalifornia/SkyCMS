@@ -1,7 +1,7 @@
 # See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
@@ -11,7 +11,7 @@ EXPOSE 8081
 VOLUME ["/app/data"]
 
 # This stage is used to build the service project
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
@@ -24,31 +24,18 @@ COPY ["Cosmos.ConnectionStrings/Cosmos.DynamicConfig.csproj", "Cosmos.Connection
 COPY ["Cosmos.EmailServices/Cosmos.EmailServices.csproj", "Cosmos.EmailServices/"]
 COPY ["Common/Cosmos.Common.csproj", "Common/"]
 COPY ["Sky.Cms.Api.Shared/Sky.Cms.Api.Shared.csproj", "Sky.Cms.Api.Shared/"]
+COPY ["Sky.Shared.Razor/Sky.Shared.Razor.csproj", "Sky.Shared.Razor/"]
 COPY ["Editor/Sky.Editor.csproj", "Editor/"]
 RUN dotnet restore "./Editor/Sky.Editor.csproj"
 COPY . .
-# Install Node.js (required for npm & LibMan filesystem provider)
-RUN apt-get update \
-	&& apt-get install -y curl gnupg \
-	&& curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-	&& apt-get install -y nodejs \
-	&& rm -rf /var/lib/apt/lists/*
-
-# Install npm dependencies for the Editor so LibMan can copy from node_modules
-RUN cd Editor && npm ci --silent
-
-# Install LibMan CLI and restore libraries that reference node_modules
-RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
-ENV PATH="${PATH}:/root/.dotnet/tools"
-RUN cd Editor && libman restore
 WORKDIR "/src/Editor"
 
-RUN dotnet build "./Sky.Editor.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./Sky.Editor.csproj" -c $BUILD_CONFIGURATION -o /app/build /p:GeneratePackageOnBuild=false /p:IncludeSymbols=false
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Sky.Editor.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Sky.Editor.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false /p:GeneratePackageOnBuild=false /p:IncludeSymbols=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final

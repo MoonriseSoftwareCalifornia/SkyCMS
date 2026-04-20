@@ -1,7 +1,7 @@
 name: Publish Docker Images
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
   #push:
   #  branches: [ "master" ]
   #pull_request:
@@ -13,17 +13,87 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env:
+      EDITOR_LOCAL_TAG: sky-editor:ci
+      PUBLISHER_LOCAL_TAG: sky-publisher:ci
+      EDITOR_REMOTE_TAG: ${{ secrets.DOCKERLOGIN }}/sky-editor:latest
+      PUBLISHER_REMOTE_TAG: ${{ secrets.DOCKERLOGIN }}/sky-publisher:latest
+
     steps:
     - uses: actions/checkout@v6
-    - name: Docker Login
-      run: docker login -u="${{ secrets.DOCKERLOGIN}}" -p="${{ secrets.DOCKERPASSWORD }}"
-    - name: List Directory
-      run: ls -alg
-    - name: Build Editor Docker Image
-      run: docker build . --file Editor/Dockerfile --tag ${{ secrets.DOCKERLOGIN}}/sky-editor:latest
-    - name: Push Editor container to Docker Hub
-      run: docker push ${{ secrets.DOCKERLOGIN}}/sky-editor
-    - name: Build Publisher Docker Image
-      run: docker build . --file Publisher/Dockerfile --tag ${{ secrets.DOCKERLOGIN}}/sky-publisher:latest
-    - name: Push Publisher container to Docker Hub
-      run: docker push ${{ secrets.DOCKERLOGIN}}/sky-publisher
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERLOGIN }}
+        password: ${{ secrets.DOCKERPASSWORD }}
+
+    - name: Build Editor image for smoke test
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: Editor/Dockerfile
+        load: true
+        push: false
+        tags: ${{ env.EDITOR_LOCAL_TAG }}
+
+    - name: Smoke test Editor image
+      shell: bash
+      run: |
+        set -euo pipefail
+        cid=$(docker run -d \
+          -p 18080:8080 \
+          -e EnableDiagnostics=true \
+          -e ConnectionStrings__ApplicationDbContextConnection='Data Source=/tmp/editor-smoke.db' \
+          "$EDITOR_LOCAL_TAG")
+        trap 'docker logs "$cid" || true; docker rm -f "$cid" || true' EXIT
+        sleep 15
+        if [ "$(docker inspect -f '{{.State.Running}}' "$cid")" != "true" ]; then
+          echo "Editor container exited during smoke test"
+          exit 1
+        fi
+        docker logs "$cid"
+
+    - name: Push Editor image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: Editor/Dockerfile
+        push: true
+        tags: ${{ env.EDITOR_REMOTE_TAG }}
+
+    - name: Build Publisher image for smoke test
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: Publisher/Dockerfile
+        load: true
+        push: false
+        tags: ${{ env.PUBLISHER_LOCAL_TAG }}
+
+    - name: Smoke test Publisher image
+      shell: bash
+      run: |
+        set -euo pipefail
+        cid=$(docker run -d \
+          -p 28080:8080 \
+          -e CosmosStaticWebPages=true \
+          "$PUBLISHER_LOCAL_TAG")
+        trap 'docker logs "$cid" || true; docker rm -f "$cid" || true' EXIT
+        sleep 15
+        if [ "$(docker inspect -f '{{.State.Running}}' "$cid")" != "true" ]; then
+          echo "Publisher container exited during smoke test"
+          exit 1
+        fi
+        docker logs "$cid"
+
+    - name: Push Publisher image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: Publisher/Dockerfile
+        push: true
+        tags: ${{ env.PUBLISHER_REMOTE_TAG }}
