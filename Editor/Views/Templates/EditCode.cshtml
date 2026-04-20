@@ -26,6 +26,16 @@
     // Initialize editFields from model
     var editFields = @Html.Raw(JsonConvert.SerializeObject(Model.EditorFields));
 
+    // Editor context for AI assistant
+    window.ccmsEditorContext = {
+        documentKind: 'template',
+        editorSurface: 'monaco',
+        templateId: '@Model.Id',
+        sectionKindMap: {
+            'Content': 'template-content'
+        }
+    };
+
     // Override afterEditorCreate to add Templates-specific behavior
     function afterEditorCreate(fieldInfo) {
         // Update active document tracker

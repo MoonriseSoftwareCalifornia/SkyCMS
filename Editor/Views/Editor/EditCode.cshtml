@@ -1,3 +1,4 @@
+@using Cosmos.Cms.Common
 @using Newtonsoft.Json
 @model EditCodePostModel
 @{
@@ -56,6 +57,20 @@
     
     // Initialize editFields from model
     var editFields = @Html.Raw(JsonConvert.SerializeObject(Model.EditorFields));
+
+    // Editor context for AI assistant
+    window.ccmsEditorContext = {
+        documentKind: '@(Model.ArticleType == ArticleType.BlogPost ? "blog" : "article")',
+        editorSurface: 'monaco',
+        articleType: '@Model.ArticleType',
+        category: '@(Model.Category ?? string.Empty)',
+        urlPath: '@(Model.UrlPath ?? string.Empty)',
+        sectionKindMap: {
+            'Content': '@(Model.ArticleType == ArticleType.BlogPost ? "blog-content" : "article-content")',
+            'HeadJavaScript': 'article-head-script',
+            'FooterJavaScript': 'article-footer-script'
+        }
+    };
 
     // Override afterEditorCreate to add active document tracking
     function afterEditorCreate(fieldInfo) {

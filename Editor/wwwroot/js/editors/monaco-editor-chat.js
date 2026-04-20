@@ -224,16 +224,29 @@
                 content: entry.content
             }));
 
+            const ctx = window.ccmsEditorContext || {};
+            const activeFieldName = this.core && this.core.currentField ? this.core.currentField.FieldName : null;
+            const sectionKind = (ctx.sectionKindMap && activeFieldName && ctx.sectionKindMap[activeFieldName])
+                || ctx.sectionKind
+                || null;
+
             return {
                 action: action,
                 message: message,
                 selection: selectedText,
                 currentCode: currentCode,
                 language: model && typeof model.getLanguageId === 'function' ? model.getLanguageId() : null,
-                fieldName: this.core && this.core.currentField ? this.core.currentField.FieldName : null,
+                fieldName: activeFieldName,
                 title: this.getInputValue('Title'),
                 articleNumber: this.getInputValue('ArticleNumber'),
-                messages: recentMessages
+                messages: recentMessages,
+                documentKind: ctx.documentKind || null,
+                sectionKind: sectionKind,
+                articleType: ctx.articleType || null,
+                category: ctx.category || null,
+                urlPath: ctx.urlPath || null,
+                templateId: ctx.templateId || null,
+                layoutId: ctx.layoutId || null
             };
         }
 

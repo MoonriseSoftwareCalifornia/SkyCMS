@@ -616,6 +616,280 @@ public class CopilotControllerTests
         return null;
     }
 
+    [TestMethod]
+    public async Task Chat_WithLayoutHeadContext_UsesLayoutHeadSystemPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+            Model = "gpt-4o-mini",
+            MaxTokens = 512,
+        };
+
+        optionsServiceMock.Setup(s => s.GetOptionsAsync()).ReturnsAsync(options);
+
+        string? capturedJson = null;
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Add Open Graph tags.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        {
+            Action = "chat",
+            Message = "Help with the head section.",
+            CurrentCode = "<meta charset=\"utf-8\">",
+            Language = "html",
+            DocumentKind = "layout",
+            SectionKind = "layout-head",
+        });
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("layout", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(systemPrompt.Contains("head", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(systemPrompt.Contains("AI writing assistant", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithLayoutBodyStartContext_UsesBodyStartSystemPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+        };
+
+        optionsServiceMock.Setup(s => s.GetOptionsAsync()).ReturnsAsync(options);
+
+        string? capturedJson = null;
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Add a nav element.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        {
+            Action = "chat",
+            Message = "Help with the header region.",
+            DocumentKind = "layout",
+            SectionKind = "layout-body-start",
+        });
+
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("body-start", StringComparison.OrdinalIgnoreCase)
+            || systemPrompt.Contains("header", StringComparison.OrdinalIgnoreCase)
+            || systemPrompt.Contains("navigation", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithTemplateContext_UsesTemplateSystemPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+        };
+
+        optionsServiceMock.Setup(s => s.GetOptionsAsync()).ReturnsAsync(options);
+
+        string? capturedJson = null;
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Add a section placeholder.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        {
+            Action = "chat",
+            Message = "Add a content placeholder.",
+            DocumentKind = "template",
+            SectionKind = "template-content",
+        });
+
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("template", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(systemPrompt.Contains("AI writing assistant", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithBlogCkeditorContext_IncludesBlogGuidanceInSystemPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+        };
+
+        optionsServiceMock.Setup(s => s.GetOptionsAsync()).ReturnsAsync(options);
+
+        string? capturedJson = null;
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Here is a punchy intro.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        {
+            EditorKind = "ckeditor",
+            Action = "improve-selection",
+            Message = "Make this intro more engaging.",
+            Selection = "<p>Welcome to our blog.</p>",
+            CurrentCode = "<p>Welcome to our blog.</p>",
+            Language = "html",
+            DocumentKind = "blog",
+            SectionKind = "blog-content",
+            ArticleType = "BlogPost",
+            Category = "News",
+        });
+
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        var userPrompt = document.RootElement.GetProperty("messages")[1].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("AI writing assistant", StringComparison.Ordinal));
+        Assert.IsTrue(systemPrompt.Contains("blog post", StringComparison.OrdinalIgnoreCase));
+
+        Assert.IsNotNull(userPrompt);
+        Assert.IsTrue(userPrompt.Contains("DocumentKind: blog", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("ArticleType: BlogPost", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("Category: News", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithArticleContentContext_IncludesContextInUserPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+        };
+
+        optionsServiceMock.Setup(s => s.GetOptionsAsync()).ReturnsAsync(options);
+
+        string? capturedJson = null;
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Fixed.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        {
+            Action = "fix-syntax",
+            Message = "Fix the markup.",
+            CurrentCode = "<div><p>Hello</div>",
+            Language = "html",
+            DocumentKind = "article",
+            SectionKind = "article-content",
+            UrlPath = "about/team",
+        });
+
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var userPrompt = document.RootElement.GetProperty("messages")[1].GetProperty("content").GetString();
+
+        Assert.IsNotNull(userPrompt);
+        Assert.IsTrue(userPrompt.Contains("DocumentKind: article", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("SectionKind: article-content", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("UrlPath: about/team", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithNoContext_FallsBackToDefaultSystemPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+        };
+
+        optionsServiceMock.Setup(s => s.GetOptionsAsync()).ReturnsAsync(options);
+
+        string? capturedJson = null;
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Done.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        {
+            Action = "chat",
+            Message = "Help with this code.",
+            CurrentCode = "function hello() {}",
+            Language = "javascript",
+        });
+
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("AI coding assistant", StringComparison.Ordinal));
+    }
+
     private sealed class DelegateHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> send;

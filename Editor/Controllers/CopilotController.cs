@@ -336,7 +336,26 @@ public sealed class CopilotController : ControllerBase
             suffix = suffix[..1000];
         }
 
-        return $"Language: {language}\nFieldId: {request.FieldId ?? string.Empty}\n\nPrefix:\n{prefix}\n\nSuffix:\n{suffix}\n\nReturn only inline completion text.";
+        var sb = new StringBuilder();
+        sb.AppendLine($"Language: {language}");
+        sb.AppendLine($"FieldId: {request.FieldId ?? string.Empty}");
+
+        if (!string.IsNullOrWhiteSpace(request.DocumentKind))
+        {
+            sb.AppendLine($"DocumentKind: {request.DocumentKind}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SectionKind))
+        {
+            sb.AppendLine($"SectionKind: {request.SectionKind}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine($"Prefix:\n{prefix}");
+        sb.AppendLine($"\nSuffix:\n{suffix}");
+        sb.AppendLine("\nReturn only inline completion text.");
+
+        return sb.ToString();
     }
 
     private static List<UpstreamChatMessage> BuildChatMessages(CopilotChatRequest request)
@@ -381,6 +400,31 @@ public sealed class CopilotController : ControllerBase
         promptBuilder.AppendLine($"Title: {request.Title ?? string.Empty}");
         promptBuilder.AppendLine($"ArticleNumber: {request.ArticleNumber ?? string.Empty}");
 
+        if (!string.IsNullOrWhiteSpace(request.DocumentKind))
+        {
+            promptBuilder.AppendLine($"DocumentKind: {request.DocumentKind}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SectionKind))
+        {
+            promptBuilder.AppendLine($"SectionKind: {request.SectionKind}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ArticleType))
+        {
+            promptBuilder.AppendLine($"ArticleType: {request.ArticleType}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Category))
+        {
+            promptBuilder.AppendLine($"Category: {request.Category}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.UrlPath))
+        {
+            promptBuilder.AppendLine($"UrlPath: {request.UrlPath}");
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Selection))
         {
             promptBuilder.AppendLine();
@@ -412,10 +456,27 @@ public sealed class CopilotController : ControllerBase
     {
         if (IsCkeditorRequest(request))
         {
-            return "You are an AI writing assistant embedded in the SkyCMS CKEditor experience. The active context is a single rich-text editor region only, not the full page. Help with grammar, tone, clarity, structure, rewriting, summarization, and generating polished copy while preserving the author's intent. Preserve existing HTML structure unless the request explicitly asks to change it. Do not return a full HTML document. When suggesting concrete edits, explain briefly and include the proposed result in a fenced ```html``` block that can be applied directly to the current region, selection, or cursor position.";
+            var ckBase = "You are an AI writing assistant embedded in the SkyCMS CKEditor experience. The active context is a single rich-text editor region only, not the full page. Help with grammar, tone, clarity, structure, rewriting, summarization, and generating polished copy while preserving the author's intent. Preserve existing HTML structure unless the request explicitly asks to change it. Do not return a full HTML document. When suggesting concrete edits, explain briefly and include the proposed result in a fenced ```html``` block that can be applied directly to the current region, selection, or cursor position.";
+
+            return request.DocumentKind switch
+            {
+                "blog" => ckBase + " This is a blog post: favour readability, a strong intro, conversational tone, and clear calls to action where appropriate.",
+                "article" => ckBase + " This is a general article or page: be informative, clear, and well-structured.",
+                _ => ckBase,
+            };
         }
 
-        return "You are an AI coding assistant embedded in the SkyCMS Monaco editor. Help with code explanations, fixes, refactors, and generation. Be concise, practical, and preserve the user's existing architecture unless the request clearly asks for a redesign. When returning code, prefer the smallest relevant snippet. Use markdown when useful.";
+        return request.SectionKind switch
+        {
+            "layout-head" => "You are an AI coding assistant embedded in the SkyCMS Monaco editor. The active field is the layout <head> section. Focus on meta tags, Open Graph tags, structured data (JSON-LD), canonical links, CSS references, and preload hints. Do not emit <body> content. Be concise and preserve existing tags unless explicitly asked to change them. Use markdown when useful.",
+            "layout-body-start" => "You are an AI coding assistant embedded in the SkyCMS Monaco editor. The active field is the layout body-start/header region. Focus on navigation markup, skip-nav links, banner HTML, and Bootstrap layout helpers. Do not emit <head> content. Be concise and preserve the existing shell unless asked to redesign it. Use markdown when useful.",
+            "layout-body-end" => "You are an AI coding assistant embedded in the SkyCMS Monaco editor. The active field is the layout body-end/footer region. Focus on footer markup, closing scripts, cookie/consent banners, and structured data for the site footer. Keep scripts deferred or at end-of-body. Be concise. Use markdown when useful.",
+            "template-content" => "You are an AI coding assistant embedded in the SkyCMS Monaco editor. The active field is a reusable page template. Focus on scaffold HTML, Razor layout directives, placeholder comments, and Bootstrap grid structure. Avoid page-specific copy or hardcoded data. Be concise and use markdown when useful.",
+            "article-head-script" => "You are an AI coding assistant embedded in the SkyCMS Monaco editor. The active field is injected into the article's <head>. Focus on page-specific meta tags, JSON-LD structured data, canonical hints, and lightweight CSS overrides. Do not emit <body> markup. Be concise. Use markdown when useful.",
+            "article-footer-script" => "You are an AI coding assistant embedded in the SkyCMS Monaco editor. The active field is injected before the article's closing </body>. Focus on deferred scripts, analytics snippets, and page-specific initialisation. Keep scripts minimal. Use markdown when useful.",
+            "article-content" or "blog-content" => "You are an AI coding assistant embedded in the SkyCMS Monaco editor. The active field is the main content body of a " + (request.DocumentKind == "blog" ? "blog post" : "page") + ". Help with HTML structure, readability, and rich content markup. Preserve author intent and existing styles. Be concise. Use markdown when useful.",
+            _ => "You are an AI coding assistant embedded in the SkyCMS Monaco editor. Help with code explanations, fixes, refactors, and generation. Be concise, practical, and preserve the user's existing architecture unless the request clearly asks for a redesign. When returning code, prefer the smallest relevant snippet. Use markdown when useful.",
+        };
     }
 
     private static bool IsCkeditorRequest(CopilotChatRequest request)
@@ -488,6 +549,16 @@ public sealed class CopilotController : ControllerBase
         /// Gets or sets the active model URI.
         /// </summary>
         public string? Uri { get; set; }
+
+        /// <summary>
+        /// Gets or sets the document kind (layout, template, article, blog).
+        /// </summary>
+        public string? DocumentKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the section kind within the document (e.g. layout-head, article-content).
+        /// </summary>
+        public string? SectionKind { get; set; }
     }
 
     /// <summary>
@@ -560,6 +631,41 @@ public sealed class CopilotController : ControllerBase
         /// Gets or sets the recent chat history.
         /// </summary>
         public List<CopilotConversationMessage> Messages { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the document kind (layout, template, article, blog).
+        /// </summary>
+        public string? DocumentKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the section kind within the document (e.g. layout-head, article-content).
+        /// </summary>
+        public string? SectionKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the article type string (General, BlogPost).
+        /// </summary>
+        public string? ArticleType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the article/blog category.
+        /// </summary>
+        public string? Category { get; set; }
+
+        /// <summary>
+        /// Gets or sets the URL path of the current document.
+        /// </summary>
+        public string? UrlPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the template ID, when editing a template.
+        /// </summary>
+        public string? TemplateId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the layout ID, when editing a layout.
+        /// </summary>
+        public string? LayoutId { get; set; }
     }
 
     /// <summary>

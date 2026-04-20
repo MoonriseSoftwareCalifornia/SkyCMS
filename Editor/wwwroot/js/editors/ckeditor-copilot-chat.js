@@ -389,6 +389,8 @@
                     content: entry.content
                 }));
 
+            const ctx = window.ccmsEditorContext || {};
+
             return {
                 editorKind: 'ckeditor',
                 action: action,
@@ -399,7 +401,12 @@
                 fieldName: this.getFieldName(this.activeEditor),
                 title: this.getInputValue('Title'),
                 articleNumber: this.getInputValue('ArticleNumber'),
-                messages: recentMessages
+                messages: recentMessages,
+                documentKind: ctx.documentKind || null,
+                sectionKind: ctx.sectionKind || null,
+                articleType: ctx.articleType || null,
+                category: ctx.category || null,
+                urlPath: ctx.urlPath || null
             };
         }
 

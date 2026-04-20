@@ -189,12 +189,20 @@
                     suffix = suffix.slice(0, 1000);
                 }
 
+                const ctx = window.ccmsEditorContext || {};
+                const activeFieldName = this._getActiveFieldName();
+                const sectionKind = (ctx.sectionKindMap && activeFieldName && ctx.sectionKindMap[activeFieldName])
+                    || ctx.sectionKind
+                    || null;
+
                 const payload = {
                     prefix: prefix,
                     suffix: suffix,
                     language: model.getLanguageId(),
                     fieldId: this._getActiveFieldId(),
-                    uri: model.uri ? model.uri.toString() : null
+                    uri: model.uri ? model.uri.toString() : null,
+                    documentKind: ctx.documentKind || null,
+                    sectionKind: sectionKind
                 };
 
                 const response = await fetch('/api/copilot/complete', {
@@ -238,6 +246,14 @@
 
             const editingField = document.getElementById('EditingField');
             return editingField ? editingField.value : null;
+        }
+
+        _getActiveFieldName() {
+            if (window.monacoEditorCore && window.monacoEditorCore.currentField && window.monacoEditorCore.currentField.FieldName) {
+                return window.monacoEditorCore.currentField.FieldName;
+            }
+
+            return null;
         }
     }
 

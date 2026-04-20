@@ -1,3 +1,4 @@
+@using Cosmos.Cms.Common
 @model HtmlEditorViewModel
 @{
     Layout = "_LayoutEditor";
@@ -178,6 +179,16 @@
 
     // This needs global scope, so using var
     var hasPermissionsSet = @hasPermissionsSet.ToString().ToLower();
+
+    // Editor context for AI assistant
+    window.ccmsEditorContext = {
+        documentKind: '@(Model.ArticleType == ArticleType.BlogPost ? "blog" : "article")',
+        editorSurface: 'ckeditor',
+        sectionKind: '@(Model.ArticleType == ArticleType.BlogPost ? "blog-content" : "article-content")',
+        articleType: '@Model.ArticleType',
+        category: '@(Model.Category ?? string.Empty)',
+        urlPath: '@(Model.UrlPath ?? string.Empty)'
+    };
 
     // Editable areas
     // let ccms_editibleAreas = []; // Currently set but not consumed.
