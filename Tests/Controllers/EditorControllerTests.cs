@@ -60,11 +60,11 @@ namespace Sky.Tests.Controllers
             var result = await controller.EditCode(article.ArticleNumber);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.IsNotNull(viewResult.Model);
-            Assert.IsInstanceOfType(viewResult.Model, typeof(EditCodePostModel));
-            var model = (EditCodePostModel)viewResult.Model;
+            Assert.IsInstanceOfType(result, typeof(ObjectResult));
+            var objectResult = (ObjectResult)result;
+            Assert.IsNotNull(objectResult.Value);
+            Assert.IsInstanceOfType(objectResult.Value, typeof(EditCodePostModel));
+            var model = (EditCodePostModel)objectResult.Value;
             Assert.AreEqual(article.ArticleNumber, model.ArticleNumber);
             Assert.AreEqual("Test Article", model.Title);
         }

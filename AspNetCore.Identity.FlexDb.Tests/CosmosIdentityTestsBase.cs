@@ -2,6 +2,7 @@ using AspNetCore.Identity.CosmosDb.Stores;
 using AspNetCore.Identity.FlexDb;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -72,6 +73,13 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
                             $"Database initialization previously failed for provider {providerName}. " +
                             $"Skipping to avoid repeated timeouts.");
                     }
+                }
+
+                // For SQL Server test environments (especially Azure SQL), the test database can be
+                // manually dropped between runs. Ensure it exists before attempting EF schema creation.
+                if (string.Equals(providerName, "SQL Server", StringComparison.Ordinal))
+                {
+                    EnsureSqlServerDatabaseExists(connectionString);
                 }
 
                 // Create fresh database with a new context
@@ -188,6 +196,71 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
                 Console.WriteLine($"[INIT] ✓ Initialization complete for {providerName}");
                 // Mark this provider as initialized
                 _initializedProviders[providerKey] = true;
+            }
+        }
+
+        private static void EnsureSqlServerDatabaseExists(string connectionString)
+        {
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            var databaseName = builder.InitialCatalog;
+
+            if (string.IsNullOrWhiteSpace(databaseName))
+            {
+                return;
+            }
+
+            try
+            {
+                // Fast path: if target database is already reachable, do nothing.
+                using (var targetConnection = new SqlConnection(connectionString))
+                {
+                    targetConnection.Open();
+                    return;
+                }
+            }
+            catch (SqlException ex) when (ex.Message.Contains("Cannot open database", StringComparison.OrdinalIgnoreCase))
+            {
+                // Expected when DB does not exist yet; continue to create below.
+                Console.WriteLine($"[INIT] SQL Server database '{databaseName}' is not accessible yet; attempting creation.");
+            }
+
+            try
+            {
+                var adminBuilder = new SqlConnectionStringBuilder(connectionString)
+                {
+                    InitialCatalog = "master",
+                    ConnectTimeout = Math.Min(builder.ConnectTimeout > 0 ? builder.ConnectTimeout : 15, 15),
+                };
+
+                using var connection = new SqlConnection(adminBuilder.ConnectionString);
+                connection.Open();
+
+                using var existsCommand = new SqlCommand("SELECT DB_ID(@dbName)", connection);
+                existsCommand.Parameters.AddWithValue("@dbName", databaseName);
+                var existsResult = existsCommand.ExecuteScalar();
+                if (existsResult != null && existsResult != DBNull.Value)
+                {
+                    return;
+                }
+
+                var escapedDatabaseName = databaseName.Replace("]", "]]", StringComparison.Ordinal);
+                var createSql = $"CREATE DATABASE [{escapedDatabaseName}]";
+                using var createCommand = new SqlCommand(createSql, connection);
+                createCommand.CommandTimeout = 60;
+                createCommand.ExecuteNonQuery();
+
+                Console.WriteLine($"[INIT] Created missing SQL Server database '{databaseName}'.");
+            }
+            catch (SqlException ex) when (ex.Number == 1801 || ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+            {
+                // Parallel test runs can race on CREATE DATABASE. If another thread/process created it first,
+                // treat this as success and continue with schema cleanup/rebuild.
+                Console.WriteLine($"[INIT] SQL Server database '{databaseName}' already exists (race), continuing.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[INIT] Failed to ensure SQL Server database exists: {ex.Message}");
+                throw;
             }
         }
 

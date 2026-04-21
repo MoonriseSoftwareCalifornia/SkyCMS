@@ -129,7 +129,44 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             }
             catch (Exception ex)
             {
+                if (!useMySql
+                    && ex is SqlException sqlEx
+                    && IsMissingSqlServerDatabase(sqlEx)
+                    && CanConnectSqlServerMaster(connectionString))
+                {
+                    Console.WriteLine("[PROVIDER] SQL Server database is missing but server is reachable; allowing provider initialization to create database.");
+                    return true;
+                }
+
                 Console.WriteLine($"[PROVIDER] Connectivity check failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool IsMissingSqlServerDatabase(SqlException exception)
+        {
+            return exception.Message.Contains("Cannot open database", StringComparison.OrdinalIgnoreCase)
+                && exception.Message.Contains("requested by the login", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool CanConnectSqlServerMaster(string connectionString)
+        {
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(connectionString)
+                {
+                    InitialCatalog = "master",
+                    ConnectTimeout = 5,
+                };
+
+                using var conn = new SqlConnection(builder.ConnectionString);
+                conn.Open();
+                conn.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[PROVIDER] SQL Server master connectivity check failed: {ex.Message}");
                 return false;
             }
         }
