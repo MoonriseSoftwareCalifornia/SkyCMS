@@ -12,6 +12,25 @@
         font-style: italic !important;
         font-weight: bold !important;
     }
+
+    .ai-preview-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .ai-preview-status-badge {
+        display: inline-block;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        letter-spacing: 0.02em;
+    }
 </style>
 
 <div class="pt-3">
@@ -41,7 +60,7 @@
                                 <option value="openai">OpenAI API</option>
                                 <option value="azureai">Azure AI (Azure OpenAI)</option>
                             </select>
-                            <span class="text-muted">Choosing a preset fills endpoint/model/timeout/temperature/max tokens. Access token is never auto-filled.</span>
+                            <span class="text-muted">Choosing a preset fills endpoint/model/timeout/temperature/max tokens. Access token is never auto-filled. OpenAI and GitHub Models presets now default to SkyCMS auto mode.</span>
                         </div>
 
                         <div class="mb-3">
@@ -67,14 +86,30 @@
 
                         <div class="mb-3">
                             <label asp-for="Model"></label>
-                            <input asp-for="Model" class="form-control" aria-required="true" />
+                            <input asp-for="Model" class="form-control" aria-required="true" placeholder="auto, gpt-4o-mini, openai/gpt-4.1, or an Azure deployment name" />
+                            <span class="text-muted">Use <strong>auto</strong> for SkyCMS-managed defaults. Azure OpenAI usually uses the deployment name already embedded in the endpoint URL.</span>
                             <span asp-validation-for="Model" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="providerModelCatalogSelect">Discovered models</label>
+                            <div class="d-flex gap-2">
+                                <select id="providerModelCatalogSelect" class="form-select" disabled>
+                                    <option value="">Load provider models from the current endpoint and token</option>
+                                </select>
+                                <button id="btnLoadProviderModels" type="button" class="btn btn-sm btn-outline-light">Load models</button>
+                            </div>
+                            <div id="providerPreviewStatus" class="ai-preview-status" style="display:none">
+                                <span id="providerPreviewStatusBadge" class="ai-preview-status-badge">Preview</span>
+                                <span id="providerPreviewStatusText" class="text-muted"></span>
+                            </div>
+                            <span id="providerModelCatalogHelp" class="text-muted d-block mt-1">Preview model choices using the current form values before saving. Unsupported providers will keep using the freeform model field.</span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="AccessToken"></label>
                             <input asp-for="AccessToken" type="password" class="form-control" aria-required="true" autocomplete="new-password" />
-                            <span class="text-muted">Stored in the SkyCMS settings table and sent as a bearer token to the upstream provider.</span>
+                            <span class="text-muted">Stored in the SkyCMS settings table and sent as a bearer token for OpenAI-compatible endpoints, or as an api-key header for Azure OpenAI endpoints.</span>
                             <span asp-validation-for="AccessToken" class="text-danger"></span>
                         </div>
 
@@ -134,14 +169,14 @@
         const providerPresets = {
             copilot: {
                 endpoint: "https://models.inference.ai.azure.com/chat/completions",
-                model: "gpt-4o-mini",
+                model: "auto",
                 timeoutMs: 30000,
                 temperature: 0.2,
                 maxTokens: 512
             },
             openai: {
                 endpoint: "https://api.openai.com/v1/chat/completions",
-                model: "gpt-4o-mini",
+                model: "auto",
                 timeoutMs: 30000,
                 temperature: 0.2,
                 maxTokens: 512
@@ -161,6 +196,150 @@
         const $temperature = $("#Temperature");
         const $maxTokens = $("#MaxTokens");
         const $providerPreset = $("#providerPreset");
+        const $accessToken = $("#AccessToken");
+        const $catalogSelect = $("#providerModelCatalogSelect");
+        const $catalogHelp = $("#providerModelCatalogHelp");
+        const $loadModels = $("#btnLoadProviderModels");
+        const $previewStatus = $("#providerPreviewStatus");
+        const $previewStatusBadge = $("#providerPreviewStatusBadge");
+        const $previewStatusText = $("#providerPreviewStatusText");
+        const previewEndpoint = '@Url.Action("PreviewAiProviderModels", "SkyCmsSettings")';
+
+        function getAntiForgeryToken() {
+            return $('input[name="__RequestVerificationToken"]').val() || '';
+        }
+
+        function clearModelCatalog(message) {
+            if (!$catalogSelect.length) {
+                return;
+            }
+
+            $catalogSelect.empty();
+            $catalogSelect.append($('<option>', {
+                value: '',
+                text: 'Load provider models from the current endpoint and token'
+            }));
+            $catalogSelect.prop('disabled', true);
+            $previewStatus.hide();
+            $previewStatusText.text('');
+            $catalogHelp.text(message || 'Preview model choices using the current form values before saving. Unsupported providers will keep using the freeform model field.');
+        }
+
+        function updatePreviewStatus(response) {
+            if (!$previewStatus.length) {
+                return;
+            }
+
+            const usedFreshLoad = !!(response && (response.usedFreshLoad ?? response.UsedFreshLoad));
+            const previewLoadLabel = (response && (response.previewLoadLabel ?? response.PreviewLoadLabel)) || (usedFreshLoad ? 'Fresh provider read' : 'Cached provider result');
+            const discoveryState = (response && (response.discoveryState ?? response.DiscoveryState)) || 'unsupported';
+
+            $previewStatusBadge.text(previewLoadLabel);
+            $previewStatusText.text(`Discovery state: ${discoveryState}`);
+            $previewStatus.show();
+        }
+
+        function appendCatalogOption(value, text, selected) {
+            $catalogSelect.append($('<option>', {
+                value: value,
+                text: text,
+                selected: !!selected
+            }));
+        }
+
+        function updateModelCatalog(response) {
+            const supportsSelection = !!(response && (response.supportsUserModelSelection ?? response.SupportsUserModelSelection));
+            const supportsAutoMode = !!(response && (response.supportsAutoMode ?? response.SupportsAutoMode));
+            const discoveryState = (response && (response.discoveryState ?? response.DiscoveryState)) || 'unsupported';
+            const discoveryStateMessage = (response && (response.discoveryStateMessage ?? response.DiscoveryStateMessage)) || '';
+            const models = response && (response.models ?? response.Models) ? (response.models ?? response.Models) : [];
+            const discoveryError = response && (response.discoveryError ?? response.DiscoveryError);
+            const defaultSelectionLabel = (response && (response.defaultSelectionLabel ?? response.DefaultSelectionLabel)) || 'Default';
+            const effectiveModel = response && (response.effectiveModel ?? response.EffectiveModel);
+            const currentModel = ($model.val() || '').trim();
+            let matchedCurrentModel = false;
+
+            updatePreviewStatus(response);
+
+            $catalogSelect.empty();
+
+            if (discoveryState === 'inferred' && models.length > 0) {
+                models.forEach((modelOption) => {
+                    const modelId = modelOption.id ?? modelOption.Id ?? '';
+                    const displayName = modelOption.displayName ?? modelOption.DisplayName ?? modelId;
+                    appendCatalogOption(modelId, `${displayName} (inferred from endpoint)`, modelId.toLowerCase() === currentModel.toLowerCase());
+                });
+
+                $catalogSelect.prop('disabled', true);
+                $catalogHelp.text(discoveryStateMessage || 'SkyCMS inferred the active model from the current endpoint.');
+                return;
+            }
+
+            if (!supportsSelection || models.length === 0) {
+                clearModelCatalog(discoveryStateMessage || discoveryError || defaultSelectionLabel);
+                return;
+            }
+
+            appendCatalogOption(supportsAutoMode ? 'auto' : (effectiveModel || ''), defaultSelectionLabel, currentModel.length === 0 || (supportsAutoMode && currentModel.toLowerCase() === 'auto'));
+
+            models.forEach((modelOption) => {
+                const modelId = modelOption.id ?? modelOption.Id ?? '';
+                const displayName = modelOption.displayName ?? modelOption.DisplayName ?? modelId;
+                const recommended = !!(modelOption.recommended ?? modelOption.Recommended);
+                const publisher = modelOption.publisher ?? modelOption.Publisher;
+                const optionLabel = recommended
+                    ? `${displayName} (recommended)`
+                    : (publisher ? `${displayName} (${publisher})` : displayName);
+                const isSelected = currentModel.length > 0 && modelId.toLowerCase() === currentModel.toLowerCase();
+                matchedCurrentModel = matchedCurrentModel || isSelected;
+                appendCatalogOption(modelId, optionLabel, isSelected);
+            });
+
+            if (currentModel.length > 0 && currentModel.toLowerCase() !== 'auto' && !matchedCurrentModel) {
+                appendCatalogOption(currentModel, `${currentModel} (current custom value)`, true);
+            }
+
+            $catalogSelect.prop('disabled', false);
+            $catalogHelp.text(discoveryStateMessage || discoveryError || 'Selecting a discovered model writes it back into the saved Model field. Choose the default option to keep provider default behavior.');
+        }
+
+        async function loadProviderModels() {
+            const token = getAntiForgeryToken();
+
+            $loadModels.prop('disabled', true);
+            $previewStatus.hide();
+            $catalogHelp.text('Loading provider models...');
+
+            try {
+                const response = await fetch(previewEndpoint, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        endpoint: $endpoint.val(),
+                        model: $model.val(),
+                        accessToken: $accessToken.val(),
+                        forceRefresh: true
+                    })
+                });
+
+                const data = await response.json().catch(() => null);
+                if (!response.ok || !data) {
+                    clearModelCatalog('The provider model catalog could not be loaded from the current form values.');
+                    return;
+                }
+
+                updateModelCatalog(data);
+            } catch (error) {
+                clearModelCatalog('The provider model catalog could not be loaded from the current form values.');
+            } finally {
+                $loadModels.prop('disabled', false);
+            }
+        }
 
         if ($providerPreset.length) {
             $providerPreset.on("change", function () {
@@ -175,8 +354,32 @@
                 $timeoutMs.val(preset.timeoutMs);
                 $temperature.val(preset.temperature);
                 $maxTokens.val(preset.maxTokens);
+                clearModelCatalog('Preset updated. Load models again to preview choices for the new endpoint.');
             });
         }
+
+        if ($loadModels.length) {
+            $loadModels.on('click', async function () {
+                await loadProviderModels();
+            });
+        }
+
+        if ($catalogSelect.length) {
+            $catalogSelect.on('change', function () {
+                const selectedValue = $(this).val();
+                if (selectedValue) {
+                    $model.val(selectedValue);
+                }
+            });
+        }
+
+        [$endpoint, $model, $accessToken].forEach(($field) => {
+            if ($field && $field.length) {
+                $field.on('input', function () {
+                    clearModelCatalog('Model preview reflects the current endpoint, token, and model values. Reload after changes.');
+                });
+            }
+        });
 
         if ($endpoint.length) {
             $endpoint.autocomplete({
@@ -208,6 +411,8 @@
                 $(this).autocomplete("search", $(this).val());
             });
         }
+
+        clearModelCatalog();
     });
 </script>
 

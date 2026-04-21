@@ -3,6 +3,34 @@
  * Wires Monaco inline completions to the SkyCMS Copilot proxy API.
  */
 (function () {
+    function buildPreferenceQueryString() {
+        const editorContext = window.ccmsEditorContext || {};
+        const params = new URLSearchParams();
+
+        if (editorContext.editorSurface) {
+            params.set('editorKind', editorContext.editorSurface);
+        }
+
+        if (editorContext.documentKind) {
+            params.set('documentKind', editorContext.documentKind);
+        }
+
+        return params.toString();
+    }
+
+    function syncSharedAiSelectionState(status) {
+        if (!window.ccmsAiModelSelection) {
+            window.ccmsAiModelSelection = {
+                selectedModel: null,
+                status: null,
+                catalog: null
+            };
+        }
+
+        window.ccmsAiModelSelection.status = status;
+        window.ccmsAiModelSelection.selectedModel = status && ((status.selectedModel ?? status.SelectedModel) || null);
+    }
+
     class MonacoCopilot {
         constructor() {
             this.initialized = false;
@@ -44,9 +72,10 @@
             const enabled = status && (status.enabled ?? status.Enabled);
             const configured = status && (status.configured ?? status.Configured);
             const model = status && (status.model ?? status.Model);
+            const providerDisplayName = status && (status.providerDisplayName ?? status.ProviderDisplayName);
             const copilotOn = !!(enabled && configured);
 
-            this._setIndicator(copilotOn, model);
+            this._setIndicator(copilotOn, model, providerDisplayName);
             if (!copilotOn || !this.inlineSuggestionsEnabled) {
                 return;
             }
@@ -67,7 +96,8 @@
 
         async _getStatus() {
             try {
-                const response = await fetch('/api/copilot/status', {
+                const queryString = buildPreferenceQueryString();
+                const response = await fetch(`/api/ai-proxy/status${queryString ? `?${queryString}` : ''}`, {
                     method: 'GET',
                     credentials: 'same-origin',
                     headers: {
@@ -79,20 +109,23 @@
                     return null;
                 }
 
-                return await response.json();
+                const status = await response.json();
+                syncSharedAiSelectionState(status);
+                return status;
             } catch (error) {
                 console.warn('Copilot status check failed:', error);
                 return null;
             }
         }
 
-        _setIndicator(enabled, model) {
-            this._setSingleIndicator('ccmsCopilotStatusIndicator', 'ccmsCopilotStatusBadge', enabled, model);
+        _setIndicator(enabled, model, providerDisplayName) {
+            this._setSingleIndicator('ccmsCopilotStatusIndicator', 'ccmsCopilotStatusBadge', enabled, model, providerDisplayName);
         }
 
-        _setSingleIndicator(indicatorId, badgeId, enabled, model) {
+        _setSingleIndicator(indicatorId, badgeId, enabled, model, providerDisplayName) {
             const indicator = document.getElementById(indicatorId);
             const badge = document.getElementById(badgeId);
+            const label = document.getElementById('ccmsCopilotProviderLabel');
             if (!indicator || !badge) {
                 return;
             }
@@ -101,9 +134,15 @@
                 indicator.style.display = '';
                 badge.classList.remove('text-bg-secondary');
                 badge.classList.add('text-bg-success');
+
+                const provider = (providerDisplayName || '').trim() || 'AI';
+                if (label) {
+                    label.textContent = provider;
+                }
+
                 badge.title = model
-                    ? `AI assistant available (${model})`
-                    : 'AI assistant available';
+                    ? `${provider} assistant available (${model})`
+                    : `${provider} assistant available`;
             } else {
                 indicator.style.display = 'none';
             }
@@ -198,6 +237,9 @@
                 const payload = {
                     prefix: prefix,
                     suffix: suffix,
+                    selectedModel: window.ccmsAiModelSelection && window.ccmsAiModelSelection.selectedModel
+                        ? window.ccmsAiModelSelection.selectedModel
+                        : null,
                     language: model.getLanguageId(),
                     fieldId: this._getActiveFieldId(),
                     uri: model.uri ? model.uri.toString() : null,
@@ -205,7 +247,7 @@
                     sectionKind: sectionKind
                 };
 
-                const response = await fetch('/api/copilot/complete', {
+                const response = await fetch('/api/ai-proxy/complete', {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: {

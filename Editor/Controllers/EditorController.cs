@@ -376,6 +376,21 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
+        /// Opens the standalone AI help chat workspace.
+        /// </summary>
+        /// <returns>The AI help chat view.</returns>
+        public IActionResult AiHelp()
+        {
+            var invalidModelState = GetInvalidModelStateResult();
+            if (invalidModelState != null)
+            {
+                return invalidModelState;
+            }
+
+            return View();
+        }
+
+        /// <summary>
         /// Open trash.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -1187,7 +1202,7 @@ namespace Sky.Cms.Controllers
 
             await PopulateEditorViewDataAsync(article.ArticleNumber, article.Title, article.Content, article.VersionNumber);
 
-            return View(new EditCodePostModel
+            return new ObjectResult(new EditCodePostModel
             {
                 Id = article.Id,
                 ArticleNumber = article.ArticleNumber,

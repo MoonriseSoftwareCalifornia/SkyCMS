@@ -7,6 +7,7 @@
 - All LINQ queries throughout the application must support Cosmos DB as a database provider. Cosmos DB does not support joins between different entity types (cross-container joins). Queries must be rewritten to avoid Join operations — use sequential queries with client-side correlation instead.
 - All LINQ queries used with Entity Framework must avoid inline casts (e.g., `(int)SomeEnum.Value`) inside lambda/predicate expressions. The Cosmos DB EF Core provider cannot translate inline casts within expression trees. Always pre-compute enum-to-int conversions (and similar casts) into local variables before the query, then reference those variables in the predicate. This applies solution-wide to maintain cross-provider compatibility (MS SQL, MySQL, SQLite, and Cosmos DB).
 - Provide clear in-chat progress updates in small steps while working so the user can tell the task is still active.
+- Prefer vendor-neutral AI naming (e.g., AiSettings, AiProxyController) instead of Copilot-branded names in the codebase.
 
 ## Testing Guidelines
 - Create richer Copilot integration tests with varied request types; a single simple hello-world style test is not sufficient.

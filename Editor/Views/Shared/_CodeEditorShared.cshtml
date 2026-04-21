@@ -21,6 +21,18 @@
         font-size: 0.65rem;
         margin-top: 0.4rem;
     }
+
+    .copilot-model-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-top: 0.75rem;
+    }
+
+    .copilot-model-help {
+        font-size: 0.75rem;
+        opacity: 0.85;
+    }
 </style>
 
 <nav id="navBar" class="code-tabs navbar" style="display:none">
@@ -46,7 +58,10 @@
                 <div class="copilot-chat-title">AI Chat</div>
                 <div id="copilotChatSubtitle" class="copilot-chat-subtitle">Ask about the current editor content.</div>
             </div>
-            <button id="btnCopilotClearChat" type="button" class="btn btn-sm btn-outline-light">Clear</button>
+            <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-light" href="/Editor/AiHelp?popup=1&launchMode=detached" target="_blank" rel="noopener">Detach</a>
+                <button id="btnCopilotClearChat" type="button" class="btn btn-sm btn-outline-light">Clear</button>
+            </div>
         </div>
 
         <div class="copilot-chat-actions" role="toolbar" aria-label="AI actions">
@@ -55,6 +70,17 @@
             <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="improve-selection">Improve Selection</button>
             <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="generate-section">Generate Section</button>
             <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="convert-selection">Convert Selection</button>
+        </div>
+
+        <div class="copilot-model-row">
+            <label class="form-label form-label-sm mb-0" for="copilotModelSelect">Model</label>
+            <div class="d-flex gap-2">
+                <select id="copilotModelSelect" class="form-select form-select-sm" disabled>
+                    <option value="">Default</option>
+                </select>
+                <button id="btnCopilotRefreshModels" type="button" class="btn btn-sm btn-outline-light">Refresh</button>
+            </div>
+            <div id="copilotModelHelp" class="copilot-model-help"></div>
         </div>
 
         <div id="copilotChatMessages" class="copilot-chat-messages">

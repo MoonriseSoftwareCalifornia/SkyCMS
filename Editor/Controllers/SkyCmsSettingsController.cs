@@ -23,6 +23,7 @@ namespace Sky.Editor.Controllers
     using Sky.Editor.Features.Copilot.SaveSettings;
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
+    using Sky.Editor.Services.Copilot;
     using Sky.Editor.Services.EditorSettings;
 
     /// <summary>
@@ -42,6 +43,7 @@ namespace Sky.Editor.Controllers
         private readonly ILogger<SkyCmsSettingsController> logger;
         private readonly IEditorSettings settings;
         private readonly ICdnServiceFactory cdnServiceFactory;
+        private readonly IAiProviderModelCatalogService aiProviderModelCatalogService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SkyCmsSettingsController"/> class.
@@ -51,18 +53,21 @@ namespace Sky.Editor.Controllers
         /// <param name="logger">Log service.</param>
         /// <param name="settings">Editor settings.</param>
         /// <param name="cdnServiceFactory">CDN service factory.</param>
+        /// <param name="aiProviderModelCatalogService">AI provider model catalog service.</param>
         public SkyCmsSettingsController(
             ApplicationDbContext dbContext,
             IMediator mediator,
             ILogger<SkyCmsSettingsController> logger,
             IEditorSettings settings,
-            ICdnServiceFactory cdnServiceFactory)
+            ICdnServiceFactory cdnServiceFactory,
+            IAiProviderModelCatalogService aiProviderModelCatalogService)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
             this.cdnServiceFactory = cdnServiceFactory ?? throw new ArgumentNullException(nameof(cdnServiceFactory));
+            this.aiProviderModelCatalogService = aiProviderModelCatalogService ?? throw new ArgumentNullException(nameof(aiProviderModelCatalogService));
         }
 
         /// <summary>
@@ -219,6 +224,52 @@ namespace Sky.Editor.Controllers
             ViewData["Operation"] = "Saved";
 
             return View(result.Data ?? options);
+        }
+
+        /// <summary>
+        /// Loads discoverable provider models from the current unsaved AI provider form values.
+        /// </summary>
+        /// <param name="request">Preview request.</param>
+        /// <returns>Provider model preview response.</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PreviewAiProviderModels([FromBody] AiProviderModelPreviewRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest(new { error = "Request body is required." });
+            }
+
+            var options = new CopilotProxyOptions
+            {
+                Enabled = true,
+                Endpoint = request.Endpoint?.Trim() ?? string.Empty,
+                Model = request.Model?.Trim() ?? string.Empty,
+                AccessToken = request.AccessToken?.Trim() ?? string.Empty,
+            };
+
+            var configuredModel = AiProviderMetadataResolver.NormalizeConfiguredModel(options.Model);
+            var effectiveModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model);
+            var catalog = await aiProviderModelCatalogService.GetCatalogAsync(options, request.ForceRefresh, HttpContext.RequestAborted);
+
+            return Ok(new AiProviderModelPreviewResponse
+            {
+                ProviderKey = catalog.ProviderKey,
+                ProviderDisplayName = catalog.ProviderDisplayName,
+                SupportsModelDiscovery = catalog.SupportsModelDiscovery,
+                SupportsUserModelSelection = catalog.SupportsUserModelSelection,
+                SupportsAutoMode = catalog.SupportsAutoMode,
+                UsedFreshLoad = request.ForceRefresh,
+                PreviewLoadLabel = request.ForceRefresh ? "Fresh provider read" : "Cached provider result",
+                DiscoveryState = catalog.DiscoveryState,
+                DiscoveryStateMessage = catalog.DiscoveryStateMessage,
+                DefaultModeDescription = catalog.DefaultModeDescription,
+                DefaultSelectionLabel = AiProviderMetadataResolver.BuildDefaultSelectionLabel(options.Endpoint, options.Model),
+                ConfiguredModel = configuredModel,
+                EffectiveModel = effectiveModel,
+                DiscoveryError = catalog.DiscoveryError,
+                Models = catalog.Models,
+            });
         }
 
         /// <summary>
@@ -417,6 +468,113 @@ namespace Sky.Editor.Controllers
                     }
                 };
             }
+        }
+
+        /// <summary>
+        /// Preview request for AI provider model discovery.
+        /// </summary>
+        public sealed class AiProviderModelPreviewRequest
+        {
+            /// <summary>
+            /// Gets or sets the endpoint.
+            /// </summary>
+            public string? Endpoint { get; set; }
+
+            /// <summary>
+            /// Gets or sets the configured model.
+            /// </summary>
+            public string? Model { get; set; }
+
+            /// <summary>
+            /// Gets or sets the access token.
+            /// </summary>
+            public string? AccessToken { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether cached catalog results should be bypassed.
+            /// </summary>
+            public bool ForceRefresh { get; set; }
+        }
+
+        /// <summary>
+        /// Preview response for AI provider model discovery.
+        /// </summary>
+        public sealed class AiProviderModelPreviewResponse
+        {
+            /// <summary>
+            /// Gets or sets the provider key.
+            /// </summary>
+            public string ProviderKey { get; set; } = "unknown";
+
+            /// <summary>
+            /// Gets or sets the provider display name.
+            /// </summary>
+            public string ProviderDisplayName { get; set; } = "AI";
+
+            /// <summary>
+            /// Gets or sets a value indicating whether discovery is supported.
+            /// </summary>
+            public bool SupportsModelDiscovery { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether user model selection is supported.
+            /// </summary>
+            public bool SupportsUserModelSelection { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether auto mode is supported.
+            /// </summary>
+            public bool SupportsAutoMode { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether this preview came from a fresh provider read.
+            /// </summary>
+            public bool UsedFreshLoad { get; set; }
+
+            /// <summary>
+            /// Gets or sets the load label for the current preview.
+            /// </summary>
+            public string PreviewLoadLabel { get; set; } = string.Empty;
+
+            /// <summary>
+            /// Gets or sets the discovery state.
+            /// </summary>
+            public string DiscoveryState { get; set; } = AiProviderDiscoveryStates.Unsupported;
+
+            /// <summary>
+            /// Gets or sets the discovery state message.
+            /// </summary>
+            public string DiscoveryStateMessage { get; set; } = string.Empty;
+
+            /// <summary>
+            /// Gets or sets the default mode description.
+            /// </summary>
+            public string DefaultModeDescription { get; set; } = string.Empty;
+
+            /// <summary>
+            /// Gets or sets the default selection label.
+            /// </summary>
+            public string DefaultSelectionLabel { get; set; } = string.Empty;
+
+            /// <summary>
+            /// Gets or sets the configured model.
+            /// </summary>
+            public string? ConfiguredModel { get; set; }
+
+            /// <summary>
+            /// Gets or sets the effective model.
+            /// </summary>
+            public string? EffectiveModel { get; set; }
+
+            /// <summary>
+            /// Gets or sets the discovery error.
+            /// </summary>
+            public string? DiscoveryError { get; set; }
+
+            /// <summary>
+            /// Gets or sets the available models.
+            /// </summary>
+            public List<AiProviderModelOption> Models { get; set; } = [];
         }
     }
 }

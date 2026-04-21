@@ -1,0 +1,93 @@
+@{
+    Layout = "_LayoutEditor";
+    ViewData["Title"] = "AI Help Chat";
+}
+
+<style>
+    .ai-help-workspace {
+        position: absolute;
+        top: 68px;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .ai-help-chat-panel {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        height: 100%;
+    }
+
+    .ai-help-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .ai-help-launch-mode {
+        width: 180px;
+    }
+</style>
+
+<div class="ai-help-workspace">
+    <div class="d-flex justify-content-between align-items-center">
+        <h5 class="text-light mb-0">AI Help Chat</h5>
+        <div class="ai-help-header-actions">
+            <label class="visually-hidden" for="aiHelpLaunchMode">Launch mode</label>
+            <select id="aiHelpLaunchMode" class="form-select form-select-sm ai-help-launch-mode" aria-label="AI Help launch mode">
+                <option value="dock">Docked in current window</option>
+                <option value="detached">Detached window by default</option>
+            </select>
+            <button id="btnAiHelpDetach" type="button" class="btn btn-sm btn-outline-light">Open in separate window</button>
+            <a class="btn btn-sm btn-secondary" href="/Editor/Index">Back to Pages</a>
+        </div>
+    </div>
+
+    <aside id="aiHelpChatPanel" class="copilot-chat-panel ai-help-chat-panel" aria-label="AI help chat panel">
+        <div class="copilot-chat-header">
+            <div>
+                <div class="copilot-chat-title">AI Help Assistant</div>
+                <div id="aiHelpChatSubtitle" class="copilot-chat-subtitle">Ask about SkyCMS, website development, or this site.</div>
+            </div>
+            <button id="btnAiHelpClearChat" type="button" class="btn btn-sm btn-outline-light">Clear</button>
+        </div>
+
+        <div class="copilot-chat-actions" role="toolbar" aria-label="AI help actions">
+            <button type="button" class="btn btn-sm btn-secondary" data-ai-help-action="skycms-help" data-ai-help-mode="general-help">SkyCMS help</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-ai-help-action="website-help" data-ai-help-mode="general-help">Website guidance</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-ai-help-action="site-help" data-ai-help-mode="site-help">This site</button>
+        </div>
+
+        <div class="copilot-model-row px-3 pt-2">
+            <label class="form-label form-label-sm mb-0" for="aiHelpModelSelect">Model</label>
+            <div class="d-flex gap-2">
+                <select id="aiHelpModelSelect" class="form-select form-select-sm" disabled>
+                    <option value="">Default</option>
+                </select>
+                <button id="btnAiHelpRefreshModels" type="button" class="btn btn-sm btn-outline-light">Refresh</button>
+            </div>
+            <div id="aiHelpModelHelp" class="copilot-model-help"></div>
+        </div>
+
+        <div id="aiHelpChatMessages" class="copilot-chat-messages">
+            <div class="copilot-chat-empty">AI help chat is loading…</div>
+        </div>
+
+        <div id="aiHelpChatStatus" class="copilot-chat-status" style="display:none"></div>
+
+        <form id="aiHelpChatForm" class="copilot-chat-form">
+            <label class="visually-hidden" for="aiHelpChatInput">Ask AI for help</label>
+            <textarea id="aiHelpChatInput" class="form-control form-control-sm" rows="4" placeholder="Ask a question about SkyCMS, website content, SEO, accessibility, or architecture."></textarea>
+            <div class="copilot-chat-footer">
+                <span class="copilot-chat-hint">Enter sends. Shift+Enter adds a new line.</span>
+                <button id="btnAiHelpSend" type="submit" class="btn btn-sm btn-primary">Send</button>
+            </div>
+        </form>
+    </aside>
+</div>
+
+<script src="~/js/editors/ai-help-chat.js"></script>

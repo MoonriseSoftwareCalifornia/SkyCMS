@@ -1,4 +1,4 @@
-// <copyright file="CopilotController.cs" company="Moonrise Software, LLC">
+// <copyright file="AiProxyController.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -25,15 +25,14 @@ using Sky.Editor.Models;
 using Sky.Editor.Services.Copilot;
 
 /// <summary>
-/// Provides server-side proxy completions and chat for Monaco-powered editing.
+/// Provides server-side proxy completions and chat for editor AI features.
 /// </summary>
+[Route("api/ai-proxy")]
 [Route("api/copilot")]
 [ApiController]
 [Authorize(Roles = "Reviewers, Administrators, Editors, Authors")]
-public sealed class CopilotController : ControllerBase
+public sealed class AiProxyController : ControllerBase
 {
-    private const string DefaultCopilotModel = "gpt-4o-mini";
-
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -41,21 +40,37 @@ public sealed class CopilotController : ControllerBase
 
     private readonly IHttpClientFactory httpClientFactory;
     private readonly ICopilotProxyOptionsService copilotProxyOptionsService;
-    private readonly ILogger<CopilotController> logger;
+    private readonly IAiProviderModelCatalogService aiProviderModelCatalogService;
+    private readonly IAiUserPreferenceService aiUserPreferenceService;
+    private readonly IAiDocumentationContextService aiDocumentationContextService;
+    private readonly IAiLayoutContextService aiLayoutContextService;
+    private readonly ILogger<AiProxyController> logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CopilotController"/> class.
+    /// Initializes a new instance of the <see cref="AiProxyController"/> class.
     /// </summary>
     /// <param name="httpClientFactory">HTTP client factory.</param>
     /// <param name="copilotProxyOptionsService">Tenant-aware Copilot proxy options service.</param>
+    /// <param name="aiProviderModelCatalogService">Provider model catalog service.</param>
+    /// <param name="aiUserPreferenceService">User AI preference service.</param>
+    /// <param name="aiDocumentationContextService">Documentation context enrichment service.</param>
+    /// <param name="aiLayoutContextService">Layout context enrichment service.</param>
     /// <param name="logger">Logger instance.</param>
-    public CopilotController(
+    public AiProxyController(
         IHttpClientFactory httpClientFactory,
         ICopilotProxyOptionsService copilotProxyOptionsService,
-        ILogger<CopilotController> logger)
+        IAiProviderModelCatalogService aiProviderModelCatalogService,
+        IAiUserPreferenceService aiUserPreferenceService,
+        IAiDocumentationContextService aiDocumentationContextService,
+        IAiLayoutContextService aiLayoutContextService,
+        ILogger<AiProxyController> logger)
     {
         this.httpClientFactory = httpClientFactory;
         this.copilotProxyOptionsService = copilotProxyOptionsService;
+        this.aiProviderModelCatalogService = aiProviderModelCatalogService;
+        this.aiUserPreferenceService = aiUserPreferenceService;
+        this.aiDocumentationContextService = aiDocumentationContextService;
+        this.aiLayoutContextService = aiLayoutContextService;
         this.logger = logger;
     }
 
@@ -64,20 +79,114 @@ public sealed class CopilotController : ControllerBase
     /// </summary>
     /// <returns>Proxy availability status.</returns>
     [HttpGet("status")]
-    public async Task<IActionResult> Status()
+    public async Task<IActionResult> Status([FromQuery] string? editorKind = null, [FromQuery] string? documentKind = null)
     {
         var options = await this.copilotProxyOptionsService.GetOptionsAsync();
         var endpointConfigured = !string.IsNullOrWhiteSpace(options.Endpoint);
         var tokenConfigured = !string.IsNullOrWhiteSpace(options.AccessToken);
         var configured = endpointConfigured && tokenConfigured;
-        var resolvedModel = ResolveModel(options.Model);
+        var providerMetadata = AiProviderMetadataResolver.Describe(options.Endpoint, options.Model);
+        var configuredModel = AiProviderMetadataResolver.NormalizeConfiguredModel(options.Model);
+        var effectiveModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model);
+        var selectedModel = providerMetadata.SupportsUserModelSelection
+            ? await this.aiUserPreferenceService.GetSelectedModelAsync(this.User, providerMetadata.ProviderKey, editorKind, documentKind, this.HttpContext.RequestAborted)
+            : null;
 
         return this.Ok(new CopilotProxyStatusResponse
         {
             Enabled = options.Enabled,
             Configured = configured,
             EndpointConfigured = endpointConfigured,
-            Model = resolvedModel,
+            Model = effectiveModel ?? configuredModel,
+            ConfiguredModel = configuredModel,
+            EffectiveModel = effectiveModel,
+            ProviderKey = providerMetadata.ProviderKey,
+            ProviderDisplayName = providerMetadata.ProviderDisplayName,
+            SupportsModelDiscovery = providerMetadata.SupportsModelDiscovery,
+            SupportsUserModelSelection = providerMetadata.SupportsUserModelSelection,
+            SupportsAutoMode = providerMetadata.SupportsAutoMode,
+            DiscoveryState = providerMetadata.DiscoveryState,
+            DiscoveryStateMessage = providerMetadata.DiscoveryStateMessage,
+            DefaultModeDescription = providerMetadata.DefaultModeDescription,
+            DefaultSelectionLabel = AiProviderMetadataResolver.BuildDefaultSelectionLabel(options.Endpoint, options.Model),
+            SelectedModel = selectedModel,
+        });
+    }
+
+    /// <summary>
+    /// Returns provider metadata and discoverable model options for the current tenant.
+    /// </summary>
+    /// <returns>Provider model catalog response.</returns>
+    [HttpGet("models")]
+    public async Task<IActionResult> Models([FromQuery] string? editorKind = null, [FromQuery] string? documentKind = null, [FromQuery] bool forceRefresh = false)
+    {
+        var options = await this.copilotProxyOptionsService.GetOptionsAsync();
+        var endpointConfigured = !string.IsNullOrWhiteSpace(options.Endpoint);
+        var tokenConfigured = !string.IsNullOrWhiteSpace(options.AccessToken);
+        var configured = endpointConfigured && tokenConfigured;
+        var configuredModel = AiProviderMetadataResolver.NormalizeConfiguredModel(options.Model);
+        var effectiveModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model);
+        var catalog = await this.aiProviderModelCatalogService.GetCatalogAsync(options, forceRefresh, this.HttpContext.RequestAborted);
+        var selectedModel = catalog.SupportsUserModelSelection
+            ? await this.aiUserPreferenceService.GetSelectedModelAsync(this.User, catalog.ProviderKey, editorKind, documentKind, this.HttpContext.RequestAborted)
+            : null;
+
+        return this.Ok(new CopilotProxyModelsResponse
+        {
+            Enabled = options.Enabled,
+            Configured = configured,
+            EndpointConfigured = endpointConfigured,
+            ProviderKey = catalog.ProviderKey,
+            ProviderDisplayName = catalog.ProviderDisplayName,
+            SupportsModelDiscovery = catalog.SupportsModelDiscovery,
+            SupportsUserModelSelection = catalog.SupportsUserModelSelection,
+            SupportsAutoMode = catalog.SupportsAutoMode,
+            DiscoveryState = catalog.DiscoveryState,
+            DiscoveryStateMessage = catalog.DiscoveryStateMessage,
+            DefaultModeDescription = catalog.DefaultModeDescription,
+            DefaultSelectionLabel = AiProviderMetadataResolver.BuildDefaultSelectionLabel(options.Endpoint, options.Model),
+            ConfiguredModel = configuredModel,
+            EffectiveModel = effectiveModel,
+            DiscoveryError = catalog.DiscoveryError,
+            SelectedModel = selectedModel,
+            Models = catalog.Models,
+        });
+    }
+
+    /// <summary>
+    /// Saves the current user's selected model for a specific editor/document context.
+    /// </summary>
+    /// <param name="request">Model preference request.</param>
+    /// <returns>Saved preference response.</returns>
+    [HttpPost("preferences/model")]
+    public async Task<IActionResult> SaveModelPreference([FromBody] CopilotModelPreferenceRequest request)
+    {
+        if (request == null)
+        {
+            return this.BadRequest(new { error = "Request body is required." });
+        }
+
+        var options = await this.copilotProxyOptionsService.GetOptionsAsync();
+        var providerMetadata = AiProviderMetadataResolver.Describe(options.Endpoint, options.Model);
+        if (!providerMetadata.SupportsUserModelSelection)
+        {
+            return this.BadRequest(new { error = "This AI provider does not support user model selection." });
+        }
+
+        await this.aiUserPreferenceService.SaveSelectedModelAsync(
+            this.User,
+            providerMetadata.ProviderKey,
+            request.EditorKind,
+            request.DocumentKind,
+            request.SelectedModel,
+            this.HttpContext.RequestAborted);
+
+        return this.Ok(new CopilotModelPreferenceResponse
+        {
+            ProviderKey = providerMetadata.ProviderKey,
+            SelectedModel = string.IsNullOrWhiteSpace(request.SelectedModel) ? null : request.SelectedModel.Trim(),
+            EditorKind = request.EditorKind,
+            DocumentKind = request.DocumentKind,
         });
     }
 
@@ -114,7 +223,7 @@ public sealed class CopilotController : ControllerBase
 
         var language = string.IsNullOrWhiteSpace(request.Language) ? "plaintext" : request.Language;
         var prompt = BuildCompletionPrompt(request, language);
-        var resolvedModel = ResolveModel(options.Model);
+        var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
         try
         {
@@ -123,7 +232,7 @@ public sealed class CopilotController : ControllerBase
 
             var httpClient = this.httpClientFactory.CreateClient();
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, options.Endpoint);
-            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.AccessToken);
+            ApplyAuthenticationHeaders(httpRequest, options.Endpoint, options.AccessToken);
 
             var upstreamRequest = new UpstreamChatCompletionRequest
             {
@@ -225,7 +334,25 @@ public sealed class CopilotController : ControllerBase
             return this.StatusCode(503, new { error = "Copilot proxy is not configured." });
         }
 
-        var resolvedModel = ResolveModel(options.Model);
+        var contextRequest = new AiContextEnrichmentRequest
+        {
+            DocumentKind = request.DocumentKind,
+            SectionKind = request.SectionKind,
+            Message = request.Message,
+            ArticleNumber = request.ArticleNumber,
+            TemplateId = request.TemplateId,
+            LayoutId = request.LayoutId,
+            UrlPath = request.UrlPath,
+        };
+
+        var docsContextTask = this.aiDocumentationContextService.GetDocumentationContextAsync(contextRequest, this.HttpContext.RequestAborted);
+        var layoutContextTask = this.aiLayoutContextService.GetLayoutContextAsync(contextRequest, this.HttpContext.RequestAborted);
+        await Task.WhenAll(docsContextTask, layoutContextTask);
+
+        var documentationContext = docsContextTask.Result.ContextText;
+        var layoutContext = layoutContextTask.Result.ContextText;
+
+        var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
         try
         {
@@ -234,12 +361,12 @@ public sealed class CopilotController : ControllerBase
 
             var httpClient = this.httpClientFactory.CreateClient();
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, options.Endpoint);
-            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.AccessToken);
+            ApplyAuthenticationHeaders(httpRequest, options.Endpoint, options.AccessToken);
 
             var upstreamRequest = new UpstreamChatCompletionRequest
             {
                 Model = resolvedModel,
-                Messages = BuildChatMessages(request),
+                Messages = BuildChatMessages(request, documentationContext, layoutContext),
                 Temperature = Math.Max(options.Temperature, 0.2d),
                 MaxTokens = Math.Clamp(Math.Max(options.MaxTokens, 400), 128, 1200),
                 Stream = false,
@@ -327,6 +454,27 @@ public sealed class CopilotController : ControllerBase
         return 5;
     }
 
+    private static void ApplyAuthenticationHeaders(HttpRequestMessage request, string endpoint, string accessToken)
+    {
+        if (UsesAzureOpenAiApiKey(endpoint))
+        {
+            request.Headers.TryAddWithoutValidation("api-key", accessToken);
+            return;
+        }
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+    }
+
+    private static bool UsesAzureOpenAiApiKey(string endpoint)
+    {
+        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri))
+        {
+            return false;
+        }
+
+        return endpointUri.Host.EndsWith(".openai.azure.com", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string BuildCompletionPrompt(CopilotCompletionRequest request, string language)
     {
         var prefix = request.Prefix.Length > 4000 ? request.Prefix[^4000..] : request.Prefix;
@@ -358,7 +506,7 @@ public sealed class CopilotController : ControllerBase
         return sb.ToString();
     }
 
-    private static List<UpstreamChatMessage> BuildChatMessages(CopilotChatRequest request)
+    private static List<UpstreamChatMessage> BuildChatMessages(CopilotChatRequest request, string? documentationContext = null, string? layoutContext = null)
     {
         var messages = new List<UpstreamChatMessage>
         {
@@ -395,6 +543,12 @@ public sealed class CopilotController : ControllerBase
         var promptBuilder = new StringBuilder();
         promptBuilder.AppendLine($"EditorKind: {request.EditorKind ?? "monaco"}");
         promptBuilder.AppendLine($"Action: {request.Action ?? "chat"}");
+
+        if (!string.IsNullOrWhiteSpace(request.ChatMode))
+        {
+            promptBuilder.AppendLine($"ChatMode: {request.ChatMode}");
+        }
+
         promptBuilder.AppendLine($"Language: {request.Language ?? "plaintext"}");
         promptBuilder.AppendLine($"Field: {request.FieldName ?? string.Empty}");
         promptBuilder.AppendLine($"Title: {request.Title ?? string.Empty}");
@@ -439,6 +593,18 @@ public sealed class CopilotController : ControllerBase
             promptBuilder.AppendLine(TrimForPrompt(request.CurrentCode, 12000));
         }
 
+        if (!string.IsNullOrWhiteSpace(layoutContext))
+        {
+            promptBuilder.AppendLine();
+            promptBuilder.AppendLine(layoutContext);
+        }
+
+        if (!string.IsNullOrWhiteSpace(documentationContext))
+        {
+            promptBuilder.AppendLine();
+            promptBuilder.AppendLine(documentationContext);
+        }
+
         promptBuilder.AppendLine();
         promptBuilder.AppendLine("User request:");
         promptBuilder.AppendLine(TrimForPrompt(request.Message, 3000));
@@ -454,6 +620,14 @@ public sealed class CopilotController : ControllerBase
 
     private static string BuildChatSystemPrompt(CopilotChatRequest request)
     {
+        var normalizedChatMode = NormalizeChatMode(request.ChatMode);
+        if (IsHelpRequest(request, normalizedChatMode))
+        {
+            return normalizedChatMode == "site-help"
+                ? "You are an AI help assistant for SkyCMS website teams. Answer general questions about SkyCMS and practical website development guidance for content editors, authors, and administrators. Prioritize clear explanations over code. Use site and page context from the prompt when available (for example UrlPath, DocumentKind, and SectionKind). Do not claim to know unpublished runtime data you have not been given. If details are missing, ask a focused follow-up question."
+                : "You are an AI help assistant for SkyCMS users. Answer general questions about SkyCMS and website development in concise, practical language. This is a non-editor chat experience, so do not assume an active code editor region. Prefer guidance and explanations instead of writing code unless the user explicitly asks for an example snippet.";
+        }
+
         if (IsCkeditorRequest(request))
         {
             var ckBase = "You are an AI writing assistant embedded in the SkyCMS CKEditor experience. The active context is a single rich-text editor region only, not the full page. Help with grammar, tone, clarity, structure, rewriting, summarization, and generating polished copy while preserving the author's intent. Preserve existing HTML structure unless the request explicitly asks to change it. Do not return a full HTML document. When suggesting concrete edits, explain briefly and include the proposed result in a fenced ```html``` block that can be applied directly to the current region, selection, or cursor position.";
@@ -484,6 +658,26 @@ public sealed class CopilotController : ControllerBase
         return string.Equals(request.EditorKind, "ckeditor", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsHelpRequest(CopilotChatRequest request, string? normalizedChatMode)
+    {
+        if (normalizedChatMode is "general-help" or "site-help")
+        {
+            return true;
+        }
+
+        return string.Equals(request.EditorKind, "help", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? NormalizeChatMode(string? chatMode)
+    {
+        if (string.IsNullOrWhiteSpace(chatMode))
+        {
+            return null;
+        }
+
+        return chatMode.Trim().ToLowerInvariant();
+    }
+
     private static string? NormalizeConversationRole(string? role)
     {
         if (string.IsNullOrWhiteSpace(role))
@@ -506,18 +700,6 @@ public sealed class CopilotController : ControllerBase
         }
 
         return text[^maxLength..];
-    }
-
-    private static string ResolveModel(string? configuredModel)
-    {
-        if (string.IsNullOrWhiteSpace(configuredModel))
-        {
-            return DefaultCopilotModel;
-        }
-
-        return configuredModel.Equals("auto", StringComparison.OrdinalIgnoreCase)
-            ? DefaultCopilotModel
-            : configuredModel;
     }
 
     /// <summary>
@@ -559,6 +741,11 @@ public sealed class CopilotController : ControllerBase
         /// Gets or sets the section kind within the document (e.g. layout-head, article-content).
         /// </summary>
         public string? SectionKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets an optional per-request selected model.
+        /// </summary>
+        public string? SelectedModel { get; set; }
     }
 
     /// <summary>
@@ -586,6 +773,11 @@ public sealed class CopilotController : ControllerBase
         /// Gets or sets the editor surface originating the request.
         /// </summary>
         public string? EditorKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the chat mode for non-editor conversations.
+        /// </summary>
+        public string? ChatMode { get; set; }
 
         /// <summary>
         /// Gets or sets the explicit action invoked from the UI.
@@ -666,6 +858,11 @@ public sealed class CopilotController : ControllerBase
         /// Gets or sets the layout ID, when editing a layout.
         /// </summary>
         public string? LayoutId { get; set; }
+
+        /// <summary>
+        /// Gets or sets an optional per-request selected model.
+        /// </summary>
+        public string? SelectedModel { get; set; }
     }
 
     /// <summary>
@@ -701,6 +898,53 @@ public sealed class CopilotController : ControllerBase
     }
 
     /// <summary>
+    /// Request payload for saving a user model preference.
+    /// </summary>
+    public sealed class CopilotModelPreferenceRequest
+    {
+        /// <summary>
+        /// Gets or sets the editor kind.
+        /// </summary>
+        public string? EditorKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the document kind.
+        /// </summary>
+        public string? DocumentKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the selected model.
+        /// </summary>
+        public string? SelectedModel { get; set; }
+    }
+
+    /// <summary>
+    /// Response payload for saving a user model preference.
+    /// </summary>
+    public sealed class CopilotModelPreferenceResponse
+    {
+        /// <summary>
+        /// Gets or sets the provider key.
+        /// </summary>
+        public string ProviderKey { get; set; } = "unknown";
+
+        /// <summary>
+        /// Gets or sets the editor kind.
+        /// </summary>
+        public string? EditorKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the document kind.
+        /// </summary>
+        public string? DocumentKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the selected model.
+        /// </summary>
+        public string? SelectedModel { get; set; }
+    }
+
+    /// <summary>
     /// Response payload for Copilot proxy availability checks.
     /// </summary>
     public sealed class CopilotProxyStatusResponse
@@ -724,11 +968,162 @@ public sealed class CopilotController : ControllerBase
         /// Gets or sets the configured model name.
         /// </summary>
         public string? Model { get; set; }
+
+        /// <summary>
+        /// Gets or sets the raw configured model value.
+        /// </summary>
+        public string? ConfiguredModel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the effective model used when the request is sent.
+        /// </summary>
+        public string? EffectiveModel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the provider key.
+        /// </summary>
+        public string ProviderKey { get; set; } = "unknown";
+
+        /// <summary>
+        /// Gets or sets the provider display name for UI labels.
+        /// </summary>
+        public string ProviderDisplayName { get; set; } = "AI";
+
+        /// <summary>
+        /// Gets or sets a value indicating whether provider model discovery is supported.
+        /// </summary>
+        public bool SupportsModelDiscovery { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether user model selection is supported.
+        /// </summary>
+        public bool SupportsUserModelSelection { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether SkyCMS auto mode is supported.
+        /// </summary>
+        public bool SupportsAutoMode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the discovery state.
+        /// </summary>
+        public string DiscoveryState { get; set; } = AiProviderDiscoveryStates.Unsupported;
+
+        /// <summary>
+        /// Gets or sets the discovery state message.
+        /// </summary>
+        public string DiscoveryStateMessage { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the provider default mode description.
+        /// </summary>
+        public string DefaultModeDescription { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the default selection label for UI pickers.
+        /// </summary>
+        public string DefaultSelectionLabel { get; set; } = "Default";
+
+        /// <summary>
+        /// Gets or sets the user-selected model for the current editor context.
+        /// </summary>
+        public string? SelectedModel { get; set; }
+    }
+
+    /// <summary>
+    /// Response payload for provider model discovery.
+    /// </summary>
+    public sealed class CopilotProxyModelsResponse
+    {
+        /// <summary>
+        /// Gets or sets a value indicating whether AI is enabled.
+        /// </summary>
+        public bool Enabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether required proxy settings are configured.
+        /// </summary>
+        public bool Configured { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the endpoint is configured.
+        /// </summary>
+        public bool EndpointConfigured { get; set; }
+
+        /// <summary>
+        /// Gets or sets the provider key.
+        /// </summary>
+        public string ProviderKey { get; set; } = "unknown";
+
+        /// <summary>
+        /// Gets or sets the provider display name.
+        /// </summary>
+        public string ProviderDisplayName { get; set; } = "AI";
+
+        /// <summary>
+        /// Gets or sets a value indicating whether provider model discovery is supported.
+        /// </summary>
+        public bool SupportsModelDiscovery { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether user model selection is supported.
+        /// </summary>
+        public bool SupportsUserModelSelection { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether SkyCMS auto mode is supported.
+        /// </summary>
+        public bool SupportsAutoMode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the discovery state.
+        /// </summary>
+        public string DiscoveryState { get; set; } = AiProviderDiscoveryStates.Unsupported;
+
+        /// <summary>
+        /// Gets or sets the discovery state message.
+        /// </summary>
+        public string DiscoveryStateMessage { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the provider default mode description.
+        /// </summary>
+        public string DefaultModeDescription { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the default selection label for UI pickers.
+        /// </summary>
+        public string DefaultSelectionLabel { get; set; } = "Default";
+
+        /// <summary>
+        /// Gets or sets the configured model.
+        /// </summary>
+        public string? ConfiguredModel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the effective model.
+        /// </summary>
+        public string? EffectiveModel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the discovery error text.
+        /// </summary>
+        public string? DiscoveryError { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user-selected model for the current editor context.
+        /// </summary>
+        public string? SelectedModel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the available models.
+        /// </summary>
+        public List<AiProviderModelOption> Models { get; set; } = [];
     }
 
     private sealed class UpstreamChatCompletionRequest
     {
-        public string Model { get; set; } = string.Empty;
+        public string? Model { get; set; }
 
         public List<UpstreamChatMessage> Messages { get; set; } = [];
 

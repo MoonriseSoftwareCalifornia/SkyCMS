@@ -60,13 +60,13 @@
 
     // Editor context for AI assistant
     window.ccmsEditorContext = {
-        documentKind: '@(Model.ArticleType == ArticleType.BlogPost ? "blog" : "article")',
+        documentKind: '@(Model.ArticleType.ToString() == "BlogPost" ? "blog" : "article")',
         editorSurface: 'monaco',
         articleType: '@Model.ArticleType',
         category: '@(Model.Category ?? string.Empty)',
         urlPath: '@(Model.UrlPath ?? string.Empty)',
         sectionKindMap: {
-            'Content': '@(Model.ArticleType == ArticleType.BlogPost ? "blog-content" : "article-content")',
+            'Content': '@(Model.ArticleType.ToString() == "BlogPost" ? "blog-content" : "article-content")',
             'HeadJavaScript': 'article-head-script',
             'FooterJavaScript': 'article-footer-script'
         }

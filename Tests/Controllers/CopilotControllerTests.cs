@@ -7,6 +7,7 @@
 
 namespace Sky.Tests.Controllers;
 
+using CopilotController = Cosmos.Cms.Editor.Controllers.AiProxyController;
 using Cosmos.Cms.Editor.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -39,25 +40,112 @@ public class CopilotControllerTests
 
     private Mock<IHttpClientFactory> httpClientFactoryMock = null!;
     private Mock<ICopilotProxyOptionsService> optionsServiceMock = null!;
-    private Mock<ILogger<CopilotController>> loggerMock = null!;
-    private CopilotController controller = null!;
+    private Mock<IAiProviderModelCatalogService> modelCatalogServiceMock = null!;
+    private Mock<IAiUserPreferenceService> userPreferenceServiceMock = null!;
+    private Mock<IAiDocumentationContextService> documentationContextServiceMock = null!;
+    private Mock<IAiLayoutContextService> layoutContextServiceMock = null!;
+    private Mock<ILogger<AiProxyController>> loggerMock = null!;
+    private AiProxyController controller = null!;
 
     [TestInitialize]
     public void Setup()
     {
         httpClientFactoryMock = new Mock<IHttpClientFactory>();
         optionsServiceMock = new Mock<ICopilotProxyOptionsService>();
-        loggerMock = new Mock<ILogger<CopilotController>>();
+        modelCatalogServiceMock = new Mock<IAiProviderModelCatalogService>();
+        userPreferenceServiceMock = new Mock<IAiUserPreferenceService>();
+        documentationContextServiceMock = new Mock<IAiDocumentationContextService>();
+        layoutContextServiceMock = new Mock<IAiLayoutContextService>();
+        loggerMock = new Mock<ILogger<AiProxyController>>();
 
-        controller = new CopilotController(
+        userPreferenceServiceMock
+            .Setup(s => s.GetSelectedModelAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+
+        documentationContextServiceMock
+            .Setup(s => s.GetDocumentationContextAsync(It.IsAny<AiContextEnrichmentRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AiDocumentationContextResult());
+
+        layoutContextServiceMock
+            .Setup(s => s.GetLayoutContextAsync(It.IsAny<AiContextEnrichmentRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AiLayoutContextResult());
+
+        controller = new AiProxyController(
             httpClientFactoryMock.Object,
             optionsServiceMock.Object,
+            modelCatalogServiceMock.Object,
+            userPreferenceServiceMock.Object,
+            documentationContextServiceMock.Object,
+            layoutContextServiceMock.Object,
             loggerMock.Object);
 
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext(),
         };
+    }
+
+    [TestMethod]
+    public async Task Status_WithAzureOpenAiEndpoint_ReturnsInferredDiscoveryState()
+    {
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(new CopilotProxyOptions
+            {
+                Enabled = true,
+                Endpoint = "https://example.openai.azure.com/openai/deployments/editor-deployment/chat/completions?api-version=2024-10-21",
+                AccessToken = "token",
+                Model = "auto",
+            });
+
+        var result = await controller.Status();
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+        var payload = ok.Value as AiProxyController.CopilotProxyStatusResponse;
+        Assert.IsNotNull(payload);
+        Assert.AreEqual("azure-openai", payload.ProviderKey);
+        Assert.AreEqual(AiProviderDiscoveryStates.Inferred, payload.DiscoveryState);
+        Assert.AreEqual("editor-deployment", payload.EffectiveModel);
+    }
+
+    [TestMethod]
+    public async Task Models_WithCatalogDiscoveryState_ReturnsStateAndMessage()
+    {
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(new CopilotProxyOptions
+            {
+                Enabled = true,
+                Endpoint = "https://example.openai.azure.com/openai/deployments/editor-deployment/chat/completions?api-version=2024-10-21",
+                AccessToken = "token",
+                Model = "auto",
+            });
+
+        modelCatalogServiceMock
+            .Setup(s => s.GetCatalogAsync(It.IsAny<CopilotProxyOptions>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AiProviderModelCatalogResult
+            {
+                ProviderKey = "azure-openai",
+                ProviderDisplayName = "Azure OpenAI",
+                SupportsModelDiscovery = true,
+                DiscoveryState = AiProviderDiscoveryStates.Inferred,
+                DiscoveryStateMessage = "SkyCMS inferred the Azure OpenAI deployment from the configured endpoint.",
+                Models =
+                [
+                    new AiProviderModelOption { Id = "editor-deployment", DisplayName = "editor-deployment", Recommended = true },
+                ],
+            });
+
+        var result = await controller.Models();
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+        var payload = ok.Value as AiProxyController.CopilotProxyModelsResponse;
+        Assert.IsNotNull(payload);
+        Assert.AreEqual(AiProviderDiscoveryStates.Inferred, payload.DiscoveryState);
+        Assert.IsTrue(payload.DiscoveryStateMessage.Contains("inferred", StringComparison.OrdinalIgnoreCase));
+        Assert.AreEqual(1, payload.Models.Count);
     }
 
     [TestMethod]
@@ -71,7 +159,7 @@ public class CopilotControllerTests
     [TestMethod]
     public async Task Complete_WithEmptyPrefix_ReturnsEmptyResponse()
     {
-        var request = new CopilotController.CopilotCompletionRequest
+        var request = new AiProxyController.CopilotCompletionRequest
         {
             Prefix = string.Empty,
         };
@@ -80,7 +168,7 @@ public class CopilotControllerTests
 
         var ok = result as OkObjectResult;
         Assert.IsNotNull(ok);
-        var payload = ok.Value as CopilotController.CopilotCompletionResponse;
+        var payload = ok.Value as AiProxyController.CopilotCompletionResponse;
         Assert.IsNotNull(payload);
         Assert.IsNull(payload.Completion);
         Assert.AreEqual(0, payload.Completions.Count);
@@ -93,7 +181,7 @@ public class CopilotControllerTests
             .Setup(s => s.GetOptionsAsync())
             .ReturnsAsync(new CopilotProxyOptions { Enabled = false });
 
-        var request = new CopilotController.CopilotCompletionRequest
+        var request = new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public class Demo",
         };
@@ -117,7 +205,7 @@ public class CopilotControllerTests
                 AccessToken = string.Empty,
             });
 
-        var request = new CopilotController.CopilotCompletionRequest
+        var request = new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public class Demo",
         };
@@ -146,7 +234,7 @@ public class CopilotControllerTests
         var httpClient = CreateHttpClient((_, _) => new HttpResponseMessage(HttpStatusCode.BadGateway));
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var request = new CopilotController.CopilotCompletionRequest
+        var request = new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public class Demo",
         };
@@ -176,7 +264,7 @@ public class CopilotControllerTests
         var httpClient = CreateHttpClient((_, _) => throw new OperationCanceledException());
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var request = new CopilotController.CopilotCompletionRequest
+        var request = new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public class Demo",
         };
@@ -218,7 +306,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var requestModel = new CopilotController.CopilotCompletionRequest
+        var requestModel = new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "if (isValid)\n{\n    ",
             Language = "csharp",
@@ -229,7 +317,7 @@ public class CopilotControllerTests
         var ok = result as OkObjectResult;
         Assert.IsNotNull(ok);
 
-        var payload = ok.Value as CopilotController.CopilotCompletionResponse;
+        var payload = ok.Value as AiProxyController.CopilotCompletionResponse;
         Assert.IsNotNull(payload);
         Assert.AreEqual("return true;", payload.Completion);
         Assert.AreEqual(1, payload.Completions.Count);
@@ -264,7 +352,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var request = new CopilotController.CopilotCompletionRequest
+        var request = new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public class Demo",
         };
@@ -273,7 +361,7 @@ public class CopilotControllerTests
 
         var ok = result as OkObjectResult;
         Assert.IsNotNull(ok);
-        var payload = ok.Value as CopilotController.CopilotCompletionResponse;
+        var payload = ok.Value as AiProxyController.CopilotCompletionResponse;
         Assert.IsNotNull(payload);
         Assert.IsNull(payload.Completion);
         Assert.AreEqual(0, payload.Completions.Count);
@@ -296,7 +384,7 @@ public class CopilotControllerTests
         var httpClient = CreateHttpClient((_, _) => throw new InvalidOperationException("boom"));
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var request = new CopilotController.CopilotCompletionRequest
+        var request = new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public class Demo",
         };
@@ -337,7 +425,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var requestModel = new CopilotController.CopilotChatRequest
+        var requestModel = new AiProxyController.CopilotChatRequest
         {
             EditorKind = "ckeditor",
             Action = "improve-selection",
@@ -400,7 +488,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
         {
             Action = "fix-syntax",
             Message = "Fix this method.",
@@ -424,7 +512,7 @@ public class CopilotControllerTests
     [TestCategory("Integration")]
     public async Task Complete_WithLiveGitHubCopilotConnection_ReturnsCompletion()
     {
-        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        var payload = await ExecuteLiveCompletionAsync(new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public static int Add(int a, int b)\n{\n    ",
             Language = "csharp",
@@ -438,7 +526,7 @@ public class CopilotControllerTests
     [TestCategory("Integration")]
     public async Task Complete_WithLiveGitHubCopilotRazorScenario_ReturnsCompletion()
     {
-        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        var payload = await ExecuteLiveCompletionAsync(new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "@if (Model.Items?.Any() == true)\n{\n    <ul>\n        ",
             Suffix = "\n    </ul>\n}",
@@ -455,7 +543,7 @@ public class CopilotControllerTests
     [TestCategory("Integration")]
     public async Task Complete_WithLiveGitHubCopilotUnitTestScenario_ReturnsCompletion()
     {
-        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        var payload = await ExecuteLiveCompletionAsync(new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "[TestMethod]\npublic void Add_WhenPositiveValues_ReturnsSum()\n{\n    var result = Add(2, 3);\n    ",
             Language = "csharp",
@@ -471,7 +559,7 @@ public class CopilotControllerTests
     [TestCategory("Integration")]
     public async Task Complete_WithLiveGitHubCopilotNullSafetyScenario_ReturnsCompletion()
     {
-        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        var payload = await ExecuteLiveCompletionAsync(new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public static string GetDisplayName(User? user)\n{\n    ",
             Language = "csharp",
@@ -488,7 +576,7 @@ public class CopilotControllerTests
     {
         const string suffixMarker = "/* END_MARKER */";
 
-        var payload = await ExecuteLiveCompletionAsync(new CopilotController.CopilotCompletionRequest
+        var payload = await ExecuteLiveCompletionAsync(new AiProxyController.CopilotCompletionRequest
         {
             Prefix = "public static int Multiply(int x, int y)\n{\n    var result = x * y;\n    ",
             Suffix = $"\n{suffixMarker}\n}}",
@@ -505,8 +593,8 @@ public class CopilotControllerTests
         return new HttpClient(handler);
     }
 
-    private async Task<CopilotController.CopilotCompletionResponse> ExecuteLiveCompletionAsync(
-        CopilotController.CopilotCompletionRequest request)
+    private async Task<AiProxyController.CopilotCompletionResponse> ExecuteLiveCompletionAsync(
+        AiProxyController.CopilotCompletionRequest request)
     {
         if (!IsLiveTestEnabled())
         {
@@ -547,14 +635,14 @@ public class CopilotControllerTests
         var ok = result as OkObjectResult;
         Assert.IsNotNull(ok);
 
-        var payload = ok.Value as CopilotController.CopilotCompletionResponse;
+        var payload = ok.Value as AiProxyController.CopilotCompletionResponse;
         Assert.IsNotNull(payload);
 
         AssertLiveCompletionShape(payload);
         return payload;
     }
 
-    private static void AssertLiveCompletionShape(CopilotController.CopilotCompletionResponse payload)
+    private static void AssertLiveCompletionShape(AiProxyController.CopilotCompletionResponse payload)
     {
         Assert.IsFalse(string.IsNullOrWhiteSpace(payload.Completion));
         Assert.IsTrue(payload.Completions.Count > 0);
@@ -642,7 +730,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
         {
             Action = "chat",
             Message = "Help with the head section.",
@@ -688,7 +776,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
         {
             Action = "chat",
             Message = "Help with the header region.",
@@ -731,7 +819,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
         {
             Action = "chat",
             Message = "Add a content placeholder.",
@@ -773,7 +861,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
         {
             EditorKind = "ckeditor",
             Action = "improve-selection",
@@ -827,7 +915,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
         {
             Action = "fix-syntax",
             Message = "Fix the markup.",
@@ -873,7 +961,7 @@ public class CopilotControllerTests
 
         httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
 
-        var result = await controller.Chat(new CopilotController.CopilotChatRequest
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
         {
             Action = "chat",
             Message = "Help with this code.",
@@ -888,6 +976,112 @@ public class CopilotControllerTests
 
         Assert.IsNotNull(systemPrompt);
         Assert.IsTrue(systemPrompt.Contains("AI coding assistant", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithGeneralHelpMode_UsesGeneralHelpSystemPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+            Model = "gpt-4o-mini",
+            MaxTokens = 512,
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        string? capturedJson = null;
+
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Use the Editor menu to manage pages.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
+        {
+            EditorKind = "help",
+            ChatMode = "general-help",
+            Action = "chat",
+            Message = "How do I manage page drafts in SkyCMS?",
+        });
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("AI help assistant", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(systemPrompt.Contains("non-editor chat", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(systemPrompt.Contains("AI coding assistant", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithSiteHelpMode_UsesSiteAwareHelpSystemPrompt()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+            Model = "gpt-4o-mini",
+            MaxTokens = 512,
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        string? capturedJson = null;
+
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Review your /about/team page hierarchy first.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
+        {
+            EditorKind = "help",
+            ChatMode = "site-help",
+            Action = "site-help",
+            Message = "Where should team bios live on this site?",
+            UrlPath = "about/team",
+            DocumentKind = "article",
+        });
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        var userPrompt = document.RootElement.GetProperty("messages")[1].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("website teams", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(systemPrompt.Contains("site and page context", StringComparison.OrdinalIgnoreCase));
+
+        Assert.IsNotNull(userPrompt);
+        Assert.IsTrue(userPrompt.Contains("ChatMode: site-help", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("UrlPath: about/team", StringComparison.Ordinal));
     }
 
     private sealed class DelegateHttpMessageHandler : HttpMessageHandler

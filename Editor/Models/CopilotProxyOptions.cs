@@ -10,7 +10,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Sky.Editor.Models;
 
 /// <summary>
-/// Configuration for the server-side GitHub Copilot-compatible completion proxy.
+/// Configuration for the server-side AI completion proxy.
 /// </summary>
 public sealed class CopilotProxyOptions
 {
@@ -27,7 +27,7 @@ public sealed class CopilotProxyOptions
 
     /// <summary>
     /// Gets or sets the upstream model identifier.
-    /// Use "auto" to let the server choose a default model.
+    /// Use "auto" to let SkyCMS select the provider default behavior.
     /// </summary>
     public string Model { get; set; } = "auto";
 

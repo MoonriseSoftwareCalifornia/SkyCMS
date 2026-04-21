@@ -81,6 +81,7 @@
             <div id="ckeditorCopilotSubtitle" class="copilot-chat-subtitle">Scoped to the current editor region.</div>
         </div>
         <div class="ckeditor-copilot-window-actions">
+            <a class="btn btn-sm btn-outline-light" href="/Editor/AiHelp?popup=1&launchMode=detached" target="_blank" rel="noopener" aria-label="Open AI help chat in a separate window">Detach</a>
             <button id="btnCkeditorCopilotMinimize" type="button" class="btn btn-sm btn-outline-light" aria-label="Minimize AI assistant">_</button>
             <button id="btnCkeditorCopilotClose" type="button" class="btn btn-sm btn-outline-light" aria-label="Close AI assistant">Close</button>
         </div>
@@ -93,6 +94,17 @@
             <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="shorten-selection">Shorten</button>
             <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="expand-selection">Expand</button>
             <button type="button" class="btn btn-sm btn-secondary" data-copilot-action="replace-block">Replace block</button>
+        </div>
+
+        <div class="copilot-model-row px-3 pt-2">
+            <label class="form-label form-label-sm mb-0" for="ckeditorCopilotModelSelect">Model</label>
+            <div class="d-flex gap-2">
+                <select id="ckeditorCopilotModelSelect" class="form-select form-select-sm" disabled>
+                    <option value="">Default</option>
+                </select>
+                <button id="btnCkeditorRefreshModels" type="button" class="btn btn-sm btn-outline-light">Refresh</button>
+            </div>
+            <div id="ckeditorCopilotModelHelp" class="copilot-model-help"></div>
         </div>
 
         <div id="ckeditorCopilotMessages" class="copilot-chat-messages">
@@ -182,9 +194,9 @@
 
     // Editor context for AI assistant
     window.ccmsEditorContext = {
-        documentKind: '@(Model.ArticleType == ArticleType.BlogPost ? "blog" : "article")',
+        documentKind: '@(Model.ArticleType.ToString() == "BlogPost" ? "blog" : "article")',
         editorSurface: 'ckeditor',
-        sectionKind: '@(Model.ArticleType == ArticleType.BlogPost ? "blog-content" : "article-content")',
+        sectionKind: '@(Model.ArticleType.ToString() == "BlogPost" ? "blog-content" : "article-content")',
         articleType: '@Model.ArticleType',
         category: '@(Model.Category ?? string.Empty)',
         urlPath: '@(Model.UrlPath ?? string.Empty)'

@@ -1,9 +1,73 @@
 (function () {
+    function getAiModelSelectionState() {
+        if (!window.ccmsAiModelSelection) {
+            window.ccmsAiModelSelection = {
+                selectedModel: null,
+                status: null,
+                catalog: null
+            };
+        }
+
+        return window.ccmsAiModelSelection;
+    }
+
+    function getAiPreferenceContext() {
+        const editorContext = window.ccmsEditorContext || {};
+        return {
+            editorKind: editorContext.editorSurface || 'ckeditor',
+            documentKind: editorContext.documentKind || null
+        };
+    }
+
+    function buildPreferenceQueryString() {
+        const context = getAiPreferenceContext();
+        const params = new URLSearchParams();
+        if (context.editorKind) {
+            params.set('editorKind', context.editorKind);
+        }
+
+        if (context.documentKind) {
+            params.set('documentKind', context.documentKind);
+        }
+
+        return params.toString();
+    }
+
+    async function normalizeSelectedModelAgainstCatalog(catalog, savePreference) {
+        const state = getAiModelSelectionState();
+        const supportsSelection = !!(catalog && (catalog.supportsUserModelSelection ?? catalog.SupportsUserModelSelection));
+        const models = catalog && (catalog.models ?? catalog.Models) ? (catalog.models ?? catalog.Models) : [];
+        if (!supportsSelection || !state.selectedModel) {
+            if (!supportsSelection && state.selectedModel) {
+                state.selectedModel = null;
+                if (savePreference) {
+                    await savePreference(null);
+                }
+            }
+
+            return;
+        }
+
+        const selectionExists = models.some((model) => {
+            const modelId = model.id ?? model.Id ?? '';
+            return modelId.toLowerCase() === state.selectedModel.toLowerCase();
+        });
+
+        if (!selectionExists) {
+            state.selectedModel = null;
+            if (savePreference) {
+                await savePreference(null);
+            }
+        }
+    }
+
     class CkeditorCopilotChat {
         constructor() {
             this.initialized = false;
             this.status = null;
             this.statusPromise = null;
+            this.catalog = null;
+            this.catalogPromise = null;
             this.available = false;
             this.isSending = false;
             this.nextMessageId = 1;
@@ -49,6 +113,9 @@
             this.clearButton = document.getElementById('btnCkeditorCopilotClear');
             this.closeButton = document.getElementById('btnCkeditorCopilotClose');
             this.minimizeButton = document.getElementById('btnCkeditorCopilotMinimize');
+            this.modelSelect = document.getElementById('ckeditorCopilotModelSelect');
+            this.modelHelp = document.getElementById('ckeditorCopilotModelHelp');
+            this.refreshModelsButton = document.getElementById('btnCkeditorRefreshModels');
             this.actionButtons = Array.from(document.querySelectorAll('#ckeditorCopilotWindow [data-copilot-action]'));
         }
 
@@ -92,6 +159,27 @@
             if (this.minimizeButton) {
                 this.minimizeButton.addEventListener('click', () => {
                     this.windowElement.classList.toggle('is-minimized');
+                });
+            }
+
+            if (this.modelSelect) {
+                this.modelSelect.addEventListener('change', async () => {
+                    const previousSelection = getAiModelSelectionState().selectedModel;
+                    getAiModelSelectionState().selectedModel = this.modelSelect.value || null;
+                    this.updateAvailability();
+
+                    const saved = await this.saveSelectedModelPreference(getAiModelSelectionState().selectedModel);
+                    if (!saved) {
+                        getAiModelSelectionState().selectedModel = previousSelection;
+                        this.updateAvailability();
+                        this.updateModelPicker();
+                    }
+                });
+            }
+
+            if (this.refreshModelsButton) {
+                this.refreshModelsButton.addEventListener('click', async () => {
+                    await this.loadModelCatalog(true);
                 });
             }
 
@@ -149,8 +237,9 @@
             this.statusPromise = this.getStatus()
                 .then((status) => {
                     this.status = status;
+                    this.syncStateFromStatus();
                     this.updateAvailability();
-                    return status;
+                    return this.loadModelCatalog().then(() => status);
                 })
                 .finally(() => {
                     this.statusPromise = null;
@@ -161,7 +250,8 @@
 
         async getStatus() {
             try {
-                const response = await fetch('/api/copilot/status', {
+                const queryString = buildPreferenceQueryString();
+                const response = await fetch(`/api/ai-proxy/status${queryString ? `?${queryString}` : ''}`, {
                     method: 'GET',
                     credentials: 'same-origin',
                     headers: {
@@ -182,7 +272,7 @@
         updateAvailability() {
             const enabled = this.status && (this.status.enabled ?? this.status.Enabled);
             const configured = this.status && (this.status.configured ?? this.status.Configured);
-            const model = this.status && (this.status.model ?? this.status.Model);
+            const model = this.getDisplayedModel();
             this.available = !!(enabled && configured);
 
             if (!this.activeEditorId) {
@@ -205,8 +295,150 @@
                 button.disabled = !this.available;
             });
 
+            this.updateModelPicker();
+
             if (!this.available) {
                 this.showStatus('AI chat is unavailable for this tenant right now.');
+            }
+        }
+
+        syncStateFromStatus() {
+            getAiModelSelectionState().status = this.status;
+            getAiModelSelectionState().selectedModel = this.status && ((this.status.selectedModel ?? this.status.SelectedModel) || null);
+        }
+
+        async loadModelCatalog(forceRefresh) {
+            if (this.catalogPromise && !forceRefresh) {
+                return this.catalogPromise;
+            }
+
+            const enabled = this.status && (this.status.enabled ?? this.status.Enabled);
+            const configured = this.status && (this.status.configured ?? this.status.Configured);
+            if (!(enabled && configured)) {
+                this.catalog = null;
+                this.updateModelPicker();
+                return null;
+            }
+
+            const params = new URLSearchParams(buildPreferenceQueryString());
+            if (forceRefresh) {
+                params.set('forceRefresh', 'true');
+            }
+
+            const queryString = params.toString();
+            this.catalogPromise = fetch(`/api/ai-proxy/models${queryString ? `?${queryString}` : ''}`, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json'
+                }
+            })
+                .then(async (response) => {
+                    if (!response.ok) {
+                        return null;
+                    }
+
+                    return await response.json();
+                })
+                .catch(() => null)
+                .finally(() => {
+                    this.catalogPromise = null;
+                });
+
+            this.catalog = await this.catalogPromise;
+            getAiModelSelectionState().catalog = this.catalog;
+            if (this.catalog) {
+                const selectedModel = this.catalog.selectedModel ?? this.catalog.SelectedModel;
+                if (selectedModel !== undefined) {
+                    getAiModelSelectionState().selectedModel = selectedModel || null;
+                }
+            }
+
+            await normalizeSelectedModelAgainstCatalog(this.catalog, (selectedModel) => this.saveSelectedModelPreference(selectedModel));
+            this.updateModelPicker();
+            return this.catalog;
+        }
+
+        async saveSelectedModelPreference(selectedModel) {
+            try {
+                const context = getAiPreferenceContext();
+                const response = await fetch('/api/ai-proxy/preferences/model', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json'
+                    },
+                    body: JSON.stringify({
+                        editorKind: context.editorKind,
+                        documentKind: context.documentKind,
+                        selectedModel: selectedModel
+                    })
+                });
+
+                return response.ok;
+            } catch {
+                return false;
+            }
+        }
+
+        getDisplayedModel() {
+            const selectedModel = getAiModelSelectionState().selectedModel;
+            if (selectedModel) {
+                return selectedModel;
+            }
+
+            return this.status && ((this.status.effectiveModel ?? this.status.EffectiveModel) || (this.status.model ?? this.status.Model));
+        }
+
+        getSelectedModel() {
+            return getAiModelSelectionState().selectedModel || null;
+        }
+
+        updateModelPicker() {
+            if (!this.modelSelect) {
+                return;
+            }
+
+            const catalog = this.catalog || getAiModelSelectionState().catalog;
+            const supportsSelection = !!(catalog && (catalog.supportsUserModelSelection ?? catalog.SupportsUserModelSelection));
+            const discoveryStateMessage = catalog && (catalog.discoveryStateMessage ?? catalog.DiscoveryStateMessage);
+            const discoveryError = catalog && (catalog.discoveryError ?? catalog.DiscoveryError);
+            const models = catalog && (catalog.models ?? catalog.Models) ? (catalog.models ?? catalog.Models) : [];
+            const defaultSelectionLabel = (catalog && (catalog.defaultSelectionLabel ?? catalog.DefaultSelectionLabel))
+                || (this.status && (this.status.defaultSelectionLabel ?? this.status.DefaultSelectionLabel))
+                || 'Default';
+            const currentValue = getAiModelSelectionState().selectedModel || '';
+
+            this.modelSelect.innerHTML = '';
+
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = defaultSelectionLabel;
+            this.modelSelect.appendChild(defaultOption);
+
+            models.forEach((model) => {
+                const option = document.createElement('option');
+                option.value = model.id ?? model.Id ?? '';
+                option.textContent = model.displayName ?? model.DisplayName ?? option.value;
+                this.modelSelect.appendChild(option);
+            });
+
+            this.modelSelect.value = currentValue;
+            this.modelSelect.disabled = !supportsSelection || models.length === 0 || !this.available;
+
+            if (this.refreshModelsButton) {
+                this.refreshModelsButton.disabled = !this.available;
+            }
+
+            if (this.modelHelp) {
+                if (discoveryError) {
+                    this.modelHelp.textContent = discoveryError;
+                } else if (supportsSelection && models.length > 0) {
+                    this.modelHelp.textContent = 'Select a model for this editor context. Your choice is saved for your account on this site. Leaving the selector on Default uses the tenant default behavior.';
+                } else {
+                    this.modelHelp.textContent = discoveryStateMessage || defaultSelectionLabel;
+                }
             }
         }
 
@@ -327,7 +559,7 @@
             this.renderMessages();
 
             try {
-                const response = await fetch('/api/copilot/chat', {
+                const response = await fetch('/api/ai-proxy/chat', {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: {
@@ -395,6 +627,7 @@
                 editorKind: 'ckeditor',
                 action: action,
                 message: message,
+                selectedModel: this.getSelectedModel(),
                 selection: context.selectedHtml,
                 currentCode: context.currentHtml,
                 language: 'html',
@@ -597,6 +830,11 @@
 
             const contentChanged = this.hashText(editor.getData()) !== message.context.contentFingerprint;
 
+            if (contentChanged && mode !== 'replaceBlock') {
+                this.showStatus('This editor region changed since the suggestion was generated. Ask AI again to refresh the suggestion, or use Replace block if you want to overwrite the whole region.');
+                return;
+            }
+
             try {
                 if (mode === 'replaceBlock') {
                     editor.setData(suggestedHtml);
@@ -625,8 +863,8 @@
                 }
 
                 editor.editing.view.focus();
-                this.showStatus(contentChanged && mode !== 'replaceBlock'
-                    ? 'Applied the suggestion using the saved cursor or selection, but the region had changed since the response was generated.'
+                this.showStatus(contentChanged
+                    ? 'Applied the AI suggestion by replacing the full editor region.'
                     : 'Applied the AI suggestion to the editor.');
             } catch {
                 this.showStatus('Could not apply that suggestion to the editor.');

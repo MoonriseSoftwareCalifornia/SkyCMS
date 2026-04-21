@@ -20,6 +20,7 @@ namespace Sky.Tests.Controllers
     using Sky.Editor.Features.Copilot.SaveSettings;
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
+    using Sky.Editor.Services.Copilot;
     using Sky.Editor.Services.EditorSettings;
     using System;
     using System.Collections.Generic;
@@ -40,6 +41,7 @@ namespace Sky.Tests.Controllers
         private Mock<IMediator> mediatorMock;
         private Mock<IEditorSettings> editorSettingsMock;
         private Mock<ICdnServiceFactory> cdnServiceFactoryMock;
+        private Mock<IAiProviderModelCatalogService> aiProviderModelCatalogServiceMock;
         private SkyCmsSettingsController controller;
 
         [TestInitialize]
@@ -56,6 +58,7 @@ namespace Sky.Tests.Controllers
             mediatorMock = new Mock<IMediator>();
             editorSettingsMock = new Mock<IEditorSettings>();
             cdnServiceFactoryMock = new Mock<ICdnServiceFactory>();
+            aiProviderModelCatalogServiceMock = new Mock<IAiProviderModelCatalogService>();
 
             mediatorMock
                 .Setup(m => m.QueryAsync(It.IsAny<GetCopilotProxyOptionsQuery>(), It.IsAny<CancellationToken>()))
@@ -87,13 +90,23 @@ namespace Sky.Tests.Controllers
                 .ReturnsAsync((ApplicationDbContext db, ILogger log, HttpContext ctx) =>
                     new CdnService(new List<CdnSetting>(), log, ctx));
 
+            aiProviderModelCatalogServiceMock
+                .Setup(s => s.GetCatalogAsync(It.IsAny<CopilotProxyOptions>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AiProviderModelCatalogResult
+                {
+                    ProviderKey = "unknown",
+                    ProviderDisplayName = "AI",
+                    DefaultModeDescription = "Use the configured model or provider default.",
+                });
+
             // Create controller
             controller = new SkyCmsSettingsController(
                 dbContext,
                 mediatorMock.Object,
                 loggerMock.Object,
                 editorSettingsMock.Object,
-                cdnServiceFactoryMock.Object);
+                cdnServiceFactoryMock.Object,
+                aiProviderModelCatalogServiceMock.Object);
 
             // Setup HttpContext
             controller.ControllerContext = new ControllerContext
@@ -115,7 +128,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new SkyCmsSettingsController(null, mediatorMock.Object, loggerMock.Object, editorSettingsMock.Object, cdnServiceFactoryMock.Object));
+                new SkyCmsSettingsController(null, mediatorMock.Object, loggerMock.Object, editorSettingsMock.Object, cdnServiceFactoryMock.Object, aiProviderModelCatalogServiceMock.Object));
         }
 
         [TestMethod]
@@ -123,7 +136,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new SkyCmsSettingsController(dbContext, null, loggerMock.Object, editorSettingsMock.Object, cdnServiceFactoryMock.Object));
+                new SkyCmsSettingsController(dbContext, null, loggerMock.Object, editorSettingsMock.Object, cdnServiceFactoryMock.Object, aiProviderModelCatalogServiceMock.Object));
         }
 
         [TestMethod]
@@ -131,7 +144,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new SkyCmsSettingsController(dbContext, mediatorMock.Object, null, editorSettingsMock.Object, cdnServiceFactoryMock.Object));
+                new SkyCmsSettingsController(dbContext, mediatorMock.Object, null, editorSettingsMock.Object, cdnServiceFactoryMock.Object, aiProviderModelCatalogServiceMock.Object));
         }
 
         [TestMethod]
@@ -139,7 +152,7 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new SkyCmsSettingsController(dbContext, mediatorMock.Object, loggerMock.Object, null, cdnServiceFactoryMock.Object));
+                new SkyCmsSettingsController(dbContext, mediatorMock.Object, loggerMock.Object, null, cdnServiceFactoryMock.Object, aiProviderModelCatalogServiceMock.Object));
         }
 
         [TestMethod]
@@ -147,7 +160,15 @@ namespace Sky.Tests.Controllers
         {
             // Arrange & Act & Assert
             _ = Assert.Throws<ArgumentNullException>(() =>
-                new SkyCmsSettingsController(dbContext, mediatorMock.Object, loggerMock.Object, editorSettingsMock.Object, null));
+                new SkyCmsSettingsController(dbContext, mediatorMock.Object, loggerMock.Object, editorSettingsMock.Object, null, aiProviderModelCatalogServiceMock.Object));
+        }
+
+        [TestMethod]
+        public void Constructor_WithNullAiProviderModelCatalogService_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            _ = Assert.Throws<ArgumentNullException>(() =>
+                new SkyCmsSettingsController(dbContext, mediatorMock.Object, loggerMock.Object, editorSettingsMock.Object, cdnServiceFactoryMock.Object, null));
         }
 
         #endregion
@@ -790,6 +811,137 @@ namespace Sky.Tests.Controllers
             mediatorMock.Verify(
                 m => m.SendAsync(It.IsAny<RemoveCopilotProxyOptionsCommand>(), It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [TestMethod]
+        public async Task PreviewAiProviderModels_WithOpenAiOptions_ReturnsCatalogResponse()
+        {
+            // Arrange
+            aiProviderModelCatalogServiceMock
+                .Setup(s => s.GetCatalogAsync(It.IsAny<CopilotProxyOptions>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AiProviderModelCatalogResult
+                {
+                    ProviderKey = "openai",
+                    ProviderDisplayName = "OpenAI",
+                    SupportsModelDiscovery = true,
+                    SupportsUserModelSelection = true,
+                    SupportsAutoMode = true,
+                    DefaultModeDescription = "SkyCMS auto resolves to gpt-4o-mini.",
+                    Models =
+                    [
+                        new AiProviderModelOption { Id = "gpt-4o-mini", DisplayName = "gpt-4o-mini", Recommended = true },
+                        new AiProviderModelOption { Id = "gpt-4.1", DisplayName = "gpt-4.1" },
+                    ],
+                });
+
+            var request = new SkyCmsSettingsController.AiProviderModelPreviewRequest
+            {
+                Endpoint = "https://api.openai.com/v1/chat/completions",
+                Model = "auto",
+                AccessToken = "secret",
+            };
+
+            // Act
+            var result = await controller.PreviewAiProviderModels(request);
+
+            // Assert
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+            var response = okResult.Value as SkyCmsSettingsController.AiProviderModelPreviewResponse;
+            Assert.IsNotNull(response);
+            Assert.AreEqual("openai", response.ProviderKey);
+            Assert.AreEqual("gpt-4o-mini", response.EffectiveModel);
+            Assert.AreEqual(2, response.Models.Count);
+            Assert.AreEqual("Auto (gpt-4o-mini)", response.DefaultSelectionLabel);
+            Assert.IsFalse(response.UsedFreshLoad);
+            Assert.AreEqual("Cached provider result", response.PreviewLoadLabel);
+        }
+
+        [TestMethod]
+        public async Task PreviewAiProviderModels_WithAzureOpenAiInferredCatalog_ReturnsDiscoveryState()
+        {
+            aiProviderModelCatalogServiceMock
+                .Setup(s => s.GetCatalogAsync(It.IsAny<CopilotProxyOptions>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AiProviderModelCatalogResult
+                {
+                    ProviderKey = "azure-openai",
+                    ProviderDisplayName = "Azure OpenAI",
+                    SupportsModelDiscovery = true,
+                    SupportsUserModelSelection = false,
+                    SupportsAutoMode = false,
+                    DiscoveryState = AiProviderDiscoveryStates.Inferred,
+                    DiscoveryStateMessage = "SkyCMS inferred the Azure OpenAI deployment from the configured endpoint.",
+                    DefaultModeDescription = "The deployment in the endpoint URL is the default model.",
+                    Models =
+                    [
+                        new AiProviderModelOption { Id = "editor-deployment", DisplayName = "editor-deployment", Recommended = true },
+                    ],
+                });
+
+            var request = new SkyCmsSettingsController.AiProviderModelPreviewRequest
+            {
+                Endpoint = "https://example.openai.azure.com/openai/deployments/editor-deployment/chat/completions?api-version=2024-10-21",
+                Model = "auto",
+                AccessToken = "secret",
+            };
+
+            var result = await controller.PreviewAiProviderModels(request);
+
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+            var response = okResult.Value as SkyCmsSettingsController.AiProviderModelPreviewResponse;
+            Assert.IsNotNull(response);
+            Assert.AreEqual(AiProviderDiscoveryStates.Inferred, response.DiscoveryState);
+            Assert.AreEqual("editor-deployment", response.EffectiveModel);
+            Assert.AreEqual(1, response.Models.Count);
+        }
+
+        [TestMethod]
+        public async Task PreviewAiProviderModels_WithForceRefresh_ReturnsFreshLoadLabel()
+        {
+            aiProviderModelCatalogServiceMock
+                .Setup(s => s.GetCatalogAsync(It.IsAny<CopilotProxyOptions>(), true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AiProviderModelCatalogResult
+                {
+                    ProviderKey = "openai",
+                    ProviderDisplayName = "OpenAI",
+                    SupportsModelDiscovery = true,
+                    SupportsUserModelSelection = true,
+                    SupportsAutoMode = true,
+                    DiscoveryState = AiProviderDiscoveryStates.LiveCatalog,
+                    DiscoveryStateMessage = "Loaded the live OpenAI model catalog.",
+                    Models =
+                    [
+                        new AiProviderModelOption { Id = "gpt-4o-mini", DisplayName = "gpt-4o-mini", Recommended = true },
+                    ],
+                });
+
+            var request = new SkyCmsSettingsController.AiProviderModelPreviewRequest
+            {
+                Endpoint = "https://api.openai.com/v1/chat/completions",
+                Model = "auto",
+                AccessToken = "secret",
+                ForceRefresh = true,
+            };
+
+            var result = await controller.PreviewAiProviderModels(request);
+
+            var okResult = result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+            var response = okResult.Value as SkyCmsSettingsController.AiProviderModelPreviewResponse;
+            Assert.IsNotNull(response);
+            Assert.IsTrue(response.UsedFreshLoad);
+            Assert.AreEqual("Fresh provider read", response.PreviewLoadLabel);
+        }
+
+        [TestMethod]
+        public async Task PreviewAiProviderModels_WithNullRequest_ReturnsBadRequest()
+        {
+            // Act
+            var result = await controller.PreviewAiProviderModels(null);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         #endregion

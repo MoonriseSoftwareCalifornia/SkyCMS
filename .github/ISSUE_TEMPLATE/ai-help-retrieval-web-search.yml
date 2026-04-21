@@ -1,0 +1,125 @@
+name: "Feature Request: AI Help Retrieval + Web Search"
+description: "Request grounded AI Help chat using SkyCMS docs and optional external web retrieval."
+title: "[Feature]: AI Help retrieval/web-search integration"
+labels:
+  - enhancement
+  - ai
+  - editor
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request or refine the AI Help retrieval/web-search feature.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One concise paragraph describing the request.
+      placeholder: Add a retrieval layer to AI Help so answers are grounded in SkyCMS docs, with optional external search.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What user pain does this solve today?
+      placeholder: AI Help answers can be generic/stale and do not show citations.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: goals
+    attributes:
+      label: Goals
+      options:
+        - label: Ground answers in SkyCMS documentation
+        - label: Return source citations in responses
+        - label: Support optional external retrieval under policy controls
+        - label: Preserve existing Monaco/CKEditor chat behavior
+
+  - type: checkboxes
+    id: retrieval_scope
+    attributes:
+      label: Retrieval scope
+      description: Select intended scope for this request.
+      options:
+        - label: Docs-only (SkyCMS first-party docs)
+        - label: Docs + approved external domains
+        - label: Open web search
+
+  - type: textarea
+    id: architecture
+    attributes:
+      label: Proposed architecture
+      description: Describe key components/services/contract changes.
+      placeholder: |
+        - Add IAiRetrievalService (scoped)
+        - Integrate retrieval in AiProxyController.Chat help path
+        - Add request flags (AllowExternalSearch, RetrievalMode, MaxSources)
+        - Add response metadata (Sources[])
+    validations:
+      required: true
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and governance requirements
+      description: Tenant controls, allowlist/blocklist, limits, logging, etc.
+      placeholder: External retrieval disabled by default; tenant allowlist required.
+
+  - type: textarea
+    id: performance
+    attributes:
+      label: Performance and cost controls
+      description: Timeouts, max results, cache strategy, token budgets.
+      placeholder: Retrieval timeout 1-2s, max 5 sources, short TTL cache.
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List testable outcomes.
+      placeholder: |
+        1. Help chat returns citations for docs-grounded answers.
+        2. External retrieval is disabled unless explicitly enabled.
+        3. Existing editor chat behavior is unchanged.
+    validations:
+      required: true
+
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Test plan
+      description: Specify required tests and validation paths.
+      placeholder: |
+        - Add controller tests for retrieval on/off and citation payload shape.
+        - Add retrieval service unit tests.
+        - Run solution build and targeted test suite.
+
+  - type: textarea
+    id: rollout
+    attributes:
+      label: Rollout plan
+      description: Suggested phased rollout (docs-only, approved web, optimization).
+      placeholder: |
+        Phase 1: docs-only + citations
+        Phase 2: approved external sources
+        Phase 3: ranking/cache optimization
+
+  - type: textarea
+    id: open_questions
+    attributes:
+      label: Open questions
+      description: Any unresolved decisions.
+      placeholder: |
+        - Which external provider should be used first?
+        - Tenant opt-in only or per-user opt-in?
+
+  - type: input
+    id: related_doc
+    attributes:
+      label: Related proposal document (optional)
+      description: Link or path to proposal markdown in repo.
+      placeholder: FEATURE_REQUEST_AI_HELP_RETRIEVAL_WEB_SEARCH.md
