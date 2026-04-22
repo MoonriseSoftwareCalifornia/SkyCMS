@@ -7,9 +7,9 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Company>Moonrise Software LLC</Company>
-		<Version>12.1.1</Version>
-		<AssemblyVersion>12.1.1</AssemblyVersion>
-		<FileVersion>12.1.1</FileVersion>
+		<Version>12.1.2</Version>
+		<AssemblyVersion>12.1.2</AssemblyVersion>
+		<FileVersion>12.1.2</FileVersion>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<RepositoryUrl></RepositoryUrl>

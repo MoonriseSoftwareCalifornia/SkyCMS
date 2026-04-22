@@ -243,8 +243,87 @@
 
     $("#frmSave").submit(function (e) {
         e.preventDefault();
-        savePagePropertiesCommand();
+        saveChanges();
     });
+
+    function getFrameEditors() {
+        const iframe = document.getElementById("ccmsContFrame");
+        if (!iframe || !iframe.contentWindow || !Array.isArray(iframe.contentWindow.ccms_editors)) {
+            return [];
+        }
+
+        return iframe.contentWindow.ccms_editors;
+    }
+
+    function getFrameDocument() {
+        const iframe = document.getElementById("ccmsContFrame");
+        if (!iframe || !iframe.contentWindow || !iframe.contentWindow.document) {
+            return null;
+        }
+
+        return iframe.contentWindow.document;
+    }
+
+    function getPersistedImageWidgetHtml(element) {
+        if (!element) {
+            return "";
+        }
+
+        const clone = element.cloneNode(true);
+        clone.querySelectorAll('.ccms-img-toolbar, .ccms-upload-progress, .filepond--root, input[type="file"]').forEach(node => node.remove());
+        return clone.innerHTML;
+    }
+
+    async function saveAllEditorRegions() {
+        const editors = getFrameEditors();
+        const savedRegionIds = new Set();
+
+        for (const ed of editors) {
+            if (!ed || typeof ed.getData !== 'function' || !ed.sourceElement) {
+                continue;
+            }
+
+            const editorId = ed.sourceElement.getAttribute("data-ccms-ceid");
+            if (!editorId) {
+                continue;
+            }
+
+            await saveEditorRegion(ed.getData(), editorId);
+            savedRegionIds.add(editorId);
+        }
+
+        return savedRegionIds;
+    }
+
+    async function saveAllImageWidgetRegions(savedRegionIds) {
+        const doc = getFrameDocument();
+        if (!doc) {
+            return;
+        }
+
+        const imageWidgets = doc.querySelectorAll('[data-editor-config="image-widget"][data-ccms-ceid]');
+        for (const widget of imageWidgets) {
+            const widgetId = widget.getAttribute('data-ccms-ceid');
+            if (!widgetId || savedRegionIds.has(widgetId)) {
+                continue;
+            }
+
+            const html = getPersistedImageWidgetHtml(widget);
+            await saveEditorRegion(html, widgetId);
+            savedRegionIds.add(widgetId);
+        }
+    }
+
+    async function saveChanges(html, editorId) {
+        if (editorId) {
+            await saveEditorRegion(html || "", editorId);
+            return;
+        }
+
+        const savedRegionIds = await saveAllEditorRegions();
+        await saveAllImageWidgetRegions(savedRegionIds);
+        await savePagePropertiesCommand();
+    }
 
     function bgEditClickCustom(command) {
         switch (command) {

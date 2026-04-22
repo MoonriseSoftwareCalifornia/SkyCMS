@@ -30,6 +30,7 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.Mvc.ModelBinding;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using MimeTypes;
     using Newtonsoft.Json;
@@ -77,6 +78,7 @@ namespace Sky.Cms.Controllers
         /// <param name="viewRenderService">View rendering service.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
+        [ActivatorUtilitiesConstructor]
         public FileManagerController(
             IEditorSettings options,
             ILogger<FileManagerController> logger,

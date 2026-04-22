@@ -7,9 +7,9 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <Version>12.1.1</Version>
-    <FileVersion>12.1.1</FileVersion>
-    <AssemblyVersion>12.1.1</AssemblyVersion>
+    <Version>12.1.2</Version>
+    <FileVersion>12.1.2</FileVersion>
+    <AssemblyVersion>12.1.2</AssemblyVersion>
     <UserSecretsId>b71b0d21-ff70-4005-80cd-4a1d8a54b083</UserSecretsId>
   </PropertyGroup>
 

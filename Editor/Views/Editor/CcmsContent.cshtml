@@ -98,6 +98,10 @@
 
         window.saveChanges = async function(html, editorId) {
             if (window.parent && window.parent !== window) {
+                if (typeof window.parent.saveChanges === 'function') {
+                    return window.parent.saveChanges(html, editorId);
+                }
+
                 if (editorId && typeof window.parent.saveEditorRegion === 'function') {
                     return window.parent.saveEditorRegion(html, editorId);
                 }
@@ -159,7 +163,9 @@
 
         // Close all dropdowns
         window.addEventListener("click", function () {
-            parent.closeDropDowns();
+            if (window.parent && window.parent !== window && typeof window.parent.closeDropDowns === 'function') {
+                window.parent.closeDropDowns();
+            }
         });
 
         window.addEventListener("keydown", (event) => {
@@ -172,10 +178,13 @@
                 switch (String.fromCharCode(event.which).toLowerCase()) {
                     case 's':
                         event.preventDefault();
-                        if (editor === null) {
-                            parent.savePagePropertiesCommand();
+
+                        const activeEditor = focusedEditor || (ccms_editors.length === 1 ? ccms_editors[0] : null);
+                        if (activeEditor && typeof activeEditor.getData === 'function' && activeEditor.sourceElement) {
+                            const editorId = activeEditor.sourceElement.getAttribute("data-ccms-ceid");
+                            window.saveChanges(activeEditor.getData(), editorId);
                         } else {
-                            parent.SaveEditorRegion(editor.getData(), editor.sourceElement.getAttribute("data-ccms-ceid"));
+                            window.saveChanges();
                         }
                         break;
                 }
