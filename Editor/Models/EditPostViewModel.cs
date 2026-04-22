@@ -28,12 +28,12 @@ namespace Sky.Cms.Models
         /// <summary>
         /// Gets or sets edit ID as defined by the data-ccms-ceid attribute (Live Editor).
         /// </summary>
-        public string EditorId { get; set; }
+        public string EditorId { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets user Id (Email address).
         /// </summary>
-        public string UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets user position in document.

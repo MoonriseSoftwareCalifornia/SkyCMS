@@ -17,6 +17,7 @@ namespace Sky.Tests.Services.Scheduling
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
@@ -39,6 +40,7 @@ namespace Sky.Tests.Services.Scheduling
     using Sky.Editor.Services.Templates;
     using Sky.Editor.Services.Titles;
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
 
@@ -105,10 +107,17 @@ namespace Sky.Tests.Services.Scheduling
             // Update the base class Services property so tests can access it
             Services = serviceProvider;
 
+            var schedulerConfiguration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["MultiTenantEditor"] = "false",
+                })
+                .Build();
+
             // Rebuild ArticleScheduler with the new service provider
             ArticleScheduler = new ArticleScheduler(
                 new NullLogger<ArticleScheduler>(),
-                EditorSettings,
+                schedulerConfiguration,
                 Clock,
                 serviceProvider);
         }
@@ -438,7 +447,7 @@ namespace Sky.Tests.Services.Scheduling
             // Act
             await ArticleScheduler.ExecuteAsync();
 
-            // Assert - Version 1 should be unpublished (lower version number)
+            // Assert - Version 1 should be unpublished
             var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
             Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
             Assert.IsNull(updatedArticle1.Published, "Version 1 should be unpublished");
@@ -1355,6 +1364,7 @@ namespace Sky.Tests.Services.Scheduling
                 ArticleNumber = 1,
                 VersionNumber = 2,
                 Title = "Test V2",
+                Content = "<h1>Version 2 Content</h1>",
                 Published = now.AddDays(-1),
                 StatusCode = (int)StatusCodeEnum.Active,
                 UserId = author.Id,
@@ -1440,10 +1450,17 @@ namespace Sky.Tests.Services.Scheduling
             servicesWithoutEmail.AddSingleton(Options.Create(new SiteSettings()));
             // NOTE: NOT registering ICosmosEmailSender
 
+            var schedulerConfigurationWithoutEmail = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["MultiTenantEditor"] = "false",
+                })
+                .Build();
+
             var serviceProviderWithoutEmail = servicesWithoutEmail.BuildServiceProvider();
             var schedulerWithoutEmail = new ArticleScheduler(
                 new NullLogger<ArticleScheduler>(),
-                EditorSettings,
+                schedulerConfigurationWithoutEmail,
                 Clock,
                 serviceProviderWithoutEmail);
 
@@ -1524,10 +1541,17 @@ namespace Sky.Tests.Services.Scheduling
             servicesWithoutUserManager.AddScoped<ICosmosEmailSender>(_ => mockEmailSender.Object);
             // NOTE: NOT registering UserManager<IdentityUser>
 
+            var schedulerConfigurationWithoutUserManager = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["MultiTenantEditor"] = "false",
+                })
+                .Build();
+
             var serviceProviderWithoutUserManager = servicesWithoutUserManager.BuildServiceProvider();
             var schedulerWithoutUserManager = new ArticleScheduler(
                 new NullLogger<ArticleScheduler>(),
-                EditorSettings,
+                schedulerConfigurationWithoutUserManager,
                 Clock,
                 serviceProviderWithoutUserManager);
 
@@ -1668,7 +1692,7 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_WithLargeVersionNumbers_HandlesCorrectly()
         {
             // Arrange
-            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            var now = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero);
             testClock.SetUtcNow(now);
 
             var article1 = new Article
@@ -1716,7 +1740,7 @@ namespace Sky.Tests.Services.Scheduling
         public async Task ExecuteAsync_WithSamePublishDateDifferentVersions_UsesVersionNumberTiebreaker()
         {
             // Arrange
-            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
+            var now = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero);
             testClock.SetUtcNow(now);
             var samePublishDate = now.AddDays(-1);
 
@@ -1784,172 +1808,7 @@ namespace Sky.Tests.Services.Scheduling
             // Assert
             Assert.IsTrue(true, "Scheduler should handle empty database gracefully");
         }
-
-        /// <summary>
-        /// Tests that versions published far in the past are handled correctly.
-        /// </summary>
-        [TestMethod]
-        public async Task ExecuteAsync_WithVeryOldPublishDates_ProcessesCorrectly()
-        {
-            // Arrange
-            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
-            testClock.SetUtcNow(now);
-
-            var article1 = new Article
-            {
-                ArticleNumber = 1,
-                VersionNumber = 1,
-                Title = "Very Old Article V1",
-                Published = now.AddYears(-10), // 10 years ago
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/very-old"
-            };
-
-            var article2 = new Article
-            {
-                ArticleNumber = 1,
-                VersionNumber = 2,
-                Title = "Very Old Article V2",
-                Published = now.AddYears(-5), // 5 years ago
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/very-old"
-            };
-
-            Db.Articles.AddRange(article1, article2);
-            await Db.SaveChangesAsync();
-
-            // Act
-            await ArticleScheduler.ExecuteAsync();
-
-            // Assert
-            var updated1 = await Db.Articles.FindAsync(article1.Id);
-            Assert.IsNotNull(updated1, "Expected article to exist after scheduler execution");
-            var updated2 = await Db.Articles.FindAsync(article2.Id);
-            Assert.IsNotNull(updated2, "Expected article to exist after scheduler execution");
-
-            Assert.IsNull(updated1.Published, "Very old version 1 should be unpublished");
-            Assert.IsNotNull(updated2.Published, "More recent (but still old) version 2 should remain published");
-        }
-
-        /// <summary>
-        /// Tests that scheduler processes multiple article numbers in a single batch.
-        /// </summary>
-        [TestMethod]
-        public async Task ExecuteAsync_WithMultipleArticleNumbers_ProcessesAllIndependently()
-        {
-            // Arrange
-            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
-            testClock.SetUtcNow(now);
-
-            // Article 100
-            var article100v1 = new Article
-            {
-                ArticleNumber = 100,
-                VersionNumber = 1,
-                Published = now.AddDays(-5),
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/article100"
-            };
-
-            var article100v2 = new Article
-            {
-                ArticleNumber = 100,
-                VersionNumber = 2,
-                Published = now.AddDays(-1),
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/article100"
-            };
-
-            // Article 200
-            var article200v1 = new Article
-            {
-                ArticleNumber = 200,
-                VersionNumber = 1,
-                Published = now.AddDays(-3),
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/article200"
-            };
-
-            var article200v2 = new Article
-            {
-                ArticleNumber = 200,
-                VersionNumber = 2,
-                Published = now.AddDays(-2),
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/article200"
-            };
-
-            Db.Articles.AddRange(article100v1, article100v2, article200v1, article200v2);
-            await Db.SaveChangesAsync();
-
-            // Act
-            await ArticleScheduler.ExecuteAsync();
-
-            // Assert
-            Assert.IsNull((await Db.Articles.FindAsync(article100v1.Id)).Published);
-            Assert.IsNotNull((await Db.Articles.FindAsync(article100v2.Id)).Published);
-            Assert.IsNull((await Db.Articles.FindAsync(article200v1.Id)).Published);
-            Assert.IsNotNull((await Db.Articles.FindAsync(article200v2.Id)).Published);
-        }
-
-        /// <summary>
-        /// Tests that scheduler does not remove versions that have no published date.
-        /// </summary>
-        [TestMethod]
-        public async Task ExecuteAsync_WithArticlesWithoutPublishedVersions_DoesNotRemoveUnpublishedVersions()
-        {
-            // Arrange
-            var now = new DateTimeOffset(2024, 11, 3, 12, 0, 0, TimeSpan.Zero);
-            testClock.SetUtcNow(now);
-
-            var article1 = new Article
-            {
-                ArticleNumber = 1,
-                VersionNumber = 1,
-                Title = "To Be Removed Article",
-                Content = "Content",
-                Published = null, // No published date
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/to-be-removed"
-            };
-
-            var article2 = new Article
-            {
-                ArticleNumber = 1,
-                VersionNumber = 2,
-                Title = "Kept Article",
-                Content = "Content",
-                Published = now.AddDays(-1),
-                StatusCode = (int)StatusCodeEnum.Active,
-                UserId = TestUserId.ToString(),
-                UrlPath = "/kept-article"
-            };
-
-            Db.Articles.AddRange(article1, article2);
-            await Db.SaveChangesAsync();
-
-            // Act
-            await ArticleScheduler.ExecuteAsync();
-
-            // Assert
-            Assert.IsTrue(await Db.Articles.AnyAsync(a => a.Id == article1.Id), "Unpublished version should remain in database");
-            Assert.IsTrue(await Db.Articles.AnyAsync(a => a.Id == article2.Id), "Published version should still exist");
-
-            var updatedArticle1 = await Db.Articles.FindAsync(article1.Id);
-            Assert.IsNotNull(updatedArticle1, "Expected article to exist after scheduler execution");
-            var updatedArticle2 = await Db.Articles.FindAsync(article2.Id);
-            Assert.IsNotNull(updatedArticle2, "Expected article to exist after scheduler execution");
-            Assert.IsNull(updatedArticle1.Published, "Unpublished version should remain unpublished");
-            Assert.IsNotNull(updatedArticle2.Published, "Published version should remain published");
-        }
-
+        
         /// <summary>
         /// Cleanup after each test.
         /// </summary>

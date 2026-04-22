@@ -8,6 +8,7 @@
 namespace Sky.Tests.Services.Scheduling
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using Cosmos.BlobService;
@@ -19,6 +20,7 @@ namespace Sky.Tests.Services.Scheduling
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
@@ -103,9 +105,17 @@ namespace Sky.Tests.Services.Scheduling
             serviceProvider = services.BuildServiceProvider();
             
             // Rebuild ArticleScheduler with the new service provider
+            var schedulerConfiguration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["MultiTenantEditor"] = "false",
+                })
+                .Build();
+
+            // Rebuild ArticleScheduler with the new service provider
             ArticleScheduler = new ArticleScheduler(
                 new NullLogger<ArticleScheduler>(),
-                EditorSettings,
+                schedulerConfiguration,
                 Clock,
                 serviceProvider);
         }

@@ -81,7 +81,7 @@
             <div id="ckeditorCopilotSubtitle" class="copilot-chat-subtitle">Scoped to the current editor region.</div>
         </div>
         <div class="ckeditor-copilot-window-actions">
-            <a class="btn btn-sm btn-outline-light" href="/Editor/AiHelp?popup=1&launchMode=detached" target="_blank" rel="noopener" aria-label="Open AI help chat in a separate window">Detach</a>
+            <a class="btn btn-sm btn-outline-light" href="/Editor/AiHelp?popup=1" rel="noopener" aria-label="Open AI help chat" onclick="return ccmsOpenAiHelpFloatingWindow('/Editor/AiHelp?popup=1');">Detach</a>
             <button id="btnCkeditorCopilotMinimize" type="button" class="btn btn-sm btn-outline-light" aria-label="Minimize AI assistant">_</button>
             <button id="btnCkeditorCopilotClose" type="button" class="btn btn-sm btn-outline-light" aria-label="Close AI assistant">Close</button>
         </div>
@@ -182,7 +182,7 @@
 
 <!-- Include shared editor infrastructure -->
 <partial name="_EditorCommonScripts" />
-<script src="~/js/editors/ckeditor-copilot-chat.js"></script>
+<script asp-append-version="true" src="~/js/editors/ckeditor-copilot-chat.js"></script>
 
 <script>
     // Global variables
@@ -197,10 +197,16 @@
         documentKind: '@(Model.ArticleType.ToString() == "BlogPost" ? "blog" : "article")',
         editorSurface: 'ckeditor',
         sectionKind: '@(Model.ArticleType.ToString() == "BlogPost" ? "blog-content" : "article-content")',
+        articleNumber: '@Model.ArticleNumber',
+        title: '@(Model.Title ?? string.Empty)',
         articleType: '@Model.ArticleType',
         category: '@(Model.Category ?? string.Empty)',
         urlPath: '@(Model.UrlPath ?? string.Empty)'
     };
+
+    if (typeof window.ccmsEnrichEditorContext === 'function') {
+        window.ccmsEnrichEditorContext();
+    }
 
     // Editable areas
     // let ccms_editibleAreas = []; // Currently set but not consumed.

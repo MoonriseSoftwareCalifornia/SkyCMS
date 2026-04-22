@@ -18,7 +18,6 @@ namespace Sky.Tests.Services.Scheduling
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Infrastructure.Time;
-    using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Scheduling;
     using System;
     using System.Collections.Generic;
@@ -34,9 +33,9 @@ namespace Sky.Tests.Services.Scheduling
     {
         private ArticleScheduler _scheduler;
         private Mock<IClock> _mockClock;
-        private Mock<IEditorSettings> _mockSettings;
         private Mock<ICosmosEmailSender> _mockEmailSender;
         private Mock<ITenantArticleLogicFactory> _mockTenantArticleLogicFactory;
+        private IConfiguration _schedulerConfiguration;
         private IServiceProvider _serviceProvider;
         private ServiceCollection _serviceCollection;
         private DateTimeOffset _testNow;
@@ -55,19 +54,22 @@ namespace Sky.Tests.Services.Scheduling
             _mockClock = new Mock<IClock>();
             _mockClock.Setup(x => x.UtcNow).Returns(_testNow);
 
-            _mockSettings = new Mock<IEditorSettings>();
-            _mockSettings.Setup(x => x.IsMultiTenantEditor).Returns(false);
+            _mockTenantArticleLogicFactory = new Mock<ITenantArticleLogicFactory>();
+            _mockTenantArticleLogicFactory
+                .Setup(x => x.CreateForTenantAsync(It.IsAny<string>()))
+                .ReturnsAsync(Logic);
+
+            _schedulerConfiguration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["MultiTenantEditor"] = "false",
+                })
+                .Build();
 
             _mockEmailSender = new Mock<ICosmosEmailSender>();
             _mockEmailSender
                 .Setup(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask);
-
-            // Setup mock factory that returns the test's ArticleEditLogic (Logic property from base class)
-            _mockTenantArticleLogicFactory = new Mock<ITenantArticleLogicFactory>();
-            _mockTenantArticleLogicFactory
-                .Setup(x => x.CreateForTenantAsync(It.IsAny<string>()))
-                .ReturnsAsync(Logic);
 
             // Setup service collection
             _serviceCollection = new ServiceCollection();
@@ -76,11 +78,10 @@ namespace Sky.Tests.Services.Scheduling
             // breaking test assertions that need to query the Db after scheduler execution
             _serviceCollection.AddSingleton(_ => Db);
             _serviceCollection.AddSingleton(_ => Storage);
-            _serviceCollection.AddScoped(_ => _mockSettings.Object);
             _serviceCollection.AddScoped(_ => _mockClock.Object);
             _serviceCollection.AddScoped(_ => _mockEmailSender.Object);
             _serviceCollection.AddScoped(_ => _mockTenantArticleLogicFactory.Object);
-            _serviceCollection.AddScoped(_ => new Mock<IConfiguration>().Object);
+            _serviceCollection.AddSingleton(_schedulerConfiguration);
             _serviceCollection.AddScoped(_ => new Mock<UserManager<IdentityUser>>(
                 new Mock<IUserStore<IdentityUser>>().Object, null, null, null, null, null, null, null, null).Object);
             _serviceCollection.AddLogging();
@@ -88,7 +89,7 @@ namespace Sky.Tests.Services.Scheduling
 
             _serviceProvider = _serviceCollection.BuildServiceProvider();
             var logger = _serviceProvider.GetRequiredService<ILogger<ArticleScheduler>>();
-            _scheduler = new ArticleScheduler(logger, _mockSettings.Object, _mockClock.Object, _serviceProvider);
+            _scheduler = new ArticleScheduler(logger, _schedulerConfiguration, _mockClock.Object, _serviceProvider);
         }
 
         /// <summary>
@@ -130,7 +131,7 @@ namespace Sky.Tests.Services.Scheduling
             Assert.ThrowsExactly<ArgumentNullException>(() =>
                 new ArticleScheduler(
                     new Mock<ILogger<ArticleScheduler>>().Object,
-                    _mockSettings.Object,
+                    _schedulerConfiguration,
                     null, // null clock
                     _serviceProvider));
         }
@@ -146,7 +147,7 @@ namespace Sky.Tests.Services.Scheduling
             Assert.ThrowsExactly<ArgumentNullException>(() =>
                 new ArticleScheduler(
                     new Mock<ILogger<ArticleScheduler>>().Object,
-                    _mockSettings.Object,
+                    _schedulerConfiguration,
                     _mockClock.Object,
                     null)); // null service provider
         }
@@ -415,10 +416,10 @@ namespace Sky.Tests.Services.Scheduling
         {
             public MockArticleScheduler(
                 ILogger<ArticleScheduler> logger,
-                IEditorSettings settings,
+                IConfiguration configuration,
                 IClock clock,
                 IServiceProvider serviceProvider)
-                : base(logger, settings, clock, serviceProvider)
+                : base(logger, configuration, clock, serviceProvider)
             {
             }
         }

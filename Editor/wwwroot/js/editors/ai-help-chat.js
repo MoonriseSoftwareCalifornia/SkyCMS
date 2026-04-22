@@ -7,9 +7,8 @@
             this.catalog = null;
             this.selectedModel = null;
             this.currentMode = 'general-help';
-            this.launchModeStorageKey = 'skycms.aihelp.launchMode';
+            this.available = false;
             this.context = this.readContextFromQuery();
-            this.launchMode = this.resolveLaunchMode();
         }
 
         readContextFromQuery() {
@@ -20,65 +19,17 @@
                 articleNumber: params.get('articleNumber'),
                 title: params.get('title'),
                 urlPath: params.get('urlPath'),
-                popup: params.get('popup') === '1',
-                launchMode: params.get('launchMode')
+                popup: params.get('popup') === '1'
             };
-        }
-
-        resolveLaunchMode() {
-            const fromQuery = (this.context.launchMode || '').toLowerCase();
-            if (fromQuery === 'dock' || fromQuery === 'detached') {
-                this.saveLaunchMode(fromQuery);
-                return fromQuery;
-            }
-
-            try {
-                const stored = (window.localStorage.getItem(this.launchModeStorageKey) || '').toLowerCase();
-                if (stored === 'dock' || stored === 'detached') {
-                    return stored;
-                }
-            } catch {
-            }
-
-            return 'dock';
-        }
-
-        saveLaunchMode(mode) {
-            if (mode !== 'dock' && mode !== 'detached') {
-                return;
-            }
-
-            this.launchMode = mode;
-            try {
-                window.localStorage.setItem(this.launchModeStorageKey, mode);
-            } catch {
-            }
         }
 
         initialize() {
             this.cacheElements();
-            this.initializeLaunchModeSelector();
             this.attachListeners();
             this.initializeAsync();
         }
 
-        initializeLaunchModeSelector() {
-            if (this.launchModeSelect) {
-                this.launchModeSelect.value = this.launchMode;
-            }
-        }
-
         async initializeAsync() {
-            if (this.launchMode === 'detached' && !this.context.popup) {
-                const popup = this.openDetachedWindow(false);
-                if (popup) {
-                    this.showStatus('Opening AI Help in a detached window based on your launch preference.');
-                    return;
-                }
-
-                this.showStatus('Detached mode is enabled, but a new window was blocked. Continuing docked.');
-            }
-
             this.status = await this.getStatus();
             this.updateAvailability();
             await this.loadModelCatalog();
@@ -96,8 +47,6 @@
             this.modelSelect = document.getElementById('aiHelpModelSelect');
             this.modelHelp = document.getElementById('aiHelpModelHelp');
             this.refreshModelsButton = document.getElementById('btnAiHelpRefreshModels');
-            this.detachButton = document.getElementById('btnAiHelpDetach');
-            this.launchModeSelect = document.getElementById('aiHelpLaunchMode');
             this.actionButtons = Array.from(document.querySelectorAll('[data-ai-help-action]'));
         }
 
@@ -123,13 +72,6 @@
                     this.messages = [];
                     this.renderMessages();
                     this.hideStatus();
-                });
-            }
-
-            if (this.launchModeSelect) {
-                this.launchModeSelect.addEventListener('change', () => {
-                    const next = this.launchModeSelect.value === 'detached' ? 'detached' : 'dock';
-                    this.saveLaunchMode(next);
                 });
             }
 
@@ -160,30 +102,6 @@
                     await this.sendChatMessage(action, message);
                 });
             });
-
-            if (this.detachButton) {
-                this.detachButton.addEventListener('click', () => {
-                    this.saveLaunchMode('detached');
-                    if (this.launchModeSelect) {
-                        this.launchModeSelect.value = 'detached';
-                    }
-
-                    const popup = this.openDetachedWindow(true);
-                    if (!popup) {
-                        this.showStatus('Unable to open a detached window. Please allow pop-ups for this site.');
-                    }
-                });
-            }
-        }
-
-        openDetachedWindow(focusWindow) {
-            const popupUrl = this.buildHelpWindowUrl(true);
-            const popup = window.open(popupUrl, 'SkyCmsAiHelp', 'popup=yes,width=1100,height=820,scrollbars=yes,resizable=yes');
-            if (popup && focusWindow) {
-                popup.focus();
-            }
-
-            return popup;
         }
 
         getActionPrompt(action) {
@@ -204,38 +122,6 @@
             params.set('editorKind', 'help');
             params.set('documentKind', this.context.documentKind || this.currentMode);
             return params.toString();
-        }
-
-        buildHelpWindowUrl(forcePopup) {
-            const params = new URLSearchParams();
-            if (forcePopup) {
-                params.set('popup', '1');
-            }
-
-            params.set('launchMode', this.launchMode);
-
-            if (this.context.documentKind) {
-                params.set('documentKind', this.context.documentKind);
-            }
-
-            if (this.context.sectionKind) {
-                params.set('sectionKind', this.context.sectionKind);
-            }
-
-            if (this.context.articleNumber) {
-                params.set('articleNumber', this.context.articleNumber);
-            }
-
-            if (this.context.title) {
-                params.set('title', this.context.title);
-            }
-
-            if (this.context.urlPath) {
-                params.set('urlPath', this.context.urlPath);
-            }
-
-            const query = params.toString();
-            return `/Editor/AiHelp${query ? `?${query}` : ''}`;
         }
 
         async getStatus() {
@@ -324,6 +210,7 @@
             const enabled = this.status && (this.status.enabled ?? this.status.Enabled);
             const configured = this.status && (this.status.configured ?? this.status.Configured);
             const available = !!(enabled && configured);
+            this.available = available;
 
             if (this.subtitle) {
                 this.subtitle.textContent = available
@@ -385,6 +272,7 @@
                 return;
             }
 
+            this.statusContainer.classList.remove('is-thinking');
             this.statusContainer.style.display = 'block';
             this.statusContainer.textContent = message;
         }
@@ -394,14 +282,64 @@
                 return;
             }
 
+            this.statusContainer.classList.remove('is-thinking');
             this.statusContainer.style.display = 'none';
             this.statusContainer.textContent = '';
+        }
+
+        showThinking() {
+            if (!this.statusContainer) {
+                return;
+            }
+
+            this.statusContainer.classList.add('is-thinking');
+            this.statusContainer.style.display = 'block';
+            this.statusContainer.textContent = 'Thinking...';
+        }
+
+        hideThinking() {
+            if (!this.statusContainer || !this.statusContainer.classList.contains('is-thinking')) {
+                return;
+            }
+
+            this.hideStatus();
+        }
+
+        async flashErrorOnSendButton() {
+            if (!this.sendButton) {
+                return;
+            }
+
+            this.sendButton.classList.remove('btn-primary', 'btn-success');
+            this.sendButton.classList.add('btn-danger');
+            this.sendButton.innerHTML = '<span class="me-1">!</span>Error';
+            this.sendButton.disabled = true;
+            await new Promise((resolve) => setTimeout(resolve, 900));
         }
 
         setBusy(isBusy) {
             this.isSending = isBusy;
             if (this.sendButton) {
-                this.sendButton.disabled = isBusy;
+                this.sendButton.classList.remove('btn-primary', 'btn-success', 'btn-danger');
+                this.sendButton.classList.add(isBusy ? 'btn-success' : 'btn-primary');
+                this.sendButton.disabled = isBusy || !this.available;
+                this.sendButton.innerHTML = isBusy
+                    ? '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Thinking...'
+                    : 'Send';
+            }
+
+            if (this.input) {
+                this.input.disabled = isBusy || !this.available;
+            }
+
+            this.actionButtons.forEach((button) => {
+                button.disabled = isBusy || !this.available;
+            });
+
+            if (isBusy) {
+                this.showThinking();
+            } else {
+                this.hideThinking();
             }
         }
 
@@ -438,6 +376,8 @@
             this.messages.push(this.createMessage('user', trimmed));
             this.renderMessages();
 
+            let hadError = false;
+
             try {
                 const response = await fetch('/api/ai-proxy/chat', {
                     method: 'POST',
@@ -467,6 +407,7 @@
                 const data = await response.json().catch(() => null);
 
                 if (response.status === 429) {
+                    hadError = true;
                     const retryAfterSeconds = data && (data.retryAfterSeconds ?? data.RetryAfterSeconds)
                         ? (data.retryAfterSeconds ?? data.RetryAfterSeconds)
                         : 5;
@@ -475,6 +416,7 @@
                 }
 
                 if (!response.ok) {
+                    hadError = true;
                     const errorMessage = data && (data.error ?? data.Error)
                         ? (data.error ?? data.Error)
                         : 'The AI help request failed.';
@@ -492,8 +434,13 @@
                     this.input.value = '';
                 }
             } catch {
+                hadError = true;
                 this.showStatus('The AI help request failed before a response was returned.');
             } finally {
+                if (hadError) {
+                    await this.flashErrorOnSendButton();
+                }
+
                 this.setBusy(false);
             }
         }

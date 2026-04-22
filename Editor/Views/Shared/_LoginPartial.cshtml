@@ -1,11 +1,44 @@
 @using Microsoft.AspNetCore.Identity
+@using Sky.Editor.Services.Copilot
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
+@inject ICopilotProxyOptionsService CopilotProxyOptionsService
 
-@if (SignInManager.IsSignedIn(User))
+@{
+    var signedIn = SignInManager.IsSignedIn(User);
+    var aiHelpEnabled = false;
+    var aiHelpPopupFeatures = "popup=yes,width=430,height=900,scrollbars=yes,resizable=yes";
+    var infoHref = "https://docs.sky-cms.com";
+    var infoTitle = "SkyCMS documentation";
+    var infoTarget = "_blank";
+
+    if (signedIn)
+    {
+        var aiOptions = await CopilotProxyOptionsService.GetOptionsAsync();
+        aiHelpEnabled = aiOptions.Enabled
+            && !string.IsNullOrWhiteSpace(aiOptions.Endpoint)
+            && !string.IsNullOrWhiteSpace(aiOptions.AccessToken);
+
+        if (aiHelpEnabled)
+        {
+            infoHref = "/Editor/AiHelp?popup=1";
+            infoTitle = "AI Help chat";
+            infoTarget = "_blank";
+        }
+    }
+}
+
+@if (signedIn)
 {
     <a class="btn btn-sm bg-dark text-light me-2" href="mailto:support@moonrise.net?subject=Help Desk Message" title="Email Help Desk"><i class="fa-solid fa-bell-concierge"></i></a>
-    <a title="SkyCMS documentation" target="_blank" class="btn btn-sm bg-dark text-light me-2" aria-current="page" href="https://docs.sky-cms.com"><i class="fa-solid fa-circle-info"></i></a>
+    @if (aiHelpEnabled)
+    {
+        <a title="@infoTitle" target="@infoTarget" class="btn btn-sm bg-dark text-light me-2" aria-current="page" href="@infoHref" rel="noopener" onclick="if (typeof window.ccmsOpenAiHelpFloatingWindow === 'function') { return window.ccmsOpenAiHelpFloatingWindow('@infoHref'); } window.open('@infoHref','SkyCmsAiHelp','popup=yes,width=430,height=900,scrollbars=yes,resizable=yes'); return false;"><i class="fa-solid fa-circle-info"></i></a>
+    }
+    else
+    {
+        <a title="@infoTitle" target="@infoTarget" class="btn btn-sm bg-dark text-light me-2" aria-current="page" href="@infoHref" rel="noopener"><i class="fa-solid fa-circle-info"></i></a>
+    }
     <a class="btn btn-sm bg-dark text-light me-2" title="User account settings." asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage"><i class="fa-solid fa-user"></i></a>
     <button id="btnNavLogoutButton" type="button" title="Log out" onclick="ccms___navLogout()" class="btn btn-sm bg-dark text-light" style="margin-top:-2px;"><i class="fa-solid fa-right-from-bracket"></i></button>
     <form name="frmNavLogout" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new {area = ""})">

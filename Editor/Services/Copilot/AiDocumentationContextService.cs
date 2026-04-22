@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,8 +27,20 @@ public sealed class AiDocumentationContextService : IAiDocumentationContextServi
 {
     private const int MaxSectionLength = 650;
     private const int MaxContextLength = 2000;
+    private const string SearchIndexUrl = "https://docs.sky-cms.com/search/search_index.json";
+    private const int MaxSearchResults = 3;
+    private const int MaxSearchSectionLength = 500;
 
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(20);
+    private static readonly TimeSpan SearchIndexCacheDuration = TimeSpan.FromHours(1);
+    private static readonly JsonSerializerOptions SearchIndexJsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+    private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "a", "an", "the", "is", "it", "in", "of", "to", "and", "or", "for",
+        "on", "at", "by", "with", "do", "be", "as", "up", "my", "we", "i",
+        "can", "how", "what", "when", "where", "why", "who", "this", "that",
+    };
 
     private static readonly IReadOnlyDictionary<string, string[]> ContextToUrls = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
     {
@@ -109,6 +122,11 @@ public sealed class AiDocumentationContextService : IAiDocumentationContextServi
         var urls = ResolveUrls(request);
         if (urls.Count == 0)
         {
+            if (!string.IsNullOrWhiteSpace(request.Message))
+            {
+                return await this.SearchDocsByMessageAsync(request.Message, cancellationToken);
+            }
+
             return new AiDocumentationContextResult();
         }
 
@@ -208,6 +226,97 @@ public sealed class AiDocumentationContextService : IAiDocumentationContextServi
         }
     }
 
+    private async Task<AiDocumentationContextResult> SearchDocsByMessageAsync(string message, CancellationToken cancellationToken)
+    {
+        const string cacheKey = "ai-docs:search-index";
+
+        if (!this.memoryCache.TryGetValue(cacheKey, out List<SearchIndexEntry>? entries) || entries == null)
+        {
+            try
+            {
+                var client = this.httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(6);
+
+                var json = await client.GetStringAsync(SearchIndexUrl, cancellationToken);
+                var index = JsonSerializer.Deserialize<SearchIndex>(json, SearchIndexJsonOptions);
+                entries = index?.Docs ?? [];
+                this.memoryCache.Set(cacheKey, entries, SearchIndexCacheDuration);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogWarning(ex, "Failed to load docs search index from {Url}.", SearchIndexUrl);
+                return new AiDocumentationContextResult();
+            }
+        }
+
+        var keywords = message
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(w => Regex.Replace(w, "[^a-zA-Z0-9]", string.Empty))
+            .Where(w => w.Length > 2 && !StopWords.Contains(w))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (keywords.Count == 0)
+        {
+            return new AiDocumentationContextResult();
+        }
+
+        var scored = entries
+            .Where(e => !string.IsNullOrWhiteSpace(e.Text))
+            .Select(e =>
+            {
+                var searchable = $"{e.Title} {e.Text}";
+                var score = keywords.Sum(kw => CountOccurrences(searchable, kw));
+                return (Entry: e, Score: score);
+            })
+            .Where(x => x.Score > 0)
+            .OrderByDescending(x => x.Score)
+            .Take(MaxSearchResults)
+            .ToList();
+
+        if (scored.Count == 0)
+        {
+            return new AiDocumentationContextResult();
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine("Documentation context from docs.sky-cms.com:");
+        foreach (var (entry, _) in scored)
+        {
+            var snippet = entry.Text.Length > MaxSearchSectionLength
+                ? entry.Text[..MaxSearchSectionLength]
+                : entry.Text;
+            sb.AppendLine($"- [{entry.Title}] {snippet}");
+        }
+
+        sb.AppendLine("Sources:");
+        foreach (var (entry, _) in scored)
+        {
+            sb.AppendLine($"- https://docs.sky-cms.com/{entry.Location}");
+        }
+
+        var finalText = sb.ToString();
+        if (finalText.Length > MaxContextLength)
+        {
+            finalText = finalText[..MaxContextLength];
+        }
+
+        return new AiDocumentationContextResult { ContextText = finalText };
+    }
+
+    private static int CountOccurrences(string text, string keyword)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = text.IndexOf(keyword, index, StringComparison.OrdinalIgnoreCase)) >= 0)
+        {
+            count++;
+            index += keyword.Length;
+        }
+
+        return count;
+    }
+
     private static string ExtractText(string html)
     {
         if (string.IsNullOrWhiteSpace(html))
@@ -220,5 +329,19 @@ public sealed class AiDocumentationContextService : IAiDocumentationContextServi
         var withoutTags = Regex.Replace(withoutStyles, "<[^>]+>", " ");
         var decoded = WebUtility.HtmlDecode(withoutTags);
         return Regex.Replace(decoded, "\\s+", " ").Trim();
+    }
+
+    private sealed class SearchIndex
+    {
+        public List<SearchIndexEntry>? Docs { get; set; }
+    }
+
+    private sealed class SearchIndexEntry
+    {
+        public string Location { get; set; } = string.Empty;
+
+        public string Title { get; set; } = string.Empty;
+
+        public string Text { get; set; } = string.Empty;
     }
 }

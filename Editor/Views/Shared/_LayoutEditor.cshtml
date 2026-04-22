@@ -40,6 +40,54 @@
             font-size: 0.65rem;
             margin-top: 0.4rem;
         }
+
+        .ai-help-floating-window {
+            position: fixed;
+            top: 84px;
+            right: 18px;
+            width: 430px;
+            height: 860px;
+            max-width: calc(100vw - 24px);
+            max-height: calc(100vh - 96px);
+            background: #111315;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 50050;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        .ai-help-floating-window.is-hidden {
+            display: none;
+        }
+
+        .ai-help-floating-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #1d1f24;
+            border-bottom: 1px solid #333;
+            cursor: move;
+        }
+
+        .ai-help-floating-title {
+            font-size: 0.85rem;
+            color: #cfd6de;
+        }
+
+        .ai-help-floating-body {
+            width: 100%;
+            height: calc(100% - 46px);
+        }
+
+        .ai-help-floating-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #111315;
+        }
     </style>
 
     <script src="~/lib/promise-window/promise-window.min.js"></script>
@@ -110,7 +158,7 @@
                                 <a class="dropdown-item" href="/Code/Index" title="Internal (non-public) file storage." target="_blank">Internal files</a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="/Editor/AiHelp" title="Open AI help chat.">AI Help Chat</a>
+                                <a class="dropdown-item" href="/Editor/AiHelp?popup=1" title="Open AI help chat." onclick="return ccmsOpenAiHelpFloatingWindow('/Editor/AiHelp?popup=1');">AI Help Chat</a>
                             </li>
                             <li id="btnCcmsCodeEditor" style="display:none">
                                 <a class="dropdown-item" onclick="bgEditClick('Code')">Code editor</a>
@@ -231,6 +279,17 @@
             </div>
         </div>
     </nav>
+
+    <div id="aiHelpFloatingWindow" class="ai-help-floating-window is-hidden" aria-hidden="true">
+        <div id="aiHelpFloatingHeader" class="ai-help-floating-header">
+            <span class="ai-help-floating-title">AI Help</span>
+            <button id="btnCloseAiHelpFloatingWindow" type="button" class="btn btn-sm btn-outline-light">Close</button>
+        </div>
+        <div class="ai-help-floating-body">
+            <iframe id="aiHelpFloatingFrame" class="ai-help-floating-frame" title="AI Help Chat"></iframe>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js" integrity="sha512-a+SUDuwNzXDvz4XrIcXHuCf089/iJAoN4lmrXJg18XnduKK6YlDHNRalv4yd1N40OKI80tFidF+rqTFKGPoWFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script asp-append-version="true" src="~/lib/cosmos/crypto-js/cryptpo-js-encrypt.js"></script>
     <!-- Full screen modal -->
@@ -284,6 +343,100 @@
         // Selected anchor data
         let selectedAnchorData;
         var selectFileMode;
+
+        let aiHelpFloatingInitialized = false;
+
+        function ccmsTryReadInputValue(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                return null;
+            }
+
+            const value = (element.value || '').trim();
+            return value.length > 0 ? value : null;
+        }
+
+        function ccmsEnrichEditorContext() {
+            const existing = window.ccmsEditorContext || {};
+            const articleNumber = ccmsTryReadInputValue('ArticleNumber');
+            const title = ccmsTryReadInputValue('Title');
+            const urlPath = ccmsTryReadInputValue('UrlPath');
+
+            window.ccmsEditorContext = {
+                ...existing,
+                articleNumber: existing.articleNumber || articleNumber,
+                title: existing.title || title,
+                urlPath: existing.urlPath || urlPath
+            };
+        }
+
+        window.ccmsEnrichEditorContext = ccmsEnrichEditorContext;
+
+        function closeDropDowns() {
+            document.getElementById("btnSave")?.classList.remove("show");
+            document.getElementById("ddSave")?.classList.remove("show");
+            document.getElementById("btnInsert")?.classList.remove("show");
+            document.getElementById("ddInsert")?.classList.remove("show");
+        }
+
+        window.closeDropDowns = closeDropDowns;
+
+        function ccmsInitializeAiHelpFloatingWindow() {
+            if (aiHelpFloatingInitialized) {
+                return;
+            }
+
+            const container = document.getElementById('aiHelpFloatingWindow');
+            const closeButton = document.getElementById('btnCloseAiHelpFloatingWindow');
+            if (!container) {
+                return;
+            }
+
+            if (closeButton) {
+                closeButton.addEventListener('click', function () {
+                    ccmsCloseAiHelpFloatingWindow();
+                });
+            }
+
+            if (typeof $ === 'function' && typeof $.fn.draggable === 'function') {
+                $('#aiHelpFloatingWindow').draggable({
+                    handle: '#aiHelpFloatingHeader',
+                    containment: 'window'
+                });
+            }
+
+            aiHelpFloatingInitialized = true;
+        }
+
+        function ccmsOpenAiHelpFloatingWindow(url) {
+            const container = document.getElementById('aiHelpFloatingWindow');
+            const frame = document.getElementById('aiHelpFloatingFrame');
+            if (!container || !frame) {
+                window.open(url || '/Editor/AiHelp?popup=1', 'SkyCmsAiHelp', 'popup=yes,width=430,height=900,scrollbars=yes,resizable=yes');
+                return false;
+            }
+
+            ccmsInitializeAiHelpFloatingWindow();
+
+            const targetUrl = url || '/Editor/AiHelp?popup=1';
+            if (frame.getAttribute('src') !== targetUrl) {
+                frame.setAttribute('src', targetUrl);
+            }
+
+            container.classList.remove('is-hidden');
+            container.setAttribute('aria-hidden', 'false');
+            return false;
+        }
+
+        function ccmsCloseAiHelpFloatingWindow() {
+            const container = document.getElementById('aiHelpFloatingWindow');
+            if (!container) {
+                return;
+            }
+
+            container.classList.add('is-hidden');
+            container.setAttribute('aria-hidden', 'true');
+        }
 
         function setupIframes(iframeId, contentId) {
             var iframe = $(iframeId);
@@ -666,9 +819,10 @@
         $(document).ready(function () {
             displayLastPublished(lastPublished);
             checkForSetPermissions();
+            ccmsEnrichEditorContext();
 
             if (isAuthor) {
-                $("#tbPublished").prop("disabled", true);
+                $("#tbPublished").prop("disabled", true;
             }
 
             if ($("#Published").val() === null || $("#Published").val() === "") {

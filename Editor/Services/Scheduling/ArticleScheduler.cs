@@ -23,7 +23,6 @@ namespace Sky.Editor.Services.Scheduling
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Infrastructure.Time;
-    using Sky.Editor.Services.EditorSettings;
 
     /// <inheritdoc/>
     /// <remarks>
@@ -35,35 +34,34 @@ namespace Sky.Editor.Services.Scheduling
     {
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger<ArticleScheduler> logger;
-        private readonly IEditorSettings settings;
         private readonly IClock clock;
-        private readonly IDynamicConfigurationProvider configurationProvider;
+        private readonly bool isMultiTenantEditor;
+        private readonly IDynamicConfigurationProvider? configurationProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ArticleScheduler"/> class.
         /// </summary>
-        /// <param name="clock">Clock abstraction for testable time.</param>
         /// <param name="logger">Logger instance.</param>
-        /// <param name="settings">Editor settings.</param>
+        /// <param name="configuration">Application configuration.</param>
+        /// <param name="clock">Clock abstraction for testable time.</param>
         /// <param name="serviceProvider">Service provider for creating scoped dependencies.</param>
         public ArticleScheduler(
             ILogger<ArticleScheduler> logger,
-            IEditorSettings settings,
+            IConfiguration configuration,
             IClock clock,
             IServiceProvider serviceProvider)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
             this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
-            if (settings.IsMultiTenantEditor)
+            ArgumentNullException.ThrowIfNull(configuration);
+
+            isMultiTenantEditor = configuration.GetValue<bool?>("MultiTenantEditor") ?? false;
+
+            if (isMultiTenantEditor)
             {
                 configurationProvider = serviceProvider.GetRequiredService<IDynamicConfigurationProvider>();
-            }
-            else
-            {
-                configurationProvider = null;
             }
         }
 
@@ -73,7 +71,7 @@ namespace Sky.Editor.Services.Scheduling
             var now = clock.UtcNow;
 
             // logger.LogInformation("ArticleScheduler: Starting scheduled execution at {ExecutionTime}", now);
-            if (!settings.IsMultiTenantEditor)
+            if (!isMultiTenantEditor)
             {
                 try
                 {
@@ -87,7 +85,7 @@ namespace Sky.Editor.Services.Scheduling
                 return;
             }
 
-            var domainNames = await configurationProvider.GetAllDomainNamesAsync();
+            var domainNames = await configurationProvider!.GetAllDomainNamesAsync();
             foreach (var domainName in domainNames)
             {
                 try
@@ -111,10 +109,10 @@ namespace Sky.Editor.Services.Scheduling
             try
             {
                 // These services need to be scoped to a particular domainName.
-                if (settings.IsMultiTenantEditor)
+                if (isMultiTenantEditor)
                 {
                     // All services must be scoped to the tenant's connection
-                    var connection = await configurationProvider.GetTenantConnectionAsync(domainName);
+                    var connection = await configurationProvider!.GetTenantConnectionAsync(domainName);
 
                     if (connection == null)
                     {
@@ -132,7 +130,7 @@ namespace Sky.Editor.Services.Scheduling
                 else
                 {
                     // Single-tenant mode: Try to resolve DbContext from DI first (for tests),
-                    // otherwise create manually to avoid DI scope issues with Hangfire
+                    // otherwise create manually to avoid DI scope issues with background jobs
                     var dbContextFromDI = scopedServices.GetService<ApplicationDbContext>();
 
                     if (dbContextFromDI != null)
@@ -143,12 +141,11 @@ namespace Sky.Editor.Services.Scheduling
                     }
                     else
                     {
-                        // Create DbContext manually (production/Hangfire scenarios)
-                        // Hangfire worker threads don't have HTTP context, so we can't use scoped DI resolution
+                        // Create DbContext manually (production background worker scenarios)
                         var configuration = scopedServices.GetRequiredService<IConfiguration>();
                         var connectionString = configuration.GetConnectionString("ApplicationDbContextConnection");
 
-                        // Create ApplicationDbContext directly instead of resolving from DI (which requires HTTP context)
+                        // Create ApplicationDbContext directly instead of resolving from DI (which may require HTTP context)
                         using (var dbContext = new ApplicationDbContext(
                             CosmosDbOptionsBuilder.GetDbOptions<ApplicationDbContext>(connectionString)))
                         {

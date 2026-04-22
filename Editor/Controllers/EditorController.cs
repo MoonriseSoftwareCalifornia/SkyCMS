@@ -1202,7 +1202,7 @@ namespace Sky.Cms.Controllers
 
             await PopulateEditorViewDataAsync(article.ArticleNumber, article.Title, article.Content, article.VersionNumber);
 
-            return new ObjectResult(new EditCodePostModel
+            return View(new EditCodePostModel
             {
                 Id = article.Id,
                 ArticleNumber = article.ArticleNumber,

@@ -23,7 +23,7 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public sealed class AiLayoutContextService : IAiLayoutContextService
 {
-    private const int MaxContextLength = 1800;
+    private const int MaxContextLength = 3200;
 
     private readonly IApplicationDbContext dbContext;
     private readonly ILogger<AiLayoutContextService> logger;
@@ -55,7 +55,7 @@ public sealed class AiLayoutContextService : IAiLayoutContextService
             var assets = ExtractAssets(combinedLayoutText);
 
             var sb = new StringBuilder();
-            sb.AppendLine("Layout runtime context:");
+            sb.AppendLine("Layout runtime context (active website shell):");
             sb.AppendLine($"- Layout name: {layout.LayoutName}");
             sb.AppendLine($"- Layout number: {layout.LayoutNumber}");
 
@@ -74,6 +74,12 @@ public sealed class AiLayoutContextService : IAiLayoutContextService
                 sb.AppendLine($"- Referenced assets: {string.Join(", ", assets)}");
             }
 
+            sb.AppendLine("- Guidance: Treat the following layout excerpts as the currently active site layout context. Use them when validating classes, structure, and compatibility.");
+
+            AppendLayoutSection(sb, "Layout HEAD excerpt", layout.Head, 700);
+            AppendLayoutSection(sb, "Layout HEADER excerpt", layout.HtmlHeader, 700);
+            AppendLayoutSection(sb, "Layout FOOTER excerpt", layout.FooterHtmlContent, 700);
+
             var context = sb.ToString();
             if (context.Length > MaxContextLength)
             {
@@ -90,6 +96,28 @@ public sealed class AiLayoutContextService : IAiLayoutContextService
             this.logger.LogWarning(ex, "Failed to resolve layout context for AI request.");
             return new AiLayoutContextResult();
         }
+    }
+
+    private static void AppendLayoutSection(StringBuilder sb, string heading, string? text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        sb.AppendLine();
+        sb.AppendLine($"{heading}:");
+        sb.AppendLine(TrimForContext(text, maxLength));
+    }
+
+    private static string TrimForContext(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+        {
+            return text ?? string.Empty;
+        }
+
+        return text[..maxLength];
     }
 
     private async Task<LayoutSnapshot?> ResolveLayoutAsync(AiContextEnrichmentRequest request, CancellationToken cancellationToken)

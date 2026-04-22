@@ -62,6 +62,8 @@
     window.ccmsEditorContext = {
         documentKind: '@(Model.ArticleType.ToString() == "BlogPost" ? "blog" : "article")',
         editorSurface: 'monaco',
+        articleNumber: '@Model.ArticleNumber',
+        title: '@(Model.Title ?? string.Empty)',
         articleType: '@Model.ArticleType',
         category: '@(Model.Category ?? string.Empty)',
         urlPath: '@(Model.UrlPath ?? string.Empty)',
@@ -71,6 +73,10 @@
             'FooterJavaScript': 'article-footer-script'
         }
     };
+
+    if (typeof window.ccmsEnrichEditorContext === 'function') {
+        window.ccmsEnrichEditorContext();
+    }
 
     // Override afterEditorCreate to add active document tracking
     function afterEditorCreate(fieldInfo) {

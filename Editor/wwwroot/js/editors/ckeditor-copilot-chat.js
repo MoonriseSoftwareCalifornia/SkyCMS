@@ -555,6 +555,8 @@
             this.setBusy(true);
             this.hideStatus();
 
+            let hadError = false;
+
             session.messages.push(this.createMessage('user', trimmed, { editorId: this.activeEditorId }));
             this.renderMessages();
 
@@ -572,6 +574,7 @@
                 const data = await response.json().catch(() => null);
 
                 if (response.status === 429) {
+                    hadError = true;
                     const retryAfterSeconds = data && (data.retryAfterSeconds ?? data.RetryAfterSeconds)
                         ? (data.retryAfterSeconds ?? data.RetryAfterSeconds)
                         : 5;
@@ -580,6 +583,7 @@
                 }
 
                 if (!response.ok) {
+                    hadError = true;
                     const errorMessage = data && (data.error ?? data.Error)
                         ? (data.error ?? data.Error)
                         : 'The AI chat request failed.';
@@ -605,302 +609,38 @@
                     this.input.value = '';
                 }
             } catch {
+                hadError = true;
                 this.showStatus('The AI chat request failed before a response was returned.');
             } finally {
+                if (hadError) {
+                    await this.flashErrorOnSendButton();
+                }
+
                 this.isSending = false;
                 this.setBusy(false);
             }
         }
 
-        buildPayload(action, message, session, context) {
-            const recentMessages = session.messages
-                .filter((entry) => entry.role === 'user' || entry.role === 'assistant')
-                .slice(-8)
-                .map((entry) => ({
-                    role: entry.role,
-                    content: entry.content
-                }));
-
-            const ctx = window.ccmsEditorContext || {};
-
-            return {
-                editorKind: 'ckeditor',
-                action: action,
-                message: message,
-                selectedModel: this.getSelectedModel(),
-                selection: context.selectedHtml,
-                currentCode: context.currentHtml,
-                language: 'html',
-                fieldName: this.getFieldName(this.activeEditor),
-                title: this.getInputValue('Title'),
-                articleNumber: this.getInputValue('ArticleNumber'),
-                messages: recentMessages,
-                documentKind: ctx.documentKind || null,
-                sectionKind: ctx.sectionKind || null,
-                articleType: ctx.articleType || null,
-                category: ctx.category || null,
-                urlPath: ctx.urlPath || null
-            };
-        }
-
-        getFieldName(editor) {
-            if (!editor || !editor.sourceElement) {
-                return null;
-            }
-
-            return editor.sourceElement.getAttribute('data-field-name')
-                || editor.sourceElement.getAttribute('data-editor-config')
-                || editor.sourceElement.tagName
-                || null;
-        }
-
-        getInputValue(id) {
-            const element = document.getElementById(id);
-            if (!element) {
-                return null;
-            }
-
-            if (typeof element.value === 'string') {
-                return element.value;
-            }
-
-            return element.textContent || null;
-        }
-
-        captureEditorContext(editor) {
-            const selection = editor.model.document.selection;
-            const hasExpandedSelection = !selection.isCollapsed;
-            const selectionSnapshot = this.serializeSelection(selection);
-            const caretSnapshot = this.collapseSelectionSnapshot(selectionSnapshot, 'end');
-
-            let selectedHtml = '';
-            if (hasExpandedSelection) {
-                const selectedFragment = editor.model.getSelectedContent(selection);
-                selectedHtml = editor.data.stringify(selectedFragment);
-            }
-
-            const currentHtml = editor.getData();
-
-            return {
-                selectedHtml: selectedHtml,
-                currentHtml: currentHtml,
-                selectionSnapshot: selectionSnapshot,
-                caretSnapshot: caretSnapshot,
-                hasExpandedSelection: hasExpandedSelection,
-                contentFingerprint: this.hashText(currentHtml)
-            };
-        }
-
-        serializeSelection(selection) {
-            return {
-                isBackward: !!selection.isBackward,
-                ranges: Array.from(selection.getRanges()).map((range) => ({
-                    start: this.serializePosition(range.start),
-                    end: this.serializePosition(range.end)
-                }))
-            };
-        }
-
-        serializePosition(position) {
-            return {
-                root: position.root.rootName,
-                path: Array.from(position.path),
-                stickiness: position.stickiness || 'toNone'
-            };
-        }
-
-        collapseSelectionSnapshot(snapshot, edge) {
-            if (!snapshot || !Array.isArray(snapshot.ranges) || snapshot.ranges.length === 0) {
-                return null;
-            }
-
-            return {
-                isBackward: false,
-                ranges: snapshot.ranges.map((range) => {
-                    const point = edge === 'start' ? range.start : range.end;
-                    return {
-                        start: { ...point, path: Array.from(point.path) },
-                        end: { ...point, path: Array.from(point.path) }
-                    };
-                })
-            };
-        }
-
-        renderMessages() {
-            if (!this.messagesContainer) {
+        async flashErrorOnSendButton() {
+            if (!this.sendButton) {
                 return;
             }
 
-            const session = this.getActiveSession();
-            const messages = session ? session.messages : [];
-
-            this.messagesContainer.innerHTML = '';
-
-            if (!messages || messages.length === 0) {
-                const empty = document.createElement('div');
-                empty.className = 'copilot-chat-empty';
-                empty.textContent = this.activeEditorId
-                    ? 'Ask AI to improve this region. Suggestions will stay scoped to the selected editor instance.'
-                    : 'Open the assistant from a CKEditor toolbar button to start a region-scoped chat.';
-                this.messagesContainer.appendChild(empty);
-                return;
-            }
-
-            messages.forEach((message) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = `copilot-chat-message ${message.role}`;
-
-                const content = document.createElement('div');
-                content.className = 'copilot-chat-message-content';
-                content.textContent = message.content;
-                wrapper.appendChild(content);
-
-                if (message.role === 'assistant') {
-                    const actions = document.createElement('div');
-                    actions.className = 'copilot-chat-message-actions';
-
-                    actions.appendChild(this.createApplyButton(message, 'replaceSelection', 'Replace selection', !message.context.hasExpandedSelection));
-                    actions.appendChild(this.createApplyButton(message, 'insertAtCursor', 'Insert at cursor', false));
-                    actions.appendChild(this.createApplyButton(message, 'replaceBlock', 'Replace block', false));
-
-                    wrapper.appendChild(actions);
-                }
-
-                this.messagesContainer.appendChild(wrapper);
-            });
-
-            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
-        }
-
-        createApplyButton(message, mode, label, disabled) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'btn btn-sm btn-outline-light';
-            button.textContent = label;
-            button.setAttribute('data-message-id', String(message.id));
-            button.setAttribute('data-apply-mode', mode);
-            button.disabled = !!disabled;
-            return button;
-        }
-
-        extractSuggestedHtml(content) {
-            const text = (content || '').trim();
-            if (!text) {
-                return '';
-            }
-
-            const htmlMatch = text.match(/```html\s*([\s\S]*?)```/i);
-            if (htmlMatch && htmlMatch[1]) {
-                return htmlMatch[1].trim();
-            }
-
-            const genericMatch = text.match(/```(?:[a-zA-Z0-9#+._-]+)?\s*([\s\S]*?)```/);
-            if (genericMatch && genericMatch[1]) {
-                return genericMatch[1].trim();
-            }
-
-            return text;
-        }
-
-        applySuggestion(messageId, mode) {
-            const session = this.getActiveSession();
-            if (!session) {
-                return;
-            }
-
-            const message = session.messages.find((entry) => entry.id === messageId);
-            if (!message || message.role !== 'assistant') {
-                this.showStatus('Could not find that AI suggestion.');
-                return;
-            }
-
-            const editor = typeof window.findEditor === 'function'
-                ? window.findEditor(message.context.editorId)
-                : this.activeEditor;
-            if (!editor) {
-                this.showStatus('The target editor is no longer available.');
-                return;
-            }
-
-            const suggestedHtml = this.extractSuggestedHtml(message.content);
-            if (!suggestedHtml) {
-                this.showStatus('No editable suggestion content was found.');
-                return;
-            }
-
-            const contentChanged = this.hashText(editor.getData()) !== message.context.contentFingerprint;
-
-            if (contentChanged && mode !== 'replaceBlock') {
-                this.showStatus('This editor region changed since the suggestion was generated. Ask AI again to refresh the suggestion, or use Replace block if you want to overwrite the whole region.');
-                return;
-            }
-
-            try {
-                if (mode === 'replaceBlock') {
-                    editor.setData(suggestedHtml);
-                } else {
-                    const snapshot = mode === 'replaceSelection'
-                        ? message.context.selectionSnapshot
-                        : message.context.caretSnapshot;
-
-                    if (!snapshot) {
-                        this.showStatus('No saved selection is available for that suggestion.');
-                        return;
-                    }
-
-                    editor.model.change((writer) => {
-                        const selectionState = this.createSelectionFromSnapshot(writer, editor, snapshot);
-                        if (!selectionState) {
-                            throw new Error('selection-restore-failed');
-                        }
-
-                        writer.setSelection(selectionState.ranges, { backward: selectionState.isBackward });
-
-                        const viewFragment = editor.data.processor.toView(suggestedHtml);
-                        const modelFragment = editor.data.toModel(viewFragment);
-                        editor.model.insertContent(modelFragment, editor.model.document.selection);
-                    });
-                }
-
-                editor.editing.view.focus();
-                this.showStatus(contentChanged
-                    ? 'Applied the AI suggestion by replacing the full editor region.'
-                    : 'Applied the AI suggestion to the editor.');
-            } catch {
-                this.showStatus('Could not apply that suggestion to the editor.');
-            }
-        }
-
-        createSelectionFromSnapshot(writer, editor, snapshot) {
-            if (!snapshot || !Array.isArray(snapshot.ranges) || snapshot.ranges.length === 0) {
-                return null;
-            }
-
-            try {
-                const ranges = snapshot.ranges.map((range) => {
-                    const startRoot = editor.model.document.getRoot(range.start.root);
-                    const endRoot = editor.model.document.getRoot(range.end.root);
-                    if (!startRoot || !endRoot) {
-                        throw new Error('root-not-found');
-                    }
-
-                    const start = writer.createPositionFromPath(startRoot, range.start.path, range.start.stickiness || 'toNone');
-                    const end = writer.createPositionFromPath(endRoot, range.end.path, range.end.stickiness || 'toNone');
-                    return writer.createRange(start, end);
-                });
-
-                return {
-                    ranges: ranges,
-                    isBackward: !!snapshot.isBackward
-                };
-            } catch {
-                return null;
-            }
+            this.sendButton.classList.remove('btn-primary', 'btn-success');
+            this.sendButton.classList.add('btn-danger');
+            this.sendButton.innerHTML = '<span class="me-1">!</span>Error';
+            this.sendButton.disabled = true;
+            await new Promise((resolve) => setTimeout(resolve, 900));
         }
 
         setBusy(isBusy) {
             if (this.sendButton) {
+                this.sendButton.classList.remove('btn-primary', 'btn-success', 'btn-danger');
+                this.sendButton.classList.add(isBusy ? 'btn-success' : 'btn-primary');
                 this.sendButton.disabled = isBusy || !this.available;
+                this.sendButton.innerHTML = isBusy
+                    ? '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Thinking...'
+                    : 'Send';
             }
 
             if (this.input) {
@@ -910,6 +650,12 @@
             this.actionButtons.forEach((button) => {
                 button.disabled = isBusy || !this.available;
             });
+
+            if (isBusy) {
+                this.showThinking();
+            } else {
+                this.hideThinking();
+            }
         }
 
         showStatus(message) {
@@ -917,6 +663,7 @@
                 return;
             }
 
+            this.statusContainer.classList.remove('is-thinking');
             this.statusContainer.textContent = message;
             this.statusContainer.style.display = 'block';
         }
@@ -926,8 +673,27 @@
                 return;
             }
 
+            this.statusContainer.classList.remove('is-thinking');
             this.statusContainer.textContent = '';
             this.statusContainer.style.display = 'none';
+        }
+
+        showThinking() {
+            if (!this.statusContainer) {
+                return;
+            }
+
+            this.statusContainer.classList.add('is-thinking');
+            this.statusContainer.textContent = 'Thinking...';
+            this.statusContainer.style.display = 'block';
+        }
+
+        hideThinking() {
+            if (!this.statusContainer || !this.statusContainer.classList.contains('is-thinking')) {
+                return;
+            }
+
+            this.hideStatus();
         }
 
         handleDragMove(event) {

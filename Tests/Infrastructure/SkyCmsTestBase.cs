@@ -806,7 +806,7 @@ namespace Sky.Tests
 
             ArticleScheduler = new ArticleScheduler(
                 new NullLogger<ArticleScheduler>(),
-                EditorSettings,
+                configuration,
                 Clock,
                 Services);
 
