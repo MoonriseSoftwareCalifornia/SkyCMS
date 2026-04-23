@@ -1,19 +1,19 @@
-@model Sky.Editor.Models.Blogs.BlogStreamViewModel
+@model Sky.Editor.Models.Blogs.BlogViewModel
 @{
-    ViewData["Title"] = "Delete Blog Stream";
+    ViewData["Title"] = "Delete Blog";
     var action = $"/editor/blogs/{Model.Id.ToString()}/confirmdelete";
 }
 <div class="cwps-editor-container pt-3">
     <div class="container">
         <div class="row">
             <div class="col-md-12 text-light mb-3">
-                <h2>Delete Blog Stream</h2>
+                <h2>Delete Blog</h2>
                 <div class="alert alert-warning">
                     <strong>Warning:</strong> Deleting a blog will also delete all its posts.
                 </div>
                 <form action="@action" method="post">
                     <input type="hidden" asp-for="Id" />
-                    <p>Are you sure you want to delete blog stream: <strong>@Model.BlogKey</strong> ?</p>
+                    <p>Are you sure you want to delete blog: <strong>@Model.BlogKey</strong>?</p>
                     <button type="submit" class="btn btn-danger">Delete</button>
                     <a class="btn btn-secondary" href="@Url.Action("Index")">Cancel</a>
                 </form>

@@ -163,19 +163,19 @@ namespace Sky.Tests.Features.Blogs
 
         #endregion
 
-        #region CreateEntry Tests
+        #region CreatePost Tests
 
         /// <summary>
-        /// Tests that CreateEntry creates a blog post with the new CreateBlogPostCommand.
+        /// Tests that CreatePost creates a blog post with the new CreateBlogPostCommand.
         /// </summary>
         [TestMethod]
-        public async Task CreateEntry_SucceedsWithValidData()
+        public async Task CreatePost_SucceedsWithValidData()
         {
             // Arrange
             var title = "New Blog Post";
 
             // Act
-            var result = await controller.CreateEntry(blogStream.BlogKey, title);
+            var result = await controller.CreatePost(blogStream.BlogKey, title);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
@@ -197,50 +197,50 @@ namespace Sky.Tests.Features.Blogs
         }
 
         /// <summary>
-        /// Tests that CreateEntry returns NotFound when blog stream doesn't exist.
+        /// Tests that CreatePost returns NotFound when blog does not exist.
         /// </summary>
         [TestMethod]
-        public async Task CreateEntry_ReturnsNotFound_WhenBlogStreamDoesNotExist()
+        public async Task CreatePost_ReturnsNotFound_WhenBlogDoesNotExist()
         {
             // Arrange
             var invalidBlogKey = "non-existent-blog";
             var title = "New Post";
 
             // Act
-            var result = await controller.CreateEntry(invalidBlogKey, title);
+            var result = await controller.CreatePost(invalidBlogKey, title);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
         }
 
         /// <summary>
-        /// Tests that CreateEntry returns BadRequest when title is empty.
+        /// Tests that CreatePost returns BadRequest when title is empty.
         /// </summary>
         [TestMethod]
-        public async Task CreateEntry_ReturnsBadRequest_WhenTitleIsEmpty()
+        public async Task CreatePost_ReturnsBadRequest_WhenTitleIsEmpty()
         {
             // Arrange
             var emptyTitle = string.Empty;
 
             // Act
-            var result = await controller.CreateEntry(blogStream.BlogKey, emptyTitle);
+            var result = await controller.CreatePost(blogStream.BlogKey, emptyTitle);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         /// <summary>
-        /// Tests that CreateEntry normalizes the title into a slug for the UrlPath.
+        /// Tests that CreatePost normalizes the title into a slug for the UrlPath.
         /// </summary>
         [TestMethod]
-        public async Task CreateEntry_NormalizesTitle_IntoSlug()
+        public async Task CreatePost_NormalizesTitle_IntoSlug()
         {
             // Arrange
             var title = "My Awesome Blog Post!";
             var expectedSlug = "my-awesome-blog-post";
 
             // Act
-            var result = await controller.CreateEntry(blogStream.BlogKey, title);
+            var result = await controller.CreatePost(blogStream.BlogKey, title);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
@@ -256,16 +256,16 @@ namespace Sky.Tests.Features.Blogs
 
         #endregion
 
-        #region ConfirmDeleteEntry Tests
+        #region ConfirmDeletePost Tests
 
         /// <summary>
-        /// Tests that ConfirmDeleteEntry successfully deletes a blog post with the new DeleteBlogPostCommand.
+        /// Tests that ConfirmDeletePost successfully deletes a blog post with the new DeleteBlogPostCommand.
         /// </summary>
         [TestMethod]
-        public async Task ConfirmDeleteEntry_SuccessfullyDeletesPost()
+        public async Task ConfirmDeletePost_SuccessfullyDeletesPost()
         {
             // Arrange - Create a blog post first
-            var createResult = await controller.CreateEntry(blogStream.BlogKey, "Post to Delete");
+            var createResult = await controller.CreatePost(blogStream.BlogKey, "Post to Delete");
             var redirect = (RedirectToActionResult)createResult;
             var articleNumber = (int)redirect.RouteValues["id"];
 
@@ -276,12 +276,12 @@ namespace Sky.Tests.Features.Blogs
             Assert.IsNotNull(beforeDelete);
 
             // Act
-            var result = await controller.ConfirmDeleteEntry(blogStream.BlogKey, articleNumber);
+            var result = await controller.ConfirmDeletePost(blogStream.BlogKey, articleNumber);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirectResult = (RedirectToActionResult)result;
-            Assert.AreEqual(nameof(BlogController.Entries), redirectResult.ActionName);
+            Assert.AreEqual(nameof(BlogController.Posts), redirectResult.ActionName);
 
             // Verify the post is marked as deleted
             var deletedPost = await Db.Articles
@@ -293,13 +293,13 @@ namespace Sky.Tests.Features.Blogs
         }
 
         /// <summary>
-        /// Tests that ConfirmDeleteEntry marks all versions of a post as deleted.
+        /// Tests that ConfirmDeletePost marks all versions of a post as deleted.
         /// </summary>
         [TestMethod]
-        public async Task ConfirmDeleteEntry_DeletesAllVersions_OfPost()
+        public async Task ConfirmDeletePost_DeletesAllVersions_OfPost()
         {
             // Arrange - Create a post and edit it to create multiple versions
-            var createResult = await controller.CreateEntry(blogStream.BlogKey, "Multi-Version Post");
+            var createResult = await controller.CreatePost(blogStream.BlogKey, "Multi-Version Post");
             var redirect = (RedirectToActionResult)createResult;
             var articleNumber = (int)redirect.RouteValues["id"];
 
@@ -319,7 +319,7 @@ namespace Sky.Tests.Features.Blogs
             await Mediator.SendAsync(updateCommand);
 
             // Act
-            var deleteResult = await controller.ConfirmDeleteEntry(blogStream.BlogKey, articleNumber);
+            var deleteResult = await controller.ConfirmDeletePost(blogStream.BlogKey, articleNumber);
 
             // Assert
             Assert.IsInstanceOfType(deleteResult, typeof(RedirectToActionResult));
@@ -334,32 +334,32 @@ namespace Sky.Tests.Features.Blogs
         }
 
         /// <summary>
-        /// Tests that ConfirmDeleteEntry returns appropriate error message when post not found.
+        /// Tests that ConfirmDeletePost returns appropriate error message when post not found.
         /// </summary>
         [TestMethod]
-        public async Task ConfirmDeleteEntry_HandlesNotFound_Gracefully()
+        public async Task ConfirmDeletePost_HandlesNotFound_Gracefully()
         {
             // Arrange
             var nonExistentArticleNumber = 99999;
 
             // Act
-            var result = await controller.ConfirmDeleteEntry(blogStream.BlogKey, nonExistentArticleNumber);
+            var result = await controller.ConfirmDeletePost(blogStream.BlogKey, nonExistentArticleNumber);
 
             // Assert
             // When DeleteBlogPostCommand fails, it redirects with error message
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirectResult = (RedirectToActionResult)result;
-            Assert.AreEqual(nameof(BlogController.Entries), redirectResult.ActionName);
+            Assert.AreEqual(nameof(BlogController.Posts), redirectResult.ActionName);
         }
 
         /// <summary>
-        /// Tests that ConfirmDeleteEntry verifies BlogKey ownership.
+        /// Tests that ConfirmDeletePost verifies BlogKey ownership.
         /// </summary>
         [TestMethod]
-        public async Task ConfirmDeleteEntry_VerifiesBlogKeyOwnership()
+        public async Task ConfirmDeletePost_VerifiesBlogKeyOwnership()
         {
             // Arrange - Create a post in test-blog
-            var createResult = await controller.CreateEntry(blogStream.BlogKey, "Ownership Test");
+            var createResult = await controller.CreatePost(blogStream.BlogKey, "Ownership Test");
             var redirect = (RedirectToActionResult)createResult;
             var articleNumber = (int)redirect.RouteValues["id"];
 
@@ -367,7 +367,7 @@ namespace Sky.Tests.Features.Blogs
             var wrongBlogKey = "different-blog";
 
             // Act
-            var result = await controller.ConfirmDeleteEntry(wrongBlogKey, articleNumber);
+            var result = await controller.ConfirmDeletePost(wrongBlogKey, articleNumber);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));

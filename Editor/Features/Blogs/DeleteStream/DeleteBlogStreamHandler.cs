@@ -20,8 +20,8 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
     using Sky.Editor.Data.Logic;
 
     /// <summary>
-    /// Handler for deleting blog streams with cascade deletion of all associated blog entries.
-    /// Ensures all blog posts within the stream are removed before deleting the stream itself.
+    /// Handler for deleting blogs with cascade deletion of all associated blog posts.
+    /// Ensures all blog posts within the blog are removed before deleting the blog itself.
     /// </summary>
     public class DeleteBlogStreamHandler : ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>
     {
@@ -46,7 +46,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
         }
 
         /// <summary>
-        /// Handles the delete blog stream command with cascade deletion.
+        /// Handles the delete blog command with cascade deletion.
         /// </summary>
         /// <param name="command">Delete command.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -69,7 +69,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
 
             try
             {
-                // Retrieve the blog stream article
+                // Retrieve the blog article
                 var blogStreamType = (int)ArticleType.BlogStream;
                 var deletedStatusCode = (int)StatusCodeEnum.Deleted;
                 var article = await dbContext.Articles
@@ -95,7 +95,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                     blogKey,
                     streamArticleNumber);
 
-                // Find all blog entries (excluding the stream article itself)
+                // Find all blog posts (excluding the blog article itself)
                 var entryArticleNumbers = await dbContext.Articles
                     .Where(c => c.BlogKey == blogKey &&
                                 c.ArticleNumber != streamArticleNumber &&
@@ -105,11 +105,11 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                     .ToListAsync(cancellationToken);
 
                 logger.LogInformation(
-                    "Found {Count} blog entries to delete for stream {BlogKey}",
+                    "Found {Count} blog posts to delete for stream {BlogKey}",
                     entryArticleNumbers.Count,
                     blogKey);
 
-                // Delete each blog entry
+                // Delete each blog post
                 int deletedEntries = 0;
                 foreach (var entryNumber in entryArticleNumbers)
                 {
@@ -119,7 +119,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                         deletedEntries++;
 
                         logger.LogDebug(
-                            "Deleted blog entry {ArticleNumber} from stream {BlogKey}",
+                            "Deleted blog post {ArticleNumber} from stream {BlogKey}",
                             entryNumber,
                             blogKey);
                     }
@@ -127,7 +127,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                     {
                         logger.LogError(
                             ex,
-                            "Error deleting blog entry {ArticleNumber} from stream {BlogKey}",
+                            "Error deleting blog post {ArticleNumber} from stream {BlogKey}",
                             entryNumber,
                             blogKey);
 
@@ -136,12 +136,12 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                 }
 
                 logger.LogInformation(
-                    "Successfully deleted {DeletedCount} of {TotalCount} blog entries for stream {BlogKey}",
+                    "Successfully deleted {DeletedCount} of {TotalCount} blog posts for stream {BlogKey}",
                     deletedEntries,
                     entryArticleNumbers.Count,
                     blogKey);
 
-                // Delete the blog stream article itself
+                // Delete the blog article itself
                 await articleLogic.DeleteArticle(streamArticleNumber);
 
                 logger.LogInformation(

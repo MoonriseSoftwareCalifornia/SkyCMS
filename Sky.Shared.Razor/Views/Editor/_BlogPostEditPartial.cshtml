@@ -50,27 +50,32 @@
     </section>
 </article>
 <script>
-    // Handles the image widget events.
     document.addEventListener('DOMContentLoaded', () => {
-        // Handle the image changed event.
+        const bannerImageWidgetId = 'skycms-blog-post-bi';
+        const postTitle = document.getElementById('post-title');
+        let debounceTimer;
+
         if (window.CCMSImageWidgetEvents && typeof window.CCMSImageWidgetEvents.on === 'function') {
             window.CCMSImageWidgetEvents.on('imageChanged', function(info) {
-                // Update a hidden input to track the current image URL
+                if (!info || info.id !== bannerImageWidgetId) {
+                    return;
+                }
+
                 const hiddenField = parent.document.getElementById('BannerImage');
-                if (hiddenField) {
-                    hiddenField.value = info.imageSrc;
-                    saveChanges(); // Call the save function to persist changes
-                } else {
+                if (!hiddenField) {
                     console.warn('Hidden field for BannerImage not found.');
+                    return;
+                }
+
+                hiddenField.value = info.imageSrc || '';
+
+                if (typeof parent.savePagePropertiesCommand === 'function') {
+                    parent.savePagePropertiesCommand('', bannerImageWidgetId);
                 }
             });
         }
 
-        const postTitle = document.getElementById('post-title');
-        let debounceTimer;
-
         if (postTitle) {
-            // Track changes in real-time but debounce the save
             postTitle.addEventListener('input', function(event) {
                 const newTitle = event.target.textContent.trim();
 
@@ -79,12 +84,13 @@
                     const hiddenField = parent.document.getElementById('Title');
                     if (hiddenField) {
                         hiddenField.value = newTitle;
-                        parent.saveChanges();
+                        if (typeof parent.saveChanges === 'function') {
+                            parent.saveChanges();
+                        }
                     }
-                }, 1000); // Wait 1 second after user stops typing
+                }, 1000);
             });
 
-            // Also save on blur to catch any pending changes
             postTitle.addEventListener('blur', function(event) {
                 clearTimeout(debounceTimer);
                 const newTitle = event.target.textContent.trim();
@@ -93,8 +99,12 @@
 
                 if (hiddenField) {
                     hiddenField.value = newTitle;
-                    divTitle.innerText = newTitle;
-                    parent.saveChanges();
+                    if (divTitle) {
+                        divTitle.innerText = newTitle;
+                    }
+                    if (typeof parent.saveChanges === 'function') {
+                        parent.saveChanges();
+                    }
                 }
             });
         }

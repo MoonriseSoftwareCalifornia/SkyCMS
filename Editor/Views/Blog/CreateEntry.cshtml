@@ -1,8 +1,8 @@
-@model Sky.Editor.Models.Blogs.BlogEntryEditViewModel
+@model Sky.Editor.Models.Blogs.BlogPostEditViewModel
 @{
-    ViewData["Title"] = "Create Blog Entry";
+    ViewData["Title"] = "Create Blog Post";
 }
-<h2>Create Blog Entry (@Model.BlogKey)</h2>
+<h2>Create Blog Post (@Model.BlogKey)</h2>
 <form method="post">
     <input type="hidden" asp-for="BlogKey" />
     <div class="mb-3">
@@ -15,6 +15,6 @@
         <label asp-for="Introduction" class="form-label"></label>
         <textarea asp-for="Introduction" class="form-control" rows="2"></textarea>
     </div>
-    <button type="submit" class="btn btn-primary">Create</button>
-    <a class="btn btn-secondary" href="@Url.Action("Entries", new { blogKey = Model.BlogKey })">Cancel</a>
+    <button type="submit" class="btn btn-primary">Create Post</button>
+    <a class="btn btn-secondary" href="@Url.Action("Posts", new { blogKey = Model.BlogKey })">Cancel</a>
 </form>

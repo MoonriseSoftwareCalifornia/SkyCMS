@@ -24,7 +24,7 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
     using Sky.Editor.Services.Titles;
 
     /// <summary>
-    /// Handler for updating blog stream metadata and properties.
+    /// Handler for updating blog metadata and properties.
     /// Coordinates title changes, URL updates, blog rendering, and publishing.
     /// </summary>
     public class UpdateBlogStreamHandler : ICommandHandler<UpdateBlogStreamCommand, CommandResult<Article>>
@@ -62,7 +62,7 @@ namespace Sky.Editor.Features.Blogs.UpdateStream
         }
 
         /// <summary>
-        /// Handles the update blog stream command.
+        /// Handles the update blog command.
         /// </summary>
         /// <param name="command">Update command.</param>
         /// <param name="cancellationToken">Cancellation token.</param>

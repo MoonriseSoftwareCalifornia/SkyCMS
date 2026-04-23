@@ -23,8 +23,11 @@ namespace Sky.Tests.Controllers
     using Sky.Editor.Controllers;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Blogs.CreatePost;
+    using Sky.Editor.Features.Blogs.DeleteBlog;
     using Sky.Editor.Features.Blogs.DeleteStream;
+    using Sky.Editor.Features.Blogs.GetBlog;
     using Sky.Editor.Features.Blogs.GetStream;
+    using Sky.Editor.Features.Blogs.UpdateBlog;
     using Sky.Editor.Features.Blogs.UpdateStream;
     using Sky.Editor.Models.Blogs;
     using System.Collections.Generic;
@@ -146,7 +149,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirectResult = (RedirectToActionResult)result;
-            Assert.AreEqual(nameof(BlogController.Index), redirectResult.ActionName);
+            Assert.AreEqual(nameof(BlogController.Posts), redirectResult.ActionName);
 
             mediatorMock.Verify(
                 m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default),
@@ -420,7 +423,7 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Create", viewResult.ViewName);
-            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogStreamViewModel));
+            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogViewModel));
         }
 
         /// <summary>
@@ -434,11 +437,11 @@ namespace Sky.Tests.Controllers
             var blogEntity = await Db.Articles.FirstAsync(a => a.ArticleNumber == blog.ArticleNumber);
 
             mediatorMock
-                .Setup(m => m.QueryAsync(It.IsAny<GetBlogStreamQuery>(), default))
-                .ReturnsAsync(new CommandResult<GetBlogStreamQueryResult>
+                .Setup(m => m.QueryAsync(It.IsAny<GetBlogQuery>(), default))
+                .ReturnsAsync(new CommandResult<GetBlogQueryResult>
                 {
                     IsSuccess = true,
-                    Data = new GetBlogStreamQueryResult
+                    Data = new GetBlogQueryResult
                     {
                         Article = blogEntity,
                         Title = "Blog to Delete",
@@ -453,9 +456,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Delete", viewResult.ViewName);
-            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogStreamViewModel));
+            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogViewModel));
 
-            var model = (BlogStreamViewModel)viewResult.Model;
+            var model = (BlogViewModel)viewResult.Model;
             Assert.AreEqual(blogEntity.Id, model.Id);
             Assert.AreEqual("Blog to Delete", model.Title);
         }
@@ -468,8 +471,8 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             mediatorMock
-                .Setup(m => m.QueryAsync(It.IsAny<GetBlogStreamQuery>(), default))
-                .ReturnsAsync(new CommandResult<GetBlogStreamQueryResult>
+                .Setup(m => m.QueryAsync(It.IsAny<GetBlogQuery>(), default))
+                .ReturnsAsync(new CommandResult<GetBlogQueryResult>
                 {
                     IsSuccess = false
                 });
@@ -499,11 +502,11 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             mediatorMock
-                .Setup(m => m.QueryAsync(It.IsAny<GetBlogStreamQuery>(), default))
-                .ReturnsAsync(new CommandResult<GetBlogStreamQueryResult>
+                .Setup(m => m.QueryAsync(It.IsAny<GetBlogQuery>(), default))
+                .ReturnsAsync(new CommandResult<GetBlogQueryResult>
                 {
                     IsSuccess = true,
-                    Data = new GetBlogStreamQueryResult
+                    Data = new GetBlogQueryResult
                     {
                         Article = blogEntity,
                         Title = "Edit Test Blog",
@@ -521,9 +524,9 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Edit", viewResult.ViewName);
-            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogStreamViewModel));
+            Assert.IsInstanceOfType(viewResult.Model, typeof(BlogViewModel));
 
-            var model = (BlogStreamViewModel)viewResult.Model;
+            var model = (BlogViewModel)viewResult.Model;
             Assert.AreEqual("Edit Test Blog", model.Title);
             Assert.AreEqual("Test description", model.Description);
             Assert.AreEqual("/images/hero.jpg", model.HeroImage);
@@ -537,8 +540,8 @@ namespace Sky.Tests.Controllers
         {
             // Arrange
             mediatorMock
-                .Setup(m => m.QueryAsync(It.IsAny<GetBlogStreamQuery>(), default))
-                .ReturnsAsync(new CommandResult<GetBlogStreamQueryResult>
+                .Setup(m => m.QueryAsync(It.IsAny<GetBlogQuery>(), default))
+                .ReturnsAsync(new CommandResult<GetBlogQueryResult>
                 {
                     IsSuccess = false
                 });
@@ -570,7 +573,7 @@ namespace Sky.Tests.Controllers
             };
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<UpdateBlogStreamCommand>(), default))
+                .Setup(m => m.SendAsync(It.IsAny<UpdateBlogCommand>(), default))
                 .ReturnsAsync(new CommandResult<Article>
                 {
                     IsSuccess = true,
@@ -628,7 +631,7 @@ namespace Sky.Tests.Controllers
             };
 
             mediatorMock
-                .Setup(m => m.SendAsync(It.IsAny<UpdateBlogStreamCommand>(), default))
+                .Setup(m => m.SendAsync(It.IsAny<UpdateBlogCommand>(), default))
                 .ReturnsAsync(new CommandResult<Article>
                 {
                     IsSuccess = false,
@@ -653,10 +656,10 @@ namespace Sky.Tests.Controllers
         #region Blog Entry Listing Tests
 
         /// <summary>
-        /// Tests that Entries_ReturnsEntriesView_WithBlogEntries.
+        /// Tests that Posts_ReturnsViewWithBlogPosts.
         /// </summary>
         [TestMethod]
-        public async Task Entries_ReturnsEntriesView_WithBlogEntries()
+        public async Task Posts_ReturnsViewWithBlogPosts()
         {
             // Arrange
             var blogKey = "tech-blog";
@@ -678,40 +681,40 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             // Act
-            var result = await controller.Entries(blogKey);
+            var result = await controller.Posts(blogKey);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("Entries", viewResult.ViewName);
 
-            var model = viewResult.Model as BlogEntriesListViewModel;
+            var model = viewResult.Model as BlogPostsListViewModel;
             Assert.IsNotNull(model);
             Assert.AreEqual(blogKey, model.BlogKey);
             Assert.AreEqual(2, model.Entries.Count);
         }
 
         /// <summary>
-        /// Tests that Entries_ReturnsBadRequest_WhenBlogKeyNull.
+        /// Tests that Posts_ReturnsBadRequest_WhenBlogKeyNull.
         /// </summary>
         [TestMethod]
-        public async Task Entries_ReturnsBadRequest_WhenBlogKeyNull()
+        public async Task Posts_ReturnsBadRequest_WhenBlogKeyNull()
         {
             // Act
-            var result = await controller.Entries(null);
+            var result = await controller.Posts(null);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestResult));
         }
 
         /// <summary>
-        /// Tests that Entries_ReturnsNotFound_WhenBlogNotExists.
+        /// Tests that Posts_ReturnsNotFound_WhenBlogNotExists.
         /// </summary>
         [TestMethod]
-        public async Task Entries_ReturnsNotFound_WhenBlogNotExists()
+        public async Task Posts_ReturnsNotFound_WhenBlogNotExists()
         {
             // Act
-            var result = await controller.Entries("nonexistent-blog");
+            var result = await controller.Posts("nonexistent-blog");
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
@@ -737,7 +740,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
-            var data = jsonResult.Value as List<BlogStreamViewModel>;
+            var data = jsonResult.Value as List<BlogViewModel>;
 
             Assert.IsNotNull(data);
             Assert.IsTrue(data.Count >= 2, $"Expected at least 2 blogs, found {data.Count}");
@@ -746,10 +749,10 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Tests that GetEntries_ReturnsJsonListOfEntries.
+        /// Tests that GetPosts_ReturnsJsonListOfPosts.
         /// </summary>
         [TestMethod]
-        public async Task GetEntries_ReturnsJsonListOfEntries()
+        public async Task GetPosts_ReturnsJsonListOfPosts()
         {
             // Arrange
             var blogKey = "tech-blog";
@@ -758,33 +761,33 @@ namespace Sky.Tests.Controllers
             var entry2 = await CreateArticleAsync("Entry 2", TestUserId, null, blogKey, ArticleType.BlogPost);
 
             // Act
-            var result = await controller.GetEntries(blogKey);
+            var result = await controller.GetPosts(blogKey);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(JsonResult));
         }
 
         /// <summary>
-        /// Tests that GetEntries_ReturnsBadRequest_WhenBlogKeyNull.
+        /// Tests that GetPosts_ReturnsBadRequest_WhenBlogKeyNull.
         /// </summary>
         [TestMethod]
-        public async Task GetEntries_ReturnsBadRequest_WhenBlogKeyNull()
+        public async Task GetPosts_ReturnsBadRequest_WhenBlogKeyNull()
         {
             // Act
-            var result = await controller.GetEntries(null);
+            var result = await controller.GetPosts(null);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestResult));
         }
 
         /// <summary>
-        /// Tests that GetEntries_ReturnsNotFound_WhenBlogNotExists.
+        /// Tests that GetPosts_ReturnsNotFound_WhenBlogNotExists.
         /// </summary>
         [TestMethod]
-        public async Task GetEntries_ReturnsNotFound_WhenBlogNotExists()
+        public async Task GetPosts_ReturnsNotFound_WhenBlogNotExists()
         {
             // Act
-            var result = await controller.GetEntries("nonexistent");
+            var result = await controller.GetPosts("nonexistent");
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
@@ -792,13 +795,13 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
-        #region Delete Entry Tests
+        #region Delete Post Tests
 
         /// <summary>
-        /// Tests that DeleteEntry_Get_ReturnsDeleteConfirmationView.
+        /// Tests that DeletePost_Get_ReturnsDeleteConfirmationView.
         /// </summary>
         [TestMethod]
-        public async Task DeleteEntry_Get_ReturnsDeleteConfirmationView()
+        public async Task DeletePost_Get_ReturnsDeleteConfirmationView()
         {
             // Arrange
             var blogKey = "tech-blog";
@@ -827,36 +830,36 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             // Act
-            var result = await controller.DeleteEntry(blogKey, entry.ArticleNumber);
+            var result = await controller.DeletePost(blogKey, entry.ArticleNumber);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
             Assert.AreEqual("DeleteEntry", viewResult.ViewName);
 
-            var model = viewResult.Model as BlogEntryListItem;
+            var model = viewResult.Model as BlogPostListItem;
             Assert.IsNotNull(model);
             Assert.AreEqual(entry.ArticleNumber, model.ArticleNumber);
         }
 
         /// <summary>
-        /// Tests that DeleteEntry_Get_ReturnsNotFound_WhenEntryNotExists.
+        /// Tests that DeletePost_Get_ReturnsNotFound_WhenPostNotExists.
         /// </summary>
         [TestMethod]
-        public async Task DeleteEntry_Get_ReturnsNotFound_WhenEntryNotExists()
+        public async Task DeletePost_Get_ReturnsNotFound_WhenPostNotExists()
         {
             // Act
-            var result = await controller.DeleteEntry("tech-blog", 99999);
+            var result = await controller.DeletePost("tech-blog", 99999);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
 
         /// <summary>
-        /// Tests that DeleteEntry_Get_ReturnsNotFound_WhenBlogKeyMismatch.
+        /// Tests that DeletePost_Get_ReturnsNotFound_WhenBlogKeyMismatch.
         /// </summary>
         [TestMethod]
-        public async Task DeleteEntry_Get_ReturnsNotFound_WhenBlogKeyMismatch()
+        public async Task DeletePost_Get_ReturnsNotFound_WhenBlogKeyMismatch()
         {
             // Arrange
             var entry = await CreateArticleAsync("Entry", TestUserId, null, "blog-a", ArticleType.BlogPost);
@@ -865,7 +868,7 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             // Act - Try to delete with wrong blog key
-            var result = await controller.DeleteEntry("blog-b", entry.ArticleNumber);
+            var result = await controller.DeletePost("blog-b", entry.ArticleNumber);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
@@ -912,10 +915,10 @@ namespace Sky.Tests.Controllers
         #region Delete Blog Stream Tests
 
         /// <summary>
-        /// Tests that ConfirmDelete_DeletesBlogAndAllEntries.
+        /// Tests that ConfirmDelete_DeletesBlogAndAllPosts.
         /// </summary>
         [TestMethod]
-        public async Task ConfirmDelete_DeletesBlogAndAllEntries()
+        public async Task ConfirmDelete_DeletesBlogAndAllPosts()
         {
             // Arrange
             // Create a home page first to avoid the blog being marked as the home page
@@ -943,7 +946,7 @@ namespace Sky.Tests.Controllers
 
             // Verify success message is set
             Assert.IsTrue(controller.TempData.ContainsKey("Success"));
-            Assert.AreEqual("Blog stream and all entries deleted successfully", controller.TempData["Success"]);
+            Assert.AreEqual("Blog and all posts deleted successfully", controller.TempData["Success"]);
 
             // Verify mediator was called with correct command
             mediatorMock.Verify(

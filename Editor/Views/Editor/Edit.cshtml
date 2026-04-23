@@ -231,6 +231,7 @@
 
     // Modals
     const linksToast = new bootstrap.Toast(document.getElementById('linksToast'));
+    const bannerImageWidgetId = 'skycms-blog-post-bi';
 
     function openCkEditorCopilot(ed) {
         if (!window.ckeditorCopilotChat || typeof window.ckeditorCopilotChat.open !== 'function') {
@@ -304,7 +305,7 @@
         const imageWidgets = doc.querySelectorAll('[data-editor-config="image-widget"][data-ccms-ceid]');
         for (const widget of imageWidgets) {
             const widgetId = widget.getAttribute('data-ccms-ceid');
-            if (!widgetId || savedRegionIds.has(widgetId)) {
+            if (!widgetId || widgetId === bannerImageWidgetId || savedRegionIds.has(widgetId)) {
                 continue;
             }
 
@@ -316,6 +317,11 @@
 
     async function saveChanges(html, editorId) {
         if (editorId) {
+            if (editorId === bannerImageWidgetId) {
+                await savePagePropertiesCommand('', editorId);
+                return;
+            }
+
             await saveEditorRegion(html || "", editorId);
             return;
         }
@@ -803,6 +809,7 @@
     }
 
     async function saveEditorRegion(html, editorId) {
+
         EditorUI.saving();
 
         await EditorSaveService.ensureEncryptionContext();

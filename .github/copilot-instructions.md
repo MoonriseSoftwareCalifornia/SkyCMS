@@ -83,3 +83,4 @@ Provide concise, actionable guidance for AI coding agents working in this reposi
 
 ## Editor Functionality
 - When rewiring visual editor iframe/autosave save paths, editable content regions should route to `parent.saveEditorRegion` rather than `SavePageProperties`.
+- For the blog banner image widget, ensure that banner image changes save immediately on upload or delete rather than waiting for a manual save.

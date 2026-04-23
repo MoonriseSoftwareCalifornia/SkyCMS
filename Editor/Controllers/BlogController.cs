@@ -27,24 +27,24 @@ namespace Sky.Editor.Controllers
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Delete;
     using Sky.Editor.Features.Blogs.CreatePost;
-    using Sky.Editor.Features.Blogs.DeleteStream;
-    using Sky.Editor.Features.Blogs.GetStream;
-    using Sky.Editor.Features.Blogs.UpdateStream;
+    using Sky.Editor.Features.Blogs.DeleteBlog;
+    using Sky.Editor.Features.Blogs.GetBlog;
+    using Sky.Editor.Features.Blogs.UpdateBlog;
     using Sky.Editor.Models.Blogs;
     using Sky.Editor.Services.Slugs;
     using Sky.Editor.Services.Templates;
 
     /// <summary>
-    /// Editor-facing controller for managing blog streams (multi-blog support) and their entries (blog posts).
+    /// Editor-facing controller for managing blogs (multi-blog support) and their posts.
     /// </summary>
     /// <remarks>
     /// Responsibilities:
     /// <list type="bullet">
-    ///   <item>Create, list, edit, and delete blog streams (<c>Blog</c> records).</item>
+    ///   <item>Create, list, edit, and delete blogs.</item>
     ///   <item>Enforce uniqueness and validation of <c>BlogKey</c> values (route-safe identifiers).</item>
-    ///   <item>Maintain a single default blog stream (used as reassignment target).</item>
-    ///   <item>Create, edit, publish (immediate), and delete blog post entries via vertical slice architecture.</item>
-    ///   <item>Provide JSON listing endpoint for client-side selection widgets.</item>
+    ///   <item>Maintain a single default blog used as a reassignment target.</item>
+    ///   <item>Create, edit, publish, and delete blog posts via vertical slice architecture.</item>
+    ///   <item>Provide JSON listing endpoints for client-side selection widgets.</item>
     ///   <item>Provide an anonymous preview (<see cref="PreviewStream(string)"/>) for a specific blog.</item>
     /// </list>
     /// Security:
@@ -90,29 +90,29 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Lists all blog streams ordered by sort order then key.
+        /// Lists all blogs ordered by sort order then key.
         /// </summary>
-        /// <returns>Index view containing a list of <see cref="BlogStreamViewModel"/>.</returns>
+        /// <returns>Index view containing a list of <see cref="BlogViewModel"/>.</returns>
         [HttpGet("")]
         public async Task<IActionResult> Index()
         {
-            // Ensure that the Blog stream template exists.
+            // Ensure that the blog template exists.
             await templateService.EnsureDefaultTemplatesExistAsync();
             return View("Index");
         }
 
         /// <summary>
-        /// Displays the create blog stream form.
+        /// Displays the create blog form.
         /// </summary>
         /// <returns>Create view with default model.</returns>
         [HttpGet("create")]
         public IActionResult Create() =>
-            View("Create", new BlogStreamViewModel());
+            View("Create", new BlogViewModel());
 
         /// <summary>
-        /// Handles blog stream creation.
+        /// Handles blog creation.
         /// </summary>
-        /// <param name="model">Submitted blog stream view model.</param>
+        /// <param name="model">Submitted blog view model.</param>
         /// <returns>Redirect to <see cref="Index"/> on success; same view with validation errors otherwise.</returns>
         [HttpPost("create")]
         [ValidateAntiForgeryToken]
@@ -192,14 +192,14 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Displays edit form for a specified blog stream.
+        /// Displays edit form for a specified blog.
         /// </summary>
         /// <param name="id">Blog identifier (GUID).</param>
         /// <returns>Edit view or 404 if not found.</returns>
         [HttpGet("{id:guid}/edit")]
         public new async Task<IActionResult> Edit(Guid id)
         {
-            var query = new GetBlogStreamQuery
+            var query = new GetBlogQuery
             {
                 Id = id,
                 UserId = Guid.Parse(await GetUserId())
@@ -214,7 +214,7 @@ namespace Sky.Editor.Controllers
 
             var streamData = result.Data;
 
-            return View("Edit", new BlogStreamViewModel
+            return View("Edit", new BlogViewModel
             {
                 Id = streamData.Article.Id,
                 BlogKey = streamData.UrlPath,
@@ -226,7 +226,7 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Processes blog stream edits.
+        /// Processes blog edits.
         /// </summary>
         /// <param name="id">Route blog identifier.</param>
         /// <param name="model">Edited blog view model.</param>
@@ -245,7 +245,7 @@ namespace Sky.Editor.Controllers
                 return View("Edit", model);
             }
 
-            var command = new UpdateBlogStreamCommand
+            var command = new UpdateBlogCommand
             {
                 Id = id,
                 Title = model.Title,
@@ -282,7 +282,7 @@ namespace Sky.Editor.Controllers
         [HttpGet("{id:guid}/delete")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var query = new GetBlogStreamQuery { Id = id };
+            var query = new GetBlogQuery { Id = id };
             var result = await mediator.QueryAsync(query);
 
             if (!result.IsSuccess || result.Data == null)
@@ -292,7 +292,7 @@ namespace Sky.Editor.Controllers
 
             var streamData = result.Data;
 
-            return View("Delete", new BlogStreamViewModel
+            return View("Delete", new BlogViewModel
             {
                 Id = streamData.Article.Id,
                 BlogKey = streamData.BlogKey,
@@ -301,14 +301,14 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Performs deletion of a blog stream.
+        /// Performs deletion of a blog.
         /// </summary>
         /// <param name="id">Blog identifier.</param>
         /// <returns>Redirect to <see cref="Index"/> or view with errors.</returns>
         [HttpPost("{id:guid}/confirmdelete")]
         public async Task<IActionResult> ConfirmDelete(Guid id)
         {
-            var command = new DeleteBlogStreamCommand
+            var command = new DeleteBlogCommand
             {
                 Id = id,
                 UserId = Guid.Parse(await GetUserId())
@@ -328,17 +328,27 @@ namespace Sky.Editor.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            TempData["Success"] = "Blog stream and all entries deleted successfully";
+            TempData["Success"] = "Blog and all posts deleted successfully";
             return RedirectToAction(nameof(Index));
         }
 
         /// <summary>
-        /// Lists entries (articles) for a specific blog stream.
+        /// Lists posts for a specific blog.
         /// </summary>
         /// <param name="blogKey">Unique blog key.</param>
-        /// <returns>Entries view with listing model or 400/404 on invalid key.</returns>
+        /// <returns>Posts view with listing model or 400/404 on invalid key.</returns>
+        [HttpGet("{blogKey}/posts")]
+        public Task<IActionResult> Posts(string blogKey) => ListPosts(blogKey);
+
+        /// <summary>
+        /// Legacy alias for listing posts for a specific blog.
+        /// </summary>
+        /// <param name="blogKey">Unique blog key.</param>
+        /// <returns>Posts view with listing model or 400/404 on invalid key.</returns>
         [HttpGet("{blogKey}/entries")]
-        public async Task<IActionResult> Entries(string blogKey)
+        public Task<IActionResult> Entries(string blogKey) => ListPosts(blogKey);
+
+        private async Task<IActionResult> ListPosts(string blogKey)
         {
             if (string.IsNullOrWhiteSpace(blogKey))
             {
@@ -351,9 +361,6 @@ namespace Sky.Editor.Controllers
                 return NotFound();
             }
 
-            // Cosmos DB does not support cross-entity joins. Query Articles directly
-            // (same pattern as GetEntries), group by ArticleNumber, and take the
-            // latest version of each blog post.
             var deletedEnum = (int)StatusCodeEnum.Deleted;
             var blogStreamArticleNumber = blog.ArticleNumber;
             var rawEntries = await db.Articles
@@ -377,7 +384,7 @@ namespace Sky.Editor.Controllers
             var entries = rawEntries
                 .GroupBy(e => e.ArticleNumber)
                 .Select(g => g.OrderByDescending(e => e.VersionNumber).First())
-                .Select(c => new BlogEntryListItem
+                .Select(c => new BlogPostListItem
                 {
                     BlogKey = c.BlogKey,
                     ArticleNumber = c.ArticleNumber,
@@ -390,26 +397,37 @@ namespace Sky.Editor.Controllers
                 })
                 .ToList();
 
-            var vm = new BlogEntriesListViewModel
+            var vm = new BlogPostsListViewModel
             {
                 BlogKey = blog.BlogKey,
                 BlogTitle = blog.Title,
                 BlogDescription = blog.Introduction,
                 HeroImage = blog.BannerImage,
                 BlogUrlPath = blog.UrlPath,
-                Entries = entries.OrderByDescending(c => c.Published ?? c.Updated).ToList()
+                Entries = entries.Cast<BlogEntryListItem>().OrderByDescending(c => c.Published ?? c.Updated).ToList()
             };
             return View("Entries", vm);
         }
 
         /// <summary>
-        /// Creates a new blog entry for a given blog.
+        /// Creates a new blog post for a given blog.
         /// </summary>
         /// <param name="blogKey">Blog key.</param>
-        /// <param name="title">Title of the blog entry.</param>
+        /// <param name="title">Title of the blog post.</param>
+        /// <returns>Redirect to editor on success, or 404/400/500 on failure.</returns>
+        [HttpPost("{blogKey}/posts/create")]
+        public Task<IActionResult> CreatePost(string blogKey, [FromForm] string title) => CreatePostCore(blogKey, title);
+
+        /// <summary>
+        /// Legacy alias for creating a new blog post for a given blog.
+        /// </summary>
+        /// <param name="blogKey">Blog key.</param>
+        /// <param name="title">Title of the blog post.</param>
         /// <returns>Redirect to editor on success, or 404/400/500 on failure.</returns>
         [HttpPost("{blogKey}/entries/create")]
-        public async Task<IActionResult> CreateEntry(string blogKey, [FromForm] string title)
+        public Task<IActionResult> CreateEntry(string blogKey, [FromForm] string title) => CreatePostCore(blogKey, title);
+
+        private async Task<IActionResult> CreatePostCore(string blogKey, string title)
         {
             var blogStreamType = (int)ArticleType.BlogStream;
             var blog = await db.Articles.FirstOrDefaultAsync(b => b.BlogKey == blogKey && b.ArticleType == blogStreamType);
@@ -424,19 +442,16 @@ namespace Sky.Editor.Controllers
                 return BadRequest("Title is required.");
             }
 
-            var defaultLayout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(db);
-
             var userId = Guid.Parse(await GetUserId());
 
-            // Use dedicated CreateBlogPostCommand handler
             var command = new CreateBlogPostCommand
             {
                 Title = title,
-                Content = string.Empty, // Start with empty content; user will edit and publish
+                Content = string.Empty,
                 BlogKey = blogKey,
                 TemplateId = Guid.Empty,
                 UserId = userId,
-                Published = null // Explicitly unpublished until user publishes
+                Published = null
             };
 
             var result = await mediator.SendAsync(command);
@@ -444,22 +459,32 @@ namespace Sky.Editor.Controllers
             if (!result.IsSuccess)
             {
                 var errorMessage = result.ErrorMessage ?? "Failed to create blog post.";
-                return StatusCode(500, $"Failed to create blog entry: {errorMessage}");
+                return StatusCode(500, $"Failed to create blog post: {errorMessage}");
             }
 
             return RedirectToAction("Edit", "Editor", new { id = result.Data.ArticleNumber });
         }
 
         /// <summary>
-        /// Displays delete confirmation for a blog entry.
+        /// Displays delete confirmation for a blog post.
         /// </summary>
         /// <param name="blogKey">Blog key.</param>
         /// <param name="articleNumber">Article number.</param>
-        /// <returns>Delete entry view or 404.</returns>
+        /// <returns>Delete post view or 404.</returns>
+        [HttpGet("{blogKey}/posts/{articleNumber:int}/delete")]
+        public Task<IActionResult> DeletePost(string blogKey, int articleNumber) => DeletePostCore(blogKey, articleNumber);
+
+        /// <summary>
+        /// Legacy alias for displaying delete confirmation for a blog post.
+        /// </summary>
+        /// <param name="blogKey">Blog key.</param>
+        /// <param name="articleNumber">Article number.</param>
+        /// <returns>Delete post view or 404.</returns>
         [HttpGet("{blogKey}/entries/{articleNumber:int}/delete")]
-        public async Task<IActionResult> DeleteEntry(string blogKey, int articleNumber)
+        public Task<IActionResult> DeleteEntry(string blogKey, int articleNumber) => DeletePostCore(blogKey, articleNumber);
+
+        private async Task<IActionResult> DeletePostCore(string blogKey, int articleNumber)
         {
-            // Verify the article belongs to this blog
             var article = await db.Articles
                 .Where(a => a.ArticleNumber == articleNumber)
                 .FirstOrDefaultAsync();
@@ -468,7 +493,7 @@ namespace Sky.Editor.Controllers
                 return NotFound();
             }
 
-            var vm = new BlogEntryListItem
+            var vm = new BlogPostListItem
             {
                 BlogKey = article.BlogKey,
                 ArticleNumber = article.ArticleNumber,
@@ -483,17 +508,27 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Deletes a blog entry (article) via logic layer.
+        /// Deletes a blog post via logic layer.
         /// </summary>
         /// <param name="blogKey">Blog key.</param>
         /// <param name="articleNumber">Article number.</param>
-        /// <returns>Redirect to entries listing.</returns>
+        /// <returns>Redirect to post listing.</returns>
+        [HttpPost("{blogKey}/posts/{articleNumber:int}/confirmdelete")]
+        public Task<IActionResult> ConfirmDeletePost(string blogKey, int articleNumber) => ConfirmDeletePostCore(blogKey, articleNumber);
+
+        /// <summary>
+        /// Legacy alias for deleting a blog post via logic layer.
+        /// </summary>
+        /// <param name="blogKey">Blog key.</param>
+        /// <param name="articleNumber">Article number.</param>
+        /// <returns>Redirect to post listing.</returns>
         [HttpPost("{blogKey}/entries/{articleNumber:int}/confirmdeleteentry")]
-        public async Task<IActionResult> ConfirmDeleteEntry(string blogKey, int articleNumber)
+        public Task<IActionResult> ConfirmDeleteEntry(string blogKey, int articleNumber) => ConfirmDeletePostCore(blogKey, articleNumber);
+
+        private async Task<IActionResult> ConfirmDeletePostCore(string blogKey, int articleNumber)
         {
             try
             {
-                // Verify the article belongs to this blog
                 var article = await db.Articles
                     .Where(a => a.ArticleNumber == articleNumber)
                     .FirstOrDefaultAsync();
@@ -501,13 +536,13 @@ namespace Sky.Editor.Controllers
                 if (article == null)
                 {
                     TempData["Error"] = "Article not found.";
-                    return RedirectToAction(nameof(Entries), new { blogKey });
+                    return RedirectToAction(nameof(Posts), new { blogKey });
                 }
 
                 if (article.BlogKey != blogKey)
                 {
                     TempData["Error"] = "Article does not belong to this blog.";
-                    return RedirectToAction(nameof(Entries), new { blogKey });
+                    return RedirectToAction(nameof(Posts), new { blogKey });
                 }
 
                 var deleteArticleCommand = new DeleteArticleCommand()
@@ -522,7 +557,7 @@ namespace Sky.Editor.Controllers
                     throw new Exception(result.ErrorMessage);
                 }
 
-                TempData["Success"] = "Blog entry deleted successfully.";
+                TempData["Success"] = "Blog post deleted successfully.";
             }
             catch (KeyNotFoundException)
             {
@@ -533,11 +568,11 @@ namespace Sky.Editor.Controllers
                 TempData["Error"] = $"Error deleting article: {ex.Message}";
             }
 
-            return RedirectToAction(nameof(Entries), new { blogKey });
+            return RedirectToAction(nameof(Posts), new { blogKey });
         }
 
         /// <summary>
-        /// Anonymous preview page (simplified listing) for a specific blog stream, returning recent posts.
+        /// Anonymous preview page for a specific blog, returning recent posts.
         /// </summary>
         /// <param name="blogKey">Blog key.</param>
         /// <returns>Preview view with recent posts; 404 if blog not found.</returns>
@@ -561,7 +596,7 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Returns JSON list of all blog streams (for client-side UI).
+        /// Returns JSON list of all blogs (for client-side UI).
         /// </summary>
         /// <returns>JSON array of <see cref="BlogStreamViewModel"/>.</returns>
         [HttpGet("GetBlogs")]
@@ -577,7 +612,7 @@ namespace Sky.Editor.Controllers
             // This linq expression is done outside of the database query to avoid complex SQL generation.
             var data = blogs.GroupBy(a => a.ArticleNumber)
                 .Select(g => g.OrderBy(a => a.VersionNumber).LastOrDefault())
-                .Select(b => new BlogStreamViewModel
+                .Select(b => new BlogViewModel
                 {
                     Id = b.Id,
                     BlogKey = b.BlogKey,
@@ -592,12 +627,22 @@ namespace Sky.Editor.Controllers
         }
 
         /// <summary>
-        /// Lists entries (articles) for a specific blog stream.
+        /// Returns JSON list of posts for a specific blog.
         /// </summary>
         /// <param name="blogKey">Unique blog key.</param>
-        /// <returns>Entries view with listing model or 400/404 on invalid key.</returns>
+        /// <returns>JSON list of posts or 400/404 on invalid key.</returns>
+        [HttpGet("{blogKey}/getposts")]
+        public Task<IActionResult> GetPosts(string blogKey) => GetPostsCore(blogKey);
+
+        /// <summary>
+        /// Legacy alias for returning JSON list of posts for a specific blog.
+        /// </summary>
+        /// <param name="blogKey">Unique blog key.</param>
+        /// <returns>JSON list of posts or 400/404 on invalid key.</returns>
         [HttpGet("{blogKey}/getentries")]
-        public async Task<IActionResult> GetEntries(string blogKey)
+        public Task<IActionResult> GetEntries(string blogKey) => GetPostsCore(blogKey);
+
+        private async Task<IActionResult> GetPostsCore(string blogKey)
         {
             if (string.IsNullOrWhiteSpace(blogKey))
             {
@@ -610,8 +655,6 @@ namespace Sky.Editor.Controllers
                 return NotFound();
             }
 
-            // BlogEntryListItem
-            // Get the entries that match the blog key with the exception of the blog stream article itself.
             var deletedEnum = (int)StatusCodeEnum.Deleted;
             var blogStreamArticleNumber = blog.ArticleNumber;
             var entries = await db.Articles
@@ -633,7 +676,7 @@ namespace Sky.Editor.Controllers
             var model = entries
                 .GroupBy(e => e.ArticleNumber)
                 .Select(g => g.OrderByDescending(e => e.VersionNumber).First())
-                .Select(c => new BlogEntryListItem
+                .Select(c => new BlogPostListItem
                 {
                     BlogKey = c.BlogKey,
                     ArticleNumber = c.ArticleNumber,
@@ -644,6 +687,7 @@ namespace Sky.Editor.Controllers
                     Introduction = c.Introduction,
                     BannerImage = c.BannerImage
                 })
+                .Cast<BlogEntryListItem>()
                 .ToList();
 
             return Json(model.OrderByDescending(c => c.Published ?? c.Updated).ToList());

@@ -39,12 +39,13 @@ public enum ArticleType
     General = 0,
 
     /// <summary>
-    /// A blog post entry, typically time-ordered and possibly featured in feeds or archives.
+    /// A blog post, typically time-ordered and possibly featured in feeds or archives.
     /// </summary>
     BlogPost = 1,
 
     /// <summary>
-    /// Represents a blog stream content type.
+    /// A blog listing page or blog container that groups blog posts.
+    /// Retained as BlogStream for compatibility with existing persistence and contracts.
     /// </summary>
     BlogStream = 2,
 

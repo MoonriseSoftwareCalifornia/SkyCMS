@@ -1,15 +1,15 @@
-@model Sky.Editor.Models.Blogs.BlogEntryListItem
+@model Sky.Editor.Models.Blogs.BlogPostListItem
 @{
-    ViewData["Title"] = "Delete Blog Entry";
-    var action = $"/editor/blogs/{Model.BlogKey}/entries/{Model.ArticleNumber}/confirmdeleteentry";
+    ViewData["Title"] = "Delete Blog Post";
+    var action = $"/editor/blogs/{Model.BlogKey}/posts/{Model.ArticleNumber}/confirmdelete";
 }
 <div class="pt-3">
     <div class="container">
         <div class="row">
             <div class="col">
-                <h3 class="text-light">Delete Blog Entry</h3>
+                <h3 class="text-light">Delete Blog Post</h3>
                 <div class="text-light">
-                    Are you sure you want to delete: <strong>@Model.Title</strong> ?
+                    Are you sure you want to delete: <strong>@Model.Title</strong>?
                 </div>
                 <form action="@action" method="post">
                     <button type="submit" class="btn btn-danger">Delete</button>

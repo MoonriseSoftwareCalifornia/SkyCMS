@@ -1,11 +1,4 @@
-// <copyright file="GetBlogStreamQueryHandler.cs" company="Moonrise Software, LLC">
-// Copyright (c) Moonrise Software, LLC. All rights reserved.
-// Licensed under the MIT License (https://opensource.org/licenses/MIT)
-// See https://github.com/CWALabs/SkyCMS
-// for more information concerning the license and the contributors participating to this project.
-// </copyright>
-
-namespace Sky.Editor.Features.Blogs.GetStream
+namespace Sky.Editor.Features.Blogs.GetBlog
 {
     using System;
     using System.Linq;
@@ -21,32 +14,21 @@ namespace Sky.Editor.Features.Blogs.GetStream
     /// <summary>
     /// Handler for retrieving blog articles for editing or display.
     /// </summary>
-    public class GetBlogStreamQueryHandler : IQueryHandler<GetBlogStreamQuery, CommandResult<GetBlogStreamQueryResult>>
+    public class GetBlogQueryHandler : IQueryHandler<GetBlogQuery, CommandResult<GetBlogQueryResult>>
     {
         private readonly ApplicationDbContext dbContext;
-        private readonly ILogger<GetBlogStreamQueryHandler> logger;
+        private readonly ILogger<GetBlogQueryHandler> logger;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GetBlogStreamQueryHandler"/> class.
-        /// </summary>
-        /// <param name="dbContext">Application database context.</param>
-        /// <param name="logger">Logger for diagnostics.</param>
-        public GetBlogStreamQueryHandler(
+        public GetBlogQueryHandler(
             ApplicationDbContext dbContext,
-            ILogger<GetBlogStreamQueryHandler> logger)
+            ILogger<GetBlogQueryHandler> logger)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Handles the get blog query.
-        /// </summary>
-        /// <param name="query">Blog query.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Command result with blog data.</returns>
-        public async Task<CommandResult<GetBlogStreamQueryResult>> HandleAsync(
-            GetBlogStreamQuery query,
+        public async Task<CommandResult<GetBlogQueryResult>> HandleAsync(
+            GetBlogQuery query,
             CancellationToken cancellationToken = default)
         {
             if (query == null)
@@ -56,13 +38,12 @@ namespace Sky.Editor.Features.Blogs.GetStream
 
             if (query.Id == Guid.Empty)
             {
-                logger.LogWarning("GetBlogStream called with empty ID");
-                return CommandResult<GetBlogStreamQueryResult>.Failure("Blog stream ID is required.");
+                logger.LogWarning("GetBlog called with empty ID");
+                return CommandResult<GetBlogQueryResult>.Failure("Blog ID is required.");
             }
 
             try
             {
-                // Get the latest version of the blog article
                 var blogStreamType = (int)ArticleType.BlogStream;
                 var deletedStatusCode = (int)StatusCodeEnum.Deleted;
                 var article = await dbContext.Articles
@@ -74,11 +55,11 @@ namespace Sky.Editor.Features.Blogs.GetStream
 
                 if (article == null)
                 {
-                    logger.LogWarning("Blog stream {Id} not found", query.Id);
-                    return CommandResult<GetBlogStreamQueryResult>.Failure($"Blog stream with ID '{query.Id}' not found.");
+                    logger.LogWarning("Blog {Id} not found", query.Id);
+                    return CommandResult<GetBlogQueryResult>.Failure($"Blog with ID '{query.Id}' not found.");
                 }
 
-                var result = new GetBlogStreamQueryResult
+                var result = new GetBlogQueryResult
                 {
                     Article = article,
                     Title = article.Title,
@@ -90,17 +71,17 @@ namespace Sky.Editor.Features.Blogs.GetStream
                 };
 
                 logger.LogInformation(
-                    "Retrieved blog stream {Id} (Title: {Title}, BlogKey: {BlogKey})",
+                    "Retrieved blog {Id} (Title: {Title}, BlogKey: {BlogKey})",
                     query.Id,
                     article.Title,
                     article.BlogKey);
 
-                return CommandResult<GetBlogStreamQueryResult>.Success(result);
+                return CommandResult<GetBlogQueryResult>.Success(result);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error retrieving blog stream {Id}", query.Id);
-                return CommandResult<GetBlogStreamQueryResult>.Failure($"Error retrieving blog stream: {ex.Message}");
+                logger.LogError(ex, "Error retrieving blog {Id}", query.Id);
+                return CommandResult<GetBlogQueryResult>.Failure($"Error retrieving blog: {ex.Message}");
             }
         }
     }
