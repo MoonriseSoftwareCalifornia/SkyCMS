@@ -7,12 +7,14 @@
 
 namespace Sky.Tests.Controllers
 {
+    using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
+    using Sky.Editor.Models;
     using Sky.Editor.Models.GrapesJs;
     using System;
     using System.Collections;
@@ -296,6 +298,208 @@ namespace Sky.Tests.Controllers
             var target = items.Single(i => string.Equals(GetPropertyValue<string>(i, "Title"), "Non Editable Marker Article", StringComparison.Ordinal));
 
             Assert.IsFalse(GetPropertyValue<bool>(target, "HtmlEditorEnabled"));
+        }
+
+        /// <summary>
+        /// Tests that GetArticleList nests blog posts under their owning blog stream.
+        /// </summary>
+        [TestMethod]
+        public async Task GetArticleList_NestsBlogPostsUnderBlogStream()
+        {
+            // Arrange
+            var blogStream = await CreateArticleAsync("News Blog", TestUserId);
+            var blogStreamEntity = await Db.Articles.FirstAsync(a => a.Id == blogStream.Id);
+            blogStreamEntity.ArticleType = (int)ArticleType.BlogStream;
+            blogStreamEntity.BlogKey = "news";
+            blogStreamEntity.UrlPath = "news";
+            blogStreamEntity.Published = DateTimeOffset.UtcNow;
+
+            var blogPost = await CreateArticleAsync("Welcome Post", TestUserId);
+            var blogPostEntity = await Db.Articles.FirstAsync(a => a.Id == blogPost.Id);
+            blogPostEntity.ArticleType = (int)ArticleType.BlogPost;
+            blogPostEntity.BlogKey = "news";
+            blogPostEntity.UrlPath = "welcome-post";
+            blogPostEntity.Published = DateTimeOffset.UtcNow;
+
+            var page = await CreateArticleAsync("About Us", TestUserId);
+            var pageEntity = await Db.Articles.FirstAsync(a => a.Id == page.Id);
+            pageEntity.ArticleType = (int)ArticleType.General;
+            pageEntity.UrlPath = "about-us";
+            pageEntity.Published = DateTimeOffset.UtcNow;
+
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetArticleList(publishedOnly: false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var items = ((IEnumerable<EditorInventoryItem>)jsonResult.Value!).ToList();
+
+            Assert.AreEqual(2, items.Count, "Only the page and blog stream should be top-level rows.");
+
+            var blogRow = items.Single(i => i.ArticleNumber == blogStream.ArticleNumber);
+            Assert.AreEqual(EditorInventoryRowType.Blog, blogRow.RowType);
+            Assert.AreEqual(1, blogRow.ChildCount);
+            Assert.AreEqual(1, blogRow.Children.Count);
+            Assert.AreEqual(blogPost.ArticleNumber, blogRow.Children[0].ArticleNumber);
+            Assert.AreEqual(EditorInventoryRowType.BlogPost, blogRow.Children[0].RowType);
+            Assert.AreEqual("news/welcome-post", blogRow.Children[0].PreviewUrlPath);
+
+            var pageRow = items.Single(i => i.ArticleNumber == page.ArticleNumber);
+            Assert.AreEqual(EditorInventoryRowType.Page, pageRow.RowType);
+            Assert.AreEqual(0, pageRow.Children.Count);
+        }
+
+        /// <summary>
+        /// Tests that search by blog post title keeps the blog stream parent row.
+        /// </summary>
+        [TestMethod]
+        public async Task GetArticleList_SearchByBlogPostTitle_PreservesBlogParent()
+        {
+            // Arrange
+            var blogStream = await CreateArticleAsync("Company Updates", TestUserId);
+            var blogStreamEntity = await Db.Articles.FirstAsync(a => a.Id == blogStream.Id);
+            blogStreamEntity.ArticleType = (int)ArticleType.BlogStream;
+            blogStreamEntity.BlogKey = "updates";
+            blogStreamEntity.UrlPath = "updates";
+            blogStreamEntity.Published = DateTimeOffset.UtcNow;
+
+            var matchingPost = await CreateArticleAsync("Quarterly Recap", TestUserId);
+            var matchingPostEntity = await Db.Articles.FirstAsync(a => a.Id == matchingPost.Id);
+            matchingPostEntity.ArticleType = (int)ArticleType.BlogPost;
+            matchingPostEntity.BlogKey = "updates";
+            matchingPostEntity.UrlPath = "quarterly-recap";
+            matchingPostEntity.Published = DateTimeOffset.UtcNow;
+
+            var nonMatchingPost = await CreateArticleAsync("Engineering Notes", TestUserId);
+            var nonMatchingPostEntity = await Db.Articles.FirstAsync(a => a.Id == nonMatchingPost.Id);
+            nonMatchingPostEntity.ArticleType = (int)ArticleType.BlogPost;
+            nonMatchingPostEntity.BlogKey = "updates";
+            nonMatchingPostEntity.UrlPath = "engineering-notes";
+            nonMatchingPostEntity.Published = DateTimeOffset.UtcNow;
+
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetArticleList(term: "recap", publishedOnly: false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var items = ((IEnumerable<EditorInventoryItem>)jsonResult.Value!).ToList();
+
+            Assert.AreEqual(1, items.Count, "Only the parent blog stream should remain in filtered results.");
+            var blogRow = items.Single();
+            Assert.AreEqual(EditorInventoryRowType.Blog, blogRow.RowType);
+            Assert.AreEqual("Company Updates", blogRow.Title);
+            Assert.AreEqual(1, blogRow.Children.Count, "Only matching child posts should remain when parent title does not match.");
+            Assert.AreEqual("Quarterly Recap", blogRow.Children[0].Title);
+        }
+
+        /// <summary>
+        /// Tests that article type filtering for blog posts returns top-level post rows.
+        /// </summary>
+        [TestMethod]
+        public async Task GetArticleList_FilterByBlogPostType_ReturnsBlogPostRows()
+        {
+            // Arrange
+            var blogStream = await CreateArticleAsync("Tech Blog", TestUserId);
+            var blogStreamEntity = await Db.Articles.FirstAsync(a => a.Id == blogStream.Id);
+            blogStreamEntity.ArticleType = (int)ArticleType.BlogStream;
+            blogStreamEntity.BlogKey = "tech";
+            blogStreamEntity.UrlPath = "tech";
+            blogStreamEntity.Published = DateTimeOffset.UtcNow;
+
+            var blogPost = await CreateArticleAsync("Platform Update", TestUserId);
+            var blogPostEntity = await Db.Articles.FirstAsync(a => a.Id == blogPost.Id);
+            blogPostEntity.ArticleType = (int)ArticleType.BlogPost;
+            blogPostEntity.BlogKey = "tech";
+            blogPostEntity.UrlPath = "platform-update";
+            blogPostEntity.Published = DateTimeOffset.UtcNow;
+
+            var page = await CreateArticleAsync("Contact", TestUserId);
+            var pageEntity = await Db.Articles.FirstAsync(a => a.Id == page.Id);
+            pageEntity.ArticleType = (int)ArticleType.General;
+            pageEntity.UrlPath = "contact";
+            pageEntity.Published = DateTimeOffset.UtcNow;
+
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetArticleList(publishedOnly: false, articleType: (int)ArticleType.BlogPost);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var items = ((IEnumerable<EditorInventoryItem>)jsonResult.Value!).ToList();
+
+            Assert.AreEqual(1, items.Count);
+            Assert.AreEqual(blogPost.ArticleNumber, items[0].ArticleNumber);
+            Assert.AreEqual(EditorInventoryRowType.BlogPost, items[0].RowType);
+            Assert.AreEqual(0, items[0].Children.Count);
+        }
+
+        /// <summary>
+        /// Tests that publishedOnly returns only published blog rows and published child posts.
+        /// </summary>
+        [TestMethod]
+        public async Task GetArticleList_PublishedOnly_FiltersUnpublishedBlogContent()
+        {
+            // Arrange
+            var publishedBlog = await CreateArticleAsync("Published Blog", TestUserId);
+            var publishedBlogEntity = await Db.Articles.FirstAsync(a => a.Id == publishedBlog.Id);
+            publishedBlogEntity.ArticleType = (int)ArticleType.BlogStream;
+            publishedBlogEntity.BlogKey = "published-blog";
+            publishedBlogEntity.UrlPath = "published-blog";
+            publishedBlogEntity.Published = DateTimeOffset.UtcNow;
+
+            var publishedPost = await CreateArticleAsync("Published Post", TestUserId);
+            var publishedPostEntity = await Db.Articles.FirstAsync(a => a.Id == publishedPost.Id);
+            publishedPostEntity.ArticleType = (int)ArticleType.BlogPost;
+            publishedPostEntity.BlogKey = "published-blog";
+            publishedPostEntity.UrlPath = "published-post";
+            publishedPostEntity.Published = DateTimeOffset.UtcNow;
+
+            var unpublishedPost = await CreateArticleAsync("Draft Post", TestUserId);
+            var unpublishedPostEntity = await Db.Articles.FirstAsync(a => a.Id == unpublishedPost.Id);
+            unpublishedPostEntity.ArticleType = (int)ArticleType.BlogPost;
+            unpublishedPostEntity.BlogKey = "published-blog";
+            unpublishedPostEntity.UrlPath = "draft-post";
+            unpublishedPostEntity.Published = null;
+
+            var unpublishedBlog = await CreateArticleAsync("Unpublished Blog", TestUserId);
+            var unpublishedBlogEntity = await Db.Articles.FirstAsync(a => a.Id == unpublishedBlog.Id);
+            unpublishedBlogEntity.ArticleType = (int)ArticleType.BlogStream;
+            unpublishedBlogEntity.BlogKey = "unpublished-blog";
+            unpublishedBlogEntity.UrlPath = "unpublished-blog";
+            unpublishedBlogEntity.Published = null;
+
+            var unpublishedBlogPost = await CreateArticleAsync("Unpublished Blog Post", TestUserId);
+            var unpublishedBlogPostEntity = await Db.Articles.FirstAsync(a => a.Id == unpublishedBlogPost.Id);
+            unpublishedBlogPostEntity.ArticleType = (int)ArticleType.BlogPost;
+            unpublishedBlogPostEntity.BlogKey = "unpublished-blog";
+            unpublishedBlogPostEntity.UrlPath = "unpublished-blog-post";
+            unpublishedBlogPostEntity.Published = DateTimeOffset.UtcNow;
+
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetArticleList(publishedOnly: true);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var items = ((IEnumerable<EditorInventoryItem>)jsonResult.Value!).ToList();
+
+            var publishedBlogRow = items.Single(i => i.ArticleNumber == publishedBlog.ArticleNumber);
+            Assert.AreEqual(EditorInventoryRowType.Blog, publishedBlogRow.RowType);
+            Assert.AreEqual(1, publishedBlogRow.Children.Count, "Only published posts under published blog should be returned.");
+            Assert.AreEqual("Published Post", publishedBlogRow.Children[0].Title);
+
+            Assert.IsFalse(items.Any(i => i.ArticleNumber == unpublishedBlog.ArticleNumber), "Unpublished blog should not be present in publishedOnly results.");
+            Assert.IsFalse(publishedBlogRow.Children.Any(c => c.ArticleNumber == unpublishedPost.ArticleNumber), "Unpublished child post should be filtered out.");
         }
 
         #endregion

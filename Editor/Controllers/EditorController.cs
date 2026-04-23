@@ -1408,86 +1408,233 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
+            var activeStatusCode = (int)StatusCodeEnum.Active;
+
+            var query = dbContext.Articles
+                .Where(a => a.StatusCode == activeStatusCode)
+                .Select(a => new
+                {
+                    a.ArticleNumber,
+                    a.ArticleType,
+                    a.Title,
+                    a.UrlPath,
+                    a.BlogKey,
+                    a.Published,
+                    a.Updated,
+                    a.VersionNumber,
+                    a.Content,
+                });
+
+            if (publishedOnly)
+            {
+                query = query.Where(a => a.Published != null);
+            }
+
+            if (articleType > 0)
+            {
+                query = query.Where(a => a.ArticleType == articleType);
+            }
+
+            var rows = await query.ToListAsync();
+
+            var latestRows = rows
+                .GroupBy(a => a.ArticleNumber)
+                .Select(g => g.OrderByDescending(a => a.VersionNumber).First())
+                .ToList();
+
+            var model = BuildEditorInventory(latestRows.Select(s => new EditorInventoryItem
+            {
+                ArticleNumber = s.ArticleNumber,
+                ArticleType = s.ArticleType,
+                Title = s.Title,
+                BlogKey = s.BlogKey,
+                IsDefault = string.Equals(s.UrlPath, "root", StringComparison.OrdinalIgnoreCase),
+                LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
+                UrlPath = s.UrlPath,
+                Updated = s.Updated.UtcDateTime.ToString("o"),
+                HtmlEditorEnabled = HasEditableRegions(s.Content),
+                UsesHtmlEditor = HasEditableRegions(s.Content),
+            }));
+
+            model = FilterEditorInventoryByTerm(model, term);
+
+            return Json(model);
+        }
+
+        private static List<EditorInventoryItem> BuildEditorInventory(IEnumerable<EditorInventoryItem> rows)
+        {
             var blogPostArticleType = (int)ArticleType.BlogPost;
+            var blogStreamArticleType = (int)ArticleType.BlogStream;
 
-            if (dbContext.Database.IsCosmos())
+            var normalizedRows = rows
+                .Select(CloneAndNormalizeRow)
+                .ToList();
+
+            var blogStreams = normalizedRows
+                .Where(r => r.ArticleType == blogStreamArticleType)
+                .ToDictionary(r => r.BlogKey ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
+            var blogPostsByKey = normalizedRows
+                .Where(r => r.ArticleType == blogPostArticleType && !string.IsNullOrWhiteSpace(r.BlogKey))
+                .GroupBy(r => r.BlogKey, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(r => r.LastPublished ?? r.Updated)
+                        .ThenBy(r => r.Title, StringComparer.OrdinalIgnoreCase)
+                        .ToList(),
+                    StringComparer.OrdinalIgnoreCase);
+
+            foreach (var blogStream in blogStreams.Values)
             {
-                var whereClause = publishedOnly ? $"WHERE c.Published != null AND " : "WHERE ";
-                whereClause += $"c.StatusCode = {(int)StatusCodeEnum.Active} ";
+                blogStream.RowType = EditorInventoryRowType.Blog;
 
-                if (!string.IsNullOrEmpty(term))
+                if (blogPostsByKey.TryGetValue(blogStream.BlogKey, out var blogPosts))
                 {
-                    whereClause += $"AND LOWER(c.Title) LIKE '%{term.ToLower()}%' ";
+                    foreach (var blogPost in blogPosts)
+                    {
+                        blogPost.RowType = EditorInventoryRowType.BlogPost;
+                        blogPost.PreviewUrlPath = CombineUrlPath(blogStream.UrlPath, blogPost.UrlPath);
+                    }
+
+                    blogStream.Children = blogPosts;
+                    blogStream.ChildCount = blogPosts.Count;
+                }
+            }
+
+            var topLevelRows = normalizedRows
+                .Where(r => r.ArticleType != blogPostArticleType)
+                .ToList();
+
+            var orphanPosts = normalizedRows
+                .Where(r => r.ArticleType == blogPostArticleType && !blogStreams.ContainsKey(r.BlogKey ?? string.Empty))
+                .ToList();
+
+            foreach (var orphanPost in orphanPosts)
+            {
+                orphanPost.RowType = EditorInventoryRowType.BlogPost;
+            }
+
+            topLevelRows.AddRange(orphanPosts);
+
+            return topLevelRows
+                .OrderBy(r => r.Title, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static List<EditorInventoryItem> FilterEditorInventoryByTerm(List<EditorInventoryItem> items, string term)
+        {
+            if (string.IsNullOrWhiteSpace(term))
+            {
+                return items;
+            }
+
+            var filtered = new List<EditorInventoryItem>();
+
+            foreach (var item in items)
+            {
+                var parentMatches = MatchesSearchTerm(item, term);
+                var matchingChildren = item.Children
+                    .Where(c => MatchesSearchTerm(c, term))
+                    .Select(CloneAndNormalizeRow)
+                    .ToList();
+
+                if (!parentMatches && matchingChildren.Count == 0)
+                {
+                    continue;
                 }
 
-                var query = $"SELECT c.ArticleNumber, c.ArticleType, c.Title, c.UrlPath, " +
-                    "MAX(c.Published) as Published, " +
-                    "MAX(c.Updated) as Updated, " +
-                    "MAX(IIF(IS_DEFINED(c.Content) AND (CONTAINS(LOWER(c.Content), ' contenteditable=') OR CONTAINS(LOWER(c.Content), ' data-ccms-ceid=')), 1, 0)) as EditableRegionCount " +
-                    $"FROM Articles c {whereClause} GROUP BY c.ArticleNumber, c.ArticleType, c.Title, c.UrlPath";
+                var filteredItem = CloneAndNormalizeRow(item);
+                filteredItem.RowType = item.RowType;
 
-                var client = dbContext.Database.GetCosmosClient();
-                var queryService = new CosmosDbService(client, dbContext.Database.GetCosmosDatabaseId(), "Articles");
-
-                var data = await queryService.QueryWithGroupByAsync<ArticleListViewItem>(query);
-
-                var model = data.Select(s => new
+                if (item.Children.Count > 0)
                 {
-                    s.ArticleNumber,
-                    s.ArticleType,
-                    s.Title,
-                    IsDefault = s.UrlPath == "root",
-                    LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
-                    UrlPath = HttpUtility.UrlEncode(s.UrlPath).Replace("%2f", "/"),
-                    Updated = s.Updated.UtcDateTime.ToString("o"),
-                    HtmlEditorEnabled = (s.EditableRegionCount ?? 0) > 0,
-                }).OrderBy(o => o.Title).ToList();
+                    filteredItem.Children = parentMatches
+                        ? item.Children.Select(CloneAndNormalizeRow).ToList()
+                        : matchingChildren;
 
-                return Json(model);
-            }
-            else
-            {
-                var activeStatusCode = (int)StatusCodeEnum.Active;
-                var query = publishedOnly ? dbContext.Articles
-                    .Where(a => a.Published != null && a.StatusCode == activeStatusCode && a.ArticleType != blogPostArticleType) :
-                    dbContext.Articles
-                    .Where(a => a.StatusCode == activeStatusCode && a.ArticleType == 0);
-
-                if (!string.IsNullOrEmpty(term))
-                {
-                    query = query.Where(a => a.Title.ToLower().Contains(term.ToLower()));
+                    filteredItem.ChildCount = filteredItem.Children.Count;
                 }
 
-                var grouped = await query
-                .GroupBy(a => new { a.ArticleNumber, a.Title, a.UrlPath })
-                .Select(g => new
-                {
-                    ArticleNumber = g.Key.ArticleNumber,
-                    Title = g.Key.Title,
-                    UrlPath = g.Key.UrlPath,
-                    Published = g.Max(x => x.Published),
-                    Updated = g.Max(x => x.Updated),
-                    EditableRegionCount = g.Count(x =>
-                        x.Content != null &&
-                        (x.Content.ToLower().Contains(" contenteditable=") ||
-                         x.Content.ToLower().Contains(" data-ccms-ceid=")))
-                })
-                .OrderBy(o => o.Title)
-                .ToListAsync();
-
-                var model = grouped.Select(s => new
-                {
-                    s.ArticleNumber,
-                    s.Title,
-                    IsDefault = s.UrlPath == "root",
-                    LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
-                    UrlPath = HttpUtility.UrlEncode(s.UrlPath).Replace("%2f", "/"),
-                    Updated = s.Updated,
-                    HtmlEditorEnabled = s.EditableRegionCount > 0,
-                }).ToList();
-
-                return Json(model);
+                filtered.Add(filteredItem);
             }
+
+            return filtered;
+        }
+
+        private static bool MatchesSearchTerm(EditorInventoryItem item, string term)
+        {
+            return ContainsIgnoreCase(item.Title, term)
+                || ContainsIgnoreCase(item.BlogKey, term)
+                || ContainsIgnoreCase(item.UrlPath, term)
+                || ContainsIgnoreCase(item.PreviewUrlPath, term);
+        }
+
+        private static bool ContainsIgnoreCase(string value, string term)
+        {
+            return !string.IsNullOrWhiteSpace(value)
+                && value.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static EditorInventoryItem CloneAndNormalizeRow(EditorInventoryItem row)
+        {
+            var normalizedPath = NormalizeUrlPath(row.UrlPath);
+
+            return new EditorInventoryItem
+            {
+                ArticleNumber = row.ArticleNumber,
+                ArticleType = row.ArticleType,
+                RowType = row.RowType,
+                Title = row.Title,
+                UrlPath = normalizedPath,
+                PreviewUrlPath = normalizedPath,
+                BlogKey = row.BlogKey ?? string.Empty,
+                IsDefault = row.IsDefault,
+                LastPublished = row.LastPublished,
+                Updated = row.Updated,
+                HtmlEditorEnabled = row.HtmlEditorEnabled,
+                UsesHtmlEditor = row.UsesHtmlEditor || row.HtmlEditorEnabled,
+                ChildCount = row.ChildCount,
+                Children = new List<EditorInventoryItem>(),
+            };
+        }
+
+        private static string NormalizeUrlPath(string urlPath)
+        {
+            if (string.IsNullOrWhiteSpace(urlPath))
+            {
+                return string.Empty;
+            }
+
+            return HttpUtility.UrlEncode(urlPath).Replace("%2f", "/");
+        }
+
+        private static string CombineUrlPath(string parentPath, string childPath)
+        {
+            var normalizedParent = NormalizeUrlPath(parentPath).Trim('/');
+            var normalizedChild = NormalizeUrlPath(childPath).Trim('/');
+
+            if (string.IsNullOrEmpty(normalizedParent))
+            {
+                return normalizedChild;
+            }
+
+            if (string.IsNullOrEmpty(normalizedChild))
+            {
+                return normalizedParent;
+            }
+
+            return $"{normalizedParent}/{normalizedChild}";
+        }
+
+        private static bool HasEditableRegions(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return false;
+            }
+
+            var loweredContent = content.ToLower();
+            return loweredContent.Contains(" contenteditable=") || loweredContent.Contains(" data-ccms-ceid=");
         }
 
         /// <summary>

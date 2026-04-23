@@ -102,6 +102,11 @@
 
     const publisherUrl = "@options.PublisherUrl.TrimEnd('/')";
     const tblHeight = window.innerHeight - 200;
+    const inventoryRowTypes = {
+        page: "page",
+        blog: "blog",
+        blogPost: "blogPost"
+    };
     let pageSize = Math.round(tblHeight / 50) + 1;
 
     function dateTime(cell, formatterParams, onRendered){
@@ -136,6 +141,16 @@
         window.location.href = "@Url.Action("Versions")/" + data.ArticleNumber;
     }
 
+    function openInventoryItem(e, cell) {
+        const data = cell.getRow().getData();
+        if (data.RowType === inventoryRowTypes.blog && data.BlogKey) {
+            window.location.href = "/editor/blogs/" + encodeURIComponent(data.BlogKey) + "/posts";
+            return;
+        }
+
+        openArticleVersions(e, cell);
+    }
+
     function unpublish(articleNumber) {
         const data = cell.getRow().getData();
         $.get("@Url.Action("UnpublishPage", "Editor")/" + articleNumber, function (data) {
@@ -148,8 +163,52 @@
         if (data.IsDefault === true){
             return "";
         }
-        return "<button type='button' title='Send page to trash' onclick='sendToTrash(" + data.ArticleNumber + ", \"" + data.Title + "\")' class='btn btn-sm btn-secondary'><i class='fa-solid fa-trash'></i></button>";
+
+        let itemLabel = "page";
+        if (data.RowType === inventoryRowTypes.blog) {
+            itemLabel = "blog";
+        } else if (data.RowType === inventoryRowTypes.blogPost) {
+            itemLabel = "post";
+        }
+
+        return "<button type='button' title='Send " + itemLabel + " to trash' onclick='sendToTrash(" + data.ArticleNumber + ", \"" + data.Title + "\")' class='btn btn-sm btn-secondary'><i class='fa-solid fa-trash'></i></button>";
     };
+
+    function getPreviewPath(data) {
+        const rawPath = data.PreviewUrlPath || data.UrlPath || "";
+        return rawPath === "root" ? "" : rawPath;
+    }
+
+    function buildPreviewButton(data, label, title) {
+        const previewPath = getPreviewPath(data);
+        if (data.LastPublished !== null && data.LastPublished !== "") {
+            return "<a target='_blank' href='" + publisherUrl + "/" + previewPath + "' title='" + title + "' class='btn btn-sm btn-secondary'><i class='fa-solid fa-arrow-up-right-from-square'></i> " + label + "</a>";
+        }
+
+        return "<a title='Cannot open item on website until it is published.' onclick='alert(\"Cannot open item on website until it is published.\")' class='btn btn-sm btn-secondary'><i class='fa-solid fa-arrow-up-right-from-square'></i></a>";
+    }
+
+    function buildBlogPostsButton(blogKey, label, title) {
+        if (!blogKey) {
+            return "";
+        }
+
+        return "<a href='/editor/blogs/" + encodeURIComponent(blogKey) + "/posts' title='" + title + "' class='btn btn-sm btn-secondary'><i class='fa-solid fa-newspaper'></i> " + label + "</a>";
+    }
+
+    function titleFormatter(cell, formatterParams, onRendered) {
+        const data = cell.getRow().getData();
+        const title = data.Title || "";
+        if (data.RowType === inventoryRowTypes.blog) {
+            return "<span class='badge text-bg-info me-2'>Blog</span>" + title;
+        }
+
+        if (data.RowType === inventoryRowTypes.blogPost) {
+            return "<span class='badge text-bg-secondary me-2'>Post</span>" + title;
+        }
+
+        return title;
+    }
 
     function buildEditorDropDownMarkup(articleNumber, usesPageEditor) {
         if (typeof ccms___buildEditDropDownMenu !== "function") {
@@ -182,31 +241,23 @@
     const menuBar = function(cell, formatterParams){
         const data = cell.getRow().getData();
 
-        let html = "<div class='btn-group btn-group-sm' role='group' aria-label='Page actions.'>";
+        let html = "<div class='btn-group btn-group-sm' role='group' aria-label='Inventory actions.'>";
 
         html += buildEditorDropDownMarkup(data.ArticleNumber, data.UsesHtmlEditor === true);
 
-        // html += "<a href='/Editor/Versions/" + data.ArticleNumber + "' title='Click to edit page.' class='btn btn-sm btn-success'><i class='fa-solid fa-pen-to-square'></i></a>";
-        let url = data.UrlPath;
-        if (url === "root") {
-            url = "";
+        if (data.RowType === inventoryRowTypes.blog || data.RowType === inventoryRowTypes.blogPost) {
+            html += buildBlogPostsButton(data.BlogKey, "Posts", "Open blog posts list.");
         }
 
-        if (data.LastPublished !== null && data.LastPublished !== ""){
-            html += "<a target='_blank' href='" + publisherUrl + "/" + url + "' title='Open page on website.'  class='btn btn-sm btn-secondary'><i class='fa-solid fa-arrow-up-right-from-square'></i></a>";
-        }
-        else
-        {
-            html += "<a title='Cannot open page on website until it is published.' onclick='alert(\"Cannot open page on website until it is published.\")' class='btn btn-sm btn-secondary'><i class='fa-solid fa-arrow-up-right-from-square'></i></a>";
-        }
+        html += buildPreviewButton(data, "Preview", "Open item on website.");
 
-        if (data.IsDefault === true){
+        if (data.RowType === inventoryRowTypes.page && data.IsDefault === true){
             html += "<div title='Current home page.' class='btn btn-sm btn-primary'><i class='fa-solid fa-house'></i></div>";
         }
-        else if (data.LastPublished !== null && data.LastPublished !== ""){
+        else if (data.RowType === inventoryRowTypes.page && data.LastPublished !== null && data.LastPublished !== ""){
             html += "<a href='/Editor/NewHome/" + data.ArticleNumber + "' title='Make this the new home page.' class='btn btn-sm btn-secondary'><i class='fa-solid fa-house'></i></a>";
         }
-        else
+        else if (data.RowType === inventoryRowTypes.page)
         {
             html += "<a title='Cannot make this the new home page until it is published.' onclick='alert(\"Cannot make this the home until it is published.\")' class='btn btn-sm btn-secondary'><i class='fa-solid fa-house'></i></a>";
         }
@@ -226,6 +277,11 @@
         pagination:true, //enable pagination
         paginationMode:"local", //enable local pagination
         paginationSize:pageSize, //optional parameter to request a certain number of rows per page
+        dataTree:true,
+        dataTreeChildField:"_children",
+        dataTreeStartExpanded:false,
+        dataTreeSort:true,
+        dataTreeFilter:true,
         persistence:{
             sort: true, //persist column sorting
             filter: true, //persist filters
@@ -249,7 +305,10 @@
         layout:"fitColumns",
         ajaxURL:"@Url.Action("GetArticleList", "Editor")?publishedOnly=false", //ajax URL
         columns:[
+            {title:"Type", field:"RowType", visible:false },
+            {title:"BlogKey", field:"BlogKey", visible:false },
             {title:"UrlPath", field:"UrlPath", visible: false },
+            {title:"PreviewUrlPath", field:"PreviewUrlPath", visible: false },
             {title:"No.", field:"ArticleNumber", visible: false },
 
             {title:"Actions", field:"IsDefault", formatter:menuBar, width:300, headerSort:false },
@@ -258,7 +317,7 @@
                 field:"LastPublished",
                 headerFilter:"date",
                 headerFilterFunc:dateFilterFunction,
-                cellClick:openArticleVersions,
+                cellClick:openInventoryItem,
                 width:180,
                 sorter:"datetime",
                 sorterParams:{
@@ -275,7 +334,7 @@
                 field:"Updated",
                 headerFilter:"date",
                 headerFilterFunc:dateFilterFunction,
-                cellClick:openArticleVersions,
+                cellClick:openInventoryItem,
                 width:180,
                 sorter:"datetime",
                 sorterParams:{
@@ -288,7 +347,7 @@
                 }
             },
 
-            {title:"Title", field:"Title", sorter:"string", headerFilter:"input", cellClick:openArticleVersions },
+            {title:"Title", field:"Title", sorter:"string", formatter:titleFormatter, headerFilter:"input", cellClick:openInventoryItem },
 
             {title: "Trash", field:"ArticleNumber", formatter:trashBtn, width:56, headerSort:false, hozAlign:"center", headerHozAlign:"center" }
 
