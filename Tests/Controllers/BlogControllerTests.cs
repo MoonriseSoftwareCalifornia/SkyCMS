@@ -281,7 +281,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirectResult = (RedirectToActionResult)result;
-            Assert.AreEqual("Edit", redirectResult.ActionName);
+            Assert.AreEqual("VisualEditor", redirectResult.ActionName);
             Assert.AreEqual("Editor", redirectResult.ControllerName);
 
             mediatorMock.Verify(
@@ -1090,7 +1090,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(entryResult, typeof(RedirectToActionResult));
             var redirectResult = (RedirectToActionResult)entryResult;
-            Assert.AreEqual("Edit", redirectResult.ActionName);
+            Assert.AreEqual("VisualEditor", redirectResult.ActionName);
             Assert.AreEqual("Editor", redirectResult.ControllerName);
             Assert.AreEqual(mockEntryResult.ArticleNumber, redirectResult.RouteValues["id"]);
 

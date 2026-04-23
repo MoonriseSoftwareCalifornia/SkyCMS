@@ -181,7 +181,7 @@
 
         const endpoint = typeof cosmos__saveEndpoint !== 'undefined' && cosmos__saveEndpoint
             ? cosmos__saveEndpoint
-            : "/Editor/Edit";
+            : "/Editor/PageBuilder";
 
         try {
             const response = await EditorSaveService.saveArticle(model, "SaveDesigner", {

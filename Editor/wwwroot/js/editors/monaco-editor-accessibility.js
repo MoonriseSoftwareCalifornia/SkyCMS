@@ -7,7 +7,7 @@ function setupAccessibility(editor) {
     // Enable screen reader support
     editor.updateOptions({
         accessibilitySupport: 'on',
-        ariaLabel: 'Code editor',
+        ariaLabel: 'Code Editor',
         
         // High contrast support
         detectIndentation: true,
@@ -24,7 +24,7 @@ function setupAccessibility(editor) {
     const editorElement = editor.getDomNode();
     editorElement.setAttribute('role', 'textbox');
     editorElement.setAttribute('aria-multiline', 'true');
-    editorElement.setAttribute('aria-label', 'Code editor for editing content');
+    editorElement.setAttribute('aria-label', 'Code Editor for editing content');
 }
 
 // Keyboard shortcuts help modal

@@ -384,7 +384,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirectResult = result as RedirectToActionResult;
-            Assert.AreEqual("Edit", redirectResult?.ActionName);
+            Assert.AreEqual("VisualEditor", redirectResult?.ActionName);
             Assert.AreEqual("Editor", redirectResult?.ControllerName);
             Assert.AreEqual(article.ArticleNumber, redirectResult?.RouteValues?["id"]);
         }
@@ -1405,7 +1405,7 @@ namespace Sky.Tests.Controllers
         public async Task Designer_ReturnsNotFound_WhenTemplateMissing()
         {
             // Act
-            var result = await _controller.Designer(Guid.NewGuid());
+            var result = await _controller.PageBuilder(Guid.NewGuid());
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));

@@ -167,11 +167,11 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Loads the designer GUI.
+        /// Loads the page builder GUI.
         /// </summary>
         /// <param name="id">Article number.</param>
         /// <returns>View.</returns>
-        public async Task<IActionResult> Designer(int id)
+        public async Task<IActionResult> PageBuilder(int id)
         {
             var invalidModelState = GetInvalidModelStateResult();
             if (invalidModelState != null)
@@ -179,7 +179,7 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            ViewData["IsDesigner"] = true;
+            ViewData["IsPageBuilder"] = true;
 
             var context = await GetEditableArticleContextAsync(id);
             if (context == null)
@@ -203,7 +203,7 @@ namespace Sky.Cms.Controllers
             var designerUtils = new DesignerUtilities();
             var data = designerUtils.ExtractDesignerData(article.Content);
 
-            return View(new ArticleDesignerDataViewModel
+            return View("Designer", new ArticleDesignerDataViewModel
             {
                 Id = article.Id,
                 ArticleNumber = article.ArticleNumber,
@@ -220,12 +220,23 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Gets designer for GrapeJS.
+        /// Preserves the legacy designer route.
+        /// </summary>
+        /// <param name="id">Article number.</param>
+        /// <returns>Redirect to the canonical page builder route.</returns>
+        [HttpGet]
+        public IActionResult Designer(int id)
+        {
+            return RedirectToActionPermanent(nameof(PageBuilder), new { id });
+        }
+
+        /// <summary>
+        /// Gets page builder data for GrapesJS.
         /// </summary>
         /// <param name="id">Article number.</param>
         /// <returns>IActionResult.</returns>
         [HttpGet]
-        public async Task<IActionResult> GetDesignerData(int id)
+        public async Task<IActionResult> GetPageBuilderData(int id)
         {
             var invalidModelState = GetInvalidModelStateResult();
             if (invalidModelState != null)
@@ -243,6 +254,17 @@ namespace Sky.Cms.Controllers
             var htmlContent = htmlService.EnsureEditableMarkers(article.Content);
 
             return Json(new Project(htmlContent));
+        }
+
+        /// <summary>
+        /// Preserves the legacy page builder data route.
+        /// </summary>
+        /// <param name="id">Article number.</param>
+        /// <returns>IActionResult.</returns>
+        [HttpGet]
+        public Task<IActionResult> GetDesignerData(int id)
+        {
+            return GetPageBuilderData(id);
         }
 
         /// <summary>
@@ -1021,13 +1043,13 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        ///     Gets an article to edit by ID for the HTML (WYSIWYG) Editor.
+        /// Gets an article to edit by ID for the visual editor.
         /// </summary>
         /// <param name="id">Article number.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> VisualEditor(int id)
         {
             var invalidModelState = GetInvalidModelStateResult();
             if (invalidModelState != null)
@@ -1061,17 +1083,29 @@ namespace Sky.Cms.Controllers
                 return NotFound();
             }
 
-            return View(new HtmlEditorViewModel(model, context.Value.CatalogEntry));
+            return View("Edit", new HtmlEditorViewModel(model, context.Value.CatalogEntry));
         }
 
         /// <summary>
-        /// Saves article properties.
+        /// Preserves the legacy visual editor route.
+        /// </summary>
+        /// <param name="id">Article number.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            return RedirectToActionPermanent(nameof(VisualEditor), new { id });
+        }
+
+        /// <summary>
+        /// Saves article properties from the visual editor.
         /// </summary>
         /// <param name="model">Live editor post model from JSON body.</param>
         /// <param name="queryModel">Optional query string overrides.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpPost]
-        public async Task<IActionResult> Edit([FromBody] EditPostViewModel model, [FromQuery] EditPostViewModel? queryModel = null)
+        public async Task<IActionResult> VisualEditor([FromBody] EditPostViewModel model, [FromQuery] EditPostViewModel? queryModel = null)
         {
             if (model == null)
             {
@@ -1176,6 +1210,30 @@ namespace Sky.Cms.Controllers
                 Model = result.Data.Model,
                 CdnResults = result.Data.CdnResults
             });
+        }
+
+        /// <summary>
+        /// Saves article properties from the page builder.
+        /// </summary>
+        /// <param name="model">Page builder post model from JSON body.</param>
+        /// <param name="queryModel">Optional query string overrides.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpPost]
+        public Task<IActionResult> PageBuilder([FromBody] EditPostViewModel model, [FromQuery] EditPostViewModel? queryModel = null)
+        {
+            return VisualEditor(model, queryModel);
+        }
+
+        /// <summary>
+        /// Preserves the legacy visual editor post endpoint.
+        /// </summary>
+        /// <param name="model">Visual editor post model.</param>
+        /// <param name="queryModel">Optional query string overrides.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpPost]
+        public Task<IActionResult> Edit([FromBody] EditPostViewModel model, [FromQuery] EditPostViewModel? queryModel = null)
+        {
+            return VisualEditor(model, queryModel);
         }
 
         /// <summary>

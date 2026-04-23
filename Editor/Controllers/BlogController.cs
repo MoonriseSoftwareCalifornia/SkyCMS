@@ -462,7 +462,7 @@ namespace Sky.Editor.Controllers
                 return StatusCode(500, $"Failed to create blog post: {errorMessage}");
             }
 
-            return RedirectToAction("Edit", "Editor", new { id = result.Data.ArticleNumber });
+            return RedirectToAction("VisualEditor", "Editor", new { id = result.Data.ArticleNumber });
         }
 
         /// <summary>

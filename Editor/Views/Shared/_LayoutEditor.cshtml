@@ -10,7 +10,7 @@
     var isAuthor = User.IsInRole("Authors");
     var title = ViewData["PageTitle"];
     var requiresAuth = options.CosmosRequiresAuthentication;
-    var isDesigner = (bool?)ViewData["IsDesigner"];
+    var isPageBuilder = (bool?)ViewData["IsPageBuilder"];
     var controllerName = ViewContext.RouteData.Values["controller"].ToString();
     var actionName = ViewContext.RouteData.Values["action"].ToString();
     var lastPublishedDateTimeOffset = (DateTimeOffset?)ViewData["LastPubDateTime"];
@@ -161,16 +161,16 @@
                                 <a class="dropdown-item" href="/Editor/AiHelp?popup=1" title="Open AI help chat." onclick="return ccmsOpenAiHelpFloatingWindow('/Editor/AiHelp?popup=1');">AI Help Chat</a>
                             </li>
                             <li id="btnCcmsCodeEditor" style="display:none">
-                                <a class="dropdown-item" onclick="bgEditClick('Code')">Code editor</a>
+                                <a class="dropdown-item" onclick="bgEditClick('Code')">Code Editor</a>
                             </li>
                             @if (enableHtmlEditor)
                             {
                                 <li id="btnCcmsHtmlEditor" style="display:none">
-                                    <a class="dropdown-item" onclick="bgEditClick('Html')">Visual editor</a>
+                                    <a class="dropdown-item" onclick="bgEditClick('VisualEditor')">Visual Editor</a>
                                 </li>
                             }
                             <li id="btnCcmsGrapesJsEditor" style="display:none">
-                                <a class="dropdown-item" onclick="bgEditClick('Designer')">Design editor</a>
+                                <a class="dropdown-item" onclick="bgEditClick('PageBuilder')">Page Builder</a>
                             </li>
                             <li id="liBtnVersions" style="display:none">
                                 <a id="btnVersions" class="dropdown-item" href="#" target="_blank">Page versions</a>
@@ -226,7 +226,7 @@
                     </li>
 
                     <li id="ccmsCopilotStatusIndicator" class="nav-item" style="display:none">
-                        <div type="button" class="btn btn-sm btn-outline-primary">
+                        <div type="button" class="btn btn-sm btn-secondary mt-1 ms-1 me-1">
                              <span id="ccmsCopilotProviderLabel">AI</span> <span id="ccmsCopilotStatusBadge" class="badge rounded-pill text-bg-success ccms-copilot-status-badge" title="AI assistant enabled">ON</span>
                         </div>
                         
@@ -303,7 +303,7 @@
     <partial name="_EditorModals" />
 
     <script>
-        const isDesigner = @((isDesigner.HasValue ? isDesigner : false).ToString().ToLower());
+        const isPageBuilder = @((isPageBuilder.HasValue ? isPageBuilder : false).ToString().ToLower());
         const modalRecoverData = new bootstrap.Modal(document.getElementById('modalRecoverData'));
         const modalChangeTitle = new bootstrap.Modal(document.getElementById('modalChangeTitle'));
         const modalCheckSaveFirst = new bootstrap.Modal(document.getElementById('modalCheckSaveFirst'));
@@ -315,7 +315,7 @@
         const fileBaseUrl = "@(options.BlobPublicUrl.TrimEnd('/'))";
         const errorModal = new bootstrap.Modal(document.getElementById('modalSavingError'));
         document.getElementById('modalFileMgr').addEventListener('hidden.bs.modal', event => {
-            if (isDesigner) {
+            if (isPageBuilder) {
                 cosmos__designerLoadAssets("/pub", "pub/articles");
             }
         });
@@ -537,26 +537,26 @@
                     $("#divSaveFirstDialog").html("Save before opening code editor?");
                     modalCheckSaveFirst.show();
                     break;
-                case "Designer":
+                case "PageBuilder":
                     next = function () {
                         if ("@controllerName" == "Editor") {
-                            window.location.href = "/Editor/Designer/" + articleNumber;
+                            window.location.href = "/Editor/PageBuilder/" + articleNumber;
                         } else {
-                            window.location.href = "/@controllerName/Designer/" + itemId;
+                            window.location.href = "/@controllerName/PageBuilder/" + itemId;
                         }
                     }
-                    $("#divSaveFirstDialog").html("Save before opening code editor?");
+                    $("#divSaveFirstDialog").html("Save before opening Page Builder?");
                     modalCheckSaveFirst.show();
                     break;
-                case "Html":
+                case "VisualEditor":
                     next = function () {
                         if ("@controllerName" == "Editor") {
-                            window.location.href = "/Editor/Edit/" + articleNumber;
+                            window.location.href = "/Editor/VisualEditor/" + articleNumber;
                         } else {
                             window.location.href = "/@controllerName/Edit/" + itemId;
                         }
                     }
-                    $("#divSaveFirstDialog").html("Save before opening HTML editor?");
+                    $("#divSaveFirstDialog").html("Save before opening Visual Editor?");
                     modalCheckSaveFirst.show();
                     break;
                 case "Preview":

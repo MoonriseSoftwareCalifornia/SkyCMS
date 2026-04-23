@@ -132,8 +132,9 @@
 
             if (enabled) {
                 indicator.style.display = '';
-                badge.classList.remove('text-bg-secondary');
-                badge.classList.add('text-bg-success');
+                // btn btn-sm btn-secondary mt-1 ms-1 me-1
+                // badge.classList.remove('text-bg-secondary');
+                // badge.classList.add('text-bg-success');
 
                 const provider = (providerDisplayName || '').trim() || 'AI';
                 if (label) {

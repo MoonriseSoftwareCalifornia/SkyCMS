@@ -84,7 +84,7 @@
     const menuBar = function(cell, formatterParams){
         data = cell.getRow().getData();
         let html = "<div class='btn-group btn-group-sm' role='group' aria-label='Post actions.'>";
-        html += html += "<a href='/Editor/Edit/" + data.ArticleNumber + "' title='Edit post.' class='btn btn-sm btn-success'><i class='fa-solid fa-pen-to-square'></i> Edit</a>";
+        html += html += "<a href='/Editor/VisualEditor/" + data.ArticleNumber + "' title='Open Visual Editor.' class='btn btn-sm btn-success'><i class='fa-solid fa-pen-to-square'></i> Visual Editor</a>";
         let url = data.UrlPath;
         if (url === "root") {
             url = "";

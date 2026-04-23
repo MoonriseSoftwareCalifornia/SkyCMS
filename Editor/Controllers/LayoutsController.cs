@@ -306,10 +306,10 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Loads the designer GUI editing the latest version.
+        /// Loads the page builder GUI editing the latest version.
         /// </summary>
         /// <returns>View.</returns>
-        public async Task<IActionResult> Designer()
+        public async Task<IActionResult> PageBuilder()
         {
             var invalidModelState = GetInvalidModelStateResult();
             if (invalidModelState != null)
@@ -319,7 +319,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                ViewData["IsDesigner"] = true;
+                ViewData["IsPageBuilder"] = true;
 
                 var layout = await GetLayoutForEdit();
                 var config = new DesignerConfig(layout, layout.Id.ToString(), layout.LayoutName);
@@ -330,7 +330,7 @@ namespace Sky.Cms.Controllers
                     config.ImageAssets.AddRange(assets);
                 }
 
-                return View(config);
+                return View("Designer", config);
             }
             catch (Exception ex)
             {
@@ -340,11 +340,20 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Gets data to edit.
+        /// Preserves the legacy designer route.
+        /// </summary>
+        /// <returns>Redirect to the canonical page builder route.</returns>
+        public IActionResult Designer()
+        {
+            return RedirectToActionPermanent(nameof(PageBuilder));
+        }
+
+        /// <summary>
+        /// Gets page builder data.
         /// </summary>
         /// <returns>IActionResult.</returns>
         [HttpGet]
-        public async Task<IActionResult> DesignerData()
+        public async Task<IActionResult> PageBuilderData()
         {
             var invalidModelState = GetInvalidModelStateResult();
             if (invalidModelState != null)
@@ -367,7 +376,17 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Save designer data.
+        /// Preserves the legacy page builder data route.
+        /// </summary>
+        /// <returns>IActionResult.</returns>
+        [HttpGet]
+        public Task<IActionResult> DesignerData()
+        {
+            return PageBuilderData();
+        }
+
+        /// <summary>
+        /// Save page builder data.
         /// </summary>
         /// <param name="id">Template ID.</param>
         /// <param name="title">Template title.</param>
@@ -375,7 +394,7 @@ namespace Sky.Cms.Controllers
         /// <param name="cssContent">CSS content.</param>
         /// <returns>IActionResult.</returns>
         [HttpPost]
-        public async Task<IActionResult> DesignerData(Guid id, string title, string htmlContent, string cssContent)
+        public async Task<IActionResult> PageBuilderData(Guid id, string title, string htmlContent, string cssContent)
         {
             if (id == Guid.Empty)
             {
@@ -430,6 +449,20 @@ namespace Sky.Cms.Controllers
                 logger.LogError(ex, "Error saving designer data for layout {LayoutId}", id);
                 return Json(new { success = false, error = "An error occurred while saving" });
             }
+        }
+
+        /// <summary>
+        /// Preserves the legacy page builder save route.
+        /// </summary>
+        /// <param name="id">Layout ID.</param>
+        /// <param name="title">Layout title.</param>
+        /// <param name="htmlContent">HTML content.</param>
+        /// <param name="cssContent">CSS content.</param>
+        /// <returns>IActionResult.</returns>
+        [HttpPost]
+        public Task<IActionResult> DesignerData(Guid id, string title, string htmlContent, string cssContent)
+        {
+            return PageBuilderData(id, title, htmlContent, cssContent);
         }
 
         /// <summary>

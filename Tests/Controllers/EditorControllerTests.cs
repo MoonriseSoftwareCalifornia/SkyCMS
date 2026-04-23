@@ -297,7 +297,7 @@ namespace Sky.Tests.Controllers
             await SaveArticleAsync(article, TestUserId);
 
             // Act
-            var result = await controller.Designer(article.ArticleNumber);
+            var result = await controller.PageBuilder(article.ArticleNumber);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
@@ -310,7 +310,7 @@ namespace Sky.Tests.Controllers
         public async Task Designer_ReturnsNotFound_WhenArticleDoesNotExist()
         {
             // Act
-            var result = await controller.Designer(int.MaxValue);
+            var result = await controller.PageBuilder(int.MaxValue);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));

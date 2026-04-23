@@ -519,11 +519,11 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Loads the designer GUI.
+        /// Loads the page builder GUI.
         /// </summary>
         /// <param name="id">Template ID.</param>
         /// <returns>View.</returns>
-        public async Task<IActionResult> Designer(Guid id)
+        public async Task<IActionResult> PageBuilder(Guid id)
         {
             var invalidModelState = GetInvalidModelStateResult();
             if (invalidModelState != null)
@@ -531,8 +531,8 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            // Loads GrapeJS.
-            ViewData["IsDesigner"] = true;
+            // Loads GrapesJS.
+            ViewData["IsPageBuilder"] = true;
 
             var editableCommand = new GetEditablePageDesignVersionCommand { TemplateId = id };
             var editableResult = await mediator.SendAsync(editableCommand);
@@ -555,16 +555,26 @@ namespace Sky.Cms.Controllers
             }
 
             var htmlContent = htmlService.EnsureEditableMarkers(editableVersion.Content);
-            return View(config);
+            return View("Designer", config);
         }
 
         /// <summary>
-        /// Gets designer for GrapeJS.
+        /// Preserves the legacy designer route.
+        /// </summary>
+        /// <param name="id">Template ID.</param>
+        /// <returns>Redirect to the canonical page builder route.</returns>
+        public IActionResult Designer(Guid id)
+        {
+            return RedirectToActionPermanent(nameof(PageBuilder), new { id });
+        }
+
+        /// <summary>
+        /// Gets page builder data for GrapesJS.
         /// </summary>
         /// <param name="id">Article number.</param>
         /// <returns>IActionResult.</returns>
         [HttpGet]
-        public async Task<IActionResult> GetDesignerData(Guid id)
+        public async Task<IActionResult> GetPageBuilderData(Guid id)
         {
             var invalidModelState = GetInvalidModelStateResult();
             if (invalidModelState != null)
@@ -572,8 +582,8 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            // Loads GrapeJS.
-            ViewData["IsDesigner"] = true;
+            // Loads GrapesJS.
+            ViewData["IsPageBuilder"] = true;
 
             var editableCommand = new GetEditablePageDesignVersionCommand { TemplateId = id };
             var editableResult = await mediator.SendAsync(editableCommand);
@@ -596,6 +606,17 @@ namespace Sky.Cms.Controllers
             var htmlContent = htmlService.EnsureEditableMarkers(editableVersion.Content);
 
             return Json(new Project(htmlContent));
+        }
+
+        /// <summary>
+        /// Preserves the legacy page builder data route.
+        /// </summary>
+        /// <param name="id">Template ID.</param>
+        /// <returns>IActionResult.</returns>
+        [HttpGet]
+        public Task<IActionResult> GetDesignerData(Guid id)
+        {
+            return GetPageBuilderData(id);
         }
 
         /// <summary>
@@ -715,8 +736,8 @@ namespace Sky.Cms.Controllers
                 TempData["Success"] = $"Template applied successfully. Draft version {result.NewVersionNumber} created.";
             }
 
-            // Redirect to editor to review the new DRAFT version
-            return RedirectToAction("Edit", "Editor", new { id = id });
+            // Redirect to the visual editor to review the new draft version.
+            return RedirectToAction("VisualEditor", "Editor", new { id = id });
         }
 
         /// <summary>

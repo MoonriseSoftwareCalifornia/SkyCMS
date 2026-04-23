@@ -714,7 +714,7 @@ namespace Sky.Tests.Controllers
         /// Test that Designer GET returns designer view.
         /// </summary>
         [TestMethod]
-        public async Task Designer_Get_ReturnsDesignerView()
+        public async Task PageBuilder_Get_ReturnsPageBuilderView()
         {
             // Arrange
             var layout = new Layout
@@ -729,12 +729,12 @@ namespace Sky.Tests.Controllers
             await Db.SaveChangesAsync();
 
             // Act
-            var result = await controller.Designer();
+            var result = await controller.PageBuilder();
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = (ViewResult)result;
-            Assert.AreEqual(true, viewResult.ViewData["IsDesigner"]);
+            Assert.AreEqual(true, viewResult.ViewData["IsPageBuilder"]);
         }
 
         /// <summary>
