@@ -89,6 +89,7 @@ ADRs should be added intentionally and reviewed carefully.
 - [0032: Environment-Specific Error Handling Strategy](0032-environment-specific-error-handling-strategy.md)
 - [0033: Antiforgery Token Bootstrap Endpoint Pattern](0033-antiforgery-token-bootstrap-endpoint-pattern.md)
 - [0034: Domain Events and Setup Audit Log Observability Model](0034-domain-events-and-setup-audit-log-observability-model.md)
+- [0035: File Explorer Modernization and Connector Adapter Strategy](0035-file-explorer-modernization-and-connector-adapter-strategy.md)
 
 ## Changing or Superseding ADRs
 

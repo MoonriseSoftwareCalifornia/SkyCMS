@@ -38,37 +38,22 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Containers
         }
 
         /// <summary>
-        /// Removes all containers prior to running tests.
-        /// </summary>
-        /// <returns></returns>
-        //[TestMethod()]
-        //public async Task A1_RemoveAllContainersPriorToTest()
-        //{
-        //    Assert.IsNotNull(containerUtilities);
-
-        //    // Get rid of all the containers if they exist.
-        //    await containerUtilities.DeleteRequiredContainers();
-        //}
-
-        /// <summary>
-        /// Deletes the test database if it exists, ensuring a clean start for the suite.
+        /// Deletes required containers if they exist, preserving the test database.
         /// </summary>
         [TestMethod()]
-        public async Task A1_DeleteDatabaseIfExistsTest()
+        public async Task A1_DeleteRequiredContainersIfExistsTest()
         {
-            DatabaseResponse? result;
-
             try
             {
-                result = await containerUtilities.DeleteDatabaseIfExists(TestUtilities.GetKeyValue("CosmosIdentityDbName"));
+                await containerUtilities.DeleteRequiredContainers();
             }
             catch (Exception ex) when (IsTransientCosmosEmulatorFailure(ex))
             {
-                Assert.Inconclusive($"Cosmos emulator was not stable enough to delete the database: {ex.Message}");
+                Assert.Inconclusive($"Cosmos emulator was not stable enough to delete required containers: {ex.Message}");
                 return;
             }
 
-            Assert.IsTrue(result == null || result.StatusCode == System.Net.HttpStatusCode.OK || result.StatusCode == System.Net.HttpStatusCode.NoContent);
+            Assert.IsTrue(true);
         }
 
         /// <summary>

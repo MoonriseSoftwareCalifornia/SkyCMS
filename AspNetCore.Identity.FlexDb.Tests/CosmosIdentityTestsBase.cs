@@ -151,9 +151,15 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
                                         }
                                     }
                                 }
+                                else if (dbContext.Database.IsSqlite())
+                                {
+                                    ClearSqliteSchema(dbContext);
+                                }
                                 else
                                 {
-                                    dbContext.Database.EnsureDeleted();
+                                    // Avoid full database deletion for providers where drop/create can be brittle.
+                                    // Fallback to removing Identity data while preserving schema.
+                                    ClearTestData(dbContext);
                                 }
 
                                 Console.WriteLine($"[INIT] Database cleaned for {providerName}");
@@ -261,6 +267,61 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             {
                 Console.WriteLine($"[INIT] Failed to ensure SQL Server database exists: {ex.Message}");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Drops all user tables for SQLite without deleting the database file.
+        /// </summary>
+        private static void ClearSqliteSchema(CosmosIdentityDbContext<IdentityUser, IdentityRole, string> dbContext)
+        {
+            var connection = dbContext.Database.GetDbConnection();
+            var wasOpen = connection.State == System.Data.ConnectionState.Open;
+
+            if (!wasOpen)
+            {
+                connection.Open();
+            }
+
+            try
+            {
+                using (var disableFk = connection.CreateCommand())
+                {
+                    disableFk.CommandText = "PRAGMA foreign_keys = OFF;";
+                    disableFk.ExecuteNonQuery();
+                }
+
+                var tableNames = new List<string>();
+                using (var tableQuery = connection.CreateCommand())
+                {
+                    tableQuery.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%';";
+                    using var reader = tableQuery.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        tableNames.Add(reader.GetString(0));
+                    }
+                }
+
+                foreach (var tableName in tableNames)
+                {
+                    var escapedTableName = tableName.Replace("\"", "\"\"", StringComparison.Ordinal);
+                    using var dropTable = connection.CreateCommand();
+                    dropTable.CommandText = $"DROP TABLE IF EXISTS \"{escapedTableName}\";";
+                    dropTable.ExecuteNonQuery();
+                }
+
+                using (var enableFk = connection.CreateCommand())
+                {
+                    enableFk.CommandText = "PRAGMA foreign_keys = ON;";
+                    enableFk.ExecuteNonQuery();
+                }
+            }
+            finally
+            {
+                if (!wasOpen)
+                {
+                    connection.Close();
+                }
             }
         }
 

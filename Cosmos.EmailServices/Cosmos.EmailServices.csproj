@@ -7,9 +7,9 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Company>Moonrise Software LLC</Company>
-		<Version>12.1.2</Version>
-		<AssemblyVersion>12.1.2</AssemblyVersion>
-		<FileVersion>12.1.2</FileVersion>
+		<Version>12.1.3</Version>
+		<AssemblyVersion>12.1.3</AssemblyVersion>
+		<FileVersion>12.1.3</FileVersion>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<RepositoryUrl>https://github.com/CWALabs/SkyCMS</RepositoryUrl>
@@ -53,6 +53,7 @@
 	  <PackageReference Include="Azure.Communication.Email" />
 	  <PackageReference Include="Azure.Identity" />
 	  <PackageReference Include="HtmlAgilityPack" />
+	  <PackageReference Include="Newtonsoft.Json" />
 	  <PackageReference Include="Roslynator.Analyzers">
 		<PrivateAssets>all</PrivateAssets>
 		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
