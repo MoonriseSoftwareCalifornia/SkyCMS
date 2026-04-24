@@ -1,38 +1,41 @@
 @model Cosmos.Common.Models.ArticleViewModel
 @{
-  var displayDate = Model.Published ?? Model.Updated;
+    var displayDate = Model.Published ?? Model.Updated;
 }
+<div class="pico skycms-blog-post">
+    <main class="container">
+        <article class="pico" aria-labelledby="post-title">
+            <header>
+                <h1 id="post-title">@Model.Title</h1>
+                <p>
+                    <small>
+                        <time datetime="@displayDate.UtcDateTime.ToString("o")">@displayDate.ToString("D")</time>
+                        @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
+                        {
+                            <text> · @Model.AuthorInfo</text>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Category))
+                        {
+                            <text> · @Model.Category</text>
+                        }
+                    </small>
+                </p>
+                @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+                {
+                    <p>@Model.Introduction</p>
+                }
+            </header>
 
-<article class="pico" aria-labelledby="post-title">
-  <header>
-    <h1 id="post-title">@Model.Title</h1>
-    <p>
-      <small>
-        <time datetime="@displayDate.UtcDateTime.ToString("o")">@displayDate.ToString("D")</time>
-        @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
-        {
-          <text> · @Model.AuthorInfo</text>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.Category))
-        {
-          <text> · @Model.Category</text>
-        }
-      </small>
-    </p>
-    @if (!string.IsNullOrWhiteSpace(Model.Introduction))
-    {
-      <p>@Model.Introduction</p>
-    }
-  </header>
+            @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
+            {
+                <figure>
+                    <img src="@Model.BannerImage" alt="@Model.Title" loading="lazy" decoding="async" />
+                </figure>
+            }
 
-  @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
-  {
-    <figure>
-      <img src="@Model.BannerImage" alt="@Model.Title" loading="lazy" decoding="async" />
-    </figure>
-  }
-
-  <section class="ck-content">
-    @Html.Raw(Model.Content)
-  </section>
-</article>
+            <section class="ck-content">
+                @Html.Raw(Model.Content)
+            </section>
+        </article>
+    </main>
+</div>

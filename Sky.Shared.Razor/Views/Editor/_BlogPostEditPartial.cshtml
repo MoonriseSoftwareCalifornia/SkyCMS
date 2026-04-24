@@ -8,16 +8,18 @@
         display: block !important;
     }
 </style>
-<article class="pico" aria-labelledby="post-title">
-    <header>
-        <h1 id="post-title" contenteditable>@Model.Title</h1>
-        <p>
-            <small>
-                <time datetime="@displayDate.UtcDateTime.ToString("o")">@displayDate.ToString("D")</time>
-                @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
-                {
-                    <text> · </text>
-                    @* <span class="ccms-author-widget-container"
+<div class="pico skycms-blog-post">
+    <main class="container">
+        <article aria-labelledby="post-title">
+            <header>
+                <h1 id="post-title" contenteditable>@Model.Title</h1>
+                <p>
+                    <small>
+                        <time datetime="@displayDate.UtcDateTime.ToString("o")">@displayDate.ToString("D")</time>
+                        @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
+                        {
+                            <text> · </text>
+                            @* <span class="ccms-author-widget-container"
                           data-editor-config="author-widget"
                           data-ccms-ceid="skycms-blog-post-author"
                           data-author-json="@Model.AuthorInfo"
@@ -26,29 +28,31 @@
                           data-show-social="false"
                           data-show-description="false"
                           data-show-website="true"></span> *@
-                }
-                @if (!string.IsNullOrWhiteSpace(Model.Category))
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Category))
+                        {
+                            <text> · @Model.Category</text>
+                        }
+                    </small>
+                </p>
+            </header>
+            <figure class="ccms-img-widget-container"
+                    data-editor-config="image-widget"
+                    data-ccms-ceid="skycms-blog-post-bi"
+                    data-ccms-disable-save="true">
+                @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
                 {
-                    <text> · @Model.Category</text>
+                    <img src="@Model.BannerImage" alt="Banner image for @Model.Title" />
                 }
-            </small>
-        </p>
-    </header>
-    <figure class="ccms-img-widget-container"
-            data-editor-config="image-widget"
-            data-ccms-ceid="skycms-blog-post-bi"
-            data-ccms-disable-save="true">
-        @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
-        {
-            <img src="@Model.BannerImage" alt="Banner image for @Model.Title" />
-        }
-    </figure>
-    <section class="ck-content">
-        <div data-ccms-ceid="@Model.Id">
-            @Html.Raw(Model.Content)
-        </div>
-    </section>
-</article>
+            </figure>
+            <section class="ck-content">
+                <div data-ccms-ceid="@Model.Id">
+                    @Html.Raw(Model.Content)
+                </div>
+            </section>
+        </article>
+    </main>
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const bannerImageWidgetId = 'skycms-blog-post-bi';

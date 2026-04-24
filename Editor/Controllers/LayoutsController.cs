@@ -470,6 +470,7 @@ namespace Sky.Cms.Controllers
         /// </summary>
         /// <param name="id">Optional ID of the layout to view (not edit).</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpGet]
         public async Task<IActionResult> EditCode(Guid? id = null)
         {
             if (id.HasValue && id.Value == Guid.Empty)
@@ -526,8 +527,7 @@ namespace Sky.Cms.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    ViewData["PageTitle"] = model.EditorTitle;
-                    return View(model);
+                    return Json(BuildSaveResultModel());
                 }
 
                 model.BodyHtmlAttributes = StripBOM(model.BodyHtmlAttributes);

@@ -1075,7 +1075,7 @@ namespace Sky.Tests.Controllers
         #region Phase 7: Edge Cases & Validation
 
         /// <summary>
-        /// Test that EditCode POST returns BadRequest when model invalid.
+        /// Test that EditCode POST returns BadRequest when model is invalid.
         /// </summary>
         [TestMethod]
         public async Task EditCode_Post_ReturnsBadRequest_WhenModelInvalid()
@@ -1108,8 +1108,15 @@ namespace Sky.Tests.Controllers
             var result = await controller.EditCode(model);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
             Assert.IsFalse(controller.ModelState.IsValid);
+
+            var jsonResult = (JsonResult)result;
+            Assert.IsNotNull(jsonResult.Value);
+            Assert.IsInstanceOfType(jsonResult.Value, typeof(SaveCodeResultJsonModel));
+            var payload = (SaveCodeResultJsonModel)jsonResult.Value;
+            Assert.IsFalse(payload.IsValid);
+            Assert.IsTrue(payload.ErrorCount > 0);
         }
 
         /// <summary>

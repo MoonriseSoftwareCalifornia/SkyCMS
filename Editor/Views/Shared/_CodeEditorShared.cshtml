@@ -3,7 +3,7 @@
 @model ICodeEditorViewModel
 
 @{
-    var fields = Model.EditorFields.ToList();
+    var fields = (Model?.EditorFields ?? Enumerable.Empty<EditorField>()).ToList();
     var aclass = "active";
 }
 

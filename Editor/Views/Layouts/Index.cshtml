@@ -3,7 +3,7 @@
 @using Sky.Editor.Services.EditorSettings
 @inject IEditorSettings options
 @{
-    ViewData["Title"] = "Site Design Version List";
+    ViewData["Title"] = "Layout Version List";
     var showFirstPageBtn = (bool)ViewData["ShowFirstPageBtn"];
     var showCreateFirstLayout = (bool)ViewData["ShowCreateFirstLayout"];
 }
@@ -23,16 +23,16 @@
         {
             <div class="row justify-content-center">
                 <div class="col-md-10 text-light">
-                    <h1>Site Design</h1>
-                    <p>&quot;Designs&quot; provide a common functionality, look and feel across all pages on your website.</p>
-                    <h4>Choose a pre-built website design (recommended)</h4>
+                    <h1>Layouts</h1>
+                    <p>Layouts (formerly called Site Design) provide a common structure and look-and-feel across all pages on your website.</p>
+                    <h4>Choose a pre-built layout (recommended)</h4>
                     <div class="ms-5 mb-5">
-                        <p class="mb-3">These designs are ready for use and some are designed for non-technical users.  The is the recommened choice for most users.</p>
+                        <p class="mb-3">These layouts are ready for use and some are designed for non-technical users. This is the recommended choice for most users.</p>
                         <a class="btn btn-sm btn-primary" asp-action="CommunityLayouts">Choose pre-built <i class="fa-solid fa-circle-arrow-right"></i></a>
                     </div>
-                    <h4>Build your own website design (advanced)</h4>
+                    <h4>Build your own layout (advanced)</h4>
                     <div class="ms-5 mb-3">
-                        <p>If you are working with a web developer with at least basic HTML, CSS and JavaScript experience, you can choose to build a design from scratch that meets your specific needs.</p>
+                        <p>If you are working with a web developer with at least basic HTML, CSS and JavaScript experience, you can build a layout from scratch that meets your specific needs.</p>
                         <a class="btn btn-small btn-primary" asp-action="Create">Choose custom <i class="fa-solid fa-circle-arrow-right"></i></a>
                     </div>
                 </div>
@@ -52,11 +52,11 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="btn-group" role="group" aria-label="Page Actions">
-                        <a class="btn btn-sm btn-primary" href="@Url.Action("Create")">New design</a>
+                        <a class="btn btn-sm btn-primary" href="@Url.Action("Create")">New layout</a>
                         <a class="btn btn-sm btn-secondary" title="Edit HTML and template markup" href="@Url.Action("EditCode")"><i class='fa-solid fa-code me-2'></i> Code Editor</a>
                         <a class="btn btn-sm btn-secondary" title="Drag-and-drop page layout builder" href="@Url.Action("PageBuilder")"><i class='fa-solid fa-table-columns me-2'></i> Page Builder</a>
                         @* <a class="btn btn-sm btn-secondary" title="Edit design title and notes." href="@Url.Action("EditNotes")"><i class="fa-solid fa-pen-to-square me-2"></i> Notes</a> *@
-                        <a class="btn btn-sm btn-secondary" title="Import one of the community layouts." href="@Url.Action("CommunityLayouts")">Import design <i class="fa-solid fa-cloud-arrow-down"></i></a>
+                        <a class="btn btn-sm btn-secondary" title="Import one of the community layouts." href="@Url.Action("CommunityLayouts")">Import layout <i class="fa-solid fa-cloud-arrow-down"></i></a>
                         <a class="btn btn-sm btn-secondary" title="Return to page list" href="@Url.Action("Index", "Editor")">Page list <i class="fa-solid fa-circle-arrow-right"></i></a>
                     </div>
                 </div>

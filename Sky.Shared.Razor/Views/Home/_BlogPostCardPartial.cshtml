@@ -2,40 +2,42 @@
 @{
     var displayDate = Model.Published ?? Model.Updated;
 }
-<article class="pico">
-    <header>
-        <h2>
-            <a href="@Model.UrlPath">@Model.Title</a>
-        </h2>
-        <p>
-            <small>
-                @if (displayDate.HasValue)
-                {
-                    <time datetime="@displayDate.Value.UtcDateTime.ToString("o")">@displayDate.Value.ToString("D")</time>
-                }
-                @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
-                {
-                    <text> · @Model.AuthorInfo</text>
-                }
-            </small>
-        </p>
-    </header>
+<div class="pico skycms-blog-card">
+    <article>
+        <header>
+            <h2>
+                <a href="@Model.UrlPath">@Model.Title</a>
+            </h2>
+            <p>
+                <small>
+                    @if (displayDate.HasValue)
+                    {
+                        <time datetime="@displayDate.Value.UtcDateTime.ToString("o")">@displayDate.Value.ToString("D")</time>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.AuthorInfo))
+                    {
+                        <text> · @Model.AuthorInfo</text>
+                    }
+                </small>
+            </p>
+        </header>
 
-    @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
-    {
-        <figure>
-            <a href="@Model.UrlPath" aria-label="Read @Model.Title">
-                <img src="@Model.BannerImage" alt="@Model.Title" loading="lazy" decoding="async" />
-            </a>
-        </figure>
-    }
+        @if (!string.IsNullOrWhiteSpace(Model.BannerImage))
+        {
+            <figure>
+                <a href="@Model.UrlPath" aria-label="Read @Model.Title">
+                    <img src="@Model.BannerImage" alt="@Model.Title" loading="lazy" decoding="async" />
+                </a>
+            </figure>
+        }
 
-    @if (!string.IsNullOrWhiteSpace(Model.Introduction))
-    {
-        <p>@Model.Introduction</p>
-    }
+        @if (!string.IsNullOrWhiteSpace(Model.Introduction))
+        {
+            <p>@Model.Introduction</p>
+        }
 
-    <footer>
-        <a href="@Model.UrlPath">Read more</a>
-    </footer>
-</article>
+        <footer>
+            <a href="@Model.UrlPath">Read more</a>
+        </footer>
+    </article>
+</div>

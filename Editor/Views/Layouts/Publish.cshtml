@@ -1,7 +1,7 @@
 @model Sky.Cms.Models.LayoutIndexViewModel
 
 @{
-    ViewData["Title"] = "Set Default Website Design";
+    ViewData["Title"] = "Set Default Website Layout";
     Layout = "_Layout";
 
 }
@@ -13,7 +13,7 @@
                     <div class="card-body">
                         <h3>@ViewData["Title"]</h3>
                         <hr />
-                        <p>You are about to set the default design for your entire website.</p>
+                        <p>You are about to set the default layout for your entire website.</p>
                         <p>Please note:</p>
                         <ul>
                             <li>
@@ -21,7 +21,7 @@
                                 entire website looks.
                                 <ul>
                                     <li>
-                                        Changing designs may cause errors on pages that need to be fixed.
+                                        Changing layouts may cause errors on pages that need to be fixed.
                                     <li><span class="badge badge-info">Tip:</span> Have a clone of your website made where you can test the change.</li>
                                 </ul>
                             </li>
@@ -34,14 +34,14 @@
                             </li>
 
                             <li>
-                                After the new design is applied, you will taken to the site publishing page.
+                                After the new layout is applied, you will taken to the site publishing page.
                                 <ul>
                                     <li>Publishing is required to ensure changes are pushed throughout the Internet.</li>
                                 </ul>
                             </li>
 
                             <li>
-                                You can always roll back to the previous design by making it the default.
+                                You can always roll back to the previous layout by making it the default.
                             </li>
                         </ul>
                     </div>
@@ -67,7 +67,7 @@
 
                                 <div class="form-check form-switch">
                                     <input id="IsDefault" class="form-check-input" type="checkbox" asp-for="IsDefault">
-                                    <label class="form-check-label" for="IsDefault">Enable design change</label>
+                                    <label class="form-check-label" for="IsDefault">Enable layout change</label>
                                 </div>
 
                                 <div id="lblWarning" class="form-group" style="display: none">

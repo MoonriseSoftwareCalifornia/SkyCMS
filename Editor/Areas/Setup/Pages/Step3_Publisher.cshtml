@@ -42,9 +42,9 @@
                         }
                     </div>
                     <div class="form-group mb-3">
-                        <label asp-for="SiteDesignId" class="form-label">Choose a site design</label>
+                        <label asp-for="SiteDesignId" class="form-label">Choose a layout</label>
                         <select asp-for="SiteDesignId" class="form-select" required>
-                            <option value="">Select a design</option>
+                            <option value="">Select a layout</option>
                             @foreach (var layout in layouts)
                             {
                                 <option value="@layout.Id">@layout.Title</option>
@@ -52,7 +52,7 @@
                         </select>
                         <span asp-validation-for="SiteDesignId" class="text-danger"></span>
                         <small class="form-text text-light">
-                            Please choose a design now, you can change or edit it later. <a title="Information about all starter designs." target="_blank" href="https://cwalabs.github.io/Cosmos.Starter.Designs/"><i class="fa-solid fa-circle-info"></i></a>
+                            Please choose a layout now (formerly called Site Design). You can change or edit it later. <a title="Information about all starter layouts." target="_blank" href="https://cwalabs.github.io/Cosmos.Starter.Designs/"><i class="fa-solid fa-circle-info"></i></a>
                         </small>
                     </div>
 
