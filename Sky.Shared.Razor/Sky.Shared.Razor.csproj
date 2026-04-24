@@ -5,9 +5,9 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-		<Version>12.1.4</Version>
-		<FileVersion>12.1.4</FileVersion>
-		<AssemblyVersion>12.1.4</AssemblyVersion>
+		<Version>12.2.0</Version>
+		<FileVersion>12.2.0</FileVersion>
+		<AssemblyVersion>12.2.0</AssemblyVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -370,6 +370,29 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task Index_Post_WithUseModernFileExplorer_PersistsSettings()
+        {
+            // Arrange
+            var model = new EditorConfig
+            {
+                BlobPublicUrl = "https://newcdn.example.com",
+                StaticWebPages = false,
+                UseModernFileExplorer = true
+            };
+
+            // Act
+            await controller.Index(model);
+
+            // Assert
+            var savedSetting = await dbContext.Settings
+                .FirstOrDefaultAsync(s => s.Group == "EDITORSETTINGS");
+            Assert.IsNotNull(savedSetting);
+
+            var savedConfig = JsonConvert.DeserializeObject<EditorConfig>(savedSetting.Value);
+            Assert.IsTrue(savedConfig.UseModernFileExplorer);
+        }
+
+        [TestMethod]
         public async Task Index_Post_WithStaticWebPages_SetsBlobUrlToSlash()
         {
             // Arrange

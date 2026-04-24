@@ -751,6 +751,29 @@ namespace Sky.Tests.Services.EditorSettings
         }
 
         /// <summary>
+        /// Tests that UseModernFileExplorer_WithCustomValue_ReturnsCustomValue.
+        /// </summary>
+        [TestMethod]
+        public async Task UseModernFileExplorer_WithCustomValue_ReturnsCustomValue()
+        {
+            // Arrange
+            var config = CreateConfiguration(new Dictionary<string, string>
+            {
+                ["MultiTenantEditor"] = "false",
+                ["UseModernFileExplorer"] = "true"
+            });
+
+            var services = new ServiceCollection().BuildServiceProvider();
+            var editorSettings = new EditorSettings(config, Db, mockHttpContextAccessor.Object, memoryCache, services);
+
+            // Act
+            var result = editorSettings.UseModernFileExplorer;
+
+            // Assert
+            Assert.IsTrue(result);
+        }
+
+        /// <summary>
         /// Tests that GetBlobAbsoluteUrl_AbsoluteUrl_ReturnsAsUri.
         /// </summary>
         [TestMethod]

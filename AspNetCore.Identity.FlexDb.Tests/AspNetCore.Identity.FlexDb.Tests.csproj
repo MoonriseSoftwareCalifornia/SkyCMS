@@ -5,9 +5,9 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>annotations</Nullable>
 
-		<Version>12.1.4</Version>
-		<AssemblyVersion>12.1.4</AssemblyVersion>
-		<FileVersion>12.1.4</FileVersion>
+		<Version>12.2.0</Version>
+		<AssemblyVersion>12.2.0</AssemblyVersion>
+		<FileVersion>12.2.0</FileVersion>
 		<IsPackable>false</IsPackable>
 
 		<!--<UserSecretsId>e5f1f76e-e6ac-4f45-ac55-02e401325c2b</UserSecretsId>-->

@@ -21,6 +21,10 @@
       "destination": "wwwroot/lib/filepond/"
     },
     {
+      "destination": "wwwroot/lib/elfinder/",
+      "library": "elfinder@2.1.66"
+    },
+    {
       "library": "jquery-validate@1.21.0",
       "destination": "wwwroot/lib/jquery-validate"
     },

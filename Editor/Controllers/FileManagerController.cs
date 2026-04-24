@@ -252,7 +252,7 @@ namespace Sky.Cms.Controllers
         /// <param name="isNewSession">s a new session.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpGet]
-        public async Task<IActionResult> Index(string target, bool? selectOne, string sortOrder = "asc", string currentSort = "Name", int pageNo = 0, int pageSize = 10, bool directoryOnly = false, bool imagesOnly = false, bool isNewSession = false)
+        public async Task<IActionResult> Index(string? target, bool? selectOne, string sortOrder = "asc", string currentSort = "Name", int pageNo = 0, int pageSize = 10, bool directoryOnly = false, bool imagesOnly = false, bool isNewSession = false)
         {
             if (!ModelState.IsValid)
             {
@@ -433,10 +433,21 @@ namespace Sky.Cms.Controllers
             if (directoryOnly)
             {
                 var ddata = query.Where(w => w.IsDirectory).ToList();
+
+                if (this.options.UseModernFileExplorer)
+                {
+                    return View("~/Views/Shared/FileExplorer/IndexModern.cshtml", ddata);
+                }
+
                 return View(ddata);
             }
 
             var data = query.Skip(pageNo * pageSize).Take(pageSize).ToList();
+
+            if (this.options.UseModernFileExplorer)
+            {
+                return View("~/Views/Shared/FileExplorer/IndexModern.cshtml", data);
+            }
 
             return View("~/Views/Shared/FileExplorer/Index.cshtml", data);
         }

@@ -1,0 +1,217 @@
+@using Sky.Editor.Services.EditorSettings
+@inject IEditorSettings options
+@{
+    var selectOne = ViewData["SelectOne"] is bool s && s;
+    var directoryOnly = ViewData["DirectoryOnly"] is bool d && d;
+    var imagesOnly = ViewData["ImagesOnly"] is bool i && i;
+    var target = Context.Request.Query["target"].ToString();
+    if (string.IsNullOrEmpty(target)) { target = "/pub"; }
+
+    var connectorUrl = Url.Action("Connector", "ElFinderConnector") ?? "/FileManager/ElFinderConnector";
+
+    if (directoryOnly)
+    {
+        ViewData["Title"] = "File Manager – Folder View";
+    }
+    else if (imagesOnly)
+    {
+        ViewData["Title"] = "Select an Image";
+    }
+    else
+    {
+        ViewData["Title"] = "File Manager";
+    }
+}
+
+@* elFinder core – BSD-3-Clause license (Studio-42/elFinder) *@
+<link rel="stylesheet"
+    href="~/lib/elfinder/css/elfinder.min.css"
+       asp-append-version="true" />
+
+@* LibreICONS Bootstrap theme for elFinder – MIT license (DennisSuitters/LibreICONS) *@
+<link rel="stylesheet"
+      href="~/lib/elfinder/css/theme-bootstrap-libreicons-svg.css"
+      asp-append-version="true" />
+
+<style>
+    /* ── Layout shell ─────────────────────────────────────────── */
+    .ccms-elfinder-wrap {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 72px);
+        padding: 0;
+        background: #1e1e1e;
+    }
+
+    /* ── Dark mode surface overrides ──────────────────────────── */
+    .elfinder,
+    .elfinder-navbar,
+    .elfinder-workzone,
+    .elfinder-cwd,
+    .elfinder-statusbar,
+    .elfinder-toolbar {
+        background-color: #1e1e1e !important;
+        color: #cfd6de !important;
+        border-color: #3e3e42 !important;
+    }
+
+    .elfinder-navbar {
+        border-right: 1px solid #3e3e42 !important;
+    }
+
+    .elfinder-cwd-header {
+        background-color: #252527 !important;
+        color: #cfd6de !important;
+        border-bottom: 1px solid #3e3e42 !important;
+    }
+
+    .elfinder-toolbar .ui-toolbar-btn {
+        background-color: #252527 !important;
+        border-color: #3e3e42 !important;
+        color: #cfd6de !important;
+    }
+
+    .elfinder-toolbar .ui-toolbar-btn:hover {
+        background-color: #007acc !important;
+        color: #fff !important;
+    }
+
+    .elfinder-cwd-file .elfinder-cwd-filename {
+        color: #cfd6de !important;
+    }
+
+    .elfinder-cwd-file.ui-selected .elfinder-cwd-filename {
+        color: #fff !important;
+    }
+
+    .elfinder-cwd-file.ui-selected {
+        background-color: #094771 !important;
+    }
+
+    .elfinder-contextmenu,
+    .elfinder-dialog {
+        background-color: #252527 !important;
+        color: #cfd6de !important;
+        border-color: #3e3e42 !important;
+    }
+
+    .elfinder-dialog .ui-dialog-titlebar {
+        background-color: #1d1f24 !important;
+        color: #cfd6de !important;
+        border-bottom: 1px solid #3e3e42 !important;
+    }
+
+    .elfinder-dialog .ui-button {
+        background-color: #007acc !important;
+        color: #fff !important;
+        border-color: #005fa3 !important;
+    }
+
+    /* ── Toolbar button label (Bootstrap theme integration) ───── */
+    .elfinder .elfinder-button-icon,
+    .elfinder .elfinder-button-menu-item-icon {
+        filter: invert(0.8) brightness(1.2);
+    }
+</style>
+
+<div class="ccms-elfinder-wrap" id="ccmsElFinderWrap">
+    <div id="ccmsElFinder"></div>
+</div>
+
+@section Scripts {
+<script src="~/lib/elfinder/js/elfinder.min.js"
+        asp-append-version="true"></script>
+<script>
+    (function () {
+        // ── Encode path to elFinder hash ──────────────────────────
+        function encodePath(path) {
+            var trimmed = path.replace(/^\//, '');
+            var encoded = btoa(unescape(encodeURIComponent(trimmed)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+            return 'l1_' + encoded;
+        }
+
+        // ── Starting target hash ──────────────────────────────────
+        var startTarget = encodePath('@Html.Raw(target)');
+
+        // ── File-selection callback (selectOne / imagesOnly) ──────
+        var pickCallback = null;
+@if (selectOne || imagesOnly)
+{
+        <text>
+        pickCallback = function (file) {
+            var url = file.url || '';
+            if (typeof window.parent !== 'undefined') {
+                if (typeof window.parent.CCMS___FileManagerPick === 'function') {
+                    window.parent.CCMS___FileManagerPick(url);
+                } else if (typeof window.parent.selectImage === 'function') {
+                    window.parent.selectImage(url);
+                }
+            }
+        };
+        </text>
+}
+
+        // ── elFinder initialisation ───────────────────────────────
+        var efOptions = {
+            url: '@connectorUrl',
+            lang: 'en',
+            resizable: false,
+            baseUrl: '/lib/elfinder/',
+            uiOptions: {
+                toolbar: [
+                    ['back', 'forward'],
+                    ['reload'],
+                    ['home', 'up'],
+                    ['mkdir', 'mkfile', 'upload'],
+                    ['open', 'download'],
+                    ['info'],
+                    ['quicklook'],
+                    ['copy', 'cut', 'paste'],
+                    ['rm'],
+                    ['rename'],
+                    ['search'],
+                    ['view', 'sort']
+                ],
+            },
+            startPathHash: startTarget,
+            handlers: {
+                error: function (event) {
+                    var err = event.data && event.data.error;
+                    if (window.console && err) { console.warn('[elFinder]', err); }
+                }
+            }
+        };
+
+@if (directoryOnly)
+{
+        <text>
+        efOptions.commandsOptions = { open: { dirs: true } };
+        efOptions.onlyMimes = ['directory'];
+        </text>
+}
+@if (imagesOnly)
+{
+        <text>
+        efOptions.onlyMimes = ['image'];
+        </text>
+}
+        if (pickCallback !== null) {
+            efOptions.getFileCallback = pickCallback;
+        }
+
+        if (typeof $.fn.elfinder !== 'function') {
+            $('#ccmsElFinder').html('<div class="alert alert-danger" role="alert">File manager failed to load. Please refresh or contact support.</div>');
+            if (window.console) {
+                console.error('[elFinder] Plugin did not load. Check CDN/network access.');
+            }
+
+            return;
+        }
+
+        $('#ccmsElFinder').elfinder(efOptions);
+    })();
+</script>
+}

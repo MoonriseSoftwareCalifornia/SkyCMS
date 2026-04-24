@@ -7,9 +7,9 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Company>Moonrise Software LLC</Company>
-		<Version>12.1.4</Version>
-		<AssemblyVersion>12.1.4</AssemblyVersion>
-		<FileVersion>12.1.4</FileVersion>
+		<Version>12.2.0</Version>
+		<AssemblyVersion>12.2.0</AssemblyVersion>
+		<FileVersion>12.2.0</FileVersion>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<RepositoryUrl>https://github.com/CWALabs/SkyCMS</RepositoryUrl>
