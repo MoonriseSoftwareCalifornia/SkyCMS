@@ -24,48 +24,48 @@ namespace Sky.Cms.Models
         /// <summary>
         /// Gets or sets hEAD content of the layout.
         /// </summary>
-        public string Head { get; set; }
+        public string Head { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets hTML Header content.
         /// </summary>
         /// <remarks>Often is either a NAV or HEADER tag content, or both.</remarks>
-        public string HtmlHeader { get; set; }
+        public string HtmlHeader { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets body tag HTML attributes.
         /// </summary>
-        public string BodyHtmlAttributes { get; set; }
+        public string BodyHtmlAttributes { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets layout footer.
         /// </summary>
-        public string FooterHtmlContent { get; set; }
+        public string FooterHtmlContent { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets current edit field.
         /// </summary>
-        public string EditingField { get; set; }
+        public string EditingField { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets editor title.
         /// </summary>
-        public string EditorTitle { get; set; }
+        public string EditorTitle { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets list of editor fields.
         /// </summary>
-        public IEnumerable<EditorField> EditorFields { get; set; }
+        public IEnumerable<EditorField> EditorFields { get; set; } = new List<EditorField>();
 
         /// <summary>
         /// Gets or sets custom button list.
         /// </summary>
-        public IEnumerable<string> CustomButtons { get; set; }
+        public IEnumerable<string> CustomButtons { get; set; } = new List<string>();
 
         /// <summary>
         /// Gets or sets a value indicating whether model is valid.
         /// </summary>
-        public bool IsValid { get; set; }
+        public bool IsValid { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the published date and time.

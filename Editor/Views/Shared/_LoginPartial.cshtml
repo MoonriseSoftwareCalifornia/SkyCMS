@@ -7,7 +7,6 @@
 @{
     var signedIn = SignInManager.IsSignedIn(User);
     var aiHelpEnabled = false;
-    var aiHelpPopupFeatures = "popup=yes,width=430,height=900,scrollbars=yes,resizable=yes";
     var infoHref = "https://docs.sky-cms.com";
     var infoTitle = "SkyCMS documentation";
     var infoTarget = "_blank";
@@ -31,6 +30,7 @@
 @if (signedIn)
 {
     <a class="btn btn-sm bg-dark text-light me-2" href="mailto:support@moonrise.net?subject=Help Desk Message" title="Email Help Desk"><i class="fa-solid fa-bell-concierge"></i></a>
+    <a title="Help: opens a documentation search window." aria-label="Open Help search. This opens a documentation search window where you can type a search and open results in a new tab." class="btn btn-sm bg-dark text-light me-2" aria-current="page" href="https://docs.sky-cms.com" target="_blank" rel="noopener" onclick="if (typeof window.ccmsOpenDocsHelpSearchWindow === 'function') { return window.ccmsOpenDocsHelpSearchWindow(); } return true;"><i class="fa-solid fa-circle-question"></i></a>
     @if (aiHelpEnabled)
     {
         <a title="@infoTitle" target="@infoTarget" class="btn btn-sm bg-dark text-light me-2" aria-current="page" href="@infoHref" rel="noopener" onclick="if (typeof window.ccmsOpenAiHelpFloatingWindow === 'function') { return window.ccmsOpenAiHelpFloatingWindow('@infoHref'); } window.open('@infoHref','SkyCmsAiHelp','popup=yes,width=430,height=900,scrollbars=yes,resizable=yes'); return false;"><i class="fa-solid fa-circle-info"></i></a>
@@ -84,6 +84,7 @@ else
 {
     <div>
         <a class="btn btn-sm bg-dark text-light me-2" href="mailto:support@moonrise.net?subject=Help Desk Message" title="Email Help Desk"><i class="fa-solid fa-bell-concierge"></i></a>
+        <a title="Help: opens a documentation search window." aria-label="Open Help search. This opens a documentation search window where you can type a search and open results in a new tab." class="btn btn-sm bg-dark text-light me-2" aria-current="page" href="https://docs.sky-cms.com" target="_blank" rel="noopener" onclick="if (typeof window.ccmsOpenDocsHelpSearchWindow === 'function') { return window.ccmsOpenDocsHelpSearchWindow(); } return true;"><i class="fa-solid fa-circle-question"></i></a>
         <a title="SkyCMS documentation" target="_blank" class="nav-link active" aria-current="page" href="https://docs.sky-cms.com"><i class="fa-solid fa-circle-info"></i></a>
         <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Register</a> |
         <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Login</a>

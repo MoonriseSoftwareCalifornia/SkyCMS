@@ -11,6 +11,7 @@ namespace Sky.Cms.Controllers
     using System.Diagnostics;
     using System.Linq;
     using System.Net;
+    using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
@@ -49,6 +50,7 @@ namespace Sky.Cms.Controllers
         private readonly IArticleHtmlService articleHtmlService;
         private readonly ILayoutTemplateService layoutTemplateService;
         private readonly IViewRenderService viewRenderService;
+        private readonly IHttpClientFactory httpClientFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeController"/> class.
@@ -76,6 +78,7 @@ namespace Sky.Cms.Controllers
             IConfiguration configuration,
             IServiceProvider services,
             IArticleHtmlService articleHtmlService,
+            IHttpClientFactory httpClientFactory = null,
             ILayoutTemplateService layoutTemplateService = null,
             IViewRenderService viewRenderService = null)
         {
@@ -84,6 +87,9 @@ namespace Sky.Cms.Controllers
             this.dbContext = dbContext;
             this.userManager = userManager;
             this.articleHtmlService = articleHtmlService;
+            this.httpClientFactory = httpClientFactory
+                ?? services?.GetService(typeof(IHttpClientFactory)) as IHttpClientFactory
+                ?? throw new InvalidOperationException("HTTP client factory is not available");
             this.layoutTemplateService = layoutTemplateService
                 ?? services?.GetService(typeof(ILayoutTemplateService)) as ILayoutTemplateService
                 ?? throw new InvalidOperationException("Layout template service is not available");
@@ -279,6 +285,34 @@ namespace Sky.Cms.Controllers
             var data = Newtonsoft.Json.JsonConvert.SerializeObject(model);
 
             return File(Encoding.UTF8.GetBytes(data), "application/json", fileDownloadName: "microsoft-identity-association.json");
+        }
+
+        /// <summary>
+        /// Proxies the published docs search index so editor users can search docs from the UI.
+        /// </summary>
+        /// <returns>Returns the docs search index JSON payload.</returns>
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> DocsSearchIndex()
+        {
+            const string docsSearchIndexUrl = "https://docs.sky-cms.com/search/search_index.json";
+
+            try
+            {
+                var client = httpClientFactory.CreateClient();
+                using var response = await client.GetAsync(docsSearchIndexUrl);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, "Unable to load docs search index.");
+                }
+
+                var payload = await response.Content.ReadAsStringAsync();
+                return Content(payload, "application/json", Encoding.UTF8);
+            }
+            catch
+            {
+                return StatusCode(503, "Unable to load docs search index.");
+            }
         }
 
         /// <summary>

@@ -144,6 +144,11 @@ namespace Sky.Tests.Controllers
                     }
                 });
 
+            var mockHttpClientFactory = new Mock<System.Net.Http.IHttpClientFactory>();
+            mockHttpClientFactory
+                .Setup(f => f.CreateClient(It.IsAny<string>()))
+                .Returns(new System.Net.Http.HttpClient());
+
             // Mock IArticleHtmlService for template preview
             var mockArticleHtmlService = new Mock<Sky.Editor.Services.Html.IArticleHtmlService>();
             mockArticleHtmlService
@@ -176,6 +181,7 @@ namespace Sky.Tests.Controllers
                 configuration.Object,
                 services.Object,
                 mockArticleHtmlService.Object,
+                mockHttpClientFactory.Object,
                 mockLayoutTemplateService.Object,
                 mockViewRenderService.Object);
 

@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>12.1.3</Version>
+    <Version>12.1.4</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Sky CMS Dynamic Config</Title>
   </PropertyGroup>
@@ -31,8 +31,8 @@
 
   <PropertyGroup>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <FileVersion>12.1.3</FileVersion>
-    <AssemblyVersion>12.1.3</AssemblyVersion>
+    <FileVersion>12.1.4</FileVersion>
+    <AssemblyVersion>12.1.4</AssemblyVersion>
   </PropertyGroup>
 
 </Project>

@@ -61,6 +61,102 @@
             border: 0;
             background: #111315;
         }
+
+        .docs-help-floating-window {
+            position: fixed;
+            top: 84px;
+            right: 466px;
+            width: 460px;
+            height: 640px;
+            max-width: calc(100vw - 24px);
+            max-height: calc(100vh - 96px);
+            background: #111315;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 50040;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        .docs-help-floating-window.is-hidden {
+            display: none;
+        }
+
+        .docs-help-floating-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #1d1f24;
+            border-bottom: 1px solid #333;
+            cursor: move;
+        }
+
+        .docs-help-floating-title {
+            font-size: 0.85rem;
+            color: #cfd6de;
+        }
+
+        .docs-help-floating-body {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: calc(100% - 46px);
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .docs-help-search-form {
+            display: flex;
+            gap: 8px;
+        }
+
+        .docs-help-search-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .docs-help-results {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .docs-help-results-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .docs-help-result-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #2b2f36;
+        }
+
+        .docs-help-result-link {
+            color: #8cc7ff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .docs-help-result-link:hover {
+            color: #b6ddff;
+            text-decoration: underline;
+        }
+
+        .docs-help-result-snippet {
+            margin: 4px 0 0;
+            color: #cfd6de;
+            font-size: 0.85rem;
+            line-height: 1.35;
+        }
+
+        .docs-help-result-path {
+            margin: 2px 0 0;
+            color: #9aa7b4;
+            font-size: 0.75rem;
+        }
     </style>
 
     @await RenderSectionAsync("Styles", required: false)
@@ -75,6 +171,8 @@
     <script src="/ccms/js/TimeUtils.js"></script>
     <script>
         let aiHelpFloatingInitialized = false;
+        let docsHelpFloatingInitialized = false;
+        let docsHelpSearchIndex = null;
 
         function cwpsSelectTableRow(element, isSelected) {
             const row = $(element).closest('tr');
@@ -143,6 +241,307 @@
             container.classList.add('is-hidden');
             container.setAttribute('aria-hidden', 'true');
         }
+
+        function ccmsInitializeDocsHelpFloatingWindow() {
+            if (docsHelpFloatingInitialized) {
+                return;
+            }
+
+            const container = document.getElementById('docsHelpFloatingWindow');
+            const closeButton = document.getElementById('btnCloseDocsHelpFloatingWindow');
+            const form = document.getElementById('frmDocsHelpSearch');
+            const clearButton = document.getElementById('btnDocsHelpSearchClear');
+            if (!container || !form) {
+                return;
+            }
+
+            if (closeButton) {
+                closeButton.addEventListener('click', function () {
+                    ccmsCloseDocsHelpSearchWindow();
+                });
+            }
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                ccmsRunDocsHelpSearch();
+            });
+
+            if (clearButton) {
+                clearButton.addEventListener('click', function () {
+                    const input = document.getElementById('txtDocsHelpSearch');
+                    if (input) {
+                        input.value = '';
+                        input.focus();
+                    }
+
+                    ccmsRenderDocsHelpResults([], 'Type a search phrase to find documentation pages.');
+                });
+            }
+
+            if (typeof $ === 'function' && typeof $.fn.draggable === 'function') {
+                $('#docsHelpFloatingWindow').draggable({
+                    handle: '#docsHelpFloatingHeader',
+                    containment: 'window'
+                });
+            }
+
+            docsHelpFloatingInitialized = true;
+        }
+
+        function ccmsOpenDocsHelpSearchWindow() {
+            const container = document.getElementById('docsHelpFloatingWindow');
+            if (!container) {
+                window.open('https://docs.sky-cms.com', '_blank', 'noopener');
+                return false;
+            }
+
+            ccmsInitializeDocsHelpFloatingWindow();
+            container.classList.remove('is-hidden');
+            container.setAttribute('aria-hidden', 'false');
+
+            const input = document.getElementById('txtDocsHelpSearch');
+            if (input) {
+                input.focus();
+            }
+
+            if (docsHelpSearchIndex === null) {
+                ccmsRenderDocsHelpStatus('Loading search index...');
+                ccmsEnsureDocsSearchIndex().then(function () {
+                    ccmsRenderDocsHelpResults([], 'Type a search phrase to find documentation pages.');
+                }).catch(function () {
+                    ccmsRenderDocsHelpStatus('Unable to load docs search right now. You can still open docs.sky-cms.com directly.');
+                });
+            }
+
+            return false;
+        }
+
+        function ccmsCloseDocsHelpSearchWindow() {
+            const container = document.getElementById('docsHelpFloatingWindow');
+            if (!container) {
+                return;
+            }
+
+            container.classList.add('is-hidden');
+            container.setAttribute('aria-hidden', 'true');
+        }
+
+        async function ccmsEnsureDocsSearchIndex() {
+            const response = await fetch('/Home/DocsSearchIndex', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error('Search index request failed.');
+            }
+
+            const payload = await response.json();
+            const docs = Array.isArray(payload && payload.docs) ? payload.docs : [];
+            docsHelpSearchIndex = docs.map(function (item) {
+                return {
+                    location: item.location || '',
+                    title: item.title || '',
+                    text: ccmsStripHtml((item.text || '').toString())
+                };
+            });
+
+            return docsHelpSearchIndex;
+        }
+
+        async function ccmsRunDocsHelpSearch() {
+            const input = document.getElementById('txtDocsHelpSearch');
+            if (!input) {
+                return;
+            }
+
+            const rawQuery = (input.value || '').trim();
+            if (rawQuery.length < 2) {
+                ccmsRenderDocsHelpStatus('Enter at least 2 characters to search.');
+                return;
+            }
+
+            ccmsRenderDocsHelpStatus('Searching...');
+
+            try {
+                const index = docsHelpSearchIndex ?? await ccmsEnsureDocsSearchIndex();
+                const results = ccmsFindDocsHelpMatches(rawQuery, index);
+
+                if (results.length === 0) {
+                    ccmsRenderDocsHelpStatus('No matching docs pages were found. Try a different phrase.');
+                    return;
+                }
+
+                ccmsRenderDocsHelpResults(results, null);
+            }
+            catch {
+                ccmsRenderDocsHelpStatus('Search is temporarily unavailable. Please try again.');
+            }
+        }
+
+        function ccmsFindDocsHelpMatches(query, index) {
+            const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+            if (terms.length === 0) {
+                return [];
+            }
+
+            const scored = [];
+
+            for (const doc of index) {
+                const haystackTitle = (doc.title || '').toLowerCase();
+                const haystackText = (doc.text || '').toLowerCase();
+                const haystack = `${haystackTitle} ${haystackText}`;
+                let score = 0;
+                let matchesAllTerms = true;
+
+                for (const term of terms) {
+                    if (!haystack.includes(term)) {
+                        matchesAllTerms = false;
+                        break;
+                    }
+
+                    if (haystackTitle.includes(term)) {
+                        score += 6;
+                    }
+
+                    score += 1;
+                }
+
+                if (!matchesAllTerms) {
+                    continue;
+                }
+
+                scored.push({
+                    score,
+                    title: doc.title || 'Untitled',
+                    location: doc.location || '',
+                    snippet: ccmsBuildDocsSnippet(doc.text || '', terms)
+                });
+            }
+
+            scored.sort(function (a, b) {
+                return b.score - a.score;
+            });
+
+            return scored.slice(0, 12);
+        }
+
+        function ccmsBuildDocsSnippet(text, terms) {
+            if (!text) {
+                return '';
+            }
+
+            const normalized = text.replace(/\s+/g, ' ').trim();
+            const lower = normalized.toLowerCase();
+            let hit = -1;
+
+            for (const term of terms) {
+                const index = lower.indexOf(term);
+                if (index >= 0 && (hit === -1 || index < hit)) {
+                    hit = index;
+                }
+            }
+
+            if (hit === -1) {
+                return normalized.substring(0, 180);
+            }
+
+            const start = Math.max(0, hit - 60);
+            const end = Math.min(normalized.length, hit + 120);
+            const prefix = start > 0 ? '... ' : '';
+            const suffix = end < normalized.length ? ' ...' : '';
+            return `${prefix}${normalized.substring(start, end)}${suffix}`;
+        }
+
+        function ccmsRenderDocsHelpStatus(message) {
+            ccmsRenderDocsHelpResults([], message);
+        }
+
+        function ccmsRenderDocsHelpResults(results, statusMessage) {
+            const host = document.getElementById('docsHelpResults');
+            if (!host) {
+                return;
+            }
+
+            host.innerHTML = '';
+
+            if (statusMessage) {
+                const message = document.createElement('p');
+                message.className = 'text-light mb-0';
+                message.textContent = statusMessage;
+                host.appendChild(message);
+                return;
+            }
+
+            const summary = document.createElement('p');
+            summary.className = 'text-light mb-2';
+            summary.textContent = `Found ${results.length} documentation result${results.length === 1 ? '' : 's'}.`;
+            host.appendChild(summary);
+
+            const list = document.createElement('ul');
+            list.className = 'docs-help-results-list';
+
+            for (const result of results) {
+                const item = document.createElement('li');
+                item.className = 'docs-help-result-item';
+
+                const link = document.createElement('a');
+                link.className = 'docs-help-result-link';
+                link.href = ccmsBuildDocsAbsoluteUrl(result.location);
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = result.title;
+                item.appendChild(link);
+
+                const snippet = document.createElement('p');
+                snippet.className = 'docs-help-result-snippet';
+                snippet.textContent = result.snippet;
+                item.appendChild(snippet);
+
+                const path = document.createElement('p');
+                path.className = 'docs-help-result-path';
+                path.textContent = ccmsBuildDocsDisplayPath(result.location);
+                item.appendChild(path);
+
+                list.appendChild(item);
+            }
+
+            host.appendChild(list);
+        }
+
+        function ccmsBuildDocsAbsoluteUrl(location) {
+            const docsRoot = 'https://docs.sky-cms.com/';
+            if (!location) {
+                return docsRoot;
+            }
+
+            if (location.startsWith('http://') || location.startsWith('https://')) {
+                return location;
+            }
+
+            if (location.startsWith('/')) {
+                return `https://docs.sky-cms.com${location}`;
+            }
+
+            return `${docsRoot}${location}`;
+        }
+
+        function ccmsBuildDocsDisplayPath(location) {
+            if (!location) {
+                return 'docs.sky-cms.com';
+            }
+
+            const anchorIndex = location.indexOf('#');
+            if (anchorIndex > -1) {
+                return location.substring(0, anchorIndex);
+            }
+
+            return location;
+        }
+
+        function ccmsStripHtml(value) {
+            return value.replace(/<[^>]+>/g, ' ');
+        }
     </script>
 </head>
 <body class="cwps-body" style="background-color:#323236">
@@ -155,6 +554,23 @@
         </div>
         <div class="ai-help-floating-body">
             <iframe id="aiHelpFloatingFrame" class="ai-help-floating-frame" title="AI Help Chat"></iframe>
+        </div>
+    </div>
+
+    <div id="docsHelpFloatingWindow" class="docs-help-floating-window is-hidden" aria-hidden="true">
+        <div id="docsHelpFloatingHeader" class="docs-help-floating-header">
+            <span class="docs-help-floating-title">Help Search</span>
+            <button id="btnCloseDocsHelpFloatingWindow" type="button" class="btn btn-sm btn-outline-light">Close</button>
+        </div>
+        <div class="docs-help-floating-body">
+            <form id="frmDocsHelpSearch" class="docs-help-search-form" aria-label="Search SkyCMS documentation">
+                <input id="txtDocsHelpSearch" class="form-control form-control-sm docs-help-search-input" type="search" placeholder="Search docs..." aria-label="Search SkyCMS documentation" autocomplete="off" />
+                <button type="submit" class="btn btn-sm btn-primary">Search</button>
+                <button id="btnDocsHelpSearchClear" type="button" class="btn btn-sm btn-secondary">Clear</button>
+            </form>
+            <div id="docsHelpResults" class="docs-help-results" role="status" aria-live="polite">
+                <p class="text-light mb-0">Type a search phrase to find documentation pages.</p>
+            </div>
         </div>
     </div>
 
