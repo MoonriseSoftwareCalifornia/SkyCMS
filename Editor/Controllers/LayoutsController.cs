@@ -27,7 +27,6 @@ namespace Sky.Cms.Controllers
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using Sky.Cms.Models;
     using Sky.Cms.Services;

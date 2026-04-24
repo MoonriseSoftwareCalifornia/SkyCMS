@@ -37,14 +37,14 @@ namespace Sky.Cms.Models
         /// </summary>
         [Display(Name = "Layout Name")]
         [StringLength(128)]
-        public string LayoutName { get; set; }
+        public string LayoutName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets layout notes.
         /// </summary>
         [Display(Name = "Notes")]
         [DataType(DataType.Html)]
-        public string Notes { get; set; }
+        public string Notes { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the last modified date and time.
