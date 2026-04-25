@@ -156,10 +156,28 @@ namespace Sky.Cms.Controllers
                 cwdObject = SyntheticDirObject(path, parentHash, isRoot);
             }
 
+            // elFinder expects directory objects in "files" to build and keep the navbar tree
+            // stable (root/cwd plus children for the current folder).
+            var allFiles = new List<object>();
+            var rootHash = EncodeHash(RootPath);
+            var cwdHash = ((Dictionary<string, object>)cwdObject)["hash"]?.ToString();
+
+            // Always include the root volume node.
+            allFiles.Add(SyntheticDirObject(RootPath, null, isRoot: true));
+
+            // Include cwd when it is not root; if cwd is root, avoid duplicate root entry.
+            if (!string.Equals(cwdHash, rootHash, StringComparison.Ordinal))
+            {
+                allFiles.Add(cwdObject);
+            }
+
+            // Add children in the opened directory.
+            allFiles.AddRange(fileObjects);
+
             var response = new Dictionary<string, object>
             {
                 ["cwd"] = cwdObject,
-                ["files"] = fileObjects,
+                ["files"] = allFiles,
                 ["api"] = "2.1",
                 ["uplMaxSize"] = "64M",
                 ["options"] = BuildOptions(path),
@@ -167,11 +185,8 @@ namespace Sky.Cms.Controllers
 
             if (isInit)
             {
-                // On init, also inject the root volume object so the sidebar tree renders
-                var rootObject = SyntheticDirObject(RootPath, null, isRoot: true);
-                var allFiles = new List<object> { rootObject };
-                allFiles.AddRange(fileObjects);
-                response["files"] = allFiles;
+                // Keep init behavior explicit; tree data is already included above.
+                response["init"] = 1;
             }
 
             return Json(response);
@@ -669,44 +684,78 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errAccess"));
             }
 
-            var tree = new List<object>();
+            // elFinder parents command: return all parent folders, plus each parent's first-level
+            // subfolders, in a shape that allows the navbar tree to be rebuilt from root to target.
+            var ancestors = new List<string>();
             var current = path;
 
-            while (!string.IsNullOrEmpty(current) && current != "/" && current.Length > 1)
+            while (!string.IsNullOrEmpty(current) && current.StartsWith(RootPath, StringComparison.Ordinal))
             {
-                var parent = GetParentPath(current);
-                if (parent == current)
+                ancestors.Add(current);
+                if (string.Equals(current, RootPath, StringComparison.Ordinal))
                 {
                     break;
                 }
 
+                var parent = GetParentPath(current);
+                if (string.IsNullOrEmpty(parent) || parent == current)
+                {
+                    break;
+                }
+
+                current = parent;
+            }
+
+            ancestors.Reverse();
+            var tree = new List<object>();
+
+            foreach (var ancestor in ancestors)
+            {
+                var isRoot = string.Equals(ancestor, RootPath, StringComparison.Ordinal);
+                if (isRoot)
+                {
+                    tree.Add(SyntheticDirObject(RootPath, null, isRoot: true));
+                    continue;
+                }
+
+                var parent = GetParentPath(ancestor);
+
                 try
                 {
                     var items = await storageContext.GetFilesAndDirectories(parent);
-                    foreach (var item in items.Where(i => i.IsDirectory))
+                    foreach (var item in items.Where(e => e.IsDirectory))
                     {
                         tree.Add(ToElFinderObject(item, EncodeHash(parent)));
                     }
                 }
                 catch
                 {
-                    break;
-                }
-
-                current = parent;
-
-                if (current.TrimEnd('/') == RootPath.TrimEnd('/'))
-                {
-                    break;
+                    // Best-effort: continue walking up even if this level fails.
                 }
             }
 
-            return await Task.FromResult(Json(new { tree }));
+            var seen = new HashSet<string>();
+            var deduped = new List<object>();
+            foreach (var item in tree)
+            {
+                var itemDict = item as Dictionary<string, object>;
+                if (itemDict != null && itemDict.ContainsKey("hash"))
+                {
+                    var hash = itemDict["hash"].ToString();
+                    if (seen.Add(hash))
+                    {
+                        deduped.Add(item);
+                    }
+                }
+            }
+
+            return Json(new { tree = deduped });
         }
 
         // ─── Helpers ──────────────────────────────────────────────────────────────
         private static string EncodeHash(string path)
         {
+            path = NormalizePath(path);
             var bytes = Encoding.UTF8.GetBytes(path.TrimStart('/'));
             return VolumeId + Convert.ToBase64String(bytes)
                 .Replace('+', '-')
@@ -734,7 +783,7 @@ namespace Sky.Cms.Controllers
             try
             {
                 var bytes = Convert.FromBase64String(encoded);
-                return "/" + Encoding.UTF8.GetString(bytes);
+                return NormalizePath("/" + Encoding.UTF8.GetString(bytes));
             }
             catch
             {
@@ -742,9 +791,30 @@ namespace Sky.Cms.Controllers
             }
         }
 
+        private static string NormalizePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            var segments = path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length == 0)
+            {
+                return "/";
+            }
+
+            return "/" + string.Join("/", segments);
+        }
+
         private static string GetParentPath(string path)
         {
-            var trimmed = path.TrimEnd('/');
+            var trimmed = NormalizePath(path);
+            if (string.IsNullOrEmpty(trimmed) || trimmed == "/")
+            {
+                return "/";
+            }
+
             var idx = trimmed.LastIndexOf('/');
             if (idx <= 0)
             {
@@ -772,13 +842,15 @@ namespace Sky.Cms.Controllers
                 return false;
             }
 
+            path = NormalizePath(path);
+
             // Block path traversal
             if (path.Contains(".."))
             {
                 return false;
             }
 
-            var normalised = "/" + path.Trim('/');
+            var normalised = NormalizePath(path);
             return normalised == RootPath || normalised.StartsWith(RootPath + "/");
         }
 
@@ -789,13 +861,13 @@ namespace Sky.Cms.Controllers
 
         private object ToElFinderObject(FileManagerEntry entry, string parentHash)
         {
-            var fullPath = entry.Path.StartsWith("/") ? entry.Path : "/" + entry.Path;
+            var fullPath = NormalizePath(entry.Path.StartsWith("/") ? entry.Path : "/" + entry.Path);
             var hash = EncodeHash(fullPath);
             var displayName = entry.IsDirectory ? entry.Name : (entry.Name + entry.Extension);
             var mime = entry.IsDirectory ? "directory" : GetMimeType(entry.Extension);
             var ts = new DateTimeOffset(entry.ModifiedUtc == default ? DateTime.UtcNow : entry.ModifiedUtc, TimeSpan.Zero)
                          .ToUnixTimeSeconds();
-            var isRoot = fullPath.TrimEnd('/') == RootPath;
+            var isRoot = fullPath == RootPath;
 
             var obj = new Dictionary<string, object>
             {
@@ -842,6 +914,7 @@ namespace Sky.Cms.Controllers
 
         private object SyntheticDirObject(string path, string parentHash, bool isRoot)
         {
+            path = NormalizePath(path);
             var hash = EncodeHash(path);
             var name = isRoot ? "pub" : path.TrimEnd('/').Split('/').Last();
             var obj = new Dictionary<string, object>
@@ -889,7 +962,7 @@ namespace Sky.Cms.Controllers
         private Dictionary<string, object> BuildOptions(string path)
         {
             var blobBase = editorSettings.BlobPublicUrl.TrimEnd('/');
-            var humanPath = path.TrimStart('/');
+            var humanPath = NormalizePath(path).TrimStart('/');
 
             return new Dictionary<string, object>
             {

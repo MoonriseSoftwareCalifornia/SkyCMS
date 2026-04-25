@@ -154,6 +154,62 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task Connector_Open_ForNestedDirectory_ReturnsCanonicalParentHash()
+        {
+            var designPath = testRoot + "/design";
+            var imagesPath = designPath + "/images";
+            await storage.CreateFolder(designPath);
+            await storage.CreateFolder(imagesPath);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash(imagesPath + "/"),
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+
+            Assert.AreEqual(EncodeHash(designPath), json["cwd"]?["phash"]?.ToString());
+        }
+
+        [TestMethod]
+        public async Task Connector_Parents_ForNestedDirectory_ReturnsRootFirstTreeWithCanonicalHashes()
+        {
+            var designPath = testRoot + "/design";
+            var imagesPath = designPath + "/images";
+            var articlesPath = testRoot + "/articles";
+            await storage.CreateFolder(designPath);
+            await storage.CreateFolder(imagesPath);
+            await storage.CreateFolder(articlesPath);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "parents",
+                ["target"] = EncodeHash(imagesPath + "/"),
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var tree = (JArray)json["tree"];
+
+            Assert.IsNotNull(tree);
+            Assert.AreEqual("pub", tree[0]?["name"]?.ToString());
+
+            var hashes = tree.Select(item => item?["hash"]?.ToString()).Where(hash => hash != null).ToList();
+            var testRootHash = EncodeHash(testRoot);
+            var designHash = EncodeHash(designPath);
+            var imagesHash = EncodeHash(imagesPath);
+
+            Assert.IsTrue(hashes.IndexOf(testRootHash) > hashes.IndexOf(EncodeHash("/pub")));
+            Assert.IsTrue(hashes.IndexOf(designHash) > hashes.IndexOf(testRootHash));
+            Assert.IsTrue(hashes.IndexOf(imagesHash) > hashes.IndexOf(designHash));
+
+            var imagesNode = tree.Children<JObject>().First(node => node["hash"]?.ToString() == imagesHash);
+            Assert.AreEqual(designHash, imagesNode["phash"]?.ToString());
+        }
+
+        [TestMethod]
         public async Task Connector_Mkdir_WithUnsafeName_ReturnsInvalidNameError()
         {
             SetGetRequest(new Dictionary<string, string>
@@ -201,11 +257,18 @@ namespace Sky.Tests.Controllers
 
         private static string EncodeHash(string path)
         {
+            path = NormalizePath(path);
             var bytes = Encoding.UTF8.GetBytes(path.TrimStart('/'));
             return VolumeId + Convert.ToBase64String(bytes)
                 .Replace('+', '-')
                 .Replace('/', '_')
                 .TrimEnd('=');
+        }
+
+        private static string NormalizePath(string path)
+        {
+            var segments = path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            return "/" + string.Join("/", segments);
         }
 
         private JObject AsJsonObject(IActionResult result)

@@ -29,88 +29,277 @@
        asp-append-version="true" />
 
 @* LibreICONS Bootstrap theme for elFinder – MIT license (DennisSuitters/LibreICONS) *@
-<link rel="stylesheet"
+@* <link rel="stylesheet"
       href="~/lib/elfinder/css/theme-bootstrap-libreicons-svg.css"
-      asp-append-version="true" />
+      asp-append-version="true" /> *@
 
 <style>
     /* ── Layout shell ─────────────────────────────────────────── */
     .ccms-elfinder-wrap {
+        --ef-bg: #14171d;
+        --ef-panel: #1a1f27;
+        --ef-panel-2: #202734;
+        --ef-border: #2e3646;
+        --ef-text: #dde6f3;
+        --ef-muted: #9aa7bc;
+        --ef-accent: #3da0ff;
+        --ef-accent-strong: #1f84e4;
+        --ef-selected: #1f4063;
+        --ef-hover: #273245;
+        --ef-danger: #e06d76;
         display: flex;
         flex-direction: column;
         height: calc(100vh - 72px);
         padding: 0;
-        background: #1e1e1e;
+        background: radial-gradient(circle at 20% 10%, #1d2633 0%, var(--ef-bg) 55%);
     }
 
-    /* ── Dark mode surface overrides ──────────────────────────── */
-    .elfinder,
-    .elfinder-navbar,
-    .elfinder-workzone,
-    .elfinder-cwd,
-    .elfinder-statusbar,
-    .elfinder-toolbar {
-        background-color: #1e1e1e !important;
-        color: #cfd6de !important;
-        border-color: #3e3e42 !important;
+    .ccms-elfinder-wrap .elfinder {
+        background: var(--ef-bg) !important;
+        color: var(--ef-text) !important;
+        border: 1px solid var(--ef-border) !important;
     }
 
-    .elfinder-navbar {
-        border-right: 1px solid #3e3e42 !important;
+    .ccms-elfinder-wrap .elfinder .ui-state-default,
+    .ccms-elfinder-wrap .elfinder .ui-widget-content,
+    .ccms-elfinder-wrap .elfinder .ui-widget-header {
+        border-color: var(--ef-border) !important;
+        color: var(--ef-text) !important;
     }
 
-    .elfinder-cwd-header {
-        background-color: #252527 !important;
-        color: #cfd6de !important;
-        border-bottom: 1px solid #3e3e42 !important;
+    .ccms-elfinder-wrap .elfinder-toolbar,
+    .ccms-elfinder-wrap .elfinder-navbar,
+    .ccms-elfinder-wrap .elfinder-workzone,
+    .ccms-elfinder-wrap .elfinder-cwd,
+    .ccms-elfinder-wrap .elfinder-statusbar,
+    .ccms-elfinder-wrap .elfinder-path,
+    .ccms-elfinder-wrap .elfinder-stattext {
+        background: var(--ef-panel) !important;
+        color: var(--ef-text) !important;
+        border-color: var(--ef-border) !important;
     }
 
-    .elfinder-toolbar .ui-toolbar-btn {
-        background-color: #252527 !important;
-        border-color: #3e3e42 !important;
-        color: #cfd6de !important;
+    .ccms-elfinder-wrap .elfinder-cwd-header,
+    .ccms-elfinder-wrap .elfinder-button-menu,
+    .ccms-elfinder-wrap .elfinder-contextmenu {
+        background: var(--ef-panel-2) !important;
+        color: var(--ef-text) !important;
+        border-color: var(--ef-border) !important;
     }
 
-    .elfinder-toolbar .ui-toolbar-btn:hover {
-        background-color: #007acc !important;
+    .ccms-elfinder-wrap .elfinder-navbar {
+        border-right: 1px solid var(--ef-border) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-cwd-header {
+        border-bottom: 1px solid var(--ef-border) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-toolbar .ui-button,
+    .ccms-elfinder-wrap .elfinder-toolbar .ui-state-default,
+    .ccms-elfinder-wrap .elfinder-button {
+        background: var(--ef-panel-2) !important;
+        color: var(--ef-text) !important;
+        border-color: var(--ef-border) !important;
+        transition: background-color .15s ease, border-color .15s ease;
+    }
+
+    .ccms-elfinder-wrap .elfinder-toolbar .ui-button:hover,
+    .ccms-elfinder-wrap .elfinder-toolbar .ui-state-hover,
+    .ccms-elfinder-wrap .elfinder-button:hover,
+    .ccms-elfinder-wrap .elfinder-button-menu-item:hover,
+    .ccms-elfinder-wrap .elfinder-contextmenu-item:hover {
+        background: var(--ef-hover) !important;
         color: #fff !important;
     }
 
-    .elfinder-cwd-file .elfinder-cwd-filename {
-        color: #cfd6de !important;
+    .ccms-elfinder-wrap .elfinder-button.ui-state-active,
+    .ccms-elfinder-wrap .elfinder-button-menu-item.ui-state-active,
+    .ccms-elfinder-wrap .elfinder-cwd-file.ui-selected,
+    .ccms-elfinder-wrap .elfinder-cwd-file.ui-state-active,
+    .ccms-elfinder-wrap .elfinder-navbar-tr.ui-state-active,
+    .ccms-elfinder-wrap .elfinder-tree-dir.ui-state-active {
+        background: var(--ef-selected) !important;
+        color: #fff !important;
+        border-color: var(--ef-accent) !important;
     }
 
-    .elfinder-cwd-file.ui-selected .elfinder-cwd-filename {
+    .ccms-elfinder-wrap .elfinder-tree,
+    .ccms-elfinder-wrap .elfinder-tree-dir,
+    .ccms-elfinder-wrap .elfinder-navbar-dir,
+    .ccms-elfinder-wrap .elfinder-cwd-file,
+    .ccms-elfinder-wrap .elfinder-cwd-filename,
+    .ccms-elfinder-wrap .elfinder-statusbar div,
+    .ccms-elfinder-wrap .elfinder-path,
+    .ccms-elfinder-wrap .elfinder-navbar .elfinder-button-text {
+        color: var(--ef-text) !important;
+    }
+
+    /* filename pill and icon wrapper: always dark background */
+    .ccms-elfinder-wrap .elfinder-cwd-filename {
+        background: transparent !important;
+        color: var(--ef-text) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-cwd-file-wrapper,
+    .ccms-elfinder-wrap .elfinder-cwd-file-wrapper.ui-widget-content,
+    .ccms-elfinder-wrap .elfinder-cwd-file-wrapper.ui-state-default {
+        background: transparent !important;
+    }
+
+    /* hover state: subtle dark highlight on the whole file cell */
+    .ccms-elfinder-wrap .elfinder-cwd-file:hover .elfinder-cwd-file-wrapper,
+    .ccms-elfinder-wrap .elfinder-cwd-file-wrapper:hover,
+    .ccms-elfinder-wrap .elfinder-cwd-file-wrapper.ui-state-hover,
+    .ccms-elfinder-wrap .elfinder-cwd-file.ui-state-hover .elfinder-cwd-file-wrapper,
+    .ccms-elfinder-wrap .elfinder-navbar-tr:hover,
+    .ccms-elfinder-wrap .elfinder-navbar-tr.ui-state-hover,
+    .ccms-elfinder-wrap .elfinder-tree-dir:hover,
+    .ccms-elfinder-wrap .elfinder-tree-dir.ui-state-hover {
+        background: var(--ef-hover) !important;
+        color: var(--ef-text) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-cwd-file:hover .elfinder-cwd-filename,
+    .ccms-elfinder-wrap .elfinder-cwd-file.ui-state-hover .elfinder-cwd-filename {
+        background: var(--ef-hover) !important;
+        color: var(--ef-text) !important;
+    }
+
+    /* selected state: filename pill gets accent color */
+    .ccms-elfinder-wrap .elfinder-cwd-file.ui-selected .elfinder-cwd-filename,
+    .ccms-elfinder-wrap .elfinder-cwd-file.ui-state-active .elfinder-cwd-filename {
+        background: var(--ef-selected) !important;
         color: #fff !important;
     }
 
-    .elfinder-cwd-file.ui-selected {
-        background-color: #094771 !important;
+    .ccms-elfinder-wrap .elfinder-cwd-file.ui-selected .elfinder-cwd-file-wrapper,
+    .ccms-elfinder-wrap .elfinder-cwd-file.ui-state-active .elfinder-cwd-file-wrapper {
+        background: var(--ef-selected) !important;
     }
 
-    .elfinder-contextmenu,
-    .elfinder-dialog {
-        background-color: #252527 !important;
-        color: #cfd6de !important;
-        border-color: #3e3e42 !important;
+    .ccms-elfinder-wrap .elfinder-navbar .elfinder-button-icon,
+    .ccms-elfinder-wrap .elfinder-toolbar .elfinder-button-icon,
+    .ccms-elfinder-wrap .elfinder-button-menu-item-icon {
+        filter: brightness(1.1) saturate(0.9);
+        opacity: 0.92;
     }
 
-    .elfinder-dialog .ui-dialog-titlebar {
-        background-color: #1d1f24 !important;
-        color: #cfd6de !important;
-        border-bottom: 1px solid #3e3e42 !important;
+    .ccms-elfinder-wrap .elfinder-dialog {
+        background: var(--ef-panel) !important;
+        color: var(--ef-text) !important;
+        border: 1px solid var(--ef-border) !important;
     }
 
-    .elfinder-dialog .ui-button {
-        background-color: #007acc !important;
+    .ccms-elfinder-wrap .elfinder-dialog .ui-dialog-titlebar {
+        background: linear-gradient(180deg, #243147 0%, #1f2a3b 100%) !important;
         color: #fff !important;
-        border-color: #005fa3 !important;
+        border-bottom: 1px solid var(--ef-border) !important;
     }
 
-    /* ── Toolbar button label (Bootstrap theme integration) ───── */
-    .elfinder .elfinder-button-icon,
-    .elfinder .elfinder-button-menu-item-icon {
-        filter: invert(0.8) brightness(1.2);
+    .ccms-elfinder-wrap .elfinder-dialog .ui-dialog-content {
+        background: var(--ef-panel) !important;
+        color: var(--ef-text) !important;
+        border-color: var(--ef-border) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-dialog .ui-dialog-content label,
+    .ccms-elfinder-wrap .elfinder-dialog .elfinder-info-title,
+    .ccms-elfinder-wrap .elfinder-dialog .elfinder-info-tb td,
+    .ccms-elfinder-wrap .elfinder-dialog .elfinder-info-tb th {
+        background: transparent !important;
+        color: var(--ef-text) !important;
+        border-color: var(--ef-border) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-dialog .elfinder-info-tb a {
+        color: var(--ef-accent) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-dialog input,
+    .ccms-elfinder-wrap .elfinder-dialog textarea,
+    .ccms-elfinder-wrap .elfinder-dialog select,
+    .ccms-elfinder-wrap .elfinder-navbar input,
+    .ccms-elfinder-wrap .elfinder input.elfinder-cwd-search {
+        background: #10151d !important;
+        color: var(--ef-text) !important;
+        border: 1px solid var(--ef-border) !important;
+        outline: none !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-dialog input:focus,
+    .ccms-elfinder-wrap .elfinder-dialog textarea:focus,
+    .ccms-elfinder-wrap .elfinder-dialog select:focus,
+    .ccms-elfinder-wrap .elfinder-navbar input:focus,
+    .ccms-elfinder-wrap .elfinder input.elfinder-cwd-search:focus {
+        border-color: var(--ef-accent) !important;
+        box-shadow: 0 0 0 2px rgba(61, 160, 255, 0.25) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-dialog .ui-button,
+    .ccms-elfinder-wrap .elfinder .ui-dialog-buttonpane .ui-button {
+        background: var(--ef-accent-strong) !important;
+        color: #fff !important;
+        border: 1px solid #1869bb !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-dialog .ui-button:hover,
+    .ccms-elfinder-wrap .elfinder .ui-dialog-buttonpane .ui-button:hover {
+        background: var(--ef-accent) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-button-menu-separator,
+    .ccms-elfinder-wrap .elfinder-contextmenu-separator,
+    .ccms-elfinder-wrap .elfinder-statusbar,
+    .ccms-elfinder-wrap .elfinder-path {
+        border-color: var(--ef-border) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-button-menu-item.elfinder-button-menu-item-del,
+    .ccms-elfinder-wrap .elfinder-contextmenu-item.elfinder-contextmenu-item-del {
+        color: var(--ef-danger) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder-button-menu-item.elfinder-button-menu-item-del:hover,
+    .ccms-elfinder-wrap .elfinder-contextmenu-item.elfinder-contextmenu-item-del:hover {
+        background: rgba(224, 109, 118, 0.22) !important;
+        color: #fff !important;
+    }
+
+    .ccms-elfinder-wrap .ui-resizable-handle {
+        background: var(--ef-border);
+    }
+
+    .ccms-elfinder-wrap .elfinder ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    .ccms-elfinder-wrap .elfinder ::-webkit-scrollbar-track {
+        background: #11151d;
+    }
+
+    .ccms-elfinder-wrap .elfinder ::-webkit-scrollbar-thumb {
+        background: #374259;
+        border: 2px solid #11151d;
+        border-radius: 8px;
+    }
+
+    .ccms-elfinder-wrap .elfinder ::-webkit-scrollbar-thumb:hover {
+        background: #4b5d7e;
+    }
+
+    .ccms-elfinder-wrap .elfinder .ui-state-disabled,
+    .ccms-elfinder-wrap .elfinder [disabled] {
+        opacity: .55;
+    }
+
+    .ccms-elfinder-wrap .elfinder a {
+        color: var(--ef-accent) !important;
+    }
+
+    .ccms-elfinder-wrap .elfinder a:hover {
+        color: #7ec2ff !important;
     }
 </style>
 
