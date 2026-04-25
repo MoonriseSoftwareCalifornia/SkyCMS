@@ -8,9 +8,9 @@
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>
 		<RepositoryUrl>https://github.com/CosmosSoftware/CosmosCms</RepositoryUrl>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<Version>12.2.0</Version>
-		<AssemblyVersion>12.2.0</AssemblyVersion>
-		<FileVersion>12.2.0</FileVersion>
+		<Version>12.2.1</Version>
+		<AssemblyVersion>12.2.1</AssemblyVersion>
+		<FileVersion>12.2.1</FileVersion>
 		<RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
 		<Authors></Authors>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>

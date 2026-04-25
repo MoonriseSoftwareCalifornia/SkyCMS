@@ -5,9 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Library</OutputType>
-    <Version>12.2.0</Version>
-    <FileVersion>12.2.0</FileVersion>
-    <AssemblyVersion>12.2.0</AssemblyVersion>
+    <Version>12.2.1</Version>
+    <FileVersion>12.2.1</FileVersion>
+    <AssemblyVersion>12.2.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
