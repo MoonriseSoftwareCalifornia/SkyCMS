@@ -32,7 +32,7 @@ jobs:
         password: ${{ secrets.DOCKERPASSWORD }}
 
     - name: Build Editor image for smoke test
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: Editor/Dockerfile
@@ -58,7 +58,7 @@ jobs:
         docker logs "$cid"
 
     - name: Push Editor image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: Editor/Dockerfile
@@ -66,7 +66,7 @@ jobs:
         tags: ${{ env.EDITOR_REMOTE_TAG }}
 
     - name: Build Publisher image for smoke test
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: Publisher/Dockerfile
@@ -91,7 +91,7 @@ jobs:
         docker logs "$cid"
 
     - name: Push Publisher image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: Publisher/Dockerfile
