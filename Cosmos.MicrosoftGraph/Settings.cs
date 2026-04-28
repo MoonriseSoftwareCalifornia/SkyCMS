@@ -13,7 +13,7 @@ namespace Cosmos.MicrosoftGraph
     /// <summary>
     /// Configuration settings.
     /// </summary>
-    public class Settings
+    internal class Settings
     {
         /// <summary>
         /// Gets or sets the Entra ID client ID.
