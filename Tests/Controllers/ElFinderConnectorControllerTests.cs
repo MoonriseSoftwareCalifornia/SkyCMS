@@ -174,6 +174,336 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(EncodeHash(designPath), json["cwd"]?["phash"]?.ToString());
         }
 
+        // ─── OPEN – files[] content by mode ──────────────────────────────────
+        //
+        // Tree-restoration mode (init=1 or tree=1): files[] must contain the full
+        // ancestor chain (root + siblings at every level + cwd + cwd children) so
+        // elFinder can reconstruct the tree panel on page load or direct deep-link.
+        //
+        // Navigation mode (regular open, no init/tree): files[] must contain ONLY
+        // the direct children. The client-side cache already holds parent/sibling
+        // nodes from prior navigations; including ancestors here would overwrite the
+        // cached child-lists for those nodes, causing sibling folders to vanish.
+
+        [TestMethod]
+        public async Task Connector_Open_DeepNestedPath_FilesContainsAllAncestorNodes()
+        {
+            // Arrange: /testRoot/level1/level2/level3  (3 levels deep)
+            var level1 = testRoot + "/level1";
+            var level2 = level1 + "/level2";
+            var level3 = level2 + "/level3";
+            await storage.CreateFolder(level1);
+            await storage.CreateFolder(level2);
+            await storage.CreateFolder(level3);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"]    = "open",
+                ["target"] = EncodeHash(level3),
+                ["tree"]   = "1",   // tree-restoration mode
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
+
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+            var hashes = files.Select(f => f["hash"]?.ToString()).ToHashSet();
+
+            // Root must always be present
+            Assert.IsTrue(hashes.Contains(EncodeHash("/pub")), "Root /pub must be in files[]");
+            // Every intermediate ancestor must be present for phash chain to be resolvable
+            Assert.IsTrue(hashes.Contains(EncodeHash(testRoot)), $"Ancestor {testRoot} must be in files[]");
+            Assert.IsTrue(hashes.Contains(EncodeHash(level1)), $"Ancestor {level1} must be in files[]");
+            Assert.IsTrue(hashes.Contains(EncodeHash(level2)), $"Ancestor {level2} must be in files[]");
+            // The cwd itself must also be present
+            Assert.IsTrue(hashes.Contains(EncodeHash(level3)), $"Cwd {level3} must be in files[]");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_DeepNestedPath_AllAncestorPhashChainsAreValid()
+        {
+            // Arrange
+            var level1 = testRoot + "/docs";
+            var level2 = level1 + "/archive";
+            var level3 = level2 + "/2025";
+            await storage.CreateFolder(level1);
+            await storage.CreateFolder(level2);
+            await storage.CreateFolder(level3);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"]    = "open",
+                ["target"] = EncodeHash(level3),
+                ["tree"]   = "1",   // tree-restoration mode
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+
+            // Build a hash→node lookup
+            var byHash = files
+                .Where(f => f["hash"] != null)
+                .ToDictionary(f => f["hash"]!.ToString(), f => f);
+
+            // Every non-root node with a phash must point to a node that exists in files[]
+            foreach (var node in byHash.Values)
+            {
+                var phash = node["phash"]?.ToString();
+                if (string.IsNullOrEmpty(phash))
+                {
+                    continue; // root has no phash
+                }
+
+                Assert.IsTrue(
+                    byHash.ContainsKey(phash),
+                    $"Node '{node["name"]}' (hash={node["hash"]}) has phash={phash} but that parent is missing from files[]. elFinder cannot build the tree.");
+            }
+
+            // Also verify the cwd's phash points to level2
+            var cwd = (JObject)json["cwd"];
+            Assert.AreEqual(EncodeHash(level2), cwd?["phash"]?.ToString());
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_DeepNestedPath_IncludesAncestorSiblingsAtEachLevel()
+        {
+            // Arrange: create the deep path plus sibling directories at each level
+            var level1        = testRoot + "/content";
+            var level1sibling = testRoot + "/assets";
+            var level2        = level1 + "/pages";
+            var level2sibling = level1 + "/posts";
+            var level3        = level2 + "/2025";
+            await storage.CreateFolder(level1);
+            await storage.CreateFolder(level1sibling);
+            await storage.CreateFolder(level2);
+            await storage.CreateFolder(level2sibling);
+            await storage.CreateFolder(level3);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"]    = "open",
+                ["target"] = EncodeHash(level3),
+                ["tree"]   = "1",   // tree-restoration mode
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+            var hashes = files.Select(f => f["hash"]?.ToString()).ToHashSet();
+
+            // Siblings at each ancestor level must be present so the tree can be fully
+            // expanded at each level without an additional round-trip to the server.
+            Assert.IsTrue(hashes.Contains(EncodeHash(level1sibling)),
+                $"Sibling {level1sibling} at level1 must be in files[] so the tree is fully navigable");
+            Assert.IsTrue(hashes.Contains(EncodeHash(level2sibling)),
+                $"Sibling {level2sibling} at level2 must be in files[] so the tree is fully navigable");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_DeepNestedPath_FilesContainsNoDuplicateHashes()
+        {
+            // Arrange
+            var level1 = testRoot + "/media";
+            var level2 = level1 + "/images";
+            await storage.CreateFolder(level1);
+            await storage.CreateFolder(level2);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"]    = "open",
+                ["target"] = EncodeHash(level2),
+                ["tree"]   = "1",   // tree-restoration mode — this is where dedup matters
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+
+            var hashes = files
+                .Select(f => f["hash"]?.ToString())
+                .Where(h => h != null)
+                .ToList();
+
+            var duplicates = hashes
+                .GroupBy(h => h)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            Assert.AreEqual(0, duplicates.Count,
+                $"Duplicate hashes in files[]: {string.Join(", ", duplicates)}");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_RootAlwaysPresentInFiles_EvenForDeeplyNestedPath()
+        {
+            // Arrange: 4 levels deep
+            var a = testRoot + "/a";
+            var b = a + "/b";
+            var c = b + "/c";
+            await storage.CreateFolder(a);
+            await storage.CreateFolder(b);
+            await storage.CreateFolder(c);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"]    = "open",
+                ["target"] = EncodeHash(c),
+                ["tree"]   = "1",   // tree-restoration mode
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+
+            var rootNode = files.FirstOrDefault(f => f["hash"]?.ToString() == EncodeHash("/pub"));
+            Assert.IsNotNull(rootNode, "The root /pub node must always appear in files[] (tree=1) regardless of depth");
+            Assert.AreEqual("pub", rootNode?["name"]?.ToString());
+            Assert.IsNotNull(rootNode?["volumeid"], "The root node must carry volumeid so elFinder treats it as a volume root");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_FilesAndParents_ReturnConsistentAncestorHashes()
+        {
+            // Arrange: shared tree
+            var level1 = testRoot + "/shared";
+            var level2 = level1 + "/inner";
+            await storage.CreateFolder(level1);
+            await storage.CreateFolder(level2);
+
+            // Act: open level2 in tree-restoration mode so ancestors are included
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"]    = "open",
+                ["target"] = EncodeHash(level2),
+                ["tree"]   = "1",
+            });
+            var openResult = await controller.Connector();
+            var openJson = AsJsonObject(openResult);
+            var openFiles = (JArray)openJson["files"];
+            var openHashes = openFiles!.Select(f => f["hash"]?.ToString()).ToHashSet();
+
+            // Act: parents for level2
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "parents",
+                ["target"] = EncodeHash(level2),
+            });
+            var parentsResult = await controller.Connector();
+            var parentsJson = AsJsonObject(parentsResult);
+            var parentsTree = (JArray)parentsJson["tree"];
+            var parentsHashes = parentsTree!.Select(f => f["hash"]?.ToString()).ToHashSet();
+
+            // Assert: the specific ancestors of level2 must appear in BOTH responses.
+            // We do NOT assert that every hash in parents also appears in open, because
+            // other concurrent tests create sibling folders under /pub between the two
+            // calls, so parents can legitimately return more nodes than open saw.
+            var openDump    = string.Join(", ", openHashes.OrderBy(h => h));
+            var parentsDump = string.Join(", ", parentsHashes.OrderBy(h => h));
+
+            foreach (var knownAncestor in new[] { testRoot, level1, level2 })
+            {
+                var hash = EncodeHash(knownAncestor);
+                Assert.IsTrue(
+                    openHashes.Contains(hash),
+                    $"Ancestor {knownAncestor} (hash {hash}) is missing from open files[].\n"
+                    + $"  open files[] : {openDump}");
+                Assert.IsTrue(
+                    parentsHashes.Contains(hash),
+                    $"Ancestor {knownAncestor} (hash {hash}) is missing from parents tree[].\n"
+                    + $"  parents tree[]: {parentsDump}");
+            }
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_Navigation_ReturnsOnlyDirectChildren()
+        {
+            // Navigation open (no init=1, no tree=1) must return ONLY the direct children
+            // of the opened folder. Returning ancestors/root would overwrite the client's
+            // cached child-lists for those nodes, causing sibling folders to disappear.
+            var navFolder  = testRoot + "/nav";
+            var navSibling = testRoot + "/nav-sibling";
+            var navChild   = navFolder + "/deep";
+            await storage.CreateFolder(navFolder);
+            await storage.CreateFolder(navSibling);
+            await storage.CreateFolder(navChild);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"]    = "open",
+                ["target"] = EncodeHash(navFolder),
+                // Deliberately no tree=1 or init=1 — this is a regular navigation click
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
+
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+            var hashes = files.Select(f => f["hash"]?.ToString()).ToHashSet();
+
+            // The direct child must appear
+            Assert.IsTrue(hashes.Contains(EncodeHash(navChild)),
+                "Direct child of cwd must appear in navigation files[]");
+
+            // Root and ancestors must NOT appear — they are in the client's cache already.
+            // Including them would cause elFinder to overwrite its cached sibling listings.
+            Assert.IsFalse(hashes.Contains(EncodeHash("/pub")),
+                "Root must NOT appear in navigation files[] — it would overwrite the tree cache");
+            Assert.IsFalse(hashes.Contains(EncodeHash(testRoot)),
+                "testRoot ancestor must NOT appear in navigation files[]");
+            Assert.IsFalse(hashes.Contains(EncodeHash(navSibling)),
+                "Sibling of cwd must NOT appear in navigation files[] — that is the overwrite that drops it from the tree");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_Tree1_CwdSiblingsIncludedForDirectChildOfParent()
+        {
+            // Regression: when cwd is a direct child of its parent level (regardless of depth
+            // from root), tree=1 mode must include all peers of the cwd so the user sees the
+            // complete sibling list in the tree panel. Previously the ancestor loop broke
+            // immediately when the cwd was the first entry, leaving siblings out.
+            var alpha  = testRoot + "/t1-alpha";
+            var beta   = testRoot + "/t1-beta";
+            var target = testRoot + "/t1-target";
+            await storage.CreateFolder(alpha);
+            await storage.CreateFolder(beta);
+            await storage.CreateFolder(target);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"]    = "open",
+                ["target"] = EncodeHash(target),
+                ["tree"]   = "1",
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
+
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+            var hashes = files.Select(f => f["hash"]?.ToString()).ToHashSet();
+
+            // All sibling folders at the cwd's level must be in files[]
+            Assert.IsTrue(hashes.Contains(EncodeHash(alpha)),
+                $"Sibling '{alpha}' must be in files[] (tree=1) — previously dropped due to ancestor-loop break");
+            Assert.IsTrue(hashes.Contains(EncodeHash(beta)),
+                $"Sibling '{beta}' must be in files[] (tree=1) — previously dropped due to ancestor-loop break");
+            Assert.IsTrue(hashes.Contains(EncodeHash(target)),
+                $"Target '{target}' must be in files[]");
+            Assert.IsTrue(hashes.Contains(EncodeHash("/pub")),
+                "Root must be in files[]");
+        }
+
         [TestMethod]
         public async Task Connector_Parents_ForNestedDirectory_ReturnsRootFirstTreeWithCanonicalHashes()
         {

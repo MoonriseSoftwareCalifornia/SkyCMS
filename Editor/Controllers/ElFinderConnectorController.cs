@@ -922,23 +922,128 @@ namespace Sky.Cms.Controllers
                 cwdObject = SyntheticDirObject(path, parentHash, isRoot);
             }
 
-            // elFinder expects directory objects in "files" to build and keep the navbar tree
-            // stable (root/cwd plus children for the current folder).
-            var allFiles = new List<object>();
-            var rootHash = EncodeHash(RootPath);
-            var cwdHash = ((Dictionary<string, object>)cwdObject)["hash"]?.ToString();
+            // elFinder maintains its tree panel entirely from a client-side cache built up over
+            // successive responses. There are two distinct behaviours needed:
+            //
+            // • Tree-restoration mode (init=1 or tree=1): the client needs the full ancestor
+            //   chain — root + siblings at every level down to and including the cwd's own
+            //   peer level — so it can reconstruct the tree without extra round-trips. This is
+            //   used on page load and when navigating directly to a deep path via a URL hash.
+            //
+            // • Navigation mode (regular open, no init/tree): the client already has parent/
+            //   sibling nodes in its cache from prior navigations. Returning root or ancestors
+            //   here causes elFinder to overwrite its cached child-list for those nodes with
+            //   only the items present in this response — so siblings disappear. Return only
+            //   the direct children.
+            //
+            // This matches the behaviour of the Studio-42 reference PHP connector.
+            List<object> allFiles;
+            var isTreeMode = isInit || GetParam("tree") == "1";
 
-            // Always include the root volume node.
-            allFiles.Add(SyntheticDirObject(RootPath, null, isRoot: true));
-
-            // Include cwd when it is not root; if cwd is root, avoid duplicate root entry.
-            if (!string.Equals(cwdHash, rootHash, StringComparison.Ordinal))
+            if (isTreeMode)
             {
-                allFiles.Add(cwdObject);
-            }
+                var treeFiles = new List<object>();
+                var seenHashes = new HashSet<string>();
+                var rootHash = EncodeHash(RootPath);
+                var cwdHash = ((Dictionary<string, object>)cwdObject)["hash"]?.ToString();
 
-            // Add children in the opened directory.
-            allFiles.AddRange(fileObjects);
+                // Always include the root volume node.
+                treeFiles.Add(SyntheticDirObject(RootPath, null, isRoot: true));
+                seenHashes.Add(rootHash);
+
+                // Walk from the cwd up to root, collect ancestor paths (excluding root),
+                // then process them outermost → innermost to load siblings at each level.
+                var ancestors = new List<string>();
+                var ancestorCursor = path;
+                while (!string.IsNullOrEmpty(ancestorCursor) &&
+                       ancestorCursor.StartsWith(RootPath, StringComparison.Ordinal) &&
+                       !string.Equals(ancestorCursor, RootPath, StringComparison.Ordinal))
+                {
+                    ancestors.Add(ancestorCursor);
+                    var p = GetParentPath(ancestorCursor);
+                    if (string.IsNullOrEmpty(p) || string.Equals(p, ancestorCursor, StringComparison.Ordinal))
+                    {
+                        break;
+                    }
+
+                    ancestorCursor = p;
+                }
+
+                ancestors.Reverse(); // outermost (direct child of root) → innermost (cwd)
+
+                foreach (var ancestor in ancestors)
+                {
+                    // Stop before the cwd itself — handled below after loading cwd siblings.
+                    if (string.Equals(ancestor, path, StringComparison.Ordinal))
+                    {
+                        break;
+                    }
+
+                    // Add all directory siblings at this level (children of this ancestor's parent).
+                    var ancestorParent = GetParentPath(ancestor);
+                    try
+                    {
+                        var siblingItems = await storageContext.GetFilesAndDirectories(ancestorParent);
+                        foreach (var sibling in siblingItems.Where(e => e.IsDirectory))
+                        {
+                            var sibObj = ToElFinderObject(sibling, EncodeHash(ancestorParent));
+                            var sibHash = ((Dictionary<string, object>)sibObj)["hash"]?.ToString();
+                            if (sibHash != null && seenHashes.Add(sibHash))
+                            {
+                                treeFiles.Add(sibObj);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Best-effort: skip this level if storage fails.
+                    }
+                }
+
+                // Always load siblings of the cwd itself (children of cwd's parent).
+                // The ancestor loop above stops before the cwd, so this handles:
+                //   (a) cwd is a direct child of root — the loop ran zero useful iterations.
+                //   (b) any depth — ensures the cwd's peer level is fully represented.
+                if (!string.Equals(path, RootPath, StringComparison.Ordinal))
+                {
+                    var cwdParent = GetParentPath(path);
+                    try
+                    {
+                        var cwdSiblings = await storageContext.GetFilesAndDirectories(cwdParent);
+                        foreach (var sibling in cwdSiblings.Where(e => e.IsDirectory))
+                        {
+                            var sibObj = ToElFinderObject(sibling, EncodeHash(cwdParent));
+                            var sibHash = ((Dictionary<string, object>)sibObj)["hash"]?.ToString();
+                            if (sibHash != null && seenHashes.Add(sibHash))
+                            {
+                                treeFiles.Add(sibObj);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Best-effort: skip this level if storage fails.
+                    }
+                }
+
+                // Include cwd if not already present as a sibling.
+                if (!string.Equals(cwdHash, rootHash, StringComparison.Ordinal) &&
+                    cwdHash != null && seenHashes.Add(cwdHash))
+                {
+                    treeFiles.Add(cwdObject);
+                }
+
+                treeFiles.AddRange(fileObjects);
+                allFiles = treeFiles;
+            }
+            else
+            {
+                // Navigation mode: return only the direct children of the opened folder.
+                // Do not include root, ancestors, or the cwd itself — adding those would
+                // cause elFinder to overwrite its cached child-lists for those nodes and
+                // drop sibling nodes that were loaded in prior responses.
+                allFiles = new List<object>(fileObjects);
+            }
 
             var response = new Dictionary<string, object>
             {
