@@ -45,6 +45,11 @@ function Write-Info {
     Write-Host "ℹ️  $Text" -ForegroundColor Blue
 }
 
+function Write-Warning-Custom {
+    param([string]$Text)
+    Write-Host "⚠️  $Text" -ForegroundColor Yellow
+}
+
 function Write-Error-Custom {
     param([string]$Text)
     Write-Host "❌ $Text" -ForegroundColor Red
@@ -68,6 +73,9 @@ Write-Header "Bicep Template Validation"
 
 Write-Info "Checking prerequisites..."
 
+# Baseline tool version (warn-only; does not fail validation)
+$minimumBicepVersion = [version]'0.42.1'
+
 # Check Azure CLI
 if (-not (Test-AzureCLI)) {
     Write-Error-Custom "Azure CLI is not installed"
@@ -79,6 +87,18 @@ Write-Success "Azure CLI is installed"
 try {
     $bicepVersion = az bicep version 2>&1
     Write-Success "Bicep CLI is installed: $bicepVersion"
+
+    $versionMatch = [regex]::Match(($bicepVersion | Out-String), 'Bicep CLI version\s+([0-9]+\.[0-9]+\.[0-9]+)')
+    if ($versionMatch.Success) {
+        $installedBicepVersion = [version]$versionMatch.Groups[1].Value
+        if ($installedBicepVersion -lt $minimumBicepVersion) {
+            Write-Warning-Custom "Bicep CLI $installedBicepVersion is below recommended baseline $minimumBicepVersion. Run 'az bicep upgrade'."
+        } else {
+            Write-Info "Bicep CLI meets recommended baseline: $minimumBicepVersion"
+        }
+    } else {
+        Write-Warning-Custom "Could not parse Bicep CLI version output to compare against baseline $minimumBicepVersion."
+    }
 } catch {
     Write-Info "Bicep CLI not found, installing..."
     az bicep install
@@ -149,9 +169,6 @@ if ($ResourceGroupName) {
     
     $mainBicep = Join-Path $PSScriptRoot "bicep\main.bicep"
     
-    # Generate a random password for validation (not used, just for template validation)
-    $testPassword = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 16 | ForEach-Object {[char]$_})
-    
     try {
         az deployment group what-if `
             --resource-group $ResourceGroupName `
@@ -159,8 +176,12 @@ if ($ResourceGroupName) {
             --parameters `
                 baseName="skycms" `
                 environment="dev" `
-                mysqlAdminPassword=$testPassword `
-                deployPublisher=$true
+                deployPublisher=$true `
+                deployEmail=$false `
+                deployAppInsights=$false `
+                dockerImage="toiyabe/sky-editor:latest" `
+                minReplicas=1 `
+                adminEmail="admin@example.com"
         
         if ($LASTEXITCODE -eq 0) {
             Write-Success "What-if analysis completed"

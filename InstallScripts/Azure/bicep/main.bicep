@@ -152,7 +152,6 @@ resource kvStorageConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01
   }
   dependsOn: [
     keyVault
-    storage
   ]
 }
 
@@ -164,7 +163,6 @@ resource kvAcsConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = 
   }
   dependsOn: [
     keyVault
-    acs
   ]
 }
 
@@ -176,7 +174,6 @@ resource kvAppInsightsConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-0
   }
   dependsOn: [
     keyVault
-    appInsights
   ]
 }
 

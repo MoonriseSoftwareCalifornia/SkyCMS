@@ -70,6 +70,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
+		<PackageReference Include="MediatR" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -97,6 +98,7 @@
 	  <ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
 	  <ProjectReference Include="..\Sky.Cms.Api.Shared\Sky.Cms.Api.Shared.csproj" />
 	  <ProjectReference Include="..\Sky.Shared.Razor\Sky.Shared.Razor.csproj" />
+	  <ProjectReference Include="..\Drivers\SkyCMS.Drivers.ElFinder\SkyCMS.Drivers.ElFinder.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

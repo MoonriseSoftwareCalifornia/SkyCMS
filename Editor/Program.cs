@@ -74,6 +74,7 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
+using SkyCMS.Drivers.ElFinder;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
 
@@ -340,6 +341,10 @@ builder.Services.AddScoped<IContactManagementService, ContactManagementService>(
 
 // Register SINGLE mediator (Common namespace) with multi-tenant security decorator
 builder.Services.AddCosmosMediator();
+
+// Register elFinder CQRS driver services (MediatR handlers + storage adapter)
+// Current controller flow stays legacy by default; CQRS paths are opt-in.
+builder.Services.AddElFinderDriver();
 
 // Auto-register all command and query handlers from Editor and Common assemblies
 builder.Services.AddMediatorHandlers();

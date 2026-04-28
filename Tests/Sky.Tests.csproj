@@ -48,6 +48,7 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
 		<PackageReference Include="Moq" />
 		<PackageReference Include="RazorLight" />
+		<PackageReference Include="SixLabors.ImageSharp" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -55,6 +56,7 @@
 		<ProjectReference Include="..\Cosmos.BlobService\Cosmos.BlobService.csproj" />
 		<ProjectReference Include="..\Cosmos.ConnectionStrings\Cosmos.DynamicConfig.csproj" />
 		<ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
+		<ProjectReference Include="..\Drivers\SkyCMS.Drivers.ElFinder\SkyCMS.Drivers.ElFinder.csproj" />
 		<ProjectReference Include="..\Editor\Sky.Editor.csproj" />
 		<ProjectReference Include="..\Publisher\Sky.Publisher.csproj" />
 	</ItemGroup>

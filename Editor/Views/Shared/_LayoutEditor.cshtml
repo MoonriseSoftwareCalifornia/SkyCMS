@@ -345,6 +345,8 @@
         // Selected anchor data
         let selectedAnchorData;
         var selectFileMode;
+        let pendingFilePickerOptions = null;
+        let isCompletingFilePickerSelection = false;
 
         let aiHelpFloatingInitialized = false;
 
@@ -445,8 +447,131 @@
             $(contentId).height = 50 + (window.innerHeight - document.getElementById("ccmsNavMenu").clientHeight);
         }
 
-        function openSelectFileModal(mode) {
+        function resolvePublicFileUrl(pathOrUrl) {
+            if (!pathOrUrl) {
+                return '';
+            }
+
+            if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+                return pathOrUrl;
+            }
+
+            const clean = pathOrUrl.charAt(0) === '/' ? pathOrUrl : '/' + pathOrUrl;
+            return fileBaseUrl + clean;
+        }
+
+        function resolvePickerPath(pathOrUrl) {
+            if (!pathOrUrl) {
+                return '';
+            }
+
+            let value = pathOrUrl;
+            const basePrefix = fileBaseUrl + '/';
+
+            if (value.startsWith(basePrefix)) {
+                value = value.substring(basePrefix.length);
+            } else if (value.startsWith(fileBaseUrl)) {
+                value = value.substring(fileBaseUrl.length);
+            }
+
+            while (value.startsWith('/')) {
+                value = value.substring(1);
+            }
+
+            return value;
+        }
+
+        function buildFilePickerSelection(pathOrUrl) {
+            const path = resolvePickerPath(pathOrUrl);
+            const url = resolvePublicFileUrl(pathOrUrl || path);
+            const name = path ? path.split('/').pop() : '';
+            const extension = name && name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+
+            return {
+                path: path,
+                url: url,
+                name: name || '',
+                extension: extension,
+                isImage: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif'].includes(extension)
+            };
+        }
+
+        function applyDefaultFileSelection(selection) {
+            if (!selection || !selection.path) {
+                return false;
+            }
+
+            if (selectFileMode === "file") {
+                insertFileLink(selection.path);
+            } else if (selectFileMode === "image") {
+                const currentBannerImage = $("#BannerImage").val();
+                if (currentBannerImage === null || currentBannerImage === "") {
+                    $("#BannerImage").val(selection.url);
+                }
+
+                insertImage(selection.path);
+            } else if (selectFileMode === "bannerimage") {
+                $("#BannerImage").val(selection.url);
+            } else {
+                return false;
+            }
+
+            return true;
+        }
+
+        function completeFilePickerSelection(pathOrUrl) {
+            const selection = buildFilePickerSelection(pathOrUrl);
+            const options = pendingFilePickerOptions;
+            const handled = options && typeof options.onSelect === 'function'
+                ? options.onSelect(selection) !== false
+                : applyDefaultFileSelection(selection);
+
+            pendingFilePickerOptions = null;
+
+            if (handled !== false) {
+                if (!options || options.autoSave !== false) {
+                    saveChanges();
+                }
+
+                checkBannerImage();
+            }
+
+            return handled;
+        }
+
+        function handleFilePickerModalHidden() {
+            if (isCompletingFilePickerSelection) {
+                return;
+            }
+
+            if (pendingFilePickerOptions && typeof pendingFilePickerOptions.onCancel === 'function') {
+                pendingFilePickerOptions.onCancel();
+            }
+
+            pendingFilePickerOptions = null;
+        }
+
+        window.CCMS___OpenFilePicker = function (options) {
+            const pickerOptions = options || {};
+            pendingFilePickerOptions = pickerOptions;
+            openSelectFileModal(pickerOptions.mode || 'file', pickerOptions);
+        };
+
+        window.CCMS___FileManagerPick = function (pathOrUrl) {
+            isCompletingFilePickerSelection = true;
+            try {
+                const handled = completeFilePickerSelection(pathOrUrl);
+                if (handled !== false) {
+                    modalSelectFile.hide();
+                }
+            } finally {
+                isCompletingFilePickerSelection = false;
+            }
+        };
+
+        function openSelectFileModal(mode, options) {
             selectFileMode = mode;
+            pendingFilePickerOptions = options || null;
 
             let id = $("#ArticleNumber").val();
             let url = "@Url.Action("Index", "FileManager")";
@@ -913,6 +1038,10 @@
                 $("#spinFileMgrLoading").hide();
             });
 
+            document.getElementById('modalSelectFile').addEventListener('hidden.bs.modal', function () {
+                handleFilePickerModalHidden();
+            });
+
             $("#btnClear").click(function () {
                 // 'next' is the function that needs to be executed after close.
                 let iframe = document.getElementById("iframeSelectFile");
@@ -928,24 +1057,10 @@
 
                 if (typeof iframeWin.paths === "undefined" || iframeWin.paths === null || iframeWin.paths.length < 1) {
                     alert("Please select a file.");
+                    return false;
                 }
 
-                if (selectFileMode === "file") {
-                    insertFileLink(p[0]);
-                } else if (selectFileMode === "image") {
-                    const url = $("#BannerImage").val();
-                    if (url === null || url === "") {
-                        $("#BannerImage").val(p[0]);
-                    }
-                    insertImage(p[0]); // Text or code editor inserts image
-                } else if (selectFileMode === "bannerimage") {
-                    let imgRoot = "@options.BlobPublicUrl.TrimEnd('/')";
-                    $("#BannerImage").val(imgRoot + "/" + p[0]);
-                }
-
-                saveChanges();
-                checkBannerImage();
-                return true;
+                return completeFilePickerSelection(p[0]) !== false;
             });
 
             $("#btnOpenBannerImage").click(function () {

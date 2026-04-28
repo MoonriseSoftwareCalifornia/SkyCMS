@@ -43,6 +43,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
+    using SkyCMS.Drivers.ElFinder;
 
     /// <summary>
     /// File manager controller.
@@ -156,42 +157,17 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Gets a list of valid editor extensions.
         /// </summary>
-        public static string[] ValidEditorExtensions
-        {
-            get
-            {
-                return new string[] { ".js", ".css", ".html", ".htm", ".json", ".xml", ".txt" };
-            }
-        }
+        public static string[] ValidEditorExtensions => FileStorageConstants.ValidEditorExtensions;
 
         /// <summary>
         /// Gets a list of valid image extensions.
         /// </summary>
-        public static string[] ValidImageExtensions
-        {
-            get
-            {
-                return new string[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico" };
-            }
-        }
+        public static string[] ValidImageExtensions => FileStorageConstants.ValidImageExtensions;
 
         /// <summary>
         /// Gets the file extensions that are not allowed for upload due to security concerns.
         /// </summary>
-        public static string[] DangerousFileExtensions
-        {
-            get
-            {
-                return new string[]
-                {
-                    ".exe", ".dll", ".bat", ".cmd", ".sh", ".ps1", ".psm1", ".psd1",
-                    ".vbs", ".vbe", ".jse", ".wsf", ".wsh", ".msi", ".msp",
-                    ".scr", ".hta", ".cpl", ".msc", ".jar", ".app", ".deb", ".rpm",
-                    ".dmg", ".pkg", ".run", ".bin", ".com", ".gadget", ".application",
-                    ".pif", ".lnk", ".inf", ".reg"
-                };
-            }
-        }
+        public static string[] DangerousFileExtensions => FileStorageConstants.DangerousFileExtensions;
 
         /// <summary>
         /// Fixes the path for the image asset array method.

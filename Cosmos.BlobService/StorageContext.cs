@@ -35,6 +35,11 @@ namespace Cosmos.BlobService
         private static readonly TimeSpan DriverCacheExpiration = TimeSpan.FromHours(1);
 
         /// <summary>
+        /// Singleton instance of <see cref="IPathValidator"/> used for all path validation.
+        /// </summary>
+        private static readonly IPathValidator PathValidator = new PathValidator();
+
+        /// <summary>
         /// Used to brefly store chuk data while uploading.
         /// </summary>
         private readonly IMemoryCache memoryCache;
@@ -103,8 +108,11 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="path">Path check for a blob.</param>
         /// <returns><see cref="bool"/> indicating existence.</returns>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
         public async Task<bool> BlobExistsAsync(string path)
         {
+            path = PathUtilities.NormalizePath(path);
+            ValidatePathOrThrow(path);
             var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             return await driver.BlobExistsAsync(path).ConfigureAwait(false);
         }
@@ -125,11 +133,14 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="path">Path to folder.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
         public async Task DeleteFolderAsync(string path)
         {
             // Ensure leading slash is removed.
+            path = PathUtilities.NormalizePath(path);
+            ValidatePathOrThrow(path);
             var driver = await GetPrimaryDriverAsync().ConfigureAwait(false);
-            await driver.DeleteFolderAsync(PathUtilities.NormalizePath(path)).ConfigureAwait(false);
+            await driver.DeleteFolderAsync(path).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -137,10 +148,12 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="path">Path to file.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
         public async Task DeleteFileAsync(string path)
         {
             // Ensure leading slash is removed.
             path = PathUtilities.NormalizePath(path);
+            ValidatePathOrThrow(path);
 
             var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             await driver.DeleteIfExistsAsync(path).ConfigureAwait(false);
@@ -193,11 +206,14 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="path">Path to search.</param>
         /// <returns>List of files found including full path.</returns>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
         public async Task<List<string>> GetFilesAsync(string path)
         {
             var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             path = PathUtilities.NormalizePath(path);
+            ValidatePathOrThrow(path);
             var blobNames = await driver.GetBlobNamesByPath(path).ConfigureAwait(false);
+
             return blobNames.Where(w => !w.EndsWith(StorageConstants.FolderMarkerFile)).ToList();
         }
 
@@ -206,10 +222,12 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="path">Path to file.</param>
         /// <returns>File metadata as a <see cref="FileManagerEntry"/>.</returns>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
         public async Task<FileManagerEntry> GetFileAsync(string path)
         {
             // Ensure leading slash is removed.
             path = PathUtilities.NormalizePath(path);
+            ValidatePathOrThrow(path);
 
             var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
 
@@ -261,10 +279,12 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="path">Path to blob to open read stream from.</param>
         /// <returns>Data as a <see cref="Stream"/>.</returns>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
         public async Task<Stream> GetStreamAsync(string path)
         {
             // Ensure leading slash is removed.
             path = PathUtilities.NormalizePath(path);
+            ValidatePathOrThrow(path);
 
             // Get the primary driver based on the configuration.
             var driver = await GetPrimaryDriverAsync().ConfigureAwait(false);
@@ -277,8 +297,13 @@ namespace Cosmos.BlobService
         /// <param name="sourceFile">Path to file.</param>
         /// <param name="destinationFile">Destination file name.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="StorageException">Thrown if paths fail validation.</exception>
         public async Task MoveFileAsync(string sourceFile, string destinationFile)
         {
+            sourceFile = PathUtilities.NormalizePath(sourceFile);
+            destinationFile = PathUtilities.NormalizePath(destinationFile);
+            ValidatePathOrThrow(sourceFile);
+            ValidatePathOrThrow(destinationFile);
             var driver = await GetPrimaryDriverAsync().ConfigureAwait(false);
             await driver.MoveFileAsync(sourceFile, destinationFile).ConfigureAwait(false);
         }
@@ -289,8 +314,13 @@ namespace Cosmos.BlobService
         /// <param name="sourceFolder">Source folder.</param>
         /// <param name="destinationFolder">Destination folder.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="StorageException">Thrown if paths fail validation.</exception>
         public async Task MoveFolderAsync(string sourceFolder, string destinationFolder)
         {
+            sourceFolder = PathUtilities.NormalizePath(sourceFolder);
+            destinationFolder = PathUtilities.NormalizePath(destinationFolder);
+            ValidatePathOrThrow(sourceFolder);
+            ValidatePathOrThrow(destinationFolder);
             var driver = await GetPrimaryDriverAsync().ConfigureAwait(false);
             await driver.MoveFolderAsync(sourceFolder, destinationFolder).ConfigureAwait(false);
         }
@@ -318,8 +348,11 @@ namespace Cosmos.BlobService
         /// <param name="path">Path to the folder to create.</param>
         /// <returns>Folder metadata as a <see cref="FileManagerEntry"/>.</returns>
         /// <remarks>Creates the folder if it does not already exist.</remarks>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
         public async Task<FileManagerEntry> CreateFolder(string path)
         {
+            path = PathUtilities.NormalizePath(path);
+            ValidatePathOrThrow(path);
             var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             var folderMarkerPath = path + "/" + StorageConstants.FolderMarkerFile;
 
@@ -352,12 +385,13 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="path">Path to objects.</param>
         /// <returns>Returns metadata for the objects as a <see cref="FileManagerEntry"/> <see cref="List{T}"/>.</returns>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
         public async Task<List<FileManagerEntry>> GetFilesAndDirectories(string path)
         {
-            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
-
             path = PathUtilities.NormalizePath(path);
+            ValidatePathOrThrow(path);
 
+            var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
             var entries = await driver.GetFilesAndDirectories(path).ConfigureAwait(false);
 
             return entries;
@@ -565,6 +599,20 @@ namespace Cosmos.BlobService
                     {
                         Provider = provider
                     };
+            }
+        }
+
+        /// <summary>
+        /// Validates a normalized path and throws a StorageException if validation fails.
+        /// </summary>
+        /// <param name="path">The normalized path to validate.</param>
+        /// <exception cref="StorageException">Thrown if the path fails validation.</exception>
+        private static void ValidatePathOrThrow(string path)
+        {
+            var validationResult = PathValidator.ValidatePath(path);
+            if (!validationResult.IsValid)
+            {
+                throw new StorageException($"Invalid path: {validationResult.ErrorMessage}");
             }
         }
     }

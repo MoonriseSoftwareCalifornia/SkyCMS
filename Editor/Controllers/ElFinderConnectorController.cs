@@ -12,20 +12,27 @@ namespace Sky.Cms.Controllers
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.BlobService.Models;
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Services.Caching;
+    using MediatR;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using MimeTypes;
     using Sky.Cms.Models;
     using Sky.Editor.Services.EditorSettings;
+    using SkyCMS.Drivers.ElFinder.Commands;
+    using SkyCMS.Drivers.ElFinder.Responses;
+    using SkyCMS.Drivers.ElFinder;
 
     /// <summary>
     /// Connector adapter controller that maps elFinder JSON protocol commands to SkyCMS
@@ -37,12 +44,13 @@ namespace Sky.Cms.Controllers
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
     public class ElFinderConnectorController : BaseController
     {
-        private const string VolumeId = "l1_";
+        private const string VolumeId = ElFinderHashEncoder.VolumeId;
         private const string RootPath = "/pub";
 
         private readonly IStorageContext storageContext;
         private readonly IEditorSettings editorSettings;
         private readonly ILogger<ElFinderConnectorController> logger;
+        private readonly IConfiguration configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ElFinderConnectorController"/> class.
@@ -54,19 +62,46 @@ namespace Sky.Cms.Controllers
         /// <param name="storageContext">Storage context for file operations.</param>
         /// <param name="editorSettings">Editor settings (blob URL, flags).</param>
         /// <param name="logger">Logger.</param>
+        /// <param name="configuration">Configuration.</param>
+        [ActivatorUtilitiesConstructor]
         public ElFinderConnectorController(
             ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
-            IMediator mediator,
+            Cosmos.Common.Features.Shared.IMediator mediator,
             ICacheService<Layout> layoutCache,
             IStorageContext storageContext,
             IEditorSettings editorSettings,
-            ILogger<ElFinderConnectorController> logger)
+            ILogger<ElFinderConnectorController> logger,
+            IConfiguration configuration)
             : base(dbContext, userManager, mediator, layoutCache)
         {
             this.storageContext = storageContext;
             this.editorSettings = editorSettings;
             this.logger = logger;
+            this.configuration = configuration;
+        }
+
+        /// <summary>
+        /// Backward-compatible constructor for existing tests and call sites.
+        /// </summary>
+        public ElFinderConnectorController(
+            ApplicationDbContext dbContext,
+            UserManager<IdentityUser> userManager,
+            Cosmos.Common.Features.Shared.IMediator mediator,
+            ICacheService<Layout> layoutCache,
+            IStorageContext storageContext,
+            IEditorSettings editorSettings,
+            ILogger<ElFinderConnectorController> logger)
+            : this(
+                dbContext,
+                userManager,
+                mediator,
+                layoutCache,
+                storageContext,
+                editorSettings,
+                logger,
+                new ConfigurationBuilder().Build())
+        {
         }
 
         // ─── Public endpoint ────────────────────────────────────────────────────
@@ -92,21 +127,48 @@ namespace Sky.Cms.Controllers
             {
                 return cmd switch
                 {
+                    "open" when UseCqrsForOpen() => await HandleOpenViaCqrsAsync(),
                     "open" => await HandleOpenAsync(),
+                    "tree" when UseCqrsForCommand("tree") => await HandleTreeViaCqrsAsync(),
                     "tree" => await HandleTreeAsync(),
+                    "ls" when UseCqrsForCommand("ls") => await HandleLsViaCqrsAsync(),
                     "ls" => await HandleLsAsync(),
+                    "mkdir" when UseCqrsForCommand("mkdir") => await HandleMkdirViaCqrsAsync(),
                     "mkdir" => await HandleMkdirAsync(),
+                    "mkfile" when UseCqrsForCommand("mkfile") => await HandleMkfileViaCqrsAsync(),
                     "mkfile" => await HandleMkfileAsync(),
+                    "rename" when UseCqrsForCommand("rename") => await HandleRenameViaCqrsAsync(),
                     "rename" => await HandleRenameAsync(),
+                    "rm" when UseCqrsForCommand("rm") => await HandleRmViaCqrsAsync(),
                     "rm" => await HandleRmAsync(),
+                    "upload" when UseCqrsForCommand("upload") => await HandleUploadViaCqrsAsync(),
                     "upload" => await HandleUploadAsync(),
+                    "get" when UseCqrsForCommand("get") => await HandleGetViaCqrsAsync(),
                     "get" => await HandleGetAsync(),
+                    "put" when UseCqrsForCommand("put") => await HandlePutViaCqrsAsync(),
                     "put" => await HandlePutAsync(),
+                    "paste" when UseCqrsForCommand("paste") => await HandlePasteViaCqrsAsync(),
                     "paste" => await HandlePasteAsync(),
+                    "tmb" when UseCqrsForCommand("tmb") => await HandleTmbViaCqrsAsync(),
                     "tmb" => await HandleTmbAsync(),
+                    "info" when UseCqrsForCommand("info") => await HandleInfoViaCqrsAsync(),
                     "info" => await HandleInfoAsync(),
+                    "size" when UseCqrsForCommand("size") => await HandleSizeViaCqrsAsync(),
                     "size" => await HandleSizeAsync(),
+                    "parents" when UseCqrsForCommand("parents") => await HandleParentsViaCqrsAsync(),
                     "parents" => await HandleParentsAsync(),
+                    "search" when UseCqrsForCommand("search") => await HandleSearchViaCqrsAsync(),
+                    "search" => await HandleSearchAsync(),
+                    "file" when UseCqrsForCommand("file") => await HandleFileViaCqrsAsync(),
+                    "file" => await HandleFileAsync(),
+                    "duplicate" when UseCqrsForCommand("duplicate") => await HandleDuplicateViaCqrsAsync(),
+                    "duplicate" => await HandleDuplicateAsync(),
+                    "resize" when UseCqrsForCommand("resize") => await HandleResizeViaCqrsAsync(),
+                    "resize" => await HandleResizeAsync(),
+                    "url" when UseCqrsForCommand("url") => await HandleUrlViaCqrsAsync(),
+                    "url" => await HandleUrlAsync(),
+                    "dim" when UseCqrsForCommand("dim") => await HandleDimViaCqrsAsync(),
+                    "dim" => await HandleDimAsync(),
                     _ => Json(ElFinderError("errUnknownCmd"))
                 };
             }
@@ -115,6 +177,710 @@ namespace Sky.Cms.Controllers
                 logger.LogError(ex, "ElFinder connector error handling command '{Cmd}'", cmd);
                 return Json(ElFinderError(ex.Message));
             }
+        }
+
+        private bool UseCqrsForOpen()
+        {
+            return UseCqrsForCommand("open");
+        }
+
+        private bool UseCqrsForCommand(string command)
+        {
+            // Backward compatibility with explicit query opt-in during migration.
+            var legacyQueryOptIn = string.Equals(GetParam("__cqrs"), "1", StringComparison.Ordinal)
+                || string.Equals(GetParam($"__cqrs_{command}"), "1", StringComparison.Ordinal);
+
+            if (legacyQueryOptIn)
+            {
+                return true;
+            }
+
+            // Config-driven staged rollout.
+            // Supported keys:
+            // - ElFinder:Cqrs:Enabled=true|false
+            // - ElFinder:Cqrs:Commands:open=true|false (per-command override)
+            var globalEnabled = configuration.GetValue<bool?>("ElFinder:Cqrs:Enabled") ?? false;
+            var commandEnabled = configuration.GetValue<bool?>($"ElFinder:Cqrs:Commands:{command}");
+
+            return commandEnabled ?? globalEnabled;
+        }
+
+        private MediatR.IMediator GetElFinderMediatorOrNull()
+        {
+            return this.HttpContext?.RequestServices.GetService<MediatR.IMediator>();
+        }
+
+        private static IActionResult TranslateCqrsErrorToLegacy(Controller controller, IElFinderResponse response)
+        {
+            if (response is not ElFinderErrorResponse error)
+            {
+                return null;
+            }
+
+            var code = error.ErrorCode;
+            var mapped = code switch
+            {
+                "errCmdParams" => "errAccess",
+                "errNotFound" => "errOpen",
+                _ => code
+            };
+
+            return controller.Json(new { error = mapped });
+        }
+
+        private async Task<IActionResult> HandleTreeViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS tree requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleTreeAsync();
+            }
+
+            var command = new TreeCommand
+            {
+                Target = GetParam("target"),
+                Filter = GetParam("filter"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleMkdirViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS mkdir requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleMkdirAsync();
+            }
+
+            var target = GetParam("target");
+            var name = GetParam("name");
+            var path = DecodeHash(target);
+
+            if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            if (!IsSafeName(name))
+            {
+                return Json(ElFinderError("errInvName"));
+            }
+
+            var uniqueName = await GetUniqueNameAsync(path, name);
+
+            var command = new MkdirCommand
+            {
+                Target = target,
+                Name = uniqueName,
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleMkfileViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS mkfile requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleMkfileAsync();
+            }
+
+            var target = GetParam("target");
+            var name = GetParam("name");
+            var path = DecodeHash(target);
+
+            if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            if (!IsSafeName(name))
+            {
+                return Json(ElFinderError("errInvName"));
+            }
+
+            var ext = Path.GetExtension(name).ToLowerInvariant();
+            if (FileStorageConstants.DangerousFileExtensions.Contains(ext))
+            {
+                return Json(ElFinderError("errUploadFile"));
+            }
+
+            var uniqueName = await GetUniqueNameAsync(path, name);
+
+            var command = new MkfileCommand
+            {
+                Target = target,
+                Name = uniqueName,
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleRenameViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS rename requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleRenameAsync();
+            }
+
+            var target = GetParam("target");
+            var name = GetParam("name");
+            var path = DecodeHash(target);
+
+            if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            if (!IsSafeName(name))
+            {
+                return Json(ElFinderError("errInvName"));
+            }
+
+            var parentPath = GetParentPath(path);
+            var uniqueName = await GetUniqueNameAsync(parentPath, name, path);
+
+            var command = new RenameCommand
+            {
+                Target = target,
+                Name = uniqueName,
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleRmViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS rm requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleRmAsync();
+            }
+
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var removed = new List<string>();
+            foreach (var t in targets)
+            {
+                var command = new RmCommand
+                {
+                    Target = t,
+                    VolumeId = VolumeId,
+                };
+
+                var response = await mediator.Send(command);
+                if (response is RmResponse rm)
+                {
+                    removed.AddRange(rm.Removed ?? new List<string>());
+                }
+            }
+
+            return Json(new { removed = removed.Distinct().ToList() });
+        }
+
+        private async Task<IActionResult> HandleOpenViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS open requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleOpenAsync();
+            }
+
+            var target = GetParam("target");
+            var isInit = GetParam("init") == "1";
+            var command = new OpenCommand(target: target, init: isInit, volumeId: VolumeId);
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleUploadViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS upload requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleUploadAsync();
+            }
+
+            var target = GetParam("target");
+            var path = DecodeHash(target);
+            if (path == null || !IsAllowedPath(path))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            var files = Request.Form.Files;
+            if (files == null || files.Count == 0)
+            {
+                return Json(ElFinderError("errUploadNoFiles"));
+            }
+
+            var added = new List<object>();
+            foreach (var file in files)
+            {
+                var originalName = Path.GetFileName(file.FileName);
+                if (string.IsNullOrWhiteSpace(originalName))
+                {
+                    continue;
+                }
+
+                var ext = Path.GetExtension(originalName).ToLowerInvariant();
+                if (FileStorageConstants.DangerousFileExtensions.Contains(ext))
+                {
+                    return Json(ElFinderError("errUploadFile"));
+                }
+
+                var uniqueName = await GetUniqueNameAsync(path, originalName);
+
+                var command = new UploadCommand
+                {
+                    Target = target,
+                    FileStream = file.OpenReadStream(),
+                    Filename = uniqueName,
+                    VolumeId = VolumeId,
+                };
+
+                var response = await mediator.Send(command);
+                var mappedError = TranslateCqrsErrorToLegacy(this, response);
+                if (mappedError != null)
+                {
+                    return mappedError;
+                }
+
+                if (response is UploadResponse upload)
+                {
+                    added.AddRange(upload.Added);
+                }
+            }
+
+            return Json(new { added });
+        }
+
+        private async Task<IActionResult> HandleGetViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS get requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleGetAsync();
+            }
+
+            var command = new GetCommand
+            {
+                Target = GetParam("target"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandlePutViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS put requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandlePutAsync();
+            }
+
+            var command = new PutCommand
+            {
+                Target = GetParam("target"),
+                Content = GetParam("content"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandlePasteViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS paste requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandlePasteAsync();
+            }
+
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var command = new PasteCommand
+            {
+                Target = GetParam("dst") ?? GetParam("target"),
+                Sources = string.Join(',', targets),
+                Cut = GetParam("cut"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleParentsViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS parents requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleParentsAsync();
+            }
+
+            var command = new ParentsCommand
+            {
+                Target = GetParam("target"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            // Use System.Text.Json so [JsonPropertyName] / [JsonIgnore] attributes on
+            // the CQRS response DTOs are honored (the app uses Newtonsoft with
+            // DefaultContractResolver which would otherwise produce PascalCase keys).
+            var json = JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleSizeViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS size requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleSizeAsync();
+            }
+
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            if (targets.Length == 0)
+            {
+                return Json(new { size = 0L });
+            }
+
+            long total = 0;
+            foreach (var target in targets)
+            {
+                var command = new SizeCommand
+                {
+                    Target = target,
+                    VolumeId = VolumeId,
+                };
+
+                var response = await mediator.Send(command);
+                if (response is SizeResponse sizeResponse)
+                {
+                    total += sizeResponse.Size;
+                }
+            }
+
+            return Json(new { size = total });
+        }
+
+        private async Task<IActionResult> HandleLsViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS ls requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleLsAsync();
+            }
+
+            var intersect = GetParams("intersect[]");
+
+            var command = new LsCommand
+            {
+                Target = GetParam("target"),
+                Intersect = intersect,
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleTmbViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS tmb requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleTmbAsync();
+            }
+
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var command = new TmbCommand
+            {
+                Targets = string.Join(',', targets),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleInfoViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS info requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleInfoAsync();
+            }
+
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var command = new InfoCommand
+            {
+                Targets = string.Join(',', targets),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError ?? Json(response);
+        }
+
+        private async Task<IActionResult> HandleSearchViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS search requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleSearchAsync();
+            }
+
+            var mimes = GetParams("mimes[]");
+
+            var command = new SearchCommand
+            {
+                Query = GetParam("q"),
+                Target = GetParam("target"),
+                Mimes = mimes.Length > 0 ? mimes : null,
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleFileViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS file requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleFileAsync();
+            }
+
+            var command = new FileCommand
+            {
+                Target = GetParam("target"),
+                Download = GetParam("download"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+
+            if (response is FileResponse fileResponse && fileResponse.Stream != null)
+            {
+                if (fileResponse.ForceDownload)
+                {
+                    return File(fileResponse.Stream, fileResponse.ContentType, fileResponse.FileName);
+                }
+
+                Response.Headers["Content-Disposition"] = $"inline; filename=\"{fileResponse.FileName}\"";
+                return File(fileResponse.Stream, fileResponse.ContentType);
+            }
+
+            var mappedError2 = TranslateCqrsErrorToLegacy(this, response);
+            return mappedError2 ?? Json(ElFinderError("errOpen"));
+        }
+
+        private async Task<IActionResult> HandleDuplicateViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS duplicate requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleDuplicateAsync();
+            }
+
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var command = new DuplicateCommand
+            {
+                Targets = string.Join(',', targets),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleResizeViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS resize requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleResizeAsync();
+            }
+
+            _ = int.TryParse(GetParam("width"), out var width);
+            _ = int.TryParse(GetParam("height"), out var height);
+            _ = int.TryParse(GetParam("x"), out var x);
+            _ = int.TryParse(GetParam("y"), out var y);
+            _ = int.TryParse(GetParam("degree"), out var degree);
+            _ = int.TryParse(GetParam("quality"), out var quality);
+
+            var command = new ResizeCommand
+            {
+                Target = GetParam("target"),
+                Mode = GetParam("mode"),
+                Width = width,
+                Height = height,
+                X = x,
+                Y = y,
+                Degree = degree,
+                Quality = quality > 0 ? quality : 100,
+                CopyName = GetParam("copyname"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleUrlViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS url requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleUrlAsync();
+            }
+
+            var command = new UrlCommand
+            {
+                Target = GetParam("target"),
+                BlobPublicUrl = editorSettings.BlobPublicUrl,
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleDimViaCqrsAsync()
+        {
+            var mediator = GetElFinderMediatorOrNull();
+            if (mediator == null)
+            {
+                logger.LogWarning("elFinder CQRS dim requested but MediatR.IMediator is not registered; falling back to legacy handler.");
+                return await HandleDimAsync();
+            }
+
+            var command = new DimCommand
+            {
+                Target = GetParam("target"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await mediator.Send(command);
+            var mappedError = TranslateCqrsErrorToLegacy(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
         }
 
         // ─── Command handlers ────────────────────────────────────────────────────
@@ -218,12 +984,20 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errAccess"));
             }
 
-            var items = await storageContext.GetFilesAndDirectories(path);
-            var list = items.ToDictionary(
-                e => EncodeHash(e.Path),
-                e => e.Name + (e.IsDirectory ? string.Empty : e.Extension));
+            var intersect = GetParams("intersect[]");
 
-            return Json(new { list });
+            var items = await storageContext.GetFilesAndDirectories(path);
+            var names = items
+                .Select(e => e.IsDirectory ? e.Name : e.Name + e.Extension)
+                .Where(n => !string.IsNullOrEmpty(n));
+
+            if (intersect.Length > 0)
+            {
+                var intersectSet = new HashSet<string>(intersect, StringComparer.OrdinalIgnoreCase);
+                names = names.Where(n => intersectSet.Contains(n));
+            }
+
+            return Json(new { list = names.ToList() });
         }
 
         private async Task<IActionResult> HandleMkdirAsync()
@@ -242,7 +1016,8 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errInvName"));
             }
 
-            var newPath = path.TrimEnd('/') + "/" + name;
+            var uniqueName = await GetUniqueNameAsync(path, name);
+            var newPath = path.TrimEnd('/') + "/" + uniqueName;
             var entry = await storageContext.CreateFolder(newPath.TrimStart('/'));
 
             // Normalise path returned by the storage provider
@@ -271,18 +1046,20 @@ namespace Sky.Cms.Controllers
             }
 
             var ext = Path.GetExtension(name).ToLowerInvariant();
-            if (FileManagerController.DangerousFileExtensions.Contains(ext))
+            if (FileStorageConstants.DangerousFileExtensions.Contains(ext))
             {
                 return Json(ElFinderError("errUploadFile"));
             }
 
-            var filePath = path.TrimEnd('/') + "/" + name;
+            var uniqueName = await GetUniqueNameAsync(path, name);
+            var filePath = path.TrimEnd('/') + "/" + uniqueName;
+            var uniqueExt = Path.GetExtension(uniqueName).ToLowerInvariant();
             var meta = new FileUploadMetaData
             {
                 UploadUid = Guid.NewGuid().ToString(),
-                FileName = name,
+                FileName = uniqueName,
                 RelativePath = filePath.TrimStart('/'),
-                ContentType = MimeTypeMap.GetMimeType(ext),
+                ContentType = MimeTypeMap.GetMimeType(uniqueExt),
                 ChunkIndex = 0,
                 TotalChunks = 1,
                 TotalFileSize = 0,
@@ -290,7 +1067,7 @@ namespace Sky.Cms.Controllers
 
             await storageContext.AppendBlob(new MemoryStream(Array.Empty<byte>()), meta);
 
-            var entry = BuildSyntheticFileEntry(filePath, name, ext, 0);
+            var entry = BuildSyntheticFileEntry(filePath, Path.GetFileNameWithoutExtension(uniqueName), uniqueExt, 0);
             return Json(new { added = new[] { ToElFinderObject(entry, target) } });
         }
 
@@ -311,7 +1088,8 @@ namespace Sky.Cms.Controllers
             }
 
             var parentPath = GetParentPath(path);
-            var newPath = parentPath.TrimEnd('/') + "/" + name;
+            var uniqueName = await GetUniqueNameAsync(parentPath, name, path);
+            var newPath = parentPath.TrimEnd('/') + "/" + uniqueName;
 
             FileManagerEntry entry;
             try
@@ -334,7 +1112,7 @@ namespace Sky.Cms.Controllers
                 await storageContext.MoveFileAsync(path, newPath);
             }
 
-            var newEntry = BuildSyntheticFileEntry(newPath, Path.GetFileNameWithoutExtension(name), Path.GetExtension(name), entry?.Size ?? 0, isDir);
+            var newEntry = BuildSyntheticFileEntry(newPath, Path.GetFileNameWithoutExtension(uniqueName), Path.GetExtension(uniqueName), entry?.Size ?? 0, isDir);
             return Json(new
             {
                 added = new[] { ToElFinderObject(newEntry, EncodeHash(parentPath)) },
@@ -414,18 +1192,20 @@ namespace Sky.Cms.Controllers
                 }
 
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
-                if (FileManagerController.DangerousFileExtensions.Contains(ext))
+                if (FileStorageConstants.DangerousFileExtensions.Contains(ext))
                 {
                     return Json(ElFinderError("errUploadFile"));
                 }
 
-                var filePath = path.TrimEnd('/') + "/" + fileName;
+                var uniqueName = await GetUniqueNameAsync(path, fileName);
+                var uniqueExt = Path.GetExtension(uniqueName).ToLowerInvariant();
+                var filePath = path.TrimEnd('/') + "/" + uniqueName;
                 var meta = new FileUploadMetaData
                 {
                     UploadUid = Guid.NewGuid().ToString(),
-                    FileName = fileName,
+                    FileName = uniqueName,
                     RelativePath = filePath.TrimStart('/'),
-                    ContentType = MimeTypeMap.GetMimeType(ext),
+                    ContentType = MimeTypeMap.GetMimeType(uniqueExt),
                     ChunkIndex = 0,
                     TotalChunks = 1,
                     TotalFileSize = file.Length,
@@ -438,7 +1218,7 @@ namespace Sky.Cms.Controllers
                     await storageContext.AppendBlob(ms, meta);
                 }
 
-                var entry = BuildSyntheticFileEntry(filePath, Path.GetFileNameWithoutExtension(fileName), ext, file.Length);
+                var entry = BuildSyntheticFileEntry(filePath, Path.GetFileNameWithoutExtension(uniqueName), uniqueExt, file.Length);
                 added.Add(ToElFinderObject(entry, target));
             }
 
@@ -589,7 +1369,7 @@ namespace Sky.Cms.Controllers
                 }
 
                 var ext = Path.GetExtension(path).ToLowerInvariant();
-                if (FileManagerController.ValidImageExtensions.Contains(ext))
+                if (FileStorageConstants.ValidImageExtensions.Contains(ext))
                 {
                     images[t] = $"/FileManager/GetImageThumbnail?target={Uri.EscapeDataString(path)}&width=80&height=80";
                 }
@@ -684,8 +1464,6 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errAccess"));
             }
 
-            // elFinder parents command: return all parent folders, plus each parent's first-level
-            // subfolders, in a shape that allows the navbar tree to be rebuilt from root to target.
             var ancestors = new List<string>();
             var current = path;
 
@@ -734,6 +1512,20 @@ namespace Sky.Cms.Controllers
                 }
             }
 
+            // Include children of the target path so the tree can expand current node.
+            try
+            {
+                var targetChildren = await storageContext.GetFilesAndDirectories(path);
+                foreach (var child in targetChildren.Where(e => e.IsDirectory))
+                {
+                    tree.Add(ToElFinderObject(child, EncodeHash(path)));
+                }
+            }
+            catch
+            {
+                // Best-effort only.
+            }
+
             var seen = new HashSet<string>();
             var deduped = new List<object>();
             foreach (var item in tree)
@@ -752,44 +1544,237 @@ namespace Sky.Cms.Controllers
             return Json(new { tree = deduped });
         }
 
-        // ─── Helpers ──────────────────────────────────────────────────────────────
-        private static string EncodeHash(string path)
+        private async Task<string> GetUniqueNameAsync(string parentPath, string requestedName, string ignorePath = null)
         {
-            path = NormalizePath(path);
-            var bytes = Encoding.UTF8.GetBytes(path.TrimStart('/'));
-            return VolumeId + Convert.ToBase64String(bytes)
-                .Replace('+', '-')
-                .Replace('/', '_')
-                .TrimEnd('=');
+            var desired = requestedName?.Trim();
+            if (string.IsNullOrWhiteSpace(desired))
+            {
+                return requestedName;
+            }
+
+            var entries = await storageContext.GetFilesAndDirectories(parentPath);
+            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var normalizedIgnore = string.IsNullOrWhiteSpace(ignorePath) ? null : NormalizePath(ignorePath);
+
+            foreach (var entry in entries)
+            {
+                var entryPath = NormalizePath(entry.Path.StartsWith("/") ? entry.Path : "/" + entry.Path);
+                if (normalizedIgnore != null && string.Equals(entryPath, normalizedIgnore, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Storage providers can differ in how Name/Extension are populated.
+                // Add all common display variants so duplicate detection is provider-agnostic.
+                if (!string.IsNullOrWhiteSpace(entry.Name))
+                {
+                    existing.Add(entry.Name);
+                }
+
+                var ext = entry.Extension ?? string.Empty;
+                if (!string.IsNullOrEmpty(ext) && !ext.StartsWith('.'))
+                {
+                    ext = "." + ext;
+                }
+
+                if (!entry.IsDirectory && !string.IsNullOrWhiteSpace(entry.Name) && !string.IsNullOrEmpty(ext))
+                {
+                    existing.Add(entry.Name + ext);
+                }
+
+                var fileNameFromPath = Path.GetFileName(entryPath);
+                if (!string.IsNullOrWhiteSpace(fileNameFromPath))
+                {
+                    existing.Add(fileNameFromPath);
+                }
+            }
+
+            if (!existing.Contains(desired))
+            {
+                return desired;
+            }
+
+            var desiredExt = Path.GetExtension(desired);
+            var desiredBaseName = Path.GetFileNameWithoutExtension(desired);
+
+            if (string.IsNullOrEmpty(desiredExt))
+            {
+                desiredBaseName = desired;
+            }
+
+            for (var i = 1; i < 10000; i++)
+            {
+                var candidate = $"{desiredBaseName}-{i}{desiredExt}";
+                if (!existing.Contains(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return desired;
         }
 
-        private static string DecodeHash(string hash)
+        private async Task<IActionResult> HandleSearchAsync()
         {
-            if (string.IsNullOrEmpty(hash) || !hash.StartsWith(VolumeId))
+            var q = GetParam("q");
+            if (string.IsNullOrWhiteSpace(q))
             {
-                return null;
+                return Json(ElFinderError("errCmdParams"));
             }
 
-            var encoded = hash.Substring(VolumeId.Length)
-                .Replace('-', '+')
-                .Replace('_', '/');
-
-            var padding = encoded.Length % 4;
-            if (padding > 0)
+            var target = GetParam("target");
+            var rootPath = string.IsNullOrEmpty(target) ? RootPath : DecodeHash(target);
+            if (rootPath == null || !IsAllowedPath(rootPath))
             {
-                encoded += new string('=', 4 - padding);
+                return Json(ElFinderError("errAccess"));
             }
 
+            var results = new List<object>();
+            var queue = new Queue<string>();
+            queue.Enqueue(rootPath);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                List<FileManagerEntry> entries;
+                try
+                {
+                    entries = await storageContext.GetFilesAndDirectories(current);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                foreach (var entry in entries)
+                {
+                    var entryPath = current.TrimEnd('/') + "/" + entry.Name;
+                    if ((entry.Name ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase))
+                    {
+                        results.Add(ToElFinderObject(entry, EncodeHash(current)));
+                    }
+
+                    if (entry.IsDirectory)
+                    {
+                        queue.Enqueue(entryPath);
+                    }
+                }
+            }
+
+            return Json(new { files = results });
+        }
+
+        private async Task<IActionResult> HandleFileAsync()
+        {
+            var target = GetParam("target");
+            var path = DecodeHash(target);
+            if (path == null || !IsAllowedPath(path))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            var download = GetParam("download") == "1";
+            Stream stream;
             try
             {
-                var bytes = Convert.FromBase64String(encoded);
-                return NormalizePath("/" + Encoding.UTF8.GetString(bytes));
+                stream = await storageContext.GetStreamAsync(path);
             }
             catch
             {
-                return null;
+                return Json(ElFinderError("errOpen"));
             }
+
+            if (stream == null)
+            {
+                return Json(ElFinderError("errOpen"));
+            }
+
+            var fileName = Path.GetFileName(path);
+            var contentType = GetMimeType(Path.GetExtension(path));
+
+            if (download)
+            {
+                return File(stream, contentType, fileName);
+            }
+
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{fileName}\"";
+            return File(stream, contentType);
         }
+
+        private async Task<IActionResult> HandleDuplicateAsync()
+        {
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var added = new List<object>();
+            foreach (var t in targets)
+            {
+                var sourcePath = DecodeHash(t);
+                if (sourcePath == null || !IsAllowedPath(sourcePath))
+                {
+                    continue;
+                }
+
+                var parentPath = GetParentPath(sourcePath);
+                var originalName = Path.GetFileName(sourcePath.TrimEnd('/'));
+                var ext = Path.GetExtension(originalName);
+                var baseName = Path.GetFileNameWithoutExtension(originalName);
+                var copyName = await GetUniqueNameAsync(parentPath, baseName + "~" + ext);
+                var destPath = parentPath.TrimEnd('/') + "/" + copyName;
+
+                try
+                {
+                    await storageContext.CopyAsync(sourcePath, destPath);
+                    var newEntry = await storageContext.GetFileAsync(destPath);
+                    if (newEntry != null)
+                    {
+                        added.Add(ToElFinderObject(newEntry, EncodeHash(parentPath)));
+                    }
+                }
+                catch
+                {
+                    // Skip failed copies.
+                }
+            }
+
+            return Json(new { added });
+        }
+
+        private async Task<IActionResult> HandleResizeAsync()
+        {
+            // Legacy path delegates to the CQRS handler via feature flag default.
+            return Json(ElFinderError("errCmdNoSupport"));
+        }
+
+        private Task<IActionResult> HandleUrlAsync()
+        {
+            var target = GetParam("target");
+            var path = DecodeHash(target);
+            if (path == null)
+            {
+                return Task.FromResult<IActionResult>(Json(ElFinderError("errCmdParams")));
+            }
+
+            var blobBase = (editorSettings.BlobPublicUrl ?? string.Empty).TrimEnd('/');
+            var url = $"{blobBase}/{path.TrimStart('/')}";
+            return Task.FromResult<IActionResult>(Json(new { url }));
+        }
+
+        private async Task<IActionResult> HandleDimAsync()
+        {
+            // Legacy path delegates to the CQRS handler via feature flag default.
+            return Json(ElFinderError("errCmdNoSupport"));
+        }
+
+        // ─── Helpers ──────────────────────────────────────────────────────────────
+        private static string EncodeHash(string path) =>
+            ElFinderHashEncoder.Encode(NormalizePath(path));
+
+        private static string DecodeHash(string hash) =>
+            ElFinderHashEncoder.Decode(hash) is string decoded ? NormalizePath(decoded) : null;
 
         private static string NormalizePath(string path)
         {
@@ -863,7 +1848,7 @@ namespace Sky.Cms.Controllers
         {
             var fullPath = NormalizePath(entry.Path.StartsWith("/") ? entry.Path : "/" + entry.Path);
             var hash = EncodeHash(fullPath);
-            var displayName = entry.IsDirectory ? entry.Name : (entry.Name + entry.Extension);
+            var displayName = GetDisplayName(entry);
             var mime = entry.IsDirectory ? "directory" : GetMimeType(entry.Extension);
             var ts = new DateTimeOffset(entry.ModifiedUtc == default ? DateTime.UtcNow : entry.ModifiedUtc, TimeSpan.Zero)
                          .ToUnixTimeSeconds();
@@ -900,12 +1885,12 @@ namespace Sky.Cms.Controllers
             if (!entry.IsDirectory)
             {
                 var blobBase = editorSettings.BlobPublicUrl.TrimEnd('/');
-                obj["url"] = $"{blobBase}/{fullPath.TrimStart('/')}";
+                obj["url"] = $"{blobBase}/{fullPath.TrimStart("/")}";
 
                 var ext = (entry.Extension ?? string.Empty).ToLowerInvariant();
-                if (FileManagerController.ValidImageExtensions.Contains(ext))
+                if (FileStorageConstants.ValidImageExtensions.Contains(ext))
                 {
-                    obj["tmb"] = $"/FileManager/GetImageThumbnail?target={Uri.EscapeDataString(fullPath)}&width=80&height=80";
+                    obj["tmb"] = $"{Uri.EscapeDataString(fullPath)}&width=80&height=80";
                 }
             }
 
@@ -1026,6 +2011,31 @@ namespace Sky.Cms.Controllers
             }
 
             return Request.Query[key].ToArray();
+        }
+
+        private static string GetDisplayName(FileManagerEntry entry)
+        {
+            if (entry.IsDirectory)
+            {
+                return entry.Name ?? string.Empty;
+            }
+
+            var name = entry.Name ?? string.Empty;
+            var ext = entry.Extension ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(ext) && !ext.StartsWith('.'))
+            {
+                ext = "." + ext;
+            }
+
+            if (string.IsNullOrEmpty(ext))
+            {
+                return name;
+            }
+
+            return name.EndsWith(ext, StringComparison.OrdinalIgnoreCase)
+                ? name
+                : name + ext;
         }
     }
 }
