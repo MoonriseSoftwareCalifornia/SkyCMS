@@ -210,6 +210,19 @@ namespace Sky.Cms.Controllers
             return this.HttpContext?.RequestServices.GetService<MediatR.IMediator>();
         }
 
+        /// <summary>
+        /// Serializes a CQRS response using System.Text.Json so that
+        /// <c>[JsonPropertyName]</c> attributes on response DTOs are honoured.
+        /// The MVC pipeline is configured with Newtonsoft + DefaultContractResolver
+        /// (PascalCase), which ignores those attributes; using System.Text.Json here
+        /// ensures the elFinder client receives the expected lowercase keys.
+        /// </summary>
+        private ContentResult JsonCqrs(IElFinderResponse response)
+        {
+            var json = JsonSerializer.Serialize(response, response.GetType());
+            return Content(json, "application/json; charset=utf-8");
+        }
+
         private static IActionResult TranslateCqrsErrorToLegacy(Controller controller, IElFinderResponse response)
         {
             if (response is not ElFinderErrorResponse error)
@@ -246,7 +259,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleMkdirViaCqrsAsync()
@@ -283,7 +296,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleMkfileViaCqrsAsync()
@@ -326,7 +339,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleRenameViaCqrsAsync()
@@ -364,7 +377,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleRmViaCqrsAsync()
@@ -416,7 +429,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleUploadViaCqrsAsync()
@@ -499,7 +512,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandlePutViaCqrsAsync()
@@ -520,7 +533,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandlePasteViaCqrsAsync()
@@ -548,7 +561,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleParentsViaCqrsAsync()
@@ -639,7 +652,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleTmbViaCqrsAsync()
@@ -665,7 +678,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleInfoViaCqrsAsync()
@@ -691,7 +704,7 @@ namespace Sky.Cms.Controllers
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
-            return mappedError ?? Json(response);
+            return mappedError ?? JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleSearchViaCqrsAsync()

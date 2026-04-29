@@ -22,6 +22,8 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json.Linq;
+    using SkyCMS.Drivers.ElFinder.Adapters;
+    using SkyCMS.Drivers.ElFinder.Handlers;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
     using Sky.Editor.Services.EditorSettings;
@@ -31,6 +33,7 @@ namespace Sky.Tests.Controllers
     using System.Linq;
     using System.Security.Claims;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -942,6 +945,12 @@ namespace Sky.Tests.Controllers
 
         private JObject AsJsonObject(IActionResult result)
         {
+            if (result is ContentResult contentResult)
+            {
+                Assert.IsNotNull(contentResult.Content, "ContentResult.Content must not be null");
+                return JObject.Parse(contentResult.Content);
+            }
+
             Assert.IsInstanceOfType(result, typeof(JsonResult));
             var jsonResult = (JsonResult)result;
             Assert.IsNotNull(jsonResult.Value);
@@ -1063,6 +1072,68 @@ namespace Sky.Tests.Controllers
             var result = await controller.Connector();
             var json = AsJsonObject(result);
             Assert.IsNotNull(json["tree"]);
+        }
+
+        [TestMethod]
+        public async Task Connector_CqrsTree_WhenMediatRAvailable_ResponseBodyHasLowercaseKeys()
+        {
+            // Regression test: CQRS handlers use System.Text.Json [JsonPropertyName] attributes,
+            // but the MVC pipeline uses Newtonsoft + DefaultContractResolver (PascalCase).
+            // JsonCqrs() must serialize via System.Text.Json so elFinder receives lowercase JSON.
+            var fakeResponse = new SkyCMS.Drivers.ElFinder.Commands.TreeResponse
+            {
+                Tree = new List<SkyCMS.Drivers.ElFinder.Responses.ElFinderObject>
+                {
+                    new SkyCMS.Drivers.ElFinder.Responses.ElFinderObject
+                    {
+                        Hash = "l1_dGVzdA",
+                        PHash = "l1_cHVi",
+                        Name = "child-a",
+                        Mime = "directory",
+                        Size = 0,
+                        Ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                    },
+                },
+            };
+
+            var mockMediatR = new Mock<MediatR.IMediator>();
+            mockMediatR
+                .Setup(m => m.Send(It.IsAny<MediatR.IRequest<SkyCMS.Drivers.ElFinder.Responses.IElFinderResponse>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((SkyCMS.Drivers.ElFinder.Responses.IElFinderResponse)fakeResponse);
+
+            var services = new ServiceCollection();
+            services.AddSingleton<MediatR.IMediator>(mockMediatR.Object);
+            var sp = services.BuildServiceProvider();
+
+            var context = CreateAuthorizedHttpContext();
+            context.Request.Method = "GET";
+            context.Request.QueryString = QueryString.Create(new Dictionary<string, string>
+            {
+                ["cmd"] = "tree",
+                ["target"] = EncodeHash(testRoot),
+                ["__cqrs_tree"] = "1",
+            });
+            context.RequestServices = sp;
+            controller.ControllerContext = new ControllerContext { HttpContext = context };
+
+            var result = await controller.Connector();
+
+            // With MediatR present, must return ContentResult (serialized by System.Text.Json).
+            Assert.IsInstanceOfType(result, typeof(ContentResult), "CQRS tree should return ContentResult, not JsonResult");
+            var contentResult = (ContentResult)result;
+            var parsed = JObject.Parse(contentResult.Content!);
+
+            // elFinder protocol requires lowercase keys — "tree" not "Tree", "hash" not "Hash".
+            Assert.IsNotNull(parsed["tree"], "Response body must have lowercase 'tree' key");
+            Assert.IsNull(parsed["Tree"], "Response body must NOT have PascalCase 'Tree' key");
+
+            var entries = (JArray)parsed["tree"]!;
+            Assert.IsTrue(entries.Count > 0, "Tree should contain at least one directory entry");
+            var first = entries[0];
+            Assert.IsNotNull(first["hash"], "Entry must have lowercase 'hash' key");
+            Assert.IsNull(first["Hash"], "Entry must NOT have PascalCase 'Hash' key");
+            Assert.IsNotNull(first["phash"], "Entry must have lowercase 'phash' key");
+            Assert.IsNull(first["PHash"], "Entry must NOT have PascalCase 'PHash' key");
         }
 
         [TestMethod]
