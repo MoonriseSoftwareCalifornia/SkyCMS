@@ -22369,7 +22369,7 @@ $.fn.elfindertree = function(fm, opts) {
 					// update title attr if necessary
 					if (enter && opts.attrTitle) {
 						dir = fm.file(hash || fm.navId2Hash(link.attr('id')));
-						if (!dir.isroot && link.attr('title') === (dir.i18 || dir.name)) {
+						if (dir && !dir.isroot && link.attr('title') === (dir.i18 || dir.name)) {
 							link.attr('title', fm.path(hash, true));
 						}
 					}

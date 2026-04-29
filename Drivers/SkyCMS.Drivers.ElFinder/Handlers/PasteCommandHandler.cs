@@ -59,8 +59,9 @@ public class PasteCommandHandler : IRequestHandler<PasteCommand, IElFinderRespon
                     continue;
                 }
 
-                // Check source accessibility
-                if (!await _adapter.IsAccessibleAsync(sourcePath, cancellationToken))
+                // Resolve entry once; covers accessibility check and provides metadata for move/copy.
+                var sourceEntry = await _adapter.GetEntryAsync(sourcePath, cancellationToken);
+                if (sourceEntry == null)
                 {
                     continue;
                 }
@@ -75,7 +76,7 @@ public class PasteCommandHandler : IRequestHandler<PasteCommand, IElFinderRespon
                     if (isCut)
                     {
                         // Move operation
-                        resultEntry = await _adapter.MoveAsync(sourcePath, newPath, cancellationToken);
+                        resultEntry = await _adapter.MoveAsync(sourceEntry, newPath, cancellationToken);
                         if (resultEntry != null)
                         {
                             response.Removed = response.Removed ?? new List<string>();

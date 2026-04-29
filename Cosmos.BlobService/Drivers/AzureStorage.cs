@@ -518,12 +518,27 @@ namespace Cosmos.BlobService.Drivers
         public async Task<FileMetadata> GetFileMetadataAsync(string path)
         {
             var blobClient = await this.GetBlobAsync(path);
-            var properties = await blobClient.GetPropertiesAsync();
-            _ = long.TryParse(properties.Value.Metadata["ccmsuploaduid"], out var mark);
+            if (blobClient == null)
+            {
+                return null;
+            }
+
+            Azure.Response<BlobProperties> properties;
+            try
+            {
+                properties = await blobClient.GetPropertiesAsync();
+            }
+            catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+            {
+                return null;
+            }
+
+            properties.Value.Metadata.TryGetValue("ccmsuploaduid", out var uploadUid);
+            _ = long.TryParse(uploadUid, out var mark);
 
             var eTag = properties.Value.ETag.ToString("H").Trim('"');
 
-            var metaData = new FileMetadata()
+            return new FileMetadata()
             {
                 ContentLength = properties.Value.ContentLength,
                 ContentType = properties.Value.ContentType,
@@ -532,8 +547,6 @@ namespace Cosmos.BlobService.Drivers
                 LastModified = properties.Value.LastModified.UtcDateTime,
                 UploadDateTime = mark
             };
-
-            return metaData;
         }
 
         /// <inheritdoc/>

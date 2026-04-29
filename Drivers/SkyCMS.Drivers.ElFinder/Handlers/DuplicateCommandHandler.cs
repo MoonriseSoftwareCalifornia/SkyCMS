@@ -44,7 +44,9 @@ public class DuplicateCommandHandler : IRequestHandler<DuplicateCommand, IElFind
                 continue;
             }
 
-            if (!await _adapter.IsAccessibleAsync(sourcePath, cancellationToken))
+            // Resolve entry once; covers accessibility check and provides name/type metadata.
+            var sourceEntry = await _adapter.GetEntryAsync(sourcePath, cancellationToken);
+            if (sourceEntry == null)
             {
                 continue;
             }

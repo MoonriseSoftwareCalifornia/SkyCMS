@@ -101,6 +101,32 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
                 };
             }
 
+            // Empty virtual directories may exist only as entries in the parent listing.
+            // Treat them as accessible directories so elFinder operations (rename/parents)
+            // can still resolve metadata.
+            var parent = GetParentPath(normalized);
+            if (!string.IsNullOrEmpty(parent))
+            {
+                var name = Path.GetFileName(normalized.TrimEnd('/'));
+                var siblings = await _storageContext.GetFilesAndDirectories(parent).ConfigureAwait(false);
+                var match = siblings.FirstOrDefault(e =>
+                    e.IsDirectory
+                    && !string.IsNullOrWhiteSpace(e.Name)
+                    && string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+
+                if (match != null)
+                {
+                    return new FileManagerEntry
+                    {
+                        Path = normalized,
+                        Name = match.Name,
+                        IsDirectory = true,
+                        Modified = match.Modified,
+                        Size = 0,
+                    };
+                }
+            }
+
             return null;
         }
         catch
@@ -171,29 +197,13 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
             return null;
         }
 
-        try
-        {
-            var sourceEntry = await _storageContext.GetFileAsync(normalizedSource).ConfigureAwait(false);
-            if (sourceEntry == null)
-            {
-                return null;
-            }
-
-            if (sourceEntry.IsDirectory)
-            {
-                await _storageContext.MoveFolderAsync(normalizedSource, normalizedDestination).ConfigureAwait(false);
-            }
-            else
-            {
-                await _storageContext.MoveFileAsync(normalizedSource, normalizedDestination).ConfigureAwait(false);
-            }
-
-            return await _storageContext.GetFileAsync(normalizedDestination).ConfigureAwait(false);
-        }
-        catch
+        var sourceEntry = await GetEntryAsync(normalizedSource, cancellationToken).ConfigureAwait(false);
+        if (sourceEntry == null)
         {
             return null;
         }
+
+        return await RenameAsync(sourceEntry, normalizedDestination, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeleteAsync(string path, CancellationToken cancellationToken = default)
@@ -206,12 +216,35 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
 
         try
         {
-            var entry = await _storageContext.GetFileAsync(normalized).ConfigureAwait(false);
+            var entry = await GetEntryAsync(normalized, cancellationToken).ConfigureAwait(false);
             if (entry == null)
             {
                 return;
             }
 
+            await DeleteAsync(entry, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Keep behavior tolerant for batch delete scenarios.
+        }
+    }
+
+    public async Task DeleteAsync(FileManagerEntry entry, CancellationToken cancellationToken = default)
+    {
+        if (entry == null)
+        {
+            return;
+        }
+
+        var normalized = _pathNormalizer.Normalize(entry.Path);
+        if (!_pathValidator.ValidatePath(normalized).IsValid)
+        {
+            return;
+        }
+
+        try
+        {
             if (entry.IsDirectory)
             {
                 await _storageContext.DeleteFolderAsync(normalized).ConfigureAwait(false);
@@ -225,6 +258,45 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
         {
             // Keep behavior tolerant for batch delete scenarios.
         }
+    }
+
+    public async Task<FileManagerEntry?> RenameAsync(FileManagerEntry entry, string destinationPath, CancellationToken cancellationToken = default)
+    {
+        if (entry == null)
+        {
+            return null;
+        }
+
+        var normalizedSource = _pathNormalizer.Normalize(entry.Path);
+        var normalizedDestination = _pathNormalizer.Normalize(destinationPath);
+
+        if (!_pathValidator.ValidatePath(normalizedSource).IsValid || !_pathValidator.ValidatePath(normalizedDestination).IsValid)
+        {
+            return null;
+        }
+
+        try
+        {
+            if (entry.IsDirectory)
+            {
+                await _storageContext.MoveFolderAsync(normalizedSource, normalizedDestination).ConfigureAwait(false);
+            }
+            else
+            {
+                await _storageContext.MoveFileAsync(normalizedSource, normalizedDestination).ConfigureAwait(false);
+            }
+
+            return await GetEntryAsync(normalizedDestination, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public Task<FileManagerEntry?> MoveAsync(FileManagerEntry entry, string destinationPath, CancellationToken cancellationToken = default)
+    {
+        return RenameAsync(entry, destinationPath, cancellationToken);
     }
 
     public async Task<Stream?> GetReadStreamAsync(string path, CancellationToken cancellationToken = default)
@@ -294,7 +366,7 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
         try
         {
             await _storageContext.CopyAsync(normalizedSource, normalizedDestination).ConfigureAwait(false);
-            return await _storageContext.GetFileAsync(normalizedDestination).ConfigureAwait(false);
+            return await GetEntryAsync(normalizedDestination, cancellationToken).ConfigureAwait(false);
         }
         catch
         {
@@ -328,30 +400,10 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
                     break;
                 }
 
-                var parentEntry = await _storageContext.GetFileAsync(parent).ConfigureAwait(false);
+                var parentEntry = await GetEntryAsync(parent, cancellationToken).ConfigureAwait(false);
                 if (parentEntry != null)
                 {
                     ancestors.Add(parentEntry);
-                }
-                else
-                {
-                    // Blob storage uses virtual directory paths that have no marker blob.
-                    // Synthesize an entry if the path has any children.
-                    var children = await _storageContext.GetFilesAndDirectories(parent).ConfigureAwait(false);
-                    if (children.Count > 0)
-                    {
-                        var name = parent.TrimEnd('/');
-                        var slash = name.LastIndexOf('/');
-                        name = slash >= 0 ? name[(slash + 1)..] : name;
-                        ancestors.Add(new FileManagerEntry
-                        {
-                            Path = parent,
-                            Name = name,
-                            IsDirectory = true,
-                            Modified = DateTime.UtcNow,
-                            Size = 0,
-                        });
-                    }
                 }
 
                 current = parent;
@@ -376,21 +428,29 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
 
         try
         {
-            var entry = await _storageContext.GetFileAsync(normalized).ConfigureAwait(false);
-            if (entry != null)
-            {
-                return true;
-            }
-
-            // Blob storage uses virtual directory paths that have no marker blob.
-            // Treat a path as accessible if it has any children.
-            var children = await _storageContext.GetFilesAndDirectories(normalized).ConfigureAwait(false);
-            return children.Count > 0;
+            return await GetEntryAsync(normalized, cancellationToken).ConfigureAwait(false) != null;
         }
         catch
         {
             return false;
         }
+    }
+
+    private static string? GetParentPath(string normalizedPath)
+    {
+        var trimmed = normalizedPath?.TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return null;
+        }
+
+        var lastSlash = trimmed.LastIndexOf('/');
+        if (lastSlash <= 0)
+        {
+            return null;
+        }
+
+        return trimmed[..lastSlash];
     }
 
     public async Task<long> GetSizeAsync(string path, CancellationToken cancellationToken = default)
@@ -404,19 +464,19 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
         try
         {
             var entry = await _storageContext.GetFileAsync(normalized).ConfigureAwait(false);
-            if (entry == null)
+            if(entry == null)
             {
                 return 0;
             }
 
-            if (!entry.IsDirectory)
+            if(!entry.IsDirectory)
             {
                 return entry.Size;
             }
 
             var children = await _storageContext.GetFilesAndDirectories(normalized).ConfigureAwait(false);
             var total = 0L;
-            foreach (var child in children)
+            foreach(var child in children)
             {
                 var childPath = string.IsNullOrEmpty(normalized) ? child.Path : child.Path;
                 total += await GetSizeAsync(childPath, cancellationToken).ConfigureAwait(false);

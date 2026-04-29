@@ -74,6 +74,15 @@ namespace SkyCMS.Drivers.ElFinder.Adapters
         Task<FileManagerEntry?> RenameAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Renames or moves a file or folder using a pre-resolved entry to avoid redundant storage lookups.
+        /// </summary>
+        /// <param name="entry">The already-resolved source entry.</param>
+        /// <param name="destinationPath">The destination normalized path.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated entry.</returns>
+        Task<FileManagerEntry?> RenameAsync(FileManagerEntry entry, string destinationPath, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Deletes a file or folder.
         /// </summary>
         /// <param name="path">The normalized path.</param>
@@ -82,22 +91,29 @@ namespace SkyCMS.Drivers.ElFinder.Adapters
         Task DeleteAsync(string path, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets the read stream for a file.
+        /// Deletes a file or folder using a pre-resolved entry to avoid redundant storage lookups.
         /// </summary>
-        /// <param name="path">The normalized path.</param>
+        /// <param name="entry">The already-resolved entry to delete.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A readable stream, or null if not found.</returns>
-        Task<Stream?> GetReadStreamAsync(string path, CancellationToken cancellationToken = default);
+        Task DeleteAsync(FileManagerEntry entry, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Uploads file data to the specified path.
+        /// Moves a file or folder from source to destination.
         /// </summary>
-        /// <param name="path">The normalized target file path.</param>
-        /// <param name="content">The file content stream.</param>
-        /// <param name="contentType">The MIME type.</param>
+        /// <param name="sourcePath">The source path.</param>
+        /// <param name="destinationPath">The destination path.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The created/updated file entry.</returns>
-        Task<FileManagerEntry?> UploadFileAsync(string path, Stream content, string contentType, CancellationToken cancellationToken = default);
+        /// <returns>The moved entry.</returns>
+        Task<FileManagerEntry?> MoveAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Moves a file or folder using a pre-resolved entry to avoid redundant storage lookups.
+        /// </summary>
+        /// <param name="entry">The already-resolved source entry.</param>
+        /// <param name="destinationPath">The destination path.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The moved entry.</returns>
+        Task<FileManagerEntry?> MoveAsync(FileManagerEntry entry, string destinationPath, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Copies a file or folder from source to destination.
@@ -109,13 +125,22 @@ namespace SkyCMS.Drivers.ElFinder.Adapters
         Task<FileManagerEntry?> CopyAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Moves a file or folder from source to destination.
+        /// Gets a readable stream for the file at the specified path.
         /// </summary>
-        /// <param name="sourcePath">The source path.</param>
-        /// <param name="destinationPath">The destination path.</param>
+        /// <param name="path">The normalized file path.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The moved entry.</returns>
-        Task<FileManagerEntry?> MoveAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken = default);
+        /// <returns>A readable stream, or null if not found.</returns>
+        Task<Stream?> GetReadStreamAsync(string path, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Uploads or overwrites a file at the specified path.
+        /// </summary>
+        /// <param name="path">The normalized target file path.</param>
+        /// <param name="stream">The content stream.</param>
+        /// <param name="mimeType">MIME type of the content.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created/updated file entry.</returns>
+        Task<FileManagerEntry?> UploadFileAsync(string path, Stream stream, string mimeType, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all ancestor entries from root to target parent.

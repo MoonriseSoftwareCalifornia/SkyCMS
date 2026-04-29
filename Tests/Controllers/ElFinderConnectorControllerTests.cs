@@ -769,6 +769,106 @@ namespace Sky.Tests.Controllers
             var entries = await storage.GetFilesAndDirectories(testRoot);
             Assert.IsFalse(entries.Any(e => e.Path.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)));
         }
+            [TestMethod]
+            public async Task Connector_Rm_MissingTarget_ReturnsNotFoundArrayAndNoRemoved()
+            {
+                var missingPath = testRoot + "/missing-file.txt";
+                var missingHash = EncodeHash(missingPath);
+
+                SetGetRequest(new Dictionary<string, string>
+                {
+                    ["cmd"] = "rm",
+                    ["targets[]"] = missingHash,
+                });
+
+                var result = await controller.Connector();
+
+                var json = AsJsonObject(result);
+                CollectionAssert.AreEqual(new[] { missingHash }, ((JArray)json["notFound"])!.Values<string>().ToArray());
+                Assert.AreEqual(0, ((JArray)json["removed"]!)!.Count, "Missing target must not appear in removed.");
+                Assert.AreEqual(0, ((JArray)json["notRemoved"]!)!.Count, "Missing target must not appear in notRemoved.");
+
+                var notFoundDetails = (JArray)json["notFoundDetails"]!;
+                Assert.AreEqual(1, notFoundDetails.Count, "Missing target should include one diagnostic detail.");
+                Assert.AreEqual(missingHash, notFoundDetails[0]?["hash"]?.ToString());
+                Assert.AreEqual(missingPath, notFoundDetails[0]?["path"]?.ToString());
+                Assert.IsFalse(string.IsNullOrWhiteSpace(notFoundDetails[0]?["reason"]?.ToString()));
+                Assert.IsFalse(string.IsNullOrWhiteSpace(notFoundDetails[0]?["reasonCode"]?.ToString()));
+            }
+
+            [TestMethod]
+            public async Task Connector_Rm_Cqrs_ResponseUsesLowercaseNotFoundAndNotRemovedKeys()
+            {
+                var missingHash = EncodeHash(testRoot + "/missing-cqrs.txt");
+                var lockedHash = EncodeHash(testRoot + "/locked-cqrs.txt");
+                var fakeResponse = new SkyCMS.Drivers.ElFinder.Commands.RmResponse
+                {
+                    NotFound = new List<string> { missingHash },
+                    NotRemoved = new List<string> { lockedHash },
+                    NotFoundDetails = new List<SkyCMS.Drivers.ElFinder.Commands.RmDiagnosticEntry>
+                    {
+                        new SkyCMS.Drivers.ElFinder.Commands.RmDiagnosticEntry
+                        {
+                            Hash = missingHash,
+                            Path = testRoot + "/missing-cqrs.txt",
+                            Reason = "Target is not accessible or does not exist",
+                            ReasonCode = "not_accessible",
+                        },
+                    },
+                    NotRemovedDetails = new List<SkyCMS.Drivers.ElFinder.Commands.RmDiagnosticEntry>
+                    {
+                        new SkyCMS.Drivers.ElFinder.Commands.RmDiagnosticEntry
+                        {
+                            Hash = lockedHash,
+                            Path = testRoot + "/locked-cqrs.txt",
+                            Reason = "Delete call completed but target is still accessible",
+                            ReasonCode = "delete_no_effect",
+                        },
+                    },
+                };
+
+                var mockMediatR = new Mock<MediatR.IMediator>();
+                mockMediatR
+                    .Setup(m => m.Send(It.IsAny<MediatR.IRequest<SkyCMS.Drivers.ElFinder.Responses.IElFinderResponse>>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((SkyCMS.Drivers.ElFinder.Responses.IElFinderResponse)fakeResponse);
+
+                var services = new ServiceCollection();
+                services.AddSingleton<MediatR.IMediator>(mockMediatR.Object);
+                var sp = services.BuildServiceProvider();
+
+                var context = CreateAuthorizedHttpContext();
+                context.Request.Method = "GET";
+                context.Request.QueryString = QueryString.Create(new Dictionary<string, string>
+                {
+                    ["cmd"] = "rm",
+                    ["targets[]"] = missingHash,
+                    ["__cqrs_rm"] = "1",
+                });
+                context.RequestServices = sp;
+                controller.ControllerContext = new ControllerContext { HttpContext = context };
+
+                var result = await controller.Connector();
+
+                Assert.IsInstanceOfType(result, typeof(JsonResult), "CQRS rm should aggregate mediator responses into a JsonResult.");
+                var parsed = AsJsonObject(result);
+
+                Assert.IsNotNull(parsed["removed"], "Response body must have lowercase 'removed' key.");
+                Assert.IsNotNull(parsed["notFound"], "Response body must have lowercase 'notFound' key.");
+                Assert.IsNotNull(parsed["notRemoved"], "Response body must have lowercase 'notRemoved' key.");
+                Assert.IsNotNull(parsed["notFoundDetails"], "Response body must have lowercase 'notFoundDetails' key.");
+                Assert.IsNotNull(parsed["notRemovedDetails"], "Response body must have lowercase 'notRemovedDetails' key.");
+                Assert.IsNull(parsed["NotFound"], "Response body must not have PascalCase 'NotFound' key.");
+                Assert.IsNull(parsed["NotRemoved"], "Response body must not have PascalCase 'NotRemoved' key.");
+                Assert.IsNull(parsed["NotFoundDetails"], "Response body must not have PascalCase 'NotFoundDetails' key.");
+                Assert.IsNull(parsed["NotRemovedDetails"], "Response body must not have PascalCase 'NotRemovedDetails' key.");
+
+                CollectionAssert.AreEqual(new[] { missingHash }, ((JArray)parsed["notFound"]!)!.Values<string>().ToArray());
+                CollectionAssert.AreEqual(new[] { lockedHash }, ((JArray)parsed["notRemoved"]!)!.Values<string>().ToArray());
+                CollectionAssert.AreEqual(new[] { missingHash }, ((JArray)parsed["notFoundDetails"]!)!.Select(x => x["hash"]?.ToString()).ToArray());
+                CollectionAssert.AreEqual(new[] { lockedHash }, ((JArray)parsed["notRemovedDetails"]!)!.Select(x => x["hash"]?.ToString()).ToArray());
+                CollectionAssert.AreEqual(new[] { "not_accessible" }, ((JArray)parsed["notFoundDetails"]!)!.Select(x => x["reasonCode"]?.ToString()).ToArray());
+                CollectionAssert.AreEqual(new[] { "delete_no_effect" }, ((JArray)parsed["notRemovedDetails"]!)!.Select(x => x["reasonCode"]?.ToString()).ToArray());
+            }
 
         [TestMethod]
         public async Task Connector_Rm_WithInvalidHash_SkipsAndReturnsWarning()

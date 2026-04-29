@@ -38,8 +38,9 @@ public class RenameCommandHandler : IRequestHandler<RenameCommand, IElFinderResp
                 return ElFinderErrorResponse.InvalidParams("Invalid target hash");
             }
 
-            // Check accessibility
-            if (!await _adapter.IsAccessibleAsync(sourcePath, cancellationToken))
+            // Resolve the entry once; this covers both the accessibility check and the metadata needed for rename.
+            var sourceEntry = await _adapter.GetEntryAsync(sourcePath, cancellationToken);
+            if (sourceEntry == null)
             {
                 return ElFinderErrorResponse.Access("Access denied");
             }
@@ -52,8 +53,8 @@ public class RenameCommandHandler : IRequestHandler<RenameCommand, IElFinderResp
             // Construct new path
             var newPath = parentDir.TrimEnd('/') + "/" + request.Name;
 
-            // Rename/move the item
-            var renamedEntry = await _adapter.RenameAsync(sourcePath, newPath, cancellationToken);
+            // Rename/move the item using the pre-resolved entry
+            var renamedEntry = await _adapter.RenameAsync(sourceEntry, newPath, cancellationToken);
 
             var response = new RenameResponse
             {

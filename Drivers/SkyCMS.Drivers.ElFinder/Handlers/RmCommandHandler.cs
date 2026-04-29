@@ -27,34 +27,90 @@ public class RmCommandHandler : IRequestHandler<RmCommand, IElFinderResponse>
             }
 
             var response = new RmResponse { VolumeId = request.VolumeId };
+            var notFound = new List<string>();
+            var notFoundDetails = new List<RmDiagnosticEntry>();
+            var notRemoved = new List<string>();
+            var notRemovedDetails = new List<RmDiagnosticEntry>();
 
             // Handle single or multiple targets (comma-separated)
             var targets = request.Target.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var target in targets)
             {
-                var path = _adapter.DecodePath(target.Trim());
+                var trimmedTarget = target.Trim();
+                var path = _adapter.DecodePath(trimmedTarget);
                 if (path == null)
                 {
-                    continue; // Skip invalid hashes
+                    notFound.Add(trimmedTarget);
+                    notFoundDetails.Add(new RmDiagnosticEntry
+                    {
+                        Hash = trimmedTarget,
+                        Reason = "Unable to decode target hash",
+                        ReasonCode = "hash_decode_failed",
+                    });
+                    continue;
                 }
 
-                // Check accessibility
-                if (!await _adapter.IsAccessibleAsync(path, cancellationToken))
+                // Resolve the entry once; this also acts as the accessibility + existence check.
+                var entry = await _adapter.GetEntryAsync(path, cancellationToken);
+                if (entry == null)
                 {
-                    continue; // Skip inaccessible items
+                    notFound.Add(trimmedTarget);
+                    notFoundDetails.Add(new RmDiagnosticEntry
+                    {
+                        Hash = trimmedTarget,
+                        Path = path,
+                        Reason = "Target is not accessible or does not exist",
+                        ReasonCode = "not_accessible",
+                    });
+                    continue;
                 }
 
                 try
                 {
-                    await _adapter.DeleteAsync(path, cancellationToken);
-                    response.Removed.Add(target.Trim());
+                    await _adapter.DeleteAsync(entry, cancellationToken);
+
+                    // Only report success when the target no longer resolves as accessible.
+                    if (!await _adapter.IsAccessibleAsync(path, cancellationToken))
+                    {
+                        response.Removed.Add(trimmedTarget);
+                    }
+                    else
+                    {
+                        notRemoved.Add(trimmedTarget);
+                        notRemovedDetails.Add(new RmDiagnosticEntry
+                        {
+                            Hash = trimmedTarget,
+                            Path = path,
+                            Reason = "Delete call completed but target is still accessible",
+                            ReasonCode = "delete_no_effect",
+                        });
+                    }
                 }
                 catch
                 {
-                    // Continue deleting other items even if one fails
+                    notRemoved.Add(trimmedTarget);
+                    notRemovedDetails.Add(new RmDiagnosticEntry
+                    {
+                        Hash = trimmedTarget,
+                        Path = path,
+                        Reason = "Delete operation threw an exception",
+                        ReasonCode = "delete_exception",
+                    });
                     continue;
                 }
+            }
+
+            if (notFound.Count > 0)
+            {
+                response.NotFound = notFound;
+                response.NotFoundDetails = notFoundDetails;
+            }
+
+            if (notRemoved.Count > 0)
+            {
+                response.NotRemoved = notRemoved;
+                response.NotRemovedDetails = notRemovedDetails;
             }
 
             return response;

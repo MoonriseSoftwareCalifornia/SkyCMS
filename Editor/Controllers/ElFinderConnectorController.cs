@@ -30,9 +30,9 @@ namespace Sky.Cms.Controllers
     using MimeTypes;
     using Sky.Cms.Models;
     using Sky.Editor.Services.EditorSettings;
+    using SkyCMS.Drivers.ElFinder;
     using SkyCMS.Drivers.ElFinder.Commands;
     using SkyCMS.Drivers.ElFinder.Responses;
-    using SkyCMS.Drivers.ElFinder;
 
     /// <summary>
     /// Connector adapter controller that maps elFinder JSON protocol commands to SkyCMS
@@ -82,7 +82,8 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Backward-compatible constructor for existing tests and call sites.
+        /// Initializes a new instance of the <see cref="ElFinderConnectorController"/> class
+        /// for existing tests and call sites.
         /// </summary>
         public ElFinderConnectorController(
             ApplicationDbContext dbContext,
@@ -272,7 +273,7 @@ namespace Sky.Cms.Controllers
             }
 
             var target = GetParam("target");
-            var name = GetParam("name");
+            var name = NormalizeElFinderName(GetParam("name"));
             var path = DecodeHash(target);
 
             if (path == null || !IsAllowedPath(path))
@@ -280,7 +281,7 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errAccess"));
             }
 
-            var hasBatchDirs = Request.Form.ContainsKey("dirs[]");
+            var hasBatchDirs = Request.Method == "POST" && Request.HasFormContentType && Request.Form.ContainsKey("dirs[]");
             if (!hasBatchDirs && string.IsNullOrWhiteSpace(name))
             {
                 return Json(ElFinderError("errAccess"));
@@ -296,7 +297,10 @@ namespace Sky.Cms.Controllers
                 : null;
 
             var batchDirs = hasBatchDirs
-                ? GetParams("dirs[]").Where(d => !string.IsNullOrWhiteSpace(d) && IsSafeName(d)).ToList()
+                ? GetParams("dirs[]")
+                    .Select(NormalizeElFinderName)
+                    .Where(d => !string.IsNullOrWhiteSpace(d) && IsSafeName(d))
+                    .ToList()
                 : null;
 
             var command = new MkdirCommand
@@ -322,7 +326,7 @@ namespace Sky.Cms.Controllers
             }
 
             var target = GetParam("target");
-            var name = GetParam("name");
+            var name = NormalizeElFinderName(GetParam("name"));
             var path = DecodeHash(target);
 
             if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
@@ -365,7 +369,7 @@ namespace Sky.Cms.Controllers
             }
 
             var target = GetParam("target");
-            var name = GetParam("name");
+            var name = NormalizeElFinderName(GetParam("name"));
             var path = DecodeHash(target);
 
             if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
@@ -409,6 +413,10 @@ namespace Sky.Cms.Controllers
             }
 
             var removed = new List<string>();
+            var notFound = new List<string>();
+            var notRemoved = new List<string>();
+            var notFoundDetails = new List<RmDiagnosticEntry>();
+            var notRemovedDetails = new List<RmDiagnosticEntry>();
             foreach (var t in targets)
             {
                 var command = new RmCommand
@@ -421,10 +429,33 @@ namespace Sky.Cms.Controllers
                 if (response is RmResponse rm)
                 {
                     removed.AddRange(rm.Removed ?? new List<string>());
+                    notFound.AddRange(rm.NotFound ?? new List<string>());
+                    notRemoved.AddRange(rm.NotRemoved ?? new List<string>());
+                    notFoundDetails.AddRange(rm.NotFoundDetails ?? new List<RmDiagnosticEntry>());
+                    notRemovedDetails.AddRange(rm.NotRemovedDetails ?? new List<RmDiagnosticEntry>());
                 }
             }
 
-            return Json(new { removed = removed.Distinct().ToList() });
+            return Json(new
+            {
+                removed = removed.Distinct().ToList(),
+                notFound = notFound.Distinct().ToList(),
+                notRemoved = notRemoved.Distinct().ToList(),
+                notFoundDetails = notFoundDetails.Select(d => new
+                {
+                    hash = d.Hash,
+                    path = d.Path,
+                    reason = d.Reason,
+                    reasonCode = d.ReasonCode,
+                }).ToList(),
+                notRemovedDetails = notRemovedDetails.Select(d => new
+                {
+                    hash = d.Hash,
+                    path = d.Path,
+                    reason = d.Reason,
+                    reasonCode = d.ReasonCode,
+                }).ToList(),
+            });
         }
 
         private async Task<IActionResult> HandleOpenViaCqrsAsync()
@@ -477,19 +508,24 @@ namespace Sky.Cms.Controllers
             var added = new List<object>();
             foreach (var file in files)
             {
-                var originalName = Path.GetFileName(file.FileName);
-                if (string.IsNullOrWhiteSpace(originalName))
+                var normalizedName = NormalizeElFinderName(Path.GetFileName(file.FileName));
+                if (string.IsNullOrWhiteSpace(normalizedName))
                 {
                     continue;
                 }
 
-                var ext = Path.GetExtension(originalName).ToLowerInvariant();
+                if (!IsSafeName(normalizedName))
+                {
+                    return Json(ElFinderError("errInvName"));
+                }
+
+                var ext = Path.GetExtension(normalizedName).ToLowerInvariant();
                 if (FileStorageConstants.DangerousFileExtensions.Contains(ext))
                 {
                     return Json(ElFinderError("errUploadFile"));
                 }
 
-                var uniqueName = await GetUniqueNameAsync(path, originalName);
+                var uniqueName = await GetUniqueNameAsync(path, normalizedName);
 
                 var command = new UploadCommand
                 {
@@ -1150,7 +1186,7 @@ namespace Sky.Cms.Controllers
         private async Task<IActionResult> HandleMkdirAsync()
         {
             var target = GetParam("target");
-            var name = GetParam("name");
+            var name = NormalizeElFinderName(GetParam("name"));
             var path = DecodeHash(target);
 
             if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
@@ -1179,7 +1215,7 @@ namespace Sky.Cms.Controllers
         private async Task<IActionResult> HandleMkfileAsync()
         {
             var target = GetParam("target");
-            var name = GetParam("name");
+            var name = NormalizeElFinderName(GetParam("name"));
             var path = DecodeHash(target);
 
             if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
@@ -1221,7 +1257,7 @@ namespace Sky.Cms.Controllers
         private async Task<IActionResult> HandleRenameAsync()
         {
             var target = GetParam("target");
-            var name = GetParam("name");
+            var name = NormalizeElFinderName(GetParam("name"));
             var path = DecodeHash(target);
 
             if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
@@ -1276,12 +1312,26 @@ namespace Sky.Cms.Controllers
             }
 
             var removed = new List<string>();
+            var notFound = new List<string>();
+            var notRemoved = new List<string>();
+            var notFoundDetails = new List<object>();
+            var notRemovedDetails = new List<object>();
 
             foreach (var t in targets)
             {
                 var path = DecodeHash(t);
                 if (path == null || !IsAllowedPath(path))
                 {
+                    notFound.Add(t);
+                    notFoundDetails.Add(new
+                    {
+                        hash = t,
+                        path,
+                        reasonCode = path == null ? "hash_decode_failed" : "path_not_allowed",
+                        reason = path == null
+                            ? "Unable to decode target hash"
+                            : "Decoded path is not allowed by server policy",
+                    });
                     continue;
                 }
 
@@ -1295,7 +1345,22 @@ namespace Sky.Cms.Controllers
                     entry = null;
                 }
 
-                var isDir = entry?.IsDirectory ?? false;
+                var parentListingMatch = await GetEntryFromParentListingAsync(path);
+                var existedBeforeDelete = entry != null || parentListingMatch != null;
+                if (!existedBeforeDelete)
+                {
+                    notFound.Add(t);
+                    notFoundDetails.Add(new
+                    {
+                        hash = t,
+                        path,
+                        reasonCode = "not_found_pre_delete",
+                        reason = "Target was not found before delete",
+                    });
+                    continue;
+                }
+
+                var isDir = entry?.IsDirectory ?? parentListingMatch?.IsDirectory ?? false;
 
                 if (isDir)
                 {
@@ -1306,10 +1371,73 @@ namespace Sky.Cms.Controllers
                     await storageContext.DeleteFileAsync(path);
                 }
 
-                removed.Add(t);
+                if (!await PathExistsInParentListingAsync(path))
+                {
+                    removed.Add(t);
+                }
+                else
+                {
+                    notRemoved.Add(t);
+                    notRemovedDetails.Add(new
+                    {
+                        hash = t,
+                        path,
+                        reasonCode = "delete_no_effect",
+                        reason = "Delete call completed but target still appears in storage listing",
+                    });
+                }
             }
 
-            return Json(new { removed });
+            return Json(new { removed, notFound, notRemoved, notFoundDetails, notRemovedDetails });
+        }
+
+        private async Task<FileManagerEntry?> GetEntryFromParentListingAsync(string path)
+        {
+            try
+            {
+                var normalizedPath = NormalizePath(path);
+                if (string.IsNullOrEmpty(normalizedPath))
+                {
+                    return null;
+                }
+
+                var parent = GetParentPath(normalizedPath);
+                var children = await storageContext.GetFilesAndDirectories(parent);
+                return children.FirstOrDefault(c =>
+                {
+                    var childPath = NormalizePath(c.Path.StartsWith('/') ? c.Path : "/" + c.Path);
+                    return string.Equals(childPath, normalizedPath, StringComparison.OrdinalIgnoreCase);
+                });
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private async Task<bool> PathExistsInParentListingAsync(string path)
+        {
+            try
+            {
+                var normalizedPath = NormalizePath(path);
+                if (string.IsNullOrEmpty(normalizedPath))
+                {
+                    return false;
+                }
+
+                var direct = await storageContext.GetFileAsync(normalizedPath);
+                if (direct != null)
+                {
+                    return true;
+                }
+
+                var parentListingMatch = await GetEntryFromParentListingAsync(normalizedPath);
+                return parentListingMatch != null;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private async Task<IActionResult> HandleUploadAsync()
@@ -1332,10 +1460,15 @@ namespace Sky.Cms.Controllers
 
             foreach (var file in files)
             {
-                var fileName = Path.GetFileName(file.FileName);
+                var fileName = NormalizeElFinderName(Path.GetFileName(file.FileName));
                 if (string.IsNullOrWhiteSpace(fileName))
                 {
                     continue;
+                }
+
+                if (!IsSafeName(fileName))
+                {
+                    return Json(ElFinderError("errInvName"));
                 }
 
                 var ext = Path.GetExtension(fileName).ToLowerInvariant();
@@ -1693,7 +1826,7 @@ namespace Sky.Cms.Controllers
 
         private async Task<string> GetUniqueNameAsync(string parentPath, string requestedName, string ignorePath = null)
         {
-            var desired = requestedName?.Trim();
+            var desired = NormalizeElFinderName(requestedName);
             if (string.IsNullOrWhiteSpace(desired))
             {
                 return requestedName;
@@ -1989,6 +2122,24 @@ namespace Sky.Cms.Controllers
         private static bool IsSafeName(string name)
         {
             return !name.Contains('/') && !name.Contains('\\') && !name.Contains("..") && !name.Contains('\0');
+        }
+
+        private static string NormalizeElFinderName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return name;
+            }
+
+            var normalized = name.Trim().ToLowerInvariant().Replace(' ', '-');
+
+            // Collapse repeated dashes to keep generated names readable.
+            while (normalized.Contains("--", StringComparison.Ordinal))
+            {
+                normalized = normalized.Replace("--", "-", StringComparison.Ordinal);
+            }
+
+            return normalized;
         }
 
         private object ToElFinderObject(FileManagerEntry entry, string parentHash)

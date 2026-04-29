@@ -231,12 +231,6 @@ namespace Cosmos.BlobService
 
             var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
 
-            // Check if blob exists first to avoid exceptions
-            if (!await driver.BlobExistsAsync(path).ConfigureAwait(false))
-            {
-                return null;
-            }
-
             var metadata = await driver.GetFileMetadataAsync(path).ConfigureAwait(false);
 
             if (metadata == null)
@@ -354,14 +348,8 @@ namespace Cosmos.BlobService
             path = PathUtilities.NormalizePath(path);
             ValidatePathOrThrow(path);
             var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
-            var folderMarkerPath = path + "/" + StorageConstants.FolderMarkerFile;
 
-            // Check if folder already exists using proper async/await
-            var exists = await driver.BlobExistsAsync(folderMarkerPath).ConfigureAwait(false);
-            if (!exists)
-            {
-                await driver.CreateFolderAsync(path).ConfigureAwait(false);
-            }
+            await driver.CreateFolderAsync(path).ConfigureAwait(false);
 
             var parts = path.TrimEnd('/').Split('/');
 
@@ -440,23 +428,9 @@ namespace Cosmos.BlobService
 
                 await driver.CopyBlobAsync(srcBlobName, destBlobName).ConfigureAwait(false);
 
-                // Now check to see if files were copied
-                var success = await driver.BlobExistsAsync(destBlobName).ConfigureAwait(false);
-
-                if (success)
+                if (deleteSource)
                 {
-                    // Deleting the source is in the case of RENAME.
-                    // Copying things does not delete the source
-                    if (deleteSource)
-                    {
-                        await driver.DeleteIfExistsAsync(srcBlobName).ConfigureAwait(false);
-                    }
-                }
-                else
-                {
-                    // The copy was NOT successfull, delete any copied files and halt, throw an error.
-                    await driver.DeleteIfExistsAsync(destBlobName).ConfigureAwait(false);
-                    throw new StorageException($"Could not copy: {srcBlobName} to {destBlobName}");
+                    await driver.DeleteIfExistsAsync(srcBlobName).ConfigureAwait(false);
                 }
             }
         }
