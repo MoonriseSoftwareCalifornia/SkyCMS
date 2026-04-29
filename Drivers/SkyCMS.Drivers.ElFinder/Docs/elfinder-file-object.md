@@ -50,6 +50,7 @@ Every file and directory returned by the connector is an **elFinder file object*
 | `ParentHash` | `phash` | string | Parent directory hash. **Omitted for volume roots.** |
 | `Dirs` | `dirs` | int (0/1) | Directories only. `1` = has sub-dirs (chevron shown in tree). `0` = leaf. |
 | `VolumeId` | `volumeid` | string | Present on volume root entries (e.g. `l1_`). |
+| `IsRoot` | `isroot` | int (0/1) | `1` on the volume root object; omitted on all other entries. Required alongside `volumeid` for elFinder to recognise the root. |
 | `Tmb` | `tmb` | string | Thumbnail path relative to connector base, or `"1"` to request generation. |
 | `Alias` | `alias` | string | Display alias (shown instead of `name` in some UIs). |
 | `Target` | `target` | string | Hash of symlink target. |
@@ -88,7 +89,7 @@ hash = volumeId + base64url(path)
 
 ## SkyCMS implementation notes
 
-- `ElFinderObject` is the C# DTO in `Responses/OpenResponse.cs`.
+- `ElFinderObject` is the C# DTO in `Responses/OpenResponse.cs`. It carries `VolumeId` (`[JsonPropertyName("volumeid")]`) and `IsRoot` (`[JsonPropertyName("isroot")]`), both omitted when zero/null via `JsonIgnoreCondition.WhenWritingDefault` / `WhenWritingNull`.
 - All JSON property names use `System.Text.Json` `[JsonPropertyName]` attributes (lowercase).
 - Responses that go through the CQRS path must be serialized with `System.Text.Json.JsonSerializer.Serialize()` — NOT through the controller's `Json()` helper (which uses Newtonsoft). See [SkyCMS Implementation Notes](skycms-implementation-notes.md).
 - For Azure Blob virtual directories, `size` is always `0` and `ts` is synthesized (e.g. `DateTimeOffset.UtcNow.ToUnixTimeSeconds()`).

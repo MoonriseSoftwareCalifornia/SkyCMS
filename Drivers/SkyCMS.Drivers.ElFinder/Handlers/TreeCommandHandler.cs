@@ -1,6 +1,7 @@
 using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
+using SkyCMS.Drivers.ElFinder.Helpers;
 using SkyCMS.Drivers.ElFinder.Responses;
 
 namespace SkyCMS.Drivers.ElFinder.Handlers;
@@ -77,8 +78,6 @@ public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse
             Write = 1,
             Locked = 0,
             Dirs = 1,
-            Tmb = null,
-            Url = null
         };
     }
 }

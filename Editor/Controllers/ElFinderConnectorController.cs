@@ -275,22 +275,35 @@ namespace Sky.Cms.Controllers
             var name = GetParam("name");
             var path = DecodeHash(target);
 
-            if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
+            if (path == null || !IsAllowedPath(path))
             {
                 return Json(ElFinderError("errAccess"));
             }
 
-            if (!IsSafeName(name))
+            var hasBatchDirs = Request.Form.ContainsKey("dirs[]");
+            if (!hasBatchDirs && string.IsNullOrWhiteSpace(name))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(name) && !IsSafeName(name))
             {
                 return Json(ElFinderError("errInvName"));
             }
 
-            var uniqueName = await GetUniqueNameAsync(path, name);
+            var uniqueName = (!string.IsNullOrWhiteSpace(name))
+                ? await GetUniqueNameAsync(path, name)
+                : null;
+
+            var batchDirs = hasBatchDirs
+                ? GetParams("dirs[]").Where(d => !string.IsNullOrWhiteSpace(d) && IsSafeName(d)).ToList()
+                : null;
 
             var command = new MkdirCommand
             {
                 Target = target,
                 Name = uniqueName,
+                Dirs = batchDirs,
                 VolumeId = VolumeId,
             };
 
@@ -425,7 +438,14 @@ namespace Sky.Cms.Controllers
 
             var target = GetParam("target");
             var isInit = GetParam("init") == "1";
-            var command = new OpenCommand(target: target, init: isInit, volumeId: VolumeId);
+            var command = new OpenCommand(
+                target: target,
+                init: isInit,
+                volumeId: VolumeId,
+                tree: GetParam("tree") == "1",
+                blobPublicUrl: editorSettings.BlobPublicUrl,
+                tmbUrl: "/FileManager/GetImageThumbnail?target=",
+                rootPath: RootPath);
 
             var response = await mediator.Send(command);
             var mappedError = TranslateCqrsErrorToLegacy(this, response);
@@ -492,7 +512,9 @@ namespace Sky.Cms.Controllers
                 }
             }
 
-            return Json(new { added });
+            return Content(
+                System.Text.Json.JsonSerializer.Serialize(new { added }),
+                "application/json; charset=utf-8");
         }
 
         private async Task<IActionResult> HandleGetViaCqrsAsync()

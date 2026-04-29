@@ -1,6 +1,7 @@
 using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
+using SkyCMS.Drivers.ElFinder.Helpers;
 using SkyCMS.Drivers.ElFinder.Responses;
 
 namespace SkyCMS.Drivers.ElFinder.Handlers;
@@ -78,29 +79,12 @@ public class MkfileCommandHandler : IRequestHandler<MkfileCommand, IElFinderResp
             PHash = phash,
             Name = entry.Name,
             Size = entry.Size,
-            Mime = GetMimeType(entry.Name),
+            Mime = ElFinderMimeHelper.GetMimeType(entry.Name),
             Ts = new DateTimeOffset(entry.Modified).ToUnixTimeSeconds(),
             Read = 1,
             Write = 1,
             Locked = 0,
             Dirs = 0,
-            Tmb = null,
-            Url = null
-        };
-    }
-
-    private static string GetMimeType(string fileName)
-    {
-        var ext = Path.GetExtension(fileName).ToLowerInvariant();
-        return ext switch
-        {
-            ".txt" => "text/plain",
-            ".pdf" => "application/pdf",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".zip" => "application/zip",
-            _ => "application/octet-stream"
         };
     }
 }

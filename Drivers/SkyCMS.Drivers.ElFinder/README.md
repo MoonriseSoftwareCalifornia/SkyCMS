@@ -44,21 +44,29 @@ IStorageContext (SkyCMS backend)
 
 ## Development Status
 
-🚀 **Phase 0**: Project setup and documentation framework
-📋 **Phase 1**: Research and spec audit (in progress)
-🔨 **Phase 2**: Driver architecture and design
-⚙️ **Phase 3**: Core command implementation and testing
-🎯 **Phase 4**: Controller integration and legacy consolidation
+✅ **Phase 0**: Project setup and documentation framework  
+✅ **Phase 1**: Research and spec audit  
+✅ **Phase 2**: Driver architecture and design  
+✅ **Phase 3**: Core command implementation and testing  
+✅ **Phase 4**: Controller integration and legacy consolidation  
+✅ **Phase 5**: elFinder 2.1 protocol compliance (init bootstrap, MIME standardisation, batch mkdir, upload serialisation)
 
-## Usage (TBD)
+## Usage
 
-Once implemented, the driver will be used like:
+The driver is wired via MediatR. Example from `ElFinderConnectorController`:
 
 ```csharp
-// In ElFinderConnectorController
-var command = new ElFinderOpenCommand { Target = hash, IsInit = true };
+// init request (first load)
+var command = new OpenCommand(
+    target: null,
+    init: true,
+    volumeId: "l1_",
+    tree: true,
+    blobPublicUrl: editorSettings.BlobPublicUrl,
+    tmbUrl: "/FileManager/GetImageThumbnail?target=",
+    rootPath: "/pub");
 var response = await mediator.Send(command);
-return Json(response);
+return JsonCqrs(response);  // uses System.Text.Json — required for [JsonPropertyName] attrs
 ```
 
 ## License

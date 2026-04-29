@@ -31,7 +31,7 @@ namespace SkyCMS.Drivers.ElFinder.Responses
         /// Gets or sets optional API version information.
         /// </summary>
         [JsonPropertyName("api")]
-        public string Api { get; set; } = "2.1";
+        public string Api { get; set; } = "2.1049";
 
         /// <summary>
         /// Gets or sets optional upload size limit.
@@ -46,6 +46,21 @@ namespace SkyCMS.Drivers.ElFinder.Responses
         [JsonPropertyName("volumeid")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string VolumeId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the volume options block. Populated only on init requests.
+        /// </summary>
+        [JsonPropertyName("options")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public ElFinderOptions Options { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of network drivers. Always empty for this driver;
+        /// must be present in the init response so the client initialises correctly.
+        /// </summary>
+        [JsonPropertyName("netDrivers")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<object> NetDrivers { get; set; }
     }
 
     /// <summary>
@@ -58,6 +73,21 @@ namespace SkyCMS.Drivers.ElFinder.Responses
         /// </summary>
         [JsonPropertyName("hash")]
         public string Hash { get; set; }
+
+        /// <summary>
+        /// Gets or sets the volume ID. Set only on volume root directory objects.
+        /// </summary>
+        [JsonPropertyName("volumeid")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string VolumeId { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this object is a volume root (1 = yes).
+        /// Omitted (0 / default) for non-root entries.
+        /// </summary>
+        [JsonPropertyName("isroot")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public int IsRoot { get; set; }
 
         /// <summary>
         /// Gets or sets the parent hash (folder path).

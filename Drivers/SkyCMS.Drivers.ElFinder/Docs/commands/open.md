@@ -13,7 +13,7 @@ Opens a directory and returns everything the client needs to render it:
 - **`cwd`** — the opened directory's own file object (metadata for the header/breadcrumb).
 - **`files`** — flat list of all items in the directory (children), plus any additional context items (e.g. ancestors needed to restore tree state on init).
 - **`options`** — volume-level settings (path separator, URL base, disabled commands, etc.).
-- **`api`** (init only) — protocol version string, e.g. `"2.1"`.
+- **`api`** (init only) — protocol version string, e.g. `"2.1049"`.
 - **`uplMaxSize`** (init only) — max upload size string, e.g. `"128M"`.
 
 `open` is called:
@@ -63,37 +63,37 @@ GET /elfinder/connector?cmd=open&target=l1_cHViL2ltYWdlcw
   },
   "files": [
     {
-      "hash":   "l1_cHViL2ltYWdlcw",
-      "phash":  "l1_cHVi",
-      "name":   "images",
-      "mime":   "directory",
-      "ts":     1714300000,
-      "size":   0,
-      "dirs":   1,
-      "read":   1,
-      "write":  1,
-      "locked": 0
+      "hash":     "l1_cHViL2ltYWdlcw",
+      "phash":    "l1_cHVi",
+      "name":     "images",
+      "mime":     "directory",
+      "ts":       1714300000,
+      "size":     0,
+      "dirs":     1,
+      "read":     1,
+      "write":    1,
+      "locked":   0
     },
     {
-      "hash":   "l1_cHViL2ltYWdlcy9sb2dvLnBuZw",
-      "phash":  "l1_cHViL2ltYWdlcw",
-      "name":   "logo.png",
-      "mime":   "image/png",
-      "ts":     1714200000,
-      "size":   42000,
-      "read":   1,
-      "write":  1,
-      "locked": 0,
-      "tmb":    "l1_cHViL2ltYWdlcy9sb2dvLnBuZw.png"
+      "hash":     "l1_cHViL2ltYWdlcy9sb2dvLnBuZw",
+      "phash":    "l1_cHViL2ltYWdlcw",
+      "name":     "logo.png",
+      "mime":     "image/png",
+      "ts":       1714200000,
+      "size":     42000,
+      "read":     1,
+      "write":    1,
+      "locked":   0,
+      "tmb":      "l1_cHViL2ltYWdlcy9sb2dvLnBuZw.png"
     }
   ],
   "options": {
-    "path":         "pub/images",
-    "url":          "https://cdn.example.com/pub/images/",
-    "tmbUrl":       "/elfinder/thumbnail/",
-    "separator":    "/",
-    "disabled":     ["archive", "extract", "chmod"],
-    "archivers":    { "create": [], "extract": [] },
+    "path":          "pub/images",
+    "url":           "https://cdn.example.com/pub/images/",
+    "tmbUrl":        "/FileManager/GetImageThumbnail?target=",
+    "separator":     "/",
+    "disabled":      [],
+    "archivers":     { "create": [], "extract": [], "createExt": {} },
     "copyOverwrite": 1,
     "uploadMaxSize": 134217728
   }
@@ -106,9 +106,12 @@ GET /elfinder/connector?cmd=open&target=l1_cHViL2ltYWdlcw
 
 - Legacy path: `HandleOpenAsync()` in `ElFinderConnectorController`.
 - CQRS path: `OpenCommand` / `OpenCommandHandler`.
-- `options.disabled` is populated from the driver's `DisabledCommands` list (configured via `ElFinderOptions`).
-- `options.url` is the public CDN/blob base URL; used by client to build download links.
-- On `init=1`, `files` includes volume root entries (one per configured volume).
+- `OpenCommand` accepts: `target`, `init`, `volumeId`, `tree`, `blobPublicUrl`, `tmbUrl`, `rootPath`. These are wired by the controller from the HTTP request and `IEditorSettings`.
+- `options.url` is built from `blobPublicUrl + "/" + rootPath + "/"`; used by the client for download links.
+- `options.tmbUrl` points to `/FileManager/GetImageThumbnail?target=`; the client appends the file hash to form the thumbnail URL.
+- On `init=1`, response must include `api: "2.1049"`, `netDrivers: []`, and the `options` block or the client stalls on init.
+- `cwd` is also included in the `files` array (the protocol requires this).
+- The root directory object must carry `isroot: 1` and `volumeid`; `phash` must be absent on root.
 
 ---
 

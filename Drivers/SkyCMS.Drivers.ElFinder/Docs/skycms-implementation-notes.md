@@ -35,9 +35,27 @@ var json = System.Text.Json.JsonSerializer.Serialize(response);
 return Content(json, "application/json");
 ```
 
-This is already applied to `HandleParentsViaCqrsAsync()`. Apply the same pattern to any new CQRS command handler wired into the controller.
+This is already applied to `HandleParentsViaCqrsAsync()` and `HandleUploadViaCqrsAsync()`. Apply the same pattern to any new CQRS command handler wired into the controller.
+
+> **Upload-specific note**: `HandleUploadViaCqrsAsync()` collects `ElFinderObject` items into an anonymous `{ added }` wrapper and serialises that wrapper via `System.Text.Json.JsonSerializer.Serialize()` rather than `Json()`. This is necessary because the wrapper is anonymous — Newtonsoft would see it without `[JsonPropertyName]` and produce PascalCase keys (`Added`, `Hash`, …). The STJ call ensures the `[JsonPropertyName]` attributes on `ElFinderObject` are honoured.
 
 The legacy path is unaffected — legacy handlers return `IActionResult` directly and manage their own serialization.
+
+---
+
+## MIME type resolution
+
+All handlers must use `ElFinderMimeHelper.GetMimeType(fileName)` from `SkyCMS.Drivers.ElFinder.Helpers`. Do **not** add inline `switch` statements — they produce inconsistent or missing types and drift over time.
+
+```csharp
+// Correct
+Mime = entry.IsDirectory ? "directory" : ElFinderMimeHelper.GetMimeType(entry.Name),
+
+// Wrong — do not do this
+Mime = entry.IsDirectory ? "directory" : ext switch { ".jpg" => "image/jpeg", ... }
+```
+
+`ElFinderMimeHelper` delegates to `MimeTypeMap.GetMimeType()` from the `MimeTypes` NuGet package, which covers thousands of extensions. It returns `"application/octet-stream"` for unknown types.
 
 ---
 

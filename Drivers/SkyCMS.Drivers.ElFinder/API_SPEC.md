@@ -37,7 +37,8 @@ Optional fields (important for tree navigation):
 {
     "phash": "l1_cHVi",             // Parent hash (REQUIRED except for root)
     "dirs": 1,                      // Has subdirs (1=yes; elFinder uses for +/- toggle)
-    "volumeid": "l1_",              // Volume ID (root only)
+    "volumeid": "l1_",              // Volume ID (root directory only)
+    "isroot": 1,                    // 1 if this object is a volume root (root only)
     "url": "http://example.com/...", // Public URL (for download/preview)
     "tmb": "/path/to/thumb.jpg"     // Thumbnail URL
 }
@@ -103,8 +104,9 @@ GET/POST /connector
         },
         // More children...
     ],
-    "api": "2.1",               // API version
+    "api": "2.1049",           // API version (2.1049 = elFinder 2.1 with extended features)
     "uplMaxSize": "64M",        // Max upload size
+    "netDrivers": [],           // Network driver list (always [] for local/blob connectors)
     "options": {                // Directory options (see below)
         "path": "pub/target",   // Human-readable path
         "url": "http://blob.../pub/target/",
@@ -117,9 +119,10 @@ GET/POST /connector
 ```
 
 **Key points**:
-- If `init=1`, elFinder uses this to bootstrap the tree.
-- The `files` array must include the root node (for navbar) and all immediate children (for folder contents display).
-- If `target` directory is not the root, `cwd` should have a `phash` pointing to its parent.
+- If `init=1`, elFinder uses this to bootstrap the tree. The response **must** include `api`, `netDrivers`, and `options` or the client will stall on the loading spinner.
+- The `files` array must include the root node (with `volumeid` and `isroot: 1`) and all immediate children.
+- The root node must have `isroot: 1` and `volumeid` set, and must omit `phash`.
+- `dirs` on each entry must reflect whether that directory actually contains subdirectories; an incorrect `dirs: 1` on an empty folder causes elFinder to show a phantom expand toggle.
 
 ---
 
@@ -207,7 +210,12 @@ GET/POST /connector
             "ts": 1234567890,
             // ... standard fields
         }
-    ]
+    ],
+    // hashes is only present when dirs[] batch parameter was used:
+    "hashes": {
+        "newfolder": "l1_cHViL3RhcmdldC9uZXdmb2xkZXI="
+        // maps requested name → assigned hash
+    }
 }
 ```
 

@@ -26,7 +26,9 @@ public class MkdirCommandHandler : IRequestHandler<MkdirCommand, IElFinderRespon
                 return ElFinderErrorResponse.InvalidParams("Target is required");
             }
 
-            if (string.IsNullOrEmpty(request.Name))
+            var hasBatchDirs = request.Dirs is { Count: > 0 };
+
+            if (!hasBatchDirs && string.IsNullOrEmpty(request.Name))
             {
                 return ElFinderErrorResponse.InvalidParams("Name is required");
             }
@@ -43,18 +45,42 @@ public class MkdirCommandHandler : IRequestHandler<MkdirCommand, IElFinderRespon
                 return ElFinderErrorResponse.Access("Access denied");
             }
 
-            // Create folder
-            var newFolderPath = parentPath.TrimEnd('/') + "/" + request.Name;
-            var createdEntry = await _adapter.CreateFolderAsync(newFolderPath, cancellationToken);
-
             var response = new MkdirResponse
             {
-                VolumeId = request.VolumeId
+                VolumeId = request.VolumeId,
             };
 
-            if (createdEntry != null)
+            // Single-directory creation (the standard path)
+            if (!string.IsNullOrEmpty(request.Name))
             {
-                response.Added.Add(ConvertToElFinderObject(createdEntry, newFolderPath));
+                var newFolderPath = parentPath.TrimEnd('/') + "/" + request.Name;
+                var createdEntry = await _adapter.CreateFolderAsync(newFolderPath, cancellationToken);
+                if (createdEntry != null)
+                {
+                    response.Added.Add(ConvertToElFinderObject(createdEntry, newFolderPath));
+                }
+            }
+
+            // Batch directory creation via dirs[] (elFinder 2.1 protocol extension)
+            if (hasBatchDirs)
+            {
+                response.Hashes = new Dictionary<string, string>();
+                foreach (var dirName in request.Dirs!)
+                {
+                    if (string.IsNullOrWhiteSpace(dirName))
+                    {
+                        continue;
+                    }
+
+                    var batchPath = parentPath.TrimEnd('/') + "/" + dirName;
+                    var batchEntry = await _adapter.CreateFolderAsync(batchPath, cancellationToken);
+                    if (batchEntry != null)
+                    {
+                        var obj = ConvertToElFinderObject(batchEntry, batchPath);
+                        response.Added.Add(obj);
+                        response.Hashes[dirName] = obj.Hash;
+                    }
+                }
             }
 
             return response;
@@ -84,8 +110,6 @@ public class MkdirCommandHandler : IRequestHandler<MkdirCommand, IElFinderRespon
             Write = 1,
             Locked = 0,
             Dirs = 1,
-            Tmb = null,
-            Url = null
         };
     }
 }

@@ -1,6 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
+using SkyCMS.Drivers.ElFinder.Helpers;
 using SkyCMS.Drivers.ElFinder.Responses;
 
 namespace SkyCMS.Drivers.ElFinder.Handlers;
@@ -23,8 +30,8 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
         {
             var response = new OpenResponse();
 
-            // Determine target path
-            string targetPath = "/";
+            // Determine target path — default to volume root on init or empty target.
+            string targetPath = NormalizeRootPath(request.RootPath);
             if (!string.IsNullOrEmpty(request.Target))
             {
                 var decodedPath = _adapter.DecodePath(request.Target);
@@ -32,6 +39,7 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
                 {
                     return ElFinderErrorResponse.InvalidParams("Invalid target hash");
                 }
+
                 targetPath = decodedPath;
             }
 
@@ -48,19 +56,57 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
                 return ElFinderErrorResponse.Open("Cannot open directory");
             }
 
-            response.Cwd = ConvertToElFinderObject(cwdEntry, targetPath);
-
-            // Get directory contents
+            // Get directory contents — fetched once, reused for cwd.Dirs computation.
             var entries = await _adapter.GetEntriesAsync(targetPath, cancellationToken);
+
+            // Build cwd object.
+            bool isRoot = IsVolumeRoot(targetPath, request.RootPath);
+            response.Cwd = BuildElFinderObject(cwdEntry, targetPath, request.VolumeId, isRoot);
+
+            // Set cwd.Dirs based on whether any children are directories (no extra round-trip).
+            response.Cwd.Dirs = entries.Any(e => e.IsDirectory) ? 1 : 0;
+
+            // The protocol requires cwd to appear in the files list as well.
+            response.Files.Add(response.Cwd);
+
+            // Add child entries.
             foreach (var entry in entries)
             {
                 var entryPath = targetPath.TrimEnd('/') + "/" + entry.Name;
-                response.Files.Add(ConvertToElFinderObject(entry, entryPath));
+                response.Files.Add(BuildElFinderObject(entry, entryPath, request.VolumeId, false));
             }
 
-            response.Api = "2.1";
+            // When tree=1 (panel navigation), include ancestor directories so the tree
+            // panel can expand to the correct node without extra round-trips.
+            if (request.Tree)
+            {
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    targetPath.TrimEnd('/'),
+                };
+
+                var ancestors = await _adapter.GetAncestorsAsync(targetPath, cancellationToken);
+                foreach (var ancestor in ancestors)
+                {
+                    var ancestorPath = ancestor.Path?.TrimEnd('/') ?? string.Empty;
+                    if (!string.IsNullOrEmpty(ancestorPath) && seen.Add(ancestorPath))
+                    {
+                        bool ancestorIsRoot = IsVolumeRoot(ancestorPath, request.RootPath);
+                        // Insert ancestors before the children so the tree renders top-down.
+                        response.Files.Insert(1, BuildElFinderObject(ancestor, ancestorPath, request.VolumeId, ancestorIsRoot));
+                    }
+                }
+            }
+
             response.UplMaxSize = "2G";
             response.VolumeId = request.VolumeId;
+
+            // Init-specific fields required by the elFinder client bootstrap.
+            if (request.Init)
+            {
+                response.Options = BuildOptions(targetPath, request.BlobPublicUrl, request.TmbUrl);
+                response.NetDrivers = new List<object>();
+            }
 
             return response;
         }
@@ -70,42 +116,70 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
         }
     }
 
-    private ElFinderObject ConvertToElFinderObject(Cosmos.BlobService.FileManagerEntry entry, string path)
+    // ─── Helpers ────────────────────────────────────────────────────────────────
+
+    private ElFinderObject BuildElFinderObject(
+        Cosmos.BlobService.FileManagerEntry entry,
+        string path,
+        string volumeId,
+        bool isRoot)
     {
         var hash = _adapter.EncodePath(path);
-        var parentPath = path.TrimEnd('/');
-        var lastSlash = parentPath.LastIndexOf('/');
-        var phash = lastSlash >= 0 ? _adapter.EncodePath(parentPath.Substring(0, lastSlash + 1)) : _adapter.EncodePath("/");
+        var normalizedPath = path.TrimEnd('/');
+        var lastSlash = normalizedPath.LastIndexOf('/');
+        var phash = lastSlash >= 0
+            ? _adapter.EncodePath(normalizedPath.Substring(0, lastSlash + 1))
+            : _adapter.EncodePath("/");
 
-        return new ElFinderObject
+        var obj = new ElFinderObject
         {
             Hash = hash,
-            PHash = phash,
+            PHash = isRoot ? null : phash,
             Name = entry.Name,
             Size = entry.Size,
-            Mime = entry.IsDirectory ? "directory" : GetMimeType(entry.Name),
+            Mime = entry.IsDirectory ? "directory" : ElFinderMimeHelper.GetMimeType(entry.Name),
             Ts = new DateTimeOffset(entry.Modified).ToUnixTimeSeconds(),
             Read = 1,
             Write = 1,
             Locked = 0,
             Dirs = entry.IsDirectory ? 1 : 0,
-            Tmb = null,
-            Url = null
+        };
+
+        if (isRoot)
+        {
+            obj.IsRoot = 1;
+            obj.VolumeId = volumeId;
+        }
+
+        return obj;
+    }
+
+    private static ElFinderOptions BuildOptions(string targetPath, string blobPublicUrl, string tmbUrl)
+    {
+        var blobBase = (blobPublicUrl ?? string.Empty).TrimEnd('/');
+        var humanPath = targetPath.TrimStart('/').TrimEnd('/');
+        var volumeUrl = string.IsNullOrEmpty(blobBase)
+            ? "/" + humanPath + "/"
+            : blobBase + "/" + humanPath + "/";
+
+        return new ElFinderOptions
+        {
+            Url = volumeUrl,
+            TmbUrl = tmbUrl ?? "/FileManager/GetImageThumbnail?target=",
+            Path = string.IsNullOrEmpty(humanPath) ? "Media" : humanPath,
         };
     }
 
-    private static string GetMimeType(string fileName)
+    private static bool IsVolumeRoot(string targetPath, string rootPath)
     {
-        var ext = Path.GetExtension(fileName).ToLowerInvariant();
-        return ext switch
-        {
-            ".txt" => "text/plain",
-            ".pdf" => "application/pdf",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".zip" => "application/zip",
-            _ => "application/octet-stream"
-        };
+        var root = NormalizeRootPath(rootPath);
+        return string.Equals(
+            targetPath.TrimEnd('/'),
+            root.TrimEnd('/'),
+            StringComparison.OrdinalIgnoreCase);
     }
+
+    private static string NormalizeRootPath(string rootPath) =>
+        string.IsNullOrEmpty(rootPath) ? "/" : rootPath;
 }
+

@@ -56,7 +56,7 @@ namespace Sky.Tests.ElFinder.Contracts
         }
 
         [TestMethod]
-        [Description("'api' must equal '2.1' — the protocol version the client expects.")]
+        [Description("'api' must be '2.1049' — the protocol version the client expects.")]
         public async Task Open_Api_IsVersion21()
         {
             var command = new OpenCommand(target: ImagesHash);
@@ -64,8 +64,8 @@ namespace Sky.Tests.ElFinder.Contracts
             using var doc = SerializeResponse(response);
 
             var api = AssertStringProperty(doc.RootElement, "api");
-            Assert.AreEqual("2.1", api,
-                $"Contract violation: 'api' must be '2.1' but was '{api}'. " +
+            Assert.AreEqual("2.1049", api,
+                $"Contract violation: 'api' must be '2.1049' but was '{api}'. " +
                 $"The elFinder client uses this to negotiate protocol features.");
         }
 

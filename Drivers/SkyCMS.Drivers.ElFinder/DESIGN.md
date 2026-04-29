@@ -2,8 +2,8 @@
 
 **Document Purpose**: Capture architecture, design decisions, and implementation approach for the elFinder driver.
 
-**Status**: Phase 2 - To Be Completed  
-**Last Updated**: [To Be Updated]
+**Status**: Implementation Complete  
+**Last Updated**: Phase 5 (elFinder 2.1 protocol compliance)
 
 ---
 
@@ -72,21 +72,24 @@
 Each elFinder command maps to a CQRS command:
 
 ```csharp
-// SkyCMS.Drivers.ElFinder/Commands/Open/ElFinderOpenCommand.cs
-public class ElFinderOpenCommand : IRequest<ElFinderOpenResponse>
+// SkyCMS.Drivers.ElFinder/Commands/OpenCommand.cs
+public class OpenCommand : IRequest<OpenResponse>
 {
-    public string Target { get; set; }
-    public bool IsInit { get; set; }
+    public string? Target { get; }
+    public bool Init { get; }
+    public bool Tree { get; }
+    public string? BlobPublicUrl { get; }
+    public string? TmbUrl { get; }
+    public string? RootPath { get; }
 }
 
-// SkyCMS.Drivers.ElFinder/Commands/Open/ElFinderOpenCommandHandler.cs
-public class ElFinderOpenCommandHandler 
-    : IRequestHandler<ElFinderOpenCommand, ElFinderOpenResponse>
+// SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs
+public class OpenCommandHandler : IRequestHandler<OpenCommand, OpenResponse>
 {
-    private readonly IElFinderStorageAdapter storageAdapter;
+    private readonly IElFinderStorageAdapter _adapter;
 
-    public async Task<ElFinderOpenResponse> Handle(
-        ElFinderOpenCommand request,
+    public async Task<OpenResponse> Handle(
+        OpenCommand request,
         CancellationToken cancellationToken)
     {
         // Implementation
@@ -101,21 +104,27 @@ public class ElFinderOpenCommandHandler
 Strongly-typed classes with `[JsonPropertyName]` attributes:
 
 ```csharp
-public class ElFinderOpenResponse
+public class OpenResponse
 {
     [JsonPropertyName("cwd")]
-    public ElFinderFileObject CurrentWorkingDirectory { get; set; }
+    public ElFinderObject? Cwd { get; set; }
 
     [JsonPropertyName("files")]
-    public List<object> Files { get; set; }
+    public List<ElFinderObject> Files { get; set; } = new();
 
     [JsonPropertyName("api")]
-    public string ApiVersion { get; set; } = "2.1";
+    public string Api { get; set; } = "2.1049";
+
+    [JsonPropertyName("options")]
+    public ElFinderOptions? Options { get; set; }
+
+    [JsonPropertyName("netDrivers")]
+    public List<object>? NetDrivers { get; set; }
 
     // ... additional fields
 }
 
-public class ElFinderFileObject
+public class ElFinderObject
 {
     [JsonPropertyName("hash")]
     public string Hash { get; set; }
