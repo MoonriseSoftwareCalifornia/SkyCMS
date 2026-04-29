@@ -1058,18 +1058,25 @@ namespace Sky.Cms.Controllers
                 allFiles = new List<object>(fileObjects);
             }
 
+            if (cwdObject is Dictionary<string, object> cwdDict)
+            {
+                cwdDict["root"] = EncodeHash(RootPath);
+            }
+
             var response = new Dictionary<string, object>
             {
                 ["cwd"] = cwdObject,
                 ["files"] = allFiles,
-                ["api"] = "2.1",
-                ["uplMaxSize"] = "64M",
                 ["options"] = BuildOptions(path),
             };
 
             if (isInit)
             {
-                // Keep init behavior explicit; tree data is already included above.
+                // api, uplMaxSize, and init are protocol fields that must only appear
+                // on the init response. Sending api on a navigation response triggers
+                // a full client re-initialization which clears the folder tree.
+                response["api"] = "2.1";
+                response["uplMaxSize"] = "64M";
                 response["init"] = 1;
             }
 
@@ -1989,14 +1996,25 @@ namespace Sky.Cms.Controllers
                 obj["dirs"] = 1;
             }
 
-            if (!isRoot && parentHash != null)
+            if (isRoot)
+            {
+                // Root volume node: isroot and an empty phash are required by the
+                // elFinder protocol so the JS client anchors the node correctly.
+                obj["isroot"] = 1;
+                obj["phash"] = string.Empty;
+            }
+            else if (parentHash != null)
             {
                 obj["phash"] = parentHash;
             }
 
-            if (isRoot)
+            if (entry.IsDirectory)
             {
                 obj["volumeid"] = VolumeId;
+            }
+
+            if (isRoot)
+            {
                 obj["dirs"] = 1;
             }
 
@@ -2033,9 +2051,13 @@ namespace Sky.Cms.Controllers
                 ["dirs"] = 1,
             };
 
+            obj["volumeid"] = VolumeId;
             if (isRoot)
             {
-                obj["volumeid"] = VolumeId;
+                // Root volume node: isroot and an empty phash are required by the
+                // elFinder protocol so the JS client anchors the node correctly.
+                obj["isroot"] = 1;
+                obj["phash"] = string.Empty;
             }
             else if (parentHash != null)
             {
@@ -2077,7 +2099,7 @@ namespace Sky.Cms.Controllers
                 ["uploadOverwrite"] = 1,
                 ["archivers"] = new { create = Array.Empty<string>(), extract = Array.Empty<string>() },
                 ["disabled"] = new[] { "chmod", "zipdl", "archive", "extract" },
-                ["uploadMaxConnections"] = 3,
+                ["uploadMaxConn"] = 3,
             };
         }
 

@@ -153,7 +153,7 @@ namespace Sky.Tests.Controllers
             var json = AsJsonObject(result);
             Assert.IsNotNull(json["cwd"]);
             Assert.IsNotNull(json["files"]);
-            Assert.AreEqual("2.1", json["api"]?.ToString());
+            Assert.IsNull(json["api"], "api must not be present on a non-init open response");
             Assert.IsTrue((json["files"] as JArray)?.Count >= 1);
         }
 
@@ -927,6 +927,266 @@ namespace Sky.Tests.Controllers
                 "Target's child2 should be in tree");
         }
 
+        // ─── JSON SHAPE / PROTOCOL COMPLIANCE TESTS ──────────────────────────────
+        //
+        // These tests assert that our responses match the elFinder protocol shape
+        // expected by the JS client. They mirror what the studio-42.github.io reference
+        // connector produces, and directly correspond to the fix for the "tree goes blank
+        // on child folder click" bug caused by missing volumeid on directory objects.
+
+        [TestMethod]
+        public async Task Connector_Open_Init_CwdHasVolumeId()
+        {
+            // The root cwd (init=1) must carry volumeid so elFinder treats it as a volume root.
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash("/pub"),
+                ["init"] = "1",
+                ["tree"] = "1",
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+
+            Assert.IsNotNull(json["cwd"]?["volumeid"],
+                "cwd.volumeid must be present in the init open response");
+            Assert.AreEqual(VolumeId, json["cwd"]?["volumeid"]?.ToString());
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_ChildFolder_CwdHasVolumeId()
+        {
+            // Navigating into a child folder: the cwd object must carry volumeid.
+            // Without this the JS tree plugin cannot slot the node into the volume.
+            var child = testRoot + "/shape-child";
+            await storage.CreateFolder(child);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash(child),
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+
+            Assert.IsNotNull(json["cwd"]?["volumeid"],
+                "cwd.volumeid must be present even when opening a non-root child folder");
+            Assert.AreEqual(VolumeId, json["cwd"]?["volumeid"]?.ToString());
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_Init_AllDirectoryFilesEntriesHaveVolumeId()
+        {
+            // Every directory object inside files[] must carry volumeid (not just the root).
+            // The reference connector returns volumeid on every dir regardless of depth.
+            var sub = testRoot + "/shape-sub";
+            await storage.CreateFolder(sub);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash("/pub"),
+                ["init"] = "1",
+                ["tree"] = "1",
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+
+            var dirs = files.Where(f => f["mime"]?.ToString() == "directory").ToList();
+            Assert.IsTrue(dirs.Count > 0, "There must be at least one directory in files[]");
+
+            foreach (var dir in dirs)
+            {
+                Assert.IsNotNull(
+                    dir["volumeid"],
+                    $"Directory '{dir["name"]}' (hash={dir["hash"]}) is missing volumeid — elFinder cannot anchor it in the tree");
+                Assert.AreEqual(VolumeId, dir["volumeid"]?.ToString(),
+                    $"Directory '{dir["name"]}' has wrong volumeid value");
+            }
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_Navigation_AllDirectoryFilesEntriesHaveVolumeId()
+        {
+            // Navigation open (no init/tree): all returned directory objects must still have volumeid.
+            var parent = testRoot + "/shape-nav";
+            var grandchild = parent + "/sub";
+            await storage.CreateFolder(parent);
+            await storage.CreateFolder(grandchild);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash(parent),
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+
+            var dirs = files.Where(f => f["mime"]?.ToString() == "directory").ToList();
+            foreach (var dir in dirs)
+            {
+                Assert.IsNotNull(
+                    dir["volumeid"],
+                    $"Directory '{dir["name"]}' in navigation files[] is missing volumeid");
+            }
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_NonDirectoryFilesDoNotHaveVolumeId()
+        {
+            // Regular files (non-directories) must NOT carry volumeid — protocol compliance.
+            var folder = testRoot + "/shape-files";
+            await storage.CreateFolder(folder);
+            await CreateTestFile(folder + "/doc.txt", "content");
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash(folder),
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+
+            var nonDirs = files.Where(f => f["mime"]?.ToString() != "directory").ToList();
+            foreach (var file in nonDirs)
+            {
+                Assert.IsNull(
+                    file["volumeid"],
+                    $"Non-directory file '{file["name"]}' must NOT have a volumeid property");
+            }
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_Options_HasUploadMaxConnNotUploadMaxConnections()
+        {
+            // The options key must be uploadMaxConn (matching the elFinder protocol).
+            // uploadMaxConnections is not a valid elFinder option key.
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash(testRoot),
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var options = json["options"] as JObject;
+            Assert.IsNotNull(options);
+
+            Assert.IsNotNull(options["uploadMaxConn"],
+                "options.uploadMaxConn must be present (elFinder protocol key)");
+            Assert.IsNull(options["uploadMaxConnections"],
+                "options.uploadMaxConnections must NOT be present — wrong key, elFinder ignores it");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_Init_HasApiAndUplMaxSize()
+        {
+            // api and uplMaxSize must be present on the init response.
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash("/pub"),
+                ["init"] = "1",
+                ["tree"] = "1",
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+
+            Assert.AreEqual("2.1", json["api"]?.ToString(),
+                "api must be present on the init response");
+            Assert.IsNotNull(json["uplMaxSize"],
+                "uplMaxSize must be present on the init response");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_Navigation_DoesNotHaveApiOrUplMaxSize()
+        {
+            // api and uplMaxSize must NOT appear on a navigation (non-init) open.
+            // Sending api on navigation triggers elFinder client re-initialization
+            // which clears the folder tree.
+            var folder = testRoot + "/shape-noapi";
+            await storage.CreateFolder(folder);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash(folder),
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+
+            Assert.IsNull(json["api"],
+                "api must NOT appear on a non-init open — it would trigger client re-init and clear the tree");
+            Assert.IsNull(json["uplMaxSize"],
+                "uplMaxSize must NOT appear on a non-init open");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_Init_RootFileEntryHasIsrootAndEmptyPhash()
+        {
+            // The root volume node in files[] must have isroot:1 and phash:"" (empty string,
+            // not absent). This lets elFinder anchor the node at the volume root.
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash("/pub"),
+                ["init"] = "1",
+                ["tree"] = "1",
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+            var files = (JArray)json["files"];
+            Assert.IsNotNull(files);
+
+            var rootNode = files.FirstOrDefault(f =>
+                f["hash"]?.ToString() == EncodeHash("/pub"));
+            Assert.IsNotNull(rootNode, "Root node (hash=l1_cHVi) must be present in files[]");
+            Assert.AreEqual(1, rootNode["isroot"]?.ToObject<int>(),
+                "Root node must have isroot:1");
+            Assert.IsNotNull(rootNode["phash"],
+                "Root node must have phash present (empty string, not absent)");
+            Assert.AreEqual(string.Empty, rootNode["phash"]?.ToString(),
+                "Root node phash must be empty string per elFinder protocol");
+        }
+
+        [TestMethod]
+        public async Task Connector_Open_CwdHasRootField()
+        {
+            // Every open response's cwd must carry a root field pointing to the volume
+            // root hash. This lets the JS client resolve the volume the folder belongs to.
+            var folder = testRoot + "/shape-root-field";
+            await storage.CreateFolder(folder);
+
+            SetGetRequest(new Dictionary<string, string>
+            {
+                ["cmd"] = "open",
+                ["target"] = EncodeHash(folder),
+            });
+
+            var result = await controller.Connector();
+            var json = AsJsonObject(result);
+
+            var rootHash = EncodeHash("/pub");
+            Assert.IsNotNull(json["cwd"]?["root"],
+                "cwd.root must be present");
+            Assert.AreEqual(rootHash, json["cwd"]?["root"]?.ToString(),
+                "cwd.root must equal the volume root hash");
+        }
+
         private static string EncodeHash(string path)
         {
             path = NormalizePath(path);
@@ -1052,7 +1312,7 @@ namespace Sky.Tests.Controllers
 
             Assert.IsNotNull(json["cwd"]);
             Assert.IsNotNull(json["files"]);
-            Assert.AreEqual("2.1", json["api"]?.ToString());
+            Assert.IsNull(json["api"], "api must not be present on a non-init open response");
         }
 
         [TestMethod]
