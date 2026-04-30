@@ -106,26 +106,119 @@
             background: #223148;
         }
 
-    .ccms-elfinder-wrap.ccms-drop-active #ccmsElFinder {
-        box-shadow: inset 0 0 0 2px rgba(122, 162, 247, 0.45);
-    }
+        #ccmsPondDismissBtn {
+            display: none;
+        }
 
-    .ccms-upload-bar .filepond--root {
-        margin: 0;
+    /* ── FilePond expanding panel ─────────────────────────────── */
+
+    /* Wrapper that sits in normal flow inside .ccms-upload-bar   */
+    #ccmsPondWrap {
+        position: relative;
         flex: 1;
+        min-width: 0;
     }
 
-    .ccms-upload-bar .filepond--panel-root {
-        background: #10151d;
+    /* When active, the FilePond root lifts out of flow and       */
+    /* expands downward over the elFinder panel.                  */
+    .ccms-upload-bar.ccms-pond-active {
+        position: relative; /* anchor for absolute child */
+    }
+
+    .ccms-upload-bar.ccms-pond-active #ccmsPondWrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 200;
+        background: linear-gradient(180deg, #111825 0%, #0d1219 100%);
         border: 1px solid var(--ef-border);
+        border-top: 0;
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+        max-height: 72vh;
+        overflow-y: auto;
+        padding: 8px 0;
+        animation: ccmsPondSlideIn 200ms ease forwards;
     }
 
-    .ccms-upload-bar .filepond--drop-label {
+    .ccms-upload-bar.ccms-pond-active #ccmsPondDismissBtn {
+        display: inline-block;
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        z-index: 230;
+    }
+
+    .ccms-upload-bar.ccms-pond-closing #ccmsPondWrap {
+        animation: ccmsPondSlideOut 180ms ease forwards;
+    }
+
+    @@keyframes ccmsPondSlideIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @@keyframes ccmsPondSlideOut {
+        from { opacity: 1; transform: translateY(0); }
+        to   { opacity: 0; transform: translateY(-6px); }
+    }
+
+    /* ── FilePond theme scoped to the panel ──────────────────── */
+    #ccmsPondWrap .filepond--root {
+        margin: 0;
+        font-family: inherit;
+    }
+
+    #ccmsPondWrap .filepond--panel-root {
+        background: transparent;
+        border: none;
+    }
+
+    #ccmsPondWrap .filepond--drop-label {
+        color: var(--ef-muted);
+        font-size: 0.875rem;
+    }
+
+    #ccmsPondWrap .filepond--credits {
+        display: none;
+    }
+
+    #ccmsPondWrap .filepond--item-panel {
+        background: #1a2231;
+        border-radius: 6px;
+    }
+
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-complete'] .filepond--item-panel {
+        background: #1f4b34;
+    }
+
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-error'] .filepond--item-panel,
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='load-error'] .filepond--item-panel,
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-revert-error'] .filepond--item-panel {
+        background: #5c2830;
+    }
+
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-complete'] .filepond--file-status-main {
+        color: #a9f5bd;
+    }
+
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-error'] .filepond--file-status-main,
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='load-error'] .filepond--file-status-main,
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-revert-error'] .filepond--file-status-main {
+        color: #ffd4d9;
+    }
+
+    #ccmsPondWrap .filepond--file {
         color: var(--ef-text);
     }
 
-    .ccms-upload-bar .filepond--credits {
-        display: none;
+    #ccmsPondWrap .filepond--file-action-button {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    #ccmsPondWrap .filepond--progress-indicator {
+        color: var(--ef-accent);
     }
 
     /* Ensure elFinder operation progress remains visible with custom theming. */
@@ -144,101 +237,6 @@
     .ccms-elfinder-wrap .elfinder-notify-progress {
         background-color: var(--ef-accent) !important;
     }
-
-    .ccms-upload-modal {
-        position: fixed;
-        inset: 0;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        background: rgba(6, 10, 16, 0.72);
-        z-index: 1050;
-    }
-
-    .ccms-upload-modal.ccms-open {
-        display: flex;
-    }
-
-    .ccms-upload-modal-panel {
-        width: min(560px, calc(100vw - 32px));
-        max-height: 72vh;
-        overflow: auto;
-        border: 1px solid var(--ef-border);
-        border-radius: 10px;
-        background: linear-gradient(180deg, #121824 0%, #0d131d 100%);
-        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
-        padding: 14px;
-        color: var(--ef-text);
-    }
-
-    .ccms-upload-modal-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 10px;
-    }
-
-    .ccms-upload-modal-title {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 700;
-    }
-
-    .ccms-upload-modal-close {
-        border: 1px solid var(--ef-border);
-        background: #1b2737;
-        color: var(--ef-text);
-        border-radius: 6px;
-        padding: 4px 8px;
-        line-height: 1.2;
-    }
-
-    .ccms-upload-progress-list {
-        display: grid;
-        gap: 8px;
-    }
-
-    .ccms-upload-progress-item {
-        border: 1px solid #2a3342;
-        border-radius: 8px;
-        background: #111826;
-        padding: 8px 10px;
-    }
-
-    .ccms-upload-progress-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 6px;
-        font-size: 0.88rem;
-    }
-
-    .ccms-upload-progress-name {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .ccms-upload-progress-state {
-        color: var(--ef-muted);
-        white-space: nowrap;
-    }
-
-    .ccms-upload-progress-track {
-        height: 6px;
-        border-radius: 999px;
-        background: #1f2a3b;
-        overflow: hidden;
-    }
-
-    .ccms-upload-progress-fill {
-        height: 100%;
-        width: 0;
-        border-radius: inherit;
-        background: linear-gradient(90deg, var(--ef-accent-strong), var(--ef-accent));
-        transition: width 120ms linear;
-    }
 </style>
 
 <div class="ccms-elfinder-wrap" id="ccmsElFinderWrap">
@@ -247,26 +245,21 @@
         <div class="ccms-upload-bar">
             <p class="ccms-upload-status" id="ccmsUploadStatus">Ready to upload</p>
             <button type="button" id="ccmsUploadBrowseBtn" class="ccms-upload-btn">Upload Files</button>
-            <input type="file"
-                   id="ccmsFilepond"
-                   name="files"
-                   class="filepond"
-                   data-file-metadata-path="@target"
-                   multiple>
+            <button type="button" id="ccmsPondDismissBtn" class="ccms-upload-btn" aria-label="Close upload panel">Close</button>
+            <div id="ccmsPondWrap">
+                <input type="file"
+                       id="ccmsFilepond"
+                       name="files"
+                       class="filepond"
+                       data-file-metadata-path="@target"
+                       multiple>
+            </div>
         </div>
     }
     <div id="ccmsElFinder"></div>
 </div>
 
-<div class="ccms-upload-modal" id="ccmsUploadModal" aria-hidden="true">
-    <div class="ccms-upload-modal-panel" role="dialog" aria-modal="true" aria-labelledby="ccmsUploadModalTitle">
-        <div class="ccms-upload-modal-head">
-            <h2 class="ccms-upload-modal-title" id="ccmsUploadModalTitle">Upload Progress</h2>
-            <button type="button" id="ccmsUploadModalClose" class="ccms-upload-modal-close">Close</button>
-        </div>
-        <div class="ccms-upload-progress-list" id="ccmsUploadProgressList"></div>
-    </div>
-</div>
+
 
 @section Scripts {
     <script src="~/lib/elfinder/js/elfinder.min.js"
@@ -338,111 +331,32 @@
                     updateUploadStatus('Ready to upload to ' + currentUploadPathDisplay);
                 }
 
-                function getFileDedupKey(file) {
-                    if (!file) {
-                        return null;
-                    }
-
-                    var modified = typeof file.lastModified === 'number' ? file.lastModified : 0;
-                    return [file.name || '', file.size || 0, modified].join('::');
-                }
-
-                function openUploadModal() {
-                    if (!uploadModal) {
+                function expandPond() {
+                    var bar = document.querySelector('.ccms-upload-bar');
+                    if (!bar) {
                         return;
                     }
 
-                    uploadModal.classList.add('ccms-open');
-                    uploadModal.setAttribute('aria-hidden', 'false');
+                    if (autoCollapseHandle) {
+                        clearTimeout(autoCollapseHandle);
+                        autoCollapseHandle = null;
+                    }
+
+                    bar.classList.remove('ccms-pond-closing');
+                    bar.classList.add('ccms-pond-active');
                 }
 
-                function closeUploadModal() {
-                    if (!uploadModal) {
+                function collapsePond() {
+                    var bar = document.querySelector('.ccms-upload-bar');
+                    if (!bar || !bar.classList.contains('ccms-pond-active')) {
                         return;
                     }
 
-                    uploadModal.classList.remove('ccms-open');
-                    uploadModal.setAttribute('aria-hidden', 'true');
-                }
+                    bar.classList.add('ccms-pond-closing');
 
-                function ensureProgressItem(fileItem) {
-                    if (!uploadProgressList) {
-                        return null;
-                    }
-
-                    var originalFile = fileItem && fileItem.file ? fileItem.file : fileItem;
-                    var key = getFileDedupKey(originalFile);
-                    if (!key) {
-                        return null;
-                    }
-
-                    if (uploadProgressMap[key]) {
-                        return uploadProgressMap[key];
-                    }
-
-                    var root = document.createElement('div');
-                    root.className = 'ccms-upload-progress-item';
-
-                    var row = document.createElement('div');
-                    row.className = 'ccms-upload-progress-row';
-
-                    var nameNode = document.createElement('span');
-                    nameNode.className = 'ccms-upload-progress-name';
-                    nameNode.textContent = (fileItem && fileItem.filename) || (originalFile && originalFile.name) || 'File';
-
-                    var stateNode = document.createElement('span');
-                    stateNode.className = 'ccms-upload-progress-state';
-                    stateNode.textContent = 'Queued';
-
-                    row.appendChild(nameNode);
-                    row.appendChild(stateNode);
-
-                    var track = document.createElement('div');
-                    track.className = 'ccms-upload-progress-track';
-
-                    var fill = document.createElement('div');
-                    fill.className = 'ccms-upload-progress-fill';
-
-                    track.appendChild(fill);
-                    root.appendChild(row);
-                    root.appendChild(track);
-                    uploadProgressList.appendChild(root);
-
-                    uploadProgressMap[key] = {
-                        root: root,
-                        state: stateNode,
-                        fill: fill
-                    };
-
-                    return uploadProgressMap[key];
-                }
-
-                function setProgressState(fileItem, label, widthPercent) {
-                    var item = ensureProgressItem(fileItem);
-                    if (!item) {
-                        return;
-                    }
-
-                    item.state.textContent = label;
-                    if (typeof widthPercent === 'number') {
-                        var safe = Math.max(0, Math.min(100, widthPercent));
-                        item.fill.style.width = safe + '%';
-                    }
-                }
-
-                function hasPendingUploads() {
-                    if (!pond || typeof pond.getFiles !== 'function') {
-                        return false;
-                    }
-
-                    var files = pond.getFiles();
-                    for (var i = 0; i < files.length; i++) {
-                        if (files[i] && files[i].status !== 5 && files[i].status !== 8) {
-                            return true;
-                        }
-                    }
-
-                    return false;
+                    setTimeout(function () {
+                        bar.classList.remove('ccms-pond-active', 'ccms-pond-closing');
+                    }, 190);
                 }
 
                 function refreshElFinderFolder() {
@@ -457,10 +371,10 @@
                 var currentUploadPathDisplay = currentUploadPath;
                 var elFinderInstance = null;
                 var pond = null;
-                var uploadModal = document.getElementById('ccmsUploadModal');
-                var uploadModalClose = document.getElementById('ccmsUploadModalClose');
-                var uploadProgressList = document.getElementById('ccmsUploadProgressList');
-                var uploadProgressMap = Object.create(null);
+                var autoCollapseHandle = null;
+
+                // Tracks serverId → filename so the revert call can reconstruct the DELETE URL.
+                var pondFileMap = new Map();
 
                 // ── File-selection callback (selectOne / imagesOnly) ──────
                 var pickCallback = null;
@@ -493,6 +407,7 @@
                     theme: 'mt-gray',
                     resizable: false,
                     baseUrl: '/lib/elfinder/',
+                    commands: ['*', '!upload'],
                     uiOptions: {
                         toolbar: [
                             ['back', 'forward'],
@@ -598,37 +513,41 @@
                 }
 
                 pond = FilePond.create(inputElement, {
+                    dropOnPage: true,
+                    dropOnElement: false,
                     chunkUploads: true,
                     chunkSize: 5242880,
                     chunkForce: true,
                     credits: false,
                     instantUpload: true,
-                    beforeAddFile: function (item) {
-                        if (!pond || typeof pond.getFiles !== 'function') {
-                            return true;
-                        }
-
-                        var candidate = item && item.file ? item.file : item;
-                        var candidateKey = getFileDedupKey(candidate);
-                        if (!candidateKey) {
-                            return true;
-                        }
-
-                        var existing = pond.getFiles();
-                        for (var i = 0; i < existing.length; i++) {
-                            var existingFile = existing[i] && existing[i].file ? existing[i].file : null;
-                            if (getFileDedupKey(existingFile) === candidateKey) {
-                                return false;
+                    labelIdle: 'Drop files anywhere or <span class="filepond--label-action">Browse</span>',
+                    server: {
+                        process: '@Url.Action("Process", "FileManager")',
+                        patch: '@Url.Action("Process", "FileManager")',
+                        revert: function (uniqueFileId, load, error) {
+                            var filename = pondFileMap.get(uniqueFileId);
+                            if (!filename) {
+                                load();
+                                return;
                             }
+
+                            fetch('@Url.Action("Process", "FileManager")?fileName=' + encodeURIComponent(filename), {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'text/plain' },
+                                body: uniqueFileId
+                            }).then(function (response) {
+                                if (response.ok) {
+                                    pondFileMap.delete(uniqueFileId);
+                                    refreshElFinderFolder();
+                                    load();
+                                } else {
+                                    error('Revert failed: ' + response.status);
+                                }
+                            }).catch(function (err) {
+                                error('Revert error: ' + err);
+                            });
                         }
-
-                        return true;
-                    },
-                    labelIdle: 'Drop files here or <span class="filepond--label-action">Browse</span>'
-                });
-
-                FilePond.setOptions({
-                    server: '@Url.Action("Process", "FileManager")'
+                    }
                 });
 
                 pond.on('addfile', function (error, file) {
@@ -641,45 +560,44 @@
                     file.setMetadata('relativePath', file.relativePath || file.filename);
                     file.setMetadata('fileName', file.filename);
 
-                    openUploadModal();
-                    setProgressState(file, 'Queued', 0);
+                    expandPond();
                     updateUploadStatus('Uploading ' + file.filename + '...');
                 });
 
                 pond.on('processfilestart', function (file) {
-                    openUploadModal();
-                    setProgressState(file, 'Uploading', 0);
                     updateUploadStatus('Uploading ' + file.filename + '...');
-                });
-
-                pond.on('processfileprogress', function (file, progress) {
-                    var percent = Math.round((progress || 0) * 100);
-                    setProgressState(file, 'Uploading ' + percent + '%', percent);
                 });
 
                 pond.on('processfile', function (error, file) {
                     if (error) {
-                        setProgressState(file, 'Failed', 100);
                         updateUploadStatus('Upload failed for ' + file.filename);
+                        if (autoCollapseHandle) {
+                            clearTimeout(autoCollapseHandle);
+                            autoCollapseHandle = null;
+                        }
                         return;
                     }
 
-                    setProgressState(file, 'Completed', 100);
+                    // Record serverId → filename so revert can build the DELETE URL.
+                    if (file.serverId) {
+                        pondFileMap.set(file.serverId, file.filename);
+                    }
+
                     updateUploadStatus('Uploaded ' + file.filename + ' to ' + currentUploadPathDisplay);
                 });
 
                 pond.on('processfiles', function () {
                     refreshElFinderFolder();
+                    updateReadyUploadStatus();
 
-                    if (!hasPendingUploads()) {
-                        setTimeout(function () {
-                            if (!hasPendingUploads()) {
-                                closeUploadModal();
-                            }
-                        }, 900);
+                    if (autoCollapseHandle) {
+                        clearTimeout(autoCollapseHandle);
                     }
 
-                    updateReadyUploadStatus();
+                    autoCollapseHandle = setTimeout(function () {
+                        collapsePond();
+                        autoCollapseHandle = null;
+                    }, 2500);
                 });
 
                 var browseButton = document.getElementById('ccmsUploadBrowseBtn');
@@ -694,116 +612,12 @@
                     });
                 }
 
-                if (uploadModalClose) {
-                    uploadModalClose.addEventListener('click', function () {
-                        closeUploadModal();
+                var dismissButton = document.getElementById('ccmsPondDismissBtn');
+                if (dismissButton) {
+                    dismissButton.addEventListener('click', function () {
+                        collapsePond();
                     });
                 }
-
-                var wrap = document.getElementById('ccmsElFinderWrap');
-                var dropTargets = [wrap, document.getElementById('ccmsElFinder')].filter(Boolean);
-
-                function hasExternalFiles(event) {
-                    if (!event || !event.dataTransfer) {
-                        return false;
-                    }
-
-                    var types = event.dataTransfer.types;
-                    if (!types) {
-                        return false;
-                    }
-
-                    for (var i = 0; i < types.length; i++) {
-                        if (types[i] === 'Files') {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                }
-
-                function setDropHighlight(active) {
-                    if (!wrap) {
-                        return;
-                    }
-
-                    wrap.classList.toggle('ccms-drop-active', !!active);
-                }
-
-                function isEventInsideFilePond(event) {
-                    return !!(event && event.target && event.target.closest && event.target.closest('.filepond--root'));
-                }
-
-                dropTargets.forEach(function (target) {
-                    target.addEventListener('dragenter', function (event) {
-                        if (!hasExternalFiles(event)) {
-                            return;
-                        }
-
-                        if (isEventInsideFilePond(event)) {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        setDropHighlight(true);
-                    });
-
-                    target.addEventListener('dragover', function (event) {
-                        if (!hasExternalFiles(event)) {
-                            return;
-                        }
-
-                        if (isEventInsideFilePond(event)) {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        if (event.dataTransfer) {
-                            event.dataTransfer.dropEffect = 'copy';
-                        }
-
-                        setDropHighlight(true);
-                        updateUploadStatus('Drop files to upload into ' + currentUploadPathDisplay);
-                    });
-
-                    target.addEventListener('dragleave', function (event) {
-                        if (isEventInsideFilePond(event)) {
-                            return;
-                        }
-
-                        setDropHighlight(false);
-                    });
-
-                    target.addEventListener('drop', function (event) {
-                        if (!hasExternalFiles(event)) {
-                            return;
-                        }
-
-                        if (isEventInsideFilePond(event)) {
-                            setDropHighlight(false);
-                            return;
-                        }
-
-                        event.preventDefault();
-                        setDropHighlight(false);
-
-                        if (!pond) {
-                            updateUploadStatus('Upload is unavailable');
-                            return;
-                        }
-
-                        var files = event.dataTransfer && event.dataTransfer.files
-                            ? Array.prototype.slice.call(event.dataTransfer.files)
-                            : [];
-
-                        if (!files.length) {
-                            return;
-                        }
-
-                        updateUploadStatus('Preparing ' + files.length + ' file(s) for upload to ' + currentUploadPathDisplay + '...');
-                        pond.addFiles(files);
-                    });
-                });
             })();
     </script>
 }

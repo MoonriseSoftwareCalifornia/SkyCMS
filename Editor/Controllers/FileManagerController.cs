@@ -651,20 +651,33 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Process a chunned upload.
+        /// Processes a chunked FilePond upload.
+        /// Supports both query-style transfer ids (?patch=...) and
+        /// path-style transfer ids (/FileManager/Process/{transferId}).
         /// </summary>
-        /// <param name="patch">Patch number.</param>
+        /// <param name="patch">Transfer id supplied via query string.</param>
         /// <param name="options">Upload options.</param>
+        /// <param name="patchRoute">Transfer id supplied via path segment.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPatch]
-        public async Task<ActionResult> Process(string patch, string options = "")
+        [HttpPatch("FileManager/Process/{*patchRoute}")]
+        public async Task<ActionResult> Process(string patch = "", string options = "", string patchRoute = "")
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var patchArray = patch.Split('|');
+            var transferId = !string.IsNullOrWhiteSpace(patch) ? patch : patchRoute;
+            if (string.IsNullOrWhiteSpace(transferId))
+            {
+                return BadRequest("Missing transfer id.");
+            }
+
+            var patchArray = transferId.Split('|');
+            if (patchArray.Length < 6)
+            {
+                return BadRequest("Invalid transfer id format.");
+            }
 
             // 0 based index
             var uploadOffset = long.Parse(Request.Headers["Upload-Offset"]);
@@ -744,6 +757,66 @@ namespace Sky.Cms.Controllers
                 await PurgeCdnPath(metaData);
             }
 
+            return Ok();
+        }
+
+        /// <summary>
+        /// Reverts (deletes) an already-uploaded file. Called by FilePond when the user
+        /// clicks the undo button after a completed upload.
+        /// </summary>
+        /// <param name="fileName">The original file name, supplied as a query parameter by the FilePond revert function.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpDelete]
+        [ActionName("Process")]
+        public IActionResult ProcessRevert([FromQuery] string? fileName = null)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return BadRequest("fileName is required.");
+            }
+
+            // FilePond sends the server UID as the request body:
+            // {path}|{relativePath}|{guid}|{mime}|{imageWidth}|{imageHeight}
+            string uid;
+            using (var reader = new System.IO.StreamReader(Request.Body, System.Text.Encoding.UTF8, leaveOpen: true))
+            {
+                uid = reader.ReadToEnd();
+            }
+
+            if (string.IsNullOrWhiteSpace(uid))
+            {
+                return BadRequest("Missing file id in request body.");
+            }
+
+            var parts = uid.Split('|');
+            if (parts.Length < 2)
+            {
+                return BadRequest("Invalid file id format.");
+            }
+
+            // Reconstruct blob path the same way the PATCH action does.
+            var basePath = UrlEncode(parts[0].TrimEnd('/'));
+            var subDir = parts.Length > 1 ? parts[1].TrimStart('/') : string.Empty;
+
+            string blobPath;
+            if (!string.IsNullOrEmpty(subDir))
+            {
+                var dpath = Path.GetDirectoryName(subDir)?.Replace('\\', '/') ?? string.Empty;
+                if (!string.IsNullOrEmpty(dpath))
+                {
+                    blobPath = $"{basePath}/{UrlEncode(dpath)}/{UrlEncode(fileName)}";
+                }
+                else
+                {
+                    blobPath = $"{basePath}/{UrlEncode(fileName)}";
+                }
+            }
+            else
+            {
+                blobPath = $"{basePath}/{UrlEncode(fileName)}";
+            }
+
+            storageContext.DeleteFile(blobPath);
             return Ok();
         }
 
