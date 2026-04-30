@@ -17,7 +17,7 @@ namespace Cosmos.BlobService.Drivers
     using System.Threading;
     using System.Threading.Tasks;
     using Azure;
-    using Azure.Identity;
+    using Azure.Core;
     using Azure.Storage.Blobs;
     using Azure.Storage.Blobs.Models;
     using Azure.Storage.Blobs.Specialized;
@@ -37,22 +37,22 @@ namespace Cosmos.BlobService.Drivers
         /// Initializes a new instance of the <see cref="AzureStorage"/> class.
         /// </summary>
         /// <param name="connectionString">Connection string.</param>
-        /// <param name="defaultAzureCredential">Default azure credential (optional for Azurite).</param>
+        /// <param name="tokenCredential">Default azure credential (optional for Azurite).</param>
         /// <param name="containerName">Name of container (default is $web).</param>
-        public AzureStorage(string connectionString, DefaultAzureCredential defaultAzureCredential = null, string containerName = "$web")
+        public AzureStorage(string connectionString, TokenCredential tokenCredential = null, string containerName = "$web")
         {
-            this.Initialize(containerName, connectionString, defaultAzureCredential);
+            this.Initialize(containerName, connectionString, tokenCredential);
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureStorage"/> class.
         /// </summary>
         /// <param name="config">Storage configuration as a <see cref="AzureStorageConfig"/>.</param>
-        /// <param name="defaultAzureCredential">Default azure credential.</param>
+        /// <param name="tokenCredential">Default azure credential.</param>
         /// <param name="containerName">Name of container (default is $web).</param>
-        public AzureStorage(AzureStorageConfig config, DefaultAzureCredential defaultAzureCredential, string containerName = "$web")
+        public AzureStorage(AzureStorageConfig config, TokenCredential tokenCredential, string containerName = "$web")
         {
-            this.Initialize(containerName, config.AzureBlobStorageConnectionString, defaultAzureCredential);
+            this.Initialize(containerName, config.AzureBlobStorageConnectionString, tokenCredential);
         }
 
         /// <summary>
@@ -984,8 +984,8 @@ namespace Cosmos.BlobService.Drivers
         /// </summary>
         /// <param name="containerName">Container name.</param>
         /// <param name="connectionString">Connection string.</param>
-        /// <param name="defaultAzureCredential">Azure default credential.</param>
-        private void Initialize(string containerName, string connectionString, DefaultAzureCredential defaultAzureCredential)
+        /// <param name="tokenCredential">Azure default credential.</param>
+        private void Initialize(string containerName, string connectionString, TokenCredential tokenCredential)
         {
             this.containerName = containerName;
             if (connectionString.Contains("AccountKey=AccessToken", StringComparison.CurrentCultureIgnoreCase))
@@ -993,7 +993,7 @@ namespace Cosmos.BlobService.Drivers
                 var conpartsDict = connectionString.Split(';').Where(w => !string.IsNullOrEmpty(w)).Select(part => part.Split('=')).ToDictionary(sp => sp[0], sp => sp[1], StringComparer.OrdinalIgnoreCase);
 
                 this.usesAzureDefaultCredential = true;
-                this.blobServiceClient = new BlobServiceClient(new Uri($"https://{conpartsDict["AccountName"]}.blob.core.windows.net/"), defaultAzureCredential);
+                this.blobServiceClient = new BlobServiceClient(new Uri($"https://{conpartsDict["AccountName"]}.blob.core.windows.net/"), tokenCredential);
             }
             else
             {

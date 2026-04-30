@@ -14,7 +14,7 @@ namespace Cosmos.BlobService
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
-    using Azure.Identity;
+    using Azure.Core;
     using Cosmos.BlobService.Config;
     using Cosmos.BlobService.Drivers;
     using Cosmos.BlobService.Exceptions;
@@ -548,7 +548,7 @@ namespace Cosmos.BlobService
             {
                 case CloudStorageProvider.Azure:
                     var isAzurite = ConnectionStringParser.IsAzurite(connectionString);
-                    var credential = isAzurite ? null : new DefaultAzureCredential();
+                    TokenCredential credential = isAzurite ? null : CreateDefaultTokenCredential();
                     return new AzureStorage(connectionString, credential);
 
                 case CloudStorageProvider.CloudflareR2:
@@ -574,6 +574,19 @@ namespace Cosmos.BlobService
                         Provider = provider
                     };
             }
+        }
+
+        private static TokenCredential CreateDefaultTokenCredential()
+        {
+            var credentialType = Type.GetType("Azure.Identity.DefaultAzureCredential, Azure.Identity", throwOnError: false)
+                ?? Type.GetType("Azure.Identity.DefaultAzureCredential, Azure.Core", throwOnError: false);
+
+            if (credentialType != null && typeof(TokenCredential).IsAssignableFrom(credentialType))
+            {
+                return (TokenCredential)Activator.CreateInstance(credentialType);
+            }
+
+            return null;
         }
 
         /// <summary>

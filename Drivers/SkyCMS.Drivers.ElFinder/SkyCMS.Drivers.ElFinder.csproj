@@ -8,11 +8,13 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>SkyCMS.Drivers.ElFinder</AssemblyName>
     <RootNamespace>SkyCMS.Drivers.ElFinder</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>12.3.0</Version>
     <Description>elFinder protocol adapter driver for SkyCMS. Implements the elFinder 2.1 API specification with SkyCMS storage and tenant-awareness.</Description>
     <Authors>Moonrise Software, LLC</Authors>
     <License>MIT</License>
     <RepositoryUrl>https://github.com/CWALabs/SkyCMS</RepositoryUrl>
+    <FileVersion>12.3.0</FileVersion>
+    <AssemblyVersion>12.3.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

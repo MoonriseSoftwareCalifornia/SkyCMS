@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>annotations</Nullable>
-		<AssemblyVersion>12.2.1</AssemblyVersion>
-		<FileVersion>12.2.1</FileVersion>
-		<Version>12.2.1</Version>
+		<AssemblyVersion>12.3.0</AssemblyVersion>
+		<FileVersion>12.3.0</FileVersion>
+		<Version>12.3.0</Version>
 		<Title>Sky CMS Multi-Cloud Storage Provider</Title>
 		<Authors>toiyabe62</Authors>
 		<Company>Moonrise Software LLC</Company>

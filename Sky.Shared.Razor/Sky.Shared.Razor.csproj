@@ -6,6 +6,9 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
 		<RazorLangVersion>Latest</RazorLangVersion>
+		<Version>12.3.0</Version>
+		<FileVersion>12.3.0</FileVersion>
+		<AssemblyVersion>12.3.0</AssemblyVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
