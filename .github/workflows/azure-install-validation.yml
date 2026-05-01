@@ -1,0 +1,54 @@
+name: Azure Install Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'InstallScripts/Azure/**'
+      - 'Editor/Program.cs'
+      - 'Editor/Dockerfile'
+      - '.github/workflows/azure-install-validation.yml'
+
+jobs:
+  static-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Verify Azure CLI
+        shell: bash
+        run: az --version
+
+      - name: Validate Bicep templates
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          ./InstallScripts/Azure/validate-bicep.ps1
+
+      - name: Validate template-source contracts
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          ./InstallScripts/Azure/validate-template-contracts.ps1
+
+  optional-whatif:
+    runs-on: ubuntu-latest
+    needs: static-validation
+    if: ${{ github.event_name == 'workflow_dispatch' && secrets.AZURE_CREDENTIALS != '' && vars.AZURE_VALIDATION_RESOURCE_GROUP != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Run what-if validation
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          ./InstallScripts/Azure/validate-bicep.ps1 -ResourceGroupName '${{ vars.AZURE_VALIDATION_RESOURCE_GROUP }}'

@@ -195,6 +195,18 @@ namespace Sky.Editor.Services.EditorSettings
         public int? StaticPageParallelism { get; set; } = null;
 
         /// <summary>
+        /// Gets a value indicating whether the modern elFinder-based file explorer is enabled.
+        /// </summary>
+        public bool UseModernFileExplorer
+        {
+            get
+            {
+                EnsureConfigLoaded();
+                return editorConfig.UseModernFileExplorer;
+            }
+        }
+
+        /// <summary>
         /// Gets the blob absolute URL.
         /// </summary>
         /// <returns>Uri.</returns>
@@ -306,7 +318,8 @@ namespace Sky.Editor.Services.EditorSettings
                 MicrosoftAppId = configuration.GetValue<string>("MicrosoftAppId"),
                 PublisherUrl = configuration.GetValue<string>("CosmosPublisherUrl"),
                 StaticWebPages = configuration.GetValue<bool?>("CosmosStaticWebPages"),
-                AllowedFileTypes = configuration.GetValue<string>("AllowedFileTypes")
+                AllowedFileTypes = configuration.GetValue<string>("AllowedFileTypes"),
+                UseModernFileExplorer = configuration.GetValue<bool?>("UseModernFileExplorer")
             };
         }
 
@@ -350,7 +363,11 @@ namespace Sky.Editor.Services.EditorSettings
 
                 AllowedFileTypes = configSource.AllowedFileTypes
                     ?? dbSource?.AllowedFileTypes
-                    ?? ".js,.css,.htm,.html,.mov,.webm,.avi,.mp4,.mpeg,.ts,.svg,.json"
+                    ?? ".js,.css,.htm,.html,.mov,.webm,.avi,.mp4,.mpeg,.ts,.svg,.json",
+
+                UseModernFileExplorer = configSource.UseModernFileExplorer
+                    ?? dbSource?.UseModernFileExplorer
+                    ?? false
             };
         }
 
@@ -399,7 +416,8 @@ namespace Sky.Editor.Services.EditorSettings
                     MicrosoftAppId = GetSettingValue(settings, "OAUTH", "MicrosoftAppId"),
                     PublisherUrl = GetSettingValue(settings, "PUBLISHER", "PublisherUrl"),
                     StaticWebPages = GetSettingValueAsBool(settings, "PUBLISHER", "StaticWebPages") ?? true,
-                    AllowedFileTypes = GetSettingValue(settings, "PUBLISHER", "AllowedFileTypes")
+                    AllowedFileTypes = GetSettingValue(settings, "PUBLISHER", "AllowedFileTypes"),
+                    UseModernFileExplorer = GetSettingValueAsBool(settings, "PUBLISHER", "UseModernFileExplorer") ?? false
                 };
 
                 return config;
@@ -512,6 +530,8 @@ namespace Sky.Editor.Services.EditorSettings
             public bool? StaticWebPages { get; set; }
 
             public string AllowedFileTypes { get; set; }
+
+            public bool? UseModernFileExplorer { get; set; }
         }
     }
 }

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>SkyCMS.Drivers.ElFinder</AssemblyName>
+    <RootNamespace>SkyCMS.Drivers.ElFinder</RootNamespace>
+    <Version>12.3.0</Version>
+    <Description>elFinder protocol adapter driver for SkyCMS. Implements the elFinder 2.1 API specification with SkyCMS storage and tenant-awareness.</Description>
+    <Authors>Moonrise Software, LLC</Authors>
+    <License>MIT</License>
+    <RepositoryUrl>https://github.com/CWALabs/SkyCMS</RepositoryUrl>
+    <FileVersion>12.3.0</FileVersion>
+    <AssemblyVersion>12.3.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="MimeTypeMapOfficial" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Cosmos.BlobService\Cosmos.BlobService.csproj" />
+  </ItemGroup>
+
+</Project>

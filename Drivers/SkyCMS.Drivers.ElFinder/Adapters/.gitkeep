@@ -1,0 +1,3 @@
+// Storage adapter abstraction and implementations
+// Insulates driver from storage implementation details
+// E.g., IElFinderStorageAdapter, StorageContextAdapter

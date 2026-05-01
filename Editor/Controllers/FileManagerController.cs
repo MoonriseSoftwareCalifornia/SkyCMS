@@ -43,6 +43,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Models;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
+    using SkyCMS.Drivers.ElFinder;
 
     /// <summary>
     /// File manager controller.
@@ -156,42 +157,17 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Gets a list of valid editor extensions.
         /// </summary>
-        public static string[] ValidEditorExtensions
-        {
-            get
-            {
-                return new string[] { ".js", ".css", ".html", ".htm", ".json", ".xml", ".txt" };
-            }
-        }
+        public static string[] ValidEditorExtensions => FileStorageConstants.ValidEditorExtensions;
 
         /// <summary>
         /// Gets a list of valid image extensions.
         /// </summary>
-        public static string[] ValidImageExtensions
-        {
-            get
-            {
-                return new string[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico" };
-            }
-        }
+        public static string[] ValidImageExtensions => FileStorageConstants.ValidImageExtensions;
 
         /// <summary>
         /// Gets the file extensions that are not allowed for upload due to security concerns.
         /// </summary>
-        public static string[] DangerousFileExtensions
-        {
-            get
-            {
-                return new string[]
-                {
-                    ".exe", ".dll", ".bat", ".cmd", ".sh", ".ps1", ".psm1", ".psd1",
-                    ".vbs", ".vbe", ".jse", ".wsf", ".wsh", ".msi", ".msp",
-                    ".scr", ".hta", ".cpl", ".msc", ".jar", ".app", ".deb", ".rpm",
-                    ".dmg", ".pkg", ".run", ".bin", ".com", ".gadget", ".application",
-                    ".pif", ".lnk", ".inf", ".reg"
-                };
-            }
-        }
+        public static string[] DangerousFileExtensions => FileStorageConstants.DangerousFileExtensions;
 
         /// <summary>
         /// Fixes the path for the image asset array method.
@@ -252,7 +228,7 @@ namespace Sky.Cms.Controllers
         /// <param name="isNewSession">s a new session.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpGet]
-        public async Task<IActionResult> Index(string target, bool? selectOne, string sortOrder = "asc", string currentSort = "Name", int pageNo = 0, int pageSize = 10, bool directoryOnly = false, bool imagesOnly = false, bool isNewSession = false)
+        public async Task<IActionResult> Index(string? target, bool? selectOne, string sortOrder = "asc", string currentSort = "Name", int pageNo = 0, int pageSize = 10, bool directoryOnly = false, bool imagesOnly = false, bool isNewSession = false)
         {
             if (!ModelState.IsValid)
             {
@@ -433,10 +409,21 @@ namespace Sky.Cms.Controllers
             if (directoryOnly)
             {
                 var ddata = query.Where(w => w.IsDirectory).ToList();
+
+                if (this.options.UseModernFileExplorer)
+                {
+                    return View("~/Views/Shared/FileExplorer/IndexModern.cshtml", ddata);
+                }
+
                 return View(ddata);
             }
 
             var data = query.Skip(pageNo * pageSize).Take(pageSize).ToList();
+
+            if (this.options.UseModernFileExplorer)
+            {
+                return View("~/Views/Shared/FileExplorer/IndexModern.cshtml", data);
+            }
 
             return View("~/Views/Shared/FileExplorer/Index.cshtml", data);
         }
@@ -664,20 +651,33 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        /// Process a chunned upload.
+        /// Processes a chunked FilePond upload.
+        /// Supports both query-style transfer ids (?patch=...) and
+        /// path-style transfer ids (/FileManager/Process/{transferId}).
         /// </summary>
-        /// <param name="patch">Patch number.</param>
+        /// <param name="patch">Transfer id supplied via query string.</param>
         /// <param name="options">Upload options.</param>
+        /// <param name="patchRoute">Transfer id supplied via path segment.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPatch]
-        public async Task<ActionResult> Process(string patch, string options = "")
+        [HttpPatch("FileManager/Process/{*patchRoute}")]
+        public async Task<ActionResult> Process(string patch = "", string options = "", string patchRoute = "")
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var patchArray = patch.Split('|');
+            var transferId = !string.IsNullOrWhiteSpace(patch) ? patch : patchRoute;
+            if (string.IsNullOrWhiteSpace(transferId))
+            {
+                return BadRequest("Missing transfer id.");
+            }
+
+            var patchArray = transferId.Split('|');
+            if (patchArray.Length < 6)
+            {
+                return BadRequest("Invalid transfer id format.");
+            }
 
             // 0 based index
             var uploadOffset = long.Parse(Request.Headers["Upload-Offset"]);
@@ -757,6 +757,66 @@ namespace Sky.Cms.Controllers
                 await PurgeCdnPath(metaData);
             }
 
+            return Ok();
+        }
+
+        /// <summary>
+        /// Reverts (deletes) an already-uploaded file. Called by FilePond when the user
+        /// clicks the undo button after a completed upload.
+        /// </summary>
+        /// <param name="fileName">The original file name, supplied as a query parameter by the FilePond revert function.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpDelete]
+        [ActionName("Process")]
+        public IActionResult ProcessRevert([FromQuery] string? fileName = null)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return BadRequest("fileName is required.");
+            }
+
+            // FilePond sends the server UID as the request body:
+            // {path}|{relativePath}|{guid}|{mime}|{imageWidth}|{imageHeight}
+            string uid;
+            using (var reader = new System.IO.StreamReader(Request.Body, System.Text.Encoding.UTF8, leaveOpen: true))
+            {
+                uid = reader.ReadToEnd();
+            }
+
+            if (string.IsNullOrWhiteSpace(uid))
+            {
+                return BadRequest("Missing file id in request body.");
+            }
+
+            var parts = uid.Split('|');
+            if (parts.Length < 2)
+            {
+                return BadRequest("Invalid file id format.");
+            }
+
+            // Reconstruct blob path the same way the PATCH action does.
+            var basePath = UrlEncode(parts[0].TrimEnd('/'));
+            var subDir = parts.Length > 1 ? parts[1].TrimStart('/') : string.Empty;
+
+            string blobPath;
+            if (!string.IsNullOrEmpty(subDir))
+            {
+                var dpath = Path.GetDirectoryName(subDir)?.Replace('\\', '/') ?? string.Empty;
+                if (!string.IsNullOrEmpty(dpath))
+                {
+                    blobPath = $"{basePath}/{UrlEncode(dpath)}/{UrlEncode(fileName)}";
+                }
+                else
+                {
+                    blobPath = $"{basePath}/{UrlEncode(fileName)}";
+                }
+            }
+            else
+            {
+                blobPath = $"{basePath}/{UrlEncode(fileName)}";
+            }
+
+            storageContext.DeleteFile(blobPath);
             return Ok();
         }
 
@@ -1087,7 +1147,7 @@ namespace Sky.Cms.Controllers
         /// Creates a new file in a given folder.
         /// </summary>
         /// <param name="model">New file post model.</param>
-        /// <returns>IActionResult.</returns>
+        /// <returns>IActionResult。</returns>
         public async Task<IActionResult> NewFile(NewFileViewModel model)
         {
             if (!ModelState.IsValid)
@@ -1180,28 +1240,35 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Check if blob exists before attempting to get metadata
-            if (!await storageContext.BlobExistsAsync(path))
+            try
+            {
+                // Check if blob exists before attempting to get metadata
+                if (!await storageContext.BlobExistsAsync(path))
+                {
+                    return NotFound();
+                }
+
+                var blob = await storageContext.GetFileAsync(path);
+
+                if (blob == null)
+                {
+                    return NotFound();
+                }
+
+                if (blob.IsDirectory)
+                {
+                    return NotFound();
+                }
+
+                using var stream = await storageContext.GetStreamAsync(path);
+                using var memStream = new MemoryStream();
+                await stream.CopyToAsync(memStream);
+                return File(memStream.ToArray(), "application/octet-stream", fileDownloadName: blob.Name);
+            }
+            catch (Cosmos.BlobService.Exceptions.StorageException)
             {
                 return NotFound();
             }
-
-            var blob = await storageContext.GetFileAsync(path);
-
-            if (blob == null)
-            {
-                return NotFound();
-            }
-
-            if (blob.IsDirectory)
-            {
-                return NotFound();
-            }
-
-            using var stream = await storageContext.GetStreamAsync(path);
-            using var memStream = new MemoryStream();
-            await stream.CopyToAsync(memStream);
-            return File(memStream.ToArray(), "application/octet-stream", fileDownloadName: blob.Name);
         }
 
         /// <summary>

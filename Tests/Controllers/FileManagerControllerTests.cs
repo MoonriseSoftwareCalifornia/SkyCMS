@@ -22,6 +22,7 @@ namespace Sky.Tests.Controllers
     using Sky.Cms.Models;
     using Sky.Cms.Services;
     using Sky.Editor.Models;
+    using Sky.Editor.Services.EditorSettings;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -145,6 +146,48 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
             Assert.IsNotNull(viewResult.Model);
+        }
+
+        /// <summary>
+        /// Tests that Index_WithModernExplorerDisabled_UsesLegacyView.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_WithModernExplorerDisabled_UsesLegacyView()
+        {
+            // Arrange
+            var path = "/pub/modern-switch-off";
+            await Storage.CreateFolder(path);
+            await CreateTestFile(path + "/a.txt");
+            var sut = CreateControllerWithModernFlag(false);
+
+            // Act
+            var result = await sut.Index(path, false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = result as ViewResult;
+            Assert.AreEqual("~/Views/Shared/FileExplorer/Index.cshtml", viewResult.ViewName);
+        }
+
+        /// <summary>
+        /// Tests that Index_WithModernExplorerEnabled_UsesModernView.
+        /// </summary>
+        [TestMethod]
+        public async Task Index_WithModernExplorerEnabled_UsesModernView()
+        {
+            // Arrange
+            var path = "/pub/modern-switch-on";
+            await Storage.CreateFolder(path);
+            await CreateTestFile(path + "/a.txt");
+            var sut = CreateControllerWithModernFlag(true);
+
+            // Act
+            var result = await sut.Index(path, false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(ViewResult));
+            var viewResult = result as ViewResult;
+            Assert.AreEqual("~/Views/Shared/FileExplorer/IndexModern.cshtml", viewResult.ViewName);
         }
 
         /// <summary>
@@ -1558,6 +1601,42 @@ namespace Sky.Tests.Controllers
         #endregion
 
         #region Helper Methods
+
+        private FileManagerController CreateControllerWithModernFlag(bool useModernFileExplorer)
+        {
+            var settingsMock = new Mock<IEditorSettings>();
+            settingsMock.SetupGet(s => s.BlobPublicUrl).Returns(EditorSettings.BlobPublicUrl);
+            settingsMock.SetupGet(s => s.AllowedFileTypes).Returns(EditorSettings.AllowedFileTypes);
+            settingsMock.SetupGet(s => s.UseModernFileExplorer).Returns(useModernFileExplorer);
+
+            var sut = new FileManagerController(
+                settingsMock.Object,
+                mockLogger.Object,
+                Db,
+                isolatedStorage,
+                UserManager,
+                Logic,
+                mockArticleQueries.Object,
+                mockHostEnvironment.Object,
+                mockViewRenderService.Object,
+                LayoutCacheService,
+                DynamicConfigurationProvider);
+
+            var httpContext = new DefaultHttpContext();
+            httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()),
+                new Claim(ClaimTypes.Name, "testuser@example.com"),
+                new Claim(ClaimTypes.Role, "Administrators")
+            }, "mock"));
+
+            sut.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext
+            };
+
+            return sut;
+        }
 
         private async Task CreateTestFile(string path, string content = "Test Content")
         {

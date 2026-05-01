@@ -8,9 +8,9 @@
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>
 		<RepositoryUrl>https://github.com/CosmosSoftware/CosmosCms</RepositoryUrl>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<Version>12.1.4</Version>
-		<AssemblyVersion>12.1.4</AssemblyVersion>
-		<FileVersion>12.1.4</FileVersion>
+		<Version>12.3.0</Version>
+		<AssemblyVersion>12.3.0</AssemblyVersion>
+		<FileVersion>12.3.0</FileVersion>
 		<RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
 		<Authors></Authors>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
@@ -70,6 +70,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
+		<PackageReference Include="MediatR" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -97,6 +98,7 @@
 	  <ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
 	  <ProjectReference Include="..\Sky.Cms.Api.Shared\Sky.Cms.Api.Shared.csproj" />
 	  <ProjectReference Include="..\Sky.Shared.Razor\Sky.Shared.Razor.csproj" />
+	  <ProjectReference Include="..\Drivers\SkyCMS.Drivers.ElFinder\SkyCMS.Drivers.ElFinder.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

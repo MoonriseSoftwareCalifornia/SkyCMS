@@ -149,7 +149,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirectResult = (RedirectToActionResult)result;
-            Assert.AreEqual(nameof(BlogController.Posts), redirectResult.ActionName);
+            Assert.AreEqual(nameof(BlogController.Index), redirectResult.ActionName);
 
             mediatorMock.Verify(
                 m => m.SendAsync(It.IsAny<CreateArticleCommand>(), default),
@@ -382,7 +382,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirectResult = (RedirectToActionResult)result;
-            Assert.AreEqual(nameof(BlogController.Entries), redirectResult.ActionName);
+            Assert.AreEqual(nameof(BlogController.Posts), redirectResult.ActionName);
 
             // Verify article was deleted
             var deletedArticle = await Db.Articles

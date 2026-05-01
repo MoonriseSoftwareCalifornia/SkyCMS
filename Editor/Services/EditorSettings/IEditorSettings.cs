@@ -62,6 +62,12 @@ namespace Sky.Editor.Services.EditorSettings
         bool StaticWebPages { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the modern elFinder-based file explorer is enabled.
+        /// When false the legacy file explorer is shown instead.
+        /// </summary>
+        bool UseModernFileExplorer { get; }
+
+        /// <summary>
         /// Gets the maximum degree of parallelism for static page generation.
         /// If null, the system will auto-detect based on storage provider.
         /// </summary>

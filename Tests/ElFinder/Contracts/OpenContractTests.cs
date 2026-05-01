@@ -1,0 +1,194 @@
+// <copyright file="OpenContractTests.cs" company="Moonrise Software, LLC">
+// Copyright (c) Moonrise Software, LLC. All rights reserved.
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// </copyright>
+
+namespace Sky.Tests.ElFinder.Contracts
+{
+    using System.Text.Json;
+    using System.Threading.Tasks;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+    using SkyCMS.Drivers.ElFinder.Commands;
+    using SkyCMS.Drivers.ElFinder.Handlers;
+    using SkyCMS.Drivers.ElFinder.Responses;
+
+    /// <summary>
+    /// Contract tests for the <c>open</c> command.
+    ///
+    /// KEY CONTRACT RULES (from Docs/commands/open.md):
+    ///   - Response must contain "cwd" (object), "files" (array), "api" (string).
+    ///   - "cwd" must be a valid elFinder file object.
+    ///   - Every entry in "files" must be a valid elFinder file object.
+    ///   - "api" must equal "2.1".
+    ///   - On error, response must contain "error" array key.
+    /// </summary>
+    [TestClass]
+    public class OpenContractTests : ElFinderContractTestBase
+    {
+        private OpenCommandHandler _handler = null!;
+
+        [TestInitialize]
+        public void Setup()
+        {
+            var adapter = BuildAdapter();
+            _handler = new OpenCommandHandler(adapter.Object);
+        }
+
+        // ------------------------------------------------------------------ //
+        //  Top-level shape                                                     //
+        // ------------------------------------------------------------------ //
+
+        [TestMethod]
+        [Description("Response must contain 'cwd', 'files', and 'api' keys.")]
+        public async Task Open_Response_HasRequiredTopLevelKeys()
+        {
+            var command = new OpenCommand(target: ImagesHash);
+            var response = await _handler.Handle(command, default);
+            using var doc = SerializeResponse(response);
+
+            Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out _),
+                "Contract violation: 'cwd' key missing from open response. See Docs/commands/open.md.");
+            Assert.IsTrue(doc.RootElement.TryGetProperty("files", out _),
+                "Contract violation: 'files' key missing from open response.");
+            Assert.IsTrue(doc.RootElement.TryGetProperty("api", out _),
+                "Contract violation: 'api' key missing from open response.");
+        }
+
+        [TestMethod]
+        [Description("'api' must be '2.1049' — the protocol version the client expects.")]
+        public async Task Open_Api_IsVersion21()
+        {
+            var command = new OpenCommand(target: ImagesHash);
+            var response = await _handler.Handle(command, default);
+            using var doc = SerializeResponse(response);
+
+            var api = AssertStringProperty(doc.RootElement, "api");
+            Assert.AreEqual("2.1049", api,
+                $"Contract violation: 'api' must be '2.1049' but was '{api}'. " +
+                $"The elFinder client uses this to negotiate protocol features.");
+        }
+
+        [TestMethod]
+        [Description("'files' must be a JSON array.")]
+        public async Task Open_Files_IsArray()
+        {
+            var command = new OpenCommand(target: ImagesHash);
+            var response = await _handler.Handle(command, default);
+            using var doc = SerializeResponse(response);
+
+            AssertArrayProperty(doc.RootElement, "files");
+        }
+
+        // ------------------------------------------------------------------ //
+        //  cwd shape                                                           //
+        // ------------------------------------------------------------------ //
+
+        [TestMethod]
+        [Description("'cwd' must satisfy the elFinder file object contract.")]
+        public async Task Open_Cwd_IsValidElFinderObject()
+        {
+            var command = new OpenCommand(target: ImagesHash);
+            var response = await _handler.Handle(command, default);
+            using var doc = SerializeResponse(response);
+
+            Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd),
+                "Response missing 'cwd'.");
+
+            Assert.AreEqual(JsonValueKind.Object, cwd.ValueKind,
+                "'cwd' must be a JSON object.");
+
+            AssertElFinderObject(cwd, "cwd");
+        }
+
+        [TestMethod]
+        [Description("'cwd' mime must be 'directory' when opening a folder.")]
+        public async Task Open_Cwd_MimeIsDirectory()
+        {
+            var command = new OpenCommand(target: ImagesHash);
+            var response = await _handler.Handle(command, default);
+            using var doc = SerializeResponse(response);
+
+            doc.RootElement.TryGetProperty("cwd", out var cwd);
+            var mime = AssertStringProperty(cwd, "mime");
+            Assert.AreEqual("directory", mime,
+                $"cwd.mime must be 'directory' when opening a folder. Got '{mime}'.");
+        }
+
+        // ------------------------------------------------------------------ //
+        //  files entries shape                                                 //
+        // ------------------------------------------------------------------ //
+
+        [TestMethod]
+        [Description("Every entry in 'files' must satisfy the elFinder file object contract.")]
+        public async Task Open_FilesEntries_AreValidElFinderObjects()
+        {
+            var command = new OpenCommand(target: ImagesHash);
+            var response = await _handler.Handle(command, default);
+            using var doc = SerializeResponse(response);
+
+            var files = AssertArrayProperty(doc.RootElement, "files");
+            var index = 0;
+            foreach (var entry in files.EnumerateArray())
+            {
+                AssertElFinderObject(entry, $"files[{index}]");
+                index++;
+            }
+        }
+
+        [TestMethod]
+        [Description("No PascalCase keys should appear anywhere in the response.")]
+        public async Task Open_NoPascalCaseKeysLeak()
+        {
+            var command = new OpenCommand(target: ImagesHash);
+            var response = await _handler.Handle(command, default);
+            using var doc = SerializeResponse(response);
+
+            foreach (var forbiddenKey in new[] { "Cwd", "Files", "Api", "UplMaxSize", "VolumeId" })
+            {
+                Assert.IsFalse(
+                    doc.RootElement.TryGetProperty(forbiddenKey, out _),
+                    $"PascalCase key '{forbiddenKey}' found — STJ serializer must be used. " +
+                    $"See skycms-implementation-notes.md.");
+            }
+        }
+
+        // ------------------------------------------------------------------ //
+        //  Error paths                                                         //
+        // ------------------------------------------------------------------ //
+
+        [TestMethod]
+        [Description("Invalid hash returns an error response with 'error' array key.")]
+        public async Task Open_InvalidHash_ReturnsErrorResponse()
+        {
+            var command = new OpenCommand(target: "not_a_valid_hash");
+            var response = await _handler.Handle(command, default);
+
+            Assert.IsTrue(response is ElFinderErrorResponse,
+                "Invalid hash must return ElFinderErrorResponse.");
+
+            using var doc = SerializeResponse(response);
+            Assert.IsTrue(doc.RootElement.TryGetProperty("error", out var err),
+                "Error response must have 'error' key.");
+            Assert.AreEqual(JsonValueKind.Array, err.ValueKind,
+                "'error' must be a JSON array.");
+        }
+
+        [TestMethod]
+        [Description("Access denied returns an error response.")]
+        public async Task Open_AccessDenied_ReturnsErrorResponse()
+        {
+            var adapter = BuildAdapter();
+            adapter.Setup(a => a.IsAccessibleAsync(
+                It.IsAny<string>(),
+                It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var handler = new OpenCommandHandler(adapter.Object);
+            var response = await handler.Handle(new OpenCommand(target: ImagesHash), default);
+
+            Assert.IsTrue(response is ElFinderErrorResponse,
+                "Access denied must return ElFinderErrorResponse.");
+        }
+    }
+}

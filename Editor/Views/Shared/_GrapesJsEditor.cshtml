@@ -335,6 +335,34 @@
         return imageUrls;
     }
 
+    function openSharedAssetPicker(assetManagerProps) {
+        if (typeof window.CCMS___OpenFilePicker !== 'function') {
+            toastr.error('File picker is not available.');
+            return;
+        }
+
+        window.CCMS___OpenFilePicker({
+            mode: 'image',
+            autoSave: false,
+            onSelect: function (selection) {
+                if (!selection || !selection.url) {
+                    return false;
+                }
+
+                assetManagerProps.select({
+                    src: selection.url,
+                    type: 'image'
+                }, true);
+
+                assetManagerProps.close();
+                return true;
+            },
+            onCancel: function () {
+                assetManagerProps.close();
+            }
+        });
+    }
+
     let editor; // Define globally as is used by methods.
 
     window.onload = () => {
@@ -353,6 +381,13 @@
             assetManager: {
                 upload: cosmos__designerUploadEndpoint,
                 embedAsBase64: false,
+                custom: {
+                    open: function (assetManagerProps) {
+                        openSharedAssetPicker(assetManagerProps);
+                    },
+                    close: function () {
+                    }
+                },
                 /*assets: preloadImages(),*/
             },
             selectorManager: {

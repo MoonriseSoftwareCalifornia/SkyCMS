@@ -5,13 +5,13 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-		<Version>12.1.4</Version>
-		<FileVersion>12.1.4</FileVersion>
-		<AssemblyVersion>12.1.4</AssemblyVersion>
+		<RazorLangVersion>Latest</RazorLangVersion>
+		<Version>12.3.0</Version>
+		<FileVersion>12.3.0</FileVersion>
+		<AssemblyVersion>12.3.0</AssemblyVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Azure.Identity" />
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 

@@ -61,6 +61,33 @@
         color: white;
         font-weight: 900;
     }
+
+    /* elFinder context menu contrast improvements */
+    .elfinder .elfinder-contextmenu,
+    .elfinder .ui-menu {
+        background-color: #6b7280 !important;
+        border-color: #7a7a7a !important;
+    }
+
+    .elfinder .elfinder-contextmenu .ui-menu-item,
+    .elfinder .elfinder-contextmenu .ui-menu-item a,
+    .elfinder .ui-menu .ui-menu-item,
+    .elfinder .ui-menu .ui-menu-item a {
+        color: #ffffff !important;
+    }
+
+    .elfinder .elfinder-contextmenu .ui-menu-item:hover,
+    .elfinder .elfinder-contextmenu .ui-menu-item:hover > a,
+    .elfinder .elfinder-contextmenu .ui-state-hover,
+    .elfinder .elfinder-contextmenu .ui-state-focus,
+    .elfinder .ui-menu .ui-menu-item:hover,
+    .elfinder .ui-menu .ui-menu-item:hover > a,
+    .elfinder .ui-menu .ui-state-hover,
+    .elfinder .ui-menu .ui-state-focus {
+        background: #116ab7 !important;
+        color: #ffffff !important;
+        border-color: #116ab7 !important;
+    }
 </style>
 <link href="~/lib/filepond/filepond.css" rel="stylesheet" />
 <partial name="_ValidationScriptsPartial" />
@@ -150,9 +177,9 @@
 
     @if (pathPrefix.StartsWith(topDirectory) && directoryOnly == false)
     {
-        <div class="row uploader">
+        <div class="row uploader" style="display:none;">
             <div class="col-md-12 justify-content-center text-light">
-                <button id="btnProgress" class="btn btn-sm  btn-primary" type="button" disabled style="display:none;">
+                <button id="btnProgress" class="btn btn-sm btn-primary" type="button" disabled style="display:none;">
                     <span class="spinner-border spinner-border-sm text-light" role="status" aria-hidden="true"></span>
                     <span role="status" id="fpMesageSpace"></span>
                 </button>
@@ -529,6 +556,26 @@
     </div>
 </div>
 
+<div class="modal mt-5" id="uploadProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">Uploading files</h5>
+            </div>
+            <div class="modal-body">
+                <div id="uploadProgressMessage" class="mb-3">Preparing upload...</div>
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Upload progress">
+                    <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%">0%</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnUploadCancel" class="btn btn-warning">Cancel uploads</button>
+                <button type="button" id="btnUploadClose" class="btn btn-secondary" style="display:none;" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="~/js/clipboard.min.js"></script>
 
 <script>
@@ -541,7 +588,13 @@
     let modalCheckSaveFirst = new bootstrap.Modal(document.getElementById('modalCheckSaveFirst'));
     let showSelectedModal = new bootstrap.Modal(document.getElementById('showSelectedModal'));
     let newFileModal  = new bootstrap.Modal(document.getElementById('newFileModal'));
+    let uploadProgressModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'));
     let btnSelectFileAndClose = parent.document.getElementById("btnSelectFileAndClose");
+
+    const uploadProgressBar = $("#uploadProgressBar");
+    const uploadProgressMessage = $("#uploadProgressMessage");
+    const btnUploadCancel = $("#btnUploadCancel");
+    const btnUploadClose = $("#btnUploadClose");
 
     const isNewSession = @isNewSession.ToString().ToLower();
     const selectOneFile = @selectOne.ToString().ToLower();
@@ -560,6 +613,7 @@
 
     let totalFileCount = 0;
     let loadedFileCount = 0;
+    let uploadAutoCloseHandle = null;
 
     function openImageEditor(url) {
         imageEditorWindow = window.open(url, "_blank");
@@ -631,7 +685,14 @@
             return;
         }
 
-        replaceCssClass($("#btnProgress"), "btn-success", "btn-primary");
+        if (totalFileCount === 0 && loadedFileCount === 0) {
+            btnUploadClose.hide();
+            btnUploadCancel.show();
+            uploadProgressBar.removeClass("bg-danger bg-success").addClass("progress-bar-animated progress-bar-striped");
+            uploadProgressBar.css("width", "0%").text("0%");
+            uploadProgressMessage.text("Preparing upload...");
+            uploadProgressModal.show();
+        }
 
         file.setMetadata("relativePath", file.relativePath);
         file.setMetadata("fileName", file.filename);
@@ -673,561 +734,80 @@
     });
 
     pond.on('processfile', (file) => {
-
-        replaceCssClass($("#btnProgress"), "btn-primary", "btn-success");
-
         loadedFileCount++;
-        const percent = Math.round((loadedFileCount / totalFileCount) * 100);
+        const percent = Math.round((loadedFileCount / Math.max(totalFileCount, 1)) * 100);
         filePondMessage("Uploaded " + loadedFileCount + " of " + totalFileCount + " files (" + percent + "%).");
     });
 
-    function filePondMessage(message) {
-        $("#fpMesageSpace").html(message);
-        if (message === "") {
-            $("#btnProgress").hide();
-        } else {
-            $("#btnProgress").show();
+    pond.on('processfiles', () => {
+        filePondMessage("Upload complete.");
+        uploadProgressBar.removeClass("progress-bar-animated progress-bar-striped").addClass("bg-success");
+        btnUploadCancel.hide();
+        btnUploadClose.show();
+
+        if (uploadAutoCloseHandle) {
+            clearTimeout(uploadAutoCloseHandle);
         }
+
+        uploadAutoCloseHandle = setTimeout(() => {
+            btnUploadClose.trigger("click");
+            refreshFileExplorerAfterUpload();
+        }, 1200);
+    });
+
+    pond.on('processfilesabort', () => {
+        uploadProgressBar.removeClass("progress-bar-animated progress-bar-striped").addClass("bg-danger");
+        uploadProgressMessage.text("Upload canceled.");
+        btnUploadCancel.hide();
+        btnUploadClose.show();
+    });
+
+    pond.on('processfileabort', () => {
+        uploadProgressBar.removeClass("progress-bar-animated progress-bar-striped").addClass("bg-danger");
+        uploadProgressMessage.text("Upload canceled.");
+        btnUploadCancel.hide();
+        btnUploadClose.show();
+    });
+
+    btnUploadCancel.on("click", function() {
+        pond.removeFiles();
+        pond.abortProcessing();
+    });
+
+    btnUploadClose.on("click", function() {
+        if (uploadAutoCloseHandle) {
+            clearTimeout(uploadAutoCloseHandle);
+            uploadAutoCloseHandle = null;
+        }
+
+        refreshFileExplorerAfterUpload();
+    });
+
+    function refreshFileExplorerAfterUpload() {
+        // If embedded in elFinder context, try to refresh current folder without full page jump.
+        try {
+            if (window.parent && window.parent.$ && window.parent.$.fn && window.parent.$.fn.elfinder) {
+                const parentElfinder = window.parent.$('.elfinder').elfinder('instance');
+                if (parentElfinder) {
+                    parentElfinder.exec('reload');
+                    return;
+                }
+            }
+        } catch (err) {
+            // fallback below
+        }
+
+        window.location.href = "@Url.Action(action, controller)?target=@pathPrefix";
+    }
+
+    function filePondMessage(message) {
+        uploadProgressMessage.text(message || "");
+
+        const percent = Math.round((loadedFileCount / Math.max(totalFileCount, 1)) * 100);
+        uploadProgressBar.css("width", percent + "%").text(percent + "%");
     }
 
     // Event handlers
     document.addEventListener('FilePond:processfiles', (e) => {
-        filePondMessage("");
-        window.location.href = "@Url.Action(action, controller)?target=@pathPrefix";
+        // Handled by pond.on('processfiles') to support modal + in-place refresh.
     });
-
-    function savePath(path) {
-        // Avoid duplicates
-        if (paths.indexOf(path) == -1) {
-            paths.push(path);
-        }
-        sessionStorage.setItem("paths", JSON.stringify(paths));
-    }
-
-    function removePath(path) {
-        var tmp = paths.filter(function (value) {
-            return value !== path;
-        });
-        paths = tmp;
-        sessionStorage.setItem("paths", JSON.stringify(paths));
-    }
-
-    // Reload selected paths from local storage
-    function reloadPaths() {
-        var data = sessionStorage.getItem("paths");
-
-        if (typeof (data) === "undefined" || data === null || data === "") {
-            paths = [];
-            setMode("");
-        } else {
-            paths = JSON.parse(data);
-        }
-    }
-
-    function clearPaths() {
-        paths = [];
-        sessionStorage.removeItem("paths");
-        setMode("");
-    }
-
-    function getItemsToMove() {
-        var items = JSON.parse(sessionStorage.getItem("itemsToMove"));
-        return items;
-    }
-
-    function setMode(mode) {
-        sessionStorage.setItem("mode", mode);
-    }
-
-    function getMode() {
-        return sessionStorage.getItem("mode");
-    }
-
-    function getPath(checkbox) {
-
-        var isDirectory = $(checkbox).attr('data-ccms-isdir');
-
-        if (isDirectory === "True") {
-            return $(checkbox).attr('data-ccms-blob') + "/";
-        }
-        else {
-            return $(checkbox).attr('data-ccms-blob');
-        }
-    }
-
-    $(document).on("unload", function () {
-        // Update preview window if opened
-        if (typeof imageEditorWindow !== "undefined" && imageEditorWindow !== null && imageEditorWindow.location) {
-            imageEditorWindow.close();
-        }
-    });
-
-    $(document).ready(function () {
-
-        if (window.parent.document == document) {
-            $("#ccmsNavMenu").show();
-        } else {
-            $("#ccmsNavMenu").hide();
-        };
-
-        $("body").addClass("cwps-editor-container");
-
-        $(".toLocalTimeZone").each(function (index, element) {
-            var date = new Date($(element).html());
-
-            if (isNaN(date)) {
-                return;
-            }
-
-            $(element).html(date.toLocaleDateString() + " " + date.toLocaleTimeString());
-
-        });
-
-        // If new session, clear selection and paths, otherwise
-        // reload selected paths from local storage.
-        if (isNewSession) {
-            clearSelection();
-        } else {
-            reloadPaths();
-        }
-
-        $(".gridCheckBox").each(function (index, element) {
-
-            let path = getPath(element);
-
-            cwpsSelectTableRow(element, false);
-
-            if (path === "pub" || path === "pub/") {
-                $(element).prop('checked', false);
-                $(element).prop('disabled', true);
-            }
-
-            if ((paths.indexOf(path) > -1)) {
-                $(element).prop('checked', true);
-                cwpsSelectTableRow(element, true);
-            }
-
-            $(element).on("change", function () {
-                if (directoryOnly || selectOneFile === true) {
-                    var isChecked = $(element).prop('checked');
-                    $(".gridCheckBox").each(function (i, e) {
-                        $(e).prop('checked', false);
-                        cwpsSelectTableRow(e, false);
-                    });
-                    $(element).prop('checked', true);
-                    cwpsSelectTableRow(element, true);
-                }
-
-                resetButtons();
-            });
-
-        });
-
-        $("#btnClear").click(function () {
-            clearSelection();
-        });
-
-        $(".btnShowSelected").click(function () {
-
-            let data = sessionStorage.getItem("paths");
-            let items = JSON.parse(data);
-            var count = 0;
-            var table = '<table class="table custom-table">';
-            table += '<thead><tr><th style="width:10%;">#</th><th>Item</th></tr></thead>';
-            table += '<tbody>'
-            $.each(items, function (index, item) {
-
-                var path = "";
-                let lastIndex = item.replace(new RegExp("\/*$"), '').lastIndexOf('/');
-                if (lastIndex === -1) {
-                    path = item;
-                } else {
-                    path = item.substring(0, lastIndex + 1);
-                }
-
-                const target = '<a title="Click to reveal this item in its containing folder" href="@Html.Raw(baseUrl)target=' + path + '">' + item + '</a>';
-
-                count++;
-                table += '<tr scope="row"><td>' + count + '</td><td>' + target + '</td></tr>';
-            });
-            table += '</tbody>'
-            table += '</table>'
-            $('#tblShowSelected').html(table);
-
-            showSelectedModal.show();
-        });
-
-        $("#btnShowSelModalClear").click(function () {
-            clearSelection();
-        });
-
-        $("#frmNewFolder").submit(function (e) {
-            // Stop form from submitting normally
-            e.preventDefault();
-            const $form = $(this);
-            const url = $form.attr("action");
-
-            $.post(url, $form.serialize())
-                .done(function () {
-                    clearPaths();
-                    clearSelection();
-                    hideModals();
-                    // Reload
-                    window.location.href = '@Html.Raw(baseUrl)target=@target';
-                })
-                .fail(function (data) {
-                    console.log(data);
-                    alert("We appologize, and error occured while creating folder.");
-                });
-
-            return true;
-        });
-
-        $("#frmNewFile").submit(function (e) {
-            // Stop form from submitting normally
-            e.preventDefault();
-            const $form = $(this);
-            const url = $form.attr("action");
-
-            const extensions = ["@Html.Raw(editorExtensions.Aggregate((a, b) => a + "\", \"" + b))"];
-
-            if ($("#FileName").val().trim() === "") {
-                alert("Please enter a file name.");
-                return false;
-            }
-
-            if (extensions.indexOf("." + $("#FileName").val().split('.').pop()) === -1) {
-                alert("Invalid file extension. Please use one of the following: " + extensions.join(", "));
-                return false;
-            }
-
-            $.post(url, $form.serialize())
-                .done(function () {
-                    clearPaths();
-                    clearSelection();
-                    hideModals();
-                    // Reload
-                    window.location.href = '@Html.Raw(baseUrl)target=@target';
-                })
-                .fail(function (data) {
-                    console.log(data);
-                    alert("We appologize, and error occured while creating file.");
-                });
-
-            return true;
-        });
-
-        $("#frmChangeName").submit(function (e) {
-
-            // Stop form from submitting normally
-            e.preventDefault();
-            const $form = $(this);
-            const url = $form.attr("action");
-
-            $.post(url, $form.serialize())
-                .done(function () {
-                    clearPaths();
-                    clearSelection();
-                    hideModals();
-                    // Reload
-                    window.location.href = '@Html.Raw(baseUrl)target=@target';
-                })
-                .fail(function (data) {
-                    console.log(data);
-                    alert("We appologize, and error occured while renaming file.");
-                });
-
-            return true;
-
-        });
-
-        resetButtons();
-    });
-
-    function selectImage(element) {
-        var selector = '[data-ccms-blob="' + element + '"]';
-        const checkbox = $(selector)[0];
-        $(checkbox).click();
-        if ($(checkbox).prop('checked')) {
-            cwpsSelectTableRow(checkbox, true);
-        } else {
-            cwpsSelectTableRow(checkbox, false);
-        }
-    }
-
-    function clearSelection() {
-        $(".gridCheckBox").each(function (index, element) {
-            $(element).prop('checked', false);
-            cwpsSelectTableRow(element, false);
-        });
-        clearPaths();
-        resetButtons();
-    }
-
-    function resetButtons() {
-
-        const mode = getMode();
-        let disabledChecks = false;
-
-        if (mode === "copyMove") {
-            $("#bgroupCopyMove").show();
-            disabledChecks = true;
-        } else {
-            $("#bgroupCopyMove").hide();
-        }
-
-        if (disabledChecks) {
-            $(".gridCheckBox").each(function (index, element) {
-                $(element).attr("disabled", true);
-            });
-        }
-
-        $(".gridCheckBox").each(function (index, element) {
-
-            var path = getPath(element);
-
-            if ($(element).is(':checked')) {
-                cwpsSelectTableRow(element, true);
-                savePath(path);
-            } else {
-                removePath(path);
-                cwpsSelectTableRow(element, false);
-            }
-
-        });
-
-        // Get the array length
-        let arrayLength = paths.length;
-
-
-        if (selectOneFile === true) {
-            $(btnSelectFileAndClose).attr("disabled", "true");
-        }
-
-        if (arrayLength > 0) {
-            let btnClear = parent.document.getElementById("btnClear");
-            $(btnClear).show();
-
-            $("#btnClear").show();
-            $("#btnShowSelected").show();
-
-            $("#btnDelete").prop('disabled', false);
-            $("#btnDelete").prop('title', "Click to delete.");
-            replaceCssClass($("#btnDelete"), "btn-secondary", "btn-primary");
-
-            $("#btnMove").prop('disabled', false);
-            $("#btnMove").prop('title', "Click to move.");
-            replaceCssClass($("#btnMove"), "btn-secondary", "btn-primary");
-
-            $("#btnRename").prop('title', "Select only one item.");
-            replaceCssClass($("#btnRename"), "btn-primary", "btn-secondary");
-        } else {
-
-            let btnClear = parent.document.getElementById("btnClear");
-            $(btnClear).hide();
-
-            $("#btnClear").hide();
-            $("#btnShowSelected").hide();
-
-            $("#btnDelete").prop('disabled', true);
-            replaceCssClass($("#btnDelete"), "btn-primary", "btn-secondary");
-
-            $("#btnMove").prop('disabled', true);
-            replaceCssClass($("#btnMove"), "btn-primary", "btn-secondary");
-
-            $("#btnRename").prop('title', "Select one item.");
-            replaceCssClass($("#btnRename"), "btn-primary", "btn-secondary");
-        }
-
-        if (arrayLength === 1) {
-
-            if (selectOneFile === true) {
-                $(btnSelectFileAndClose).removeAttr("disabled");
-                selectedFile = paths[0];
-            }
-
-            $("#btnSelectFile").prop('disabled', false);
-            replaceCssClass($("#btnSelectFile"), "btn-secondary", "btn-primary");
-
-            $("#btnRename").prop('disabled', false);
-            $("#btnRename").prop('title', "Click to rename.");
-            replaceCssClass($("#btnRename"), "btn-secondary", "btn-primary");
-
-        } else {
-
-            $("#btnSelectFile").prop('disabled', true);
-            replaceCssClass($("#btnSelectFile"), "btn-primary", "btn-secondary");
-
-            $("#btnRename").prop('disabled', true);
-            replaceCssClass($("#btnRename"), "btn-primary", "btn-secondary");
-
-        }
-    }
-
-    function replaceCssClass(element, oldClass, newClass) {
-        $(element).removeClass(oldClass);
-        $(element).addClass(newClass);
-    }
-
-    var next = null;
-    function btnClick(command) {
-
-        // Get the array length
-        var arrayLength = paths.length;
-        var busyMsg = "";
-
-        switch (command) {
-            case "cancel":
-                clearPaths();
-                window.location.href = '@Html.Raw(baseUrl)target=@target';
-                break;
-            case "delete":
-                if (arrayLength == 1) {
-                    showModal("checkFirst", "WARNING: Are you sure you want to permanently delete this item?", "Delete Verification");
-                    busyMsg = "Deleting item";
-                } else {
-                    $("#checkFirstDialog").html();
-                    showModal("checkFirst", "WARNING: Are you sure you want to permanently delete " + arrayLength + " items ?", "Delete Verification");
-                    busyMsg = "Deleting items";
-                }
-                next = function () {
-                    showModal("busy", busyMsg);
-                    $.post('@Url.Action("Delete", controller)',   // url
-                        {
-                            ParentPath: '@pathPrefix',
-                            Paths: paths
-                        }, // data to be submit
-                        function (data, status, jqXHR) {// success callback
-                            clearSelection();
-                            hideModals();
-                            // Reload
-                            window.location.href = '@Html.Raw(baseUrl)target=@target';
-                        });
-                }
-                break;
-            case "rename":
-                showModal("checkFirst", "Are you sure you want to rename this item?<br />/" + paths[0], "Rename Verification");
-                next = function () {
-                    var len = paths[0].length;
-
-                    if (paths[0].lastIndexOf("/") == len - 1) {
-                        paths[0] = paths[0].substring(0, len - 1);
-                    }
-
-                    //itemPrefix
-                    var pathArray = paths[0].split("/");
-                    $("#itemPrefix1").html("");
-                    $("#itemPrefix2").html("");
-
-                    var p = "";
-                    var len = pathArray.length;
-                    for (var i = 0; i < len - 1; i++) {
-                        if (pathArray[i] !== "") {
-                            p = p + "/" + pathArray[i];
-                        }
-                    }
-
-                    $("#itemPrefix1").html(p);
-                    $("#itemPrefix2").html(p);
-
-                    $("#FromBlobName").val(pathArray[pathArray.length - 1]);
-
-                    $("#ctrlFromBlobName").val($("#FromBlobName").val());
-                    showModal("rename", "");
-                }
-                break;
-            case "move":
-                $("#checkFirstTitle").html("Move Items");
-                if (arrayLength == 1) {
-                    showModal("checkFirst", "WARNING: Are you sure you want to copy or move this item?", "Move Items");
-                } else {
-                    showModal("checkFirst", "Are you sure you want to copy or move " + arrayLength + " items?", "Move Items");
-                }
-
-                next = function () {
-                    showModal("busy", "Moving item(s)");
-                    sessionStorage.setItem("itemsToMove", sessionStorage.getItem("paths"));
-                    clearSelection();
-                    setMode("copyMove");
-                    window.location.href = '@Html.Raw(baseUrl)target=@pathPrefix'
-                };
-
-                break;
-            case "copyItems":
-            case "moveItems":
-
-                const items = getItemsToMove();
-
-                const dest = "@pathPrefix";
-
-                let itemCount = items.length;
-
-                showModal("checkFirst", "Are you sure you want to move item(s) to: <br />" + dest, "Move Items");
-
-                let urlPath;
-
-                if (command === "moveItems") {
-                    urlPath = "@Url.Action("Move", controller)";
-                } else {
-                    urlPath = "@Url.Action("Copy", controller)";
-                }
-
-                next = function () {
-                    setMode("");
-                    showModal("busy", "Moving item(s)");
-                    $.post(urlPath,
-                        {
-                            Destination: dest,
-                            Items: items
-                        }, // data to be submit
-                        function (response) {// success callback
-                            clearSelection();
-                            hideModals();
-                        })
-                        .done(function () {
-                            clearSelection();
-                            window.location.href = '@Html.Raw(baseUrl)target=' + dest;
-                        })
-                        .fail(function () {
-                            alert("error");
-                            hideModals();
-                        });
-                }
-                break;
-            case "createFile":
-
-                newFileModal.show();
-
-                break;
-            case "selectFile":
-                {
-                    let lastIndex = paths[0].replace(new RegExp("\/*$"), '').lastIndexOf('/');
-
-                    if (lastIndex === -1 || lastIndex === paths[0].length) {
-                        alert("Selected file: " + paths[0]);
-                    } else {
-                        // Can only select files
-                        clearSelection();
-                    }
-
-                }
-                break;
-        }
-
-
-    }
-
-    function cancelAction() {
-        hideModals();;
-    }
-
-    function continueAction() {
-        next();
-    }
-
-    function download(p) {
-        window.location.href = encodeURI("@Url.Action("Download", controller)?path=" + p);
-    }
-
-
-</script>

@@ -8,7 +8,9 @@
 namespace Sky.Cms.Services
 {
     using System;
+    using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
@@ -76,34 +78,97 @@ namespace Sky.Cms.Services
         /// <exception cref="ArgumentNullException">Null argument exception.</exception>
         public async Task<string> RenderToStringAsync(string viewPath, object model)
         {
-            var httpContext = new DefaultHttpContext { RequestServices = serviceProvider };
-            var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
-
-            using (var sw = new StringWriter())
+            if (string.IsNullOrWhiteSpace(viewPath))
             {
-                var viewResult = razorViewEngine.GetView(null, viewPath, false);
+                throw new ArgumentNullException(nameof(viewPath));
+            }
 
-                if (viewResult.View == null)
+            var actionContext = GetActionContext();
+
+            // First try direct path resolution (works for physical/absolute views).
+            var directViewResult = razorViewEngine.GetView(executingFilePath: null, viewPath: viewPath, isMainPage: true);
+            var viewResult = directViewResult;
+
+            // Fallback to MVC discovery for shared/RCL views.
+            if (!viewResult.Success)
+            {
+                var lookupName = viewPath;
+                if (lookupName.StartsWith("~/", StringComparison.Ordinal))
                 {
-                    throw new ArgumentNullException($"{viewPath} does not match any available view");
+                    lookupName = lookupName[2..];
                 }
 
-                var viewDictionary = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+                if (lookupName.StartsWith("/", StringComparison.Ordinal))
                 {
-                    Model = model
-                };
+                    lookupName = lookupName[1..];
+                }
 
-                var viewContext = new ViewContext(
-                    actionContext,
-                    viewResult.View,
-                    viewDictionary,
-                    new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
-                    sw,
-                    new HtmlHelperOptions());
+                if (lookupName.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase))
+                {
+                    lookupName = lookupName[..^".cshtml".Length];
+                }
 
-                await viewResult.View.RenderAsync(viewContext);
-                return sw.ToString();
+                // FindView expects a view name/path relative to MVC discovery roots.
+                // '~/Views/Home/Index.cshtml' should become 'Home/Index' (not 'Views/Home/Index').
+                if (lookupName.StartsWith("Views/", StringComparison.OrdinalIgnoreCase))
+                {
+                    lookupName = lookupName["Views/".Length..];
+                }
+
+                if (lookupName.StartsWith("Pages/", StringComparison.OrdinalIgnoreCase))
+                {
+                    lookupName = lookupName["Pages/".Length..];
+                }
+
+                viewResult = razorViewEngine.FindView(actionContext, lookupName, isMainPage: true);
+
+                // Final RCL guard: explicit rooted path used by shared Razor class libraries.
+                if (!viewResult.Success)
+                {
+                    var rclPath = "/Views/" + lookupName + ".cshtml";
+                    viewResult = razorViewEngine.GetView(executingFilePath: null, viewPath: rclPath, isMainPage: true);
+                }
             }
+
+            if (!viewResult.Success)
+            {
+                var searchedLocations = directViewResult.SearchedLocations
+                    .Concat(viewResult.SearchedLocations)
+                    .Distinct()
+                    .ToArray();
+
+                var searchedLocationsText = searchedLocations.Length == 0
+                    ? "(no locations reported by Razor view engine)"
+                    : string.Join(Environment.NewLine, searchedLocations);
+
+                Debug.WriteLine($"View resolution failed for '{viewPath}'. Searched locations:{Environment.NewLine}{searchedLocationsText}");
+
+                throw new ArgumentNullException($"{viewPath} does not match any available view. Searched locations:{Environment.NewLine}{searchedLocationsText}");
+            }
+
+            var viewDictionary = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+            {
+                Model = model
+            };
+
+            await using var output = new StringWriter();
+            var viewContext = new ViewContext(
+                actionContext,
+                viewResult.View,
+                viewDictionary,
+                new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
+                output,
+                new HtmlHelperOptions());
+
+            await viewResult.View.RenderAsync(viewContext);
+            return output.ToString();
+        }
+
+        private ActionContext GetActionContext()
+        {
+            var httpContext = new DefaultHttpContext { RequestServices = serviceProvider };
+            var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
+            return actionContext;
         }
     }
 }

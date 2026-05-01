@@ -266,7 +266,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
             catch (Exception ex)
             {
                 Console.WriteLine($"[INIT] Failed to ensure SQL Server database exists: {ex.Message}");
-                throw;
+                throw new InvalidOperationException(
+                    "Database initialization failed for provider SQL Server. EnsureSqlServerDatabaseExists could not prepare the test database.",
+                    ex);
             }
         }
 

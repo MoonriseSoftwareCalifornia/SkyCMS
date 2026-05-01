@@ -1,0 +1,3 @@
+// Commands for elFinder operations (MediatR CQRS pattern)
+// Each command maps to an elFinder protocol command
+// E.g., ElFinderOpenCommand → "open" protocol command
