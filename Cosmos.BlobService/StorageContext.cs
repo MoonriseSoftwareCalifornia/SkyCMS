@@ -548,7 +548,14 @@ namespace Cosmos.BlobService
             {
                 case CloudStorageProvider.Azure:
                     var isAzurite = ConnectionStringParser.IsAzurite(connectionString);
-                    TokenCredential credential = isAzurite ? null : CreateDefaultTokenCredential();
+                    var requiresTokenCredential = connectionString.Contains("AccountKey=AccessToken", StringComparison.OrdinalIgnoreCase);
+                    TokenCredential credential = null;
+
+                    if (!isAzurite && requiresTokenCredential)
+                    {
+                        credential = CreateDefaultTokenCredential();
+                    }
+
                     return new AzureStorage(connectionString, credential);
 
                 case CloudStorageProvider.CloudflareR2:
@@ -578,12 +585,19 @@ namespace Cosmos.BlobService
 
         private static TokenCredential CreateDefaultTokenCredential()
         {
-            var credentialType = Type.GetType("Azure.Identity.DefaultAzureCredential, Azure.Identity", throwOnError: false)
-                ?? Type.GetType("Azure.Identity.DefaultAzureCredential, Azure.Core", throwOnError: false);
-
-            if (credentialType != null && typeof(TokenCredential).IsAssignableFrom(credentialType))
+            try
             {
-                return (TokenCredential)Activator.CreateInstance(credentialType);
+                var credentialType = Type.GetType("Azure.Identity.DefaultAzureCredential, Azure.Identity", throwOnError: false)
+                    ?? Type.GetType("Azure.Identity.DefaultAzureCredential, Azure.Core", throwOnError: false);
+
+                if (credentialType != null && typeof(TokenCredential).IsAssignableFrom(credentialType))
+                {
+                    return (TokenCredential)Activator.CreateInstance(credentialType);
+                }
+            }
+            catch (MissingMethodException)
+            {
+                return null;
             }
 
             return null;

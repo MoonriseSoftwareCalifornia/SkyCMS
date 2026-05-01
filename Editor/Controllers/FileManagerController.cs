@@ -1147,7 +1147,7 @@ namespace Sky.Cms.Controllers
         /// Creates a new file in a given folder.
         /// </summary>
         /// <param name="model">New file post model.</param>
-        /// <returns>IActionResult.</returns>
+        /// <returns>IActionResult。</returns>
         public async Task<IActionResult> NewFile(NewFileViewModel model)
         {
             if (!ModelState.IsValid)
@@ -1240,28 +1240,35 @@ namespace Sky.Cms.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Check if blob exists before attempting to get metadata
-            if (!await storageContext.BlobExistsAsync(path))
+            try
+            {
+                // Check if blob exists before attempting to get metadata
+                if (!await storageContext.BlobExistsAsync(path))
+                {
+                    return NotFound();
+                }
+
+                var blob = await storageContext.GetFileAsync(path);
+
+                if (blob == null)
+                {
+                    return NotFound();
+                }
+
+                if (blob.IsDirectory)
+                {
+                    return NotFound();
+                }
+
+                using var stream = await storageContext.GetStreamAsync(path);
+                using var memStream = new MemoryStream();
+                await stream.CopyToAsync(memStream);
+                return File(memStream.ToArray(), "application/octet-stream", fileDownloadName: blob.Name);
+            }
+            catch (Cosmos.BlobService.Exceptions.StorageException)
             {
                 return NotFound();
             }
-
-            var blob = await storageContext.GetFileAsync(path);
-
-            if (blob == null)
-            {
-                return NotFound();
-            }
-
-            if (blob.IsDirectory)
-            {
-                return NotFound();
-            }
-
-            using var stream = await storageContext.GetStreamAsync(path);
-            using var memStream = new MemoryStream();
-            await stream.CopyToAsync(memStream);
-            return File(memStream.ToArray(), "application/octet-stream", fileDownloadName: blob.Name);
         }
 
         /// <summary>
