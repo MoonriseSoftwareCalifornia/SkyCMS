@@ -69,7 +69,7 @@ function loadCkeditorWidget() {
 
   // Stub CKEditor plugin constructors referenced in plugin arrays
   const pluginNames = [
-    'Autoformat','AutoImage','Autosave','BalloonToolbar','BlockQuote','Bookmark','Bold','CodeBlock','Essentials','Heading','ImageBlock','ImageCaption','ImageInline','ImageInsert','ImageInsertViaUrl','ImageResize','ImageStyle','ImageTextAlternative','ImageToolbar','ImageUpload','ImageUploadEditing','Indent','IndentBlock','Italic','Link','LinkImage','List','ListProperties','MediaEmbed','Paragraph','PasteFromOffice','SimpleUploadAdapter','Table','TableCaption','TableCellProperties','TableColumnResize','TableProperties','TableToolbar','TextTransformation','TodoList','Underline','CkEditorCopilot','FileLink','InsertImage','PageLink','SignalR','TitleModeIndicator','VSCodeEditor'
+    'Autoformat','AutoImage','Autosave','BalloonToolbar','BlockQuote','Bookmark','Bold','CodeBlock','Copilot','Essentials','Heading','ImageBlock','ImageCaption','ImageInline','ImageInsert','ImageInsertViaUrl','ImageResize','ImageStyle','ImageTextAlternative','ImageToolbar','ImageUpload','ImageUploadEditing','Indent','IndentBlock','Italic','Link','LinkImage','List','ListProperties','MediaEmbed','Paragraph','PasteFromOffice','SimpleUploadAdapter','Table','TableCaption','TableCellProperties','TableColumnResize','TableProperties','TableToolbar','TextTransformation','TodoList','Underline','CkEditorCopilot','FileLink','InsertImage','PageLink','SignalR','TitleModeIndicator','VSCodeEditor'
   ];
   pluginNames.forEach(name => {
     context[name] = function Plugin() {};

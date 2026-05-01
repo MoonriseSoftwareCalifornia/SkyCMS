@@ -9,7 +9,7 @@ namespace Cosmos.BlobService
 {
     using System;
     using System.Collections.Generic;
-    using Azure.Identity;
+    using Azure.Core;
     using Azure.Storage.Blobs;
     using Cosmos.BlobService.Exceptions;
 
@@ -91,27 +91,27 @@ namespace Cosmos.BlobService
         /// Creates a BlobServiceClient from an Azure connection string.
         /// </summary>
         /// <param name="connectionString">The Azure connection string.</param>
-        /// <param name="defaultAzureCredential">Optional Azure credential for token-based auth.</param>
+        /// <param name="tokenCredential">Optional token credential for token-based auth.</param>
         /// <returns>A configured BlobServiceClient instance.</returns>
         public static BlobServiceClient CreateBlobServiceClient(
             string connectionString,
-            DefaultAzureCredential defaultAzureCredential = null)
+            TokenCredential tokenCredential = null)
         {
             var components = ParseAzureConnectionString(connectionString);
 
             if (components.UsesAccessToken)
             {
-                if (defaultAzureCredential == null)
+                if (tokenCredential == null)
                 {
                     throw new InvalidConnectionStringException(
-                        "DefaultAzureCredential is required when using AccessToken authentication.")
+                        "TokenCredential is required when using AccessToken authentication.")
                     {
                         AttemptedProvider = CloudStorageProvider.Azure
                     };
                 }
 
                 var blobUri = new Uri($"https://{components.AccountName}.blob.core.windows.net/");
-                return new BlobServiceClient(blobUri, defaultAzureCredential);
+                return new BlobServiceClient(blobUri, tokenCredential);
             }
 
             return new BlobServiceClient(connectionString);

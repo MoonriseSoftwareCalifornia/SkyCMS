@@ -46,6 +46,7 @@ namespace Sky.Editor.Models
                 this.PublisherUrl = config.PublisherUrl;
                 this.StaticWebPages = config.StaticWebPages;
                 this.AllowedFileTypes = config.AllowedFileTypes;
+                this.UseModernFileExplorer = config.UseModernFileExplorer;
             }
         }
 
@@ -63,6 +64,7 @@ namespace Sky.Editor.Models
             this.PublisherUrl = settings.PublisherUrl;
             this.StaticWebPages = settings.StaticWebPages;
             this.AllowedFileTypes = settings.AllowedFileTypes;
+            this.UseModernFileExplorer = settings.UseModernFileExplorer;
         }
 
         /// <summary>
@@ -121,5 +123,11 @@ namespace Sky.Editor.Models
         /// </summary>
         [Display(Name = "Static mode website")]
         public bool StaticWebPages { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the modern elFinder-based file explorer is enabled.
+        /// </summary>
+        [Display(Name = "Use modern file explorer")]
+        public bool UseModernFileExplorer { get; set; } = true;
     }
 }

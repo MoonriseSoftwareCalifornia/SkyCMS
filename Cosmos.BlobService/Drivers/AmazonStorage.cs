@@ -585,6 +585,11 @@ namespace Cosmos.BlobService.Drivers
         public async Task<Stream> GetStreamAsync(string path)
         {
             var blob = await GetBlobAsync(path);
+            if (blob == null)
+            {
+                throw new FileNotFoundException($"Blob not found at path: {path}");
+            }
+
             return blob.ResponseStream;
         }
 

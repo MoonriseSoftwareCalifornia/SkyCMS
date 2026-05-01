@@ -6,15 +6,15 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>annotations</Nullable>
 		<UserSecretsId>c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1</UserSecretsId>
-		<Version>12.1.4</Version>
+		<Version>12.3.0</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<!-- Suppress CS0618: Using obsolete SaveArticle method for legacy integration tests -->
 		<!-- Suppress MSTEST0006: Keep ExpectedException attributes for now, will migrate later -->
 		<NoWarn>$(NoWarn);CS0618;MSTEST0006</NoWarn>
-		<FileVersion>12.1.4</FileVersion>
-		<AssemblyVersion>12.1.4</AssemblyVersion>
+		<FileVersion>12.3.0</FileVersion>
+		<AssemblyVersion>12.3.0</AssemblyVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -48,6 +48,7 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
 		<PackageReference Include="Moq" />
 		<PackageReference Include="RazorLight" />
+		<PackageReference Include="SixLabors.ImageSharp" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -55,6 +56,7 @@
 		<ProjectReference Include="..\Cosmos.BlobService\Cosmos.BlobService.csproj" />
 		<ProjectReference Include="..\Cosmos.ConnectionStrings\Cosmos.DynamicConfig.csproj" />
 		<ProjectReference Include="..\Cosmos.EmailServices\Cosmos.EmailServices.csproj" />
+		<ProjectReference Include="..\Drivers\SkyCMS.Drivers.ElFinder\SkyCMS.Drivers.ElFinder.csproj" />
 		<ProjectReference Include="..\Editor\Sky.Editor.csproj" />
 		<ProjectReference Include="..\Publisher\Sky.Publisher.csproj" />
 	</ItemGroup>

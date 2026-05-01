@@ -1,0 +1,2 @@
+// Response DTOs matching elFinder 2.1 API specification
+// Each DTO has [JsonPropertyName] attributes for exact spec compliance

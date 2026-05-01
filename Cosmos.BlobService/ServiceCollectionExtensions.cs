@@ -8,7 +8,7 @@
 namespace Cosmos.BlobService
 {
     using System;
-    using Azure.Identity;
+    using Azure.Core;
     using Azure.Storage.Blobs;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.DataProtection;
@@ -40,9 +40,9 @@ namespace Cosmos.BlobService
         /// </summary>
         /// <param name="services">Service collection.</param>
         /// <param name="config">Configuration.</param>
-        /// <param name="defaultAzureCredential">Default azure credential.</param>
+        /// <param name="tokenCredential">Default azure credential.</param>
         /// <exception cref="ArgumentNullException">Returns error if no connection string found.</exception>
-        public static void AddCosmosCmsDataProtection(this IServiceCollection services, IConfiguration config, DefaultAzureCredential defaultAzureCredential)
+        public static void AddCosmosCmsDataProtection(this IServiceCollection services, IConfiguration config, TokenCredential tokenCredential)
         {
             var connectionString = GetDataProtectionConnectionString(config);
 
@@ -53,7 +53,7 @@ namespace Cosmos.BlobService
                     "'DataProtectionStorage' or 'StorageConnectionString' connection string is not set.");
             }
 
-            var blobClient = GetDataProtectionBlobClient(connectionString, defaultAzureCredential);
+            var blobClient = GetDataProtectionBlobClient(connectionString, tokenCredential);
 
             services.AddDataProtection()
                 .SetApplicationName(GetDataProtectionApplicationName(config))
@@ -70,13 +70,13 @@ namespace Cosmos.BlobService
         /// Adds the storage context to the services collection.
         /// </summary>
         /// <param name="config">Startup configuration.</param>
-        /// <param name="defaultAzureCredential">Default Azure token credential.</param>
+        /// <param name="tokenCredential">Default Azure token credential.</param>
         /// <param name="container">The container to use.</param>
         /// <returns>Blob service client.</returns>
-        public static BlobContainerClient GetBlobContainerClient(IConfiguration config, DefaultAzureCredential defaultAzureCredential, string container = StorageConstants.DefaultWebContainer)
+        public static BlobContainerClient GetBlobContainerClient(IConfiguration config, TokenCredential tokenCredential, string container = StorageConstants.DefaultWebContainer)
         {
             var connectionString = GetConnectionString(config);
-            var blobServiceClient = ConnectionStringParser.CreateBlobServiceClient(connectionString, defaultAzureCredential);
+            var blobServiceClient = ConnectionStringParser.CreateBlobServiceClient(connectionString, tokenCredential);
             return blobServiceClient.GetBlobContainerClient(container);
         }
 
@@ -125,13 +125,13 @@ namespace Cosmos.BlobService
         /// Creates and initializes a blob client for data protection keys.
         /// </summary>
         /// <param name="connectionString">The storage connection string.</param>
-        /// <param name="defaultAzureCredential">Default Azure credential.</param>
+        /// <param name="tokenCredential">Default Azure credential.</param>
         /// <returns>A configured <see cref="BlobClient"/> for the data protection keys file.</returns>
         private static BlobClient GetDataProtectionBlobClient(
             string connectionString,
-            DefaultAzureCredential defaultAzureCredential)
+            TokenCredential tokenCredential)
         {
-            var blobServiceClient = ConnectionStringParser.CreateBlobServiceClient(connectionString, defaultAzureCredential);
+            var blobServiceClient = ConnectionStringParser.CreateBlobServiceClient(connectionString, tokenCredential);
             var containerClient = blobServiceClient.GetBlobContainerClient(StorageConstants.DataProtectionContainer);
             containerClient.CreateIfNotExists();
             return containerClient.GetBlobClient(StorageConstants.DataProtectionKeysFile);

@@ -180,7 +180,7 @@ namespace Sky.Tests.Features.Blogs
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectToActionResult));
             var redirect = (RedirectToActionResult)result;
-            Assert.AreEqual("Edit", redirect.ActionName);
+            Assert.AreEqual("VisualEditor", redirect.ActionName);
             Assert.AreEqual("Editor", redirect.ControllerName);
 
             // Verify the post was created in the database
