@@ -365,6 +365,57 @@
                     }
                 }
 
+                // ── Public blob base URL (used by Copy Public URL action) ─
+                var fileBaseUrl = '@Html.Raw(options.BlobPublicUrl.TrimEnd('/'))';
+
+                // ── Copy Public URL custom command ────────────────────────
+                (function () {
+                    if (typeof $.fn.elfinder === 'undefined') { return; }
+
+                    $.fn.elfinder.commands.ccmscopyurl = function () {
+                        this.title = 'Copy Public URL';
+                        this.state = 0;
+                    };
+
+                    $.fn.elfinder.commands.ccmscopyurl.prototype = $.extend({}, $.fn.elfinder.prototype, {
+                        exec: function (hashes) {
+                            var fm = this.fm;
+                            var files = fm.files(hashes);
+                            if (!files || !files.length) { return $.Deferred().reject(); }
+
+                            var file = files[0];
+                            if (file.mime === 'directory') { return $.Deferred().reject(); }
+
+                            var filePath = fm.path(hashes[0]);
+                            if (!filePath) { return $.Deferred().reject(); }
+
+                            // Normalise: ensure leading slash, no double-slashes.
+                            var clean = filePath.replace(/\\/g, '/');
+                            if (clean.charAt(0) !== '/') { clean = '/' + clean; }
+                            var publicUrl = fileBaseUrl + clean;
+
+                            navigator.clipboard.writeText(publicUrl).then(function () {
+                                if (window.toastr && typeof window.toastr.success === 'function') {
+                                    window.toastr.success('Public URL copied to clipboard.');
+                                }
+                            }).catch(function () {
+                                if (window.toastr && typeof window.toastr.error === 'function') {
+                                    window.toastr.error('Could not copy URL. Please copy manually: ' + publicUrl);
+                                }
+                            });
+
+                            return $.Deferred().resolve();
+                        },
+                        getstate: function (sel) {
+                            var sel = sel || this.fm.selected();
+                            if (!sel || !sel.length) { return -1; }
+                            var files = this.fm.files(sel);
+                            // Enable only for single non-directory file selection.
+                            return (files && files.length === 1 && files[0].mime !== 'directory') ? 0 : -1;
+                        }
+                    });
+                })();
+
                 // ── Starting target hash ──────────────────────────────────
                 var startTarget = encodePath('@Html.Raw(target)');
                 var currentUploadPath = normalizePath('@Html.Raw(target)');
@@ -407,7 +458,7 @@
                     theme: 'mt-gray',
                     resizable: false,
                     baseUrl: '/lib/elfinder/',
-                    commands: ['*', '!upload'],
+                    commands: ['*', '!upload', 'ccmscopyurl'],
                     uiOptions: {
                         toolbar: [
                             ['back', 'forward'],
@@ -421,8 +472,30 @@
                             ['rm'],
                             ['rename'],
                             ['search'],
-                            ['view', 'sort']
+                            ['view', 'sort'],
+                            ['ccmscopyurl']
                         ],
+                    },
+                    contextmenu: {
+                        files: [
+                            'getfile',
+                            '|',
+                            'open',
+                            'download',
+                            '|',
+                            'copy',
+                            'cut',
+                            'paste',
+                            'duplicate',
+                            '|',
+                            'rm',
+                            '|',
+                            'rename',
+                            '|',
+                            'ccmscopyurl',
+                            '|',
+                            'info'
+                        ]
                     },
                     startPathHash: startTarget,
                     handlers: {
