@@ -66,12 +66,12 @@ namespace Sky.Cms.Models
         /// Gets or sets blog category.
         /// </summary>
         [MaxLength(64)]
-        public string Category { get; set; }
+        public string? Category { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets introduction/summary for blog post.
         /// </summary>
         [MaxLength(512)]
-        public string Introduction { get; set; }
+        public string? Introduction { get; set; } = string.Empty;
     }
 }

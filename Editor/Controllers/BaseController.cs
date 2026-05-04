@@ -269,12 +269,30 @@ namespace Sky.Cms.Controllers
         /// <returns>Bad-request result or <see langword="null"/>.</returns>
         protected IActionResult? GetInvalidModelStateResult()
         {
+            RemoveOptionalBlogMetadataModelStateErrors();
+
             if (ModelState.IsValid)
             {
                 return null;
             }
 
             return BadRequest(ModelState);
+        }
+
+        private void RemoveOptionalBlogMetadataModelStateErrors()
+        {
+            var keysToRemove = ModelState.Keys
+                .Where(key =>
+                    key.Equals("Category", StringComparison.OrdinalIgnoreCase)
+                    || key.Equals("Introduction", StringComparison.OrdinalIgnoreCase)
+                    || key.EndsWith(".Category", StringComparison.OrdinalIgnoreCase)
+                    || key.EndsWith(".Introduction", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var key in keysToRemove)
+            {
+                ModelState.Remove(key);
+            }
         }
 
         /// <summary>
@@ -483,26 +501,6 @@ namespace Sky.Cms.Controllers
             if (string.IsNullOrWhiteSpace(model.UrlPath) && !string.IsNullOrWhiteSpace(queryModel.UrlPath))
             {
                 model.UrlPath = queryModel.UrlPath;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.BannerImage) && !string.IsNullOrWhiteSpace(queryModel.BannerImage))
-            {
-                model.BannerImage = queryModel.BannerImage;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.RoleList) && !string.IsNullOrWhiteSpace(queryModel.RoleList))
-            {
-                model.RoleList = queryModel.RoleList;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Category) && !string.IsNullOrWhiteSpace(queryModel.Category))
-            {
-                model.Category = queryModel.Category;
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Introduction) && !string.IsNullOrWhiteSpace(queryModel.Introduction))
-            {
-                model.Introduction = queryModel.Introduction;
             }
         }
     }

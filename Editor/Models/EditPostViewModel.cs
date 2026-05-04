@@ -143,11 +143,11 @@ namespace Sky.Cms.Models
         /// <summary>
         /// Gets or sets blog category.
         /// </summary>
-        public string Category { get; set; } = string.Empty;
+        public string? Category { get; set; }
 
         /// <summary>
         /// Gets or sets blog introduction.
         /// </summary>
-        public string Introduction { get; set; } = string.Empty;
+        public string? Introduction { get; set; }
     }
 }

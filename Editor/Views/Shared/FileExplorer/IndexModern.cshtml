@@ -370,7 +370,10 @@
 
                 // ── Copy Public URL custom command ────────────────────────
                 (function () {
-                    if (typeof $.fn.elfinder === 'undefined') { return; }
+                    if (typeof $ === 'undefined' || !$.fn || typeof $.fn.elfinder === 'undefined') { return; }
+
+                    $.fn.elfinder.commands = $.fn.elfinder.commands || {};
+                    if ($.fn.elfinder.commands.ccmscopyurl) { return; }
 
                     $.fn.elfinder.commands.ccmscopyurl = function () {
                         this.title = 'Copy Public URL';

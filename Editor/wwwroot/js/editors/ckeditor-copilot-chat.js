@@ -462,6 +462,14 @@
         }
 
         setActiveEditor(editor) {
+            const requiredMethods = ['renderMessages', 'captureEditorContext', 'buildPayload'];
+            const missingMethods = requiredMethods.filter((methodName) => typeof this[methodName] !== 'function');
+            if (missingMethods.length > 0) {
+                const message = `CKEditor AI assistant is in an invalid state. Missing required method(s): ${missingMethods.join(', ')}`;
+                this.showStatus(message);
+                throw new Error(message);
+            }
+
             this.activeEditor = editor || null;
             this.activeEditorId = this.getEditorId(editor);
 
@@ -694,6 +702,192 @@
             }
 
             this.hideStatus();
+        }
+
+        buildPayload(action, message, session, context) {
+            const editorContext = window.ccmsEditorContext || {};
+            const selectedModel = this.getSelectedModel();
+
+            return {
+                editorKind: editorContext.editorSurface || 'ckeditor',
+                action: action,
+                message: message,
+                selection: context.selectionSnapshot || null,
+                currentCode: context.currentHtml || null,
+                language: 'html',
+                fieldName: context.fieldName || null,
+                title: editorContext.title || null,
+                articleNumber: editorContext.articleNumber || null,
+                documentKind: editorContext.documentKind || null,
+                sectionKind: context.sectionKind || editorContext.sectionKind || null,
+                articleType: editorContext.articleType || null,
+                category: editorContext.category || null,
+                urlPath: editorContext.urlPath || null,
+                selectedModel: selectedModel,
+                messages: session.messages.slice(-8).map((entry) => ({
+                    role: entry.role,
+                    content: entry.content
+                }))
+            };
+        }
+
+        captureEditorContext(editor) {
+            const editorContext = window.ccmsEditorContext || {};
+            const sourceElement = editor && editor.sourceElement ? editor.sourceElement : null;
+            const selection = editor && editor.model && editor.model.document
+                ? editor.model.document.selection
+                : null;
+
+            let selectedHtml = null;
+            if (editor && selection && !selection.isCollapsed) {
+                try {
+                    editor.model.change((writer) => {
+                        const selectedContent = editor.model.getSelectedContent(selection);
+                        const viewFragment = editor.data.toView(selectedContent);
+                        selectedHtml = editor.data.processor.toData(viewFragment);
+                    });
+                } catch {
+                    selectedHtml = null;
+                }
+            }
+
+            const currentHtml = editor && typeof editor.getData === 'function'
+                ? editor.getData()
+                : null;
+
+            return {
+                fieldName: sourceElement ? sourceElement.getAttribute('name') : null,
+                sectionKind: sourceElement ? sourceElement.getAttribute('data-ccms-section-kind') : null,
+                selectionSnapshot: selectedHtml,
+                caretSnapshot: null,
+                hasExpandedSelection: !!(selection && !selection.isCollapsed),
+                currentHtml: currentHtml,
+                contentFingerprint: this.hashText(currentHtml || ''),
+                documentKind: editorContext.documentKind || null
+            };
+        }
+
+        renderMessages() {
+            if (!this.messagesContainer) {
+                return;
+            }
+
+            const session = this.getActiveSession();
+            const messages = session ? session.messages : [];
+            this.messagesContainer.innerHTML = '';
+
+            if (!messages.length) {
+                const empty = document.createElement('div');
+                empty.className = 'copilot-chat-empty';
+                empty.textContent = 'Open the assistant from a CKEditor toolbar button to start a region-scoped chat.';
+                this.messagesContainer.appendChild(empty);
+                return;
+            }
+
+            messages.forEach((entry) => {
+                const item = document.createElement('div');
+                item.className = `copilot-chat-message ${entry.role}`;
+
+                const content = document.createElement('div');
+                content.className = 'copilot-chat-message-content';
+                content.textContent = entry.content;
+                item.appendChild(content);
+
+                if (entry.role === 'assistant') {
+                    const suggestedHtml = this.extractHtmlFromReply(entry.content);
+                    if (suggestedHtml) {
+                        const actions = document.createElement('div');
+                        actions.className = 'copilot-chat-message-actions mt-2 d-flex gap-2 flex-wrap';
+
+                        const replaceSelection = document.createElement('button');
+                        replaceSelection.type = 'button';
+                        replaceSelection.className = 'btn btn-sm btn-outline-light';
+                        replaceSelection.textContent = 'Apply to selection';
+                        replaceSelection.setAttribute('data-message-id', String(entry.id));
+                        replaceSelection.setAttribute('data-apply-mode', 'replace-selection');
+                        actions.appendChild(replaceSelection);
+
+                        const replaceBlock = document.createElement('button');
+                        replaceBlock.type = 'button';
+                        replaceBlock.className = 'btn btn-sm btn-outline-light';
+                        replaceBlock.textContent = 'Replace region';
+                        replaceBlock.setAttribute('data-message-id', String(entry.id));
+                        replaceBlock.setAttribute('data-apply-mode', 'replace-block');
+                        actions.appendChild(replaceBlock);
+
+                        item.appendChild(actions);
+                    }
+                }
+
+                this.messagesContainer.appendChild(item);
+            });
+
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+        }
+
+        extractHtmlFromReply(reply) {
+            if (!reply || typeof reply !== 'string') {
+                return null;
+            }
+
+            const htmlFenceMatch = reply.match(/```html\s*([\s\S]*?)```/i);
+            if (htmlFenceMatch && htmlFenceMatch[1]) {
+                return htmlFenceMatch[1].trim();
+            }
+
+            const genericFenceMatch = reply.match(/```\s*([\s\S]*?)```/);
+            if (genericFenceMatch && genericFenceMatch[1] && /<[^>]+>/.test(genericFenceMatch[1])) {
+                return genericFenceMatch[1].trim();
+            }
+
+            if (/<[^>]+>/.test(reply)) {
+                return reply.trim();
+            }
+
+            return null;
+        }
+
+        applySuggestion(messageId, mode) {
+            const session = this.getActiveSession();
+            if (!session || !this.activeEditor) {
+                this.showStatus('No active editor context is available for applying suggestions.');
+                return;
+            }
+
+            const entry = session.messages.find((message) => message.id === messageId && message.role === 'assistant');
+            if (!entry) {
+                this.showStatus('The selected AI response is no longer available.');
+                return;
+            }
+
+            const html = this.extractHtmlFromReply(entry.content);
+            if (!html) {
+                this.showStatus('This AI response does not contain HTML that can be applied.');
+                return;
+            }
+
+            try {
+                if (mode === 'replace-block') {
+                    this.activeEditor.setData(html);
+                    this.hideStatus();
+                    return;
+                }
+
+                const selection = this.activeEditor.model.document.selection;
+                if (!selection || selection.isCollapsed) {
+                    this.showStatus('Select content in the editor before applying to selection.');
+                    return;
+                }
+
+                const viewFragment = this.activeEditor.data.processor.toView(html);
+                const modelFragment = this.activeEditor.data.toModel(viewFragment);
+                this.activeEditor.model.change((writer) => {
+                    this.activeEditor.model.insertContent(modelFragment, selection);
+                });
+                this.hideStatus();
+            } catch {
+                this.showStatus('Could not apply the AI suggestion to the editor content.');
+            }
         }
 
         handleDragMove(event) {

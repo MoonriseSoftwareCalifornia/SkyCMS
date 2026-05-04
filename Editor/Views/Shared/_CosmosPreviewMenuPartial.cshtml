@@ -10,6 +10,7 @@
     var isAdministrator = false;
     var isAuthor = false;
     var previewType = Context.Request.Query["previewType"].ToString().ToLower();
+    var isArticlePreview = previewType.Equals("editor") || previewType.Equals("article");
     var editorUrl = Context.Request.Query["editorUrl"].ToString().ToLower();
 
     var itemId = Context.Request.Query["itemId"].ToString() ?? "";
@@ -51,7 +52,7 @@
                         Back to edit <i class="fa-solid fa-arrow-rotate-left"></i>
                     </a>
                 </li>
-                @if (previewType.Equals("article") && (isEditor || isAdministrator))
+                @if (isArticlePreview && (isEditor || isAdministrator))
                 {
                     <li class="nav-item" id="liPubNow">
                         <a href="#" role="button" class="btn btn-sm btn-secondary mt-1 ms-2 btnPublish">
@@ -106,6 +107,7 @@
         e.preventDefault();
         switch (previewType) {
             case "editor":
+            case "article":
                 location.href = "/Editor/PublishPage?articleId=@itemId&datetime=" + $("#tbPublished").val() + "&editorUrl=@editorUrl";
                 break;
             case "layouts":

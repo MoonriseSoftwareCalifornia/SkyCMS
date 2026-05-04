@@ -59,6 +59,17 @@
         min-height: 72px;
     }
 
+    .ckeditor-copilot-body {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        flex: 1 1 auto;
+    }
+
+    .ckeditor-copilot-body .copilot-chat-messages {
+        min-height: 0;
+    }
+
     @@media (max-width: 768px) {
         .ckeditor-copilot-window {
             left: 12px;

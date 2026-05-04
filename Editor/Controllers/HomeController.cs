@@ -140,6 +140,11 @@ namespace Sky.Cms.Controllers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<IActionResult> Index(string lang = "", string mode = "", Guid? itemId = null, string previewType = "")
         {
+            if (string.Equals(previewType, "article", StringComparison.OrdinalIgnoreCase))
+            {
+                previewType = "editor";
+            }
+
             // Note: Setup check is handled by middleware (TenantSetupMiddleware for multi-tenant,
             // or Program.cs middleware for single-tenant) before this action is reached.
             // Ensure user is authenticated (middleware may bypass during setup)

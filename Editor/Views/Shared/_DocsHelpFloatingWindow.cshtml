@@ -120,6 +120,94 @@
     (function () {
         var docsHelpFloatingInitialized = false;
         var docsHelpSearchIndex = null;
+        var docsCanonicalRouteMap = [
+            // Content editing — articles
+            { pattern: /^\/Editor\/Index/i, url: 'https://docs.sky-cms.com/for-editors/dashboard-overview/' },
+            { pattern: /^\/Editor\/Create/i, url: 'https://docs.sky-cms.com/for-editors/creating-articles/' },
+            { pattern: /^\/Editor\/VisualEditor\//i, url: 'https://docs.sky-cms.com/for-editors/feature-catalog/visual-editor/' },
+            { pattern: /^\/Editor\/Edit\//i, url: 'https://docs.sky-cms.com/for-editors/feature-catalog/visual-editor/' },
+            { pattern: /^\/Editor\/EditCode\//i, url: 'https://docs.sky-cms.com/for-editors/feature-catalog/code-editor/' },
+            { pattern: /^\/Editor\/PageBuilder\//i, url: 'https://docs.sky-cms.com/for-editors/feature-catalog/page-builder/' },
+            { pattern: /^\/Editor\/Designer\//i, url: 'https://docs.sky-cms.com/for-editors/feature-catalog/page-builder/' },
+            { pattern: /^\/Editor\/AiHelp/i, url: 'https://docs.sky-cms.com/for-editors/ai-assistant/' },
+            // Publishing and scheduling
+            { pattern: /^\/Editor\/Publish/i, url: 'https://docs.sky-cms.com/for-editors/publish-a-page/' },
+            { pattern: /^\/Editor\/Scheduler/i, url: 'https://docs.sky-cms.com/for-editors/page-scheduling/' },
+            // Version management
+            { pattern: /^\/Editor\/Versions\//i, url: 'https://docs.sky-cms.com/for-editors/version-history/' },
+            { pattern: /^\/Editor\/Compare/i, url: 'https://docs.sky-cms.com/for-editors/compare-page-versions/' },
+            { pattern: /^\/Editor\/Trash/i, url: 'https://docs.sky-cms.com/for-editors/trash-and-recovery/' },
+            { pattern: /^\/Editor\/Restore/i, url: 'https://docs.sky-cms.com/for-editors/trash-and-recovery/' },
+            // Access control and URL management
+            { pattern: /^\/Editor\/Permissions\//i, url: 'https://docs.sky-cms.com/for-editors/article-permissions/' },
+            { pattern: /^\/Editor\/ReservedPath/i, url: 'https://docs.sky-cms.com/for-editors/url-management/' },
+            // Admin and logging
+            { pattern: /^\/Editor\/Logs/i, url: 'https://docs.sky-cms.com/for-developers/audit-logging/' },
+            { pattern: /^\/Editor\/ExportPage/i, url: 'https://docs.sky-cms.com/for-editors/content-export-import/' },
+            // File management
+            { pattern: /^\/FileManager\/Index/i, url: 'https://docs.sky-cms.com/for-editors/feature-catalog/file-management/' },
+            { pattern: /^\/FileManager\/EditCode/i, url: 'https://docs.sky-cms.com/for-editors/feature-catalog/code-editor/' },
+            { pattern: /^\/FileManager\/EditImage/i, url: 'https://docs.sky-cms.com/for-editors/feature-catalog/image-editor/' },
+            { pattern: /^\/FileManager\/Import/i, url: 'https://docs.sky-cms.com/for-editors/content-export-import/' },
+            // Layouts and templates
+            { pattern: /^\/Layouts\//i, url: 'https://docs.sky-cms.com/for-editors/layouts-and-templates/' },
+            { pattern: /^\/Templates\//i, url: 'https://docs.sky-cms.com/for-editors/layouts-and-templates/' },
+            // Blogging
+            { pattern: /^\/Blog\//i, url: 'https://docs.sky-cms.com/for-editors/blogging/' },
+            // Users and roles
+            { pattern: /^\/Users\//i, url: 'https://docs.sky-cms.com/for-editors/user-management/' },
+            { pattern: /^\/Roles\//i, url: 'https://docs.sky-cms.com/for-editors/role-management/' },
+            // Settings and configuration
+            { pattern: /^\/SkyCmsSettings\/AiProvider/i, url: 'https://docs.sky-cms.com/for-editors/ai-provider-setup/' },
+            { pattern: /^\/SkyCmsSettings\//i, url: 'https://docs.sky-cms.com/for-editors/site-settings/' },
+            // Email and contacts
+            { pattern: /^\/EmailAdmin\//i, url: 'https://docs.sky-cms.com/for-editors/email-admin/' },
+            { pattern: /^\/Contact\//i, url: 'https://docs.sky-cms.com/for-editors/contact-management/' }
+        ];
+
+        function ccmsResolveCurrentHelpPath() {
+            var path = window.location.pathname || '';
+            var iframe = document.getElementById('iFrameWebPage');
+
+            if (!iframe || !iframe.contentWindow) {
+                return path;
+            }
+
+            try {
+                var iframePath = iframe.contentWindow.location && iframe.contentWindow.location.pathname;
+                if (iframePath && iframePath.length > 0) {
+                    return iframePath;
+                }
+            }
+            catch {
+                // Ignore cross-origin iframe access failures.
+            }
+
+            return path;
+        }
+
+        function ccmsResolveCanonicalHelpUrl(path) {
+            for (var i = 0; i < docsCanonicalRouteMap.length; i += 1) {
+                var entry = docsCanonicalRouteMap[i];
+                if (entry.pattern.test(path)) {
+                    return entry.url;
+                }
+            }
+
+            return null;
+        }
+
+        function ccmsOpenCanonicalHelpForCurrentContext() {
+            var path = ccmsResolveCurrentHelpPath();
+            var canonicalUrl = ccmsResolveCanonicalHelpUrl(path);
+
+            if (canonicalUrl) {
+                window.open(canonicalUrl, '_blank', 'noopener');
+                return false;
+            }
+
+            return ccmsOpenDocsHelpSearchWindow();
+        }
 
         function ccmsInitializeDocsHelpFloatingWindow() {
             if (docsHelpFloatingInitialized) {
@@ -425,5 +513,6 @@
         // Expose to global scope so _LoginPartial onclick can call it
         window.ccmsOpenDocsHelpSearchWindow = ccmsOpenDocsHelpSearchWindow;
         window.ccmsCloseDocsHelpSearchWindow = ccmsCloseDocsHelpSearchWindow;
+        window.ccmsOpenCanonicalHelpForCurrentContext = ccmsOpenCanonicalHelpForCurrentContext;
     }());
 </script>
