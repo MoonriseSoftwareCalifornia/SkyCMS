@@ -502,6 +502,121 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(publishedBlogRow.Children.Any(c => c.ArticleNumber == unpublishedPost.ArticleNumber), "Unpublished child post should be filtered out.");
         }
 
+        /// <summary>
+        /// Tests that GetArticleList returns last published date from a previous version when the latest version is an unpublished draft.
+        /// </summary>
+        [TestMethod]
+        public async Task GetArticleList_ReturnsLastPublishedDate_WhenLatestVersionIsDraft()
+        {
+            // Arrange
+            var article = await CreateArticleAsync("Draft With Published History", TestUserId);
+            var publishedVersion = await Db.Articles.FirstAsync(a => a.Id == article.Id);
+            var publishedDate = DateTimeOffset.UtcNow.AddDays(-2);
+            publishedVersion.Published = publishedDate;
+            publishedVersion.Updated = publishedDate;
+
+            var draftVersion = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = publishedVersion.ArticleNumber,
+                VersionNumber = publishedVersion.VersionNumber + 1,
+                Title = publishedVersion.Title,
+                Content = publishedVersion.Content,
+                UrlPath = publishedVersion.UrlPath,
+                Published = null,
+                Updated = DateTimeOffset.UtcNow,
+                UserId = publishedVersion.UserId,
+                ArticleType = publishedVersion.ArticleType,
+                Category = publishedVersion.Category,
+                Introduction = publishedVersion.Introduction,
+                StatusCode = publishedVersion.StatusCode,
+                BannerImage = publishedVersion.BannerImage,
+                HeaderJavaScript = publishedVersion.HeaderJavaScript,
+                FooterJavaScript = publishedVersion.FooterJavaScript,
+                BlogKey = publishedVersion.BlogKey,
+            };
+
+            Db.Articles.Add(draftVersion);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetArticleList(term: "Draft With Published History", publishedOnly: false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var items = ((IEnumerable<EditorInventoryItem>)jsonResult.Value!).ToList();
+            var target = items.Single(i => i.ArticleNumber == publishedVersion.ArticleNumber);
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(target.LastPublished));
+
+            var parsedLastPublished = DateTimeOffset.Parse(target.LastPublished).ToUniversalTime();
+            var expectedPublished = publishedDate.ToUniversalTime();
+            Assert.IsTrue(
+                (parsedLastPublished - expectedPublished).Duration() < TimeSpan.FromSeconds(1),
+                "Expected LastPublished to come from the latest published version, even when latest version is draft.");
+        }
+
+        /// <summary>
+        /// Tests that blog stream rows keep LastPublished from the latest published version when newest version is draft.
+        /// </summary>
+        [TestMethod]
+        public async Task GetArticleList_BlogStreamRow_UsesLastPublishedFromPublishedVersion_WhenLatestIsDraft()
+        {
+            // Arrange
+            var blogStream = await CreateArticleAsync("Blog Stream Draft Latest", TestUserId);
+            var publishedVersion = await Db.Articles.FirstAsync(a => a.Id == blogStream.Id);
+            var publishedDate = DateTimeOffset.UtcNow.AddDays(-3);
+
+            publishedVersion.ArticleType = (int)ArticleType.BlogStream;
+            publishedVersion.BlogKey = "draft-latest-blog";
+            publishedVersion.UrlPath = "draft-latest-blog";
+            publishedVersion.Published = publishedDate;
+            publishedVersion.Updated = publishedDate;
+
+            var draftVersion = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = publishedVersion.ArticleNumber,
+                VersionNumber = publishedVersion.VersionNumber + 1,
+                Title = publishedVersion.Title,
+                Content = publishedVersion.Content,
+                UrlPath = publishedVersion.UrlPath,
+                Published = null,
+                Updated = DateTimeOffset.UtcNow,
+                UserId = publishedVersion.UserId,
+                ArticleType = publishedVersion.ArticleType,
+                Category = publishedVersion.Category,
+                Introduction = publishedVersion.Introduction,
+                StatusCode = publishedVersion.StatusCode,
+                BannerImage = publishedVersion.BannerImage,
+                HeaderJavaScript = publishedVersion.HeaderJavaScript,
+                FooterJavaScript = publishedVersion.FooterJavaScript,
+                BlogKey = publishedVersion.BlogKey,
+            };
+
+            Db.Articles.Add(draftVersion);
+            await Db.SaveChangesAsync();
+
+            // Act
+            var result = await controller.GetArticleList(term: "Blog Stream Draft Latest", publishedOnly: false);
+
+            // Assert
+            Assert.IsInstanceOfType(result, typeof(JsonResult));
+            var jsonResult = (JsonResult)result;
+            var items = ((IEnumerable<EditorInventoryItem>)jsonResult.Value!).ToList();
+            var target = items.Single(i => i.ArticleNumber == publishedVersion.ArticleNumber);
+
+            Assert.AreEqual(EditorInventoryRowType.Blog, target.RowType);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(target.LastPublished));
+
+            var parsedLastPublished = DateTimeOffset.Parse(target.LastPublished).ToUniversalTime();
+            var expectedPublished = publishedDate.ToUniversalTime();
+            Assert.IsTrue(
+                (parsedLastPublished - expectedPublished).Duration() < TimeSpan.FromSeconds(1),
+                "Expected blog stream LastPublished to come from published history when latest version is draft.");
+        }
+
         #endregion
 
         #region GetEncryptionKey Tests

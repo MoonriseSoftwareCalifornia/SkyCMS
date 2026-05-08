@@ -375,6 +375,7 @@ builder.Services.AddTransient<ITitleChangeService, TitleChangeService>();
 builder.Services.AddTransient<IBlogStreamRenderingService, BlogStreamRenderingService>();
 builder.Services.AddTransient<IEmailConfigurationService, EmailConfigurationService>();
 builder.Services.AddTransient<IArticleScheduler, ArticleScheduler>();
+builder.Services.AddTransient<ITenantArticleLogicFactory, TenantArticleLogicFactory>();
 builder.Services.AddTransient<ArticleEditLogic>();
 builder.Services.AddTransient<ISetupCheckService, SetupCheckService>();
 

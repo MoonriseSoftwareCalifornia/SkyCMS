@@ -1,0 +1,116 @@
+@model Sky.Cms.Models.VsCodeAuthViewModel
+@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SkyCMS VS Code Sign-In &mdash; Access Denied</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 2.5rem 2rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0 0 1.5rem;
+            color: #f0f6fc;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            color: #f85149;
+            margin-bottom: 1.25rem;
+        }
+
+        .status-icon {
+            font-size: 1.25rem;
+        }
+
+        .error-box {
+            background: #1a0a0a;
+            border: 1px solid #6e1c1c;
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            font-size: 0.9rem;
+            color: #ffa198;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: #8b949e;
+            line-height: 1.5;
+        }
+
+        .footer {
+            margin-top: 1.75rem;
+            font-size: 0.8rem;
+            color: #484f58;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">&#x1F310;</div>
+        <h1>SkyCMS VS Code Sign-In</h1>
+
+        <div class="status">
+            <span class="status-icon">&#x2717;</span>
+            <span>Sign-in failed</span>
+        </div>
+
+        <div class="error-box">@Model.ErrorMessage</div>
+
+        <p class="hint">
+            To use the SkyCMS VS Code extension your account must have
+            <strong>Editor</strong> or <strong>Administrator</strong> access.<br /><br />
+            Contact your SkyCMS administrator if you need access, then try signing in again from VS Code.
+        </p>
+
+        <div class="footer">You can close this tab and return to VS Code.</div>
+    </div>
+
+    <script>
+        // Notify VS Code of the failure so the extension can display a clear error message.
+        (function () {
+            var callbackUri = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.VsCodeCallbackUri));
+            if (callbackUri) {
+                window.location.href = callbackUri;
+            }
+        })();
+    </script>
+</body>
+</html>

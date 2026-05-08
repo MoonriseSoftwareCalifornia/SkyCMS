@@ -30,10 +30,9 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Rm_Response_HasRemovedArray()
         {
             var adapter = BuildAdapter();
-             adapter.SetupSequence(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
-                 .ReturnsAsync(true)
-                 .ReturnsAsync(false);
-            adapter.Setup(a => a.DeleteAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+            adapter.Setup(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(false);
+            adapter.Setup(a => a.DeleteAsync(It.Is<Cosmos.BlobService.FileManagerEntry>(e => e.Path == "pub/images/logo.png"), It.IsAny<System.Threading.CancellationToken>()))
                    .Returns(System.Threading.Tasks.Task.CompletedTask);
 
             var handler = new RmCommandHandler(adapter.Object);
@@ -52,10 +51,9 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Rm_DeletedHash_AppearsInRemoved()
         {
             var adapter = BuildAdapter();
-             adapter.SetupSequence(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
-                 .ReturnsAsync(true)
-                 .ReturnsAsync(false);
-            adapter.Setup(a => a.DeleteAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
+            adapter.Setup(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(false);
+            adapter.Setup(a => a.DeleteAsync(It.Is<Cosmos.BlobService.FileManagerEntry>(e => e.Path == "pub/images/logo.png"), It.IsAny<System.Threading.CancellationToken>()))
                    .Returns(System.Threading.Tasks.Task.CompletedTask);
 
             var handler = new RmCommandHandler(adapter.Object);
@@ -82,13 +80,11 @@ namespace Sky.Tests.ElFinder.Contracts
         {
             var docsHash = AdapterHashHelper.Encode("pub/docs/");
             var adapter = BuildAdapter();
-             adapter.SetupSequence(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
-                 .ReturnsAsync(true)
-                 .ReturnsAsync(false);
-             adapter.SetupSequence(a => a.IsAccessibleAsync(It.Is<string>(p => p == "pub/docs" || p == "pub/docs/"), It.IsAny<System.Threading.CancellationToken>()))
-                 .ReturnsAsync(true)
-                 .ReturnsAsync(false);
-            adapter.Setup(a => a.DeleteAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+            adapter.Setup(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(false);
+            adapter.Setup(a => a.IsAccessibleAsync(It.Is<string>(p => p == "pub/docs" || p == "pub/docs/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(false);
+            adapter.Setup(a => a.DeleteAsync(It.IsAny<Cosmos.BlobService.FileManagerEntry>(), It.IsAny<System.Threading.CancellationToken>()))
                    .Returns(System.Threading.Tasks.Task.CompletedTask);
 
             var handler = new RmCommandHandler(adapter.Object);
@@ -107,8 +103,8 @@ namespace Sky.Tests.ElFinder.Contracts
         {
             var missingHash = AdapterHashHelper.Encode("pub/missing.txt");
             var adapter = BuildAdapter();
-            adapter.Setup(a => a.IsAccessibleAsync("pub/missing.txt", It.IsAny<System.Threading.CancellationToken>()))
-                   .ReturnsAsync(false);
+            adapter.Setup(a => a.GetEntryAsync("pub/missing.txt", It.IsAny<System.Threading.CancellationToken>()))
+                   .ReturnsAsync((Cosmos.BlobService.FileManagerEntry?)null);
 
             var handler = new RmCommandHandler(adapter.Object);
             var command = new RmCommand { Target = missingHash };
@@ -134,10 +130,9 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Rm_DeleteNoOp_AppearsInNotRemoved()
         {
             var adapter = BuildAdapter();
-            adapter.SetupSequence(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
-                   .ReturnsAsync(true)
+            adapter.Setup(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
                    .ReturnsAsync(true);
-            adapter.Setup(a => a.DeleteAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
+            adapter.Setup(a => a.DeleteAsync(It.Is<Cosmos.BlobService.FileManagerEntry>(e => e.Path == "pub/images/logo.png"), It.IsAny<System.Threading.CancellationToken>()))
                    .Returns(System.Threading.Tasks.Task.CompletedTask);
 
             var handler = new RmCommandHandler(adapter.Object);
@@ -179,10 +174,9 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Rm_RemovedValues_AreHashStrings()
         {
             var adapter = BuildAdapter();
-             adapter.SetupSequence(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
-                 .ReturnsAsync(true)
-                 .ReturnsAsync(false);
-            adapter.Setup(a => a.DeleteAsync(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+            adapter.Setup(a => a.IsAccessibleAsync("pub/images/logo.png", It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(false);
+            adapter.Setup(a => a.DeleteAsync(It.Is<Cosmos.BlobService.FileManagerEntry>(e => e.Path == "pub/images/logo.png"), It.IsAny<System.Threading.CancellationToken>()))
                    .Returns(System.Threading.Tasks.Task.CompletedTask);
 
             var handler = new RmCommandHandler(adapter.Object);

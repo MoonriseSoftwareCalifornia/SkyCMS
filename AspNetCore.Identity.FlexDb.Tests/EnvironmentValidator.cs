@@ -68,6 +68,9 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
                    "   # OR Cosmos DB\n" +
                    "   dotnet user-secrets set \"ConnectionStrings:CosmosDB\" \"AccountEndpoint=https://...;AccountKey=...;Database=localtests;\" --project AspNetCore.Identity.FlexDb.Tests\n\n" +
                    "   # OR SQL Server\n" +
+                   // TODO: The Azure SQL Server used for CI/integration tests was decommissioned (cost reduction, May 2026).
+                   // Update this connection string to point to a local SQL Server instance (e.g. SQL Server Express or
+                   // a Docker container: mcr.microsoft.com/mssql/server) before re-enabling SqlServer provider tests.
                    "   dotnet user-secrets set \"ConnectionStrings:SqlServer\" \"Server=tcp:...;Initial Catalog=...;User ID=...;Password=...\" --project AspNetCore.Identity.FlexDb.Tests\n\n" +
                    "   # OR MySQL\n" +
                    "   dotnet user-secrets set \"ConnectionStrings:MySQL\" \"Server=...;Port=3306;Database=...;uid=...;pwd=...\" --project AspNetCore.Identity.FlexDb.Tests\n\n" +

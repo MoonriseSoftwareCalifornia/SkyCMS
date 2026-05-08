@@ -1,0 +1,151 @@
+@model Sky.Cms.Models.VsCodeAuthViewModel
+@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SkyCMS VS Code Sign-In</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 2.5rem 2rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem;
+            color: #f0f6fc;
+        }
+
+        .site-name {
+            font-size: 0.9rem;
+            color: #8b949e;
+            margin: 0 0 1.75rem;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            color: #3fb950;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-icon {
+            font-size: 1.25rem;
+        }
+
+        .browser-note {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+        }
+
+        .browser-note strong {
+            color: #d1d5db;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            color: #484f58;
+            font-size: 0.8rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #30363d;
+        }
+
+        .code-label {
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-bottom: 0.5rem;
+        }
+
+        .code-box {
+            display: inline-block;
+            background: #0d1117;
+            border: 1px solid #388bfd;
+            border-radius: 8px;
+            padding: 0.65rem 1.5rem;
+            font-size: 1.6rem;
+            font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+            letter-spacing: 0.2rem;
+            color: #58a6ff;
+            cursor: pointer;
+            user-select: all;
+            transition: background 0.15s;
+        }
+
+        .code-box:hover {
+            background: #121d2f;
+        }
+
+        .copy-hint {
+            font-size: 0.75rem;
+            color: #484f58;
+            margin-top: 0.4rem;
+        }
+
+        .footer {
+            margin-top: 1.75rem;
+            font-size: 0.8rem;
+            color: #484f58;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">&#x1F310;</div>
+        <h1>SkyCMS VS Code Sign-In</h1>
+        <p class="site-name">@(string.IsNullOrWhiteSpace(Model.WebsiteTitle) ? string.Empty : Model.WebsiteTitle)</p>
+
+        <div class="status">
+            <span class="status-icon">&#x2713;</span>
+            <span>Sign-in complete &mdash; you can close this window.</span>
+        </div>
+
+        <div class="footer">Your VS Code extension will connect automatically.</div>
+    </div>
+</body>
+</html>

@@ -8,15 +8,21 @@ namespace Sky.Tests.Integration
     using Cosmos.Cms.Common;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.Common.Features.Shared;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Azure.Cosmos;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
+    using Sky.Editor.Features.Articles.Inventory;
+    using Sky.Editor.Models;
     using System;
     using System.Collections;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net.Http;
     using System.Net;
@@ -88,6 +94,12 @@ namespace Sky.Tests.Integration
                 }
             }
 
+            var mediatorServices = new ServiceCollection();
+            mediatorServices.AddSingleton<IQueryHandler<GetEditorInventoryQuery, List<EditorInventoryItem>>>(
+                new GetEditorInventoryQueryHandler(cosmosDb));
+            var mediatorProvider = mediatorServices.BuildServiceProvider();
+            var cosmosMediator = new Mediator(mediatorProvider, NullLogger<Mediator>.Instance);
+
             controller = new EditorController(
                 Logger,
                 cosmosDb,
@@ -103,7 +115,7 @@ namespace Sky.Tests.Integration
                 ReservedPaths,
                 TitleChangeService,
                 TemplateService,
-                Mediator,
+                cosmosMediator,
                 LayoutCacheService,
                 DynamicConfigurationProvider);
 

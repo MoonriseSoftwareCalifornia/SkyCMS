@@ -151,7 +151,8 @@ namespace Sky.Cms.Controllers
             if (User.Identity?.IsAuthenticated == false)
             {
                 Response.Cookies.Delete("CosmosAuthCookie");
-                return Redirect("~/Identity/Account/Login");
+                var returnUrl = $"{HttpContext.Request.PathBase}{HttpContext.Request.Path}{HttpContext.Request.QueryString}";
+                return Redirect($"~/Identity/Account/Login?returnUrl={WebUtility.UrlEncode(returnUrl)}");
             }
 
             // Make sure the user's claims identity has an account here.

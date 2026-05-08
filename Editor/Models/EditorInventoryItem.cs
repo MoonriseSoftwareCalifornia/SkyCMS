@@ -61,6 +61,11 @@ namespace Sky.Editor.Models
         public string LastPublished { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the article has ever been published.
+        /// </summary>
+        public bool IsPublished { get; set; }
+
+        /// <summary>
         /// Gets or sets the updated date in ISO format.
         /// </summary>
         public string Updated { get; set; } = string.Empty;

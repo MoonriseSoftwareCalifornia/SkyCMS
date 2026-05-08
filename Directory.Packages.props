@@ -71,6 +71,14 @@
     <PackageVersion Include="AWSSDK.S3" Version="4.0.22.1" />
     <!-- Microsoft Graph -->
     <PackageVersion Include="Microsoft.Graph.Beta" Version="5.78.0-preview" />
+    <PackageVersion Include="Microsoft.Kiota.Abstractions" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Kiota.Authentication.Azure" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Kiota.Http.HttpClientLibrary" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Kiota.Serialization.Form" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Kiota.Serialization.Json" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Kiota.Serialization.Multipart" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Kiota.Serialization.Text" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Graph.Core" Version="3.2.1" />
     <!-- Testing packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="[17.14.1,18.0)" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.57.0" />

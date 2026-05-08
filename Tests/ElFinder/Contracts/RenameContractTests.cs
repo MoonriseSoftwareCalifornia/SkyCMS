@@ -34,7 +34,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var adapter = BuildAdapter();
             var renamedEntry = MakeFile("pub/images/logo-new.png", "logo-new.png");
             adapter.Setup(a => a.RenameAsync(
-                    "pub/images/logo.png",
+                    It.Is<Cosmos.BlobService.FileManagerEntry>(e => e.Path == "pub/images/logo.png"),
                     "pub/images/logo-new.png",
                     It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(renamedEntry);
@@ -60,7 +60,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var adapter = BuildAdapter();
             var renamedEntry = MakeFile("pub/images/logo-new.png", "logo-new.png");
             adapter.Setup(a => a.RenameAsync(
-                    "pub/images/logo.png",
+                    It.Is<Cosmos.BlobService.FileManagerEntry>(e => e.Path == "pub/images/logo.png"),
                     "pub/images/logo-new.png",
                     It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(renamedEntry);
@@ -89,7 +89,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var adapter = BuildAdapter();
             var renamedEntry = MakeFile("pub/images/logo-new.png", "logo-new.png");
             adapter.Setup(a => a.RenameAsync(
-                    "pub/images/logo.png",
+                    It.Is<Cosmos.BlobService.FileManagerEntry>(e => e.Path == "pub/images/logo.png"),
                     "pub/images/logo-new.png",
                     It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(renamedEntry);
@@ -119,7 +119,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var adapter = BuildAdapter();
             var renamedEntry = MakeFile("pub/images/logo-new.png", "logo-new.png");
             adapter.Setup(a => a.RenameAsync(
-                    "pub/images/logo.png",
+                    It.Is<Cosmos.BlobService.FileManagerEntry>(e => e.Path == "pub/images/logo.png"),
                     "pub/images/logo-new.png",
                     It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(renamedEntry);

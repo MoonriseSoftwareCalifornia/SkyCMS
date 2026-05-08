@@ -19,6 +19,8 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Cms.Controllers;
+    using Sky.Editor.Models;
+    using Sky.Editor.Services.Layouts;
 
     /// <summary>
     /// Tests for <see cref="VsCodeController"/> browser auth and bearer-token flow.
@@ -67,11 +69,22 @@ namespace Sky.Tests.Controllers
                 .Setup(s => s.MoveFolderAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask);
 
+            var layoutVersioningService = new LayoutVersioningService(
+                Db,
+                ArticleHtmlService,
+                NullLogger<LayoutVersioningService>.Instance);
+
             controller = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
                 cache,
-                mockStorageContext.Object);
+                mockStorageContext.Object,
+                layoutVersioningService,
+                Mediator,
+                TemplateService,
+                DynamicConfigurationProvider,
+                ArticleEditLogic,
+                PublishingService);
 
             controller.ControllerContext = new ControllerContext
             {
@@ -107,7 +120,7 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public void CompleteBrowserAuth_WithoutEditorRole_ReturnsForbiddenPage()
+        public async Task CompleteBrowserAuth_WithoutEditorRole_ReturnsForbiddenPage()
         {
             var start = controller.StartBrowserAuth() as OkObjectResult;
             var state = GetAnonymousProperty<string>(start!.Value!, "state");
@@ -117,16 +130,18 @@ namespace Sky.Tests.Controllers
                 username: "author@example.com",
                 role: "Authors");
 
-            var result = controller.CompleteBrowserAuth(state) as ContentResult;
+            var result = await controller.CompleteBrowserAuth(state) as ViewResult;
 
             Assert.IsNotNull(result);
-            Assert.AreEqual(StatusCodes.Status403Forbidden, result.StatusCode);
-            Assert.AreEqual("text/html", result.ContentType);
-            StringAssert.Contains(result.Content ?? string.Empty, "Access denied");
+            Assert.AreEqual("AuthFailed", result.ViewName);
+            Assert.AreEqual(StatusCodes.Status403Forbidden, controller.Response.StatusCode);
+            var model = result.Model as Sky.Cms.Models.VsCodeAuthViewModel;
+            Assert.IsNotNull(model);
+            StringAssert.Contains(model.ErrorMessage, "Editor");
         }
 
         [TestMethod]
-        public void BrowserAuthFlow_ExchangeProducesBearerToken_AndMeAcceptsIt()
+        public async Task BrowserAuthFlow_ExchangeProducesBearerToken_AndMeAcceptsIt()
         {
             var start = controller.StartBrowserAuth() as OkObjectResult;
             var state = GetAnonymousProperty<string>(start!.Value!, "state");
@@ -136,11 +151,12 @@ namespace Sky.Tests.Controllers
                 username: "editor@example.com",
                 role: "Editors");
 
-            var complete = controller.CompleteBrowserAuth(state) as ContentResult;
+            var complete = await controller.CompleteBrowserAuth(state) as ViewResult;
             Assert.IsNotNull(complete);
-            Assert.AreEqual("text/html", complete.ContentType);
+            var completeModel = complete.Model as Sky.Cms.Models.VsCodeAuthViewModel;
+            Assert.IsNotNull(completeModel);
 
-            var code = ExtractOneTimeCode(complete.Content ?? string.Empty);
+            var code = completeModel.Code;
             Assert.IsFalse(string.IsNullOrWhiteSpace(code));
 
             controller.ControllerContext.HttpContext = CreateHttpContext();
@@ -169,7 +185,7 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public void ExchangeBrowserAuth_WithWrongState_ReturnsUnauthorized()
+        public async Task ExchangeBrowserAuth_WithWrongState_ReturnsUnauthorized()
         {
             var start = controller.StartBrowserAuth() as OkObjectResult;
             var state = GetAnonymousProperty<string>(start!.Value!, "state");
@@ -179,9 +195,9 @@ namespace Sky.Tests.Controllers
                 username: "editor@example.com",
                 role: "Editors");
 
-            var complete = controller.CompleteBrowserAuth(state) as ContentResult;
+            var complete = await controller.CompleteBrowserAuth(state) as ViewResult;
             Assert.IsNotNull(complete);
-            var code = ExtractOneTimeCode(complete.Content ?? string.Empty);
+            var code = (complete.Model as Sky.Cms.Models.VsCodeAuthViewModel)?.Code ?? string.Empty;
 
             controller.ControllerContext.HttpContext = CreateHttpContext();
             var result = controller.ExchangeBrowserAuth(new VsCodeController.AuthExchangeRequest
@@ -210,7 +226,7 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public void ExchangeBrowserAuth_CodeReplay_SecondExchangeReturnsUnauthorized()
+        public async Task ExchangeBrowserAuth_CodeReplay_SecondExchangeReturnsUnauthorized()
         {
             var start = controller.StartBrowserAuth() as OkObjectResult;
             var state = GetAnonymousProperty<string>(start!.Value!, "state");
@@ -220,8 +236,8 @@ namespace Sky.Tests.Controllers
                 username: "editor@example.com",
                 role: "Editors");
 
-            var complete = controller.CompleteBrowserAuth(state) as ContentResult;
-            var code = ExtractOneTimeCode(complete?.Content ?? string.Empty);
+            var complete = await controller.CompleteBrowserAuth(state) as ViewResult;
+            var code = (complete?.Model as Sky.Cms.Models.VsCodeAuthViewModel)?.Code ?? string.Empty;
 
             controller.ControllerContext.HttpContext = CreateHttpContext();
             var request = new VsCodeController.AuthExchangeRequest { State = state, Code = code };
@@ -242,31 +258,35 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public void CompleteBrowserAuth_MissingState_ReturnsHtmlError()
+        public async Task CompleteBrowserAuth_MissingState_ReturnsHtmlError()
         {
             controller.ControllerContext.HttpContext = CreateHttpContext(
                 isAuthenticated: true,
                 username: "editor@example.com",
                 role: "Editors");
 
-            var result = controller.CompleteBrowserAuth(null) as ContentResult;
+            var result = await controller.CompleteBrowserAuth(null) as ViewResult;
             Assert.IsNotNull(result);
-            Assert.AreEqual("text/html", result.ContentType);
-            StringAssert.Contains(result.Content ?? string.Empty, "Missing auth state");
+            Assert.AreEqual("AuthFailed", result.ViewName);
+            var model = result.Model as Sky.Cms.Models.VsCodeAuthViewModel;
+            Assert.IsNotNull(model);
+            StringAssert.Contains(model.ErrorMessage, "state");
         }
 
         [TestMethod]
-        public void CompleteBrowserAuth_ExpiredState_ReturnsHtmlError()
+        public async Task CompleteBrowserAuth_ExpiredState_ReturnsHtmlError()
         {
             controller.ControllerContext.HttpContext = CreateHttpContext(
                 isAuthenticated: true,
                 username: "editor@example.com",
                 role: "Editors");
 
-            var result = controller.CompleteBrowserAuth("stale-state-that-was-never-registered") as ContentResult;
+            var result = await controller.CompleteBrowserAuth("stale-state-that-was-never-registered") as ViewResult;
             Assert.IsNotNull(result);
-            Assert.AreEqual("text/html", result.ContentType);
-            StringAssert.Contains(result.Content ?? string.Empty, "expired");
+            Assert.AreEqual("AuthFailed", result.ViewName);
+            var model = result.Model as Sky.Cms.Models.VsCodeAuthViewModel;
+            Assert.IsNotNull(model);
+            StringAssert.Contains(model.ErrorMessage, "expired");
         }
 
         [TestMethod]
@@ -332,7 +352,7 @@ namespace Sky.Tests.Controllers
         // ----------------------------------------------------------------
         // Helper: issue a bearer token for the default editor identity.
         // ----------------------------------------------------------------
-        private string IssueEditorBearerToken()
+        private async Task<string> IssueEditorBearerTokenAsync()
         {
             var start = controller.StartBrowserAuth() as OkObjectResult;
             var state = GetAnonymousProperty<string>(start!.Value!, "state");
@@ -342,8 +362,8 @@ namespace Sky.Tests.Controllers
                 username: "editor@example.com",
                 role: "Editors");
 
-            var complete = controller.CompleteBrowserAuth(state) as ContentResult;
-            var code = ExtractOneTimeCode(complete?.Content ?? string.Empty);
+            var complete = await controller.CompleteBrowserAuth(state) as ViewResult;
+            var code = (complete?.Model as Sky.Cms.Models.VsCodeAuthViewModel)?.Code ?? string.Empty;
 
             controller.ControllerContext.HttpContext = CreateHttpContext();
             var exchange = controller.ExchangeBrowserAuth(new VsCodeController.AuthExchangeRequest
@@ -355,9 +375,9 @@ namespace Sky.Tests.Controllers
             return GetAnonymousProperty<string>(exchange!.Value!, "token");
         }
 
-        private DefaultHttpContext CreateAuthorizedContext()
+        private async Task<DefaultHttpContext> CreateAuthorizedContextAsync()
         {
-            var token = IssueEditorBearerToken();
+            var token = await IssueEditorBearerTokenAsync();
             var ctx = CreateHttpContext();
             ctx.Request.Headers["Authorization"] = $"Bearer {token}";
             return ctx;
@@ -368,7 +388,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetLayouts_ReturnsSeededLayout()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetLayouts() as OkObjectResult;
 
@@ -391,9 +411,56 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task GetLayoutVersions_ReturnsFamilyNewestFirst()
+        {
+            var seed = Db.Layouts.First();
+            Db.Layouts.Add(new Cosmos.Common.Data.Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutNumber = seed.LayoutNumber,
+                Version = (seed.Version ?? 1) + 1,
+                LayoutName = seed.LayoutName,
+                Notes = seed.Notes,
+                Head = seed.Head,
+                HtmlHeader = seed.HtmlHeader,
+                FooterHtmlContent = seed.FooterHtmlContent,
+                BodyHtmlAttributes = seed.BodyHtmlAttributes,
+                IsDefault = false,
+                Published = null,
+                LastModified = DateTimeOffset.UtcNow,
+            });
+            await Db.SaveChangesAsync();
+
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetLayoutVersions(seed.LayoutNumber) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var list = result.Value as System.Collections.IEnumerable;
+            Assert.IsNotNull(list);
+            var items = new System.Collections.Generic.List<object>();
+            foreach (var item in list!) { items.Add(item); }
+            Assert.IsTrue(items.Count >= 2);
+
+            var firstVersion = GetAnonymousProperty<int>(items[0], "version");
+            var secondVersion = GetAnonymousProperty<int>(items[1], "version");
+            Assert.IsTrue(firstVersion >= secondVersion);
+        }
+
+        [TestMethod]
+        public async Task GetLayoutVersions_MissingFamily_ReturnsNotFound()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetLayoutVersions(99999);
+
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        [TestMethod]
         public async Task GetLayoutField_LayoutName_ReturnsValue()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
 
             var result = await controller.GetLayoutField(layout.LayoutNumber, "layoutname") as OkObjectResult;
@@ -406,7 +473,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetLayoutField_UnknownField_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
 
             var result = await controller.GetLayoutField(layout.LayoutNumber, "nonexistent");
@@ -417,7 +484,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetLayoutField_MissingLayout_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetLayoutField(99999, "layoutname");
 
@@ -425,9 +492,50 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task GetLayoutVersionField_ReturnsSpecificVersionData()
+        {
+            var seed = Db.Layouts.First();
+            Db.Layouts.Add(new Cosmos.Common.Data.Layout
+            {
+                Id = Guid.NewGuid(),
+                LayoutNumber = seed.LayoutNumber,
+                Version = 7,
+                LayoutName = "Historical Layout",
+                Notes = "Old notes",
+                Head = "<meta name='x' content='1'>",
+                HtmlHeader = "<header>Old Header</header>",
+                FooterHtmlContent = "<footer>Old Footer</footer>",
+                BodyHtmlAttributes = seed.BodyHtmlAttributes,
+                IsDefault = false,
+                Published = DateTimeOffset.UtcNow.AddDays(-10),
+                LastModified = DateTimeOffset.UtcNow.AddDays(-10),
+            });
+            await Db.SaveChangesAsync();
+
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetLayoutVersionField(seed.LayoutNumber, 7, "header") as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var content = GetAnonymousProperty<string>(result.Value!, "content");
+            Assert.AreEqual("<header>Old Header</header>", content);
+        }
+
+        [TestMethod]
+        public async Task GetLayoutVersionField_MissingVersion_ReturnsNotFound()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+            var layout = Db.Layouts.First();
+
+            var result = await controller.GetLayoutVersionField(layout.LayoutNumber, 999, "head");
+
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        [TestMethod]
         public async Task SetLayoutField_LayoutName_UpdatesValue()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
 
             var putResult = await controller.SetLayoutField(
@@ -437,14 +545,17 @@ namespace Sky.Tests.Controllers
 
             Assert.IsInstanceOfType(putResult, typeof(OkResult));
 
-            var updated = Db.Layouts.First(l => l.LayoutNumber == layout.LayoutNumber);
+            var updated = Db.Layouts
+                .Where(l => l.LayoutNumber == layout.LayoutNumber)
+                .OrderByDescending(l => l.Version ?? 0)
+                .First();
             Assert.AreEqual("Updated Name", updated.LayoutName);
         }
 
         [TestMethod]
         public async Task SetLayoutField_UnknownField_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
 
             var result = await controller.SetLayoutField(
@@ -458,7 +569,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task SetLayoutField_Head_UpdatesContent()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
 
             var putResult = await controller.SetLayoutField(
@@ -467,8 +578,51 @@ namespace Sky.Tests.Controllers
                 new VsCodeController.FieldUpdateRequest { Content = "<style>body{}</style>" });
 
             Assert.IsInstanceOfType(putResult, typeof(OkResult));
-            var updated = Db.Layouts.First(l => l.LayoutNumber == layout.LayoutNumber);
+            var updated = Db.Layouts
+                .Where(l => l.LayoutNumber == layout.LayoutNumber)
+                .OrderByDescending(l => l.Version ?? 0)
+                .First();
             Assert.AreEqual("<style>body{}</style>", updated.Head);
+        }
+
+        [TestMethod]
+        public async Task GetLayoutField_LegacyLayoutNumberZero_ReturnsContent()
+        {
+            var layout = Db.Layouts.First();
+            layout.LayoutNumber = 0;
+            layout.Notes = "legacy layout notes";
+            await Db.SaveChangesAsync();
+
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetLayoutField(0, "notes") as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var content = GetAnonymousProperty<string>(result.Value!, "content");
+            Assert.AreEqual("legacy layout notes", content);
+        }
+
+        [TestMethod]
+        public async Task SetLayoutField_LegacyLayoutNumberZero_UpdatesValue()
+        {
+            var layout = Db.Layouts.First();
+            layout.LayoutNumber = 0;
+            await Db.SaveChangesAsync();
+
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var putResult = await controller.SetLayoutField(
+                0,
+                "layoutname",
+                new VsCodeController.FieldUpdateRequest { Value = "Legacy Updated Name" });
+
+            Assert.IsInstanceOfType(putResult, typeof(OkResult));
+
+            var updated = Db.Layouts
+                .Where(l => l.LayoutNumber == 0)
+                .OrderByDescending(l => l.Version ?? 0)
+                .First();
+            Assert.AreEqual("Legacy Updated Name", updated.LayoutName);
         }
 
         #endregion
@@ -489,7 +643,7 @@ namespace Sky.Tests.Controllers
             });
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetTemplates() as OkObjectResult;
 
@@ -514,7 +668,7 @@ namespace Sky.Tests.Controllers
             });
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetTemplateField(templateId, "content") as OkObjectResult;
 
@@ -526,7 +680,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetTemplateField_MissingTemplate_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetTemplateField(Guid.NewGuid(), "content");
 
@@ -546,7 +700,7 @@ namespace Sky.Tests.Controllers
             });
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var putResult = await controller.SetTemplateField(
                 templateId,
@@ -563,27 +717,27 @@ namespace Sky.Tests.Controllers
         #region Articles endpoint tests
 
         [TestMethod]
-        public async Task GetArticles_ReturnsGroupedDraftsAndPublished()
+        public async Task GetArticles_ReturnsInventoryWithPublishedFlags()
         {
             await CreateArticleAsync("Root Article", TestUserId);
-            var draft = await CreateArticleAsync("Draft Article", TestUserId);
+            await CreateArticleAsync("Draft Article", TestUserId);
             var published = await CreateArticleAsync("Published Article", TestUserId);
 
             var publishedEntity = Db.Articles.First(a => a.ArticleNumber == published.ArticleNumber);
             publishedEntity.Published = DateTimeOffset.UtcNow.AddDays(-1);
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetArticles() as OkObjectResult;
 
             Assert.IsNotNull(result);
-            var drafts = GetAnonymousProperty<System.Collections.IList>(result.Value!, "drafts");
-            var publishedList = GetAnonymousProperty<System.Collections.IList>(result.Value!, "published");
+            var rows = result.Value as System.Collections.Generic.List<Sky.Editor.Models.EditorInventoryItem>;
 
-            Assert.IsNotNull(drafts);
-            Assert.IsNotNull(publishedList);
-            Assert.IsTrue(publishedList.Count >= 1);
+            Assert.IsNotNull(rows);
+            Assert.IsTrue(rows.Count >= 2);
+            Assert.IsTrue(rows.Any(r => r.IsPublished));
+            Assert.IsTrue(rows.Any(r => !r.IsPublished));
         }
 
         [TestMethod]
@@ -592,7 +746,7 @@ namespace Sky.Tests.Controllers
             await CreateArticleAsync("Root Article", TestUserId);
             var article = await CreateArticleAsync("Field Test Article", TestUserId);
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetArticleField(article.ArticleNumber, "title") as OkObjectResult;
 
@@ -604,7 +758,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetArticleField_MissingArticle_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetArticleField(99999, "title");
 
@@ -617,7 +771,7 @@ namespace Sky.Tests.Controllers
             await CreateArticleAsync("Root Article", TestUserId);
             var article = await CreateArticleAsync("Original Title", TestUserId);
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var putResult = await controller.SetArticleField(
                 article.ArticleNumber,
@@ -638,7 +792,7 @@ namespace Sky.Tests.Controllers
             await CreateArticleAsync("Root Article", TestUserId);
             var article = await CreateArticleAsync("Schedule Article", TestUserId);
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var putResult = await controller.SetArticleField(
                 article.ArticleNumber,
@@ -663,7 +817,7 @@ namespace Sky.Tests.Controllers
             entity.Published = DateTimeOffset.UtcNow;
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var putResult = await controller.SetArticleField(
                 article.ArticleNumber,
@@ -684,7 +838,7 @@ namespace Sky.Tests.Controllers
             await CreateArticleAsync("Root Article", TestUserId);
             var article = await CreateArticleAsync("Test Article", TestUserId);
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.SetArticleField(
                 article.ArticleNumber,
@@ -714,7 +868,7 @@ namespace Sky.Tests.Controllers
             });
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetBlogs() as OkObjectResult;
 
@@ -743,7 +897,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetBlogs_EmptyDatabase_ReturnsEmptyList()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetBlogs() as OkObjectResult;
 
@@ -784,7 +938,7 @@ namespace Sky.Tests.Controllers
                 });
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetBlogPosts("tech-blog") as OkObjectResult;
 
@@ -830,7 +984,7 @@ namespace Sky.Tests.Controllers
                 });
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetBlogPosts("news") as OkObjectResult;
 
@@ -850,7 +1004,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetBlogPosts_UnknownBlogKey_ReturnsEmptyList()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetBlogPosts("no-such-blog") as OkObjectResult;
 
@@ -901,7 +1055,7 @@ namespace Sky.Tests.Controllers
                 });
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetBlogPosts("multi-version") as OkObjectResult;
 
@@ -921,9 +1075,9 @@ namespace Sky.Tests.Controllers
         #region Logout tests
 
         [TestMethod]
-        public void Logout_RemovesToken_AndSubsequentMeReturnsUnauthorized()
+        public async Task Logout_RemovesToken_AndSubsequentMeReturnsUnauthorized()
         {
-            var token = IssueEditorBearerToken();
+            var token = await IssueEditorBearerTokenAsync();
             var ctx = CreateHttpContext();
             ctx.Request.Headers["Authorization"] = $"Bearer {token}";
             controller.ControllerContext.HttpContext = ctx;
@@ -960,7 +1114,7 @@ namespace Sky.Tests.Controllers
         {
             await CreateArticleAsync("Root Article", TestUserId);
             var article = await CreateArticleAsync("Publish Target", TestUserId);
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.PublishArticle(article.ArticleNumber);
 
@@ -972,7 +1126,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task PublishArticle_MissingArticle_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var result = await controller.PublishArticle(99999);
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
@@ -994,7 +1148,7 @@ namespace Sky.Tests.Controllers
             entity.Published = DateTimeOffset.UtcNow.AddDays(-1);
             await Db.SaveChangesAsync();
 
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.UnpublishArticle(article.ArticleNumber);
 
@@ -1006,7 +1160,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task UnpublishArticle_MissingArticle_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var result = await controller.UnpublishArticle(99999);
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
@@ -1014,7 +1168,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task CreateArticle_ReturnsNewArticleNumber()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.CreateArticle(
                 new VsCodeController.CreateArticleRequest { Title = "Brand New Article", ArticleType = 0 }) as OkObjectResult;
@@ -1031,7 +1185,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task CreateArticle_EmptyTitle_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.CreateArticle(
                 new VsCodeController.CreateArticleRequest { Title = "   " });
@@ -1042,11 +1196,39 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task CreateArticle_NullRequest_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.CreateArticle(null!);
 
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+        }
+
+        [TestMethod]
+        public async Task CreateTemplate_CreatesTemplateAndInitialVersion()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+            var templateCountBefore = Db.Templates.Count();
+
+            var result = await controller.CreateTemplate() as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var templateId = GetAnonymousProperty<Guid>(result.Value!, "templateId");
+            var title = GetAnonymousProperty<string>(result.Value!, "title");
+
+            Assert.IsFalse(templateId == Guid.Empty);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(title));
+            Assert.AreEqual(templateCountBefore + 1, Db.Templates.Count());
+            Assert.IsTrue(Db.PageDesignVersions.Any(v => v.TemplateId == templateId));
+        }
+
+        [TestMethod]
+        public async Task CreateTemplate_Unauthenticated_ReturnsUnauthorized()
+        {
+            controller.ControllerContext.HttpContext = CreateHttpContext();
+
+            var result = await controller.CreateTemplate();
+
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
         }
 
         #endregion
@@ -1056,7 +1238,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task PublishLayoutVersion_SetsPublishedTimestamp()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
 
             var result = await controller.PublishLayoutVersion(layout.LayoutNumber, layout.Version ?? 1);
@@ -1069,7 +1251,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task PublishLayoutVersion_MissingLayout_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var result = await controller.PublishLayoutVersion(99999, 1);
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
@@ -1077,7 +1259,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task PublishLayoutVersion_WrongVersion_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
             var result = await controller.PublishLayoutVersion(layout.LayoutNumber, 9999);
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
@@ -1086,7 +1268,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task SetDefaultLayoutVersion_SetsIsDefault()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
             layout.IsDefault = false;
             await Db.SaveChangesAsync();
@@ -1101,7 +1283,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task SetDefaultLayoutVersion_MissingLayout_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var result = await controller.SetDefaultLayoutVersion(99999, 1);
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
@@ -1109,7 +1291,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task DuplicateLayoutVersion_CreatesNewVersion()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var layout = Db.Layouts.First();
             var countBefore = Db.Layouts.Count(l => l.LayoutNumber == layout.LayoutNumber);
 
@@ -1131,7 +1313,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task DuplicateLayoutVersion_MissingLayout_ReturnsNotFound()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var result = await controller.DuplicateLayoutVersion(99999);
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
@@ -1139,7 +1321,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetLayouts_IncludesVersionNumber()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var result = await controller.GetLayouts() as OkObjectResult;
             Assert.IsNotNull(result);
 
@@ -1160,7 +1342,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetFilesList_Root_ReturnsPublicFolderContents()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetFilesList(null) as OkObjectResult;
 
@@ -1173,7 +1355,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetFilesList_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetFilesList("!!!invalid hash!!!") as BadRequestObjectResult;
 
@@ -1193,7 +1375,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetFileStat_ValidPath_ReturnsMetadata()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             // Use a valid path hash (base64 of "/pub")
             var pathHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("/pub"))
@@ -1215,7 +1397,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetFileStat_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.GetFileStat("invalid!!!hash");
 
@@ -1237,7 +1419,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetFileContent_SmallFile_ReturnsBytes()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var pathHash = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("/pub"))
                 .Replace('+', '-').Replace('/', '_').TrimEnd('=');
@@ -1255,7 +1437,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task GetFileContent_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             // Use an invalid base64 hash with invalid characters
             var invalidHash = "!!!invalid!!!";
@@ -1292,7 +1474,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task DeleteFile_ValidPath_ReturnsNoContent()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/test.txt");
 
             var result = await controller.DeleteFile(pathHash);
@@ -1303,7 +1485,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task DeleteFile_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.DeleteFile("!!!bad!!!");
 
@@ -1326,7 +1508,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task DeleteFolder_ValidPath_ReturnsNoContent()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/images");
 
             var result = await controller.DeleteFolder(pathHash);
@@ -1337,7 +1519,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task DeleteFolder_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.DeleteFolder("!!!bad!!!");
 
@@ -1360,7 +1542,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task CreateFolder_ValidPath_ReturnsCreated()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/newfolder");
 
             var result = await controller.CreateFolder(pathHash) as ObjectResult;
@@ -1372,7 +1554,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task CreateFolder_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.CreateFolder("!!!bad!!!");
 
@@ -1395,7 +1577,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task UploadFile_WithBody_ReturnsNoContent()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/test.txt");
 
             // Set up request body with content
@@ -1411,7 +1593,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task UploadFile_EmptyBody_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/test.txt");
 
             // No content length set — defaults to null
@@ -1425,7 +1607,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task UploadFile_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
 
             var result = await controller.UploadFile("!!!bad!!!");
 
@@ -1450,7 +1632,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task MoveFile_ValidRequest_ReturnsNoContent()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/old.txt");
             var request = new VsCodeController.MoveRequest { Destination = "/pub/new.txt" };
 
@@ -1462,7 +1644,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task MoveFile_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var request = new VsCodeController.MoveRequest { Destination = "/pub/new.txt" };
 
             var result = await controller.MoveFile("!!!bad!!!", request);
@@ -1473,7 +1655,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task MoveFile_MissingDestination_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/old.txt");
             var request = new VsCodeController.MoveRequest { Destination = null };
 
@@ -1497,7 +1679,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task MoveFolder_ValidRequest_ReturnsNoContent()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/old-folder");
             var request = new VsCodeController.MoveRequest { Destination = "/pub/new-folder" };
 
@@ -1509,7 +1691,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task MoveFolder_InvalidHash_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var request = new VsCodeController.MoveRequest { Destination = "/pub/new-folder" };
 
             var result = await controller.MoveFolder("!!!bad!!!", request);
@@ -1520,7 +1702,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task MoveFolder_MissingDestination_ReturnsBadRequest()
         {
-            controller.ControllerContext.HttpContext = CreateAuthorizedContext();
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var pathHash = EncodeTestPath("/pub/old-folder");
             var request = new VsCodeController.MoveRequest { Destination = "" };
 

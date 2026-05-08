@@ -8,14 +8,18 @@
 namespace Sky.Cms.Controllers
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Net;
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Shared;
+    using Cosmos.Common.Models;
+    using Cosmos.DynamicConfig;
+    using MailChimp.Net.Models;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
@@ -23,17 +27,31 @@ namespace Sky.Cms.Controllers
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using MimeTypes;
+    using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.GetEditable;
+    using Sky.Editor.Features.Articles.Inventory;
+    using Sky.Editor.Features.Layouts.GetEditable;
+    using Sky.Editor.Features.Templates.Create;
+    using Sky.Editor.Features.Templates.Get;
+    using Sky.Editor.Services.Layouts;
+    using Sky.Editor.Services.Publishing;
+    using Sky.Editor.Services.Templates;
 
     /// <summary>
     /// API endpoints used by the SkyCMS VS Code extension.
     /// </summary>
     [ApiController]
     [Route("api/vscode")]
-    public class VsCodeController : ControllerBase
+    public class VsCodeController : Controller
     {
+        // Constants for magic strings
+        private const string DefaultLayoutName = "Default Layout";
+        private const string DefaultLayoutNotes = "Default layout created. Please customize using code editor.";
+
         private const string StateCachePrefix = "vscode:auth:state:";
         private const string CodeCachePrefix = "vscode:auth:code:";
         private const string TokenCachePrefix = "vscode:auth:token:";
+        private const string PollCachePrefix = "vscode:auth:poll:";
 
         private static readonly TimeSpan BrowserStateLifetime = TimeSpan.FromMinutes(10);
         private static readonly TimeSpan OneTimeCodeLifetime = TimeSpan.FromMinutes(5);
@@ -43,6 +61,12 @@ namespace Sky.Cms.Controllers
         private readonly ILogger<VsCodeController> logger;
         private readonly IMemoryCache memoryCache;
         private readonly IStorageContext storageContext;
+        private readonly ILayoutVersioningService layoutVersioningService;
+        private readonly IDynamicConfigurationProvider configProvider;
+        private readonly IMediator mediator;
+        private readonly ITemplateService templateService;
+        private readonly ArticleEditLogic articleLogic;
+        private readonly IPublishingService publishingService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VsCodeController"/> class.
@@ -51,16 +75,34 @@ namespace Sky.Cms.Controllers
         /// <param name="logger">Logger instance.</param>
         /// <param name="memoryCache">Memory cache for one-time auth exchange.</param>
         /// <param name="storageContext">Storage context for file operations.</param>
+        /// <param name="layoutVersioningService">Layout import service.</param>
+        /// <param name="mediator">Mediator service.</param>
+        /// <param name="templateService">Template service.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant settings.</param>
+        /// <param name="articleLogic">Article edit logic for publish/unpublish operations.</param>
+        /// <param name="publishingService">Publishing service for unpublish operations.</param>
         public VsCodeController(
             ApplicationDbContext dbContext,
             ILogger<VsCodeController> logger,
             IMemoryCache memoryCache,
-            IStorageContext storageContext)
+            IStorageContext storageContext,
+            ILayoutVersioningService layoutVersioningService,
+            IMediator mediator,
+            ITemplateService templateService,
+            IDynamicConfigurationProvider configProvider,
+            ArticleEditLogic articleLogic,
+            IPublishingService publishingService)
         {
             this.dbContext = dbContext;
             this.logger = logger;
             this.memoryCache = memoryCache;
             this.storageContext = storageContext;
+            this.layoutVersioningService = layoutVersioningService;
+            this.mediator = mediator;
+            this.templateService = templateService;
+            this.configProvider = configProvider;
+            this.articleLogic = articleLogic;
+            this.publishingService = publishingService;
         }
 
         /// <summary>
@@ -72,8 +114,9 @@ namespace Sky.Cms.Controllers
         public IActionResult StartBrowserAuth()
         {
             var state = Guid.NewGuid().ToString("N");
-            var callbackUrl = $"{Request.Scheme}://{Request.Host}/api/vscode/auth/browser/complete?state={Uri.EscapeDataString(state)}";
-            var loginUrl = $"{Request.Scheme}://{Request.Host}/Identity/Account/Login?returnUrl={Uri.EscapeDataString(callbackUrl)}";
+            var callbackPath = $"/api/vscode/auth/browser/complete/{Uri.EscapeDataString(state)}";
+            var callbackUrl = $"{Request.Scheme}://{Request.Host}{callbackPath}";
+            var loginUrl = $"{Request.Scheme}://{Request.Host}/Identity/Account/Login?returnUrl={Uri.EscapeDataString(callbackPath)}";
 
             memoryCache.Set(
                 StateCachePrefix + state,
@@ -97,51 +140,131 @@ namespace Sky.Cms.Controllers
         /// <returns>One-time code display page.</returns>
         [Authorize]
         [HttpGet("auth/browser/complete")]
-        public IActionResult CompleteBrowserAuth([FromQuery] string? state)
+        [HttpGet("auth/browser/complete/{state}")]
+        public async Task<IActionResult> CompleteBrowserAuth(string? state)
         {
             if (string.IsNullOrWhiteSpace(state))
             {
-                return Content(BuildSimpleHtml("Invalid request", "Missing auth state parameter."), "text/html");
+                var errorModel = new Sky.Cms.Models.VsCodeAuthViewModel
+                {
+                    ErrorMessage = "Missing auth state parameter. Please start sign-in again from VS Code.",
+                    VsCodeCallbackUri = BuildVsCodeErrorUri("invalid_request", "Missing auth state parameter."),
+                };
+                return View("AuthFailed", errorModel);
             }
 
             if (!memoryCache.TryGetValue(StateCachePrefix + state, out BrowserStateCacheEntry? _))
             {
-                return Content(
-                    BuildSimpleHtml("Expired request", "This sign-in request has expired. Start sign-in again from VS Code."),
-                    "text/html");
+                var errorModel = new Sky.Cms.Models.VsCodeAuthViewModel
+                {
+                    ErrorMessage = "This sign-in request has expired. Please start sign-in again from VS Code.",
+                    VsCodeCallbackUri = BuildVsCodeErrorUri("expired_request", "Sign-in request expired."),
+                };
+                return View("AuthFailed", errorModel);
             }
 
             var role = ResolveUserRole();
             if (role is null)
             {
-                return new ContentResult
+                var errorModel = new Sky.Cms.Models.VsCodeAuthViewModel
                 {
-                    StatusCode = StatusCodes.Status403Forbidden,
-                    ContentType = "text/html",
-                    Content = BuildSimpleHtml("Access denied", "Your account must have Editor or Administrator access to use the VS Code extension."),
+                    ErrorMessage = "Your account must have Editor or Administrator access to use the VS Code extension.",
+                    VsCodeCallbackUri = BuildVsCodeErrorUri("access_denied", "Insufficient role."),
                 };
+                Response.StatusCode = StatusCodes.Status403Forbidden;
+                return View("AuthFailed", errorModel);
             }
 
             memoryCache.Remove(StateCachePrefix + state);
 
+            // Resolve site metadata for enriching the extension tree node.
+            var websiteTitle = await dbContext.Articles
+                .Where(a => a.UrlPath == "root")
+                .OrderByDescending(a => a.VersionNumber)
+                .Select(a => a.Title)
+                .FirstOrDefaultAsync() ?? string.Empty;
+
+            var publicUrl = string.Empty;
+            try
+            {
+                var domain = configProvider.GetTenantDomainNameFromRequest();
+                var connection = await configProvider.GetTenantConnectionAsync(domain);
+                publicUrl = connection?.WebsiteUrl ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Could not resolve tenant public URL during VS Code auth.");
+            }
+
             var code = GenerateOneTimeCode();
             var username = User.Identity?.Name ?? string.Empty;
-            memoryCache.Set(
-                CodeCachePrefix + code,
-                new OneTimeCodeCacheEntry
+            var codeEntry = new OneTimeCodeCacheEntry
+            {
+                Code = code,
+                State = state,
+                Username = username,
+                Role = role,
+                DisplayName = username,
+                WebsiteTitle = websiteTitle,
+                PublicUrl = publicUrl,
+            };
+
+            memoryCache.Set(CodeCachePrefix + code, codeEntry, OneTimeCodeLifetime);
+
+            // Write a second entry keyed by state so the poll endpoint can notify the
+            // extension without the extension needing to know the code in advance.
+            memoryCache.Set(PollCachePrefix + state, codeEntry, OneTimeCodeLifetime);
+
+            var callbackUri = BuildVsCodeCallbackUri(code, state, websiteTitle, publicUrl);
+
+            var model = new Sky.Cms.Models.VsCodeAuthViewModel
+            {
+                Code = code,
+                State = state,
+                VsCodeCallbackUri = callbackUri,
+                WebsiteTitle = websiteTitle,
+                PublicUrl = publicUrl,
+            };
+
+            return View(model);
+        }
+
+        /// <summary>
+        /// Polls for auth completion. Called repeatedly by the VS Code extension while the
+        /// user signs in. Returns <c>pending</c> until the browser completes sign-in, then
+        /// returns <c>complete</c> with the one-time code so the extension can exchange it.
+        /// </summary>
+        /// <param name="state">Correlation state from auth start.</param>
+        /// <returns>Poll status payload.</returns>
+        [AllowAnonymous]
+        [HttpGet("auth/poll")]
+        public IActionResult PollBrowserAuth([FromQuery] string? state)
+        {
+            if (string.IsNullOrWhiteSpace(state))
+            {
+                return BadRequest(new { status = "error", message = "state is required." });
+            }
+
+            // If the state entry is still alive but no poll entry exists yet, the user
+            // hasn't finished logging in yet.
+            if (memoryCache.TryGetValue(PollCachePrefix + state, out OneTimeCodeCacheEntry? pollEntry) && pollEntry != null)
+            {
+                return Ok(new
                 {
-                    Code = code,
-                    State = state,
-                    Username = username,
-                    Role = role,
-                    DisplayName = username,
-                },
-                OneTimeCodeLifetime);
+                    status = "complete",
+                    code = pollEntry.Code,
+                    websiteTitle = pollEntry.WebsiteTitle,
+                    publicUrl = pollEntry.PublicUrl,
+                });
+            }
 
-            var escapedCode = WebUtility.HtmlEncode(code);
-            var message = $"Copy this one-time code into VS Code: <strong style=\"font-size:1.2rem;letter-spacing:0.08rem;\">{escapedCode}</strong>";
+            // Check whether the state is still valid (not expired/consumed).
+            if (!memoryCache.TryGetValue(StateCachePrefix + state, out BrowserStateCacheEntry? _))
+            {
+                return Ok(new { status = "expired" });
+            }
 
-            return Content(BuildSimpleHtml("SkyCMS VS Code Sign-In", message), "text/html");
+            return Ok(new { status = "pending" });
         }
 
         /// <summary>
@@ -188,6 +311,8 @@ namespace Sky.Cms.Controllers
                 token,
                 role = tokenEntry.Role,
                 displayName = tokenEntry.DisplayName,
+                websiteTitle = codeEntry.WebsiteTitle,
+                publicUrl = codeEntry.PublicUrl,
                 expiresInSeconds = (int)BearerTokenLifetime.TotalSeconds,
             });
         }
@@ -254,20 +379,70 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var layouts = await dbContext.Layouts
+            var layout = await GetLayoutForEdit();
+
+            return Ok(new[]
+            {
+                new
+                {
+                    id = layout.Id,
+                    layoutNumber = layout.LayoutNumber,
+                    version = layout.Version ?? 0,
+                    name = layout.LayoutName,
+                    isDefault = layout.IsDefault,
+                    isPublished = layout.Published.HasValue,
+                    lastPublished = layout.Published?.UtcDateTime.ToString("o"),
+                    published = layout.Published,
+                    isEditable = !layout.Published.HasValue,
+                    lastModified = layout.LastModified,
+                },
+            });
+        }
+
+        /// <summary>
+        /// Lists all versions for a layout family, newest first.
+        /// </summary>
+        /// <param name="layoutNumber">Stable layout family number.</param>
+        /// <returns>Version metadata for tree rendering.</returns>
+        [HttpGet("layouts/{layoutNumber:int}/versions")]
+        public async Task<IActionResult> GetLayoutVersions(int layoutNumber)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var family = await dbContext.Layouts
                 .AsNoTracking()
-                .OrderBy(l => l.LayoutName)
+                .Where(l => l.LayoutNumber == layoutNumber)
+                .ToListAsync();
+
+            if (family.Count == 0)
+            {
+                return NotFound();
+            }
+
+            var maxVersion = family.Max(l => l.Version ?? 0);
+
+            var versions = family
+                .OrderByDescending(l => l.Version ?? 0)
                 .Select(l => new
                 {
                     id = l.Id,
                     layoutNumber = l.LayoutNumber,
-                    version = l.Version ?? 1,
+                    version = l.Version ?? 0,
                     name = l.LayoutName,
                     isDefault = l.IsDefault,
+                    isPublished = l.Published.HasValue,
+                    lastPublished = l.Published?.UtcDateTime.ToString("o"),
+                    published = l.Published,
+                    isEditable = !l.Published.HasValue && (l.Version ?? 0) == maxVersion,
+                    lastModified = l.LastModified,
                 })
-                .ToListAsync();
+                .ToList();
 
-            return Ok(layouts);
+            return Ok(versions);
         }
 
         /// <summary>
@@ -283,24 +458,28 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var templates = await dbContext.Templates
-                .AsNoTracking()
-                .OrderBy(t => t.Title)
+            await templateService.EnsureDefaultTemplatesExistAsync();
+
+            var templateEntities = await GetTemplatesForCurrentLayoutAsync();
+
+            // Keep ordering/projection client-side for provider compatibility (including Cosmos).
+            var templates = templateEntities
+                .OrderBy(t => t.Title ?? string.Empty)
                 .Select(t => new
                 {
                     templateId = t.Id,
                     name = t.Title,
                     layoutNumber = t.LayoutNumber,
                 })
-                .ToListAsync();
+                .ToList();
 
             return Ok(templates);
         }
 
         /// <summary>
-        /// Lists article summaries grouped into drafts and published states.
+        /// Lists editor inventory rows for articles, including nested blog children.
         /// </summary>
-        /// <returns>Grouped article summaries.</returns>
+        /// <returns>Editor inventory rows.</returns>
         [HttpGet("articles")]
         public async Task<IActionResult> GetArticles()
         {
@@ -310,53 +489,12 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var all = await dbContext.Articles
-                .AsNoTracking()
-                .Select(a => new
-                {
-                    a.Id,
-                    a.ArticleNumber,
-                    a.VersionNumber,
-                    a.Title,
-                    a.ArticleType,
-                    a.Published,
-                })
-                .ToListAsync();
-
-            var latest = all
-                .GroupBy(a => a.ArticleNumber)
-                .Select(g => g.OrderByDescending(a => a.VersionNumber).First())
-                .OrderBy(a => a.Title)
-                .ToList();
-
-            var now = DateTimeOffset.UtcNow;
-            var drafts = latest
-                .Where(a => !a.Published.HasValue || a.Published > now)
-                .Select(a => new
-                {
-                    id = a.Id,
-                    articleNumber = a.ArticleNumber,
-                    title = a.Title,
-                    articleType = a.ArticleType,
-                })
-                .ToList();
-
-            var published = latest
-                .Where(a => a.Published.HasValue && a.Published <= now)
-                .Select(a => new
-                {
-                    id = a.Id,
-                    articleNumber = a.ArticleNumber,
-                    title = a.Title,
-                    articleType = a.ArticleType,
-                })
-                .ToList();
-
-            return Ok(new
+            var inventory = await mediator.QueryAsync(new GetEditorInventoryQuery
             {
-                drafts,
-                published,
+                PublishedOnly = false,
             });
+
+            return Ok(inventory);
         }
 
         /// <summary>
@@ -483,6 +621,42 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
+        /// Gets a layout field payload for a specific version (read-only history access).
+        /// </summary>
+        /// <param name="layoutNumber">Layout number identifier.</param>
+        /// <param name="version">Layout version.</param>
+        /// <param name="fieldKey">Field key.</param>
+        /// <returns>Field payload.</returns>
+        [HttpGet("layouts/{layoutNumber:int}/{version:int}/{fieldKey}")]
+        public async Task<IActionResult> GetLayoutVersionField(int layoutNumber, int version, string fieldKey)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var layout = await dbContext.Layouts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.LayoutNumber == layoutNumber && (l.Version ?? 0) == version);
+
+            if (layout == null)
+            {
+                return NotFound();
+            }
+
+            return fieldKey.ToLowerInvariant() switch
+            {
+                "layoutname" => Ok(new { value = layout.LayoutName }),
+                "notes" => Ok(new { content = layout.Notes }),
+                "head" => Ok(new { content = layout.Head }),
+                "header" => Ok(new { content = layout.HtmlHeader }),
+                "footer" => Ok(new { content = layout.FooterHtmlContent }),
+                _ => NotFound(),
+            };
+        }
+
+        /// <summary>
         /// Updates a layout field payload.
         /// </summary>
         /// <param name="layoutNumber">Layout number identifier.</param>
@@ -545,7 +719,7 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var template = await dbContext.Templates.FirstOrDefaultAsync(t => t.Id == templateId);
+            var template = await GetTemplateAsync(templateId);
             if (template == null)
             {
                 return NotFound();
@@ -576,22 +750,35 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var template = await dbContext.Templates.FirstOrDefaultAsync(t => t.Id == templateId);
+            var template = await GetTemplateAsync(templateId);
             if (template == null)
             {
                 return NotFound();
+            }
+
+            var trackedTemplate = dbContext.Templates.Local.FirstOrDefault(t => t.Id == templateId);
+            if (trackedTemplate != null)
+            {
+                template = trackedTemplate;
+            }
+            else
+            {
+                dbContext.Attach(template);
             }
 
             switch (fieldKey.ToLowerInvariant())
             {
                 case "title":
                     template.Title = request.Value ?? string.Empty;
+                    dbContext.Entry(template).Property(t => t.Title).IsModified = true;
                     break;
                 case "content":
                     template.Content = request.Content ?? string.Empty;
+                    dbContext.Entry(template).Property(t => t.Content).IsModified = true;
                     break;
                 case "description":
                     template.Description = request.Content ?? string.Empty;
+                    dbContext.Entry(template).Property(t => t.Description).IsModified = true;
                     break;
                 default:
                     return NotFound();
@@ -599,6 +786,149 @@ namespace Sky.Cms.Controllers
 
             await dbContext.SaveChangesAsync();
             return Ok();
+        }
+
+        /// <summary>
+        /// Creates a new template and its initial page-design version.
+        /// </summary>
+        /// <returns>Created template metadata.</returns>
+        [HttpPost("templates")]
+        public async Task<IActionResult> CreateTemplate()
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var defaultLayout = await GetCurrentLayoutAsync();
+
+            var entity = new Cosmos.Common.Data.Template
+            {
+                Id = Guid.NewGuid(),
+                Title = "New Template " + await dbContext.Templates.CountAsync(),
+                Description = "<p>New template, please add descriptive and helpful information here.</p>",
+                Content = "<p>" + LoremIpsum.SubSection1 + "</p>",
+                LayoutId = defaultLayout?.Id,
+                LayoutNumber = defaultLayout?.LayoutNumber ?? 0,
+                CommunityLayoutId = defaultLayout?.CommunityLayoutId
+            };
+
+            if (!dbContext.Database.IsCosmos())
+            {
+                using (var transaction = await dbContext.Database.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        dbContext.Templates.Add(entity);
+                        await dbContext.SaveChangesAsync();
+
+                        var createVersionCommand = new CreatePageDesignVersionCommand
+                        {
+                            TemplateId = entity.Id,
+                            Title = entity.Title,
+                            Description = entity.Description,
+                            Content = entity.Content,
+                            PageType = "template",
+                            LayoutId = entity.LayoutId,
+                            CommunityLayoutId = entity.CommunityLayoutId
+                        };
+
+                        var versionResult = await mediator.SendAsync(createVersionCommand);
+                        if (!versionResult.IsSuccess)
+                        {
+                            await transaction.RollbackAsync();
+                            return BadRequest(new { message = $"Failed to create template version: {versionResult.ErrorMessage}" });
+                        }
+
+                        await transaction.CommitAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+                        return BadRequest(new { message = $"Error creating template: {ex.Message}" });
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    dbContext.Templates.Add(entity);
+                    await dbContext.SaveChangesAsync();
+
+                    var createVersionCommand = new CreatePageDesignVersionCommand
+                    {
+                        TemplateId = entity.Id,
+                        Title = entity.Title,
+                        Description = entity.Description,
+                        Content = entity.Content,
+                        PageType = "template",
+                        LayoutId = entity.LayoutId,
+                        CommunityLayoutId = entity.CommunityLayoutId
+                    };
+
+                    var versionResult = await mediator.SendAsync(createVersionCommand);
+                    if (!versionResult.IsSuccess)
+                    {
+                        return BadRequest(new { message = $"Failed to create template version: {versionResult.ErrorMessage}" });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(new { message = $"Error creating template: {ex.Message}" });
+                }
+            }
+
+            return Ok(new
+            {
+                templateId = entity.Id,
+                title = entity.Title,
+                layoutNumber = entity.LayoutNumber,
+            });
+        }
+
+        private async Task<List<Cosmos.Common.Data.Template>> GetTemplatesForCurrentLayoutAsync()
+        {
+            var layout = await GetCurrentLayoutAsync();
+
+            if (layout == null)
+            {
+                return new List<Cosmos.Common.Data.Template>();
+            }
+
+            var layoutId = layout.Id;
+            var layoutNumber = layout.LayoutNumber;
+
+            return await dbContext.Templates
+                .AsNoTracking()
+                .Where(t => t.LayoutNumber == layoutNumber ||
+                            (t.LayoutNumber == 0 && t.LayoutId == layoutId))
+                .ToListAsync();
+        }
+
+        private async Task<Layout?> GetCurrentLayoutAsync()
+        {
+            var layoutViewModel = await mediator.QueryAsync(new Cosmos.Common.Features.Layouts.Queries.GetDefaultLayoutQuery());
+            if (layoutViewModel == null)
+            {
+                return null;
+            }
+
+            return await dbContext.Layouts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Id == layoutViewModel.Id);
+        }
+
+        private async Task<Cosmos.Common.Data.Template?> GetTemplateAsync(Guid templateId)
+        {
+            var result = await mediator.QueryAsync(new GetTemplateQuery { TemplateId = templateId });
+            if (!result.IsSuccess || result.Data?.Template == null)
+            {
+                return null;
+            }
+
+            return result.Data.Template;
         }
 
         /// <summary>
@@ -624,6 +954,7 @@ namespace Sky.Cms.Controllers
 
             return fieldKey.ToLowerInvariant() switch
             {
+                "id" => Ok(new { value = article.Id.ToString() }),
                 "published" => Ok(new { value = article.Published?.ToString("O") }),
                 "title" => Ok(new { value = article.Title }),
                 "bannerimage" => Ok(new { value = article.BannerImage }),
@@ -707,15 +1038,13 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var article = await GetEditableArticle(articleNumber);
+            var article = await GetLatestArticleVersion(articleNumber);
             if (article == null)
             {
                 return NotFound();
             }
 
-            article.Published = DateTimeOffset.UtcNow;
-            article.Updated = DateTimeOffset.UtcNow;
-            await dbContext.SaveChangesAsync();
+            await articleLogic.PublishArticle(article.Id, null);
             return Ok();
         }
 
@@ -733,16 +1062,106 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var article = await GetEditableArticle(articleNumber);
+            var article = await GetLatestArticleVersion(articleNumber);
             if (article == null)
             {
                 return NotFound();
             }
 
-            article.Published = null;
-            article.Updated = DateTimeOffset.UtcNow;
-            await dbContext.SaveChangesAsync();
+            await publishingService.UnpublishAsync(article);
             return Ok();
+        }
+
+        /// <summary>
+        /// Lists paged version metadata for an article family, newest first.
+        /// </summary>
+        /// <param name="articleNumber">Article number.</param>
+        /// <param name="skip">Number of items to skip (0-based).</param>
+        /// <param name="take">Maximum number of items to return.</param>
+        /// <returns>Paged version metadata.</returns>
+        [HttpGet("articles/{articleNumber:int}/versions")]
+        public async Task<IActionResult> GetArticleVersions(int articleNumber, int skip = 0, int take = 10)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var family = await dbContext.Articles
+                .AsNoTracking()
+                .Where(a => a.ArticleNumber == articleNumber)
+                .ToListAsync();
+
+            if (family.Count == 0)
+            {
+                return NotFound();
+            }
+
+            var maxVersionNumber = family.Max(a => a.VersionNumber);
+
+            var ordered = family
+                .OrderByDescending(a => a.VersionNumber)
+                .ToList();
+
+            var total = ordered.Count;
+            var page = ordered.Skip(skip).Take(take).ToList();
+
+            var items = page.Select(a => new
+            {
+                versionId = a.Id,
+                versionNumber = a.VersionNumber,
+                isEditable = !a.Published.HasValue && a.VersionNumber == maxVersionNumber,
+                isPublished = a.Published.HasValue,
+                publishedDate = a.Published?.UtcDateTime.ToString("o"),
+                updated = a.Updated.UtcDateTime.ToString("o"),
+            }).ToList();
+
+            return Ok(new
+            {
+                items,
+                total,
+                hasMore = skip + take < total,
+            });
+        }
+
+        /// <summary>
+        /// Gets a specific article field for a version by its ID (read-only history access).
+        /// </summary>
+        /// <param name="articleNumber">Article number.</param>
+        /// <param name="versionId">Version row ID (GUID).</param>
+        /// <param name="fieldKey">Field key.</param>
+        /// <returns>Field payload.</returns>
+        [HttpGet("articles/{articleNumber:int}/versions/{versionId:guid}/{fieldKey}")]
+        public async Task<IActionResult> GetArticleVersionField(int articleNumber, Guid versionId, string fieldKey)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var article = await dbContext.Articles
+                .AsNoTracking()
+                .Where(a => a.ArticleNumber == articleNumber && a.Id == versionId)
+                .FirstOrDefaultAsync();
+
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            return fieldKey.ToLowerInvariant() switch
+            {
+                "title" => Ok(new { value = article.Title }),
+                "bannerimage" => Ok(new { value = article.BannerImage }),
+                "category" => Ok(new { value = article.Category }),
+                "introduction" => Ok(new { content = article.Introduction }),
+                "content" => Ok(new { content = article.Content }),
+                "headerjavascript" => Ok(new { content = article.HeaderJavaScript }),
+                "footerjavascript" => Ok(new { content = article.FooterJavaScript }),
+                _ => NotFound(),
+            };
         }
 
         /// <summary>
@@ -923,16 +1342,90 @@ namespace Sky.Cms.Controllers
 
         private async Task<Layout?> GetEditableLayout(int layoutNumber)
         {
-            return await dbContext.Layouts
-                .OrderByDescending(l => l.Version ?? 0)
-                .FirstOrDefaultAsync(l => l.LayoutNumber == layoutNumber);
+            if (layoutNumber <= 0)
+            {
+                // Legacy tenants can still have layout families persisted with LayoutNumber=0.
+                // Keep VS Code field access working by resolving/editing that family directly.
+                var legacyFamily = await dbContext.Layouts
+                    .Where(l => l.LayoutNumber == 0)
+                    .ToListAsync();
+
+                var legacyLatest = legacyFamily
+                    .OrderByDescending(l => l.Version ?? 0)
+                    .FirstOrDefault();
+
+                if (legacyLatest == null)
+                {
+                    return null;
+                }
+
+                if (!legacyLatest.Published.HasValue)
+                {
+                    return legacyLatest;
+                }
+
+                var legacyNewLayout = new Layout
+                {
+                    Id = Guid.NewGuid(),
+                    LayoutNumber = legacyLatest.LayoutNumber,
+                    Version = legacyFamily.Count + 1,
+                    LayoutName = legacyLatest.LayoutName,
+                    Notes = legacyLatest.Notes,
+                    Head = legacyLatest.Head,
+                    HtmlHeader = legacyLatest.HtmlHeader,
+                    BodyHtmlAttributes = legacyLatest.BodyHtmlAttributes,
+                    FooterHtmlContent = legacyLatest.FooterHtmlContent,
+                    IsDefault = false,
+                    Published = null,
+                    CommunityLayoutId = legacyLatest.CommunityLayoutId,
+                    LastModified = DateTimeOffset.UtcNow,
+                };
+
+                dbContext.Layouts.Add(legacyNewLayout);
+                await dbContext.SaveChangesAsync();
+
+                return legacyNewLayout;
+            }
+
+            var result = await mediator.SendAsync(new GetEditableLayoutForEditCommand
+            {
+                LayoutNumber = layoutNumber,
+            });
+
+            if (!result.IsSuccess)
+            {
+                return null;
+            }
+
+            return result.Data?.Layout;
         }
 
         private async Task<Article?> GetEditableArticle(int articleNumber)
         {
-            return await dbContext.Articles
+            var result = await mediator.SendAsync(new GetEditableArticleForEditCommand
+            {
+                ArticleNumber = articleNumber,
+            });
+
+            if (!result.IsSuccess)
+            {
+                return null;
+            }
+
+            return result.Data?.Article;
+        }
+
+        private async Task<Article?> GetLatestArticleVersion(int articleNumber)
+        {
+            // Fetch all articles with the given articleNumber, then sort client-side
+            // to avoid Cosmos DB ORDER BY limitations
+            var articles = await dbContext.Articles
+                .Where(a => a.ArticleNumber == articleNumber)
+                .ToListAsync();
+
+            return articles
                 .OrderByDescending(a => a.VersionNumber)
-                .FirstOrDefaultAsync(a => a.ArticleNumber == articleNumber);
+                .FirstOrDefault();
         }
 
         private IActionResult? EnsureVsCodeRequestAuthorized()
@@ -1034,10 +1527,20 @@ namespace Sky.Cms.Controllers
             return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
         }
 
-        private static string BuildSimpleHtml(string title, string bodyHtml)
+        private static string BuildVsCodeCallbackUri(string code, string state, string websiteTitle, string publicUrl)
         {
-            var safeTitle = WebUtility.HtmlEncode(title);
-            return $"<!doctype html><html><head><meta charset=\"utf-8\"><title>{safeTitle}</title></head><body style=\"font-family:Segoe UI,Arial,sans-serif;padding:2rem;max-width:760px;margin:auto;\"><h2>{safeTitle}</h2><p>{bodyHtml}</p><p>You can now return to VS Code.</p></body></html>";
+            return $"vscode://cwalabs.skycms-explorer/auth/callback"
+                + $"?code={Uri.EscapeDataString(code)}"
+                + $"&state={Uri.EscapeDataString(state)}"
+                + $"&websiteTitle={Uri.EscapeDataString(websiteTitle)}"
+                + $"&publicUrl={Uri.EscapeDataString(publicUrl)}";
+        }
+
+        private static string BuildVsCodeErrorUri(string error, string errorDescription)
+        {
+            return $"vscode://cwalabs.skycms-explorer/auth/callback"
+                + $"?error={Uri.EscapeDataString(error)}"
+                + $"&error_description={Uri.EscapeDataString(errorDescription)}";
         }
 
         /// <summary>
@@ -1072,6 +1575,10 @@ namespace Sky.Cms.Controllers
             public string Role { get; set; } = string.Empty;
 
             public string DisplayName { get; set; } = string.Empty;
+
+            public string WebsiteTitle { get; set; } = string.Empty;
+
+            public string PublicUrl { get; set; } = string.Empty;
         }
 
         private sealed class BearerTokenCacheEntry
@@ -1538,6 +2045,53 @@ namespace Sky.Cms.Controllers
         {
             var bytes = Encoding.UTF8.GetBytes(path);
             return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        }
+
+        /// <summary>
+        /// Gets the layout for editing - creates a new version if the current one is default.
+        /// </summary>
+        /// <returns>Layout for editing.</returns>
+        private async Task<Layout> GetLayoutForEdit()
+        {
+            // Fetch all layouts and sort client-side to avoid Cosmos DB ORDER BY limitations
+            var layouts = await dbContext.Layouts.ToListAsync();
+            var layout = layouts.OrderByDescending(o => o.Version).FirstOrDefault();
+
+            if (layout == null)
+            {
+                layout = new Layout
+                {
+                    Id = Guid.NewGuid(),
+                    IsDefault = true,
+                    LayoutName = DefaultLayoutName,
+                    Notes = DefaultLayoutNotes,
+                    LayoutNumber = 1,
+                    Version = 1,
+                    LastModified = DateTimeOffset.UtcNow
+                };
+
+                dbContext.Layouts.Add(layout);
+
+                await dbContext.SaveChangesAsync();
+
+                logger.LogInformation("Created default layout {LayoutId} with LayoutNumber=1", layout.Id);
+
+                return layout;
+            }
+
+            if (layout.IsDefault)
+            {
+                var newVersion = await layoutVersioningService.CreateNewVersionAsync(layout);
+                if (newVersion != null)
+                {
+                    return newVersion;
+                }
+
+                logger.LogWarning("Layout versioning service returned null for default layout {LayoutId}; using current layout.", layout.Id);
+                return layout;
+            }
+
+            return layout;
         }
 
         /// <summary>

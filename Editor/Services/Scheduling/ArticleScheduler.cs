@@ -106,63 +106,55 @@ namespace Sky.Editor.Services.Scheduling
             var scopedServices = scope.ServiceProvider;
             var memoryCache = scopedServices.GetRequiredService<IMemoryCache>();
 
-            try
+            // These services need to be scoped to a particular domainName.
+            if (isMultiTenantEditor)
             {
-                // These services need to be scoped to a particular domainName.
-                if (isMultiTenantEditor)
+                // All services must be scoped to the tenant's connection
+                var connection = await configurationProvider!.GetTenantConnectionAsync(domainName);
+
+                if (connection == null)
                 {
-                    // All services must be scoped to the tenant's connection
-                    var connection = await configurationProvider!.GetTenantConnectionAsync(domainName);
+                    logger.LogWarning("No connection configuration found for tenant {Domain}", domainName);
+                    return;
+                }
 
-                    if (connection == null)
-                    {
-                        logger.LogWarning("No connection configuration found for tenant {Domain}", domainName);
-                        return;
-                    }
+                using (var dbContext = new ApplicationDbContext(connection.DbConn))
+                {
+                    var storageContext = new StorageContext(connection.StorageConn, memoryCache);
 
-                    using (var dbContext = new ApplicationDbContext(connection.DbConn))
+                    await Run(dbContext, storageContext, domainName, scopedServices);
+                }
+            }
+            else
+            {
+                // Single-tenant mode: Try to resolve DbContext from DI first (for tests),
+                // otherwise create manually to avoid DI scope issues with background jobs
+                var dbContextFromDI = scopedServices.GetService<ApplicationDbContext>();
+
+                if (dbContextFromDI != null)
+                {
+                    // Use the DbContext from DI (typically in test scenarios with in-memory database)
+                    var storageContext = scopedServices.GetRequiredService<IStorageContext>();
+                    await Run(dbContextFromDI, storageContext, domainName, scopedServices);
+                }
+                else
+                {
+                    // Create DbContext manually (production background worker scenarios)
+                    var configuration = scopedServices.GetRequiredService<IConfiguration>();
+                    var connectionString = configuration.GetConnectionString("ApplicationDbContextConnection");
+
+                    // Create ApplicationDbContext directly instead of resolving from DI (which may require HTTP context)
+                    using (var dbContext = new ApplicationDbContext(
+                        CosmosDbOptionsBuilder.GetDbOptions<ApplicationDbContext>(connectionString)))
                     {
-                        var storageContext = new StorageContext(connection.StorageConn, memoryCache);
+                        // Get the storage connection string and create StorageContext manually
+                        var storageConnectionString = configuration.GetConnectionString("StorageConnectionString")
+                            ?? configuration.GetValue<string>("StorageConnectionString");
+                        var storageContext = new StorageContext(storageConnectionString, memoryCache);
 
                         await Run(dbContext, storageContext, domainName, scopedServices);
                     }
                 }
-                else
-                {
-                    // Single-tenant mode: Try to resolve DbContext from DI first (for tests),
-                    // otherwise create manually to avoid DI scope issues with background jobs
-                    var dbContextFromDI = scopedServices.GetService<ApplicationDbContext>();
-
-                    if (dbContextFromDI != null)
-                    {
-                        // Use the DbContext from DI (typically in test scenarios with in-memory database)
-                        var storageContext = scopedServices.GetRequiredService<IStorageContext>();
-                        await Run(dbContextFromDI, storageContext, domainName, scopedServices);
-                    }
-                    else
-                    {
-                        // Create DbContext manually (production background worker scenarios)
-                        var configuration = scopedServices.GetRequiredService<IConfiguration>();
-                        var connectionString = configuration.GetConnectionString("ApplicationDbContextConnection");
-
-                        // Create ApplicationDbContext directly instead of resolving from DI (which may require HTTP context)
-                        using (var dbContext = new ApplicationDbContext(
-                            CosmosDbOptionsBuilder.GetDbOptions<ApplicationDbContext>(connectionString)))
-                        {
-                            // Get the storage connection string and create StorageContext manually
-                            var storageConnectionString = configuration.GetConnectionString("StorageConnectionString")
-                                ?? configuration.GetValue<string>("StorageConnectionString");
-                            var storageContext = new StorageContext(storageConnectionString, memoryCache);
-
-                            await Run(dbContext, storageContext, domainName, scopedServices);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "ArticleScheduler: Error during scheduled execution for domain {Domain}", domainName);
-                throw;
             }
         }
 
@@ -217,13 +209,16 @@ namespace Sky.Editor.Services.Scheduling
             try
             {
                 var deletedStatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted;
-                var versions = await dbContext.Articles
+                var matchingVersions = await dbContext.Articles
                     .Where(a => a.ArticleNumber == articleNumber
                     && a.Published != null && a.Published <= now
                     && a.StatusCode != deletedStatusCode)
+                    .ToListAsync();
+
+                var versions = matchingVersions
                     .OrderByDescending(a => a.Published)
                     .ThenByDescending(a => a.VersionNumber)
-                    .ToListAsync();
+                    .ToList();
 
                 if (versions.Count < 2)
                 {

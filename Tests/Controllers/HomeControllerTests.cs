@@ -539,7 +539,8 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(RedirectResult));
             var redirectResult = (RedirectResult)result;
-            Assert.AreEqual("~/Identity/Account/Login", redirectResult.Url);
+            // Note: This has been changed tos that the returnUrl must be present now.
+            Assert.AreEqual("~/Identity/Account/Login?returnUrl=", redirectResult.Url);
         }
 
         /// <summary>

@@ -40,6 +40,8 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.Create;
     using Sky.Editor.Features.Articles.Delete;
+    using Sky.Editor.Features.Articles.GetEditable;
+    using Sky.Editor.Features.Articles.Inventory;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Articles.Trash;
     using Sky.Editor.Features.Templates.Get;
@@ -1408,55 +1410,12 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            var activeStatusCode = (int)StatusCodeEnum.Active;
-
-            var query = dbContext.Articles
-                .Where(a => a.StatusCode == activeStatusCode)
-                .Select(a => new
-                {
-                    a.ArticleNumber,
-                    a.ArticleType,
-                    a.Title,
-                    a.UrlPath,
-                    a.BlogKey,
-                    a.Published,
-                    a.Updated,
-                    a.VersionNumber,
-                    a.Content,
-                });
-
-            if (publishedOnly)
+            var model = await mediator.QueryAsync(new GetEditorInventoryQuery
             {
-                query = query.Where(a => a.Published != null);
-            }
-
-            if (articleType > 0)
-            {
-                query = query.Where(a => a.ArticleType == articleType);
-            }
-
-            var rows = await query.ToListAsync();
-
-            var latestRows = rows
-                .GroupBy(a => a.ArticleNumber)
-                .Select(g => g.OrderByDescending(a => a.VersionNumber).First())
-                .ToList();
-
-            var model = BuildEditorInventory(latestRows.Select(s => new EditorInventoryItem
-            {
-                ArticleNumber = s.ArticleNumber,
-                ArticleType = s.ArticleType,
-                Title = s.Title,
-                BlogKey = s.BlogKey,
-                IsDefault = string.Equals(s.UrlPath, "root", StringComparison.OrdinalIgnoreCase),
-                LastPublished = s.Published.HasValue ? s.Published.Value.UtcDateTime.ToString("o") : null,
-                UrlPath = s.UrlPath,
-                Updated = s.Updated.UtcDateTime.ToString("o"),
-                HtmlEditorEnabled = HasEditableRegions(s.Content),
-                UsesHtmlEditor = HasEditableRegions(s.Content),
-            }));
-
-            model = FilterEditorInventoryByTerm(model, term);
+                Term = term,
+                PublishedOnly = publishedOnly,
+                ArticleType = articleType,
+            });
 
             return Json(model);
         }
@@ -2363,24 +2322,17 @@ namespace Sky.Cms.Controllers
         /// <returns>The editable article, if found; otherwise, <see langword="null" />.</returns>
         private async Task<Article> GetArticleForEdit(int articleNumber)
         {
-            var article = await dbContext.Articles.Where(w => w.ArticleNumber == articleNumber).OrderByDescending(o => o.VersionNumber).FirstOrDefaultAsync();
-            if (article == null)
+            var result = await mediator.SendAsync(new GetEditableArticleForEditCommand
+            {
+                ArticleNumber = articleNumber,
+            });
+
+            if (!result.IsSuccess)
             {
                 return null;
             }
 
-            if (article.Published.HasValue)
-            {
-                // Use CreateArticleVersionCommand via mediator instead of deprecated NewVersion method
-                var versionCommand = new Sky.Editor.Features.Articles.CreateVersion.CreateArticleVersionCommand
-                {
-                    ArticleNumber = article.ArticleNumber
-                };
-                var versionResult = await mediator.SendAsync(versionCommand);
-                return versionResult.IsSuccess ? (await dbContext.Articles.Where(a => a.ArticleNumber == article.ArticleNumber).OrderByDescending(x => x.VersionNumber).FirstAsync()) : null;
-            }
-
-            return article;
+            return result.Data?.Article;
         }
 
         /// <summary>

@@ -37,6 +37,8 @@ using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
 using Sky.Editor.Features.Articles.Create;
 using Sky.Editor.Features.Articles.CreateVersion;
+using Sky.Editor.Features.Articles.GetEditable;
+using Sky.Editor.Features.Articles.Inventory;
 using Cosmos.Common.Models;
 using System.Diagnostics;
 using System.Reflection;
@@ -506,6 +508,10 @@ namespace Sky.Tests
                 publishPageDesignVersionHandlerFactory());
 
             // Register layout command handlers
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.GetEditable.GetEditableLayoutForEditCommand, Cosmos.Common.Features.Shared.CommandResult<Sky.Editor.Features.Layouts.GetEditable.GetEditableLayoutForEditResult>>>(sp =>
+                new Sky.Editor.Features.Layouts.GetEditable.GetEditableLayoutForEditHandler(
+                    Db));
+
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Layouts.Create.CreateLayoutCommand, Cosmos.Common.Features.Shared.CommandResult<System.Guid>>>(sp =>
                 new Sky.Editor.Features.Layouts.Create.CreateLayoutHandler(
                     Db,
@@ -578,6 +584,14 @@ namespace Sky.Tests
                     Db,
                     Cache,
                     configuration));
+
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.IQueryHandler<GetEditorInventoryQuery, System.Collections.Generic.List<Sky.Editor.Models.EditorInventoryItem>>>(sp =>
+                new GetEditorInventoryQueryHandler(Db));
+
+            serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<GetEditableArticleForEditCommand, Cosmos.Common.Features.Shared.CommandResult<GetEditableArticleForEditResult>>>(sp =>
+                new GetEditableArticleForEditHandler(
+                    Db,
+                    sp.GetRequiredService<IMediator>()));
 
 
             // Register article catalog query handlers for HomeControllerBase
