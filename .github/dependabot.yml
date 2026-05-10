@@ -31,6 +31,9 @@ updates:
       interval: "weekly"
     ignore:
       - dependency-name: "brace-expansion"
+      # Temporary: fast-uri is bundled transitively via aws-cdk-lib and
+      # currently not patchable by Dependabot in this directory.
+      - dependency-name: "fast-uri"
 
   # CloudFlare Worker npm packages
   - package-ecosystem: "npm"
