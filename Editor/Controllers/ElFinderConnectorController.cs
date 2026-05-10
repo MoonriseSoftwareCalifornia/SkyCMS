@@ -29,6 +29,7 @@ namespace Sky.Cms.Controllers
     using Microsoft.Extensions.Logging;
     using MimeTypes;
     using Sky.Cms.Models;
+    using Sky.Cms.Services;
     using Sky.Editor.Services.EditorSettings;
     using SkyCMS.Drivers.ElFinder;
     using SkyCMS.Drivers.ElFinder.Commands;
@@ -2058,28 +2059,13 @@ namespace Sky.Cms.Controllers
 
         private static string NormalizePath(string path)
         {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return null;
-            }
-
-            var segments = path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (segments.Length == 0)
-            {
-                return "/";
-            }
-
-            return "/" + string.Join("/", segments);
+            var normalized = PublicFileEntryHelper.NormalizePath(path);
+            return normalized == "/" ? RootPath : normalized;
         }
 
         private static string GetParentPath(string path)
         {
             var trimmed = NormalizePath(path);
-            if (string.IsNullOrEmpty(trimmed) || trimmed == "/")
-            {
-                return "/";
-            }
-
             var idx = trimmed.LastIndexOf('/');
             if (idx <= 0)
             {
@@ -2107,16 +2093,7 @@ namespace Sky.Cms.Controllers
                 return false;
             }
 
-            path = NormalizePath(path);
-
-            // Block path traversal
-            if (path.Contains(".."))
-            {
-                return false;
-            }
-
-            var normalised = NormalizePath(path);
-            return normalised == RootPath || normalised.StartsWith(RootPath + "/");
+            return PublicFileEntryHelper.IsPathWithinRoot(path, RootPath);
         }
 
         private static bool IsSafeName(string name)
@@ -2336,7 +2313,7 @@ namespace Sky.Cms.Controllers
             var name = entry.Name ?? string.Empty;
             var ext = entry.Extension ?? string.Empty;
 
-            if (!string.IsNullOrEmpty(ext) && !ext.StartsWith('.'))
+            if (!string.IsNullOrEmpty(ext) && !ext.StartsWith(".", StringComparison.Ordinal))
             {
                 ext = "." + ext;
             }

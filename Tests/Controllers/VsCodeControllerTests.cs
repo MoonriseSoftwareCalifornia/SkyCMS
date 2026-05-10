@@ -1353,6 +1353,90 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task GetFilesList_Root_IncludesPathAndMimeType()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetFilesList(null) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var items = (result.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
+            Assert.IsTrue(items.Count >= 1);
+
+            var first = items[0];
+            var path = GetAnonymousProperty<string>(first, "path");
+            var mimeType = GetAnonymousProperty<string>(first, "mimeType");
+            var isDir = GetAnonymousProperty<bool>(first, "isDir");
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(path));
+            Assert.IsTrue(path.StartsWith("/", StringComparison.Ordinal));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(mimeType));
+            if (isDir)
+            {
+                Assert.AreEqual("directory", mimeType);
+            }
+        }
+
+        [TestMethod]
+        public async Task GetFilesList_ArticlesRoot_MapsFolderNumbersToArticleTitles()
+        {
+            var article = await CreateArticleAsync("Mapped Folder Title", TestUserId);
+
+            var localCache = new MemoryCache(new MemoryCacheOptions());
+            var storageMock = new Mock<IStorageContext>();
+            storageMock
+                .Setup(s => s.GetFilesAndDirectories("/pub/articles"))
+                .ReturnsAsync(new List<FileManagerEntry>
+                {
+                    new FileManagerEntry
+                    {
+                        Name = article.ArticleNumber.ToString(),
+                        Path = $"/pub/articles/{article.ArticleNumber}",
+                        IsDirectory = true,
+                        Size = 0,
+                        ModifiedUtc = DateTime.UtcNow,
+                        Extension = string.Empty,
+                    },
+                });
+
+            var layoutVersioningService = new LayoutVersioningService(
+                Db,
+                ArticleHtmlService,
+                NullLogger<LayoutVersioningService>.Instance);
+
+            var localController = new VsCodeController(
+                Db,
+                NullLogger<VsCodeController>.Instance,
+                localCache,
+                storageMock.Object,
+                layoutVersioningService,
+                Mediator,
+                TemplateService,
+                DynamicConfigurationProvider,
+                ArticleEditLogic,
+                PublishingService);
+
+            localController.ControllerContext = new ControllerContext
+            {
+                HttpContext = CreateHttpContext(
+                    isAuthenticated: true,
+                    username: "editor@example.com",
+                    role: "Editors"),
+            };
+
+            var pathHash = EncodeTestPath("/pub/articles");
+            var result = await localController.GetFilesList(pathHash) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var items = (result.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
+            Assert.AreEqual(1, items.Count);
+            Assert.AreEqual("Mapped Folder Title", GetAnonymousProperty<string>(items[0], "name"));
+            Assert.AreEqual($"/pub/articles/{article.ArticleNumber}", GetAnonymousProperty<string>(items[0], "path"));
+
+            localCache.Dispose();
+        }
+
+        [TestMethod]
         public async Task GetFilesList_InvalidHash_ReturnsBadRequest()
         {
             controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
@@ -1360,6 +1444,17 @@ namespace Sky.Tests.Controllers
             var result = await controller.GetFilesList("!!!invalid hash!!!") as BadRequestObjectResult;
 
             Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public async Task GetFilesList_PathOutsidePublicRoot_ReturnsBadRequest()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+            var outsidePathHash = EncodeTestPath("/private/secret.txt");
+
+            var result = await controller.GetFilesList(outsidePathHash);
+
+            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
         }
 
         [TestMethod]

@@ -5,15 +5,8 @@
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<EnableMSTestRunner>true</EnableMSTestRunner>
+		<IsPackable>false</IsPackable>
 		<UserSecretsId>c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1</UserSecretsId>
-		<OutputType>Exe</OutputType>
-		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-		<!--
-      Displays error on console in addition to the log file. Note that this feature comes with a performance impact.
-      For more information, visit https://learn.microsoft.com/dotnet/core/testing/unit-testing-platform-integration-dotnet-test#show-failure-per-test
-      -->
-		<TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
 		<Version>12.4.0</Version>
 		<FileVersion>12.4.0</FileVersion>
 		<AssemblyVersion>12.4.0</AssemblyVersion>

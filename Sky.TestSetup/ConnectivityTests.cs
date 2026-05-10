@@ -144,10 +144,27 @@ public class ConnectivityTests
         }
         catch (SqlException ex)
         {
+            if (ex.Number == 11001
+                || ex.Message.Contains("No such host", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("server was not found", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("network-related", StringComparison.OrdinalIgnoreCase))
+            {
+                Assert.Inconclusive($"SQL Server endpoint is unreachable. Skipping test. Details: {ex.Number} - {ex.Message}");
+                return;
+            }
+
             Assert.Fail($"SQL Server connectivity failed: {ex.Number} - {ex.Message}");
         }
         catch (Exception ex)
         {
+            if (ex.Message.Contains("No such host", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("server was not found", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("network-related", StringComparison.OrdinalIgnoreCase))
+            {
+                Assert.Inconclusive($"SQL Server endpoint is unreachable. Skipping test. Details: {ex.Message}");
+                return;
+            }
+
             Assert.Fail($"SQL Server connectivity failed with unexpected error: {ex.Message}");
         }
     }

@@ -253,21 +253,29 @@ namespace Sky.Cms.Controllers
 
             if (target.Trim('/').StartsWith("pub/articles"))
             {
-                var split = target.Trim('/').Split('/');
-                if (split.Length > 2 && int.TryParse(split[2], out var articleNumber))
+                if (PublicFileEntryHelper.TryGetArticleNumber(target, out var articleNumber))
                 {
-                    var article = await dbContext.ArticleCatalog.Select(s => new { s.ArticleNumber, s.Title }).FirstOrDefaultAsync(f => f.ArticleNumber == articleNumber);
-                    articleTitle = article.Title;
+                    var article = await dbContext.ArticleCatalog
+                        .Select(s => new { s.ArticleNumber, s.Title })
+                        .FirstOrDefaultAsync(f => f.ArticleNumber == articleNumber);
+                    if (article != null)
+                    {
+                        articleTitle = article.Title;
+                    }
                 }
             }
 
             if (target.Trim('/').StartsWith("pub/templates"))
             {
-                var split = target.Trim('/').Split('/');
-                if (split.Length > 2 && Guid.TryParse(split[2], out var templateId))
+                if (PublicFileEntryHelper.TryGetTemplateId(target, out var templateId))
                 {
-                    var template = await dbContext.Templates.Select(s => new { s.Id, s.Title }).FirstOrDefaultAsync(f => f.Id == templateId);
-                    articleTitle = template.Title;
+                    var template = await dbContext.Templates
+                        .Select(s => new { s.Id, s.Title })
+                        .FirstOrDefaultAsync(f => f.Id == templateId);
+                    if (template != null)
+                    {
+                        articleTitle = template.Title;
+                    }
                 }
             }
 

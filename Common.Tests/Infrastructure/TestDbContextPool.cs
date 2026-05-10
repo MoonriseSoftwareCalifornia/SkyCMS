@@ -92,18 +92,24 @@ namespace Cosmos.Common.Tests.Infrastructure
         /// </summary>
         public void Dispose()
         {
-            if (_disposed)
+            ApplicationDbContext[] contextsToDispose;
+
+            lock (_lockObject)
             {
-                return;
+                if (_disposed)
+                {
+                    return;
+                }
+
+                contextsToDispose = _contexts.ToArray();
+                _contexts.Clear();
+                _disposed = true;
             }
 
-            foreach (var context in _contexts)
+            foreach (var context in contextsToDispose)
             {
                 context.Dispose();
             }
-
-            _contexts.Clear();
-            _disposed = true;
         }
     }
 }

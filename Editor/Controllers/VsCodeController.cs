@@ -27,6 +27,7 @@ namespace Sky.Cms.Controllers
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Logging;
     using MimeTypes;
+    using Sky.Cms.Services;
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.GetEditable;
     using Sky.Editor.Features.Articles.Inventory;
@@ -1610,19 +1611,32 @@ namespace Sky.Cms.Controllers
             try
             {
                 path = string.IsNullOrEmpty(pathHash) ? "/pub" : DecodePathHash(pathHash);
+                path = PublicFileEntryHelper.NormalizePath(path);
             }
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            if (!PublicFileEntryHelper.IsPathWithinRoot(path, "/pub"))
+            {
+                return BadRequest(new { message = "Invalid or unauthorized path." });
+            }
+
             try
             {
                 var entries = await storageContext.GetFilesAndDirectories(path);
+
+                var titleResolver = new PublicFileEntryTitleResolver(dbContext);
+                var articleTitlesByNumber = await titleResolver.GetArticleTitlesByNumberAsync(entries);
+                var templateTitlesById = await titleResolver.GetTemplateTitlesByIdAsync(entries);
+
                 var result = entries.Select(e => new
                 {
-                    name = System.IO.Path.GetFileName(e.Name) ?? e.Name,
+                    name = PublicFileEntryHelper.ResolveFriendlyDisplayName(path, e, articleTitlesByNumber, templateTitlesById),
+                    path = PublicFileEntryHelper.ResolveEntryPath(path, e),
                     isDir = e.IsDirectory,
+                    mimeType = PublicFileEntryHelper.GetEntryMimeType(e),
                     size = e.Size,
                 }).ToList();
 
