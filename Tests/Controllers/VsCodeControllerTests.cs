@@ -1447,14 +1447,14 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
-        public async Task GetFilesList_PathOutsidePublicRoot_ReturnsBadRequest()
+        public async Task GetFilesList_ArbitraryPath_ReturnsOk()
         {
             controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
             var outsidePathHash = EncodeTestPath("/private/secret.txt");
 
             var result = await controller.GetFilesList(outsidePathHash);
 
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
+            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
         }
 
         [TestMethod]

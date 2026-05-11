@@ -1596,7 +1596,7 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Lists files and folders in a directory at the specified path.
         /// </summary>
-        /// <param name="pathHash">Base64-encoded path. If empty, lists /pub (root).</param>
+        /// <param name="pathHash">Base64-encoded path. If empty, lists root (/).</param>
         /// <returns>List of file and folder names with metadata.</returns>
         [HttpGet("files/{pathHash?}")]
         public async Task<IActionResult> GetFilesList(string? pathHash = null)
@@ -1610,17 +1610,12 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = string.IsNullOrEmpty(pathHash) ? "/pub" : DecodePathHash(pathHash);
+                path = string.IsNullOrEmpty(pathHash) ? "/" : DecodePathHash(pathHash);
                 path = PublicFileEntryHelper.NormalizePath(path);
             }
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
-            }
-
-            if (!PublicFileEntryHelper.IsPathWithinRoot(path, "/pub"))
-            {
-                return BadRequest(new { message = "Invalid or unauthorized path." });
             }
 
             try
@@ -1636,7 +1631,7 @@ namespace Sky.Cms.Controllers
                     name = PublicFileEntryHelper.ResolveFriendlyDisplayName(path, e, articleTitlesByNumber, templateTitlesById),
                     path = PublicFileEntryHelper.ResolveEntryPath(path, e),
                     isDir = e.IsDirectory,
-                    mimeType = PublicFileEntryHelper.GetEntryMimeType(e),
+                    mimeType = e.ContentType,
                     size = e.Size,
                 }).ToList();
 
@@ -1690,7 +1685,7 @@ namespace Sky.Cms.Controllers
                     size = entry.Size,
                     mtime = new DateTimeOffset(entry.ModifiedUtc).ToUnixTimeMilliseconds(),
                     isDir = entry.IsDirectory,
-                    mimeType = "application/octet-stream",
+                    mimeType = entry.ContentType,
                 });
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1737,24 +1732,14 @@ namespace Sky.Cms.Controllers
                         return NotFound();
                     }
 
-                    // Read small files directly, large files as base64
-                    const long MaxDirectRead = 1024 * 1024; // 1 MB
-                    if (stream.Length > MaxDirectRead)
-                    {
-                        // Return as base64 for large files
-                        using (var reader = new System.IO.MemoryStream())
-                        {
-                            await stream.CopyToAsync(reader);
-                            var base64 = Convert.ToBase64String(reader.ToArray());
-                            return Ok(new { content = base64, isBase64 = true });
-                        }
-                    }
+                    // We need to get the content type.
+                    var metaData = await storageContext.GetFileAsync(path);
 
                     // Return as bytes for small files
                     using (var reader = new System.IO.MemoryStream())
                     {
                         await stream.CopyToAsync(reader);
-                        return File(reader.ToArray(), "application/octet-stream");
+                        return File(reader.ToArray(), metaData.ContentType);
                     }
                 }
             }
@@ -1928,7 +1913,9 @@ namespace Sky.Cms.Controllers
             {
                 var fileName = System.IO.Path.GetFileName(path);
                 var extension = System.IO.Path.GetExtension(fileName);
-                var contentType = MimeTypeMap.GetMimeType(extension);
+                var contentType = !string.IsNullOrWhiteSpace(Request.ContentType)
+                    ? Request.ContentType
+                    : MimeTypeMap.GetMimeType(extension);
 
                 using var memoryStream = new MemoryStream();
                 await Request.Body.CopyToAsync(memoryStream);
