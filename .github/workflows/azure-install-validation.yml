@@ -36,18 +36,33 @@ jobs:
   optional-whatif:
     runs-on: ubuntu-latest
     needs: static-validation
-    if: ${{ github.event_name == 'workflow_dispatch' && secrets.AZURE_CREDENTIALS != '' && vars.AZURE_VALIDATION_RESOURCE_GROUP != '' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && vars.AZURE_VALIDATION_RESOURCE_GROUP != '' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Check optional prerequisites
+        id: precheck
+        shell: bash
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+        run: |
+          if [ -z "$AZURE_CREDENTIALS" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "AZURE_CREDENTIALS is not configured; skipping optional what-if validation."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Azure Login
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Run what-if validation
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
         shell: pwsh
         run: |
           Set-StrictMode -Version Latest
