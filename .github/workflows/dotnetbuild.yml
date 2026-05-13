@@ -26,4 +26,4 @@ jobs:
     - name: Build
       run: dotnet build SkyCMS.sln --no-restore -c Release
     - name: Test
-      run: dotnet test SkyCMS.sln --no-build --verbosity normal
+      run: dotnet test SkyCMS.sln --no-build -c Release --verbosity normal
