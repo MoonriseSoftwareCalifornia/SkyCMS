@@ -1,0 +1,101 @@
+name: PR Required - Sky.Tests
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sky-tests:
+    name: Sky.Tests (PR required)
+    runs-on: ubuntu-latest
+
+    env:
+      DOTNET_NO_GLOBAL_JSON: true
+      TEST_PROJECT: Tests/Sky.Tests.csproj
+      SA_PASSWORD: "YourStr0ng!Passw0rd"
+      MYSQL_ROOT_PASSWORD: "YourStr0ng!Passw0rd"
+      COSMOS_EMULATOR_KEY: "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
+
+    services:
+      cosmosdb:
+        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+        ports:
+          - 8081:8081
+        env:
+          AZURE_COSMOS_EMULATOR_PARTITION_COUNT: 10
+          AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: "false"
+          AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE: "127.0.0.1"
+
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        ports:
+          - 1433:1433
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "YourStr0ng!Passw0rd"
+
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: "YourStr0ng!Passw0rd"
+          MYSQL_DATABASE: "skycmstest"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Bootstrap test providers
+        uses: ./.github/actions/test-provider-bootstrap
+        with:
+          enable-cosmos: 'true'
+          enable-sqlserver: 'true'
+          enable-mysql: 'true'
+          enable-azurite: 'true'
+          cosmos-emulator-key: ${{ env.COSMOS_EMULATOR_KEY }}
+          cosmos-database-name: localtests
+          sqlserver-password: ${{ env.SA_PASSWORD }}
+          sqlserver-database-names: skycmstest
+          mysql-root-password: ${{ env.MYSQL_ROOT_PASSWORD }}
+          mysql-database-names: skycmstest
+
+      - name: Restore Sky.Tests
+        run: dotnet restore $TEST_PROJECT
+
+      - name: Build Sky.Tests
+        run: dotnet build $TEST_PROJECT --configuration Release
+
+      - name: Run Sky.Tests
+        env:
+          ADMINEMAIL: ${{ secrets.ADMINEMAIL }}
+          COSMOSIDENTITYDBNAME: "localtests"
+          CONNECTIONSTRINGS__STORAGECONNECTIONSTRING: ${{ secrets.CONNECTIONSTRINGS__STORAGECONNECTIONSTRING }}
+          CONNECTIONSTRINGS__AZUREBLOBSTORAGECONNECTIONSTRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+          CONNECTIONSTRINGS__AMAZONS3CONNECTIONSTRING: ${{ secrets.CONNECTIONSTRINGS__AMAZONS3CONNECTIONSTRING }}
+          CONNECTIONSTRINGS__CLOUDFLARER2CONNECTIONSTRING: ${{ secrets.CONNECTIONSTRINGS__CLOUDFLARER2CONNECTIONSTRING }}
+          CONNECTIONSTRINGS__COSMOSDB: "AccountEndpoint=https://localhost:8081/;AccountKey=${{ env.COSMOS_EMULATOR_KEY }};Database=localtests"
+          CONNECTIONSTRINGS__SQLSERVER: "Server=localhost,1433;Initial Catalog=skycmstest;User ID=sa;Password=YourStr0ng!Passw0rd;TrustServerCertificate=True;Encrypt=True;"
+          CONNECTIONSTRINGS__MYSQL: "Server=localhost;Port=3306;Database=skycmstest;uid=root;pwd=YourStr0ng!Passw0rd;"
+          CONNECTIONSTRINGS__SQLITE: "Data Source=./skycms_tests.db;"
+          CDNINTEGRATIONTESTS__CLOUDFLARE__APITOKEN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__APITOKEN }}
+          CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__ZONEID }}
+          CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN: ${{ secrets.CDNINTEGRATIONTESTS__CLOUDFLARE__TESTDOMAIN }}
+        run: dotnet test $TEST_PROJECT --no-build --configuration Release --logger "trx;LogFileName=sky-tests.trx" --results-directory ./TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-required-sky-tests-${{ github.run_number }}
+          path: ./TestResults/
+          retention-days: 14

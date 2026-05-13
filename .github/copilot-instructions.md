@@ -11,6 +11,7 @@
 
 ## Testing Guidelines
 - Create richer Copilot integration tests with varied request types; a single simple hello-world style test is not sufficient.
+- Workflow file names should describe when and why tests run, not only speed labels, to improve maintainability and recall.
 
 ## Architecture Overview
 - The SkyCMS multi-tenant architecture utilizes the following components:

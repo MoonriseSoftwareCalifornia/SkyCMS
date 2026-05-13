@@ -514,32 +514,68 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9
         protected async Task<IdentityUser> GetMockRandomUserAsync(
             CosmosUserStore<IdentityUser, IdentityRole, string> userStore, bool saveToDatabase = true)
         {
-            // Use GUID to ensure uniqueness across all test runs
-            var uniqueId = Guid.NewGuid().ToString("N").Substring(0, 8);
-            var randomEmail = $"test{uniqueId}_{GetNextRandomNumber(1000, 9999)}@test{GetNextRandomNumber(10000, 99999)}.com";
-
-            var user = new IdentityUser(randomEmail)
+            IdentityUser CreateRandomUser()
             {
-                Email = randomEmail,
-                Id = Guid.NewGuid().ToString(),
-                LockoutEnabled = true
-            };
+                // Use GUID to ensure uniqueness across all test runs
+                var uniqueId = Guid.NewGuid().ToString("N").Substring(0, 8);
+                var randomEmail = $"test{uniqueId}_{GetNextRandomNumber(1000, 9999)}@test{GetNextRandomNumber(10000, 99999)}.com";
 
-            user.NormalizedUserName = user.UserName.ToUpper();
-            user.NormalizedEmail = user.Email.ToUpper();
+                var candidate = new IdentityUser(randomEmail)
+                {
+                    Email = randomEmail,
+                    Id = Guid.NewGuid().ToString(),
+                    LockoutEnabled = true
+                };
+
+                candidate.NormalizedUserName = candidate.UserName.ToUpper();
+                candidate.NormalizedEmail = candidate.Email.ToUpper();
+                return candidate;
+            }
+
+            static bool IsRetryableCreateFailure(IEnumerable<IdentityError> errors)
+            {
+                foreach (var error in errors)
+                {
+                    var description = error.Description ?? string.Empty;
+                    if (description.Contains("saving the item", StringComparison.OrdinalIgnoreCase)
+                        || description.Contains("Request rate is large", StringComparison.OrdinalIgnoreCase)
+                        || description.Contains("timeout", StringComparison.OrdinalIgnoreCase)
+                        || description.Contains("temporar", StringComparison.OrdinalIgnoreCase)
+                        || description.Contains("429", StringComparison.OrdinalIgnoreCase)
+                        || description.Contains("503", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            var user = CreateRandomUser();
 
             if (userStore != null && saveToDatabase)
             {
-                var result = await userStore.CreateAsync(user);
+                IdentityResult? result = null;
+                const int maxAttempts = 3;
 
-                // Improved error reporting
-                if (!result.Succeeded)
+                for (var attempt = 1; attempt <= maxAttempts; attempt++)
                 {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    Assert.Fail($"Failed to create user: {errors}");
+                    result = await userStore.CreateAsync(user);
+                    if (result.Succeeded)
+                    {
+                        break;
+                    }
+
+                    if (attempt == maxAttempts || !IsRetryableCreateFailure(result.Errors))
+                    {
+                        var errors = string.Join(", ", result.Errors.Select(e => $"[{e.Code}] {e.Description}"));
+                        Assert.Fail($"Failed to create user after {attempt} attempt(s): {errors}");
+                    }
+
+                    await Task.Delay(TimeSpan.FromMilliseconds(150 * attempt));
+                    user = CreateRandomUser();
                 }
 
-                Assert.IsTrue(result.Succeeded, $"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 user = await userStore.FindByNameAsync(user.UserName.ToUpper());
             }
 

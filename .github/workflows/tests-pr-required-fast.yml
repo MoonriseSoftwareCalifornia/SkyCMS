@@ -1,0 +1,40 @@
+name: PR Required - Fast Core Tests
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  common-tests:
+    name: Common.Tests (fast gate)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore Common.Tests
+        run: dotnet restore Common.Tests/Cosmos.Common.Tests.csproj
+
+      - name: Build Common.Tests
+        run: dotnet build Common.Tests/Cosmos.Common.Tests.csproj --no-restore --configuration Release
+
+      - name: Run Common.Tests
+        run: dotnet test Common.Tests/Cosmos.Common.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=common-tests.trx" --results-directory ./TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-fast-common-tests-${{ github.run_number }}
+          path: ./TestResults/
+          retention-days: 14

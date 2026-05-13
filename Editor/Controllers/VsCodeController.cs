@@ -1631,7 +1631,7 @@ namespace Sky.Cms.Controllers
                     name = PublicFileEntryHelper.ResolveFriendlyDisplayName(path, e, articleTitlesByNumber, templateTitlesById),
                     path = PublicFileEntryHelper.ResolveEntryPath(path, e),
                     isDir = e.IsDirectory,
-                    mimeType = e.ContentType,
+                    mimeType = e.IsDirectory ? "directory" : (string.IsNullOrWhiteSpace(e.ContentType) ? "application/octet-stream" : e.ContentType),
                     size = e.Size,
                 }).ToList();
 
@@ -1734,12 +1734,15 @@ namespace Sky.Cms.Controllers
 
                     // We need to get the content type.
                     var metaData = await storageContext.GetFileAsync(path);
+                    var contentType = string.IsNullOrWhiteSpace(metaData?.ContentType)
+                        ? "application/octet-stream"
+                        : metaData.ContentType;
 
                     // Return as bytes for small files
                     using (var reader = new System.IO.MemoryStream())
                     {
                         await stream.CopyToAsync(reader);
-                        return File(reader.ToArray(), metaData.ContentType);
+                        return File(reader.ToArray(), contentType);
                     }
                 }
             }

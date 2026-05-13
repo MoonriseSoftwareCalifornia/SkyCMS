@@ -1,0 +1,20 @@
+extends: default
+
+# Tuned for GitHub Actions workflow files in this repository.
+# Focuses on parse/syntax validity and avoids broad style churn on existing files.
+
+rules:
+  document-start: disable
+  line-length: disable
+  brackets: disable
+  new-lines: disable
+  truthy:
+    allowed-values: ['true', 'false', 'on', 'off']
+  indentation: disable
+  trailing-spaces: disable
+  comments: disable
+  new-line-at-end-of-file: disable
+
+ignore: |
+  **/bin/**
+  **/obj/**
