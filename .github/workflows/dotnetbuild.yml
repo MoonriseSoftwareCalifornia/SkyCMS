@@ -22,8 +22,8 @@ jobs:
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore SkyCMS.sln
     - name: Build
-      run: dotnet build --no-restore -c Release
+      run: dotnet build SkyCMS.sln --no-restore -c Release
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test SkyCMS.sln --no-build --verbosity normal
