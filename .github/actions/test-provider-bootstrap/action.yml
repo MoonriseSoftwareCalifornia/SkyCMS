@@ -136,7 +136,7 @@ runs:
             new ContainerProperties("MigrationHistory", "/id"),
         };
 
-        for (var attempt = 1; attempt <= 90; attempt++)
+        for (var attempt = 1; attempt <= 120; attempt++)
         {
             try
             {
@@ -156,14 +156,15 @@ runs:
                 ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
               {
                 allContainersCreated = false;
-                Console.WriteLine($"Attempt {attempt}/90: transient Cosmos response while creating container '{container.Id}' ({(int)ex.StatusCode}/{ex.SubStatusCode}). Retrying...");
+                Console.WriteLine($"Attempt {attempt}/120: transient Cosmos response while creating container '{container.Id}' ({(int)ex.StatusCode}/{ex.SubStatusCode}). Retrying...");
                 break;
               }
                 }
 
             if (!allContainersCreated)
             {
-              await Task.Delay(TimeSpan.FromSeconds(5));
+              var delaySeconds = Math.Min(30, 5 + (attempt / 5) * 5);
+              await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
               continue;
             }
 
@@ -172,8 +173,9 @@ runs:
             }
             catch (Exception ex)
             {
-            Console.WriteLine($"Attempt {attempt}/90: {ex.Message}");
-                await Task.Delay(TimeSpan.FromSeconds(5));
+            Console.WriteLine($"Attempt {attempt}/120: {ex.Message}");
+                var delaySeconds = Math.Min(30, 5 + (attempt / 5) * 5);
+                await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
             }
         }
 

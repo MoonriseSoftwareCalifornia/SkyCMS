@@ -53,6 +53,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Give Cosmos emulator extra warmup time
+        run: sleep 120
+
       - name: Bootstrap test providers
         uses: ./.github/actions/test-provider-bootstrap
         with:
