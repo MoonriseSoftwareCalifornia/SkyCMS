@@ -55,23 +55,29 @@ runs:
       shell: bash
       run: |
         echo "Waiting for Cosmos DB emulator certificate endpoint..."
+        cert_delay=5
         for i in $(seq 1 60); do
           if curl -ks "${{ inputs.cosmos-endpoint }}_explorer/emulator.pem" > /dev/null 2>&1; then
-            echo "Cosmos certificate endpoint ready"
+            echo "Cosmos certificate endpoint ready (attempt $i)"
             break
           fi
-          sleep 5
+          echo "Attempt $i: certificate endpoint not ready, waiting ${cert_delay}s..."
+          sleep $cert_delay
+          cert_delay=$(( cert_delay < 60 ? cert_delay + 5 : 60 ))
         done
 
         echo "Waiting for Cosmos DB emulator data plane..."
+        plane_delay=5
         for i in $(seq 1 60); do
           HTTP_STATUS=$(curl -ks -o /dev/null -w "%{http_code}" "${{ inputs.cosmos-endpoint }}") || true
           if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "401" ]; then
-            echo "Cosmos data plane ready"
+            echo "Cosmos data plane ready (attempt $i)"
             sleep 60
             exit 0
           fi
-          sleep 5
+          echo "Attempt $i: HTTP $HTTP_STATUS, waiting ${plane_delay}s..."
+          sleep $plane_delay
+          plane_delay=$(( plane_delay < 60 ? plane_delay + 5 : 60 ))
         done
 
         echo "Cosmos emulator did not become ready in time"
