@@ -20,6 +20,7 @@ namespace Sky.Tests.Services.Publishing
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Cms.Services;
+    using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
     using System;
     using System.Collections.Generic;
@@ -213,12 +214,14 @@ namespace Sky.Tests.Services.Publishing
             Db.Articles.AddRange(article1, article2);
             await Db.SaveChangesAsync();
 
+            var service = CreatePublishingServiceWithStaticPagesEnabled();
+
             // Publish to create pages
-            await PublishingService.PublishAsync(article1);
-            await PublishingService.PublishAsync(article2);
+            await service.PublishAsync(article1);
+            await service.PublishAsync(article2);
 
             // Act
-            await PublishingService.WriteTocAsync("/");
+            await service.WriteTocAsync("/");
 
             // Assert
             var tocExists = await Storage.BlobExistsAsync("/toc.json");
@@ -906,6 +909,29 @@ namespace Sky.Tests.Services.Publishing
         #endregion
 
         #region Helper Methods
+
+        private PublishingService CreatePublishingServiceWithStaticPagesEnabled()
+        {
+            var mockSettings = new Mock<IEditorSettings>();
+            mockSettings.SetupGet(s => s.StaticWebPages).Returns(true);
+            mockSettings.SetupGet(s => s.PublisherUrl).Returns("https://test.example.com");
+            mockSettings.SetupGet(s => s.BlobPublicUrl).Returns("https://blob.test.example.com");
+            mockSettings.SetupGet(s => s.StaticPageParallelism).Returns((int?)null);
+            var mockBlogStreamService = new Mock<Cosmos.Common.Services.BlogPublishing.IBlogStreamRenderingService>();
+            return new PublishingService(
+                Db,
+                Storage,
+                mockSettings.Object,
+                NullLogger<PublishingService>.Instance,
+                HttpContextAccessor,
+                AuthorInfoService,
+                Clock,
+                mockBlogStreamService.Object,
+                _mockViewRenderService.Object,
+                _serviceProvider,
+                new NoOpPublishingProgressReporter(),
+                _serviceProvider.GetRequiredService<Cosmos.Common.Features.Articles.Shared.IArticleCatalogQueryService>());
+        }
 
         private PublishingService CreatePublishingServiceWithProgressReporter(IPublishingProgressReporter progressReporter)
         {
