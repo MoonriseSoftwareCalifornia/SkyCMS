@@ -93,8 +93,7 @@ namespace Sky.Editor.Services.CDN
             }
 
             // Build the request.
-            var filesJson = string.Join(",", purgeUrls.Select(url => $"\"{url}\""));
-            var json = $"{{ \"files\": [{filesJson}] }}";
+            var json = JsonConvert.SerializeObject(new { files = purgeUrls });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             return await PurgeAsync(content);

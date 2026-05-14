@@ -187,6 +187,18 @@ if (typeof window !== 'undefined') {
 // ============================================================================
 
 /**
+ * Escapes a string for safe insertion into HTML content.
+ * Prevents XSS when inserting user-controlled or API-supplied strings via innerHTML.
+ * @param {string} str - The string to escape
+ * @returns {string} HTML-escaped string
+ */
+function ccms___escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+}
+
+/**
  * Creates a debounced version of a function that delays execution.
  * @param {Function} func - The function to debounce
  * @param {number} wait - Milliseconds to wait before execution
@@ -239,7 +251,7 @@ function ccms___showError(message, container) {
     errorDiv.classList.add('ccms-img-widget-error');
     errorDiv.innerHTML = `
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error:</strong> ${message}
+            <strong>Error:</strong> ${ccms___escapeHtml(message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     `;
@@ -262,7 +274,7 @@ function ccms___showInfo(message, container) {
     infoDiv.classList.add('ccms-img-widget-info');
     infoDiv.innerHTML = `
         <div class="alert alert-info alert-dismissible fade show" role="alert">
-            ${message}
+            ${ccms___escapeHtml(message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     `;
@@ -609,7 +621,7 @@ async function ccms___showImageLibrary(widgetContainer, onSelect) {
         console.error('Error loading image library:', error);
         modal.querySelector('.ccms-library-loading').innerHTML = `
             <div class="alert alert-danger">
-                <strong>Error:</strong> Failed to load image library. ${error.message}
+                <strong>Error:</strong> Failed to load image library. ${ccms___escapeHtml(error.message)}
             </div>
         `;
     }
