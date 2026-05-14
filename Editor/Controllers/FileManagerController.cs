@@ -442,6 +442,7 @@ namespace Sky.Cms.Controllers
         /// <param name="model">Post model.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Copy(MoveFilesViewModel model)
         {
             if (!ModelState.IsValid)
@@ -515,6 +516,7 @@ namespace Sky.Cms.Controllers
         /// <param name="model">Move file post model.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Move(MoveFilesViewModel model)
         {
             if (!ModelState.IsValid)
@@ -576,6 +578,7 @@ namespace Sky.Cms.Controllers
         /// <param name="files">Files being uploaded.</param>
         /// <returns>Returns an IActionResult.</returns>
         [HttpPost]
+        [IgnoreAntiforgeryToken] // FilePond chunked-upload protocol — token sent via multipart form, not cookie-based form
         public ActionResult Process([FromForm] string files)
         {
             if (!ModelState.IsValid)
@@ -598,6 +601,7 @@ namespace Sky.Cms.Controllers
         /// <param name="files">File metadata.</param>
         /// <returns>IActionResult.</returns>
         [HttpPost]
+        [IgnoreAntiforgeryToken] // FilePond multipart upload — cross-origin file uploads already blocked by browser
         public async Task<IActionResult> UploadImage([FromForm] string files)
         {
             var parsed = JsonConvert.DeserializeObject<FilePondMetadata>(files);
@@ -934,6 +938,7 @@ namespace Sky.Cms.Controllers
         /// <param name="id">Article ID.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpPost]
+        [IgnoreAntiforgeryToken] // FilePond chunked upload — multipart file upload, cross-origin submissions blocked by browser
         [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
         public async Task<IActionResult> ImportPage(
             IEnumerable<IFormFile> files,
@@ -1340,6 +1345,7 @@ namespace Sky.Cms.Controllers
         /// <param name="model">Item to delete using relative path.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<ActionResult> Delete(DeleteBlobItemsViewModel model)
         {
             if (!ModelState.IsValid)
@@ -1824,6 +1830,7 @@ namespace Sky.Cms.Controllers
         /// <param name="path">Path to where file should be uploaded.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [HttpPost]
+        [IgnoreAntiforgeryToken] // FilePond chunked upload — multipart file upload, cross-origin submissions blocked by browser
         [RequestSizeLimit(
             6291456)] // AWS S3 multi part upload requires 5 MB parts--no more, no less so pad the upload size by a MB just in case
         public async Task<ActionResult> Upload(IEnumerable<IFormFile> files, string metaData, string path = "")

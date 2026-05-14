@@ -1,0 +1,9 @@
+name: "SkyCMS CodeQL Configuration"
+
+paths-ignore:
+  # Vendored third-party JavaScript libraries — not owned by this project.
+  # Issues in these files cannot be fixed here and produce noise.
+  - "Editor/wwwroot/lib"
+  - "Publisher/wwwroot/lib"
+  # Old/legacy UI bundles bundled with grapesjsui
+  - "Editor/wwwroot/lib/grapesjsui"

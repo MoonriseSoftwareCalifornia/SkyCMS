@@ -33,7 +33,7 @@
 <script>
 window.addEventListener("load", () => {
     if (window.location === window.parent.location) {
-        var query = "@Html.Raw(Context.Request.QueryString)";
+        var query = "@System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Context.Request.QueryString.Value ?? string.Empty)";
         location.href = "/Home/CcmsContentIndex" + query;
     }
 });
