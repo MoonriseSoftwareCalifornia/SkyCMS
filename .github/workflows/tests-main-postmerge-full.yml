@@ -20,13 +20,12 @@ jobs:
 
     services:
       cosmosdb:
-        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
         ports:
           - 8081:8081
+          - 8080:8080
         env:
-          AZURE_COSMOS_EMULATOR_PARTITION_COUNT: 3
-          AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: "false"
-          AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE: "127.0.0.1"
+          PROTOCOL: https
 
       sqlserver:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -52,9 +51,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
-
-      - name: Give Cosmos emulator extra warmup time
-        run: sleep 120
 
       - name: Bootstrap test providers
         uses: ./.github/actions/test-provider-bootstrap
