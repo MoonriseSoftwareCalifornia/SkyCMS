@@ -328,6 +328,7 @@ namespace Cosmos.BlobService
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData, string mode = StorageConstants.UploadModeAppend)
         {
+            fileMetaData.RelativePath = PathUtilities.NormalizePath(fileMetaData.RelativePath);
             var mark = DateTimeOffset.UtcNow;
 
             // Gets the primary driver based on the configuration.
