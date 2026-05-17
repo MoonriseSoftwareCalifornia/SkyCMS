@@ -73,12 +73,13 @@ namespace Sky.Editor.Features.Articles.Restore
 
                 var title = articles.First().Title.ToLower();
 
-                // Check if title conflicts with another deleted article
-                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
+                // Check if an active article already occupies the same title/URL.
+                // This happens when a new article was created after this one was trashed.
+                var activeStatusCode = (int)StatusCodeEnum.Active;
                 var titleConflict = await dbContext.Articles.Where(a =>
                     a.Title.ToLower() == title &&
                     a.ArticleNumber != command.ArticleNumber &&
-                    a.StatusCode == deletedStatusCode).CosmosAnyAsync();
+                    a.StatusCode == activeStatusCode).CosmosAnyAsync();
 
                 if (titleConflict)
                 {

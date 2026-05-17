@@ -185,6 +185,89 @@ namespace Sky.Cms.Services
             return GetDisplayName(entry);
         }
 
+        internal static bool TryGetArticleNumberFromPath(string path, out int articleNumber)
+        {
+            articleNumber = 0;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            var normalizedPath = NormalizePath(path);
+            var segments = normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length < 3)
+            {
+                return false;
+            }
+
+            if (!segments[0].Equals("pub", StringComparison.OrdinalIgnoreCase)
+                || !segments[1].Equals("articles", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return int.TryParse(segments[2], out articleNumber);
+        }
+
+        /// <summary>
+        /// Extracts the distinct set of article numbers embedded in a collection of file entries.
+        /// Only entries whose path contains a numeric third segment under <c>/pub/articles/</c>
+        /// contribute to the result. Entries at shallower depths (e.g. the <c>/pub/articles</c>
+        /// folder itself) are ignored.
+        /// </summary>
+        /// <param name="entries">File/folder entries to inspect. May be null or empty.</param>
+        /// <returns>
+        /// A distinct, sorted list of article numbers. Returns an empty list when
+        /// <paramref name="entries"/> is null, empty, or contains no qualifying paths.
+        /// </returns>
+        /// <example>
+        /// Entries with paths <c>/pub/articles/100</c>, <c>/pub/articles/200/logo.png</c>,
+        /// and <c>/pub/articles/200/sub</c> return <c>[100, 200]</c>.
+        /// </example>
+        internal static List<int> ExtractArticleNumbersFromEntries(IEnumerable<FileManagerEntry>? entries)
+        {
+            if (entries == null)
+            {
+                return new List<int>();
+            }
+
+            var numbers = new HashSet<int>();
+            foreach (var entry in entries)
+            {
+                if (TryGetArticleNumberFromPath(entry.Path, out var articleNumber))
+                {
+                    numbers.Add(articleNumber);
+                }
+            }
+
+            return numbers.OrderBy(n => n).ToList();
+        }
+
+        internal static string ResolveFriendlyDisplayPath(
+            string canonicalPath,
+            IReadOnlyDictionary<int, string> articleTitlesByNumber)
+        {
+            if (string.IsNullOrWhiteSpace(canonicalPath) || articleTitlesByNumber == null || articleTitlesByNumber.Count == 0)
+            {
+                return NormalizePath(canonicalPath);
+            }
+
+            var normalizedPath = NormalizePath(canonicalPath);
+            if (!TryGetArticleNumberFromPath(normalizedPath, out var articleNumber))
+            {
+                return normalizedPath;
+            }
+
+            if (!articleTitlesByNumber.TryGetValue(articleNumber, out var articleTitle) || string.IsNullOrWhiteSpace(articleTitle))
+            {
+                return normalizedPath;
+            }
+
+            var segments = normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+            segments[2] = articleTitle;
+            return "/" + string.Join('/', segments);
+        }
+
         private static string GetLastPathSegment(string? path, string? fallback)
         {
             if (!string.IsNullOrWhiteSpace(path))

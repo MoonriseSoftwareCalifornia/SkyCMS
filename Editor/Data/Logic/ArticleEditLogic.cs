@@ -238,6 +238,7 @@ namespace Sky.Editor.Data.Logic
         /// <param name="articleNumber">Article number.</param>
         /// <param name="userId">User restoring the article (unused currently).</param>
         /// <returns>Awaitable task.</returns>
+        [Obsolete("Use RestoreArticleHandler via mediator (RestoreArticleCommand) instead. This method will be removed in version 3.0.", error: false)]
         public async Task RestoreArticle(int articleNumber, string userId)
         {
             var redeemed = await DbContext.Articles
@@ -248,11 +249,11 @@ namespace Sky.Editor.Data.Logic
             }
 
             var title = redeemed.First().Title.ToLower();
-            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
+            var activeStatusCode = (int)StatusCodeEnum.Active;
             if (await DbContext.Articles.Where(a =>
                     a.Title.ToLower() == title &&
                     a.ArticleNumber != articleNumber &&
-                    a.StatusCode == deletedStatusCode).CosmosAnyAsync())
+                    a.StatusCode == activeStatusCode).CosmosAnyAsync())
             {
                 var newTitle = title + " (" + await DbContext.Articles.CountAsync() + ")";
                 var url = slugService.Normalize(newTitle);

@@ -134,6 +134,88 @@ namespace Sky.Tests.Features.Articles.Restore
         }
 
         [TestMethod]
+        public async Task HandleAsync_TitleConflictsWithActiveArticle_RestoresWithRenamedTitle()
+        {
+            // Arrange — article 1 is trashed, article 2 is active with the same title
+            var trashedArticle = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 1,
+                Title = "My Article",
+                VersionNumber = 1,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                UrlPath = "my-article",
+                Updated = DateTimeOffset.UtcNow,
+                Published = null
+            };
+
+            var activeArticle = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 2,
+                Title = "My Article",
+                VersionNumber = 1,
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = "test-user",
+                UrlPath = "my-article",
+                Updated = DateTimeOffset.UtcNow,
+                Published = DateTimeOffset.UtcNow
+            };
+
+            this.dbContext.Articles.AddRange(trashedArticle, activeArticle);
+            await this.dbContext.SaveChangesAsync();
+
+            var command = new RestoreArticleCommand { ArticleNumber = 1, UserId = "test-user" };
+
+            // Act
+            var result = await this.handler.HandleAsync(command);
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess);
+
+            var restored = await this.dbContext.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == 1);
+            Assert.AreEqual((int)StatusCodeEnum.Active, restored.StatusCode);
+            Assert.IsNull(restored.Published, "Restored article must not be published.");
+            StringAssert.Contains(restored.Title, "my article", StringComparison.OrdinalIgnoreCase);
+            Assert.AreNotEqual("My Article", restored.Title, "Title should have been renamed to avoid conflict.");
+        }
+
+        [TestMethod]
+        public async Task HandleAsync_NoTitleConflict_RestoresWithOriginalTitle()
+        {
+            // Arrange — article is trashed, no other article has the same title
+            var trashedArticle = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 5,
+                Title = "Unique Title",
+                VersionNumber = 1,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                UrlPath = "unique-title",
+                Updated = DateTimeOffset.UtcNow,
+                Published = DateTimeOffset.UtcNow
+            };
+
+            this.dbContext.Articles.Add(trashedArticle);
+            await this.dbContext.SaveChangesAsync();
+
+            var command = new RestoreArticleCommand { ArticleNumber = 5, UserId = "test-user" };
+
+            // Act
+            var result = await this.handler.HandleAsync(command);
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess);
+
+            var restored = await this.dbContext.Articles.FirstOrDefaultAsync(a => a.ArticleNumber == 5);
+            Assert.AreEqual((int)StatusCodeEnum.Active, restored.StatusCode);
+            Assert.AreEqual("Unique Title", restored.Title, "Title should be unchanged when there is no conflict.");
+            Assert.IsNull(restored.Published, "Restored article must not be published.");
+        }
+
+        [TestMethod]
         public async Task HandleAsync_NullCommand_ReturnsError()
         {
             // Act

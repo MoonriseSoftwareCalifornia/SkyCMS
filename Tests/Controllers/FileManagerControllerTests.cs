@@ -15,6 +15,7 @@ namespace Sky.Tests.Controllers
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json;
@@ -73,7 +74,8 @@ namespace Sky.Tests.Controllers
                 mockHostEnvironment.Object,
                 mockViewRenderService.Object,
                 LayoutCacheService,
-                DynamicConfigurationProvider);
+                DynamicConfigurationProvider,
+                new MemoryCache(new MemoryCacheOptions()));
 
             // Setup HttpContext for the controller
             var httpContext = new DefaultHttpContext();
@@ -1620,7 +1622,8 @@ namespace Sky.Tests.Controllers
                 mockHostEnvironment.Object,
                 mockViewRenderService.Object,
                 LayoutCacheService,
-                DynamicConfigurationProvider);
+                DynamicConfigurationProvider,
+                new MemoryCache(new MemoryCacheOptions()));
 
             var httpContext = new DefaultHttpContext();
             httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]

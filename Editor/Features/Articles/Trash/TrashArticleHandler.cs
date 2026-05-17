@@ -19,7 +19,12 @@ namespace Sky.Editor.Features.Articles.Trash
     using Sky.Editor.Services.Publishing;
 
     /// <summary>
-    /// Handles permanent trash operations for previously deleted articles.
+    /// Handles permanent deletion of a previously trashed article.
+    /// Removes all database rows (versions, pages, catalog, locks, logs) and deletes the blob
+    /// folder <c>/pub/articles/{articleNumber}/</c>. This operation is irreversible.
+    /// The article must already be in <c>StatusCode = Deleted</c> state (i.e. trashed via
+    /// <see cref="Sky.Editor.Features.Articles.Delete.DeleteArticleHandler"/>) before this
+    /// handler will accept it.
     /// </summary>
     public class TrashArticleHandler : ICommandHandler<TrashArticleCommand, CommandResult<Unit>>
     {

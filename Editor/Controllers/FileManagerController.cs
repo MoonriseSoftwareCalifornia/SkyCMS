@@ -64,6 +64,8 @@ namespace Sky.Cms.Controllers
         private readonly IStorageContext storageContext;
         private readonly IWebHostEnvironment hostEnvironment;
         private readonly IEditorSettings options;
+        private readonly IMemoryCache memoryCache;
+        private readonly IDynamicConfigurationProvider configProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileManagerController"/> class.
@@ -79,6 +81,7 @@ namespace Sky.Cms.Controllers
         /// <param name="viewRenderService">View rendering service.</param>
         /// <param name="memoryCache">Memory cache for layout caching.</param>
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
+        /// <param name="appMemoryCache">Application memory cache for short-lived lookups (e.g. deleted-article filtering).</param>
         [ActivatorUtilitiesConstructor]
         public FileManagerController(
             IEditorSettings options,
@@ -91,7 +94,8 @@ namespace Sky.Cms.Controllers
             IWebHostEnvironment hostEnvironment,
             IViewRenderService viewRenderService,
             ICacheService<Layout> memoryCache,
-            IDynamicConfigurationProvider configProvider)
+            IDynamicConfigurationProvider configProvider,
+            IMemoryCache appMemoryCache)
             : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
             this.options = options;
@@ -109,6 +113,8 @@ namespace Sky.Cms.Controllers
             blobPublicAbsoluteUrl = options.BlobPublicUrl.TrimStart('/');
 
             this.viewRenderService = viewRenderService;
+            this.memoryCache = appMemoryCache;
+            this.configProvider = configProvider;
         }
 
         /// <summary>
@@ -152,6 +158,7 @@ namespace Sky.Cms.Controllers
             blobPublicAbsoluteUrl = options.BlobPublicUrl.TrimStart('/');
 
             this.viewRenderService = viewRenderService;
+            this.memoryCache = new MemoryCache(new MemoryCacheOptions());
         }
 
         /// <summary>
@@ -302,7 +309,10 @@ namespace Sky.Cms.Controllers
             IQueryable<FileManagerEntry> query;
             if (target.Trim('/') == "pub/articles")
             {
-                var model = dbContext.ArticleCatalog.Select(s => new FileManagerEntry()
+                var raw = await dbContext.ArticleCatalog
+                    .Select(s => new { s.ArticleNumber, s.Title, s.Updated })
+                    .ToListAsync();
+                var model = raw.Select(s => new FileManagerEntry()
                 {
                     Created = s.Updated.DateTime,
                     CreatedUtc = s.Updated.UtcDateTime,
@@ -312,24 +322,30 @@ namespace Sky.Cms.Controllers
                     Modified = s.Updated.DateTime,
                     ModifiedUtc = s.Updated.UtcDateTime,
                     Name = s.Title,
-                    Path = $"/pub/articles/{s.ArticleNumber}",
+                    Path = "/pub/articles/" + s.ArticleNumber,
+                    DisplayPath = "/pub/articles/" + s.Title,
                     Size = 0
                 });
                 query = model.AsQueryable();
             }
             else if (target.Trim('/') == "pub/templates")
             {
-                var model = dbContext.Templates.Select(s => new FileManagerEntry()
+                var raw = await dbContext.Templates
+                    .Select(s => new { s.Id, s.Title })
+                    .ToListAsync();
+                var now = DateTimeOffset.UtcNow.DateTime;
+                var model = raw.Select(s => new FileManagerEntry()
                 {
-                    Created = DateTimeOffset.UtcNow.DateTime,
-                    CreatedUtc = DateTimeOffset.UtcNow.DateTime,
+                    Created = now,
+                    CreatedUtc = now,
                     Extension = string.Empty,
                     HasDirectories = true,
                     IsDirectory = true,
-                    Modified = DateTimeOffset.UtcNow.DateTime,
-                    ModifiedUtc = DateTimeOffset.UtcNow.DateTime,
+                    Modified = now,
+                    ModifiedUtc = now,
                     Name = s.Title,
-                    Path = $"/pub/templates/{s.Id}",
+                    Path = "/pub/templates/" + s.Id,
+                    DisplayPath = "/pub/templates/" + s.Title,
                     Size = 0
                 });
                 query = model.AsQueryable();
@@ -337,6 +353,13 @@ namespace Sky.Cms.Controllers
             else
             {
                 var model = await storageContext.GetFilesAndDirectories(target);
+                if (target.Trim('/').StartsWith("pub/articles", StringComparison.OrdinalIgnoreCase))
+                {
+                    var titleResolver = new PublicFileEntryTitleResolver(dbContext);
+                    var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
+                    await titleResolver.FilterDeletedArticleEntriesAsync(model, this.memoryCache, tenantDomain);
+                }
+
                 query = model.AsQueryable();
             }
 

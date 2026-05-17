@@ -27,6 +27,8 @@ namespace Sky.Cms.Controllers
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.Caching.Memory;
+    using Cosmos.DynamicConfig;
     using MimeTypes;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
@@ -48,10 +50,13 @@ namespace Sky.Cms.Controllers
         private const string VolumeId = ElFinderHashEncoder.VolumeId;
         private const string RootPath = "/pub";
 
+        private readonly ApplicationDbContext dbContext;
         private readonly IStorageContext storageContext;
         private readonly IEditorSettings editorSettings;
         private readonly ILogger<ElFinderConnectorController> logger;
         private readonly IConfiguration configuration;
+        private readonly IMemoryCache memoryCache;
+        private readonly IDynamicConfigurationProvider configProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ElFinderConnectorController"/> class.
@@ -64,6 +69,8 @@ namespace Sky.Cms.Controllers
         /// <param name="editorSettings">Editor settings (blob URL, flags).</param>
         /// <param name="logger">Logger.</param>
         /// <param name="configuration">Configuration.</param>
+        /// <param name="memoryCache">Application memory cache for deleted-article filtering.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-scoped cache keys.</param>
         [ActivatorUtilitiesConstructor]
         public ElFinderConnectorController(
             ApplicationDbContext dbContext,
@@ -73,13 +80,18 @@ namespace Sky.Cms.Controllers
             IStorageContext storageContext,
             IEditorSettings editorSettings,
             ILogger<ElFinderConnectorController> logger,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IMemoryCache memoryCache,
+            IDynamicConfigurationProvider configProvider = null)
             : base(dbContext, userManager, mediator, layoutCache)
         {
+            this.dbContext = dbContext;
             this.storageContext = storageContext;
             this.editorSettings = editorSettings;
             this.logger = logger;
             this.configuration = configuration;
+            this.memoryCache = memoryCache;
+            this.configProvider = configProvider;
         }
 
         /// <summary>
@@ -102,7 +114,8 @@ namespace Sky.Cms.Controllers
                 storageContext,
                 editorSettings,
                 logger,
-                new ConfigurationBuilder().Build())
+                new ConfigurationBuilder().Build(),
+                new MemoryCache(new MemoryCacheOptions()))
         {
         }
 
@@ -967,7 +980,7 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errAccess"));
             }
 
-            var items = await storageContext.GetFilesAndDirectories(path);
+            var items = await GetEntriesWithFriendlyTitlesAsync(path);
             var fileObjects = items.Select(e => ToElFinderObject(e, EncodeHash(path))).ToList();
 
             // Build the cwd object for the directory being opened
@@ -975,6 +988,7 @@ namespace Sky.Cms.Controllers
             try
             {
                 cwdEntry = await storageContext.GetFileAsync(path);
+                await ApplyFriendlyTitleAsync(cwdEntry);
             }
             catch
             {
@@ -1055,7 +1069,7 @@ namespace Sky.Cms.Controllers
                     var ancestorParent = GetParentPath(ancestor);
                     try
                     {
-                        var siblingItems = await storageContext.GetFilesAndDirectories(ancestorParent);
+                        var siblingItems = await GetEntriesWithFriendlyTitlesAsync(ancestorParent);
                         foreach (var sibling in siblingItems.Where(e => e.IsDirectory))
                         {
                             var sibObj = ToElFinderObject(sibling, EncodeHash(ancestorParent));
@@ -1081,7 +1095,7 @@ namespace Sky.Cms.Controllers
                     var cwdParent = GetParentPath(path);
                     try
                     {
-                        var cwdSiblings = await storageContext.GetFilesAndDirectories(cwdParent);
+                        var cwdSiblings = await GetEntriesWithFriendlyTitlesAsync(cwdParent);
                         foreach (var sibling in cwdSiblings.Where(e => e.IsDirectory))
                         {
                             var sibObj = ToElFinderObject(sibling, EncodeHash(cwdParent));
@@ -1122,11 +1136,21 @@ namespace Sky.Cms.Controllers
                 cwdDict["root"] = EncodeHash(RootPath);
             }
 
+            var articleTitlesByNumber = new Dictionary<int, string>();
+            if (PublicFileEntryHelper.TryGetArticleNumberFromPath(NormalizePath(path), out var cwdArticleNumber))
+            {
+                var titleResolver = new PublicFileEntryTitleResolver(dbContext);
+                var resolved = await titleResolver.GetArticleTitlesByNumberAsync(new[] { cwdArticleNumber });
+                articleTitlesByNumber = new Dictionary<int, string>(resolved);
+            }
+
+            var displayPath = PublicFileEntryHelper.ResolveFriendlyDisplayPath(NormalizePath(path), articleTitlesByNumber);
+
             var response = new Dictionary<string, object>
             {
                 ["cwd"] = cwdObject,
                 ["files"] = allFiles,
-                ["options"] = BuildOptions(path),
+                ["options"] = BuildOptions(path, displayPath),
             };
 
             if (isInit)
@@ -1151,7 +1175,7 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errAccess"));
             }
 
-            var items = await storageContext.GetFilesAndDirectories(path);
+            var items = await GetEntriesWithFriendlyTitlesAsync(path);
             var dirs = items.Where(e => e.IsDirectory)
                             .Select(e => ToElFinderObject(e, EncodeHash(path)))
                             .ToList();
@@ -1781,7 +1805,7 @@ namespace Sky.Cms.Controllers
 
                 try
                 {
-                    var items = await storageContext.GetFilesAndDirectories(parent);
+                    var items = await GetEntriesWithFriendlyTitlesAsync(parent);
                     foreach (var item in items.Where(e => e.IsDirectory))
                     {
                         tree.Add(ToElFinderObject(item, EncodeHash(parent)));
@@ -1796,7 +1820,7 @@ namespace Sky.Cms.Controllers
             // Include children of the target path so the tree can expand current node.
             try
             {
-                var targetChildren = await storageContext.GetFilesAndDirectories(path);
+                var targetChildren = await GetEntriesWithFriendlyTitlesAsync(path);
                 foreach (var child in targetChildren.Where(e => e.IsDirectory))
                 {
                     tree.Add(ToElFinderObject(child, EncodeHash(path)));
@@ -2234,15 +2258,18 @@ namespace Sky.Cms.Controllers
             };
         }
 
-        private Dictionary<string, object> BuildOptions(string path)
+        private Dictionary<string, object> BuildOptions(string path, string displayPath = null)
         {
             var blobBase = editorSettings.BlobPublicUrl.TrimEnd('/');
-            var humanPath = NormalizePath(path).TrimStart('/');
+            var humanPath = !string.IsNullOrEmpty(displayPath)
+                ? displayPath.TrimStart('/')
+                : NormalizePath(path).TrimStart('/');
+            var canonicalPath = NormalizePath(path).TrimStart('/');
 
             return new Dictionary<string, object>
             {
                 ["path"] = humanPath,
-                ["url"] = $"{blobBase}/{humanPath.TrimEnd('/')}/",
+                ["url"] = $"{blobBase}/{canonicalPath.TrimEnd('/')}/",
                 ["tmbUrl"] = "/FileManager/GetImageThumbnail?target=",
                 ["separator"] = "/",
                 ["copyOverwrite"] = 1,
@@ -2303,11 +2330,62 @@ namespace Sky.Cms.Controllers
             return Request.Query[key].ToArray();
         }
 
+        private async Task<List<FileManagerEntry>> GetEntriesWithFriendlyTitlesAsync(string parentPath)
+        {
+            var items = await storageContext.GetFilesAndDirectories(parentPath);
+            var normalizedParent = NormalizePath(parentPath);
+
+            // Only get friendly names for folders and files that are children of the /pub/articles folder.
+            if (!normalizedParent.StartsWith("/pub/articles", StringComparison.OrdinalIgnoreCase))
+            {
+                // Don't bother with further processing.
+                return items;
+            }
+
+            var titleResolver = new PublicFileEntryTitleResolver(dbContext);
+            var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
+            await titleResolver.FilterDeletedArticleEntriesAsync(items, this.memoryCache, tenantDomain);
+            var articleTitlesByNumber = await titleResolver.GetArticleTitlesByNumberAsync(items);
+            foreach (var item in items)
+            {
+                if (item.IsDirectory
+                    && PublicFileEntryHelper.TryGetArticleNumber(item, out var articleNumber)
+                    && articleTitlesByNumber.TryGetValue(articleNumber, out var articleTitle)
+                    && !string.IsNullOrWhiteSpace(articleTitle))
+                {
+                    item.Title = articleTitle;
+                }
+            }
+
+            return items;
+        }
+
+        private async Task ApplyFriendlyTitleAsync(FileManagerEntry entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            var normalizedPath = NormalizePath(entry.Path);
+            if (!PublicFileEntryHelper.TryGetArticleNumberFromPath(normalizedPath, out var articleNumber))
+            {
+                return;
+            }
+
+            var titleResolver = new PublicFileEntryTitleResolver(dbContext);
+            var titles = await titleResolver.GetArticleTitlesByNumberAsync(new[] { articleNumber });
+            if (titles.TryGetValue(articleNumber, out var articleTitle) && !string.IsNullOrWhiteSpace(articleTitle))
+            {
+                entry.Title = articleTitle;
+            }
+        }
+
         private static string GetDisplayName(FileManagerEntry entry)
         {
             if (entry.IsDirectory)
             {
-                return entry.Name ?? string.Empty;
+                return !string.IsNullOrWhiteSpace(entry.Title) ? entry.Title : (entry.Name ?? string.Empty);
             }
 
             var name = entry.Name ?? string.Empty;

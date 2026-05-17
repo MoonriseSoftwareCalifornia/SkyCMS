@@ -42,6 +42,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Features.Articles.Delete;
     using Sky.Editor.Features.Articles.GetEditable;
     using Sky.Editor.Features.Articles.Inventory;
+    using Sky.Editor.Features.Articles.Restore;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Articles.Trash;
     using Sky.Editor.Features.Templates.Get;
@@ -632,8 +633,10 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Restore an article from trash.
         /// </summary>
-        /// <param name="id">Article ID to recover from trash.</param>
+        /// <param name="id">Article number to recover from trash.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrators, Editors, Authors")]
         public async Task<IActionResult> Restore(int id)
         {
@@ -643,7 +646,16 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            await articleLogic.RestoreArticle(id, await GetUserId());
+            var result = await mediator.SendAsync<CommandResult<Unit>>(new RestoreArticleCommand
+            {
+                ArticleNumber = id,
+                UserId = await GetUserId()
+            });
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage ?? "Failed to restore article.");
+            }
 
             return Ok();
         }

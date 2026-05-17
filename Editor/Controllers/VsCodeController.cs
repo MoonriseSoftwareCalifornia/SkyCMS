@@ -1623,6 +1623,8 @@ namespace Sky.Cms.Controllers
                 var entries = await storageContext.GetFilesAndDirectories(path);
 
                 var titleResolver = new PublicFileEntryTitleResolver(dbContext);
+                var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
+                await titleResolver.FilterDeletedArticleEntriesAsync(entries, this.memoryCache, tenantDomain);
                 var articleTitlesByNumber = await titleResolver.GetArticleTitlesByNumberAsync(entries);
                 var templateTitlesById = await titleResolver.GetTemplateTitlesByIdAsync(entries);
 
@@ -1630,6 +1632,9 @@ namespace Sky.Cms.Controllers
                 {
                     name = PublicFileEntryHelper.ResolveFriendlyDisplayName(path, e, articleTitlesByNumber, templateTitlesById),
                     path = PublicFileEntryHelper.ResolveEntryPath(path, e),
+                    displayPath = PublicFileEntryHelper.ResolveFriendlyDisplayPath(
+                        PublicFileEntryHelper.ResolveEntryPath(path, e),
+                        articleTitlesByNumber),
                     isDir = e.IsDirectory,
                     mimeType = e.IsDirectory ? "directory" : (string.IsNullOrWhiteSpace(e.ContentType) ? "application/octet-stream" : e.ContentType),
                     size = e.Size,

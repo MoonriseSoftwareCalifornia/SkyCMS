@@ -21,7 +21,10 @@ namespace Sky.Editor.Features.Articles.Delete
     using Sky.Editor.Services.Publishing;
 
     /// <summary>
-    /// Handler for DeleteArticleCommand. Soft-deletes an article and removes artifacts.
+    /// Handler for DeleteArticleCommand. Moves an article to the trash (soft delete).
+    /// Sets <c>StatusCode = Deleted</c> on all versions, removes catalog and page entries,
+    /// and deletes the static HTML artifact. Blob assets are intentionally preserved so
+    /// the article can be recovered. See also: <see cref="Sky.Editor.Features.Articles.Trash.TrashArticleHandler"/>.
     /// </summary>
     public class DeleteArticleHandler : ICommandHandler<DeleteArticleCommand, CommandResult<Unit>>
     {

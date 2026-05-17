@@ -55,9 +55,15 @@ public class FileManagerEntry
     public string Name { get; set; }
 
     /// <summary>
-    /// Gets or sets item path.
+    /// Gets or sets the canonical storage path of the item.
     /// </summary>
     public string Path { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UI-friendly display path of the item.
+    /// Defaults to <see cref="Path"/> when no masking is required.
+    /// </summary>
+    public string DisplayPath { get; set; }
 
     /// <summary>
     /// Gets or sets size in bytes.

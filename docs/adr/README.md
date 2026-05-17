@@ -91,6 +91,8 @@ ADRs should be added intentionally and reviewed carefully.
 - [0034: Domain Events and Setup Audit Log Observability Model](0034-domain-events-and-setup-audit-log-observability-model.md)
 - [0035: File Explorer Modernization and Connector Adapter Strategy](0035-file-explorer-modernization-and-connector-adapter-strategy.md)
 - [0036: Layout Terminology Standardization and Documentation Strategy](0036-layout-terminology-standardization-and-documentation-strategy.md)
+- [0037: Article Lifecycle and Status Code Semantics](0037-article-lifecycle-and-status-code-semantics.md)
+- [0038: Article Trash and Permanent Delete Lifecycle](0038-article-trash-and-permanent-delete-lifecycle.md)
 
 ## Changing or Superseding ADRs
 
