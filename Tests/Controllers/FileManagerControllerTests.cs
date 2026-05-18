@@ -63,6 +63,7 @@ namespace Sky.Tests.Controllers
             mockViewRenderService = new Mock<IViewRenderService>();
             mockArticleQueries = new Mock<CommonMediator>();
 
+            var titleResolver = new PublicFileEntryTitleResolver(Db);
             controller = new FileManagerController(
                 EditorSettings,
                 mockLogger.Object,
@@ -75,7 +76,9 @@ namespace Sky.Tests.Controllers
                 mockViewRenderService.Object,
                 LayoutCacheService,
                 DynamicConfigurationProvider,
-                new MemoryCache(new MemoryCacheOptions()));
+                new MemoryCache(new MemoryCacheOptions()),
+                titleResolver,
+                new FolderListingService(Db, isolatedStorage, titleResolver));
 
             // Setup HttpContext for the controller
             var httpContext = new DefaultHttpContext();
@@ -800,9 +803,9 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public void ParsePath_ReturnsExpectedParts()
         {
-            CollectionAssert.AreEqual(new[] { "pub", "test", "file.txt" }, controller.ParsePath("/pub", "test", "file.txt"));
-            CollectionAssert.AreEqual(new[] { "pub", "test" }, controller.ParsePath("//pub//test//"));
-            CollectionAssert.AreEqual(Array.Empty<string>(), controller.ParsePath((string)null));
+            CollectionAssert.AreEqual(new[] { "pub", "test", "file.txt" }, PublicFileEntryHelper.ParsePath("/pub", "test", "file.txt"));
+            CollectionAssert.AreEqual(new[] { "pub", "test" }, PublicFileEntryHelper.ParsePath("//pub//test//"));
+            CollectionAssert.AreEqual(Array.Empty<string>(), PublicFileEntryHelper.ParsePath((string)null));
         }
 
         /// <summary>
@@ -811,8 +814,8 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public void TrimPathPart_ReturnsExpectedValues()
         {
-            Assert.AreEqual("test", controller.TrimPathPart("/test/"));
-            Assert.AreEqual(string.Empty, controller.TrimPathPart(null));
+            Assert.AreEqual("test", PublicFileEntryHelper.TrimPathPart("/test/"));
+            Assert.AreEqual(string.Empty, PublicFileEntryHelper.TrimPathPart(null));
         }
 
         /// <summary>
@@ -822,7 +825,7 @@ namespace Sky.Tests.Controllers
         public void UrlEncode_WithSpecialCharacters_EncodesCorrectly()
         {
             // Act
-            var result = controller.UrlEncode("/pub/test file.txt");
+            var result = PublicFileEntryHelper.UrlEncodePath("/pub/test file.txt");
 
             // Assert
             StringAssert.Contains(result, "test-file.txt");
@@ -1611,6 +1614,7 @@ namespace Sky.Tests.Controllers
             settingsMock.SetupGet(s => s.AllowedFileTypes).Returns(EditorSettings.AllowedFileTypes);
             settingsMock.SetupGet(s => s.UseModernFileExplorer).Returns(useModernFileExplorer);
 
+            var titleResolver2 = new PublicFileEntryTitleResolver(Db);
             var sut = new FileManagerController(
                 settingsMock.Object,
                 mockLogger.Object,
@@ -1623,7 +1627,9 @@ namespace Sky.Tests.Controllers
                 mockViewRenderService.Object,
                 LayoutCacheService,
                 DynamicConfigurationProvider,
-                new MemoryCache(new MemoryCacheOptions()));
+                new MemoryCache(new MemoryCacheOptions()),
+                titleResolver2,
+                new FolderListingService(Db, isolatedStorage, titleResolver2));
 
             var httpContext = new DefaultHttpContext();
             httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]

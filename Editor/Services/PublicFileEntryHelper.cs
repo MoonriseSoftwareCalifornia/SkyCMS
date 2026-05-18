@@ -11,12 +11,15 @@ namespace Sky.Cms.Services
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text;
+    using System.Web;
     using Cosmos.BlobService;
     using MimeTypes;
+    using SkyCMS.Drivers.ElFinder;
 
-    internal static class PublicFileEntryHelper
+    public static class PublicFileEntryHelper
     {
-        internal static string NormalizePath(string path)
+        public static string NormalizePath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -42,7 +45,7 @@ namespace Sky.Cms.Services
             return clean;
         }
 
-        internal static bool IsPathWithinRoot(string path, string rootPath)
+        public static bool IsPathWithinRoot(string path, string rootPath)
         {
             if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(rootPath))
             {
@@ -61,7 +64,7 @@ namespace Sky.Cms.Services
                 || normalizedPath.StartsWith(normalizedRoot + "/", StringComparison.OrdinalIgnoreCase);
         }
 
-        internal static string GetDisplayName(FileManagerEntry entry)
+        public static string GetDisplayName(FileManagerEntry entry)
         {
             if (entry.IsDirectory)
             {
@@ -86,7 +89,7 @@ namespace Sky.Cms.Services
                 : name + ext;
         }
 
-        internal static string GetEntryMimeType(FileManagerEntry entry)
+        public static string GetEntryMimeType(FileManagerEntry entry)
         {
             if (entry.IsDirectory)
             {
@@ -97,7 +100,7 @@ namespace Sky.Cms.Services
             return MimeTypeMap.GetMimeType(extension);
         }
 
-        internal static string ResolveEntryPath(string parentPath, FileManagerEntry entry)
+        public static string ResolveEntryPath(string parentPath, FileManagerEntry entry)
         {
             if (!string.IsNullOrWhiteSpace(entry.Path))
             {
@@ -119,7 +122,7 @@ namespace Sky.Cms.Services
             return NormalizePath(combined);
         }
 
-        internal static bool TryGetArticleNumber(FileManagerEntry entry, out int articleNumber)
+        public static bool TryGetArticleNumber(FileManagerEntry entry, out int articleNumber)
         {
             articleNumber = 0;
             if (!entry.IsDirectory)
@@ -131,7 +134,7 @@ namespace Sky.Cms.Services
             return int.TryParse(segment, out articleNumber);
         }
 
-        internal static bool TryGetTemplateId(FileManagerEntry entry, out Guid templateId)
+        public static bool TryGetTemplateId(FileManagerEntry entry, out Guid templateId)
         {
             templateId = Guid.Empty;
             if (!entry.IsDirectory)
@@ -143,21 +146,21 @@ namespace Sky.Cms.Services
             return Guid.TryParse(segment, out templateId);
         }
 
-        internal static bool TryGetArticleNumber(string path, out int articleNumber)
+        public static bool TryGetArticleNumber(string path, out int articleNumber)
         {
             articleNumber = 0;
             var segment = GetLastPathSegment(path, string.Empty);
             return int.TryParse(segment, out articleNumber);
         }
 
-        internal static bool TryGetTemplateId(string path, out Guid templateId)
+        public static bool TryGetTemplateId(string path, out Guid templateId)
         {
             templateId = Guid.Empty;
             var segment = GetLastPathSegment(path, string.Empty);
             return Guid.TryParse(segment, out templateId);
         }
 
-        internal static string ResolveFriendlyDisplayName(
+        public static string ResolveFriendlyDisplayName(
             string parentPath,
             FileManagerEntry entry,
             IReadOnlyDictionary<int, string> articleTitlesByNumber,
@@ -185,7 +188,7 @@ namespace Sky.Cms.Services
             return GetDisplayName(entry);
         }
 
-        internal static bool TryGetArticleNumberFromPath(string path, out int articleNumber)
+        public static bool TryGetArticleNumberFromPath(string path, out int articleNumber)
         {
             articleNumber = 0;
             if (string.IsNullOrWhiteSpace(path))
@@ -224,7 +227,7 @@ namespace Sky.Cms.Services
         /// Entries with paths <c>/pub/articles/100</c>, <c>/pub/articles/200/logo.png</c>,
         /// and <c>/pub/articles/200/sub</c> return <c>[100, 200]</c>.
         /// </example>
-        internal static List<int> ExtractArticleNumbersFromEntries(IEnumerable<FileManagerEntry>? entries)
+        public static List<int> ExtractArticleNumbersFromEntries(IEnumerable<FileManagerEntry>? entries)
         {
             if (entries == null)
             {
@@ -243,7 +246,7 @@ namespace Sky.Cms.Services
             return numbers.OrderBy(n => n).ToList();
         }
 
-        internal static string ResolveFriendlyDisplayPath(
+        public static string ResolveFriendlyDisplayPath(
             string canonicalPath,
             IReadOnlyDictionary<int, string> articleTitlesByNumber)
         {
@@ -268,6 +271,46 @@ namespace Sky.Cms.Services
             return "/" + string.Join('/', segments);
         }
 
+        /// <summary>
+        /// Returns <see langword="true"/> when <paramref name="path"/> is a valid upload destination:
+        /// non-empty, free of path-traversal sequences (<c>..</c>), and rooted under <c>/pub</c>.
+        /// </summary>
+        /// <param name="path">Candidate upload path.</param>
+        /// <returns><see langword="true"/> if the path is safe; otherwise <see langword="false"/>.</returns>
+        public static bool IsUploadPathSafe(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || path.Trim('/') == string.Empty)
+            {
+                return false;
+            }
+
+            if (path.Contains("..", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var normalized = NormalizePath(path);
+            return normalized.Equals("/pub", StringComparison.OrdinalIgnoreCase)
+                || normalized.StartsWith("/pub/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Returns <see langword="true"/> when the file extension of <paramref name="fileName"/>
+        /// appears in the blocked-extensions list defined by <see cref="FileStorageConstants.DangerousFileExtensions"/>.
+        /// </summary>
+        /// <param name="fileName">File name (or extension) to test.</param>
+        /// <returns><see langword="true"/> if the extension is dangerous; otherwise <see langword="false"/>.</returns>
+        public static bool IsDangerousExtension(string? fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return false;
+            }
+
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            return FileStorageConstants.DangerousFileExtensions.Contains(ext);
+        }
+
         private static string GetLastPathSegment(string? path, string? fallback)
         {
             if (!string.IsNullOrWhiteSpace(path))
@@ -281,6 +324,118 @@ namespace Sky.Cms.Services
             }
 
             return fallback ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Trims leading and trailing slashes and white space from a path segment.
+        /// </summary>
+        /// <param name="part">URL path part to trim.</param>
+        /// <returns>Trimmed path part, or an empty string if <paramref name="part"/> is null or empty.</returns>
+        public static string TrimPathPart(string part)
+        {
+            if (string.IsNullOrEmpty(part))
+            {
+                return string.Empty;
+            }
+
+            return part.Trim('/').Trim('\\').Trim();
+        }
+
+        /// <summary>
+        /// Parses one or more path strings into an ordered array of non-empty, trimmed segments.
+        /// </summary>
+        /// <param name="pathParts">Path components to parse.</param>
+        /// <returns>Array of non-empty, trimmed path segments.</returns>
+        public static string[] ParsePath(params string?[] pathParts)
+        {
+            if (pathParts == null)
+            {
+                return Array.Empty<string>();
+            }
+
+            var paths = new List<string>();
+            foreach (var part in pathParts)
+            {
+                if (!string.IsNullOrEmpty(part))
+                {
+                    foreach (var segment in part.Split('/'))
+                    {
+                        var trimmed = TrimPathPart(segment);
+                        if (!string.IsNullOrEmpty(trimmed))
+                        {
+                            paths.Add(trimmed);
+                        }
+                    }
+                }
+            }
+
+            return paths.ToArray();
+        }
+
+        /// <summary>
+        /// URL-encodes each segment of <paramref name="path"/>, joining with '/',
+        /// and replaces spaces with hyphens before encoding.
+        /// </summary>
+        /// <param name="path">Raw path string to encode.</param>
+        /// <returns>URL-encoded path string, or an empty string if <paramref name="path"/> is empty.</returns>
+        public static string UrlEncodePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return string.Empty;
+            }
+
+            var parts = ParsePath(path);
+            var encoded = new List<string>(parts.Length);
+            foreach (var part in parts)
+            {
+                encoded.Add(HttpUtility.UrlEncode(part.Replace(" ", "-")).Replace("%40", "@"));
+            }
+
+            return TrimPathPart(string.Join('/', encoded));
+        }
+
+        /// <summary>
+        /// Encodes a file path to a URL-safe base64 hash for transmission in URI path segments.
+        /// </summary>
+        /// <param name="path">File path to encode.</param>
+        /// <returns>URL-safe base64-encoded path (no padding, '+' replaced with '-', '/' with '_').</returns>
+        public static string EncodePathHash(string path)
+        {
+            var bytes = Encoding.UTF8.GetBytes(path);
+            return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        }
+
+        /// <summary>
+        /// Decodes a URL-safe base64 hash back to a file path.
+        /// </summary>
+        /// <param name="hash">URL-safe base64-encoded path hash.</param>
+        /// <returns>Decoded file path.</returns>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="hash"/> is invalid or empty.</exception>
+        public static string DecodePathHash(string hash)
+        {
+            if (string.IsNullOrEmpty(hash))
+            {
+                throw new ArgumentException("Path hash cannot be empty.", nameof(hash));
+            }
+
+            // Restore standard base64 characters and padding.
+            var padded = hash.Replace('-', '+').Replace('_', '/');
+            var padding = 4 - (padded.Length % 4);
+            if (padding < 4)
+            {
+                padded += new string('=', padding);
+            }
+
+            try
+            {
+                var bytes = Convert.FromBase64String(padded);
+                return Encoding.UTF8.GetString(bytes);
+            }
+            catch (FormatException ex)
+            {
+                throw new ArgumentException("Invalid base64-encoded path hash.", nameof(hash), ex);
+            }
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Sky.Cms.Services
     /// Async helper for resolving article and template titles from the database.
     /// Centralizes title-lookup patterns used across file controllers to reduce duplication.
     /// </summary>
-    internal class PublicFileEntryTitleResolver
+    public class PublicFileEntryTitleResolver : IPublicFileEntryTitleResolver
     {
         private readonly IApplicationDbContext dbContext;
 

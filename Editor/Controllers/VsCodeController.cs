@@ -68,6 +68,8 @@ namespace Sky.Cms.Controllers
         private readonly ITemplateService templateService;
         private readonly ArticleEditLogic articleLogic;
         private readonly IPublishingService publishingService;
+        private readonly IPublicFileEntryTitleResolver titleResolver;
+        private readonly IFolderListingService folderListingService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VsCodeController"/> class.
@@ -82,6 +84,8 @@ namespace Sky.Cms.Controllers
         /// <param name="configProvider">Dynamic configuration provider for tenant settings.</param>
         /// <param name="articleLogic">Article edit logic for publish/unpublish operations.</param>
         /// <param name="publishingService">Publishing service for unpublish operations.</param>
+        /// <param name="titleResolver">Shared file entry title resolver.</param>
+        /// <param name="folderListingService">Shared folder-listing service.</param>
         public VsCodeController(
             ApplicationDbContext dbContext,
             ILogger<VsCodeController> logger,
@@ -92,7 +96,9 @@ namespace Sky.Cms.Controllers
             ITemplateService templateService,
             IDynamicConfigurationProvider configProvider,
             ArticleEditLogic articleLogic,
-            IPublishingService publishingService)
+            IPublishingService publishingService,
+            IPublicFileEntryTitleResolver titleResolver,
+            IFolderListingService folderListingService)
         {
             this.dbContext = dbContext;
             this.logger = logger;
@@ -104,6 +110,8 @@ namespace Sky.Cms.Controllers
             this.configProvider = configProvider;
             this.articleLogic = articleLogic;
             this.publishingService = publishingService;
+            this.titleResolver = titleResolver;
+            this.folderListingService = folderListingService;
         }
 
         /// <summary>
@@ -1610,7 +1618,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = string.IsNullOrEmpty(pathHash) ? "/" : DecodePathHash(pathHash);
+                path = string.IsNullOrEmpty(pathHash) ? "/" : PublicFileEntryHelper.DecodePathHash(pathHash);
                 path = PublicFileEntryHelper.NormalizePath(path);
             }
             catch
@@ -1620,13 +1628,11 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                var entries = await storageContext.GetFilesAndDirectories(path);
-
-                var titleResolver = new PublicFileEntryTitleResolver(dbContext);
                 var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
-                await titleResolver.FilterDeletedArticleEntriesAsync(entries, this.memoryCache, tenantDomain);
-                var articleTitlesByNumber = await titleResolver.GetArticleTitlesByNumberAsync(entries);
-                var templateTitlesById = await titleResolver.GetTemplateTitlesByIdAsync(entries);
+                var entries = await this.folderListingService.GetEntriesAsync(path, this.memoryCache, tenantDomain);
+
+                var articleTitlesByNumber = await this.titleResolver.GetArticleTitlesByNumberAsync(entries);
+                var templateTitlesById = await this.titleResolver.GetTemplateTitlesByIdAsync(entries);
 
                 var result = entries.Select(e => new
                 {
@@ -1670,7 +1676,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = PublicFileEntryHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1721,7 +1727,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = PublicFileEntryHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1779,7 +1785,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = PublicFileEntryHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1819,7 +1825,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = PublicFileEntryHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1859,7 +1865,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = PublicFileEntryHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1873,7 +1879,7 @@ namespace Sky.Cms.Controllers
                 {
                     name = entry.Name,
                     isDir = entry.IsDirectory,
-                    path = EncodePathHash(entry.Path),
+                    path = PublicFileEntryHelper.EncodePathHash(entry.Path),
                 });
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1905,7 +1911,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = PublicFileEntryHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1915,6 +1921,16 @@ namespace Sky.Cms.Controllers
             if (Request.ContentLength is null or 0)
             {
                 return BadRequest(new { message = "Request body is empty." });
+            }
+
+            if (!PublicFileEntryHelper.IsUploadPathSafe(path))
+            {
+                return BadRequest(new { message = "Uploads must target a path within the /pub directory." });
+            }
+
+            if (PublicFileEntryHelper.IsDangerousExtension(System.IO.Path.GetFileName(path)))
+            {
+                return BadRequest(new { message = "This file type is not allowed for upload." });
             }
 
             try
@@ -1971,7 +1987,7 @@ namespace Sky.Cms.Controllers
             string sourcePath;
             try
             {
-                sourcePath = DecodePathHash(pathHash);
+                sourcePath = PublicFileEntryHelper.DecodePathHash(pathHash);
             }
             catch (ArgumentException)
             {
@@ -2017,7 +2033,7 @@ namespace Sky.Cms.Controllers
             string sourcePath;
             try
             {
-                sourcePath = DecodePathHash(pathHash);
+                sourcePath = PublicFileEntryHelper.DecodePathHash(pathHash);
             }
             catch (ArgumentException)
             {
@@ -2043,17 +2059,6 @@ namespace Sky.Cms.Controllers
                 logger.LogError(ex, "Error moving folder from {Source} to {Destination}", sourcePath, request.Destination);
                 return StatusCode(500);
             }
-        }
-
-        /// <summary>
-        /// Encodes a file path to a base64 hash for safe transmission in URIs.
-        /// </summary>
-        /// <param name="path">File path to encode.</param>
-        /// <returns>Base64-encoded path.</returns>
-        private static string EncodePathHash(string path)
-        {
-            var bytes = Encoding.UTF8.GetBytes(path);
-            return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
         }
 
         /// <summary>
@@ -2101,38 +2106,6 @@ namespace Sky.Cms.Controllers
             }
 
             return layout;
-        }
-
-        /// <summary>
-        /// Decodes a base64 hash back to a file path.
-        /// </summary>
-        /// <param name="hash">Base64-encoded path hash.</param>
-        /// <returns>Decoded file path.</returns>
-        /// <exception cref="ArgumentException">Thrown if hash is invalid.</exception>
-        private static string DecodePathHash(string hash)
-        {
-            if (string.IsNullOrEmpty(hash))
-            {
-                throw new ArgumentException("Path hash cannot be empty.", nameof(hash));
-            }
-
-            // Restore base64 padding
-            var padded = hash.Replace('-', '+').Replace('_', '/');
-            var padding = 4 - (padded.Length % 4);
-            if (padding < 4)
-            {
-                padded += new string('=', padding);
-            }
-
-            try
-            {
-                var bytes = Convert.FromBase64String(padded);
-                return Encoding.UTF8.GetString(bytes);
-            }
-            catch (FormatException ex)
-            {
-                throw new ArgumentException("Invalid base64-encoded path hash.", nameof(hash), ex);
-            }
         }
 
         /// <summary>

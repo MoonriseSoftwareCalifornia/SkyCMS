@@ -74,6 +74,7 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
+using Cosmos.Editor.Services;
 using SkyCMS.Drivers.ElFinder;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
@@ -318,6 +319,8 @@ builder.Services.AddTransient<ISmtpEmailTester, SmtpEmailTester>();
 builder.Services.AddScoped<ISetupService, SetupService>();
 builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 builder.Services.AddScoped<IStorageContext, StorageContext>();
+builder.Services.AddSingleton<ILoginAssetBlobClient, LoginAssetBlobClient>();
+builder.Services.AddSingleton<ILoginAssetBootstrapService, LoginAssetBootstrapService>();
 builder.Services.AddScoped<IEditorSettings, EditorSettings>();
 builder.Services.AddScoped<ICopilotProxyOptionsService, CopilotProxyOptionsService>();
 builder.Services.AddScoped<IAiProviderModelCatalogService, AiProviderModelCatalogService>();
@@ -327,6 +330,8 @@ builder.Services.AddScoped<IAiLayoutContextService, AiLayoutContextService>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
 builder.Services.AddScoped<ILayoutVersioningService, LayoutVersioningService>();
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
+builder.Services.AddScoped<IPublicFileEntryTitleResolver, PublicFileEntryTitleResolver>();
+builder.Services.AddScoped<IFolderListingService, FolderListingService>();
 
 // Register shared query services (Common namespace - used by both Editor and Publisher)
 builder.Services.AddScoped<IArticleCatalogQueryService>(sp =>

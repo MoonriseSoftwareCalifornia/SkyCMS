@@ -567,8 +567,103 @@ namespace Sky.Tests.Editor.Services
             var result = PublicFileEntryHelper.ResolveFriendlyDisplayName(
                 "/pub/articles", entry, articleTitles, templateTitles);
 
-            // Should fall back to name because title is null
-            Assert.AreEqual("123", result);
-        }
-    }
-}
+                    // Should fall back to name because title is null
+                        Assert.AreEqual("123", result);
+                    }
+
+                    // ===== IsUploadPathSafe Tests =====
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsUploadPathSafe_PubRoot_ReturnsTrue()
+                    {
+                        Assert.IsTrue(PublicFileEntryHelper.IsUploadPathSafe("/pub"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsUploadPathSafe_PubSubfolder_ReturnsTrue()
+                    {
+                        Assert.IsTrue(PublicFileEntryHelper.IsUploadPathSafe("/pub/articles/123"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsUploadPathSafe_EmptyPath_ReturnsFalse()
+                    {
+                        Assert.IsFalse(PublicFileEntryHelper.IsUploadPathSafe(string.Empty));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsUploadPathSafe_NullPath_ReturnsFalse()
+                    {
+                        Assert.IsFalse(PublicFileEntryHelper.IsUploadPathSafe(null));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsUploadPathSafe_TraversalSequence_ReturnsFalse()
+                    {
+                        Assert.IsFalse(PublicFileEntryHelper.IsUploadPathSafe("/pub/../private"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsUploadPathSafe_OutsidePub_ReturnsFalse()
+                    {
+                        Assert.IsFalse(PublicFileEntryHelper.IsUploadPathSafe("/private/files"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsUploadPathSafe_SlashesOnly_ReturnsFalse()
+                    {
+                        Assert.IsFalse(PublicFileEntryHelper.IsUploadPathSafe("///"));
+                    }
+
+                    // ===== IsDangerousExtension Tests =====
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_ExeFile_ReturnsTrue()
+                    {
+                        Assert.IsTrue(PublicFileEntryHelper.IsDangerousExtension("malware.exe"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_Ps1File_ReturnsTrue()
+                    {
+                        Assert.IsTrue(PublicFileEntryHelper.IsDangerousExtension("script.ps1"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_JpegFile_ReturnsFalse()
+                    {
+                        Assert.IsFalse(PublicFileEntryHelper.IsDangerousExtension("photo.jpeg"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_HtmlFile_ReturnsFalse()
+                    {
+                        Assert.IsFalse(PublicFileEntryHelper.IsDangerousExtension("page.html"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_NullFileName_ReturnsFalse()
+                    {
+                        Assert.IsFalse(PublicFileEntryHelper.IsDangerousExtension(null));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_UpperCaseExtension_ReturnsTrue()
+                    {
+                        Assert.IsTrue(PublicFileEntryHelper.IsDangerousExtension("VIRUS.EXE"));
+                    }
+                }
+            }

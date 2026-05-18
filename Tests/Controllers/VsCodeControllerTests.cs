@@ -19,6 +19,7 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Cms.Controllers;
+    using Sky.Cms.Services;
     using Sky.Editor.Models;
     using Sky.Editor.Services.Layouts;
 
@@ -74,6 +75,7 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
+            var titleResolver = new PublicFileEntryTitleResolver(Db);
             controller = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -84,7 +86,9 @@ namespace Sky.Tests.Controllers
                 TemplateService,
                 DynamicConfigurationProvider,
                 ArticleEditLogic,
-                PublishingService);
+                PublishingService,
+                titleResolver,
+                new FolderListingService(Db, mockStorageContext.Object, titleResolver));
 
             controller.ControllerContext = new ControllerContext
             {
@@ -1404,6 +1408,7 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
+            var localTitleResolver = new PublicFileEntryTitleResolver(Db);
             var localController = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -1414,7 +1419,9 @@ namespace Sky.Tests.Controllers
                 TemplateService,
                 DynamicConfigurationProvider,
                 ArticleEditLogic,
-                PublishingService);
+                PublishingService,
+                localTitleResolver,
+                new FolderListingService(Db, storageMock.Object, localTitleResolver));
 
             localController.ControllerContext = new ControllerContext
             {

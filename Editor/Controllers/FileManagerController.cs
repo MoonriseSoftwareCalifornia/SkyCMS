@@ -1,4 +1,4 @@
-﻿// <copyright file="FileManagerController.cs" company="Moonrise Software, LLC">
+// <copyright file="FileManagerController.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -66,6 +66,8 @@ namespace Sky.Cms.Controllers
         private readonly IEditorSettings options;
         private readonly IMemoryCache memoryCache;
         private readonly IDynamicConfigurationProvider configProvider;
+        private readonly IPublicFileEntryTitleResolver titleResolver;
+        private readonly IFolderListingService folderListingService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileManagerController"/> class.
@@ -82,6 +84,8 @@ namespace Sky.Cms.Controllers
         /// <param name="memoryCache">Memory cache for layout caching.</param>
         /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
         /// <param name="appMemoryCache">Application memory cache for short-lived lookups (e.g. deleted-article filtering).</param>
+        /// <param name="titleResolver">Article / template title resolver.</param>
+        /// <param name="folderListingService">Shared folder-listing service.</param>
         [ActivatorUtilitiesConstructor]
         public FileManagerController(
             IEditorSettings options,
@@ -95,7 +99,9 @@ namespace Sky.Cms.Controllers
             IViewRenderService viewRenderService,
             ICacheService<Layout> memoryCache,
             IDynamicConfigurationProvider configProvider,
-            IMemoryCache appMemoryCache)
+            IMemoryCache appMemoryCache,
+            IPublicFileEntryTitleResolver titleResolver,
+            IFolderListingService folderListingService)
             : base(dbContext, userManager, mediator, memoryCache, configProvider)
         {
             this.options = options;
@@ -115,6 +121,8 @@ namespace Sky.Cms.Controllers
             this.viewRenderService = viewRenderService;
             this.memoryCache = appMemoryCache;
             this.configProvider = configProvider;
+            this.titleResolver = titleResolver;
+            this.folderListingService = folderListingService;
         }
 
         /// <summary>
@@ -159,6 +167,8 @@ namespace Sky.Cms.Controllers
 
             this.viewRenderService = viewRenderService;
             this.memoryCache = new MemoryCache(new MemoryCacheOptions());
+            this.titleResolver = new PublicFileEntryTitleResolver(dbContext);
+            this.folderListingService = new FolderListingService(dbContext, storageContext, this.titleResolver);
         }
 
         /// <summary>
@@ -303,65 +313,10 @@ namespace Sky.Cms.Controllers
             ViewData["pageNo"] = pageNo;
             ViewData["pageSize"] = pageSize;
 
-            // GET FULL OR ABSOLUTE PATH
-            //
-            // List<FileManagerEntry> model = await _storageContext.GetFolderContents(target);
-            IQueryable<FileManagerEntry> query;
-            if (target.Trim('/') == "pub/articles")
-            {
-                var raw = await dbContext.ArticleCatalog
-                    .Select(s => new { s.ArticleNumber, s.Title, s.Updated })
-                    .ToListAsync();
-                var model = raw.Select(s => new FileManagerEntry()
-                {
-                    Created = s.Updated.DateTime,
-                    CreatedUtc = s.Updated.UtcDateTime,
-                    Extension = string.Empty,
-                    HasDirectories = true,
-                    IsDirectory = true,
-                    Modified = s.Updated.DateTime,
-                    ModifiedUtc = s.Updated.UtcDateTime,
-                    Name = s.Title,
-                    Path = "/pub/articles/" + s.ArticleNumber,
-                    DisplayPath = "/pub/articles/" + s.Title,
-                    Size = 0
-                });
-                query = model.AsQueryable();
-            }
-            else if (target.Trim('/') == "pub/templates")
-            {
-                var raw = await dbContext.Templates
-                    .Select(s => new { s.Id, s.Title })
-                    .ToListAsync();
-                var now = DateTimeOffset.UtcNow.DateTime;
-                var model = raw.Select(s => new FileManagerEntry()
-                {
-                    Created = now,
-                    CreatedUtc = now,
-                    Extension = string.Empty,
-                    HasDirectories = true,
-                    IsDirectory = true,
-                    Modified = now,
-                    ModifiedUtc = now,
-                    Name = s.Title,
-                    Path = "/pub/templates/" + s.Id,
-                    DisplayPath = "/pub/templates/" + s.Title,
-                    Size = 0
-                });
-                query = model.AsQueryable();
-            }
-            else
-            {
-                var model = await storageContext.GetFilesAndDirectories(target);
-                if (target.Trim('/').StartsWith("pub/articles", StringComparison.OrdinalIgnoreCase))
-                {
-                    var titleResolver = new PublicFileEntryTitleResolver(dbContext);
-                    var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
-                    await titleResolver.FilterDeletedArticleEntriesAsync(model, this.memoryCache, tenantDomain);
-                }
-
-                query = model.AsQueryable();
-            }
+            // GET FULL OR ABSOLUTE PATH � delegated to the shared FolderListingService.
+            var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
+            var entries = await this.folderListingService.GetEntriesAsync(target, this.memoryCache, tenantDomain);
+            IQueryable<FileManagerEntry> query = entries.AsQueryable();
 
             if (imagesOnly)
             {
@@ -656,7 +611,7 @@ namespace Sky.Cms.Controllers
                 return Json(ReturnSimpleErrorMessage($"The file '{file.FileName}' could not be loaded as an image."));
             }
 
-            string relativePath = UrlEncode($"{directory}/{fileName}");
+            string relativePath = PublicFileEntryHelper.UrlEncodePath($"{directory}/{fileName}");
 
             var contentType = MimeTypeMap.GetMimeType(extension);
 
@@ -731,15 +686,15 @@ namespace Sky.Cms.Controllers
 
             var totalChunks = DivideByAndRoundUp(uploadLenth, contentSize);
 
-            var blobName = UrlEncode(uploadName);
+            var blobName = PublicFileEntryHelper.UrlEncodePath(uploadName);
 
-            var relativePath = UrlEncode(patchArray[0].TrimEnd('/'));
+            var relativePath = PublicFileEntryHelper.UrlEncodePath(patchArray[0].TrimEnd('/'));
 
             if (!string.IsNullOrEmpty(patchArray[1]))
             {
                 var dpath = Path.GetDirectoryName(patchArray[1]).Replace('\\', '/'); // Convert windows paths to unix style.
-                var epath = UrlEncode(dpath);
-                relativePath += "/" + UrlEncode(epath);
+                var epath = PublicFileEntryHelper.UrlEncodePath(dpath);
+                relativePath += "/" + PublicFileEntryHelper.UrlEncodePath(epath);
             }
 
             var extension = Path.GetExtension(blobName).ToLower();
@@ -826,7 +781,7 @@ namespace Sky.Cms.Controllers
             }
 
             // Reconstruct blob path the same way the PATCH action does.
-            var basePath = UrlEncode(parts[0].TrimEnd('/'));
+            var basePath = PublicFileEntryHelper.UrlEncodePath(parts[0].TrimEnd('/'));
             var subDir = parts.Length > 1 ? parts[1].TrimStart('/') : string.Empty;
 
             string blobPath;
@@ -835,16 +790,16 @@ namespace Sky.Cms.Controllers
                 var dpath = Path.GetDirectoryName(subDir)?.Replace('\\', '/') ?? string.Empty;
                 if (!string.IsNullOrEmpty(dpath))
                 {
-                    blobPath = $"{basePath}/{UrlEncode(dpath)}/{UrlEncode(fileName)}";
+                    blobPath = $"{basePath}/{PublicFileEntryHelper.UrlEncodePath(dpath)}/{PublicFileEntryHelper.UrlEncodePath(fileName)}";
                 }
                 else
                 {
-                    blobPath = $"{basePath}/{UrlEncode(fileName)}";
+                    blobPath = $"{basePath}/{PublicFileEntryHelper.UrlEncodePath(fileName)}";
                 }
             }
             else
             {
-                blobPath = $"{basePath}/{UrlEncode(fileName)}";
+                blobPath = $"{basePath}/{PublicFileEntryHelper.UrlEncodePath(fileName)}";
             }
 
             storageContext.DeleteFile(blobPath);
@@ -880,7 +835,7 @@ namespace Sky.Cms.Controllers
 
             var image = await Image.LoadAsync(file.OpenReadStream());
 
-            string relativePath = UrlEncode(directory + fileName);
+            string relativePath = PublicFileEntryHelper.UrlEncodePath(directory + fileName);
 
             var contentType = MimeTypeMap.GetMimeType(Path.GetExtension(fileName));
 
@@ -1145,40 +1100,10 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        ///     Encodes a URL.
-        /// </summary>
-        /// <param name="path">URL path to encode.</param>
-        /// <returns>Returns a URL Encoded string.</returns>
-        /// <remarks>
-        ///     For more information, see
-        ///     <a
-        ///         href="https://docs.microsoft.com/en-us/rest/api/storageservices/Naming-and-Referencing-Containers--Blobs--and-Metadata#blob-names">
-        ///         documentation
-        ///     </a>
-        ///     .
-        /// </remarks>
-        public string UrlEncode(string path)
-        {
-            if (!ModelState.IsValid)
-            {
-                return string.Empty;
-            }
-
-            var parts = ParsePath(path);
-            var urlEncodedParts = new List<string>();
-            foreach (var part in parts)
-            {
-                urlEncodedParts.Add(HttpUtility.UrlEncode(part.Replace(" ", "-")).Replace("%40", "@"));
-            }
-
-            return TrimPathPart(string.Join('/', urlEncodedParts));
-        }
-
-        /// <summary>
         /// Creates a new file in a given folder.
         /// </summary>
         /// <param name="model">New file post model.</param>
-        /// <returns>IActionResult。</returns>
+        /// <returns>IActionResult?</returns>
         public async Task<IActionResult> NewFile(NewFileViewModel model)
         {
             if (!ModelState.IsValid)
@@ -1191,8 +1116,8 @@ namespace Sky.Cms.Controllers
                 return BadRequest("Invalid file extension.");
             }
 
-            var relativePath = string.Join('/', ParsePath(model.ParentFolder, model.FileName));
-            relativePath = UrlEncode(relativePath);
+            var relativePath = string.Join('/', PublicFileEntryHelper.ParsePath(model.ParentFolder, model.FileName));
+            relativePath = PublicFileEntryHelper.UrlEncodePath(relativePath);
 
             // Check for duplicate entries
             var existingEntries = await storageContext.GetFilesAndDirectories(model.ParentFolder);
@@ -1240,8 +1165,8 @@ namespace Sky.Cms.Controllers
                 return BadRequest("Path traversal attempts are not allowed.");
             }
 
-            var relativePath = string.Join('/', ParsePath(model.ParentFolder, model.FolderName));
-            relativePath = UrlEncode(relativePath);
+            var relativePath = string.Join('/', PublicFileEntryHelper.ParsePath(model.ParentFolder, model.FolderName));
+            relativePath = PublicFileEntryHelper.UrlEncodePath(relativePath);
 
             // Check for duplicate entries
             var existingEntries = await storageContext.GetFilesAndDirectories(model.ParentFolder);
@@ -1317,7 +1242,7 @@ namespace Sky.Cms.Controllers
 
             target = target == null ? string.Empty : target;
             entry.Path = target;
-            entry.Name = UrlEncode(entry.Name);
+            entry.Name = PublicFileEntryHelper.UrlEncodePath(entry.Name);
             entry.Extension = entry.Extension;
 
             if (!entry.Path.StartsWith("/pub", StringComparison.CurrentCultureIgnoreCase))
@@ -1349,8 +1274,8 @@ namespace Sky.Cms.Controllers
                 }
             }
 
-            var relativePath = string.Join('/', ParsePath(entry.Path, entry.Name));
-            relativePath = UrlEncode(relativePath);
+            var relativePath = string.Join('/', PublicFileEntryHelper.ParsePath(entry.Path, entry.Name));
+            relativePath = PublicFileEntryHelper.UrlEncodePath(relativePath);
 
             var fileManagerEntry = storageContext.CreateFolder(relativePath);
 
@@ -1418,7 +1343,7 @@ namespace Sky.Cms.Controllers
 
                 var target = $"{model.BlobRootPath.TrimEnd('/')}/{model.FromBlobName}";
 
-                var dest = $"{model.BlobRootPath.TrimEnd('/')}/{UrlEncode(model.ToBlobName)}";
+                var dest = $"{model.BlobRootPath.TrimEnd('/')}/{PublicFileEntryHelper.UrlEncodePath(model.ToBlobName)}";
 
                 // Skip move operation if source and destination are the same
                 if (!target.Equals(dest, StringComparison.OrdinalIgnoreCase))
@@ -1428,62 +1353,6 @@ namespace Sky.Cms.Controllers
             }
 
             return Ok();
-        }
-
-        /// <summary>
-        ///     Parses out a path into a string array.
-        /// </summary>
-        /// <param name="pathParts">URL path as an arrayto parse out.</param>
-        /// <returns>Processed path as an array.</returns>
-        public string[] ParsePath(params string[] pathParts)
-        {
-            if (!ModelState.IsValid)
-            {
-                return new string[] { string.Empty };
-            }
-
-            if (pathParts == null)
-            {
-                return new string[] { };
-            }
-
-            var paths = new List<string>();
-
-            foreach (var part in pathParts)
-            {
-                if (!string.IsNullOrEmpty(part))
-                {
-                    var split = part.Split("/");
-                    foreach (var p in split)
-                    {
-                        if (!string.IsNullOrEmpty(p))
-                        {
-                            var path = TrimPathPart(p);
-                            if (!string.IsNullOrEmpty(path))
-                            {
-                                paths.Add(path);
-                            }
-                        }
-                    }
-                }
-            }
-
-            return paths.ToArray();
-        }
-
-        /// <summary>
-        ///     Trims leading and trailing slashes and white space from a path part.
-        /// </summary>
-        /// <param name="part">URL path part to trim.</param>
-        /// <returns>Returns trimmed path.</returns>
-        public string TrimPathPart(string part)
-        {
-            if (string.IsNullOrEmpty(part))
-            {
-                return string.Empty;
-            }
-
-            return part.Trim('/').Trim('\\').Trim();
         }
 
         /// <summary>
@@ -1861,15 +1730,9 @@ namespace Sky.Cms.Controllers
                 return Json(string.Empty);
             }
 
-            if (string.IsNullOrEmpty(path) || path.Trim('/') == string.Empty)
+            if (!PublicFileEntryHelper.IsUploadPathSafe(path))
             {
                 return Unauthorized("Cannot upload here. Please select the 'pub' folder first, or sub-folder below that, then try again.");
-            }
-
-            // Validate against path traversal attempts
-            if (path.Contains(".."))
-            {
-                return Unauthorized("Path traversal attempts are not allowed.");
             }
 
             // Get information about the chunk we are on.
@@ -1889,14 +1752,13 @@ namespace Sky.Cms.Controllers
             }
 
             // Validate against path traversal in metadata
-            if (fileMetaData.RelativePath?.Contains("..") == true || fileMetaData.FileName?.Contains("..") == true)
+            if (!PublicFileEntryHelper.IsUploadPathSafe(fileMetaData.RelativePath) || fileMetaData.FileName?.Contains("..") == true)
             {
                 return Unauthorized("Path traversal attempts are not allowed.");
             }
 
             // Validate against dangerous file extensions
-            var fileExtension = Path.GetExtension(fileMetaData.FileName).ToLower();
-            if (DangerousFileExtensions.Contains(fileExtension))
+            if (PublicFileEntryHelper.IsDangerousExtension(fileMetaData.FileName))
             {
                 return Json(new FileUploadResult
                 {
@@ -1912,7 +1774,7 @@ namespace Sky.Cms.Controllers
                 throw new ArgumentException("No file found to upload.");
             }
 
-            var blobName = UrlEncode(fileMetaData.FileName);
+            var blobName = PublicFileEntryHelper.UrlEncodePath(fileMetaData.FileName);
             fileMetaData.ContentType = MimeTypeMap.GetMimeType(Path.GetExtension(fileMetaData.FileName));
 
             fileMetaData.FileName = blobName;
@@ -1925,7 +1787,7 @@ namespace Sky.Cms.Controllers
             {
                 if (i == 0 && parts[i] != "pub")
                 {
-                    return Unauthorized("Must upload folders and files under /pub directory.");
+                    return Unauthorized("Must upload folders and files under /pub directory."); // guarded above by IsUploadPathSafe; defensive fallback
                 }
 
                 part = $"{part}/{parts[i]}";
