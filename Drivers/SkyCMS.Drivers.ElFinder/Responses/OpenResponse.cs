@@ -188,5 +188,17 @@ namespace SkyCMS.Drivers.ElFinder.Responses
         [JsonPropertyName("url")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string Url { get; set; }
+
+        /// <summary>
+        /// Gets or sets the canonical storage path for this entry (e.g. <c>/pub/articles/42</c>).
+        /// Always the real path, regardless of any display-name substitution applied to
+        /// <see cref="Name"/>.  Consumers such as the VS Code Explorer and the file
+        /// manager upload bar use this for server-side operations while the UI shows
+        /// the human-friendly <see cref="Name"/>.
+        /// Omitted from JSON when null (non-article/template entries do not need it).
+        /// </summary>
+        [JsonPropertyName("realPath")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string RealPath { get; set; }
     }
 }

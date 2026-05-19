@@ -12,10 +12,12 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse>
 {
     private readonly IElFinderStorageAdapter _adapter;
+    private readonly IElFinderNameResolver _nameResolver;
 
-    public TreeCommandHandler(IElFinderStorageAdapter adapter)
+    public TreeCommandHandler(IElFinderStorageAdapter adapter, IElFinderNameResolver nameResolver)
     {
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
+        _nameResolver = nameResolver ?? throw new ArgumentNullException(nameof(nameResolver));
     }
 
     public async Task<IElFinderResponse> Handle(TreeCommand request, CancellationToken cancellationToken)
@@ -47,7 +49,7 @@ public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse
             foreach (var entry in entries.Where(e => e.IsDirectory))
             {
                 var entryPath = targetPath.TrimEnd('/') + "/" + entry.Name;
-                response.Tree.Add(ConvertToElFinderObject(entry, entryPath));
+                response.Tree.Add(await ConvertToElFinderObjectAsync(entry, entryPath, cancellationToken));
             }
 
             response.VolumeId = request.VolumeId;
@@ -59,18 +61,22 @@ public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse
         }
     }
 
-    private ElFinderObject ConvertToElFinderObject(Cosmos.BlobService.FileManagerEntry entry, string path)
+    private async Task<ElFinderObject> ConvertToElFinderObjectAsync(Cosmos.BlobService.FileManagerEntry entry, string path, CancellationToken cancellationToken)
     {
         var hash = _adapter.EncodePath(path);
         var parentPath = path.TrimEnd('/');
         var lastSlash = parentPath.LastIndexOf('/');
         var phash = lastSlash >= 0 ? _adapter.EncodePath(parentPath.Substring(0, lastSlash + 1)) : _adapter.EncodePath("/");
 
+        var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
+        var rawName = entry.Name ?? string.Empty;
+        var nameWasSubstituted = !string.Equals(resolvedName, rawName, StringComparison.Ordinal);
+
         return new ElFinderObject
         {
             Hash = hash,
             PHash = phash,
-            Name = entry.Name,
+            Name = resolvedName,
             Size = entry.Size,
             Mime = "directory",
             Ts = new DateTimeOffset(entry.Modified).ToUnixTimeSeconds(),
@@ -78,6 +84,7 @@ public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse
             Write = 1,
             Locked = 0,
             Dirs = 1,
+            RealPath = nameWasSubstituted ? path.TrimEnd('/') : null,
         };
     }
 }

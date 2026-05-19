@@ -5,6 +5,7 @@
 
 namespace Sky.Tests.ElFinder.Contracts
 {
+    using System;
     using System.Text.Json;
     using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -32,7 +33,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public void Setup()
         {
             var adapter = BuildAdapter();
-            _handler = new OpenCommandHandler(adapter.Object);
+            _handler = new OpenCommandHandler(adapter.Object, BuildPassThroughNameResolver());
         }
 
         // ------------------------------------------------------------------ //
@@ -184,11 +185,130 @@ namespace Sky.Tests.ElFinder.Contracts
                 It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(false);
 
-            var handler = new OpenCommandHandler(adapter.Object);
+            var handler = new OpenCommandHandler(adapter.Object, BuildPassThroughNameResolver());
             var response = await handler.Handle(new OpenCommand(target: ImagesHash), default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Access denied must return ElFinderErrorResponse.");
+        }
+
+        // ------------------------------------------------------------------ //
+        //  Article-path: title substitution and dual-path contract             //
+        // ------------------------------------------------------------------ //
+
+        [TestMethod]
+        [Description("When opening /pub/articles/42, the cwd 'name' must be the article title, not the number.")]
+        public async Task Open_ArticleFolder_CwdNameIsArticleTitle()
+        {
+            var adapter = BuildAdapterWithArticles();
+            var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
+            var handler = new OpenCommandHandler(adapter.Object, resolver);
+
+            var response = await handler.Handle(new OpenCommand(target: ArticleFolderHash), default);
+            using var doc = SerializeResponse(response);
+
+            Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd),
+                "Response must contain 'cwd'.");
+            var name = AssertStringProperty(cwd, "name");
+            Assert.AreEqual(ArticleTitle, name,
+                $"cwd.name must be the article title '{ArticleTitle}', not the raw number '{ArticleNumber}'. " +
+                $"Check ArticleTitleNameResolver and OpenCommandHandler.BuildElFinderObjectAsync.");
+        }
+
+        [TestMethod]
+        [Description("When opening /pub/articles, the article-folder child 'name' must be the article title.")]
+        public async Task Open_ArticlesRootFolder_ChildNameIsArticleTitle()
+        {
+            var adapter = BuildAdapterWithArticles();
+            var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
+            var handler = new OpenCommandHandler(adapter.Object, resolver);
+
+            var response = await handler.Handle(new OpenCommand(target: ArticlesRootHash), default);
+            using var doc = SerializeResponse(response);
+
+            var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
+            var found = false;
+            foreach (var entry in files.EnumerateArray())
+            {
+                if (!entry.TryGetProperty("name", out var nameProp))
+                {
+                    continue;
+                }
+
+                if (string.Equals(nameProp.GetString(), ArticleTitle, StringComparison.Ordinal))
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(found,
+                $"No file entry with name='{ArticleTitle}' found in 'files'. " +
+                $"Article folder names under /pub/articles/{{number}} must use the article title.");
+        }
+
+        [TestMethod]
+        [Description("When opening /pub/articles, the article-folder child must carry 'realPath' = '/pub/articles/42'.")]
+        public async Task Open_ArticlesRootFolder_ChildRealPathIsCanonicalStoragePath()
+        {
+            var adapter = BuildAdapterWithArticles();
+            var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
+            var handler = new OpenCommandHandler(adapter.Object, resolver);
+
+            var response = await handler.Handle(new OpenCommand(target: ArticlesRootHash), default);
+            using var doc = SerializeResponse(response);
+
+            var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
+            string? foundRealPath = null;
+            foreach (var entry in files.EnumerateArray())
+            {
+                if (!entry.TryGetProperty("name", out var nameProp) ||
+                    !string.Equals(nameProp.GetString(), ArticleTitle, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                Assert.IsTrue(entry.TryGetProperty("realPath", out var rp),
+                    $"Article folder entry (name='{ArticleTitle}') must contain a 'realPath' field so consumers " +
+                    $"can access the canonical storage path alongside the friendly display name.");
+                foundRealPath = rp.GetString();
+                break;
+            }
+
+            Assert.IsNotNull(foundRealPath,
+                $"Could not find the article entry (name='{ArticleTitle}') in files array.");
+            Assert.AreEqual(ArticleRealPath, foundRealPath,
+                $"realPath must equal the canonical storage path '{ArticleRealPath}', not '{foundRealPath}'.");
+        }
+
+        [TestMethod]
+        [Description("Non-article folders must NOT carry a 'realPath' field (field is omitted when name is not substituted).")]
+        public async Task Open_NonArticleFolder_RealPathIsAbsent()
+        {
+            var adapter = BuildAdapterWithArticles();
+            var resolver = BuildPassThroughNameResolver();
+            var handler = new OpenCommandHandler(adapter.Object, resolver);
+
+            // Open the root; 'images' and 'docs' are plain folders — no title substitution.
+            var response = await handler.Handle(new OpenCommand(target: RootHash), default);
+            using var doc = SerializeResponse(response);
+
+            var files = AssertArrayProperty(doc.RootElement, "files");
+            foreach (var entry in files.EnumerateArray())
+            {
+                if (!entry.TryGetProperty("name", out var nameProp))
+                {
+                    continue;
+                }
+
+                var entryName = nameProp.GetString() ?? string.Empty;
+                if (entryName is "images" or "docs" or "articles")
+                {
+                    Assert.IsFalse(entry.TryGetProperty("realPath", out _),
+                        $"Plain folder '{entryName}' must NOT have 'realPath' — the field should be absent " +
+                        $"(WhenWritingNull) for entries whose display name was not substituted.");
+                }
+            }
         }
     }
 }

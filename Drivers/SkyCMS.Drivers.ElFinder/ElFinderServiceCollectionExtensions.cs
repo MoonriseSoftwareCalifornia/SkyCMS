@@ -30,6 +30,9 @@ public static class ElFinderServiceCollectionExtensions
         // Register storage adapter (keep first registration if app overrides in tests/startup).
         services.TryAddScoped<IElFinderStorageAdapter, ElFinderStorageAdapter>();
 
+        // Register default no-op name resolver; host can substitute a richer one before calling AddElFinderDriver.
+        services.TryAddScoped<IElFinderNameResolver, PassThroughNameResolver>();
+
         // Required path services for ElFinderStorageAdapter
         services.AddSingleton<IPathNormalizer, PathNormalizer>();
         services.AddSingleton<IPathValidator, PathValidator>();

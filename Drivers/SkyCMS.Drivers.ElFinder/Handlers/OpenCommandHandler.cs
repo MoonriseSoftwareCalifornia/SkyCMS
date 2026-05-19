@@ -18,10 +18,12 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse>
 {
     private readonly IElFinderStorageAdapter _adapter;
+    private readonly IElFinderNameResolver _nameResolver;
 
-    public OpenCommandHandler(IElFinderStorageAdapter adapter)
+    public OpenCommandHandler(IElFinderStorageAdapter adapter, IElFinderNameResolver nameResolver)
     {
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
+        _nameResolver = nameResolver ?? throw new ArgumentNullException(nameof(nameResolver));
     }
 
     public async Task<IElFinderResponse> Handle(OpenCommand request, CancellationToken cancellationToken)
@@ -61,7 +63,7 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
 
             // Build cwd object.
             bool isRoot = IsVolumeRoot(targetPath, request.RootPath);
-            response.Cwd = BuildElFinderObject(cwdEntry, targetPath, request.VolumeId, isRoot);
+            response.Cwd = await BuildElFinderObjectAsync(cwdEntry, targetPath, request.VolumeId, isRoot, cancellationToken);
 
             // Set cwd.Dirs based on whether any children are directories (no extra round-trip).
             response.Cwd.Dirs = entries.Any(e => e.IsDirectory) ? 1 : 0;
@@ -73,7 +75,7 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
             foreach (var entry in entries)
             {
                 var entryPath = targetPath.TrimEnd('/') + "/" + entry.Name;
-                response.Files.Add(BuildElFinderObject(entry, entryPath, request.VolumeId, false));
+                response.Files.Add(await BuildElFinderObjectAsync(entry, entryPath, request.VolumeId, false, cancellationToken));
             }
 
             // When tree=1 (panel navigation), include ancestor directories so the tree
@@ -93,7 +95,7 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
                     {
                         bool ancestorIsRoot = IsVolumeRoot(ancestorPath, request.RootPath);
                         // Insert ancestors before the children so the tree renders top-down.
-                        response.Files.Insert(1, BuildElFinderObject(ancestor, ancestorPath, request.VolumeId, ancestorIsRoot));
+                        response.Files.Insert(1, await BuildElFinderObjectAsync(ancestor, ancestorPath, request.VolumeId, ancestorIsRoot, cancellationToken));
                     }
                 }
             }
@@ -118,11 +120,12 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
 
     // ─── Helpers ────────────────────────────────────────────────────────────────
 
-    private ElFinderObject BuildElFinderObject(
+    private async Task<ElFinderObject> BuildElFinderObjectAsync(
         Cosmos.BlobService.FileManagerEntry entry,
         string path,
         string volumeId,
-        bool isRoot)
+        bool isRoot,
+        CancellationToken cancellationToken)
     {
         var hash = _adapter.EncodePath(path);
         var normalizedPath = path.TrimEnd('/');
@@ -131,11 +134,15 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
             ? _adapter.EncodePath(normalizedPath.Substring(0, lastSlash + 1))
             : _adapter.EncodePath("/");
 
+        var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
+        var rawName = entry.Name ?? string.Empty;
+        var nameWasSubstituted = !string.Equals(resolvedName, rawName, StringComparison.Ordinal);
+
         var obj = new ElFinderObject
         {
             Hash = hash,
             PHash = isRoot ? null : phash,
-            Name = entry.Name,
+            Name = resolvedName,
             Size = entry.Size,
             Mime = entry.IsDirectory ? "directory" : ElFinderMimeHelper.GetMimeType(entry.Name),
             Ts = new DateTimeOffset(entry.Modified).ToUnixTimeSeconds(),
@@ -143,6 +150,7 @@ public class OpenCommandHandler : IRequestHandler<OpenCommand, IElFinderResponse
             Write = 1,
             Locked = 0,
             Dirs = entry.IsDirectory ? 1 : 0,
+            RealPath = nameWasSubstituted ? normalizedPath : null,
         };
 
         if (isRoot)

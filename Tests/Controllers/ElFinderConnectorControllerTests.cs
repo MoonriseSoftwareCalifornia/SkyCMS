@@ -1,4 +1,4 @@
-// <copyright file="ElFinderConnectorControllerTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="FileManagerControllerTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -37,10 +37,10 @@ namespace Sky.Tests.Controllers
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Unit tests for <see cref="ElFinderConnectorController"/>.
+    /// Unit tests for <see cref="FileManagerController"/>.
     /// </summary>
     [TestClass]
-    public class ElFinderConnectorControllerTests : SkyCmsTestBase
+    public class FileManagerElFinderTests : SkyCmsTestBase
     {
         private const string VolumeId = "l1_";
         private ApplicationDbContext dbContext;
@@ -49,8 +49,8 @@ namespace Sky.Tests.Controllers
         private IStorageContext storage;
         private IEditorSettings editorSettings;
         private Mock<IMediator> mediator;
-        private Mock<ILogger<ElFinderConnectorController>> logger;
-        private ElFinderConnectorController controller;
+        private Mock<ILogger<FileManagerController>> logger;
+        private FileManagerController controller;
         private string testRoot;
 
         [TestInitialize]
@@ -63,12 +63,12 @@ namespace Sky.Tests.Controllers
             storage = Storage;
             editorSettings = EditorSettings;
             mediator = new Mock<IMediator>();
-            logger = new Mock<ILogger<ElFinderConnectorController>>();
+            logger = new Mock<ILogger<FileManagerController>>();
 
             testRoot = $"/pub/elfinder-tests-{Guid.NewGuid():N}";
             await storage.CreateFolder(testRoot);
 
-            controller = new ElFinderConnectorController(
+            controller = new FileManagerController(
                 dbContext,
                 userManager,
                 mediator.Object,
@@ -177,7 +177,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(EncodeHash(designPath), json["cwd"]?["phash"]?.ToString());
         }
 
-        // ─── OPEN – files[] content by mode ──────────────────────────────────
+        // â”€â”€â”€ OPEN â€“ files[] content by mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // Tree-restoration mode (init=1 or tree=1): files[] must contain the full
         // ancestor chain (root + siblings at every level + cwd + cwd children) so
@@ -247,7 +247,7 @@ namespace Sky.Tests.Controllers
             var files = (JArray)json["files"];
             Assert.IsNotNull(files);
 
-            // Build a hash→node lookup
+            // Build a hashâ†’node lookup
             var byHash = files
                 .Where(f => f["hash"] != null)
                 .ToDictionary(f => f["hash"]!.ToString(), f => f);
@@ -320,7 +320,7 @@ namespace Sky.Tests.Controllers
             {
                 ["cmd"]    = "open",
                 ["target"] = EncodeHash(level2),
-                ["tree"]   = "1",   // tree-restoration mode — this is where dedup matters
+                ["tree"]   = "1",   // tree-restoration mode â€” this is where dedup matters
             });
 
             var result = await controller.Connector();
@@ -442,7 +442,7 @@ namespace Sky.Tests.Controllers
             {
                 ["cmd"]    = "open",
                 ["target"] = EncodeHash(navFolder),
-                // Deliberately no tree=1 or init=1 — this is a regular navigation click
+                // Deliberately no tree=1 or init=1 â€” this is a regular navigation click
             });
 
             var result = await controller.Connector();
@@ -457,14 +457,14 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(hashes.Contains(EncodeHash(navChild)),
                 "Direct child of cwd must appear in navigation files[]");
 
-            // Root and ancestors must NOT appear — they are in the client's cache already.
+            // Root and ancestors must NOT appear â€” they are in the client's cache already.
             // Including them would cause elFinder to overwrite its cached sibling listings.
             Assert.IsFalse(hashes.Contains(EncodeHash("/pub")),
-                "Root must NOT appear in navigation files[] — it would overwrite the tree cache");
+                "Root must NOT appear in navigation files[] â€” it would overwrite the tree cache");
             Assert.IsFalse(hashes.Contains(EncodeHash(testRoot)),
                 "testRoot ancestor must NOT appear in navigation files[]");
             Assert.IsFalse(hashes.Contains(EncodeHash(navSibling)),
-                "Sibling of cwd must NOT appear in navigation files[] — that is the overwrite that drops it from the tree");
+                "Sibling of cwd must NOT appear in navigation files[] â€” that is the overwrite that drops it from the tree");
         }
 
         [TestMethod]
@@ -498,9 +498,9 @@ namespace Sky.Tests.Controllers
 
             // All sibling folders at the cwd's level must be in files[]
             Assert.IsTrue(hashes.Contains(EncodeHash(alpha)),
-                $"Sibling '{alpha}' must be in files[] (tree=1) — previously dropped due to ancestor-loop break");
+                $"Sibling '{alpha}' must be in files[] (tree=1) â€” previously dropped due to ancestor-loop break");
             Assert.IsTrue(hashes.Contains(EncodeHash(beta)),
-                $"Sibling '{beta}' must be in files[] (tree=1) — previously dropped due to ancestor-loop break");
+                $"Sibling '{beta}' must be in files[] (tree=1) â€” previously dropped due to ancestor-loop break");
             Assert.IsTrue(hashes.Contains(EncodeHash(target)),
                 $"Target '{target}' must be in files[]");
             Assert.IsTrue(hashes.Contains(EncodeHash("/pub")),
@@ -668,7 +668,7 @@ namespace Sky.Tests.Controllers
             await AssertEntryExists(testRoot + "/photo-1.jpg");
         }
 
-        // ─── DELETE (rm) TESTS ────────────────────────────────────────────────
+        // â”€â”€â”€ DELETE (rm) TESTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Rm_DeletesExistingFile_ReturnsHashInRemovedList()
@@ -900,7 +900,7 @@ namespace Sky.Tests.Controllers
             Assert.IsFalse(entries.Any(e => e.Path.EndsWith("valid-file.txt", StringComparison.OrdinalIgnoreCase)));
         }
 
-        // ─── PARENTS (TREE NAVIGATION) TESTS ────────────────────────────────
+        // â”€â”€â”€ PARENTS (TREE NAVIGATION) TESTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Parents_WithDeepPath_IncludesAllAncestorsAndSiblings()
@@ -1027,7 +1027,7 @@ namespace Sky.Tests.Controllers
                 "Target's child2 should be in tree");
         }
 
-        // ─── JSON SHAPE / PROTOCOL COMPLIANCE TESTS ──────────────────────────────
+        // â”€â”€â”€ JSON SHAPE / PROTOCOL COMPLIANCE TESTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // These tests assert that our responses match the elFinder protocol shape
         // expected by the JS client. They mirror what the studio-42.github.io reference
@@ -1104,7 +1104,7 @@ namespace Sky.Tests.Controllers
             {
                 Assert.IsNotNull(
                     dir["volumeid"],
-                    $"Directory '{dir["name"]}' (hash={dir["hash"]}) is missing volumeid — elFinder cannot anchor it in the tree");
+                    $"Directory '{dir["name"]}' (hash={dir["hash"]}) is missing volumeid â€” elFinder cannot anchor it in the tree");
                 Assert.AreEqual(VolumeId, dir["volumeid"]?.ToString(),
                     $"Directory '{dir["name"]}' has wrong volumeid value");
             }
@@ -1142,7 +1142,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task Connector_Open_NonDirectoryFilesDoNotHaveVolumeId()
         {
-            // Regular files (non-directories) must NOT carry volumeid — protocol compliance.
+            // Regular files (non-directories) must NOT carry volumeid â€” protocol compliance.
             var folder = testRoot + "/shape-files";
             await storage.CreateFolder(folder);
             await CreateTestFile(folder + "/doc.txt", "content");
@@ -1186,7 +1186,7 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(options["uploadMaxConn"],
                 "options.uploadMaxConn must be present (elFinder protocol key)");
             Assert.IsNull(options["uploadMaxConnections"],
-                "options.uploadMaxConnections must NOT be present — wrong key, elFinder ignores it");
+                "options.uploadMaxConnections must NOT be present â€” wrong key, elFinder ignores it");
         }
 
         [TestMethod]
@@ -1229,7 +1229,7 @@ namespace Sky.Tests.Controllers
             var json = AsJsonObject(result);
 
             Assert.IsNull(json["api"],
-                "api must NOT appear on a non-init open — it would trigger client re-init and clear the tree");
+                "api must NOT appear on a non-init open â€” it would trigger client re-init and clear the tree");
             Assert.IsNull(json["uplMaxSize"],
                 "uplMaxSize must NOT appear on a non-init open");
         }
@@ -1391,7 +1391,7 @@ namespace Sky.Tests.Controllers
             await storage.AppendBlob(stream, metadata);
         }
 
-        // ─── CQRS PARITY TESTS ────────────────────────────────────────────
+        // â”€â”€â”€ CQRS PARITY TESTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_CqrsOpen_WithValidTarget_ReturnsCwdAndFiles()
@@ -1483,7 +1483,7 @@ namespace Sky.Tests.Controllers
             var contentResult = (ContentResult)result;
             var parsed = JObject.Parse(contentResult.Content!);
 
-            // elFinder protocol requires lowercase keys — "tree" not "Tree", "hash" not "Hash".
+            // elFinder protocol requires lowercase keys â€” "tree" not "Tree", "hash" not "Hash".
             Assert.IsNotNull(parsed["tree"], "Response body must have lowercase 'tree' key");
             Assert.IsNull(parsed["Tree"], "Response body must NOT have PascalCase 'Tree' key");
 
@@ -1627,7 +1627,7 @@ namespace Sky.Tests.Controllers
 
             var result = await controller.Connector();
             var json = AsJsonObject(result);
-            // No MediatR in test context — falls back to legacy handler
+            // No MediatR in test context â€” falls back to legacy handler
             Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
             var changed = (JArray)json["changed"];
             Assert.IsNotNull(changed);
@@ -1653,7 +1653,7 @@ namespace Sky.Tests.Controllers
 
             var result = await controller.Connector();
             var json = AsJsonObject(result);
-            // Fallback to legacy (no MediatR in test context) — verify no error response
+            // Fallback to legacy (no MediatR in test context) â€” verify no error response
             Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
         }
 
@@ -1752,7 +1752,7 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(json["size"]);
         }
 
-        // ─── TREE ─────────────────────────────────────────────────────────────
+        // â”€â”€â”€ TREE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Tree_WithValidTarget_ReturnsOnlyDirectories()
@@ -1793,7 +1793,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("errAccess", json["error"]?.ToString());
         }
 
-        // ─── LS ───────────────────────────────────────────────────────────────
+        // â”€â”€â”€ LS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Ls_WithValidTarget_ReturnsHashToNameMap()
@@ -1835,7 +1835,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("errAccess", json["error"]?.ToString());
         }
 
-        // ─── GET ──────────────────────────────────────────────────────────────
+        // â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Get_OnExistingTextFile_ReturnsContent()
@@ -1871,7 +1871,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("errAccess", json["error"]?.ToString());
         }
 
-        // ─── PUT ──────────────────────────────────────────────────────────────
+        // â”€â”€â”€ PUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Put_UpdatesFileContent_ReturnsChangedEntry()
@@ -1911,7 +1911,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("errAccess", json["error"]?.ToString());
         }
 
-        // ─── PASTE (copy) ─────────────────────────────────────────────────────
+        // â”€â”€â”€ PASTE (copy) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Paste_Copy_CreatesFileInDestination_SourcePreserved()
@@ -1959,7 +1959,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("errAccess", json["error"]?.ToString());
         }
 
-        // ─── PASTE (cut / move) ───────────────────────────────────────────────
+        // â”€â”€â”€ PASTE (cut / move) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Paste_Cut_MovesFileToDestination_SourceRemovedFromResponse()
@@ -1989,7 +1989,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(EncodeHash(srcPath), removed[0]?.ToString());
         }
 
-        // ─── TMB ──────────────────────────────────────────────────────────────
+        // â”€â”€â”€ TMB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Tmb_WithImageTarget_ReturnsHashToUrlMap()
@@ -2036,7 +2036,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(0, images.Count, "Non-image file should produce no thumbnail entry");
         }
 
-        // ─── INFO ─────────────────────────────────────────────────────────────
+        // â”€â”€â”€ INFO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Info_WithValidTarget_ReturnsFileMetadata()
@@ -2080,7 +2080,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(0, files.Count, "Invalid hash should be silently skipped");
         }
 
-        // ─── SIZE ─────────────────────────────────────────────────────────────
+        // â”€â”€â”€ SIZE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Size_WithValidFile_ReturnsNonNegativeNumericTotal()
@@ -2131,7 +2131,7 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(sizeB >= 0, "File B size must be non-negative");
         }
 
-        // ─── RENAME (success path) ────────────────────────────────────────────
+        // â”€â”€â”€ RENAME (success path) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Rename_WithValidNewName_ReturnsAddedAndRemoved()
@@ -2177,7 +2177,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("errInvName", json["error"]?.ToString());
         }
 
-        // ─── UPLOAD (success path) ────────────────────────────────────────────
+        // â”€â”€â”€ UPLOAD (success path) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [TestMethod]
         public async Task Connector_Upload_BasicSuccess_ReturnsAddedEntry()
@@ -2200,7 +2200,7 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual("upload-basic.jpg", added[0]?["name"]?.ToString());
         }
 
-        // ─── REGRESSION TESTS (bug fixes) ────────────────────────────────────
+        // â”€â”€â”€ REGRESSION TESTS (bug fixes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>
         /// Regression: the "tmb" field in file listings must contain only the encoded path
@@ -2236,7 +2236,7 @@ namespace Sky.Tests.Controllers
             var tmb = imageFile["tmb"]?.ToString();
             Assert.IsNotNull(tmb, "Image file should have a tmb field");
 
-            // The tmb value must NOT be a full URL path — it must be the suffix that
+            // The tmb value must NOT be a full URL path â€” it must be the suffix that
             // gets appended to tmbUrl. elFinder builds: tmbUrl + tmb.
             // tmbUrl = "/FileManager/GetImageThumbnail?target="
             // So tmb must NOT start with "/FileManager/..."
@@ -2258,7 +2258,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task Connector_Parents_VirtualDirectory_ReturnsTreeNotAccessError()
         {
-            // Arrange: create a nested path — the inner directory is a virtual path
+            // Arrange: create a nested path â€” the inner directory is a virtual path
             var level1Path = testRoot + "/design";
             var level2Path = level1Path + "/images";
             await storage.CreateFolder(level1Path);
@@ -2320,3 +2320,5 @@ namespace Sky.Tests.Controllers
         }
     }
 }
+
+

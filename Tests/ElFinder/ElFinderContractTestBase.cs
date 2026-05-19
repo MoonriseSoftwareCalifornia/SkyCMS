@@ -120,6 +120,115 @@ namespace Sky.Tests.ElFinder
         /// </code>
         /// Individual tests can add <c>.Setup()</c> calls on the returned mock.
         /// </summary>
+        // ------------------------------------------------------------------ //
+        //  Article-path test fixtures                                          //
+        // ------------------------------------------------------------------ //
+
+        /// <summary>Article number used in article-path fixture tests.</summary>
+        protected const int ArticleNumber = 42;
+
+        /// <summary>Expected article title for the fixture article.</summary>
+        protected const string ArticleTitle = "My Great Article";
+
+        /// <summary>Canonical storage path for the article folder (no leading slash, matching adapter layer convention).</summary>
+        protected const string ArticleRealPath = "pub/articles/42";
+
+        /// <summary>Hash encoding of the <see cref="ArticleRealPath"/> path.</summary>
+        protected static readonly string ArticlesRootHash = AdapterHashHelper.Encode("pub/articles/");
+
+        /// <summary>Hash encoding of the article folder itself.</summary>
+        protected static readonly string ArticleFolderHash = AdapterHashHelper.Encode("pub/articles/42/");
+
+        // ------------------------------------------------------------------ //
+        //  Name resolver helpers                                               //
+        // ------------------------------------------------------------------ //
+
+        /// <summary>
+        /// Returns a no-op <see cref="IElFinderNameResolver"/> for use in tests that
+        /// do not require article-title substitution.  The resolver returns the raw
+        /// entry name unchanged for every path.
+        /// </summary>
+        protected static IElFinderNameResolver BuildPassThroughNameResolver()
+        {
+            var mock = new Mock<IElFinderNameResolver>();
+            mock.Setup(r => r.ResolveNameAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+                .Returns<string, string, System.Threading.CancellationToken>((_, name, _) => System.Threading.Tasks.Task.FromResult(name));
+            return mock.Object;
+        }
+
+        /// <summary>
+        /// Returns an <see cref="IElFinderNameResolver"/> that substitutes the raw
+        /// article-number name with <paramref name="title"/> when the path is exactly
+        /// <c>/pub/articles/{articleNumber}</c> (i.e. the article folder itself).
+        /// All other paths return the raw name unchanged, matching the behaviour of
+        /// <see cref="Sky.Cms.Services.ArticleTitleNameResolver"/>.
+        /// </summary>
+        protected static IElFinderNameResolver BuildArticleTitleNameResolver(int articleNumber, string title)
+        {
+            var mock = new Mock<IElFinderNameResolver>();
+            mock.Setup(r => r.ResolveNameAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+                .Returns<string, string, System.Threading.CancellationToken>((path, rawName, _) =>
+                {
+                    // Mimic ArticleTitleNameResolver: only substitute the immediate
+                    // article-folder segment (segments[2] == rawName == articleNumber).
+                    var normalized = path.TrimEnd('/');
+                    var segments = normalized.Split('/', System.StringSplitOptions.RemoveEmptyEntries);
+                    if (segments.Length >= 3
+                        && string.Equals(segments[0], "pub", System.StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(segments[1], "articles", System.StringComparison.OrdinalIgnoreCase)
+                        && int.TryParse(segments[2], out var n)
+                        && n == articleNumber
+                        && string.Equals(rawName, articleNumber.ToString(), System.StringComparison.Ordinal))
+                    {
+                        return System.Threading.Tasks.Task.FromResult(title);
+                    }
+
+                    return System.Threading.Tasks.Task.FromResult(rawName);
+                });
+            return mock.Object;
+        }
+
+        /// <summary>
+        /// Builds a mock adapter that extends the standard test tree with an
+        /// <c>/pub/articles/</c> root and a single article folder <c>/pub/articles/42/</c>.
+        /// </summary>
+        protected static Mock<IElFinderStorageAdapter> BuildAdapterWithArticles()
+        {
+            var mock = BuildAdapter();
+
+            var articlesRoot = MakeDir("pub/articles/", "articles", hasChildren: true);
+            var articleFolder = MakeDir("pub/articles/42/", ArticleNumber.ToString(), hasChildren: false);
+
+            // pub/ children now include both images/, docs/, and articles/
+            mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub" || p == "pub/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry>
+                {
+                    MakeDir("pub/images/", "images", hasChildren: true),
+                    MakeDir("pub/docs/", "docs", hasChildren: false),
+                    articlesRoot,
+                });
+
+            mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub/articles" || p == "pub/articles/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { articleFolder });
+
+            mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub/articles/42" || p == "pub/articles/42/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry>());
+
+            mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == "pub/articles" || p == "pub/articles/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(articlesRoot);
+
+            mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == "pub/articles/42" || p == "pub/articles/42/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(articleFolder);
+
+            mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == "pub/articles" || p == "pub/articles/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true) });
+
+            mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == "pub/articles/42" || p == "pub/articles/42/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true), articlesRoot });
+
+            return mock;
+        }
+
         protected static Mock<IElFinderStorageAdapter> BuildAdapter()
         {
             var mock = new Mock<IElFinderStorageAdapter>(MockBehavior.Strict);

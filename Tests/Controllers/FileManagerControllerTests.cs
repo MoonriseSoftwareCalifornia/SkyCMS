@@ -63,22 +63,20 @@ namespace Sky.Tests.Controllers
             mockViewRenderService = new Mock<IViewRenderService>();
             mockArticleQueries = new Mock<CommonMediator>();
 
-            var titleResolver = new PublicFileEntryTitleResolver(Db);
             controller = new FileManagerController(
+                Db,
+                UserManager,
+                mockArticleQueries.Object,
+                LayoutCacheService,
+                isolatedStorage,
                 EditorSettings,
                 mockLogger.Object,
-                Db,
-                isolatedStorage,
-                UserManager,
-                Logic,
-                mockArticleQueries.Object,
-                mockHostEnvironment.Object,
-                mockViewRenderService.Object,
-                LayoutCacheService,
-                DynamicConfigurationProvider,
+                new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(),
                 new MemoryCache(new MemoryCacheOptions()),
-                titleResolver,
-                new FolderListingService(Db, isolatedStorage, titleResolver));
+                DynamicConfigurationProvider,
+                Logic,
+                mockHostEnvironment.Object,
+                mockViewRenderService.Object);
 
             // Setup HttpContext for the controller
             var httpContext = new DefaultHttpContext();
@@ -171,7 +169,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
-            Assert.AreEqual("~/Views/Shared/FileExplorer/Index.cshtml", viewResult.ViewName);
+            Assert.AreEqual("~/Views/Shared/FileExplorer/index.cshtml", viewResult.ViewName);
         }
 
         /// <summary>
@@ -192,7 +190,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
-            Assert.AreEqual("~/Views/Shared/FileExplorer/IndexModern.cshtml", viewResult.ViewName);
+            Assert.AreEqual("~/Views/Shared/FileExplorer/index.cshtml", viewResult.ViewName);
         }
 
         /// <summary>
@@ -1616,20 +1614,19 @@ namespace Sky.Tests.Controllers
 
             var titleResolver2 = new PublicFileEntryTitleResolver(Db);
             var sut = new FileManagerController(
+                Db,
+                UserManager,
+                mockArticleQueries.Object,
+                LayoutCacheService,
+                isolatedStorage,
                 settingsMock.Object,
                 mockLogger.Object,
-                Db,
-                isolatedStorage,
-                UserManager,
-                Logic,
-                mockArticleQueries.Object,
-                mockHostEnvironment.Object,
-                mockViewRenderService.Object,
-                LayoutCacheService,
-                DynamicConfigurationProvider,
+                new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(),
                 new MemoryCache(new MemoryCacheOptions()),
-                titleResolver2,
-                new FolderListingService(Db, isolatedStorage, titleResolver2));
+                DynamicConfigurationProvider,
+                Logic,
+                mockHostEnvironment.Object,
+                mockViewRenderService.Object);
 
             var httpContext = new DefaultHttpContext();
             httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
