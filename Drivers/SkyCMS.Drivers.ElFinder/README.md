@@ -18,7 +18,7 @@ This driver bridges the gap between the elFinder UI (JavaScript file browser) an
 ```
 elFinder UI
     ↓ (JSON protocol)
-ElFinderConnectorController
+FileManagerController
     ↓ (dispatches)
 ElFinder CQRS Commands (MediatR)
     ↓ (handles)
@@ -53,7 +53,7 @@ IStorageContext (SkyCMS backend)
 
 ## Usage
 
-The driver is wired via MediatR. Example from `ElFinderConnectorController`:
+The driver is wired via MediatR. Example from `FileManagerController`:
 
 ```csharp
 // init request (first load)

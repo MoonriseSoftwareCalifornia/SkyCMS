@@ -31,6 +31,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.GetEditable;
     using Sky.Editor.Features.Articles.Inventory;
+    using Sky.Editor.Features.Articles.Restore;
     using Sky.Editor.Features.Layouts.GetEditable;
     using Sky.Editor.Features.Templates.Create;
     using Sky.Editor.Features.Templates.Get;
@@ -70,6 +71,8 @@ namespace Sky.Cms.Controllers
         private readonly IPublishingService publishingService;
         private readonly IPublicFileEntryTitleResolver titleResolver;
         private readonly IFolderListingService folderListingService;
+        private readonly IContentCatalogService contentCatalog;
+        private readonly IFileOperationsService fileOperations;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VsCodeController"/> class.
@@ -86,6 +89,8 @@ namespace Sky.Cms.Controllers
         /// <param name="publishingService">Publishing service for unpublish operations.</param>
         /// <param name="titleResolver">Shared file entry title resolver.</param>
         /// <param name="folderListingService">Shared folder-listing service.</param>
+        /// <param name="contentCatalog">Content catalog service for article/template queries.</param>
+        /// <param name="fileOperations">File operations service for common file/folder operations.</param>
         public VsCodeController(
             ApplicationDbContext dbContext,
             ILogger<VsCodeController> logger,
@@ -98,7 +103,9 @@ namespace Sky.Cms.Controllers
             ArticleEditLogic articleLogic,
             IPublishingService publishingService,
             IPublicFileEntryTitleResolver titleResolver,
-            IFolderListingService folderListingService)
+            IFolderListingService folderListingService,
+            IContentCatalogService contentCatalog,
+            IFileOperationsService fileOperations)
         {
             this.dbContext = dbContext;
             this.logger = logger;
@@ -112,6 +119,8 @@ namespace Sky.Cms.Controllers
             this.publishingService = publishingService;
             this.titleResolver = titleResolver;
             this.folderListingService = folderListingService;
+            this.contentCatalog = contentCatalog;
+            this.fileOperations = fileOperations;
         }
 
         /// <summary>
@@ -519,32 +528,16 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var blogStreamType = (int)Cosmos.Cms.Common.ArticleType.BlogStream;
-            var all = await dbContext.Articles
-                .AsNoTracking()
-                .Where(a => a.ArticleType == blogStreamType)
-                .Select(a => new
-                {
-                    a.ArticleNumber,
-                    a.VersionNumber,
-                    a.Title,
-                    a.BlogKey,
-                })
-                .ToListAsync();
+            var latest = await contentCatalog.GetBlogStreamsAsync();
 
-            var latest = all
-                .GroupBy(a => a.ArticleNumber)
-                .Select(g => g.OrderByDescending(a => a.VersionNumber).First())
-                .OrderBy(a => a.Title)
-                .Select(a => new
-                {
-                    articleNumber = a.ArticleNumber,
-                    name = a.Title,
-                    blogKey = a.BlogKey,
-                })
-                .ToList();
+            var result = latest.Select(a => new
+            {
+                articleNumber = a.ArticleNumber,
+                name = a.Title,
+                blogKey = a.BlogKey,
+            }).ToList();
 
-            return Ok(latest);
+            return Ok(result);
         }
 
         /// <summary>
@@ -566,35 +559,17 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Blog key is required." });
             }
 
-            var blogPostType = (int)Cosmos.Cms.Common.ArticleType.BlogPost;
-            var all = await dbContext.Articles
-                .AsNoTracking()
-                .Where(a => a.BlogKey == blogKey && a.ArticleType == blogPostType)
-                .Select(a => new
-                {
-                    a.Id,
-                    a.ArticleNumber,
-                    a.VersionNumber,
-                    a.Title,
-                    a.Published,
-                })
-                .ToListAsync();
+            var latest = await contentCatalog.GetBlogPostsAsync(blogKey);
 
-            var now = DateTimeOffset.UtcNow;
-            var latest = all
-                .GroupBy(a => a.ArticleNumber)
-                .Select(g => g.OrderByDescending(a => a.VersionNumber).First())
-                .OrderByDescending(a => a.Published ?? DateTimeOffset.MinValue)
-                .Select(a => new
-                {
-                    id = a.Id,
-                    articleNumber = a.ArticleNumber,
-                    title = a.Title,
-                    isPublished = a.Published.HasValue && a.Published <= now,
-                })
-                .ToList();
+            var result = latest.Select(a => new
+            {
+                id = a.Id,
+                articleNumber = a.ArticleNumber,
+                title = a.Title,
+                isPublished = a.IsPublished,
+            }).ToList();
 
-            return Ok(latest);
+            return Ok(result);
         }
 
         /// <summary>
@@ -1078,6 +1053,40 @@ namespace Sky.Cms.Controllers
             }
 
             await publishingService.UnpublishAsync(article);
+            return Ok();
+        }
+
+        /// <summary>
+        /// Restores a deleted article back to active status.
+        /// </summary>
+        /// <param name="articleNumber">Article number.</param>
+        /// <returns>Success, not found, or bad request.</returns>
+        [HttpPost("articles/{articleNumber:int}/restore")]
+        public async Task<IActionResult> RestoreArticle(int articleNumber)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var article = await GetLatestArticleVersion(articleNumber);
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            var result = await mediator.SendAsync<CommandResult<Unit>>(new RestoreArticleCommand
+            {
+                ArticleNumber = articleNumber,
+                UserId = User.Identity?.Name ?? string.Empty,
+            });
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage ?? "Failed to restore article.");
+            }
+
             return Ok();
         }
 
@@ -1685,7 +1694,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                var entry = await storageContext.GetFileAsync(path);
+                var entry = await fileOperations.GetFileAsync(path);
                 if (entry == null)
                 {
                     return NotFound();
@@ -1736,7 +1745,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                using (var stream = await storageContext.GetStreamAsync(path))
+                using (var stream = await fileOperations.GetFileStreamAsync(path))
                 {
                     if (stream == null)
                     {
@@ -1744,7 +1753,7 @@ namespace Sky.Cms.Controllers
                     }
 
                     // We need to get the content type.
-                    var metaData = await storageContext.GetFileAsync(path);
+                    var metaData = await fileOperations.GetFileAsync(path);
                     var contentType = string.IsNullOrWhiteSpace(metaData?.ContentType)
                         ? "application/octet-stream"
                         : metaData.ContentType;
@@ -1794,7 +1803,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                await storageContext.DeleteFileAsync(path);
+                await fileOperations.DeleteFileAsync(path);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1834,7 +1843,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                await storageContext.DeleteFolderAsync(path);
+                await fileOperations.DeleteFolderAsync(path);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1874,7 +1883,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                var entry = await storageContext.CreateFolder(path);
+                var entry = await fileOperations.CreateFolderAsync(path);
                 return StatusCode(201, new
                 {
                     name = entry.Name,
@@ -1955,7 +1964,7 @@ namespace Sky.Cms.Controllers
                     TotalFileSize = memoryStream.Length,
                 };
 
-                await storageContext.AppendBlob(memoryStream, metaData, Cosmos.BlobService.StorageConstants.UploadModeBlock);
+                await fileOperations.UploadFileAsync(path, memoryStream, metaData);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -2001,7 +2010,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                await storageContext.MoveFileAsync(sourcePath, request.Destination);
+                await fileOperations.MoveFileAsync(sourcePath, request.Destination);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -2047,7 +2056,7 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                await storageContext.MoveFolderAsync(sourcePath, request.Destination);
+                await fileOperations.MoveFolderAsync(sourcePath, request.Destination);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)

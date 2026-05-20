@@ -76,6 +76,8 @@ namespace Sky.Tests.Controllers
                 NullLogger<LayoutVersioningService>.Instance);
 
             var titleResolver = new PublicFileEntryTitleResolver(Db);
+            var contentCatalog = new ContentCatalogService(Db);
+            var fileOperations = new FileOperationsService(mockStorageContext.Object, NullLogger<FileOperationsService>.Instance);
             controller = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -88,7 +90,9 @@ namespace Sky.Tests.Controllers
                 ArticleEditLogic,
                 PublishingService,
                 titleResolver,
-                new FolderListingService(Db, mockStorageContext.Object, titleResolver));
+                new FolderListingService(Db, mockStorageContext.Object, titleResolver),
+                contentCatalog,
+                fileOperations);
 
             controller.ControllerContext = new ControllerContext
             {
@@ -1170,6 +1174,43 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task RestoreArticle_DeletedArticle_ReturnsOk()
+        {
+            var article = new Cosmos.Common.Data.Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 321,
+                Title = "Deleted Article",
+                VersionNumber = 1,
+                StatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted,
+                UserId = TestUserId.ToString(),
+                UrlPath = "deleted-article",
+                Updated = DateTimeOffset.UtcNow,
+                Published = DateTimeOffset.UtcNow,
+            };
+
+            Db.Articles.Add(article);
+            await Db.SaveChangesAsync();
+
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.RestoreArticle(article.ArticleNumber);
+
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+            var restored = Db.Articles.First(a => a.ArticleNumber == article.ArticleNumber);
+            Assert.AreEqual((int)Cosmos.Common.Data.Logic.StatusCodeEnum.Active, restored.StatusCode);
+            Assert.IsNull(restored.Published);
+        }
+
+        [TestMethod]
+        public async Task RestoreArticle_MissingArticle_ReturnsNotFound()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+            var result = await controller.RestoreArticle(99999);
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        [TestMethod]
         public async Task CreateArticle_ReturnsNewArticleNumber()
         {
             controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
@@ -1409,6 +1450,8 @@ namespace Sky.Tests.Controllers
                 NullLogger<LayoutVersioningService>.Instance);
 
             var localTitleResolver = new PublicFileEntryTitleResolver(Db);
+            var localContentCatalog = new ContentCatalogService(Db);
+            var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
             var localController = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -1421,7 +1464,9 @@ namespace Sky.Tests.Controllers
                 ArticleEditLogic,
                 PublishingService,
                 localTitleResolver,
-                new FolderListingService(Db, storageMock.Object, localTitleResolver));
+                new FolderListingService(Db, storageMock.Object, localTitleResolver),
+                localContentCatalog,
+                localFileOperations);
 
             localController.ControllerContext = new ControllerContext
             {
@@ -1479,6 +1524,8 @@ namespace Sky.Tests.Controllers
                 NullLogger<LayoutVersioningService>.Instance);
 
             var localTitleResolver = new PublicFileEntryTitleResolver(Db);
+            var localContentCatalog = new ContentCatalogService(Db);
+            var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
             var localController = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -1491,7 +1538,9 @@ namespace Sky.Tests.Controllers
                 ArticleEditLogic,
                 PublishingService,
                 localTitleResolver,
-                new FolderListingService(Db, storageMock.Object, localTitleResolver));
+                new FolderListingService(Db, storageMock.Object, localTitleResolver),
+                localContentCatalog,
+                localFileOperations);
 
             localController.ControllerContext = new ControllerContext
             {
@@ -1551,6 +1600,8 @@ namespace Sky.Tests.Controllers
                 NullLogger<LayoutVersioningService>.Instance);
 
             var localTitleResolver = new PublicFileEntryTitleResolver(Db);
+            var localContentCatalog = new ContentCatalogService(Db);
+            var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
             var localController = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -1563,7 +1614,9 @@ namespace Sky.Tests.Controllers
                 ArticleEditLogic,
                 PublishingService,
                 localTitleResolver,
-                new FolderListingService(Db, storageMock.Object, localTitleResolver));
+                new FolderListingService(Db, storageMock.Object, localTitleResolver),
+                localContentCatalog,
+                localFileOperations);
 
             localController.ControllerContext = new ControllerContext
             {

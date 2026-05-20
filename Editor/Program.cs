@@ -332,6 +332,8 @@ builder.Services.AddScoped<ILayoutVersioningService, LayoutVersioningService>();
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 builder.Services.AddScoped<IPublicFileEntryTitleResolver, PublicFileEntryTitleResolver>();
 builder.Services.AddScoped<IFolderListingService, FolderListingService>();
+builder.Services.AddScoped<IContentCatalogService, ContentCatalogService>();
+builder.Services.AddScoped<IFileOperationsService, FileOperationsService>();
 
 // Register shared query services (Common namespace - used by both Editor and Publisher)
 builder.Services.AddScoped<IArticleCatalogQueryService>(sp =>

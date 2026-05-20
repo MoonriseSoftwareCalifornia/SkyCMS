@@ -448,11 +448,11 @@ The `TryAddScoped` pattern means tests or the host app can override `IElFinderSt
 ### In Controller
 
 ```csharp
-public class ElFinderConnectorController : Controller
+public class FileManagerController : Controller
 {
     private readonly IMediator _mediator;
 
-    public ElFinderConnectorController(IMediator mediator)
+    public FileManagerController(IMediator mediator, ...)
     {
         _mediator = mediator;
     }
