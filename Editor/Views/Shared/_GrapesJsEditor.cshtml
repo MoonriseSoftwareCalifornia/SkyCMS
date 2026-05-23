@@ -365,19 +365,23 @@
 
     let editor; // Define globally as is used by methods.
 
-    window.onload = () => {
-        editor = grapesjs.init({
-            // Indicate where to init the editor. You can also pass an HTMLElement
-            container: '#gjs',
-            // Get the content for the canvas directly from the element
-            // As an alternative we could use: `components: '<h1>Hello World Component!</h1>,
-            // Size of the editor
-            height: "100%",
-            width: 'auto',
-            canvas: {
-                styles: grapesjs__canvas__styles,
-                scripts: grapesjs__canvas__scripts
-            },
+    if (!window.ccmsGrapesJsEditorInitialized) {
+        window.ccmsGrapesJsEditorInitialized = true;
+        window.addEventListener('load', () => {
+            editor = grapesjs.init({
+                // Indicate where to init the editor. You can also pass an HTMLElement
+                container: '#gjs',
+                fromElement: true,
+                showOffsets: true,
+                // Get the content for the canvas directly from the element
+                // As an alternative we could use: `components: '<h1>Hello World Component!</h1>,
+                // Size of the editor
+                height: "100%",
+                width: 'auto',
+                canvas: {
+                    styles: grapesjs__canvas__styles,
+                    scripts: grapesjs__canvas__scripts
+                },
             assetManager: {
                 upload: cosmos__designerUploadEndpoint,
                 embedAsBase64: false,
@@ -821,7 +825,7 @@
             var openBlocksBtn = editor.Panels.getButton('views', 'open-blocks');
             openBlocksBtn && openBlocksBtn.set('active', 1);
 
-        });
+        }); // Repaired.
     }
 
     //data-ccms-ceid: ccms___generateGUID(), class: 'ck-content'
