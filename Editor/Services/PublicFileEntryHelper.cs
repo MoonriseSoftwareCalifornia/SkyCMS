@@ -17,8 +17,29 @@ namespace Sky.Cms.Services
     using MimeTypes;
     using SkyCMS.Drivers.ElFinder;
 
+    /// <summary>
+    /// Provides helper methods for file path manipulation, validation, and display name resolution
+    /// in the SkyCMS public file management system.
+    /// </summary>
     public static class PublicFileEntryHelper
     {
+        /// <summary>
+        /// Normalizes a file path by converting backslashes to forward slashes, removing duplicate slashes,
+        /// ensuring the path starts with a forward slash, and removing trailing slashes (except for root).
+        /// </summary>
+        /// <param name="path">The path to normalize.</param>
+        /// <returns>
+        /// A normalized path string that starts with '/', contains no duplicate slashes,
+        /// and has no trailing slash (unless it is the root path "/").
+        /// Returns "/" if the input is null, empty, or whitespace.
+        /// </returns>
+        /// <example>
+        /// <code>
+        /// NormalizePath("foo\\bar//baz/") returns "/foo/bar/baz"
+        /// NormalizePath("") returns "/"
+        /// NormalizePath("pub/articles") returns "/pub/articles"
+        /// </code>
+        /// </example>
         public static string NormalizePath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -45,6 +66,19 @@ namespace Sky.Cms.Services
             return clean;
         }
 
+        /// <summary>
+        /// Determines whether the specified path is within the given root path,
+        /// preventing path traversal attacks by rejecting paths containing "..".
+        /// </summary>
+        /// <param name="path">The path to check.</param>
+        /// <param name="rootPath">The root path that should contain the path.</param>
+        /// <returns>
+        /// <see langword="true"/> if the path is within the root path and does not contain "..";
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// This method normalizes both paths before comparison and uses case-insensitive matching.
+        /// </remarks>
         public static bool IsPathWithinRoot(string path, string rootPath)
         {
             if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(rootPath))
@@ -64,6 +98,14 @@ namespace Sky.Cms.Services
                 || normalizedPath.StartsWith(normalizedRoot + "/", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Retrieves the display name for a file manager entry, including the file extension if present.
+        /// </summary>
+        /// <param name="entry">The file manager entry.</param>
+        /// <returns>
+        /// For directories, returns the name. For files, returns the name with extension appended
+        /// (if not already present). Returns an empty string if the entry name is null.
+        /// </returns>
         public static string GetDisplayName(FileManagerEntry entry)
         {
             if (entry.IsDirectory)
@@ -89,6 +131,14 @@ namespace Sky.Cms.Services
                 : name + ext;
         }
 
+        /// <summary>
+        /// Determines the MIME type for a file manager entry.
+        /// </summary>
+        /// <param name="entry">The file manager entry.</param>
+        /// <returns>
+        /// Returns "directory" for directories, or the MIME type based on the file extension
+        /// for files (e.g., "image/png", "text/html").
+        /// </returns>
         public static string GetEntryMimeType(FileManagerEntry entry)
         {
             if (entry.IsDirectory)
@@ -100,6 +150,17 @@ namespace Sky.Cms.Services
             return MimeTypeMap.GetMimeType(extension);
         }
 
+        /// <summary>
+        /// Resolves the full path for a file manager entry, using either its explicit path
+        /// or combining the parent path with the entry's display name.
+        /// </summary>
+        /// <param name="parentPath">The parent directory path.</param>
+        /// <param name="entry">The file manager entry.</param>
+        /// <returns>
+        /// A normalized absolute path. If the entry has an explicit path, that path is used.
+        /// Otherwise, the display name is appended to the parent path.
+        /// If the entry has no name, "untitled" is used as the filename.
+        /// </returns>
         public static string ResolveEntryPath(string parentPath, FileManagerEntry entry)
         {
             if (!string.IsNullOrWhiteSpace(entry.Path))
@@ -122,18 +183,36 @@ namespace Sky.Cms.Services
             return NormalizePath(combined);
         }
 
+        /// <summary>
+        /// Attempts to extract an article number from a file manager entry's path.
+        /// </summary>
+        /// <param name="entry">The file manager entry.</param>
+        /// <param name="articleNumber">When this method returns, contains the article number if successful; otherwise, zero.</param>
+        /// <returns>
+        /// <see langword="true"/> if the article number was successfully parsed; otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// Validates the path format <c>/pub/articles/{number}</c> before extracting the third segment.
+        /// </remarks>
         public static bool TryGetArticleNumber(FileManagerEntry entry, out int articleNumber)
         {
             articleNumber = 0;
-            if (!entry.IsDirectory)
+            if (entry?.Path == null)
             {
                 return false;
             }
 
-            var segment = GetLastPathSegment(entry.Path, entry.Name);
-            return int.TryParse(segment, out articleNumber);
+            return TryGetArticleNumberFromPath(entry.Path, out articleNumber);
         }
 
+        /// <summary>
+        /// Attempts to extract a template GUID from a directory entry's path.
+        /// </summary>
+        /// <param name="entry">The file manager entry (must be a directory).</param>
+        /// <param name="templateId">When this method returns, contains the template GUID if successful; otherwise, <see cref="Guid.Empty"/>.</param>
+        /// <returns>
+        /// <see langword="true"/> if the entry is a directory and the template GUID was successfully parsed; otherwise, <see langword="false"/>.
+        /// </returns>
         public static bool TryGetTemplateId(FileManagerEntry entry, out Guid templateId)
         {
             templateId = Guid.Empty;
@@ -146,6 +225,14 @@ namespace Sky.Cms.Services
             return Guid.TryParse(segment, out templateId);
         }
 
+        /// <summary>
+        /// Attempts to extract an article number from the last segment of a file path.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <param name="articleNumber">When this method returns, contains the article number if successful; otherwise, zero.</param>
+        /// <returns>
+        /// <see langword="true"/> if the article number was successfully parsed from the last path segment; otherwise, <see langword="false"/>.
+        /// </returns>
         public static bool TryGetArticleNumber(string path, out int articleNumber)
         {
             articleNumber = 0;
@@ -153,6 +240,14 @@ namespace Sky.Cms.Services
             return int.TryParse(segment, out articleNumber);
         }
 
+        /// <summary>
+        /// Attempts to extract a template GUID from the last segment of a file path.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <param name="templateId">When this method returns, contains the template GUID if successful; otherwise, <see cref="Guid.Empty"/>.</param>
+        /// <returns>
+        /// <see langword="true"/> if the template GUID was successfully parsed from the last path segment; otherwise, <see langword="false"/>.
+        /// </returns>
         public static bool TryGetTemplateId(string path, out Guid templateId)
         {
             templateId = Guid.Empty;
@@ -160,6 +255,18 @@ namespace Sky.Cms.Services
             return Guid.TryParse(segment, out templateId);
         }
 
+        /// <summary>
+        /// Resolves a user-friendly display name for a file manager entry, replacing numeric article IDs
+        /// or template GUIDs with their corresponding titles when applicable.
+        /// </summary>
+        /// <param name="parentPath">The parent directory path.</param>
+        /// <param name="entry">The file manager entry.</param>
+        /// <param name="articleTitlesByNumber">A dictionary mapping article numbers to article titles.</param>
+        /// <param name="templateTitlesById">A dictionary mapping template GUIDs to template titles.</param>
+        /// <returns>
+        /// For directories under <c>/pub/articles</c>, returns the article title if found; for directories under
+        /// <c>/pub/templates</c>, returns the template title if found. Otherwise, returns the standard display name.
+        /// </returns>
         public static string ResolveFriendlyDisplayName(
             string parentPath,
             FileManagerEntry entry,
@@ -188,6 +295,15 @@ namespace Sky.Cms.Services
             return GetDisplayName(entry);
         }
 
+        /// <summary>
+        /// Attempts to extract an article number from a path in the format <c>/pub/articles/{number}/...</c>.
+        /// </summary>
+        /// <param name="path">The file path to parse.</param>
+        /// <param name="articleNumber">When this method returns, contains the article number if successful; otherwise, zero.</param>
+        /// <returns>
+        /// <see langword="true"/> if the path starts with <c>/pub/articles</c> and contains a valid numeric third segment;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
         public static bool TryGetArticleNumberFromPath(string path, out int articleNumber)
         {
             articleNumber = 0;
@@ -246,6 +362,45 @@ namespace Sky.Cms.Services
             return numbers.OrderBy(n => n).ToList();
         }
 
+        /// <summary>
+        /// Resolves a user-friendly display path for a file manager entry by replacing the numeric
+        /// article ID segment with the article title.
+        /// </summary>
+        /// <param name="canonicalPath">The canonical file path.</param>
+        /// <param name="articleNumber">The article number to replace.</param>
+        /// <param name="articleTitle">The article title to use as a replacement.</param>
+        /// <returns>
+        /// A path string with the article number replaced by the article title.
+        /// Returns the original normalized path if the path structure is invalid.
+        /// </returns>
+        public static string ResolveFriendlyDisplayPath(
+            string canonicalPath,
+            int articleNumber,
+            string articleTitle)
+        {
+            var normalizedPath = NormalizePath(canonicalPath);
+            var segments = normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            // Ensure we have enough segments to replace the article number (at index 2)
+            if (segments.Count < 3)
+            {
+                return normalizedPath;
+            }
+
+            segments[2] = articleTitle;
+            return "/" + string.Join('/', segments);
+        }
+
+        /// <summary>
+        /// Resolves a user-friendly display path by replacing the numeric article ID segment
+        /// with the corresponding article title from the provided dictionary.
+        /// </summary>
+        /// <param name="canonicalPath">The canonical file path.</param>
+        /// <param name="articleTitlesByNumber">A dictionary mapping article numbers to article titles.</param>
+        /// <returns>
+        /// A normalized path with the article number replaced by the article title if found.
+        /// Returns the original normalized path if no article number is detected or no matching title exists.
+        /// </returns>
         public static string ResolveFriendlyDisplayPath(
             string canonicalPath,
             IReadOnlyDictionary<int, string> articleTitlesByNumber)
@@ -311,6 +466,14 @@ namespace Sky.Cms.Services
             return FileStorageConstants.DangerousFileExtensions.Contains(ext);
         }
 
+        /// <summary>
+        /// Extracts the last segment from a normalized path.
+        /// </summary>
+        /// <param name="path">The path to parse.</param>
+        /// <param name="fallback">The fallback value to return if no segment is found.</param>
+        /// <returns>
+        /// The last non-empty segment of the path, or the fallback value (or empty string if fallback is null).
+        /// </returns>
         private static string GetLastPathSegment(string? path, string? fallback)
         {
             if (!string.IsNullOrWhiteSpace(path))

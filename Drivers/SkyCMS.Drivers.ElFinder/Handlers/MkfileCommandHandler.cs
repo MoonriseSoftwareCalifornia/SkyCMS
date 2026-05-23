@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Helpers;
@@ -9,7 +8,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "mkfile" command: creates a new empty file.
 /// </summary>
-public class MkfileCommandHandler : IRequestHandler<MkfileCommand, IElFinderResponse>
+public class MkfileCommandHandler : IElFinderHandler<MkfileCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -18,7 +17,7 @@ public class MkfileCommandHandler : IRequestHandler<MkfileCommand, IElFinderResp
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(MkfileCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(MkfileCommand request, CancellationToken cancellationToken)
     {
         try
         {

@@ -9,18 +9,6 @@
       "destination": "wwwroot/lib/signalr/"
     },
     {
-      "library": "bootstrap@5.3.3",
-      "destination": "wwwroot/lib/bootstrap"
-    },
-    {
-      "library": "cropperjs@2.0.1",
-      "destination": "wwwroot/lib/cropperjs"
-    },
-    {
-      "library": "filepond@4.32.6",
-      "destination": "wwwroot/lib/filepond/"
-    },
-    {
       "destination": "wwwroot/lib/elfinder/",
       "library": "elfinder@2.1.66"
     },
@@ -31,10 +19,6 @@
     {
       "library": "jquery-validation-unobtrusive@4.0.0",
       "destination": "wwwroot/lib/jquery-validation-unobtrusive"
-    },
-    {
-      "library": "luxon@3.5.0",
-      "destination": "wwwroot/lib/luxon"
     },
     {
       "library": "monaco-editor@0.53.0",
@@ -66,17 +50,8 @@
       "destination": "wwwroot/lib/grapick/"
     },
     {
-      "library": "picocss@2.1.1",
-      "destination": "wwwroot/lib/picocss/"
-    },
-    {
       "library": "popper.js@2.11.8",
       "destination": "wwwroot/lib/popper"
-    },
-    {
-      "library": "tabulator-tables@6.3.1",
-      "provider": "unpkg",
-      "destination": "wwwroot/lib/tabulator-tables"
     },
     {
       "library": "tippy.js@6.3.7",

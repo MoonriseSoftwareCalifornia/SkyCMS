@@ -181,7 +181,7 @@ namespace Sky.Tests.Editor.Services
         [TestCategory("PublicFileEntryHelper")]
         public void TryGetArticleNumber_FromEntry_ValidNumber()
         {
-            var entry = new FileManagerEntry { Name = "123", IsDirectory = true };
+            var entry = new FileManagerEntry { Path = "/pub/articles/123", Name = "123", IsDirectory = true };
             var result = PublicFileEntryHelper.TryGetArticleNumber(entry, out var articleNumber);
             Assert.IsTrue(result);
             Assert.AreEqual(123, articleNumber);
@@ -191,17 +191,17 @@ namespace Sky.Tests.Editor.Services
         [TestCategory("PublicFileEntryHelper")]
         public void TryGetArticleNumber_FromEntry_NotADirectory()
         {
-            var entry = new FileManagerEntry { Name = "123", IsDirectory = false };
+            var entry = new FileManagerEntry { Path = "/pub/articles/123/banner.jpg", Name = "banner.jpg", IsDirectory = false };
             var result = PublicFileEntryHelper.TryGetArticleNumber(entry, out var articleNumber);
-            Assert.IsFalse(result);
-            Assert.AreEqual(0, articleNumber);
+            Assert.IsTrue(result); // Should still extract 123 from the path
+            Assert.AreEqual(123, articleNumber);
         }
 
         [TestMethod]
         [TestCategory("PublicFileEntryHelper")]
         public void TryGetArticleNumber_FromEntry_NonNumeric()
         {
-            var entry = new FileManagerEntry { Name = "articles", IsDirectory = true };
+            var entry = new FileManagerEntry { Path = "/pub/articles", Name = "articles", IsDirectory = true };
             var result = PublicFileEntryHelper.TryGetArticleNumber(entry, out var articleNumber);
             Assert.IsFalse(result);
             Assert.AreEqual(0, articleNumber);
@@ -444,7 +444,7 @@ namespace Sky.Tests.Editor.Services
         [TestCategory("PublicFileEntryHelper")]
         public void ResolveFriendlyDisplayName_ArticleFolder_WithTitle()
         {
-            var entry = new FileManagerEntry { Name = "123", IsDirectory = true };
+            var entry = new FileManagerEntry { Path = "/pub/articles/123", Name = "123", IsDirectory = true };
             var articleTitles = new Dictionary<int, string> { { 123, "My Article" } };
             var templateTitles = new Dictionary<Guid, string>();
 
@@ -458,7 +458,7 @@ namespace Sky.Tests.Editor.Services
         [TestCategory("PublicFileEntryHelper")]
         public void ResolveFriendlyDisplayName_ArticleFolder_NoTitle()
         {
-            var entry = new FileManagerEntry { Name = "456", IsDirectory = true };
+            var entry = new FileManagerEntry { Path = "/pub/articles/456", Name = "456", IsDirectory = true };
             var articleTitles = new Dictionary<int, string>();
             var templateTitles = new Dictionary<Guid, string>();
 
@@ -473,7 +473,7 @@ namespace Sky.Tests.Editor.Services
         public void ResolveFriendlyDisplayName_TemplateFolder_WithTitle()
         {
             var templateId = Guid.NewGuid();
-            var entry = new FileManagerEntry { Name = templateId.ToString(), IsDirectory = true };
+            var entry = new FileManagerEntry { Path = $"/pub/templates/{templateId}", Name = templateId.ToString(), IsDirectory = true };
             var articleTitles = new Dictionary<int, string>();
             var templateTitles = new Dictionary<Guid, string> { { templateId, "Default Layout" } };
 
@@ -488,7 +488,7 @@ namespace Sky.Tests.Editor.Services
         public void ResolveFriendlyDisplayName_TemplateFolder_NoTitle()
         {
             var templateId = Guid.NewGuid();
-            var entry = new FileManagerEntry { Name = templateId.ToString(), IsDirectory = true };
+            var entry = new FileManagerEntry { Path = $"/pub/templates/{templateId}", Name = templateId.ToString(), IsDirectory = true };
             var articleTitles = new Dictionary<int, string>();
             var templateTitles = new Dictionary<Guid, string>();
 
@@ -516,7 +516,7 @@ namespace Sky.Tests.Editor.Services
         [TestCategory("PublicFileEntryHelper")]
         public void ResolveFriendlyDisplayName_OtherParentPath()
         {
-            var entry = new FileManagerEntry { Name = "123", IsDirectory = true };
+            var entry = new FileManagerEntry { Path = "/pub/other/123", Name = "123", IsDirectory = true };
             var articleTitles = new Dictionary<int, string> { { 123, "My Article" } };
             var templateTitles = new Dictionary<Guid, string>();
 
@@ -531,7 +531,7 @@ namespace Sky.Tests.Editor.Services
         [TestCategory("PublicFileEntryHelper")]
         public void ResolveFriendlyDisplayName_CaseInsensitiveParentPath()
         {
-            var entry = new FileManagerEntry { Name = "123", IsDirectory = true };
+            var entry = new FileManagerEntry { Path = "/pub/articles/123", Name = "123", IsDirectory = true };
             var articleTitles = new Dictionary<int, string> { { 123, "My Article" } };
             var templateTitles = new Dictionary<Guid, string>();
 
@@ -545,7 +545,7 @@ namespace Sky.Tests.Editor.Services
         [TestCategory("PublicFileEntryHelper")]
         public void ResolveFriendlyDisplayName_EmptyTitleInDictionary()
         {
-            var entry = new FileManagerEntry { Name = "123", IsDirectory = true };
+            var entry = new FileManagerEntry { Path = "/pub/articles/123", Name = "123", IsDirectory = true };
             var articleTitles = new Dictionary<int, string> { { 123, string.Empty } };
             var templateTitles = new Dictionary<Guid, string>();
 
@@ -665,5 +665,111 @@ namespace Sky.Tests.Editor.Services
                     {
                         Assert.IsTrue(PublicFileEntryHelper.IsDangerousExtension("VIRUS.EXE"));
                     }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_BatFile_ReturnsTrue()
+                    {
+                        Assert.IsTrue(PublicFileEntryHelper.IsDangerousExtension("autorun.bat"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_DllFile_ReturnsTrue()
+                    {
+                        Assert.IsTrue(PublicFileEntryHelper.IsDangerousExtension("library.dll"));
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void IsDangerousExtension_ShFile_ReturnsTrue()
+                    {
+                        Assert.IsTrue(PublicFileEntryHelper.IsDangerousExtension("script.sh"));
+                    }
+
+                    // ===== TryGetArticleNumberFromPath Edge Cases =====
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void TryGetArticleNumberFromPath_ShortPath_ReturnsFalse()
+                    {
+                        var result = PublicFileEntryHelper.TryGetArticleNumberFromPath("/pub/articles", out var articleNumber);
+                        Assert.IsFalse(result);
+                        Assert.AreEqual(0, articleNumber);
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void TryGetArticleNumberFromPath_RootOnly_ReturnsFalse()
+                    {
+                        var result = PublicFileEntryHelper.TryGetArticleNumberFromPath("/pub", out var articleNumber);
+                        Assert.IsFalse(result);
+                        Assert.AreEqual(0, articleNumber);
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void TryGetArticleNumberFromPath_NonIntegerSegment_ReturnsFalse()
+                    {
+                        var result = PublicFileEntryHelper.TryGetArticleNumberFromPath("/pub/articles/getting-started", out var articleNumber);
+                        Assert.IsFalse(result);
+                        Assert.AreEqual(0, articleNumber);
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void TryGetArticleNumberFromPath_WrongRoot_ReturnsFalse()
+                    {
+                        var result = PublicFileEntryHelper.TryGetArticleNumberFromPath("/pub/templates/123", out var articleNumber);
+                        Assert.IsFalse(result);
+                        Assert.AreEqual(0, articleNumber);
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void TryGetArticleNumberFromPath_MissingPubSegment_ReturnsFalse()
+                    {
+                        var result = PublicFileEntryHelper.TryGetArticleNumberFromPath("/articles/123", out var articleNumber);
+                        Assert.IsFalse(result);
+                        Assert.AreEqual(0, articleNumber);
+                    }
+
+                    // ===== ResolveFriendlyDisplayPath Edge Cases =====
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void ResolveFriendlyDisplayPath_ShortPath_ReturnsOriginal()
+                    {
+                        var result = PublicFileEntryHelper.ResolveFriendlyDisplayPath("/pub/articles", 123, "Test Article");
+                        Assert.AreEqual("/pub/articles", result);
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void ResolveFriendlyDisplayPath_NullTitle_ReturnsOriginal()
+                    {
+                        var titles = new Dictionary<int, string>();
+                        var result = PublicFileEntryHelper.ResolveFriendlyDisplayPath("/pub/articles/123", titles);
+                        Assert.AreEqual("/pub/articles/123", result);
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void ResolveFriendlyDisplayPath_EmptyTitleDictionary_ReturnsOriginal()
+                    {
+                        var titles = new Dictionary<int, string>();
+                        var result = PublicFileEntryHelper.ResolveFriendlyDisplayPath("/pub/articles/123/banner.jpg", titles);
+                        Assert.AreEqual("/pub/articles/123/banner.jpg", result);
+                    }
+
+                    [TestMethod]
+                    [TestCategory("PublicFileEntryHelper")]
+                    public void ResolveFriendlyDisplayPath_NonArticlePath_ReturnsOriginal()
+                    {
+                        var titles = new Dictionary<int, string> { { 123, "Test Article" } };
+                        var result = PublicFileEntryHelper.ResolveFriendlyDisplayPath("/pub/static/logo.png", titles);
+                        Assert.AreEqual("/pub/static/logo.png", result);
+                    }
                 }
             }
+

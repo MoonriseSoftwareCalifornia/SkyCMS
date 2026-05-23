@@ -29,8 +29,9 @@
       asp-append-version="true" />
 
 <link rel="stylesheet"
-      href="~/lib/filepond/filepond.min.css"
-      asp-append-version="true" />
+    href="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.css"
+    integrity="sha384-TclCA2vTcjELuMbsLCt9deOlUllk1dZV0XmFcwlYit0UgFaqL7EVKvGOgdfzRg3M"
+    crossorigin="anonymous" />
 
 <style>
     /* ── Layout shell ─────────────────────────────────────────── */
@@ -266,8 +267,7 @@
             asp-append-version="true"></script>
     <script src="~/lib/filepond-plugin-file-metadata/dist/filepond-plugin-file-metadata.min.js"
             asp-append-version="true"></script>
-    <script src="~/lib/filepond/filepond.min.js"
-            asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.js" integrity="sha384-Eeqgmq0luVn6HThRQfVchBi+0ROgVXYcUDAsJHU+YDa7yUykpjzyq0R9iDB3ueal" crossorigin="anonymous"></script>
     <script>
             (function () {
                 // ── Encode path to elFinder hash ──────────────────────────
@@ -504,6 +504,7 @@
                     handlers: {
                         open: function (event) {
                             var cwd = null;
+                            var cwdDisplayPath = null;
 
                             if (event && event.data && event.data.cwd && event.data.cwd.hash) {
                                 cwd = decodePath(event.data.cwd.hash);
@@ -516,15 +517,15 @@
                                 }
                             }
 
+                            if (event && event.data && event.data.cwd && event.data.cwd.displayPath) {
+                                cwdDisplayPath = normalizePath(event.data.cwd.displayPath);
+                            } else if (event && event.data && event.data.options && event.data.options.path) {
+                                cwdDisplayPath = normalizePath('/' + event.data.options.path);
+                            }
+
                             if (cwd) {
                                 currentUploadPath = cwd;
-
-                                if (event && event.data && event.data.cwd && event.data.cwd.options && event.data.cwd.options.path) {
-                                    currentUploadPathDisplay = normalizePath('/' + event.data.cwd.options.path);
-                                } else {
-                                    currentUploadPathDisplay = cwd;
-                                }
-
+                                currentUploadPathDisplay = cwdDisplayPath || cwd;
                                 updateReadyUploadStatus();
                             }
                         },
@@ -571,7 +572,9 @@
                             currentUploadPath = decodedStart;
                         }
 
-                        if (initialCwd.options && initialCwd.options.path) {
+                        if (initialCwd.displayPath) {
+                            currentUploadPathDisplay = normalizePath(initialCwd.displayPath);
+                        } else if (initialCwd.options && initialCwd.options.path) {
                             currentUploadPathDisplay = normalizePath('/' + initialCwd.options.path);
                         }
                     }

@@ -1,4 +1,4 @@
-// <copyright file="OpenContractTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="OpenContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -44,8 +44,8 @@ namespace Sky.Tests.ElFinder.Contracts
         [Description("Response must contain 'cwd', 'files', and 'api' keys.")]
         public async Task Open_Response_HasRequiredTopLevelKeys()
         {
-            var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var command = new OpenCommand(target: ImagesHash, init: true);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out _),
@@ -53,15 +53,15 @@ namespace Sky.Tests.ElFinder.Contracts
             Assert.IsTrue(doc.RootElement.TryGetProperty("files", out _),
                 "Contract violation: 'files' key missing from open response.");
             Assert.IsTrue(doc.RootElement.TryGetProperty("api", out _),
-                "Contract violation: 'api' key missing from open response.");
+                "Contract violation: 'api' key missing from init=1 open response.");
         }
 
         [TestMethod]
         [Description("'api' must be '2.1049' — the protocol version the client expects.")]
         public async Task Open_Api_IsVersion21()
         {
-            var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var command = new OpenCommand(target: ImagesHash, init: true);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var api = AssertStringProperty(doc.RootElement, "api");
@@ -75,7 +75,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_Files_IsArray()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             AssertArrayProperty(doc.RootElement, "files");
@@ -90,7 +90,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_Cwd_IsValidElFinderObject()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd),
@@ -107,7 +107,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_Cwd_MimeIsDirectory()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             doc.RootElement.TryGetProperty("cwd", out var cwd);
@@ -125,7 +125,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_FilesEntries_AreValidElFinderObjects()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var files = AssertArrayProperty(doc.RootElement, "files");
@@ -142,7 +142,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_NoPascalCaseKeysLeak()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             foreach (var forbiddenKey in new[] { "Cwd", "Files", "Api", "UplMaxSize", "VolumeId" })
@@ -163,7 +163,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_InvalidHash_ReturnsErrorResponse()
         {
             var command = new OpenCommand(target: "not_a_valid_hash");
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Invalid hash must return ElFinderErrorResponse.");
@@ -186,7 +186,7 @@ namespace Sky.Tests.ElFinder.Contracts
                 .ReturnsAsync(false);
 
             var handler = new OpenCommandHandler(adapter.Object, BuildPassThroughNameResolver());
-            var response = await handler.Handle(new OpenCommand(target: ImagesHash), default);
+            var response = await handler.HandleAsync(new OpenCommand(target: ImagesHash), default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Access denied must return ElFinderErrorResponse.");
@@ -204,7 +204,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
             var handler = new OpenCommandHandler(adapter.Object, resolver);
 
-            var response = await handler.Handle(new OpenCommand(target: ArticleFolderHash), default);
+            var response = await handler.HandleAsync(new OpenCommand(target: ArticleFolderHash), default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd),
@@ -223,7 +223,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
             var handler = new OpenCommandHandler(adapter.Object, resolver);
 
-            var response = await handler.Handle(new OpenCommand(target: ArticlesRootHash), default);
+            var response = await handler.HandleAsync(new OpenCommand(target: ArticlesRootHash), default);
             using var doc = SerializeResponse(response);
 
             var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
@@ -248,18 +248,19 @@ namespace Sky.Tests.ElFinder.Contracts
         }
 
         [TestMethod]
-        [Description("When opening /pub/articles, the article-folder child must carry 'realPath' = '/pub/articles/42'.")]
-        public async Task Open_ArticlesRootFolder_ChildRealPathIsCanonicalStoragePath()
+        [Description("When opening /pub/articles, the article-folder child must carry canonical and display paths.")]
+        public async Task Open_ArticlesRootFolder_ChildContainsRealPathAndDisplayPath()
         {
             var adapter = BuildAdapterWithArticles();
-            var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
+            var resolver = BuildTitleNameResolver(ArticleNumber, ArticleTitle, TemplateId, TemplateTitle);
             var handler = new OpenCommandHandler(adapter.Object, resolver);
 
-            var response = await handler.Handle(new OpenCommand(target: ArticlesRootHash), default);
+            var response = await handler.HandleAsync(new OpenCommand(target: ArticlesRootHash), default);
             using var doc = SerializeResponse(response);
 
             var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
             string? foundRealPath = null;
+            string? foundDisplayPath = null;
             foreach (var entry in files.EnumerateArray())
             {
                 if (!entry.TryGetProperty("name", out var nameProp) ||
@@ -269,46 +270,85 @@ namespace Sky.Tests.ElFinder.Contracts
                 }
 
                 Assert.IsTrue(entry.TryGetProperty("realPath", out var rp),
-                    $"Article folder entry (name='{ArticleTitle}') must contain a 'realPath' field so consumers " +
-                    $"can access the canonical storage path alongside the friendly display name.");
+                    $"Article folder entry (name='{ArticleTitle}') must contain a 'realPath' field.");
+                Assert.IsTrue(entry.TryGetProperty("displayPath", out var dp),
+                    $"Article folder entry (name='{ArticleTitle}') must contain a 'displayPath' field.");
                 foundRealPath = rp.GetString();
+                foundDisplayPath = dp.GetString();
                 break;
             }
 
             Assert.IsNotNull(foundRealPath,
                 $"Could not find the article entry (name='{ArticleTitle}') in files array.");
             Assert.AreEqual(ArticleRealPath, foundRealPath,
-                $"realPath must equal the canonical storage path '{ArticleRealPath}', not '{foundRealPath}'.");
+                $"realPath must equal canonical storage path '{ArticleRealPath}', not '{foundRealPath}'.");
+            Assert.AreEqual(ArticleDisplayPath, foundDisplayPath,
+                $"displayPath must equal friendly path '{ArticleDisplayPath}', not '{foundDisplayPath}'.");
         }
 
         [TestMethod]
-        [Description("Non-article folders must NOT carry a 'realPath' field (field is omitted when name is not substituted).")]
-        public async Task Open_NonArticleFolder_RealPathIsAbsent()
+        [Description("Deep article paths must retain canonical IDs in realPath and friendly titles in displayPath.")]
+        public async Task Open_DeepArticlePath_EntriesContainDualPaths()
         {
             var adapter = BuildAdapterWithArticles();
-            var resolver = BuildPassThroughNameResolver();
+            var resolver = BuildTitleNameResolver(ArticleNumber, ArticleTitle, TemplateId, TemplateTitle);
             var handler = new OpenCommandHandler(adapter.Object, resolver);
 
-            // Open the root; 'images' and 'docs' are plain folders — no title substitution.
-            var response = await handler.Handle(new OpenCommand(target: RootHash), default);
+            var response = await handler.HandleAsync(new OpenCommand(target: ArticleDeepFileHash), default);
             using var doc = SerializeResponse(response);
 
-            var files = AssertArrayProperty(doc.RootElement, "files");
+            Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd), "Response must contain 'cwd'.");
+            Assert.IsTrue(cwd.TryGetProperty("realPath", out var cwdRealPath), "cwd must include 'realPath'.");
+            Assert.IsTrue(cwd.TryGetProperty("displayPath", out var cwdDisplayPath), "cwd must include 'displayPath'.");
+
+            Assert.AreEqual(ArticleDeepFileRealPath, cwdRealPath.GetString(), "cwd.realPath should remain canonical for deep article entries.");
+            Assert.AreEqual(ArticleDeepFileDisplayPath, cwdDisplayPath.GetString(), "cwd.displayPath should replace article ID with title for deep article entries.");
+
+            var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
             foreach (var entry in files.EnumerateArray())
             {
-                if (!entry.TryGetProperty("name", out var nameProp))
+                Assert.IsTrue(entry.TryGetProperty("realPath", out _), "Every returned entry must include realPath.");
+                Assert.IsTrue(entry.TryGetProperty("displayPath", out _), "Every returned entry must include displayPath.");
+            }
+        }
+
+        [TestMethod]
+        [Description("Template folder entries must contain canonical realPath and title-based displayPath.")]
+        public async Task Open_TemplatesRootFolder_ChildContainsRealPathAndDisplayPath()
+        {
+            var adapter = BuildAdapterWithArticles();
+            var resolver = BuildTitleNameResolver(ArticleNumber, ArticleTitle, TemplateId, TemplateTitle);
+            var handler = new OpenCommandHandler(adapter.Object, resolver);
+
+            var response = await handler.HandleAsync(new OpenCommand(target: TemplatesRootHash), default);
+            using var doc = SerializeResponse(response);
+
+            var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
+            string? foundRealPath = null;
+            string? foundDisplayPath = null;
+            foreach (var entry in files.EnumerateArray())
+            {
+                if (!entry.TryGetProperty("name", out var nameProp) ||
+                    !string.Equals(nameProp.GetString(), TemplateTitle, StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                var entryName = nameProp.GetString() ?? string.Empty;
-                if (entryName is "images" or "docs" or "articles")
-                {
-                    Assert.IsFalse(entry.TryGetProperty("realPath", out _),
-                        $"Plain folder '{entryName}' must NOT have 'realPath' — the field should be absent " +
-                        $"(WhenWritingNull) for entries whose display name was not substituted.");
-                }
+                Assert.IsTrue(entry.TryGetProperty("realPath", out var rp),
+                    $"Template folder entry (name='{TemplateTitle}') must contain 'realPath'.");
+                Assert.IsTrue(entry.TryGetProperty("displayPath", out var dp),
+                    $"Template folder entry (name='{TemplateTitle}') must contain 'displayPath'.");
+                foundRealPath = rp.GetString();
+                foundDisplayPath = dp.GetString();
+                break;
             }
+
+            Assert.IsNotNull(foundRealPath,
+                $"Could not find the template entry (name='{TemplateTitle}') in files array.");
+            Assert.AreEqual(TemplateRealPath, foundRealPath,
+                $"realPath must equal canonical template storage path '{TemplateRealPath}', not '{foundRealPath}'.");
+            Assert.AreEqual(TemplateDisplayPath, foundDisplayPath,
+                $"displayPath must equal friendly template path '{TemplateDisplayPath}', not '{foundDisplayPath}'.");
         }
     }
 }

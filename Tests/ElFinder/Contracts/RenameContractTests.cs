@@ -1,4 +1,4 @@
-// <copyright file="RenameContractTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="RenameContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -41,7 +41,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RenameCommandHandler(adapter.Object);
             var command = new RenameCommand { Target = LogoPngHash, Name = "logo-new.png" };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             AssertArrayProperty(doc.RootElement, "added", minLength: 1);
@@ -67,7 +67,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RenameCommandHandler(adapter.Object);
             var command = new RenameCommand { Target = LogoPngHash, Name = "logo-new.png" };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var added = AssertArrayProperty(doc.RootElement, "added", minLength: 1);
@@ -96,7 +96,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RenameCommandHandler(adapter.Object);
             var command = new RenameCommand { Target = LogoPngHash, Name = "logo-new.png" };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var removed = AssertArrayProperty(doc.RootElement, "removed", minLength: 1);
@@ -126,7 +126,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RenameCommandHandler(adapter.Object);
             var command = new RenameCommand { Target = LogoPngHash, Name = "logo-new.png" };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var added = AssertArrayProperty(doc.RootElement, "added", minLength: 1);
@@ -145,7 +145,7 @@ namespace Sky.Tests.ElFinder.Contracts
         {
             var handler = new RenameCommandHandler(BuildAdapter().Object);
             var command = new RenameCommand { Target = string.Empty, Name = "new.png" };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Missing target must return ElFinderErrorResponse.");
@@ -160,7 +160,7 @@ namespace Sky.Tests.ElFinder.Contracts
         {
             var handler = new RenameCommandHandler(BuildAdapter().Object);
             var command = new RenameCommand { Target = LogoPngHash, Name = string.Empty };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Missing name must return ElFinderErrorResponse.");

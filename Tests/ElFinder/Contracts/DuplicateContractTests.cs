@@ -1,4 +1,4 @@
-// <copyright file="DuplicateContractTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="DuplicateContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -47,7 +47,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Duplicate_ResponseKey_IsLowercaseAdded()
         {
             var command = new DuplicateCommand { Targets = LogoPngHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -64,7 +64,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Duplicate_Added_IsArray()
         {
             var command = new DuplicateCommand { Targets = LogoPngHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var added = AssertArrayProperty(doc.RootElement, "added");
@@ -76,7 +76,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Duplicate_AddedObjects_HaveRequiredFields()
         {
             var command = new DuplicateCommand { Targets = LogoPngHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var added = AssertArrayProperty(doc.RootElement, "added", minLength: 1);
@@ -91,7 +91,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Duplicate_EmptyTargets_ReturnsError()
         {
             var command = new DuplicateCommand { Targets = null };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(

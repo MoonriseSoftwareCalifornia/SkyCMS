@@ -130,14 +130,41 @@ namespace Sky.Tests.ElFinder
         /// <summary>Expected article title for the fixture article.</summary>
         protected const string ArticleTitle = "My Great Article";
 
-        /// <summary>Canonical storage path for the article folder (no leading slash, matching adapter layer convention).</summary>
-        protected const string ArticleRealPath = "pub/articles/42";
+        /// <summary>Canonical storage path for the article folder.</summary>
+        protected const string ArticleRealPath = "/pub/articles/42";
 
-        /// <summary>Hash encoding of the <see cref="ArticleRealPath"/> path.</summary>
+        /// <summary>Canonical storage path for a deep folder under the article tree.</summary>
+        protected const string ArticleDeepFileRealPath = "/pub/articles/42/assets/images";
+
+        /// <summary>Expected display path for the article folder.</summary>
+        protected const string ArticleDisplayPath = "/pub/articles/My Great Article";
+
+        /// <summary>Expected display path for a deep folder under the article tree.</summary>
+        protected const string ArticleDeepFileDisplayPath = "/pub/articles/My Great Article/assets/images";
+
+        /// <summary>Template identifier fixture for template-path tests.</summary>
+        protected const string TemplateId = "11111111-1111-1111-1111-111111111111";
+
+        /// <summary>Expected template title for the fixture template.</summary>
+        protected const string TemplateTitle = "Main Template";
+
+        /// <summary>Canonical storage path for the template folder.</summary>
+        protected const string TemplateRealPath = "/pub/templates/11111111-1111-1111-1111-111111111111";
+
+        /// <summary>Expected display path for the template folder.</summary>
+        protected const string TemplateDisplayPath = "/pub/templates/Main Template";
+
+        /// <summary>Hash encoding of the articles root.</summary>
         protected static readonly string ArticlesRootHash = AdapterHashHelper.Encode("pub/articles/");
 
         /// <summary>Hash encoding of the article folder itself.</summary>
         protected static readonly string ArticleFolderHash = AdapterHashHelper.Encode("pub/articles/42/");
+
+        /// <summary>Hash encoding of a deep folder under the article tree.</summary>
+        protected static readonly string ArticleDeepFileHash = AdapterHashHelper.Encode("pub/articles/42/assets/images/");
+
+        /// <summary>Hash encoding of the templates root.</summary>
+        protected static readonly string TemplatesRootHash = AdapterHashHelper.Encode("pub/templates/");
 
         // ------------------------------------------------------------------ //
         //  Name resolver helpers                                               //
@@ -164,23 +191,38 @@ namespace Sky.Tests.ElFinder
         /// <see cref="Sky.Cms.Services.ArticleTitleNameResolver"/>.
         /// </summary>
         protected static IElFinderNameResolver BuildArticleTitleNameResolver(int articleNumber, string title)
+            => BuildTitleNameResolver(articleNumber, title, null, null);
+
+        protected static IElFinderNameResolver BuildTitleNameResolver(int articleNumber, string articleTitle, string? templateId, string? templateTitle)
         {
             var mock = new Mock<IElFinderNameResolver>();
             mock.Setup(r => r.ResolveNameAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
                 .Returns<string, string, System.Threading.CancellationToken>((path, rawName, _) =>
                 {
-                    // Mimic ArticleTitleNameResolver: only substitute the immediate
-                    // article-folder segment (segments[2] == rawName == articleNumber).
                     var normalized = path.TrimEnd('/');
                     var segments = normalized.Split('/', System.StringSplitOptions.RemoveEmptyEntries);
-                    if (segments.Length >= 3
-                        && string.Equals(segments[0], "pub", System.StringComparison.OrdinalIgnoreCase)
+                    if (segments.Length < 3)
+                    {
+                        return System.Threading.Tasks.Task.FromResult(rawName);
+                    }
+
+                    if (string.Equals(segments[0], "pub", System.StringComparison.OrdinalIgnoreCase)
                         && string.Equals(segments[1], "articles", System.StringComparison.OrdinalIgnoreCase)
                         && int.TryParse(segments[2], out var n)
                         && n == articleNumber
                         && string.Equals(rawName, articleNumber.ToString(), System.StringComparison.Ordinal))
                     {
-                        return System.Threading.Tasks.Task.FromResult(title);
+                        return System.Threading.Tasks.Task.FromResult(articleTitle);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(templateId)
+                        && !string.IsNullOrWhiteSpace(templateTitle)
+                        && string.Equals(segments[0], "pub", System.StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(segments[1], "templates", System.StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(segments[2], templateId, System.StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(rawName, templateId, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        return System.Threading.Tasks.Task.FromResult(templateTitle);
                     }
 
                     return System.Threading.Tasks.Task.FromResult(rawName);
@@ -197,21 +239,40 @@ namespace Sky.Tests.ElFinder
             var mock = BuildAdapter();
 
             var articlesRoot = MakeDir("pub/articles/", "articles", hasChildren: true);
-            var articleFolder = MakeDir("pub/articles/42/", ArticleNumber.ToString(), hasChildren: false);
+            var articleFolder = MakeDir("pub/articles/42/", ArticleNumber.ToString(), hasChildren: true);
+            var assetsFolder = MakeDir("pub/articles/42/assets/", "assets", hasChildren: true);
+            var imagesFolder = MakeDir("pub/articles/42/assets/images/", "images", hasChildren: true);
+            var logoFile = MakeFile("pub/articles/42/assets/images/logo.png", "logo.png");
 
-            // pub/ children now include both images/, docs/, and articles/
+            var templatesRoot = MakeDir("pub/templates/", "templates", hasChildren: true);
+            var templateFolder = MakeDir($"pub/templates/{TemplateId}/", TemplateId, hasChildren: false);
+
+            // pub/ children now include images/, docs/, articles/, and templates/
             mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub" || p == "pub/"), It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(new List<FileManagerEntry>
                 {
                     MakeDir("pub/images/", "images", hasChildren: true),
                     MakeDir("pub/docs/", "docs", hasChildren: false),
                     articlesRoot,
+                    templatesRoot,
                 });
 
             mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub/articles" || p == "pub/articles/"), It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(new List<FileManagerEntry> { articleFolder });
 
             mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub/articles/42" || p == "pub/articles/42/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { assetsFolder });
+
+            mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub/articles/42/assets" || p == "pub/articles/42/assets/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { imagesFolder });
+
+            mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub/articles/42/assets/images" || p == "pub/articles/42/assets/images/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { logoFile });
+
+            mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == "pub/templates" || p == "pub/templates/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { templateFolder });
+
+            mock.Setup(a => a.GetEntriesAsync(It.Is<string>(p => p == $"pub/templates/{TemplateId}" || p == $"pub/templates/{TemplateId}/"), It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(new List<FileManagerEntry>());
 
             mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == "pub/articles" || p == "pub/articles/"), It.IsAny<System.Threading.CancellationToken>()))
@@ -220,11 +281,41 @@ namespace Sky.Tests.ElFinder
             mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == "pub/articles/42" || p == "pub/articles/42/"), It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(articleFolder);
 
+            mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == "pub/articles/42/assets" || p == "pub/articles/42/assets/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(assetsFolder);
+
+            mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == "pub/articles/42/assets/images" || p == "pub/articles/42/assets/images/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(imagesFolder);
+
+            mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == "pub/articles/42/assets/images/logo.png"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(logoFile);
+
+            mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == "pub/templates" || p == "pub/templates/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(templatesRoot);
+
+            mock.Setup(a => a.GetEntryAsync(It.Is<string>(p => p == $"pub/templates/{TemplateId}" || p == $"pub/templates/{TemplateId}/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(templateFolder);
+
             mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == "pub/articles" || p == "pub/articles/"), It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true) });
 
             mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == "pub/articles/42" || p == "pub/articles/42/"), It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true), articlesRoot });
+
+            mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == "pub/articles/42/assets" || p == "pub/articles/42/assets/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true), articlesRoot, articleFolder });
+
+            mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == "pub/articles/42/assets/images" || p == "pub/articles/42/assets/images/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true), articlesRoot, articleFolder, assetsFolder });
+
+            mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == "pub/articles/42/assets/images/logo.png"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true), articlesRoot, articleFolder, assetsFolder, imagesFolder });
+
+            mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == "pub/templates" || p == "pub/templates/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true) });
+
+            mock.Setup(a => a.GetAncestorsAsync(It.Is<string>(p => p == $"pub/templates/{TemplateId}" || p == $"pub/templates/{TemplateId}/"), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new List<FileManagerEntry> { MakeDir("pub/", "pub", hasChildren: true), templatesRoot });
 
             return mock;
         }

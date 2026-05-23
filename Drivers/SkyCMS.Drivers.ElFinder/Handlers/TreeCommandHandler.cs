@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Helpers;
@@ -9,7 +8,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "tree" command: returns directory structure for tree view.
 /// </summary>
-public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse>
+public class TreeCommandHandler : IElFinderHandler<TreeCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
     private readonly IElFinderNameResolver _nameResolver;
@@ -20,7 +19,7 @@ public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse
         _nameResolver = nameResolver ?? throw new ArgumentNullException(nameof(nameResolver));
     }
 
-    public async Task<IElFinderResponse> Handle(TreeCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(TreeCommand request, CancellationToken cancellationToken)
     {
         try
         {
@@ -48,7 +47,7 @@ public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse
             var entries = await _adapter.GetEntriesAsync(targetPath, cancellationToken);
             foreach (var entry in entries.Where(e => e.IsDirectory))
             {
-                var entryPath = targetPath.TrimEnd('/') + "/" + entry.Name;
+                var entryPath = "/" + (targetPath.TrimEnd('/') + "/" + entry.Name).TrimStart('/');
                 response.Tree.Add(await ConvertToElFinderObjectAsync(entry, entryPath, cancellationToken));
             }
 
@@ -71,6 +70,7 @@ public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse
         var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
         var rawName = entry.Name ?? string.Empty;
         var nameWasSubstituted = !string.Equals(resolvedName, rawName, StringComparison.Ordinal);
+        var normalizedPath = "/" + path.Trim('/');
 
         return new ElFinderObject
         {
@@ -84,7 +84,7 @@ public class TreeCommandHandler : IRequestHandler<TreeCommand, IElFinderResponse
             Write = 1,
             Locked = 0,
             Dirs = 1,
-            RealPath = nameWasSubstituted ? path.TrimEnd('/') : null,
+            RealPath = nameWasSubstituted ? normalizedPath : null,
         };
     }
 }

@@ -1,4 +1,4 @@
-// <copyright file="ParentsContractTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="ParentsContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -51,7 +51,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Parents_ResponseKey_IsLowercaseTree()
         {
             var command = new ParentsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -66,7 +66,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Parents_Tree_IsArray()
         {
             var command = new ParentsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             AssertArrayProperty(doc.RootElement, "tree", minLength: 1);
@@ -77,7 +77,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Parents_NoPascalCaseKeysLeak()
         {
             var command = new ParentsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             foreach (var forbiddenKey in new[] { "Tree", "VolumeId", "Hash", "Name", "Mime", "Size" })
@@ -98,7 +98,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Parents_EachTreeEntry_HasRequiredFileObjectFields()
         {
             var command = new ParentsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree", minLength: 1);
@@ -115,7 +115,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Parents_DirectoryEntries_HaveMimeDirectory()
         {
             var command = new ParentsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree");
@@ -133,7 +133,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Parents_NonRootEntries_HavePhash()
         {
             var command = new ParentsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree");
@@ -156,7 +156,7 @@ namespace Sky.Tests.ElFinder.Contracts
         {
             const long year2000Unix = 946684800L;
             var command = new ParentsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree");
@@ -179,7 +179,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Parents_MissingTarget_ReturnsErrorResponse()
         {
             var command = new ParentsCommand { Target = string.Empty };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
@@ -198,7 +198,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Parents_InvalidHash_ReturnsErrorResponse()
         {
             var command = new ParentsCommand { Target = "not_a_valid_hash" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
@@ -215,7 +215,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new ParentsCommandHandler(adapter.Object);
             var command = new ParentsCommand { Target = ImagesHash };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Access denied should return ElFinderErrorResponse.");

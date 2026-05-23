@@ -1,4 +1,4 @@
-// <copyright file="FileManagerControllerTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="FileManagerControllerTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -20,6 +20,7 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json;
+    using SkyCMS.Drivers.ElFinder;
     using Sky.Cms.Controllers;
     using Sky.Cms.Models;
     using Sky.Cms.Services;
@@ -43,6 +44,7 @@ namespace Sky.Tests.Controllers
         private FileManagerController controller;
         private Mock<ILogger<FileManagerController>> mockLogger;
         private Mock<IWebHostEnvironment> mockHostEnvironment;
+        private Mock<IElFinderDispatcher> mockElFinderMediator;
         private Mock<IViewRenderService> mockViewRenderService;
         private Mock<CommonMediator> mockArticleQueries;
         private StorageContext rawStorage;
@@ -63,6 +65,7 @@ namespace Sky.Tests.Controllers
             mockHostEnvironment = new Mock<IWebHostEnvironment>();
             mockViewRenderService = new Mock<IViewRenderService>();
             mockArticleQueries = new Mock<CommonMediator>();
+            mockElFinderMediator = new Mock<IElFinderDispatcher>();
 
             // Use real FolderListingService with title resolver to support articles/templates listing
             var titleResolver = new PublicFileEntryTitleResolver(Db);
@@ -80,6 +83,7 @@ namespace Sky.Tests.Controllers
                 mockLogger.Object,
                 new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(),
                 new MemoryCache(new MemoryCacheOptions()),
+                mockElFinderMediator.Object,
                 DynamicConfigurationProvider,
                 Logic,
                 mockHostEnvironment.Object,
@@ -198,7 +202,7 @@ namespace Sky.Tests.Controllers
             // Assert
             Assert.IsInstanceOfType(result, typeof(ViewResult));
             var viewResult = result as ViewResult;
-            Assert.AreEqual("~/Views/Shared/FileExplorer/index.cshtml", viewResult.ViewName);
+            Assert.AreEqual("~/Views/Shared/FileExplorer/Index.cshtml", viewResult.ViewName);
         }
 
         /// <summary>
@@ -469,304 +473,6 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
-        #region File and Folder Operations Tests
-
-        /// <summary>
-        /// Tests that NewFile_WithValidExtension_CreatesFile.
-        /// </summary>
-        [TestMethod]
-        public async Task NewFile_WithValidExtension_CreatesFile()
-        {
-            // Arrange
-            await Storage.CreateFolder("/pub/files");
-            var model = new NewFileViewModel
-            {
-                ParentFolder = "/pub/files",
-                FileName = "newfile.txt"
-            };
-
-            // Act
-            var result = await controller.NewFile(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/files/newfile.txt"));
-        }
-
-        [TestMethod]
-        public async Task NewFile_WithInvalidInputs_ReturnsBadRequest()
-        {
-            foreach (var fileName in new[] { "badfile.exe", "dangerous.sh", string.Empty })
-            {
-                var model = new NewFileViewModel
-                {
-                    ParentFolder = "/pub/files",
-                    FileName = fileName
-                };
-
-                var result = await controller.NewFile(model);
-
-                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            }
-        }
-
-        /// <summary>
-        /// Tests that NewFolder_WithValidName_CreatesFolder.
-        /// </summary>
-        [TestMethod]
-        public async Task NewFolder_WithValidName_CreatesFolder()
-        {
-            // Arrange
-            await Storage.CreateFolder("/pub");
-            var model = new NewFolderViewModel
-            {
-                ParentFolder = "/pub",
-                FolderName = "newfolder"
-            };
-
-            // Act
-            var result = await controller.NewFolder(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-        }
-
-        /// <summary>
-        /// Tests that Delete_WithValidPaths_DeletesItems.
-        /// </summary>
-        [TestMethod]
-        public async Task Delete_WithValidPaths_DeletesItems()
-        {
-            // Arrange
-            await CreateTestFile("/pub/test/delete.txt");
-            var model = new DeleteBlobItemsViewModel
-            {
-                Paths = new List<string> { "/pub/test/delete.txt" }
-            };
-
-            // Act
-            var result = await controller.Delete(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-            Assert.IsFalse(await Storage.BlobExistsAsync("/pub/test/delete.txt"));
-        }
-
-        /// <summary>
-        /// Tests that Copy_WithValidPaths_CopiesFiles.
-        /// </summary>
-        [TestMethod]
-        public async Task Copy_WithValidPaths_CopiesFiles()
-        {
-            const string sourceContent = "Test file content for copy operation";
-            await CreateTestFile("/pub/source/file.txt", sourceContent);
-            await Storage.CreateFolder("/pub/destination");
-
-            // Verify source file exists before copy
-            var sourceExists = await Storage.BlobExistsAsync("/pub/source/file.txt");
-            Assert.IsTrue(sourceExists, "Source file should exist before copy");
-
-            var model = new MoveFilesViewModel
-            {
-                Items = new List<string> { "/pub/source/file.txt" },
-                Destination = "/pub/destination"
-            };
-
-            // Act
-            var result = await controller.Copy(model);
-
-            // Assert - Show error details if BadRequest
-            if (result is BadRequestObjectResult badRequest)
-            {
-                var errorMessage = badRequest.Value?.ToString() ?? "Unknown error";
-                Assert.Fail($"Copy operation failed with BadRequest: {errorMessage}");
-            }
-
-            Assert.IsInstanceOfType(result, typeof(OkResult), "Copy should return OkResult");
-
-            // Verify destination file exists
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/file.txt"),
-                "Destination file should exist after copy");
-
-            // Verify source file still exists (copy shouldn't delete source)
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/source/file.txt"),
-                "Source file should still exist after copy");
-
-            // Verify file content was copied correctly
-            using var destStream = await Storage.GetStreamAsync("/pub/destination/file.txt");
-            using var reader = new StreamReader(destStream);
-            var copiedContent = await reader.ReadToEndAsync();
-            Assert.AreEqual(sourceContent, copiedContent, "Copied file content should match source");
-
-            // Verify file metadata
-            var destFileMetadata = await Storage.GetFileAsync("/pub/destination/file.txt");
-            Assert.IsNotNull(destFileMetadata, "Destination file metadata should exist");
-            Assert.AreEqual("file.txt", destFileMetadata.Name, "File name should be correct");
-            Assert.IsFalse(destFileMetadata.IsDirectory, "Copied item should be a file, not a directory");
-            Assert.AreEqual(".txt", destFileMetadata.Extension, "File extension should be preserved");
-        }
-
-        /// <summary>
-        /// Tests that Copy_WithMultipleFiles_CopiesAllFiles.
-        /// </summary>
-        [TestMethod]
-        public async Task Copy_WithMultipleFiles_CopiesAllFiles()
-        {
-            // Arrange
-            await CreateTestFile("/pub/source/file1.txt", "Content 1");
-            await CreateTestFile("/pub/source/file2.txt", "Content 2");
-            await CreateTestFile("/pub/source/file3.txt", "Content 3");
-            await Storage.CreateFolder("/pub/destination");
-
-            var model = new MoveFilesViewModel
-            {
-                Items = new List<string>
-                {
-                    "/pub/source/file1.txt",
-                    "/pub/source/file2.txt",
-                    "/pub/source/file3.txt"
-                },
-                Destination = "/pub/destination"
-            };
-
-            // Act
-            var result = await controller.Copy(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/file1.txt"));
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/file2.txt"));
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/file3.txt"));
-        }
-
-        /// <summary>
-        /// Tests that Copy_WithNestedPath_PreservesFilename.
-        /// </summary>
-        [TestMethod]
-        public async Task Copy_WithNestedPath_PreservesFilename()
-        {
-            var testPath = "/pub/deeply/nested/source/file.txt";
-            var destPath = "/pub/destination/file.txt";
-
-            try
-            {
-                // Create test file
-                await CreateTestFile(testPath);
-                await Storage.CreateFolder("/pub/destination");
-
-                // Additional delay to ensure storage is consistent
-                await Task.Delay(200);
-
-                // Verify source file exists before copy with detailed diagnostics
-                var sourceExists = await Storage.BlobExistsAsync(testPath);
-                if (!sourceExists)
-                {
-                    var allFiles = await Storage.GetFilesAndDirectories("/pub");
-                    var fileList = string.Join(", ", allFiles.Select(f => f.Path));
-                    Assert.Fail($"Source file not created. Platform: {Environment.OSVersion.Platform}. Files: {fileList}");
-                }
-
-                var model = new MoveFilesViewModel
-                {
-                    Items = new List<string> { testPath },
-                    Destination = "/pub/destination"
-                };
-
-                // Act
-                var result = await controller.Copy(model);
-
-                // Assert with better error messages
-                if (result is BadRequestObjectResult badRequest)
-                {
-                    var errorMessage = badRequest.Value?.ToString() ?? "Unknown error";
-                    Assert.Fail($"Copy operation failed. Platform: {Environment.OSVersion.Platform}. Error: {errorMessage}");
-                }
-
-                Assert.IsInstanceOfType(result, typeof(OkResult));
-                Assert.IsTrue(await Storage.BlobExistsAsync(destPath));
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"Test failed on platform {Environment.OSVersion.Platform}: {ex.Message}\nStack: {ex.StackTrace}");
-            }
-            finally
-            {
-            }
-        }
-
-        /// <summary>
-        /// Tests that Copy_WithSpecialCharactersInFilename_HandlesCorrectly.
-        /// </summary>
-        [TestMethod]
-        public async Task Copy_WithSpecialCharactersInFilename_HandlesCorrectly()
-        {
-            // Arrange
-            await CreateTestFile("/pub/source/test-file_2024.txt", "Special content");
-            await Storage.CreateFolder("/pub/destination");
-
-            var model = new MoveFilesViewModel
-            {
-                Items = new List<string> { "/pub/source/test-file_2024.txt" },
-                Destination = "/pub/destination"
-            };
-
-            // Act
-            var result = await controller.Copy(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/test-file_2024.txt"));
-        }
-
-        /// <summary>
-        /// Tests that Move_WithValidPaths_MovesFiles.
-        /// </summary>
-        [TestMethod]
-        public async Task Move_WithValidPaths_MovesFiles()
-        {
-            // Arrange
-            await CreateTestFile("/pub/source/moveme.txt");
-            await Storage.CreateFolder("/pub/destination");
-            var model = new MoveFilesViewModel
-            {
-                Items = new List<string> { "/pub/source/moveme.txt" },
-                Destination = "/pub/destination"
-            };
-
-            // Act
-            var result = await controller.Move(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/destination/moveme.txt"));
-            Assert.IsFalse(await Storage.BlobExistsAsync("/pub/source/moveme.txt"));
-        }
-
-        /// <summary>
-        /// Tests that Rename_WithValidNames_RenamesFile.
-        /// </summary>
-        [TestMethod]
-        public async Task Rename_WithValidNames_RenamesFile()
-        {
-            // Arrange
-            await CreateTestFile("/pub/test/oldname.txt");
-            var model = new RenameBlobViewModel
-            {
-                BlobRootPath = "/pub/test",
-                FromBlobName = "oldname.txt",
-                ToBlobName = "newname.txt"
-            };
-
-            // Act
-            var result = await controller.Rename(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-            Assert.IsTrue(await Storage.BlobExistsAsync("/pub/test/newname.txt"));
-        }
-
-        #endregion
-
         #region Download Tests
 
         /// <summary>
@@ -1016,27 +722,6 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
-        #region Security - Path Traversal Tests
-
-        [TestMethod]
-        public async Task NewFolder_WithInvalidNames_ReturnsBadRequest()
-        {
-            foreach (var folderName in new[] { "../../../malicious", string.Empty })
-            {
-                var model = new NewFolderViewModel
-                {
-                    ParentFolder = "/pub",
-                    FolderName = folderName
-                };
-
-                var result = await controller.NewFolder(model);
-
-                Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            }
-        }
-
-        #endregion
-
         #region Security - File Type Validation Tests
 
         /// <summary>
@@ -1063,70 +748,6 @@ namespace Sky.Tests.Controllers
                 var jsonResult = result as JsonResult;
                 var uploadResult = jsonResult.Value as FileUploadResult;
                 Assert.IsFalse(uploadResult.Uploaded, "Dangerous files should not be uploaded");
-            }
-        }
-
-        #endregion
-
-        #region Error Handling - Storage Failures Tests
-
-        /// <summary>
-        /// Tests that file operations with non-existent paths return expected responses.
-        /// </summary>
-        [TestMethod]
-        public async Task FileOperations_WithNonExistentPaths_ReturnExpectedResponses()
-        {
-            var scenarios = new (string Name, Func<Task<IActionResult>> Action, Type ExpectedType)[]
-            {
-                (
-                    "DeleteNonExistentPath",
-                    async () =>
-                    {
-                        var model = new DeleteBlobItemsViewModel
-                        {
-                            Paths = new List<string> { "/pub/nonexistent/file.txt" }
-                        };
-
-                        return await controller.Delete(model);
-                    },
-                    typeof(OkResult)
-                ),
-                (
-                    "MoveNonExistentSource",
-                    async () =>
-                    {
-                        await Storage.CreateFolder("/pub/destination");
-                        var model = new MoveFilesViewModel
-                        {
-                            Items = new List<string> { "/pub/nonexistent.txt" },
-                            Destination = "/pub/destination"
-                        };
-
-                        return await controller.Move(model);
-                    },
-                    typeof(BadRequestObjectResult)
-                ),
-                (
-                    "CopyNonExistentDestination",
-                    async () =>
-                    {
-                        await CreateTestFile("/pub/source/file.txt");
-                        var model = new MoveFilesViewModel
-                        {
-                            Items = new List<string> { "/pub/source/file.txt" },
-                            Destination = "/pub/nonexistent-destination"
-                        };
-
-                        return await controller.Copy(model);
-                    },
-                    typeof(BadRequestObjectResult)
-                ),
-            };
-
-            foreach (var scenario in scenarios)
-            {
-                var result = await scenario.Action();
-                Assert.IsInstanceOfType(result, scenario.ExpectedType, $"{scenario.Name} should return {scenario.ExpectedType.Name}.");
             }
         }
 
@@ -1249,91 +870,6 @@ namespace Sky.Tests.Controllers
             });
         }
 
-        /// <summary>
-        /// Tests that Rename_WithSameName_ReturnsOk.
-        /// </summary>
-        [TestMethod]
-        public async Task Rename_WithSameName_ReturnsOk()
-        {
-            // Arrange
-            await CreateTestFile("/pub/test/samename.txt");
-            var model = new RenameBlobViewModel
-            {
-                BlobRootPath = "/pub/test",
-                FromBlobName = "samename.txt",
-                ToBlobName = "samename.txt"
-            };
-
-            // Act
-            var result = await controller.Rename(model);
-
-            // Assert
-            // Should handle gracefully - either OK or no-op
-            Assert.IsInstanceOfType(result, typeof(OkResult));
-        }
-
-        #endregion
-
-        #region Multi-File Operation Edge Cases Tests
-
-        /// <summary>
-        /// Tests that multi-file operations with empty lists return Ok.
-        /// </summary>
-        [TestMethod]
-        public async Task MultiFileOperations_WithEmptyLists_ReturnOk()
-        {
-            await Storage.CreateFolder("/pub/destination");
-
-            var scenarios = new (string Name, Func<Task<IActionResult>> Action)[]
-            {
-                (
-                    "Delete",
-                    async () => (IActionResult)await controller.Delete(new DeleteBlobItemsViewModel
-                    {
-                        Paths = new List<string>()
-                    })
-                ),
-                (
-                    "Copy",
-                    async () => (IActionResult)await controller.Copy(new MoveFilesViewModel
-                    {
-                        Items = new List<string>(),
-                        Destination = "/pub/destination"
-                    })
-                ),
-            };
-
-            foreach (var scenario in scenarios)
-            {
-                var result = await scenario.Action();
-                Assert.IsInstanceOfType(result, typeof(OkResult), $"{scenario.Name} should return Ok for an empty list.");
-            }
-        }
-
-        /// <summary>
-        /// Tests that Move_WithSameSourceAndDestination_HandlesCorrectly.
-        /// </summary>
-        [TestMethod]
-        public async Task Move_WithSameSourceAndDestination_HandlesCorrectly()
-        {
-            // Arrange
-            await CreateTestFile("/pub/test/file.txt");
-            var model = new MoveFilesViewModel
-            {
-                Items = new List<string> { "/pub/test/file.txt" },
-                Destination = "/pub/test"
-            };
-
-            // Act
-            var result = await controller.Move(model);
-
-            // Assert
-            // Should handle gracefully - either OK (no-op) or BadRequest
-            Assert.IsTrue(
-                result is OkResult || result is BadRequestObjectResult,
-                "Should return OK or BadRequest for same source/destination");
-        }
-
         #endregion
 
         #region Permission and Authorization Tests
@@ -1348,19 +884,6 @@ namespace Sky.Tests.Controllers
             {
                 ("SimpleUpload", async () => (IActionResult)await controller.SimpleUpload("123", "articles")),
                 ("Index", async () => (IActionResult)await controller.Index("/pub", false)),
-                (
-                    "NewFolder",
-                    async () => (IActionResult)await controller.NewFolder(new NewFolderViewModel
-                    {
-                        ParentFolder = "/pub",
-                        FolderName = "test"
-                    })),
-                (
-                    "Delete",
-                    async () => (IActionResult)await controller.Delete(new DeleteBlobItemsViewModel
-                    {
-                        Paths = new List<string> { "/pub/test.txt" }
-                    })),
             };
 
             foreach (var scenario in scenarios)
@@ -1435,52 +958,9 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(model.Count >= 2, "Should list templates as folders");
         }
 
-        /// <summary>
-        /// Tests that Rename_WithConflictingName_ReturnsBadRequest.
-        /// </summary>
-        [TestMethod]
-        public async Task Rename_WithConflictingName_ReturnsBadRequest()
-        {
-            // Arrange
-            await CreateTestFile("/pub/test/existing.txt", "Existing");
-            await CreateTestFile("/pub/test/conflict.txt", "Conflict");
-
-            var model = new RenameBlobViewModel
-            {
-                BlobRootPath = "/pub/test",
-                FromBlobName = "existing.txt",
-                ToBlobName = "conflict.txt" // This name already exists
-            };
-
-            // Act
-            var result = await controller.Rename(model);
-
-            // Assert
-            // Should return BadRequest or handle conflict appropriately
-            Assert.IsTrue(
-                result is BadRequestObjectResult || result is OkResult,
-                "Should handle naming conflict");
-        }
-
         #endregion
 
         #region Missing Endpoint Coverage Tests
-
-        /// <summary>
-        /// Tests that Create rejects targets outside /pub.
-        /// </summary>
-        [TestMethod]
-        public async Task Create_ReturnsUnauthorized_WhenTargetOutsidePub()
-        {
-            // Arrange
-            var entry = new FileManagerEntry { Name = "new-folder" };
-
-            // Act
-            var result = await controller.Create("/private", entry);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(UnauthorizedObjectResult));
-        }
 
         /// <summary>
         /// Tests that GetImageAssets returns JSON payload.
@@ -1634,6 +1114,7 @@ namespace Sky.Tests.Controllers
                 mockLogger.Object,
                 new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(),
                 new MemoryCache(new MemoryCacheOptions()),
+                mockElFinderMediator.Object,
                 DynamicConfigurationProvider,
                 Logic,
                 mockHostEnvironment.Object,

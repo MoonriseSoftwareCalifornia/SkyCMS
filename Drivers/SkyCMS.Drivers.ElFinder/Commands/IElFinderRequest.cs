@@ -7,7 +7,6 @@
 
 namespace SkyCMS.Drivers.ElFinder.Commands
 {
-    using MediatR;
     using SkyCMS.Drivers.ElFinder.Responses;
 
     /// <summary>
@@ -15,9 +14,9 @@ namespace SkyCMS.Drivers.ElFinder.Commands
     /// </summary>
     /// <remarks>
     /// All elFinder commands inherit from this interface and return an <see cref="IElFinderResponse"/>.
-    /// This enables centralized command handling, validation, and response formatting through MediatR.
+    /// This enables centralized command handling and response formatting through <see cref="IElFinderDispatcher"/>.
     /// </remarks>
-    public interface IElFinderRequest : IRequest<IElFinderResponse>
+    public interface IElFinderRequest
     {
         /// <summary>
         /// Gets the elFinder command name (e.g., "open", "tree", "mkdir").

@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -8,7 +7,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "mkdir" command: creates a new directory.
 /// </summary>
-public class MkdirCommandHandler : IRequestHandler<MkdirCommand, IElFinderResponse>
+public class MkdirCommandHandler : IElFinderHandler<MkdirCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -17,7 +16,7 @@ public class MkdirCommandHandler : IRequestHandler<MkdirCommand, IElFinderRespon
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(MkdirCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(MkdirCommand request, CancellationToken cancellationToken)
     {
         try
         {

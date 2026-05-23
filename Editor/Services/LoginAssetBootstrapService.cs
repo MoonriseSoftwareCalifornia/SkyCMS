@@ -25,7 +25,6 @@ namespace Cosmos.Editor.Services
 
         private static readonly IReadOnlyList<LoginAsset> RequiredAssets = new[]
         {
-            new LoginAsset("lib/picocss/pico.conditional.min.css", "pub/lib/picocss/pico.conditional.min.css", "text/css"),
             new LoginAsset("lib/ckeditor/ckeditor5-content.css", "pub/lib/ckeditor/ckeditor5-content.css", "text/css"),
         };
 
@@ -76,20 +75,20 @@ namespace Cosmos.Editor.Services
 
                 foreach (var asset in RequiredAssets)
                 {
-                    var sourcePath = Path.Combine(webRootPath, asset.SourcePath.Replace('/', Path.DirectorySeparatorChar));
+                    var sourcePath = Path.Combine(webRootPath, asset.sourcePath.Replace('/', Path.DirectorySeparatorChar));
                     if (!global::System.IO.File.Exists(sourcePath))
                     {
                         logger.LogWarning("Required login asset not found on disk: {AssetPath}", sourcePath);
                         continue;
                     }
 
-                    if (await blobClient.BlobExistsAsync(storageConnection, ContainerName, asset.BlobName))
+                    if (await blobClient.BlobExistsAsync(storageConnection, ContainerName, asset.blobName))
                     {
                         continue;
                     }
 
                     await using var fileStream = global::System.IO.File.OpenRead(sourcePath);
-                    await blobClient.UploadAsync(storageConnection, ContainerName, asset.BlobName, fileStream, asset.ContentType);
+                    await blobClient.UploadAsync(storageConnection, ContainerName, asset.blobName, fileStream, asset.contentType);
                 }
             }
             catch (Exception ex)
@@ -98,6 +97,12 @@ namespace Cosmos.Editor.Services
             }
         }
 
-        private sealed record LoginAsset(string SourcePath, string BlobName, string ContentType);
+        /// <summary>
+        /// Represents an asset to be uploaded for login page customization.
+        /// </summary>
+        /// <param name="sourcePath">Local file system path to the source asset.</param>
+        /// <param name="blobName">Name of the blob in storage where the asset will be stored.</param>
+        /// <param name="contentType">MIME type of the asset content.</param>
+        private sealed record LoginAsset(string sourcePath, string blobName, string contentType);
     }
 }

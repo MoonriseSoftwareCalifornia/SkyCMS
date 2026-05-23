@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -8,7 +7,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "put" command: edits/updates file content.
 /// </summary>
-public class PutCommandHandler : IRequestHandler<PutCommand, IElFinderResponse>
+public class PutCommandHandler : IElFinderHandler<PutCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -17,7 +16,7 @@ public class PutCommandHandler : IRequestHandler<PutCommand, IElFinderResponse>
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(PutCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(PutCommand request, CancellationToken cancellationToken)
     {
         try
         {

@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Helpers;
@@ -9,7 +8,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "rename" command: renames or moves a file/folder.
 /// </summary>
-public class RenameCommandHandler : IRequestHandler<RenameCommand, IElFinderResponse>
+public class RenameCommandHandler : IElFinderHandler<RenameCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -18,7 +17,7 @@ public class RenameCommandHandler : IRequestHandler<RenameCommand, IElFinderResp
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(RenameCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(RenameCommand request, CancellationToken cancellationToken)
     {
         try
         {

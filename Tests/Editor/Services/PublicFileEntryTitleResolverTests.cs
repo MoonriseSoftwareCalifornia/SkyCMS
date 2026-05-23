@@ -257,5 +257,276 @@ namespace Sky.Tests.Editor.Services
             await resolver.FilterDeletedArticleEntriesAsync(secondBatch, cache);
             Assert.AreEqual(1, secondBatch.Count, "Second call within cache window: stale cache should keep the entry visible.");
         }
+
+        // ───── GetArticleTitlesByNumberAsync ──────────────────────────────────
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task GetArticleTitles_MultipleVersions_ReturnsLatestVersion()
+        {
+            // Arrange: Create multiple versions of the same article with different titles
+            using var db = CreateDb(nameof(GetArticleTitles_MultipleVersions_ReturnsLatestVersion));
+            db.Articles.AddRange(
+                new Cosmos.Common.Data.Article
+                {
+                    ArticleNumber = 100,
+                    VersionNumber = 1,
+                    Title = "Original Title",
+                    UrlPath = "article-100",
+                    StatusCode = (int)StatusCodeEnum.Active,
+                },
+                new Cosmos.Common.Data.Article
+                {
+                    ArticleNumber = 100,
+                    VersionNumber = 2,
+                    Title = "Updated Title",
+                    UrlPath = "article-100",
+                    StatusCode = (int)StatusCodeEnum.Active,
+                },
+                new Cosmos.Common.Data.Article
+                {
+                    ArticleNumber = 100,
+                    VersionNumber = 3,
+                    Title = "Latest Title",
+                    UrlPath = "article-100",
+                    StatusCode = (int)StatusCodeEnum.Active,
+                });
+            await db.SaveChangesAsync();
+
+            // Act: Get title for article 100
+            var entries = new List<FileManagerEntry>
+            {
+                new FileManagerEntry
+                {
+                    Path = "pub/articles/100",
+                    Name = "100",
+                    IsDirectory = true,
+                },
+            };
+            var resolver = new PublicFileEntryTitleResolver(db);
+            var result = await resolver.GetArticleTitlesByNumberAsync(entries);
+
+            // Assert: Should return the title from version 3 (latest)
+            Assert.AreEqual(1, result.Count);
+            Assert.IsTrue(result.ContainsKey(100));
+            Assert.AreEqual("Latest Title", result[100]);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task GetArticleTitles_EmptyTitles_SkipsEmptyVersions()
+        {
+            // Arrange: Create versions where some have empty titles
+            using var db = CreateDb(nameof(GetArticleTitles_EmptyTitles_SkipsEmptyVersions));
+            db.Articles.AddRange(
+                new Cosmos.Common.Data.Article
+                {
+                    ArticleNumber = 200,
+                    VersionNumber = 1,
+                    Title = "Good Title",
+                    UrlPath = "article-200",
+                    StatusCode = (int)StatusCodeEnum.Active,
+                },
+                new Cosmos.Common.Data.Article
+                {
+                    ArticleNumber = 200,
+                    VersionNumber = 2,
+                    Title = string.Empty,
+                    UrlPath = "article-200",
+                    StatusCode = (int)StatusCodeEnum.Active,
+                },
+                new Cosmos.Common.Data.Article
+                {
+                    ArticleNumber = 200,
+                    VersionNumber = 3,
+                    Title = "   ",  // Whitespace only
+                    UrlPath = "article-200",
+                    StatusCode = (int)StatusCodeEnum.Active,
+                });
+            await db.SaveChangesAsync();
+
+            // Act
+            var entries = new List<FileManagerEntry>
+            {
+                new FileManagerEntry
+                {
+                    Path = "pub/articles/200",
+                    Name = "200",
+                    IsDirectory = true,
+                },
+            };
+            var resolver = new PublicFileEntryTitleResolver(db);
+            var result = await resolver.GetArticleTitlesByNumberAsync(entries);
+
+            // Assert: Should return "Good Title" from version 1 (latest non-empty)
+            Assert.AreEqual(1, result.Count);
+            Assert.IsTrue(result.ContainsKey(200));
+            Assert.AreEqual("Good Title", result[200]);
+        }
+
+        // ───── ResolveCanonicalPathAsync Tests ───────────────────────────────────
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_AlreadyCanonical_PassesThrough()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_AlreadyCanonical_PassesThrough));
+            var resolver = new PublicFileEntryTitleResolver(db);
+
+            var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/123/banner.jpg");
+
+            Assert.AreEqual("/pub/articles/123/banner.jpg", result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_NonArticlePath_PassesThrough()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_NonArticlePath_PassesThrough));
+            var resolver = new PublicFileEntryTitleResolver(db);
+
+            var result = await resolver.ResolveCanonicalPathAsync("/pub/static/logo.png");
+
+            Assert.AreEqual("/pub/static/logo.png", result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_TitleInCatalog_ResolvesToNumber()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_TitleInCatalog_ResolvesToNumber));
+            db.ArticleCatalog.Add(new Cosmos.Common.Data.CatalogEntry
+            {
+                ArticleNumber = 456,
+                Title = "Getting Started Guide",
+                UrlPath = "getting-started",
+                Status = nameof(StatusCodeEnum.Active),
+            });
+            await db.SaveChangesAsync();
+
+            var resolver = new PublicFileEntryTitleResolver(db);
+            var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Getting Started Guide/banner.jpg");
+
+            Assert.AreEqual("/pub/articles/456/banner.jpg", result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_TitleInArticlesTable_ResolvesToNumber()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_TitleInArticlesTable_ResolvesToNumber));
+            db.Articles.Add(new Cosmos.Common.Data.Article
+            {
+                ArticleNumber = 789,
+                VersionNumber = 1,
+                Title = "Draft Article",
+                UrlPath = "draft",
+                StatusCode = (int)StatusCodeEnum.Active,
+            });
+            await db.SaveChangesAsync();
+
+            var resolver = new PublicFileEntryTitleResolver(db);
+            var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Draft Article");
+
+            Assert.AreEqual("/pub/articles/789", result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_NonexistentTitle_ReturnsOriginal()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_NonexistentTitle_ReturnsOriginal));
+            var resolver = new PublicFileEntryTitleResolver(db);
+
+            var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Nonexistent Article");
+
+            Assert.AreEqual("/pub/articles/Nonexistent Article", result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_TitleCollision_ReturnsLowestNumber()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_TitleCollision_ReturnsLowestNumber));
+            db.ArticleCatalog.AddRange(
+                new Cosmos.Common.Data.CatalogEntry
+                {
+                    ArticleNumber = 999,
+                    Title = "Duplicate Title",
+                    UrlPath = "duplicate-999",
+                    Status = nameof(StatusCodeEnum.Active),
+                },
+                new Cosmos.Common.Data.CatalogEntry
+                {
+                    ArticleNumber = 111,
+                    Title = "Duplicate Title",
+                    UrlPath = "duplicate-111",
+                    Status = nameof(StatusCodeEnum.Active),
+                });
+            await db.SaveChangesAsync();
+
+            var resolver = new PublicFileEntryTitleResolver(db);
+            var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Duplicate Title/image.png");
+
+            // Should return lowest article number (111)
+            Assert.AreEqual("/pub/articles/111/image.png", result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_EmptyPath_ReturnsEmpty()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_EmptyPath_ReturnsEmpty));
+            var resolver = new PublicFileEntryTitleResolver(db);
+
+            var result = await resolver.ResolveCanonicalPathAsync(string.Empty);
+
+            Assert.AreEqual(string.Empty, result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_NullPath_ReturnsEmpty()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_NullPath_ReturnsEmpty));
+            var resolver = new PublicFileEntryTitleResolver(db);
+
+            var result = await resolver.ResolveCanonicalPathAsync(null!);
+
+            Assert.AreEqual(string.Empty, result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_ShortPath_PassesThrough()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_ShortPath_PassesThrough));
+            var resolver = new PublicFileEntryTitleResolver(db);
+
+            var result = await resolver.ResolveCanonicalPathAsync("/pub/articles");
+
+            Assert.AreEqual("/pub/articles", result);
+        }
+
+        [TestMethod]
+        [TestCategory("PublicFileEntryTitleResolver")]
+        public async Task ResolveCanonicalPath_DeepNestedPath_ResolvesCorrectly()
+        {
+            using var db = CreateDb(nameof(ResolveCanonicalPath_DeepNestedPath_ResolvesCorrectly));
+            db.ArticleCatalog.Add(new Cosmos.Common.Data.CatalogEntry
+            {
+                ArticleNumber = 555,
+                Title = "Deep Article",
+                UrlPath = "deep",
+                Status = nameof(StatusCodeEnum.Active),
+            });
+            await db.SaveChangesAsync();
+
+            var resolver = new PublicFileEntryTitleResolver(db);
+            var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Deep Article/assets/images/photo.jpg");
+
+            Assert.AreEqual("/pub/articles/555/assets/images/photo.jpg", result);
+        }
     }
 }
+

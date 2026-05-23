@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -12,7 +11,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// Handles the "url" command: returns a public URL for a file hash.
 /// See Docs/commands/url.md.
 /// </summary>
-public class UrlCommandHandler : IRequestHandler<UrlCommand, IElFinderResponse>
+public class UrlCommandHandler : IElFinderHandler<UrlCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -21,7 +20,7 @@ public class UrlCommandHandler : IRequestHandler<UrlCommand, IElFinderResponse>
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public Task<IElFinderResponse> Handle(UrlCommand request, CancellationToken cancellationToken)
+    public Task<IElFinderResponse> HandleAsync(UrlCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Target))
         {

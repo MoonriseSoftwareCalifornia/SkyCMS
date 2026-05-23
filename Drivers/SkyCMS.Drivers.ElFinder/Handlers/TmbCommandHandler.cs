@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -8,7 +7,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "tmb" command.
 /// </summary>
-public class TmbCommandHandler : IRequestHandler<TmbCommand, IElFinderResponse>
+public class TmbCommandHandler : IElFinderHandler<TmbCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -17,7 +16,7 @@ public class TmbCommandHandler : IRequestHandler<TmbCommand, IElFinderResponse>
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(TmbCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(TmbCommand request, CancellationToken cancellationToken)
     {
         var response = new TmbResponse();
         if (string.IsNullOrWhiteSpace(request.Targets))

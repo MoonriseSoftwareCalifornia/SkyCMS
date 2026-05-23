@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -8,7 +7,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "rm" (remove/delete) command: deletes files and folders.
 /// </summary>
-public class RmCommandHandler : IRequestHandler<RmCommand, IElFinderResponse>
+public class RmCommandHandler : IElFinderHandler<RmCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -17,7 +16,7 @@ public class RmCommandHandler : IRequestHandler<RmCommand, IElFinderResponse>
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(RmCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(RmCommand request, CancellationToken cancellationToken)
     {
         try
         {

@@ -60,5 +60,20 @@ namespace Sky.Cms.Services
         /// </param>
         /// <returns>A task that completes once filtering is done.</returns>
         Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, IMemoryCache cache, string tenantDomain = "");
+
+        /// <summary>
+        /// Resolves a friendly display path (containing article title) to its canonical numeric path.
+        /// </summary>
+        /// <param name="friendlyPath">The friendly path containing an article title (e.g., "/pub/articles/Getting Started Guide/banner.jpg").</param>
+        /// <returns>
+        /// The canonical path with article number (e.g., "/pub/articles/123/banner.jpg") if the title is found.
+        /// Returns the original path if it's already canonical, not an article path, or the title cannot be resolved.
+        /// </returns>
+        /// <remarks>
+        /// This method performs a database lookup to find the article number by title.
+        /// If multiple articles share the same title, the first match (lowest article number) is returned.
+        /// Use this for user-typed paths or friendly URLs that need to be converted for storage operations.
+        /// </remarks>
+        Task<string> ResolveCanonicalPathAsync(string friendlyPath);
     }
 }

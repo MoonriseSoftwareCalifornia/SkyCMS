@@ -94,6 +94,7 @@ ADRs should be added intentionally and reviewed carefully.
 - [0037: Article Lifecycle and Status Code Semantics](0037-article-lifecycle-and-status-code-semantics.md)
 - [0038: Article Trash and Permanent Delete Lifecycle](0038-article-trash-and-permanent-delete-lifecycle.md)
 - [0039: DRY Controller Unification: File Manager and VS Code Explorer](0039-dry-controller-unification-file-manager-and-vscode.md)
+- [0040: Use Human-Readable Article Titles in File Manager Display Paths](0040-article-title-display-paths.md)
 
 ## Changing or Superseding ADRs
 

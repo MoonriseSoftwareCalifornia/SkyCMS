@@ -1,4 +1,4 @@
-// <copyright file="FileContractTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="FileContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -45,7 +45,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task File_ValidTarget_ReturnsStreamResponse()
         {
             var command = new FileCommand { Target = LogoPngHash, Download = "0" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
 
             Assert.IsInstanceOfType(response, typeof(FileResponse),
                 "file command must return FileResponse, not a JSON DTO.");
@@ -63,7 +63,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task File_Download1_SetsForceDownload()
         {
             var command = new FileCommand { Target = LogoPngHash, Download = "1" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
 
             Assert.IsInstanceOfType(response, typeof(FileResponse));
             var fileResponse = (FileResponse)response;
@@ -77,7 +77,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task File_Download0_DoesNotForceDownload()
         {
             var command = new FileCommand { Target = LogoPngHash, Download = "0" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
 
             Assert.IsInstanceOfType(response, typeof(FileResponse));
             var fileResponse = (FileResponse)response;
@@ -91,7 +91,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task File_MissingTarget_ReturnsError()
         {
             var command = new FileCommand { Target = null };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -104,7 +104,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task File_InvalidHash_ReturnsError()
         {
             var command = new FileCommand { Target = "not_a_valid_hash" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(

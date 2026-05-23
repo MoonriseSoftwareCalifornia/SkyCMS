@@ -12,8 +12,8 @@ namespace Sky.Cms.Services
     using SkyCMS.Drivers.ElFinder.Adapters;
 
     /// <summary>
-    /// elFinder name resolver that substitutes the article number with the article's title
-    /// for any path rooted under <c>/pub/articles/{articleNumber}/</c>.
+    /// elFinder name resolver that substitutes canonical entity IDs with friendly titles
+    /// for paths under <c>/pub/articles/{articleNumber}/</c> and <c>/pub/templates/{guid}/</c>.
     /// All other paths are returned unchanged.
     /// </summary>
     public sealed class ArticleTitleNameResolver : IElFinderNameResolver
@@ -32,28 +32,42 @@ namespace Sky.Cms.Services
         /// <inheritdoc />
         public async Task<string> ResolveNameAsync(string fullPath, string rawName, CancellationToken cancellationToken = default)
         {
-            // Only apply to paths under /pub/articles with a numeric third segment.
-            if (!PublicFileEntryHelper.TryGetArticleNumberFromPath(fullPath, out var articleNumber))
-            {
-                return rawName;
-            }
-
-            // The display name is only overridden for the article folder itself
-            // (i.e. the third path segment). Sub-folders and files keep their raw names.
             var normalized = PublicFileEntryHelper.NormalizePath(fullPath);
             var segments = normalized.Split('/', System.StringSplitOptions.RemoveEmptyEntries);
-
-            // segments[0]=pub  segments[1]=articles  segments[2]=<articleNumber>
-            // Only rename when rawName is the article-number segment.
-            if (segments.Length < 3 || !string.Equals(segments[2], rawName, System.StringComparison.OrdinalIgnoreCase))
+            if (segments.Length < 3)
             {
                 return rawName;
             }
 
-            var titles = await this.titleResolver.GetArticleTitlesByNumberAsync(new[] { articleNumber });
-            if (titles.TryGetValue(articleNumber, out var title) && !string.IsNullOrWhiteSpace(title))
+            var scope = segments[0];
+            var kind = segments[1];
+            var idSegment = segments[2];
+
+            if (!string.Equals(idSegment, rawName, System.StringComparison.OrdinalIgnoreCase))
             {
-                return title;
+                return rawName;
+            }
+
+            if (string.Equals(scope, "pub", System.StringComparison.OrdinalIgnoreCase)
+                && string.Equals(kind, "articles", System.StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(idSegment, out var articleNumber))
+            {
+                var titles = await this.titleResolver.GetArticleTitlesByNumberAsync(new[] { articleNumber });
+                if (titles.TryGetValue(articleNumber, out var articleTitle) && !string.IsNullOrWhiteSpace(articleTitle))
+                {
+                    return articleTitle;
+                }
+            }
+
+            if (string.Equals(scope, "pub", System.StringComparison.OrdinalIgnoreCase)
+                && string.Equals(kind, "templates", System.StringComparison.OrdinalIgnoreCase)
+                && System.Guid.TryParse(idSegment, out var templateId))
+            {
+                var titles = await this.titleResolver.GetTemplateTitlesByIdAsync(new[] { templateId });
+                if (titles.TryGetValue(templateId, out var templateTitle) && !string.IsNullOrWhiteSpace(templateTitle))
+                {
+                    return templateTitle;
+                }
             }
 
             return rawName;

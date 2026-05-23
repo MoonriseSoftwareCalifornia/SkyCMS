@@ -50,50 +50,56 @@ GET /elfinder/connector?cmd=open&target=l1_cHViL2ltYWdlcw
 ```json
 {
   "cwd": {
-    "hash":   "l1_cHViL2ltYWdlcw",
-    "phash":  "l1_cHVi",
-    "name":   "images",
-    "mime":   "directory",
-    "ts":     1714300000,
-    "size":   0,
-    "dirs":   1,
-    "read":   1,
-    "write":  1,
-    "locked": 0
+    "hash": "l1_cHViL2FydGljbGVzLzQy",
+    "phash": "l1_cHViL2FydGljbGVz",
+    "name": "My Great Article",
+    "mime": "directory",
+    "ts": 1714300000,
+    "size": 0,
+    "dirs": 1,
+    "read": 1,
+    "write": 1,
+    "locked": 0,
+    "realPath": "/pub/articles/42",
+    "displayPath": "/pub/articles/My Great Article"
   },
   "files": [
     {
-      "hash":     "l1_cHViL2ltYWdlcw",
-      "phash":    "l1_cHVi",
-      "name":     "images",
-      "mime":     "directory",
-      "ts":       1714300000,
-      "size":     0,
-      "dirs":     1,
-      "read":     1,
-      "write":    1,
-      "locked":   0
+      "hash": "l1_cHViL2FydGljbGVzLzQy",
+      "phash": "l1_cHViL2FydGljbGVz",
+      "name": "My Great Article",
+      "mime": "directory",
+      "ts": 1714300000,
+      "size": 0,
+      "dirs": 1,
+      "read": 1,
+      "write": 1,
+      "locked": 0,
+      "realPath": "/pub/articles/42",
+      "displayPath": "/pub/articles/My Great Article"
     },
     {
-      "hash":     "l1_cHViL2ltYWdlcy9sb2dvLnBuZw",
-      "phash":    "l1_cHViL2ltYWdlcw",
-      "name":     "logo.png",
-      "mime":     "image/png",
-      "ts":       1714200000,
-      "size":     42000,
-      "read":     1,
-      "write":    1,
-      "locked":   0,
-      "tmb":      "l1_cHViL2ltYWdlcy9sb2dvLnBuZw.png"
+      "hash": "l1_cHViL2FydGljbGVzLzQyL2Fzc2V0cy9sb2dvLnBuZw",
+      "phash": "l1_cHViL2FydGljbGVzLzQyL2Fzc2V0cw",
+      "name": "logo.png",
+      "mime": "image/png",
+      "ts": 1714200000,
+      "size": 42000,
+      "read": 1,
+      "write": 1,
+      "locked": 0,
+      "tmb": "l1_cHViL2FydGljbGVzLzQyL2Fzc2V0cy9sb2dvLnBuZw.png",
+      "realPath": "/pub/articles/42/assets/logo.png",
+      "displayPath": "/pub/articles/My Great Article/assets/logo.png"
     }
   ],
   "options": {
-    "path":          "pub/images",
-    "url":           "https://cdn.example.com/pub/images/",
-    "tmbUrl":        "/FileManager/GetImageThumbnail?target=",
-    "separator":     "/",
-    "disabled":      [],
-    "archivers":     { "create": [], "extract": [], "createExt": {} },
+    "path": "pub/articles/My Great Article",
+    "url": "https://cdn.example.com/pub/articles/42/",
+    "tmbUrl": "/FileManager/GetImageThumbnail?target=",
+    "separator": "/",
+    "disabled": [],
+    "archivers": { "create": [], "extract": [], "createExt": {} },
     "copyOverwrite": 1,
     "uploadMaxSize": 134217728
   }
@@ -107,11 +113,31 @@ GET /elfinder/connector?cmd=open&target=l1_cHViL2ltYWdlcw
 - Legacy path: `HandleOpenAsync()` in `ElFinderConnectorController`.
 - CQRS path: `OpenCommand` / `OpenCommandHandler`.
 - `OpenCommand` accepts: `target`, `init`, `volumeId`, `tree`, `blobPublicUrl`, `tmbUrl`, `rootPath`. These are wired by the controller from the HTTP request and `IEditorSettings`.
-- `options.url` is built from `blobPublicUrl + "/" + rootPath + "/"`; used by the client for download links.
+- `options.url` is built from the canonical path and is used by the client for download links.
+- `options.path` is friendly/user-facing when a title substitution exists.
 - `options.tmbUrl` points to `/FileManager/GetImageThumbnail?target=`; the client appends the file hash to form the thumbnail URL.
 - On `init=1`, response must include `api: "2.1049"`, `netDrivers: []`, and the `options` block or the client stalls on init.
 - `cwd` is also included in the `files` array (the protocol requires this).
 - The root directory object must carry `isroot: 1` and `volumeid`; `phash` must be absent on root.
+
+### VS Code Extension integration contract (SkyCMS-specific)
+
+When consuming the `open` response in the SkyCMS Explorer extension:
+
+- Treat `hash` / `phash` as the authoritative operation identifiers.
+  - These encode canonical storage paths and must be sent back for follow-up commands.
+- Treat `realPath` as the authoritative canonical path string.
+  - Use this when the extension needs to display or log the stable storage path.
+- Treat `displayPath` and `name` as presentation values.
+  - Use these for tree labels, breadcrumbs, and user-facing status text.
+- Treat `options.path` as the current friendly breadcrumb path for the opened directory.
+- Never construct operation requests from `displayPath`.
+  - Use `hash` (preferred) or `realPath` for canonical resolution.
+
+In short:
+
+- Operations: `hash` / `phash` / `realPath`
+- UI display: `name` / `displayPath` / `options.path`
 
 ---
 

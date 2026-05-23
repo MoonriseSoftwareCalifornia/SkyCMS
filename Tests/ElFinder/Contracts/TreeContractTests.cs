@@ -1,4 +1,4 @@
-// <copyright file="TreeContractTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="TreeContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -38,7 +38,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Tree_ResponseKey_IsLowercaseTreeArray()
         {
             var command = new TreeCommand { Target = RootHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             AssertArrayProperty(doc.RootElement, "tree");
@@ -49,7 +49,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Tree_Entries_AreValidElFinderObjects()
         {
             var command = new TreeCommand { Target = RootHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree");
@@ -66,7 +66,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Tree_Entries_AreDirectoriesOnly()
         {
             var command = new TreeCommand { Target = RootHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree");
@@ -86,7 +86,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Tree_NoPascalCaseKeysLeak()
         {
             var command = new TreeCommand { Target = RootHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             foreach (var forbiddenKey in new[] { "Tree", "Hash", "Name", "Mime" })
@@ -102,7 +102,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Tree_InvalidHash_ReturnsErrorResponse()
         {
             var command = new TreeCommand { Target = "not_a_hash" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Invalid hash must return ElFinderErrorResponse.");
@@ -124,7 +124,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
             var handler = new TreeCommandHandler(adapter.Object, resolver);
 
-            var response = await handler.Handle(new TreeCommand { Target = ArticlesRootHash }, default);
+            var response = await handler.HandleAsync(new TreeCommand { Target = ArticlesRootHash }, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree", minLength: 1);
@@ -152,7 +152,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
             var handler = new TreeCommandHandler(adapter.Object, resolver);
 
-            var response = await handler.Handle(new TreeCommand { Target = ArticlesRootHash }, default);
+            var response = await handler.HandleAsync(new TreeCommand { Target = ArticlesRootHash }, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree", minLength: 1);
@@ -187,7 +187,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var handler = new TreeCommandHandler(adapter.Object, resolver);
 
             // Expand root — children are images/, docs/, articles/ (no title substitution here).
-            var response = await handler.Handle(new TreeCommand { Target = RootHash }, default);
+            var response = await handler.HandleAsync(new TreeCommand { Target = RootHash }, default);
             using var doc = SerializeResponse(response);
 
             var tree = AssertArrayProperty(doc.RootElement, "tree");

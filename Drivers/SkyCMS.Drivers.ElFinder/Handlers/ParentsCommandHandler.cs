@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -8,7 +7,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "parents" command: returns breadcrumb path from target to root.
 /// </summary>
-public class ParentsCommandHandler : IRequestHandler<ParentsCommand, IElFinderResponse>
+public class ParentsCommandHandler : IElFinderHandler<ParentsCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -17,7 +16,7 @@ public class ParentsCommandHandler : IRequestHandler<ParentsCommand, IElFinderRe
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(ParentsCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(ParentsCommand request, CancellationToken cancellationToken)
     {
         try
         {
@@ -82,6 +81,21 @@ public class ParentsCommandHandler : IRequestHandler<ParentsCommand, IElFinderRe
                 response.Tree.Add(ConvertToElFinderObject(targetEntry, targetPath));
             }
 
+            // Include siblings of the target so the tree panel shows them for breadcrumb expansion.
+            var targetParentPath = GetParentPath(targetPath);
+            if (!string.IsNullOrEmpty(targetParentPath))
+            {
+                var targetSiblings = await _adapter.GetEntriesAsync(targetParentPath, cancellationToken);
+                foreach (var sibling in targetSiblings.Where(e => e.IsDirectory))
+                {
+                    var sibPath = sibling.Path.TrimEnd('/');
+                    if (seen.Add(sibPath))
+                    {
+                        response.Tree.Add(ConvertToElFinderObject(sibling, sibPath));
+                    }
+                }
+            }
+
             // Include children of the target so the node can expand in the tree panel.
             var targetChildren = await _adapter.GetEntriesAsync(targetPath, cancellationToken);
             foreach (var child in targetChildren.Where(e => e.IsDirectory))
@@ -99,6 +113,18 @@ public class ParentsCommandHandler : IRequestHandler<ParentsCommand, IElFinderRe
         {
             return ElFinderErrorResponse.Generic($"Parents failed: {ex.Message}");
         }
+    }
+
+    private static string? GetParentPath(string path)
+    {
+        var trimmedPath = path.TrimEnd('/');
+        var lastSlash = trimmedPath.LastIndexOf('/');
+        if (lastSlash < 0)
+        {
+            return null;
+        }
+
+        return lastSlash == 0 ? "/" : trimmedPath[..lastSlash];
     }
 
     private ElFinderObject ConvertToElFinderObject(Cosmos.BlobService.FileManagerEntry entry, string path)

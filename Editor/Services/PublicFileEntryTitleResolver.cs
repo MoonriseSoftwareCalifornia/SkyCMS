@@ -52,25 +52,34 @@ namespace Sky.Cms.Services
                 return new Dictionary<int, string>();
             }
 
-            // Exclude only truly unusable statuses (Deleted, Redirect). Active and Inactive
-            // articles are both valid non-trashed articles that can have files on disk.
-            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
-            var redirectStatusCode = (int)StatusCodeEnum.Redirect;
-
-            var articleTitlesByNumber = new Dictionary<int, string>();
-            var articleRows = await this.dbContext.Articles
-                .Where(a => articleNumbers.Contains(a.ArticleNumber)
-                            && a.StatusCode != deletedStatusCode
-                            && a.StatusCode != redirectStatusCode)
-                .Select(a => new { a.ArticleNumber, a.Title })
-                .Distinct()
+            // Load all articles from the Articles table (single query, not filtered by articleNumbers).
+            // Cosmos DB EF provider does not support Contains() on partition keys (ArticleNumber),
+            // so we load all and filter client-side. This is efficient because:
+            // 1. Article titles are small (typically < 1MB for thousands of articles)
+            // 2. This method is called per-folder listing, so cache hit rate is high
+            // 3. Sequential per-article queries would be slower (20 articles = 20 round-trips)
+            // 
+            // Note: Articles table contains multiple versions per ArticleNumber, so we must
+            // group by ArticleNumber and select the highest VersionNumber to get the latest title.
+            var allArticleRows = await this.dbContext.Articles
+                .Select(a => new { a.ArticleNumber, a.Title, a.VersionNumber })
                 .ToListAsync();
 
-            foreach (var row in articleRows)
+            // Filter to only requested article numbers, group by ArticleNumber, and take the latest version
+            var articleNumberSet = new HashSet<int>(articleNumbers);
+            var articleTitlesByNumber = new Dictionary<int, string>();
+
+            foreach (var group in allArticleRows.Where(a => articleNumberSet.Contains(a.ArticleNumber)).GroupBy(a => a.ArticleNumber))
             {
-                if (!string.IsNullOrWhiteSpace(row.Title))
+                // Pick the latest version with a non-empty title
+                var latestWithTitle = group
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Title))
+                    .OrderByDescending(x => x.VersionNumber)
+                    .FirstOrDefault();
+
+                if (latestWithTitle != null)
                 {
-                    articleTitlesByNumber[row.ArticleNumber] = row.Title;
+                    articleTitlesByNumber[group.Key] = latestWithTitle.Title;
                 }
             }
 
@@ -297,6 +306,75 @@ namespace Sky.Cms.Services
                     entries.RemoveAt(i);
                 }
             }
+        }
+
+        /// <summary>
+        /// Resolves a friendly display path (containing article title) to its canonical numeric path.
+        /// </summary>
+        /// <param name="friendlyPath">The friendly path containing an article title.</param>
+        /// <returns>
+        /// The canonical path with article number if the title is found.
+        /// Returns the original path if it's already canonical, not an article path, or the title cannot be resolved.
+        /// </returns>
+        public async Task<string> ResolveCanonicalPathAsync(string friendlyPath)
+        {
+            if (string.IsNullOrWhiteSpace(friendlyPath))
+            {
+                return friendlyPath ?? string.Empty;
+            }
+
+            var normalizedPath = PublicFileEntryHelper.NormalizePath(friendlyPath);
+
+            // Check if already canonical (contains article number)
+            if (PublicFileEntryHelper.TryGetArticleNumberFromPath(normalizedPath, out _))
+            {
+                return normalizedPath; // Already canonical, pass through
+            }
+
+            // Parse the path to extract potential article title
+            var segments = normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+            // Must be at least /pub/articles/{title} format
+            if (segments.Length < 3
+                || !segments[0].Equals("pub", StringComparison.OrdinalIgnoreCase)
+                || !segments[1].Equals("articles", StringComparison.OrdinalIgnoreCase))
+            {
+                return normalizedPath; // Not an article path
+            }
+
+            var potentialTitle = segments[2];
+
+            // Query database for article with this title
+            // Try ArticleCatalog first (published articles)
+            var catalogMatch = await this.dbContext.ArticleCatalog
+                .Where(a => a.Title == potentialTitle)
+                .OrderBy(a => a.ArticleNumber) // Deterministic: return lowest number if collision
+                .Select(a => a.ArticleNumber)
+                .FirstOrDefaultAsync();
+
+            if (catalogMatch > 0)
+            {
+                // Replace title with article number
+                segments[2] = catalogMatch.ToString();
+                return "/" + string.Join('/', segments);
+            }
+
+            // Fallback to Articles table (drafts)
+            var articleMatch = await this.dbContext.Articles
+                .Where(a => a.Title == potentialTitle)
+                .OrderBy(a => a.ArticleNumber)
+                .ThenByDescending(a => a.VersionNumber) // Latest version of lowest number
+                .Select(a => a.ArticleNumber)
+                .FirstOrDefaultAsync();
+
+            if (articleMatch > 0)
+            {
+                segments[2] = articleMatch.ToString();
+                return "/" + string.Join('/', segments);
+            }
+
+            // Title not found - return original path (will likely 404)
+            return normalizedPath;
         }
     }
 }

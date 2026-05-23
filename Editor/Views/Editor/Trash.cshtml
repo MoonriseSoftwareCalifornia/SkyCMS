@@ -11,9 +11,9 @@
     ViewData["Title"] = "Trash";
     var isReviewer = User.IsInRole("Reviewers");
 }
-<link href="~/lib/tabulator-tables/dist/css/tabulator_midnight.css" rel="stylesheet" />
-<script src="~/lib/luxon/luxon.min.js"></script>
-<script src="~/lib/tabulator-tables/dist/js/tabulator.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css" rel="stylesheet" integrity="sha384-vBqRsRIPXb03PYCog2z5jjcEBrrvg3yilshFbdVOmFtVX27t9rYeO7lXit0xIcou" crossorigin="anonymous" />
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.5.0/build/global/luxon.min.js" integrity="sha384-CU0J6nu6GO5gWB5IqOOhPQsG0LKyjpotF5Gw502R+0zbkzKHjDWc6FKSZsNTJfLX" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.1/dist/js/tabulator.min.js" integrity="sha384-SKSq3cuuVWdfrjtLz9wNlqE0bMc903yMS5zGnFtwvfddplgxa1hywtiLyw1CbSHO" crossorigin="anonymous"></script>
 <script src="~/js/clipboard.min.js"></script>
 <div class="cwps-editor-container pt-3">
     @Html.AntiForgeryToken()

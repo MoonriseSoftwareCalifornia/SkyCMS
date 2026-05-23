@@ -1,4 +1,4 @@
-// <copyright file="ResizeContractTests.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="ResizeContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -54,7 +54,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Resize_ResponseKey_IsLowercaseChanged()
         {
             var command = new ResizeCommand { Target = LogoPngHash, Mode = "resize", Width = 1, Height = 1 };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -71,7 +71,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Resize_Changed_IsArray()
         {
             var command = new ResizeCommand { Target = LogoPngHash, Mode = "resize", Width = 1, Height = 1 };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var changed = AssertArrayProperty(doc.RootElement, "changed");
@@ -83,7 +83,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Resize_ChangedObject_HasRequiredFields()
         {
             var command = new ResizeCommand { Target = LogoPngHash, Mode = "resize", Width = 1, Height = 1 };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var changed = AssertArrayProperty(doc.RootElement, "changed", minLength: 1);
@@ -98,7 +98,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Resize_MissingTarget_ReturnsError()
         {
             var command = new ResizeCommand { Target = null, Mode = "resize", Width = 100, Height = 100 };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
