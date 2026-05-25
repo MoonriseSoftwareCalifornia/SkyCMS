@@ -25,7 +25,7 @@ namespace Cosmos.Editor.Services
 
         private static readonly IReadOnlyList<LoginAsset> RequiredAssets = new[]
         {
-            new LoginAsset("lib/ckeditor/ckeditor5-content.css", "pub/lib/ckeditor/ckeditor5-content.css", "text/css"),
+            new LoginAsset("lib/ckeditor/ckeditor5-content.css", "/lib/ckeditor/ckeditor5-content.css", "text/css"),
         };
 
         private readonly IWebHostEnvironment webHostEnvironment;

@@ -77,13 +77,13 @@ namespace Sky.Tests.Services
             blobClient.Verify(b => b.UploadAsync(
                 "UseDevelopmentStorage=true",
                 "$web",
-                "pub/lib/picocss/pico.conditional.min.css",
+                "lib/picocss/pico.conditional.min.css",
                 It.IsAny<Stream>(),
                 "text/css"), Times.Once);
             blobClient.Verify(b => b.UploadAsync(
                 "UseDevelopmentStorage=true",
                 "$web",
-                "pub/lib/ckeditor/ckeditor5-content.css",
+                "lib/ckeditor/ckeditor5-content.css",
                 It.IsAny<Stream>(),
                 "text/css"), Times.Once);
         }
