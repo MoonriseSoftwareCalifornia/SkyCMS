@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Helpers;
@@ -68,9 +73,11 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
         var phash = lastSlash >= 0 ? _adapter.EncodePath(parentPath.Substring(0, lastSlash + 1)) : _adapter.EncodePath("/");
 
         var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
-        var rawName = entry.Name ?? string.Empty;
-        var nameWasSubstituted = !string.Equals(resolvedName, rawName, StringComparison.Ordinal);
         var normalizedPath = "/" + path.Trim('/');
+
+        // Only emit RealPath and DisplayPath when name substitution occurred
+        // (per ElFinderObject contract: realPath is "Only emitted when the display name differs from the raw storage name")
+        var nameWasSubstituted = !string.Equals(resolvedName, entry.Name, StringComparison.Ordinal);
 
         return new ElFinderObject
         {
@@ -85,6 +92,51 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
             Locked = 0,
             Dirs = 1,
             RealPath = nameWasSubstituted ? normalizedPath : null,
+            DisplayPath = nameWasSubstituted ? await BuildDisplayPathAsync(path, cancellationToken) : null,
         };
+    }
+
+    private async Task<string> BuildDisplayPathAsync(string canonicalPath, CancellationToken cancellationToken)
+    {
+        var normalizedPath = canonicalPath.TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(normalizedPath))
+        {
+            return "/";
+        }
+
+        var segments = normalizedPath
+            .TrimStart('/')
+            .Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+
+        if (segments.Count >= 3)
+        {
+            var scope = segments[0];
+            var kind = segments[1];
+            var idSegment = segments[2];
+
+            if (scope.Equals("pub", StringComparison.OrdinalIgnoreCase)
+                && kind.Equals("articles", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(idSegment, out var articleNumber))
+            {
+                var friendly = await _nameResolver.ResolveNameAsync($"/{scope}/{kind}/{articleNumber}", idSegment, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(friendly))
+                {
+                    segments[2] = friendly;
+                }
+            }
+            else if (scope.Equals("pub", StringComparison.OrdinalIgnoreCase)
+                && kind.Equals("templates", StringComparison.OrdinalIgnoreCase)
+                && Guid.TryParse(idSegment, out _))
+            {
+                var friendly = await _nameResolver.ResolveNameAsync($"/{scope}/{kind}/{idSegment}", idSegment, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(friendly))
+                {
+                    segments[2] = friendly;
+                }
+            }
+        }
+
+        return "/" + string.Join('/', segments);
     }
 }

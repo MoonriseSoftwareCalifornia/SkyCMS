@@ -236,6 +236,93 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
+        /// Validates that no display paths in the response contain article IDs (integers) instead of article titles.
+        /// ADR 0040 requires that display paths NEVER show `/pub/articles/{integer}` - they must show `/pub/articles/{title}`.
+        /// This method enforces that contract by throwing an exception if a violation is detected.
+        /// </summary>
+        /// <param name="response">The elFinder response to validate.</param>
+        /// <exception cref="InvalidOperationException">Thrown if any display path contains `/pub/articles/{integer}`.</exception>
+        private void ValidateDisplayPathsForArticles(IElFinderResponse response)
+        {
+            if (response == null)
+            {
+                return;
+            }
+
+            var displayPaths = new List<string>();
+
+            // Extract displayPath fields from various response types
+            if (response is OpenResponse openResponse)
+            {
+                if (openResponse.Cwd?.DisplayPath != null)
+                {
+                    displayPaths.Add(openResponse.Cwd.DisplayPath);
+                }
+
+                if (openResponse.Files != null)
+                {
+                    foreach (var file in openResponse.Files)
+                    {
+                        if (file?.DisplayPath != null)
+                        {
+                            displayPaths.Add(file.DisplayPath);
+                        }
+                    }
+                }
+            }
+            else if (response is TreeResponse treeResponse)
+            {
+                if (treeResponse.Tree != null)
+                {
+                    foreach (var item in treeResponse.Tree)
+                    {
+                        if (item?.DisplayPath != null)
+                        {
+                            displayPaths.Add(item.DisplayPath);
+                        }
+                    }
+                }
+            }
+            else if (response is InfoResponse infoResponse)
+            {
+                if (infoResponse.Files != null)
+                {
+                    foreach (var file in infoResponse.Files)
+                    {
+                        if (file?.DisplayPath != null)
+                        {
+                            displayPaths.Add(file.DisplayPath);
+                        }
+                    }
+                }
+            }
+
+            // Check each display path for violations
+            foreach (var displayPath in displayPaths)
+            {
+                if (string.IsNullOrEmpty(displayPath))
+                {
+                    continue;
+                }
+
+                // Check if path matches /pub/articles/{integer}
+                // Pattern: /pub/articles/ followed by one or more digits, optionally followed by more path segments
+                var segments = displayPath.Split('/', System.StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length >= 3
+                    && segments[0].Equals("pub", System.StringComparison.OrdinalIgnoreCase)
+                    && segments[1].Equals("articles", System.StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(segments[2], out _))
+                {
+                    throw new InvalidOperationException(
+                        $"VIOLATION: DisplayPath contains article ID instead of title: '{displayPath}'. " +
+                        $"ADR 0040 requires display paths to show article titles, not numeric IDs. " +
+                        $"Expected format: /pub/articles/{{ArticleTitle}}, not /pub/articles/{{ArticleId}}. " +
+                        $"This indicates the ArticleTitleNameResolver failed to resolve the article title.");
+                }
+            }
+        }
+
+        /// <summary>
         /// Serializes a CQRS response using System.Text.Json so that
         /// <c>[JsonPropertyName]</c> attributes on response DTOs are honoured.
         /// The MVC pipeline is configured with Newtonsoft + DefaultContractResolver
@@ -244,6 +331,9 @@ namespace Sky.Cms.Controllers
         /// </summary>
         private ContentResult JsonCqrs(IElFinderResponse response)
         {
+            // Validate ADR 0040 contract before serializing
+            ValidateDisplayPathsForArticles(response);
+
             var json = System.Text.Json.JsonSerializer.Serialize(response, response.GetType());
             return Content(json, "application/json; charset=utf-8");
         }
