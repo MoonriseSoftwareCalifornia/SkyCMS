@@ -2472,6 +2472,15 @@ namespace Sky.Cms.Controllers
                 throw new NotSupportedException($"Image type {extension} not supported.");
             }
 
+            if (extension == ".svg")
+            {
+                // For SVGs, return the original file since they are vector-based and scale without losing quality
+                using var svgstream = await storageContext.GetStreamAsync(target);
+                using var memStream = new MemoryStream();
+                await svgstream.CopyToAsync(memStream);
+                return File(memStream.ToArray(), "image/svg+xml");
+            }
+
             using var stream = await storageContext.GetStreamAsync(target);
             var image = await Image.LoadAsync(stream);
             var newImage = image.Clone(i => i.Resize(new ResizeOptions() { Mode = ResizeMode.Crop, Position = AnchorPositionMode.Center, Size = new Size(width, height) }));
