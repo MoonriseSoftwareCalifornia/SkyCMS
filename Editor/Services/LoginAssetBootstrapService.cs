@@ -25,7 +25,8 @@ namespace Cosmos.Editor.Services
 
         private static readonly IReadOnlyList<LoginAsset> RequiredAssets = new[]
         {
-            new LoginAsset("lib/ckeditor/ckeditor5-content.css", "/lib/ckeditor/ckeditor5-content.css", "text/css"),
+            new LoginAsset("lib/picocss/pico.conditional.min.css", "lib/picocss/pico.conditional.min.css", "text/css"),
+            new LoginAsset("lib/ckeditor/ckeditor5-content.css", "lib/ckeditor/ckeditor5-content.css", "text/css"),
         };
 
         private readonly IWebHostEnvironment webHostEnvironment;
@@ -90,6 +91,10 @@ namespace Cosmos.Editor.Services
                     await using var fileStream = global::System.IO.File.OpenRead(sourcePath);
                     await blobClient.UploadAsync(storageConnection, ContainerName, asset.blobName, fileStream, asset.contentType);
                 }
+            }
+            catch (FormatException ex)
+            {
+                logger.LogDebug(ex, "Storage connection string is not configured or invalid; skipping login asset bootstrap.");
             }
             catch (Exception ex)
             {

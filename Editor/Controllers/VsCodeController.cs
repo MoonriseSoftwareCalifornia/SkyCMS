@@ -1,4 +1,4 @@
-// <copyright file="VsCodeController.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="VsCodeController.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -69,7 +69,7 @@ namespace Sky.Cms.Controllers
         private readonly ITemplateService templateService;
         private readonly ArticleEditLogic articleLogic;
         private readonly IPublishingService publishingService;
-        private readonly IPublicFileEntryTitleResolver titleResolver;
+        private readonly IFileEntryTitleService titleResolver;
         private readonly IFolderListingService folderListingService;
         private readonly IContentCatalogService contentCatalog;
         private readonly IFileOperationsService fileOperations;
@@ -102,7 +102,7 @@ namespace Sky.Cms.Controllers
             IDynamicConfigurationProvider configProvider,
             ArticleEditLogic articleLogic,
             IPublishingService publishingService,
-            IPublicFileEntryTitleResolver titleResolver,
+            IFileEntryTitleService titleResolver,
             IFolderListingService folderListingService,
             IContentCatalogService contentCatalog,
             IFileOperationsService fileOperations)
@@ -1627,8 +1627,8 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = string.IsNullOrEmpty(pathHash) ? "/" : PublicFileEntryHelper.DecodePathHash(pathHash);
-                path = PublicFileEntryHelper.NormalizePath(path);
+                path = string.IsNullOrEmpty(pathHash) ? "/" : FileEntryPathHelper.DecodePathHash(pathHash);
+                path = FileEntryPathHelper.NormalizePath(path);
             }
             catch
             {
@@ -1640,15 +1640,15 @@ namespace Sky.Cms.Controllers
                 var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
                 var entries = await this.folderListingService.GetEntriesAsync(path, this.memoryCache, tenantDomain);
 
-                var articleTitlesByNumber = await this.titleResolver.GetArticleTitlesByNumberAsync(entries);
+                var articleTitlesByNumber = await this.titleResolver.GetArticleTitlesByNumberAsync(entries, tenantDomain);
                 var templateTitlesById = await this.titleResolver.GetTemplateTitlesByIdAsync(entries);
 
                 var result = entries.Select(e => new
                 {
-                    name = PublicFileEntryHelper.ResolveFriendlyDisplayName(path, e, articleTitlesByNumber, templateTitlesById),
-                    path = PublicFileEntryHelper.ResolveEntryPath(path, e),
-                    displayPath = PublicFileEntryHelper.ResolveFriendlyDisplayPath(
-                        PublicFileEntryHelper.ResolveEntryPath(path, e),
+                    name = FileEntryPathHelper.ResolveFriendlyDisplayName(path, e, articleTitlesByNumber, templateTitlesById),
+                    path = FileEntryPathHelper.ResolveEntryPath(path, e),
+                    displayPath = FileEntryPathHelper.ResolveFriendlyDisplayPath(
+                        FileEntryPathHelper.ResolveEntryPath(path, e),
                         articleTitlesByNumber),
                     isDir = e.IsDirectory,
                     mimeType = e.IsDirectory ? "directory" : (string.IsNullOrWhiteSpace(e.ContentType) ? "application/octet-stream" : e.ContentType),
@@ -1685,7 +1685,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = PublicFileEntryHelper.DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1736,7 +1736,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = PublicFileEntryHelper.DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1794,7 +1794,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = PublicFileEntryHelper.DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1834,7 +1834,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = PublicFileEntryHelper.DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1874,7 +1874,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = PublicFileEntryHelper.DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1888,7 +1888,7 @@ namespace Sky.Cms.Controllers
                 {
                     name = entry.Name,
                     isDir = entry.IsDirectory,
-                    path = PublicFileEntryHelper.EncodePathHash(entry.Path),
+                    path = FileEntryPathHelper.EncodePathHash(entry.Path),
                 });
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1920,7 +1920,7 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = PublicFileEntryHelper.DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
@@ -1932,12 +1932,12 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Request body is empty." });
             }
 
-            if (!PublicFileEntryHelper.IsUploadPathSafe(path))
+            if (!FileEntryPathHelper.IsUploadPathSafe(path))
             {
                 return BadRequest(new { message = "Uploads must target a path within the /pub directory." });
             }
 
-            if (PublicFileEntryHelper.IsDangerousExtension(System.IO.Path.GetFileName(path)))
+            if (FileEntryPathHelper.IsDangerousExtension(System.IO.Path.GetFileName(path)))
             {
                 return BadRequest(new { message = "This file type is not allowed for upload." });
             }
@@ -1996,7 +1996,7 @@ namespace Sky.Cms.Controllers
             string sourcePath;
             try
             {
-                sourcePath = PublicFileEntryHelper.DecodePathHash(pathHash);
+                sourcePath = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch (ArgumentException)
             {
@@ -2042,7 +2042,7 @@ namespace Sky.Cms.Controllers
             string sourcePath;
             try
             {
-                sourcePath = PublicFileEntryHelper.DecodePathHash(pathHash);
+                sourcePath = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch (ArgumentException)
             {

@@ -1,4 +1,4 @@
-﻿// <copyright file="FileManagerControllerTests.cs" company="Moonrise Software, LLC">
+// <copyright file="FileManagerControllerTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -77,6 +77,8 @@ namespace Sky.Tests.Controllers
 
             // Build a real dispatcher wired to the elFinder handlers so that
             // Connector() dispatches work end-to-end without a mock.
+            // ElFinderNameResolver must be registered BEFORE AddElFinderDriver()
+            // so it wins the TryAddScoped for IElFinderNameResolver — matching Program.cs.
             var sp = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<IPathNormalizer, PathNormalizer>()
@@ -86,6 +88,8 @@ namespace Sky.Tests.Controllers
                         storage,
                         svc.GetRequiredService<IPathNormalizer>(),
                         svc.GetRequiredService<IPathValidator>()))
+                .AddScoped<IFileEntryTitleService>(_ => new FileEntryTitleService(dbContext))
+                .AddScoped<IElFinderNameResolver, ElFinderNameResolver>()
                 .AddElFinderDriver()
                 .BuildServiceProvider();
             elFinderMediator = sp.GetRequiredService<IElFinderDispatcher>();
@@ -2312,6 +2316,292 @@ namespace Sky.Tests.Controllers
             Assert.IsTrue(
                 hashes.Contains(EncodeHash(level1Path)),
                 "Ancestor 'design' should appear in the tree");
+        }
+
+        // ─── ADR 0040: DisplayPath must use article titles, not numeric IDs ──────
+        //
+        // These are TRUE regression tests.
+        //
+        // CURRENT STATE (bug present, no fix):
+        //   Setup() wires the dispatcher with the default PassThroughNameResolver.
+        //   When Connector() opens an article folder the numeric ID is left in the
+        //   DisplayPath.  ValidateDisplayPathsForArticles() detects this and throws
+        //   InvalidOperationException before the response is serialised, causing the
+        //   test to fail with an unexpected exception.
+        //
+        // AFTER THE FIX:
+        //   Setup() must register ElFinderNameResolver (backed by the real
+        //   in-memory DB) before calling AddElFinderDriver(), matching Program.cs.
+        //   The resolver then substitutes the numeric ID with the article title,
+        //   ValidateDisplayPathsForArticles() passes, and the title assertions below
+        //   confirm the correct value is returned.
+        //
+        // Each test seeds a real article in the DB and creates the matching blob
+        // folder so the end-to-end path through the resolver can be exercised.
+
+        /// <summary>
+        /// Regression (ADR 0040): Opening /pub/articles/{number} must return cwd.name equal
+        /// to the article title, not the numeric ID.
+        /// FAILS before fix (InvalidOperationException from ValidateDisplayPathsForArticles).
+        /// PASSES after fix (ElFinderNameResolver wired in Setup()).
+        /// </summary>
+        [TestMethod]
+        public async Task Connector_Open_ArticleFolder_CwdNameIsArticleTitle_NotNumericId()
+        {
+            const int articleNumber = 501;
+            const string articleTitle = "My Article Title";
+            var articlePath = $"/pub/articles/{articleNumber}";
+            await storage.CreateFolder(articlePath);
+
+            dbContext.Articles.Add(new Cosmos.Common.Data.Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = articleNumber,
+                Title = articleTitle,
+                UrlPath = "my-article-title",
+                Content = "<p>test</p>",
+                StatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Active,
+                VersionNumber = 1,
+                Updated = DateTimeOffset.UtcNow.DateTime,
+                UserId = Guid.NewGuid().ToString(),
+                BannerImage = string.Empty,
+            });
+            await dbContext.SaveChangesAsync();
+
+            try
+            {
+                SetGetRequest(new Dictionary<string, string>
+                {
+                    ["cmd"] = "open",
+                    ["target"] = EncodeHash(articlePath),
+                });
+
+                var result = await controller.Connector();
+                var json = AsJsonObject(result);
+
+                Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
+                var cwdName = json["cwd"]?["name"]?.ToString();
+                Assert.AreEqual(
+                    articleTitle,
+                    cwdName,
+                    $"cwd.name must be the article title '{articleTitle}', not the raw number '{articleNumber}'. " +
+                    $"Fix: register ElFinderNameResolver in Setup() before AddElFinderDriver().");
+            }
+            finally
+            {
+                try { await storage.DeleteFolderAsync(articlePath); } catch { }
+            }
+        }
+
+        /// <summary>
+        /// Regression (ADR 0040): Opening /pub/articles must return the article folder child
+        /// with name equal to the article title, not the numeric ID.
+        /// FAILS before fix. PASSES after fix.
+        /// </summary>
+        [TestMethod]
+        public async Task Connector_Open_ArticlesParentFolder_ChildNameIsArticleTitle_NotNumericId()
+        {
+            const int articleNumber = 502;
+            const string articleTitle = "Another Article";
+            var articlesPath = "/pub/articles";
+            var articlePath = $"/pub/articles/{articleNumber}";
+            await storage.CreateFolder(articlesPath);
+            await storage.CreateFolder(articlePath);
+
+            dbContext.Articles.Add(new Cosmos.Common.Data.Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = articleNumber,
+                Title = articleTitle,
+                UrlPath = "another-article",
+                Content = "<p>test</p>",
+                StatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Active,
+                VersionNumber = 1,
+                Updated = DateTimeOffset.UtcNow.DateTime,
+                UserId = Guid.NewGuid().ToString(),
+                BannerImage = string.Empty,
+            });
+            await dbContext.SaveChangesAsync();
+
+            try
+            {
+                SetGetRequest(new Dictionary<string, string>
+                {
+                    ["cmd"] = "open",
+                    ["target"] = EncodeHash(articlesPath),
+                });
+
+                var result = await controller.Connector();
+                var json = AsJsonObject(result);
+
+                Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
+                var files = json["files"] as Newtonsoft.Json.Linq.JArray;
+                Assert.IsNotNull(files);
+
+                var articleEntry = files.FirstOrDefault(f =>
+                    f["name"]?.ToString() == articleTitle ||
+                    f["name"]?.ToString() == articleNumber.ToString());
+
+                Assert.IsNotNull(articleEntry, $"No entry found for article {articleNumber} in files[].");
+                Assert.AreEqual(
+                    articleTitle,
+                    articleEntry["name"]?.ToString(),
+                    $"Article folder name must be the title '{articleTitle}', not the raw number '{articleNumber}'. " +
+                    $"Fix: register ElFinderNameResolver in Setup() before AddElFinderDriver().");
+            }
+            finally
+            {
+                try { await storage.DeleteFolderAsync(articlePath); } catch { }
+                try { await storage.DeleteFolderAsync(articlesPath); } catch { }
+            }
+        }
+
+        /// <summary>
+        /// Regression (ADR 0040): A deep path /pub/articles/{number}/my subdirectory must
+        /// return displayPath values that use the article title at segment [2], not the
+        /// numeric ID.  Mirrors the real-world path: /pub/articles/my article name/my subdirectory/myimage.png.
+        /// FAILS before fix. PASSES after fix.
+        /// </summary>
+        [TestMethod]
+        public async Task Connector_Open_DeepArticlePath_DisplayPathContainsArticleTitle_NotNumericId()
+        {
+            const int articleNumber = 503;
+            const string articleTitle = "My Article Name";
+            var articlePath = $"/pub/articles/{articleNumber}";
+            var subPath = $"{articlePath}/my subdirectory";
+            await storage.CreateFolder(articlePath);
+            await storage.CreateFolder(subPath);
+            await CreateTestFile(subPath + "/myimage.png", "fake-png");
+
+            dbContext.Articles.Add(new Cosmos.Common.Data.Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = articleNumber,
+                Title = articleTitle,
+                UrlPath = "my-article-name",
+                Content = "<p>test</p>",
+                StatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Active,
+                VersionNumber = 1,
+                Updated = DateTimeOffset.UtcNow.DateTime,
+                UserId = Guid.NewGuid().ToString(),
+                BannerImage = string.Empty,
+            });
+            await dbContext.SaveChangesAsync();
+
+            try
+            {
+                SetGetRequest(new Dictionary<string, string>
+                {
+                    ["cmd"] = "open",
+                    ["target"] = EncodeHash(subPath),
+                });
+
+                var result = await controller.Connector();
+                var json = AsJsonObject(result);
+
+                Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
+
+                // No displayPath in the response may carry a numeric ID at segment [2].
+                var files = json["files"] as Newtonsoft.Json.Linq.JArray;
+                Assert.IsNotNull(files);
+
+                var numericViolation = files
+                    .Select(f => f["displayPath"]?.ToString())
+                    .Where(dp => dp != null)
+                    .FirstOrDefault(dp =>
+                    {
+                        var segs = dp.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                        return segs.Length >= 3
+                            && segs[0].Equals("pub", StringComparison.OrdinalIgnoreCase)
+                            && segs[1].Equals("articles", StringComparison.OrdinalIgnoreCase)
+                            && int.TryParse(segs[2], out _);
+                    });
+
+                Assert.IsNull(
+                    numericViolation,
+                    $"displayPath '{numericViolation}' contains a numeric article ID at segment [2]. " +
+                    $"Expected '/pub/articles/{articleTitle}/my subdirectory'. " +
+                    $"Fix: register ElFinderNameResolver in Setup() before AddElFinderDriver().");
+            }
+            finally
+            {
+                try { await storage.DeleteFolderAsync(articlePath); } catch { }
+            }
+        }
+
+        /// <summary>
+        /// Regression (ADR 0040): The tree command for /pub/articles must return the article
+        /// folder as a tree item whose name is the article title, not the numeric ID.
+        /// FAILS before fix (the article folder appears with name="504", the raw number).
+        /// PASSES after fix (ElFinderNameResolver wired in Setup()).
+        /// </summary>
+        [TestMethod]
+        public async Task Connector_Tree_ArticleFolder_TreeItemNameIsArticleTitle_NotNumericId()
+        {
+            const int articleNumber = 504;
+            const string articleTitle = "Tree Article Title";
+            var articlesPath = "/pub/articles";
+            var articlePath = $"/pub/articles/{articleNumber}";
+            await storage.CreateFolder(articlesPath);
+            await storage.CreateFolder(articlePath);
+
+            dbContext.Articles.Add(new Cosmos.Common.Data.Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = articleNumber,
+                Title = articleTitle,
+                UrlPath = "tree-article-title",
+                Content = "<p>test</p>",
+                StatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Active,
+                VersionNumber = 1,
+                Updated = DateTimeOffset.UtcNow.DateTime,
+                UserId = Guid.NewGuid().ToString(),
+                BannerImage = string.Empty,
+            });
+            await dbContext.SaveChangesAsync();
+
+            try
+            {
+                // Target /pub/articles (the parent) so the article folder itself
+                // appears as a tree item — its name will be "504" before the fix.
+                var context = CreateAuthorizedHttpContext();
+                context.Request.Method = "GET";
+                context.Request.QueryString = QueryString.Create(new Dictionary<string, string>
+                {
+                    ["cmd"] = "tree",
+                    ["target"] = EncodeHash(articlesPath),
+                });
+                controller.ControllerContext = new ControllerContext { HttpContext = context };
+
+                var result = await controller.Connector();
+                var json = AsJsonObject(result);
+
+                Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
+
+                var tree = json["tree"] as Newtonsoft.Json.Linq.JArray;
+                Assert.IsNotNull(tree, "Response must contain a 'tree' array.");
+
+                // The article folder must appear in the tree and must use the title as name.
+                var articleEntry = tree.FirstOrDefault(f =>
+                    f["name"]?.ToString() == articleNumber.ToString() ||
+                    f["name"]?.ToString() == articleTitle);
+
+                Assert.IsNotNull(
+                    articleEntry,
+                    $"No tree entry found for article {articleNumber} ('{articleTitle}'). " +
+                    $"The article folder must appear in the tree[] response.");
+
+                Assert.AreEqual(
+                    articleTitle,
+                    articleEntry["name"]?.ToString(),
+                    $"tree item name must be the article title '{articleTitle}', not the raw number '{articleNumber}'. " +
+                    $"Fix: register ElFinderNameResolver in Setup() before AddElFinderDriver().");
+            }
+            finally
+            {
+                try { await storage.DeleteFolderAsync(articlePath); } catch { }
+                try { await storage.DeleteFolderAsync(articlesPath); } catch { }
+            }
         }
 
         private IServiceProvider BuildRequestServices()

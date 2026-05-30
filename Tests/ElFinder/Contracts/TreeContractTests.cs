@@ -1,4 +1,4 @@
-﻿// <copyright file="TreeContractTests.cs" company="Moonrise Software, LLC">
+// <copyright file="TreeContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -121,7 +121,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Tree_ArticleFolder_NameIsArticleTitle()
         {
             var adapter = BuildAdapterWithArticles();
-            var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
+            var resolver = BuildElFinderNameResolver(ArticleNumber, ArticleTitle);
             var handler = new TreeCommandHandler(adapter.Object, resolver);
 
             var response = await handler.HandleAsync(new TreeCommand { Target = ArticlesRootHash }, default);
@@ -149,7 +149,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Tree_ArticleFolder_RealPathIsCanonicalStoragePath()
         {
             var adapter = BuildAdapterWithArticles();
-            var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
+            var resolver = BuildElFinderNameResolver(ArticleNumber, ArticleTitle);
             var handler = new TreeCommandHandler(adapter.Object, resolver);
 
             var response = await handler.HandleAsync(new TreeCommand { Target = ArticlesRootHash }, default);

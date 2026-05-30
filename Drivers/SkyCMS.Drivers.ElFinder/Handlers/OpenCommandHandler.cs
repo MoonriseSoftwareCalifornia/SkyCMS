@@ -146,12 +146,15 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
 
             response.VolumeId = request.VolumeId;
 
+            // Options must be present on every open response (not only init);
+            // the elFinder client unconditionally reads options.uiCmdMap after navigation.
+            response.Options = await BuildOptionsAsync(targetPath, request.BlobPublicUrl, request.TmbUrl, cancellationToken);
+
             // Init-specific fields required by the elFinder client bootstrap.
             if (request.Init)
             {
                 response.Api = "2.1049";
                 response.UplMaxSize = "2G";
-                response.Options = await BuildOptionsAsync(targetPath, request.BlobPublicUrl, request.TmbUrl, cancellationToken);
                 response.NetDrivers = new List<object>();
             }
 

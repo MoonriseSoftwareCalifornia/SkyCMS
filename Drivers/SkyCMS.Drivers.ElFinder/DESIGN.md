@@ -27,12 +27,12 @@
 ┌─────────────────────────────────────────────────────────────┐
 │  elFinder UI (JavaScript)                                   │
 │  - Sends HTTP requests with cmd parameter                   │
-│  - Expects elFinder 2.1 JSON responses                       │
+│  - Expects elFinder 2.1 JSON responses                      │
 └──────────────────────┬──────────────────────────────────────┘
                        │ HTTP (GET/POST)
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  ElFinderConnectorController                                │
+│  FileManagerController                                      │
 │  - Parses cmd parameter                                     │
 │  - Dispatches to MediatR handler                            │
 │  - Returns JSON response                                    │

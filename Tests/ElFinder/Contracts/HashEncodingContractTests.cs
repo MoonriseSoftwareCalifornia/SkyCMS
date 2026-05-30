@@ -32,6 +32,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
         [TestMethod]
         [Description("pub/ encodes to the documented root hash 'l1_cHVi'.")]
+        [TestCategory("ADR0040")]
         public void HashEncoding_Root_ProducesDocumentedHash()
         {
             var hash = AdapterHashHelper.Encode("pub/");
@@ -42,6 +43,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
         [TestMethod]
         [Description("pub/images/ encodes to the documented hash 'l1_cHViL2ltYWdlcw'.")]
+        [TestCategory("ADR0040")]
         public void HashEncoding_ImagesDir_ProducesDocumentedHash()
         {
             var hash = AdapterHashHelper.Encode("pub/images/");
@@ -51,6 +53,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
         [TestMethod]
         [Description("pub/images/logo.png encodes to the documented hash.")]
+        [TestCategory("ADR0040")]
         public void HashEncoding_LogoPng_ProducesDocumentedHash()
         {
             var hash = AdapterHashHelper.Encode("pub/images/logo.png");
@@ -64,6 +67,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
         [TestMethod]
         [Description("Encode then decode must recover the original path for a file.")]
+        [TestCategory("ADR0040")]
         public void HashEncoding_RoundTrip_File()
         {
             const string path = "pub/images/logo.png";
@@ -75,6 +79,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
         [TestMethod]
         [Description("Encode then decode must recover the original path for a directory.")]
+        [TestCategory("ADR0040")]
         public void HashEncoding_RoundTrip_Directory()
         {
             const string path = "pub/images/";
@@ -89,6 +94,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
         [TestMethod]
         [Description("Encode then decode must work for a deeply nested path.")]
+        [TestCategory("ADR0040")]
         public void HashEncoding_RoundTrip_DeepPath()
         {
             const string path = "pub/media/2024/05/hero-image.jpg";
@@ -104,6 +110,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
         [TestMethod]
         [Description("All hashes must start with the volumeId prefix 'l1_'.")]
+        [TestCategory("ADR0040")]
         public void HashEncoding_Hash_StartsWithVolumeId()
         {
             foreach (var path in new[] { "pub/", "pub/images/", "pub/images/logo.png", "pub/docs/readme.md" })
@@ -116,6 +123,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
         [TestMethod]
         [Description("Hashes must not contain '+', '/', or '=' — they use Base64Url encoding.")]
+        [TestCategory("ADR0040")]
         public void HashEncoding_Hash_IsBase64Url()
         {
             foreach (var path in new[] { "pub/images/logo.png", "pub/docs/file with spaces.txt", "pub/üñícode.txt" })

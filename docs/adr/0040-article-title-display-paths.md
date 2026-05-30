@@ -36,7 +36,7 @@ Use this section to quickly validate implementation against design intent:
 - **VS Code Extension:** Not yet implemented (future work)
 
 ### 📋 Key Files to Validate
-- **Server:** `PublicFileEntryHelper.cs`, `PublicFileEntryTitleResolver.cs`, `ArticleTitleNameResolver.cs`, `FolderListingService.cs`, `OpenCommandHandler.cs`
+- **Server:** `FileEntryPathHelper.cs`, `FileEntryTitleService.cs`, `ElFinderNameResolver.cs`, `FolderListingService.cs`, `OpenCommandHandler.cs`
 - **Client:** `Editor/wwwroot/js/file-manager.js` (or elFinder integration code)
 - **Models:** `FileManagerEntry.cs` (`Path` vs `DisplayPath`), `ElFinderObject.cs` (`Hash` vs `Name`)
 
@@ -164,7 +164,7 @@ We will implement a **dual-path architecture** that maintains canonical numeric 
 
 ### Implementation Architecture
 
-#### Layer 1: Path Extraction Utilities (`PublicFileEntryHelper`)
+#### Layer 1: Path Extraction Utilities (`FileEntryPathHelper`)
 
 Pure utility functions for:
 - Extracting article numbers from canonical paths (`TryGetArticleNumberFromPath`)
@@ -188,7 +188,7 @@ string ResolveFriendlyDisplayName(string parentPath, FileManagerEntry entry,
 	IReadOnlyDictionary<Guid, string> templateTitlesById);
 ```
 
-#### Layer 2: Database Resolution (`PublicFileEntryTitleResolver`)
+#### Layer 2: Database Resolution (`FileEntryTitleService`)
 
 Async service responsible for:
 - Batch lookup of article titles by article number from `ArticleCatalog` table
@@ -218,7 +218,7 @@ Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, IMemoryCa
 
 #### Layer 3: Integration Points
 
-**3a. `ArticleTitleNameResolver` (elFinder Driver Integration)**
+**3a. `ElFinderNameResolver` (elFinder Driver Integration)**
 
 Implements `IElFinderNameResolver` to hook into the elFinder file manager driver's name resolution pipeline.
 
@@ -344,7 +344,7 @@ FileManagerEntry:
   DisplayPath = "/pub/articles/Getting Started Guide"
   Name = "Getting Started Guide"
 
-↓ (ArticleTitleNameResolver applied)
+↓ (ElFinderNameResolver applied)
 
 ElFinderObject:
   Hash = "bDFfL3B1Yi9hcnRpY2xlcy8xMjM"  ← Base64("/pub/articles/123")
@@ -375,7 +375,7 @@ OpenCommandHandler.Handle()
      Path = "/pub/articles/123/banner.jpg"
      DisplayPath = "/pub/articles/Getting Started Guide/banner.jpg"
      Name = "banner.jpg"
-5. ArticleTitleNameResolver transforms folder name "123" → "Getting Started Guide"
+5. ElFinderNameResolver transforms folder name "123" → "Getting Started Guide"
 6. Encode canonical paths as hashes for elFinder protocol
 7. Set Name field to friendly title
 ```
@@ -424,7 +424,7 @@ When the user clicks a file or performs an operation (upload, delete, rename), t
 
 The system supports reverse resolution through these mechanisms:
 
-1. **ArticleTitleNameResolver.ResolveNameAsync()**
+1. **ElFinderNameResolver.ResolveNameAsync()**
    - Given a path like `/pub/articles/Getting Started Guide/banner.jpg`
    - Extracts the article number from the canonical path structure
    - **Limitation**: Requires the canonical path to already contain the article number
@@ -432,7 +432,7 @@ The system supports reverse resolution through these mechanisms:
 2. **Manual Reverse Lookup (Not Yet Implemented)**
    - **Missing**: Direct API endpoint for friendly path → canonical path conversion
    - **Workaround**: Client must maintain a mapping from titles to article numbers
-   - **Future Work**: Add `IPublicFileEntryTitleResolver.ResolveCanonicalPathAsync(string friendlyPath)`
+   - **Future Work**: Add `IFileEntryTitleService.ResolveCanonicalPathAsync(string friendlyPath)`
 
 **Expected Behavior for Edge Cases:**
 
@@ -577,9 +577,9 @@ Titles are displayed with special characters intact (no URL encoding or sanitiza
 
 ### Affected Components
 
-- ✅ `Editor/Services/PublicFileEntryHelper.cs` - Path transformation utilities
-- ✅ `Editor/Services/PublicFileEntryTitleResolver.cs` - Database title lookups
-- ✅ `Editor/Services/ArticleTitleNameResolver.cs` - elFinder driver integration
+- ✅ `Editor/Services/FileEntryPathHelper.cs` - Path transformation utilities
+- ✅ `Editor/Services/FileEntryTitleService.cs` - Database title lookups
+- ✅ `Editor/Services/ElFinderNameResolver.cs` - elFinder driver integration
 - ✅ `Editor/Services/FolderListingService.cs` - Virtual root listings
 - ✅ `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs` - elFinder open command
 - ✅ `Drivers/SkyCMS.Drivers.ElFinder/Adapters/IElFinderNameResolver.cs` - Name resolver interface
@@ -600,7 +600,7 @@ Titles are displayed with special characters intact (no URL encoding or sanitiza
 | **Article Re-published** | Same canonical path `/pub/articles/123` reused | Folder reappears with current title | Cached deleted state expires (30s) |
 | **Article Deleted** | Blob storage may retain files (soft delete) | Folder **removed** from listings permanently | Number may be reused for future articles |
 
-**Critical Behavior:** `PublicFileEntryTitleResolver.FilterDeletedArticleEntriesAsync()` actively removes entries for article numbers not present in the `ArticleCatalog`. This means **unpublished articles disappear from File Manager** even if their blob storage files remain.
+**Critical Behavior:** `FileEntryTitleService.FilterDeletedArticleEntriesAsync()` actively removes entries for article numbers not present in the `ArticleCatalog`. This means **unpublished articles disappear from File Manager** even if their blob storage files remain.
 
 ### Title Conflict Resolution
 
@@ -631,7 +631,7 @@ Titles are displayed with special characters intact (no URL encoding or sanitiza
 
 **Malformed Paths:**
 ```csharp
-// Safe handling in PublicFileEntryHelper
+// Safe handling in FileEntryPathHelper
 TryGetArticleNumberFromPath("/pub/articles/")       → false, articleNumber = 0
 TryGetArticleNumberFromPath("/pub/articles/abc")    → false (non-integer segment)
 TryGetArticleNumberFromPath("/pub/123")             → false (not under /articles/)
@@ -663,7 +663,7 @@ TryGetArticleNumberFromPath("/pub/articles/123/")   → true, articleNumber = 12
 
 **Upload Target Validation:**
 ```csharp
-PublicFileEntryHelper.IsUploadPathSafe(path)
+FileEntryPathHelper.IsUploadPathSafe(path)
 ```
 
 - **Blocks:** `..` traversal, absolute paths, paths outside `/pub/` root
@@ -672,7 +672,7 @@ PublicFileEntryHelper.IsUploadPathSafe(path)
 
 **Dangerous Extensions:**
 ```csharp
-PublicFileEntryHelper.IsDangerousExtension(filename)
+FileEntryPathHelper.IsDangerousExtension(filename)
 ```
 
 - **Blocks:** `.exe`, `.dll`, `.bat`, `.sh`, `.ps1`, executable scripts
@@ -773,8 +773,8 @@ No migration required. Changes are additive:
 
 ## References
 
-- Implementation: `Editor/Services/PublicFileEntryHelper.cs`
-- Tests: `Tests/Editor/Services/PublicFileEntryHelperTests.cs`
+- Implementation: `Editor/Services/FileEntryPathHelper.cs`
+- Tests: `Tests/Editor/Services/FileEntryPathHelperTests.cs`
 - elFinder Driver: `Drivers/SkyCMS.Drivers.ElFinder/`
 - Azure Blob Storage docs: https://learn.microsoft.com/azure/storage/blobs/
 

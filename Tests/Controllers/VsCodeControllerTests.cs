@@ -75,7 +75,7 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
-            var titleResolver = new PublicFileEntryTitleResolver(Db);
+            var titleResolver = new FileEntryTitleService(Db);
             var contentCatalog = new ContentCatalogService(Db);
             var fileOperations = new FileOperationsService(mockStorageContext.Object, NullLogger<FileOperationsService>.Instance);
             controller = new VsCodeController(
@@ -1449,7 +1449,7 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
-            var localTitleResolver = new PublicFileEntryTitleResolver(Db);
+            var localTitleResolver = new FileEntryTitleService(Db);
             var localContentCatalog = new ContentCatalogService(Db);
             var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
             var localController = new VsCodeController(
@@ -1523,7 +1523,7 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
-            var localTitleResolver = new PublicFileEntryTitleResolver(Db);
+            var localTitleResolver = new FileEntryTitleService(Db);
             var localContentCatalog = new ContentCatalogService(Db);
             var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
             var localController = new VsCodeController(
@@ -1599,7 +1599,7 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
-            var localTitleResolver = new PublicFileEntryTitleResolver(Db);
+            var localTitleResolver = new FileEntryTitleService(Db);
             var localContentCatalog = new ContentCatalogService(Db);
             var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
             var localController = new VsCodeController(

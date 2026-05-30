@@ -42,7 +42,7 @@ namespace Cosmos.Common.Data.Logic
         /// Soft-deleted ("Send to Trash"). Set on all versions by <c>DeleteArticleHandler</c>.
         /// The blob storage folder <c>/pub/articles/{ArticleNumber}</c> is retained until
         /// permanently trashed. Must be hidden from all file-listing surfaces — use
-        /// <c>PublicFileEntryTitleResolver.FilterDeletedArticleEntriesAsync</c>.
+        /// <c>FileEntryTitleService.FilterDeletedArticleEntriesAsync</c>.
         /// </summary>
         Deleted = 2,
 

@@ -117,6 +117,8 @@
 		
 	<ItemGroup>
 	  <Folder Include="Services\Migrations\Testing\" />
+	  <Folder Include="wwwroot\lib\elfinder-material-theme\manifests\" />
+	  <Folder Include="wwwroot\lib\elfinder-material-theme\Material\" />
 	</ItemGroup>
 
 	<ProjectExtensions>

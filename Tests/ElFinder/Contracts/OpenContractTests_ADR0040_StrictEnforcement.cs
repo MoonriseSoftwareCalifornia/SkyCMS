@@ -73,7 +73,7 @@ namespace Sky.Tests.ElFinder.Contracts
                         $"When listing /pub/articles, all article folder names must show article titles, not numeric IDs. " +
                         $"Expected: article title like 'My Great Article'. " +
                         $"Got: numeric ID '{parsedId}'. " +
-                        $"This indicates ArticleTitleNameResolver failed to resolve the article title.");
+                        $"This indicates ElFinderNameResolver failed to resolve the article title.");
                 }
 
                 index++;
@@ -143,6 +143,9 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var response = await handler.HandleAsync(new OpenCommand(target: ArticleFolderHash), default);
             using var doc = SerializeResponse(response);
+
+            // Get string version of document
+            var jsonString = doc.RootElement.GetRawText();
 
             Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd), "Response must contain 'cwd'.");
             if (cwd.TryGetProperty("displayPath", out var displayPathProp))
@@ -265,7 +268,7 @@ namespace Sky.Tests.ElFinder.Contracts
                     $"ADR 0040 VIOLATION: {fieldName} contains article ID instead of title: '{displayPath}'. " +
                     $"The third segment '{segments[2]}' is an integer ({articleId}). " +
                     $"Expected format: /pub/articles/{{ArticleTitle}}, not /pub/articles/{{ArticleId}}. " +
-                    $"This indicates ArticleTitleNameResolver failed to resolve the article title, or " +
+                    $"This indicates ElFinderNameResolver failed to resolve the article title, or " +
                     $"OpenCommandHandler.BuildElFinderObjectAsync is not calling BuildDisplayPathAsync correctly.");
             }
         }

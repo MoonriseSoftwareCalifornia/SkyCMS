@@ -1,4 +1,4 @@
-// <copyright file="IPublicFileEntryTitleResolver.cs" company="Moonrise Software, LLC">
+// <copyright file="IFileEntryTitleService.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -17,21 +17,29 @@ namespace Sky.Cms.Services
     /// Resolves article and template titles from the database for file listing entries,
     /// and filters soft-deleted article folders from listings.
     /// </summary>
-    public interface IPublicFileEntryTitleResolver
+    public interface IFileEntryTitleService
     {
         /// <summary>
         /// Extracts article numbers from file and folder entries and resolves their titles from the database.
         /// </summary>
         /// <param name="entries">File entries to process (only from /pub/articles directory).</param>
+        /// <param name="tenantDomain">
+        /// Optional tenant domain used to scope cache lookups. If caching is enabled, separate tenants will have isolated cache entries.
+        /// Defaults to an empty string, which is safe for single-tenant deployments.
+        /// </param>
         /// <returns>Dictionary mapping article numbers to titles, empty if no matches found.</returns>
-        Task<IReadOnlyDictionary<int, string>> GetArticleTitlesByNumberAsync(IEnumerable<FileManagerEntry> entries);
+        Task<IReadOnlyDictionary<int, string>> GetArticleTitlesByNumberAsync(IEnumerable<FileManagerEntry> entries, string tenantDomain);
 
         /// <summary>
         /// Retrieves article titles for a given set of article numbers.
         /// </summary>
         /// <param name="articleNumbers">Article numbers to look up.</param>
+        /// <param name="tenantDomain">
+        /// Optional tenant domain used to scope cache lookups. If caching is enabled, separate tenants will have isolated cache entries.
+        /// Defaults to an empty string, which is safe for single-tenant deployments.
+        /// </param>
         /// <returns>Dictionary mapping article numbers to titles, empty if no matches found.</returns>
-        Task<IReadOnlyDictionary<int, string>> GetArticleTitlesByNumberAsync(IEnumerable<int> articleNumbers);
+        Task<IReadOnlyDictionary<int, string>> GetArticleTitlesByNumberAsync(IEnumerable<int> articleNumbers, string tenantDomain);
 
         /// <summary>
         /// Extracts template IDs from file entries and resolves their titles from the database.
@@ -59,12 +67,15 @@ namespace Sky.Cms.Services
         /// Defaults to an empty string, which is safe for single-tenant and test scenarios.
         /// </param>
         /// <returns>A task that completes once filtering is done.</returns>
-        Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, IMemoryCache cache, string tenantDomain = "");
+        Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, IMemoryCache cache, string tenantDomain);
 
         /// <summary>
         /// Resolves a friendly display path (containing article title) to its canonical numeric path.
         /// </summary>
         /// <param name="friendlyPath">The friendly path containing an article title (e.g., "/pub/articles/Getting Started Guide/banner.jpg").</param>
+        /// <param name="tenantDomain">The tenant domain name used to scope the cache key. Obtain this from
+        /// <c>IDynamicConfigurationProvider.GetTenantDomainNameFromRequest()</c> in controllers.
+        /// Defaults to an empty string, which is safe for single-tenant and test scenarios.</param>
         /// <returns>
         /// The canonical path with article number (e.g., "/pub/articles/123/banner.jpg") if the title is found.
         /// Returns the original path if it's already canonical, not an article path, or the title cannot be resolved.
@@ -74,6 +85,6 @@ namespace Sky.Cms.Services
         /// If multiple articles share the same title, the first match (lowest article number) is returned.
         /// Use this for user-typed paths or friendly URLs that need to be converted for storage operations.
         /// </remarks>
-        Task<string> ResolveCanonicalPathAsync(string friendlyPath);
+        Task<string> ResolveCanonicalPathAsync(string friendlyPath, string tenantDomain);
     }
 }

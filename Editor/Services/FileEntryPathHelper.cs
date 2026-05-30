@@ -1,4 +1,4 @@
-// <copyright file="PublicFileEntryHelper.cs" company="Moonrise Software, LLC">
+// <copyright file="FileEntryPathHelper.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -21,7 +21,7 @@ namespace Sky.Cms.Services
     /// Provides helper methods for file path manipulation, validation, and display name resolution
     /// in the SkyCMS public file management system.
     /// </summary>
-    public static class PublicFileEntryHelper
+    public static class FileEntryPathHelper
     {
         /// <summary>
         /// Normalizes a file path by converting backslashes to forward slashes, removing duplicate slashes,
@@ -421,9 +421,7 @@ namespace Sky.Cms.Services
                 return normalizedPath;
             }
 
-            var segments = normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
-            segments[2] = articleTitle;
-            return "/" + string.Join('/', segments);
+            return ResolveFriendlyDisplayPath(normalizedPath, articleNumber, articleTitle);
         }
 
         /// <summary>

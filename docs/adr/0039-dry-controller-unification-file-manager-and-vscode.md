@@ -41,16 +41,16 @@ bearer token, FilePond chunked upload protocol vs raw body).
 
 | Concern | Where extracted | Type |
 |---|---|---|
-| Path normalization / encoding | `PublicFileEntryHelper` | `public static class` |
-| Article/template title lookup + deleted-article filter | `IPublicFileEntryTitleResolver` / `PublicFileEntryTitleResolver` | Scoped DI service |
+| Path normalization / encoding | `FileEntryPathHelper` | `public static class` |
+| Article/template title lookup + deleted-article filter | `IFileEntryTitleService` / `FileEntryTitleService` | Scoped DI service |
 | Folder listing (articles, templates, storage) | `IFolderListingService` / `FolderListingService` | Scoped DI service |
-| Upload path-safety (empty, traversal, `/pub` root) | `PublicFileEntryHelper.IsUploadPathSafe` | `public static` method |
-| Dangerous-extension blocking | `PublicFileEntryHelper.IsDangerousExtension` | `public static` method |
+| Upload path-safety (empty, traversal, `/pub` root) | `FileEntryPathHelper.IsUploadPathSafe` | `public static` method |
+| Dangerous-extension blocking | `FileEntryPathHelper.IsDangerousExtension` | `public static` method |
 
 ### Rationale for static helpers vs scoped services
 
 Upload validation (`IsUploadPathSafe`, `IsDangerousExtension`) requires no I/O and carries no
-state. Extracting it as static methods on `PublicFileEntryHelper` keeps the call-sites simple and
+state. Extracting it as static methods on `FileEntryPathHelper` keeps the call-sites simple and
 removes the need for an additional DI registration. A dedicated `IUploadValidationService` was
 considered and rejected as a pass-through wrapper that would add indirection without reducing real
 duplication.
@@ -62,7 +62,7 @@ modelled as scoped DI services.
 
 Any upload security guard present in one controller **must** be present in the other. Extracting
 the guards into shared helpers enforces this mechanically: a guard added or changed in
-`PublicFileEntryHelper` is automatically applied to both surfaces without a second change.
+`FileEntryPathHelper` is automatically applied to both surfaces without a second change.
 
 At the time of this ADR the following guards are enforced on both surfaces:
 
@@ -84,7 +84,7 @@ At the time of this ADR the following guards are enforced on both surfaces:
 
 ### Negative / trade-offs
 
-- `PublicFileEntryHelper` now carries a dependency on `SkyCMS.Drivers.ElFinder`
+- `FileEntryPathHelper` now carries a dependency on `SkyCMS.Drivers.ElFinder`
   (for `FileStorageConstants`). This is an existing in-repo project dependency and is acceptable.
 - Controllers retain upload-protocol differences (FilePond chunked vs raw body). This divergence
   is intentional and is not considered technical debt.
@@ -103,8 +103,8 @@ At the time of this ADR the following guards are enforced on both surfaces:
 
 ## References
 
-- `Editor/Services/PublicFileEntryHelper.cs` — shared static helpers
-- `Editor/Services/IPublicFileEntryTitleResolver.cs` / `PublicFileEntryTitleResolver.cs` — title resolution service
+- `Editor/Services/FileEntryPathHelper.cs` — shared static helpers
+- `Editor/Services/IFileEntryTitleService.cs` / `FileEntryTitleService.cs` — title resolution service
 - `Editor/Services/IFolderListingService.cs` / `FolderListingService.cs` — folder listing service
 - `Drivers/SkyCMS.Drivers.ElFinder/FileStorageConstants.cs` — blocked extensions and valid extension lists
-- `Tests/Editor/Services/PublicFileEntryHelperTests.cs` — validation coverage for all helper methods
+- `Tests/Editor/Services/FileEntryPathHelperTests.cs` — validation coverage for all helper methods

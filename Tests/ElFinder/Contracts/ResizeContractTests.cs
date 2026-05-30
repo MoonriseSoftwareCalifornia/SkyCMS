@@ -1,4 +1,4 @@
-﻿// <copyright file="ResizeContractTests.cs" company="Moonrise Software, LLC">
+// <copyright file="ResizeContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>

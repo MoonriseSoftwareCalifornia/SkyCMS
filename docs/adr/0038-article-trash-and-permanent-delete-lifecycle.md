@@ -142,5 +142,5 @@ and its URL slug is re-derived from the new title. The conflicting active articl
 - `Editor/Features/Articles/Trash/TrashArticleValidator.cs`
 - `Editor/Features/Articles/Restore/RestoreArticleHandler.cs`
 - `Editor/Controllers/EditorController.cs` — `TrashArticle`, `TrashPermanently`, `Restore` actions
-- `Editor/Services/PublicFileEntryTitleResolver.cs` — `FilterDeletedArticleEntriesAsync`
+- `Editor/Services/FileEntryTitleService.cs` — `FilterDeletedArticleEntriesAsync`
 - `Tests/Features/Articles/Restore/RestoreArticleHandlerTests.cs`

@@ -188,9 +188,9 @@ namespace Sky.Tests.ElFinder
         /// article-number name with <paramref name="title"/> when the path is exactly
         /// <c>/pub/articles/{articleNumber}</c> (i.e. the article folder itself).
         /// All other paths return the raw name unchanged, matching the behaviour of
-        /// <see cref="Sky.Cms.Services.ArticleTitleNameResolver"/>.
+        /// <see cref="Sky.Cms.Services.ElFinderNameResolver"/>.
         /// </summary>
-        protected static IElFinderNameResolver BuildArticleTitleNameResolver(int articleNumber, string title)
+        protected static IElFinderNameResolver BuildElFinderNameResolver(int articleNumber, string title)
             => BuildTitleNameResolver(articleNumber, title, null, null);
 
         protected static IElFinderNameResolver BuildTitleNameResolver(int articleNumber, string articleTitle, string? templateId, string? templateTitle)

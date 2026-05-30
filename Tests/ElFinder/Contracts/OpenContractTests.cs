@@ -1,4 +1,4 @@
-﻿// <copyright file="OpenContractTests.cs" company="Moonrise Software, LLC">
+// <copyright file="OpenContractTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // </copyright>
@@ -201,7 +201,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_ArticleFolder_CwdNameIsArticleTitle()
         {
             var adapter = BuildAdapterWithArticles();
-            var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
+            var resolver = BuildElFinderNameResolver(ArticleNumber, ArticleTitle);
             var handler = new OpenCommandHandler(adapter.Object, resolver);
 
             var response = await handler.HandleAsync(new OpenCommand(target: ArticleFolderHash), default);
@@ -212,7 +212,7 @@ namespace Sky.Tests.ElFinder.Contracts
             var name = AssertStringProperty(cwd, "name");
             Assert.AreEqual(ArticleTitle, name,
                 $"cwd.name must be the article title '{ArticleTitle}', not the raw number '{ArticleNumber}'. " +
-                $"Check ArticleTitleNameResolver and OpenCommandHandler.BuildElFinderObjectAsync.");
+                $"Check ElFinderNameResolver and OpenCommandHandler.BuildElFinderObjectAsync.");
         }
 
         [TestMethod]
@@ -220,7 +220,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_ArticlesRootFolder_ChildNameIsArticleTitle()
         {
             var adapter = BuildAdapterWithArticles();
-            var resolver = BuildArticleTitleNameResolver(ArticleNumber, ArticleTitle);
+            var resolver = BuildElFinderNameResolver(ArticleNumber, ArticleTitle);
             var handler = new OpenCommandHandler(adapter.Object, resolver);
 
             var response = await handler.HandleAsync(new OpenCommand(target: ArticlesRootHash), default);

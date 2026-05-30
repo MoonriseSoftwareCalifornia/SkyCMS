@@ -1,4 +1,4 @@
-﻿// <copyright file="FileManagerControllerTests.cs" company="Moonrise Software, LLC">
+// <copyright file="FileManagerControllerTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -68,7 +68,7 @@ namespace Sky.Tests.Controllers
             mockElFinderMediator = new Mock<IElFinderDispatcher>();
 
             // Use real FolderListingService with title resolver to support articles/templates listing
-            var titleResolver = new PublicFileEntryTitleResolver(Db);
+            var titleResolver = new FileEntryTitleService(Db);
             var folderListingService = new FolderListingService(Db, isolatedStorage, titleResolver);
             var fileOperations = new FileOperationsService(isolatedStorage, NullLogger<FileOperationsService>.Instance);
 
@@ -515,9 +515,9 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public void ParsePath_ReturnsExpectedParts()
         {
-            CollectionAssert.AreEqual(new[] { "pub", "test", "file.txt" }, PublicFileEntryHelper.ParsePath("/pub", "test", "file.txt"));
-            CollectionAssert.AreEqual(new[] { "pub", "test" }, PublicFileEntryHelper.ParsePath("//pub//test//"));
-            CollectionAssert.AreEqual(Array.Empty<string>(), PublicFileEntryHelper.ParsePath((string)null));
+            CollectionAssert.AreEqual(new[] { "pub", "test", "file.txt" }, FileEntryPathHelper.ParsePath("/pub", "test", "file.txt"));
+            CollectionAssert.AreEqual(new[] { "pub", "test" }, FileEntryPathHelper.ParsePath("//pub//test//"));
+            CollectionAssert.AreEqual(Array.Empty<string>(), FileEntryPathHelper.ParsePath((string)null));
         }
 
         /// <summary>
@@ -526,8 +526,8 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public void TrimPathPart_ReturnsExpectedValues()
         {
-            Assert.AreEqual("test", PublicFileEntryHelper.TrimPathPart("/test/"));
-            Assert.AreEqual(string.Empty, PublicFileEntryHelper.TrimPathPart(null));
+            Assert.AreEqual("test", FileEntryPathHelper.TrimPathPart("/test/"));
+            Assert.AreEqual(string.Empty, FileEntryPathHelper.TrimPathPart(null));
         }
 
         /// <summary>
@@ -537,7 +537,7 @@ namespace Sky.Tests.Controllers
         public void UrlEncode_WithSpecialCharacters_EncodesCorrectly()
         {
             // Act
-            var result = PublicFileEntryHelper.UrlEncodePath("/pub/test file.txt");
+            var result = FileEntryPathHelper.UrlEncodePath("/pub/test file.txt");
 
             // Assert
             StringAssert.Contains(result, "test-file.txt");
@@ -1100,7 +1100,7 @@ namespace Sky.Tests.Controllers
             settingsMock.SetupGet(s => s.AllowedFileTypes).Returns(EditorSettings.AllowedFileTypes);
             settingsMock.SetupGet(s => s.UseModernFileExplorer).Returns(useModernFileExplorer);
 
-            var titleResolver2 = new PublicFileEntryTitleResolver(Db);
+            var titleResolver2 = new FileEntryTitleService(Db);
             var folderListingService2 = new FolderListingService(Db, isolatedStorage, titleResolver2);
             var fileOperations2 = new FileOperationsService(isolatedStorage, NullLogger<FileOperationsService>.Instance);
             var sut = new FileManagerController(

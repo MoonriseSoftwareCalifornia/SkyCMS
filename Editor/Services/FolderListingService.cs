@@ -30,7 +30,7 @@ namespace Sky.Cms.Services
 
         private readonly IApplicationDbContext dbContext;
         private readonly IStorageContext storageContext;
-        private readonly IPublicFileEntryTitleResolver titleResolver;
+        private readonly IFileEntryTitleService titleResolver;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FolderListingService"/> class.
@@ -41,7 +41,7 @@ namespace Sky.Cms.Services
         public FolderListingService(
             IApplicationDbContext dbContext,
             IStorageContext storageContext,
-            IPublicFileEntryTitleResolver titleResolver)
+            IFileEntryTitleService titleResolver)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             this.storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext));
@@ -54,7 +54,7 @@ namespace Sky.Cms.Services
             IMemoryCache cache,
             string tenantDomain)
         {
-            var normalised = PublicFileEntryHelper.NormalizePath(path ?? "/");
+            var normalised = FileEntryPathHelper.NormalizePath(path ?? "/");
             var trimmed = normalised.Trim('/');
 
             // ── /pub/articles root: virtual list from ArticleCatalog ──────────────
