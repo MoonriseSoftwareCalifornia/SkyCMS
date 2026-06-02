@@ -88,7 +88,7 @@ namespace Sky.Tests.Controllers
                         storage,
                         svc.GetRequiredService<IPathNormalizer>(),
                         svc.GetRequiredService<IPathValidator>()))
-                .AddScoped<IFileEntryTitleService>(_ => new FileEntryTitleService(dbContext))
+                .AddScoped<IFileEntryTitleService>(_ => new FileEntryTitleService(dbContext, Cache, DynamicConfigurationProvider))
                 .AddSingleton<Cosmos.DynamicConfig.IDynamicConfigurationProvider>(_ => DynamicConfigurationProvider)
                 .AddScoped<IElFinderNameResolver, ElFinderNameResolver>()
                 .AddElFinderDriver()

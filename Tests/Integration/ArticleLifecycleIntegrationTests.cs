@@ -408,9 +408,11 @@ namespace Sky.Tests.Integration
             var home = await CreateArticleAsync("Temp Home", TestUserId);
             await Logic.DeleteArticle(article.ArticleNumber);
 
-            // Verify catalog removed
+            // Verify catalog preserved with Deleted status (soft delete model)
             var catalog4 = await Db.ArticleCatalog.FirstOrDefaultAsync(c => c.ArticleNumber == article.ArticleNumber);
-            Assert.IsNull(catalog4);
+            Assert.IsNotNull(catalog4, "Catalog entry should be preserved during soft delete");
+            Assert.AreEqual((int)StatusCodeEnum.Deleted, catalog4.StatusCode, "Catalog should mark article as Deleted");
+            Assert.IsNull(catalog4.Published, "Published status should be cleared when deleted");
         }
 
         #endregion

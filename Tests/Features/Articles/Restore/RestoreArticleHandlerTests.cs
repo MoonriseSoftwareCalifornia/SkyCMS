@@ -49,6 +49,7 @@ namespace Sky.Tests.Features.Articles.Restore
 
             this.handler = new RestoreArticleHandler(
                 this.dbContext,
+                this.mockCatalogService.Object,
                 this.mockSlugService.Object,
                 this.mockLogger.Object);
         }
@@ -164,6 +165,19 @@ namespace Sky.Tests.Features.Articles.Restore
             };
 
             this.dbContext.Articles.AddRange(trashedArticle, activeArticle);
+
+            // Seed the catalog entry for the active article so title-conflict detection
+            // (which now queries ArticleCatalog) finds the occupied title.
+            this.dbContext.ArticleCatalog.Add(new CatalogEntry
+            {
+                ArticleNumber = activeArticle.ArticleNumber,
+                Title = activeArticle.Title,
+                UrlPath = activeArticle.UrlPath,
+                StatusCode = (int)StatusCodeEnum.Active,
+                Status = "Active",
+                Updated = activeArticle.Updated
+            });
+
             await this.dbContext.SaveChangesAsync();
 
             var command = new RestoreArticleCommand { ArticleNumber = 1, UserId = "test-user" };

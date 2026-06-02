@@ -13,6 +13,7 @@ namespace Sky.Tests.Features.Articles.Delete
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Editor.Features.Articles.Delete;
+    using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
     using System;
@@ -50,6 +51,7 @@ namespace Sky.Tests.Features.Articles.Delete
 
             this.handler = new DeleteArticleHandler(
                 this.dbContext,
+                new Mock<ICatalogService>().Object,
                 this.mockPublishingService.Object,
                 this.mockStorageContext.Object,
                 this.mockEditorSettings.Object,

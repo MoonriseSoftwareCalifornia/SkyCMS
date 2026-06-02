@@ -1424,7 +1424,7 @@ namespace Sky.Cms.Controllers
              *  all of them have friendly titles if they are article entries.
             */
 
-            var titleResolver = new FileEntryTitleService(dbContext);
+            var titleResolver = new FileEntryTitleService(dbContext, memoryCache, configProvider);
             var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
             await titleResolver.FilterDeletedArticleEntriesAsync(items, tenantDomain);
             var articleTitlesByNumber = await titleResolver.GetArticleTitlesByNumberAsync(items, tenantDomain);
@@ -1460,7 +1460,7 @@ namespace Sky.Cms.Controllers
                 return;
             }
 
-            var titleResolver = new FileEntryTitleService(dbContext);
+            var titleResolver = new FileEntryTitleService(dbContext, memoryCache, configProvider);
             var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
             var titles = await titleResolver.GetArticleTitlesByNumberAsync(new[] { articleNumber }, tenantDomain);
             if (titles.TryGetValue(articleNumber, out var articleTitle) && !string.IsNullOrWhiteSpace(articleTitle))
@@ -1508,7 +1508,7 @@ namespace Sky.Cms.Controllers
 
             var normalizedPath = NormalizePath(path);
             var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
-            var titleResolver = new FileEntryTitleService(this.dbContext);
+            var titleResolver = new FileEntryTitleService(this.dbContext, this.memoryCache, this.configProvider);
             if (!await titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
             {
                 return null;

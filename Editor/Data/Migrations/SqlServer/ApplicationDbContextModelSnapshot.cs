@@ -261,6 +261,9 @@ namespace Sky.Editor.Data.Migrations.SqlServer
                     b.Property<long?>("RowVersion")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Status")
                         .HasColumnType("TEXT");
 

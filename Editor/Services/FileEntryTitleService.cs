@@ -305,10 +305,15 @@ namespace Sky.Cms.Services
             else
             {
                 articleRows = await this.dbContext.Articles
-                .Where(a => numbersList.Contains(a.ArticleNumber))
-                .Select(a => new C { ArticleNumber = a.ArticleNumber, Title = a.Title, StatusCode = a.StatusCode })
-                .Distinct()
-                .ToListAsync();
+                    .Where(a => numbersList.Contains(a.ArticleNumber))
+                    .Select(a => new ArticleTitleAndStatus
+                    {
+                        ArticleNumber = a.ArticleNumber,
+                        Title = a.Title,
+                        StatusCode = a.StatusCode,
+                    })
+                    .Distinct()
+                    .ToListAsync();
             }
 
             foreach (var row in articleRows)
@@ -372,6 +377,17 @@ namespace Sky.Cms.Services
         /// <param name="friendlyPath">The friendly display path containing the article title.</param>
         /// <param name="tenantDomain">The tenant domain for which to resolve the path.</param>
         /// <returns>The canonical path with the article number, or the original path if not found.</returns>
+        private sealed class CosmosArticleTitleRow
+        {
+            public int ArticleNumber { get; set; }
+
+            public int VersionNumber { get; set; }
+
+            public string Title { get; set; } = string.Empty;
+
+            public int StatusCode { get; set; }
+        }
+
         public async Task<string> ResolveCanonicalPathAsync(string friendlyPath, string tenantDomain)
         {
             if (string.IsNullOrWhiteSpace(friendlyPath))

@@ -333,18 +333,20 @@ namespace Sky.Editor.Services.Titles
                 }
             }
 
-            // Check for title conflicts with other existing articles
+            // Check for title conflicts with other existing articles.
+            // Uses ArticleCatalog (one row per article) instead of Articles (one row per version)
+            // for efficiency and Cosmos DB EF provider compatibility.
             var deletedStatusCode = (int)StatusCodeEnum.Deleted;
-            Article existingArticle = articleNumber.HasValue
-                ? await db.Articles.FirstOrDefaultAsync(a =>
+            CatalogEntry existingEntry = articleNumber.HasValue
+                ? await db.ArticleCatalog.FirstOrDefaultAsync(a =>
                     a.ArticleNumber != articleNumber &&
                     a.Title.ToLower() == normalizedTitle.ToLower() &&
                     a.StatusCode != deletedStatusCode)
-                : await db.Articles.FirstOrDefaultAsync(a =>
+                : await db.ArticleCatalog.FirstOrDefaultAsync(a =>
                     a.Title.ToLower() == normalizedTitle.ToLower() &&
                     a.StatusCode != deletedStatusCode);
 
-            return existingArticle == null;
+            return existingEntry == null;
         }
 
         /// <summary>

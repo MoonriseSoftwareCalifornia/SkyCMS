@@ -68,7 +68,7 @@ namespace Sky.Tests.Controllers
             mockElFinderMediator = new Mock<IElFinderDispatcher>();
 
             // Use real FolderListingService with title resolver to support articles/templates listing
-            var titleResolver = new FileEntryTitleService(Db);
+            var titleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
             var folderListingService = new FolderListingService(Db, isolatedStorage, titleResolver);
             var fileOperations = new FileOperationsService(isolatedStorage, NullLogger<FileOperationsService>.Instance);
 
@@ -1100,7 +1100,7 @@ namespace Sky.Tests.Controllers
             settingsMock.SetupGet(s => s.AllowedFileTypes).Returns(EditorSettings.AllowedFileTypes);
             settingsMock.SetupGet(s => s.UseModernFileExplorer).Returns(useModernFileExplorer);
 
-            var titleResolver2 = new FileEntryTitleService(Db);
+            var titleResolver2 = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
             var folderListingService2 = new FolderListingService(Db, isolatedStorage, titleResolver2);
             var fileOperations2 = new FileOperationsService(isolatedStorage, NullLogger<FileOperationsService>.Instance);
             var sut = new FileManagerController(

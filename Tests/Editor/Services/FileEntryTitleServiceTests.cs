@@ -20,6 +20,7 @@ namespace Sky.Tests.Editor.Services
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
     using Sky.Cms.Services;
 
     /// <summary>
@@ -37,6 +38,14 @@ namespace Sky.Tests.Editor.Services
                 .UseInMemoryDatabase($"TitleResolver_{name}_{System.Guid.NewGuid()}")
                 .Options;
             return new ApplicationDbContext(options);
+        }
+
+        private static FileEntryTitleService CreateService(ApplicationDbContext db)
+        {
+            var cache = new Microsoft.Extensions.Caching.Memory.MemoryCache(
+                new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions());
+            var configProvider = new Moq.Mock<Cosmos.DynamicConfig.IDynamicConfigurationProvider>().Object;
+            return new FileEntryTitleService(db, cache, configProvider);
         }
 
         private static FileManagerEntry ArticleEntry(int articleNumber, bool isDirectory = true) =>
@@ -126,7 +135,7 @@ namespace Sky.Tests.Editor.Services
         public async Task FilterDeleted_NullList_DoesNotThrow()
         {
             using var db = CreateDb(nameof(FilterDeleted_NullList_DoesNotThrow));
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             await resolver.FilterDeletedArticleEntriesAsync(null!);
         }
 
@@ -135,7 +144,7 @@ namespace Sky.Tests.Editor.Services
         public async Task FilterDeleted_EmptyList_DoesNotThrow()
         {
             using var db = CreateDb(nameof(FilterDeleted_EmptyList_DoesNotThrow));
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             var entries = new List<FileManagerEntry>();
             await resolver.FilterDeletedArticleEntriesAsync(entries);
             Assert.AreEqual(0, entries.Count);
@@ -156,7 +165,7 @@ namespace Sky.Tests.Editor.Services
             await db.SaveChangesAsync();
 
             var entries = new List<FileManagerEntry> { ArticleEntry(10) };
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             await resolver.FilterDeletedArticleEntriesAsync(entries);
 
             Assert.AreEqual(1, entries.Count, "Active article folder should remain.");
@@ -177,7 +186,7 @@ namespace Sky.Tests.Editor.Services
             await db.SaveChangesAsync();
 
             var entries = new List<FileManagerEntry> { ArticleEntry(20) };
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             await resolver.FilterDeletedArticleEntriesAsync(entries);
 
             Assert.AreEqual(0, entries.Count, "Soft-deleted article folder should be removed.");
@@ -199,7 +208,7 @@ namespace Sky.Tests.Editor.Services
                 ArticleEntry(40),
                 FileEntry(40, "old-logo.png"),
             };
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             await resolver.FilterDeletedArticleEntriesAsync(entries);
 
             Assert.AreEqual(1, entries.Count);
@@ -218,7 +227,7 @@ namespace Sky.Tests.Editor.Services
             await db.SaveChangesAsync();
 
             var entries = new List<FileManagerEntry> { ArticleEntry(50) };
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             await resolver.FilterDeletedArticleEntriesAsync(entries);
 
             Assert.AreEqual(1, entries.Count, "Article with at least one live version must remain visible.");
@@ -240,7 +249,7 @@ namespace Sky.Tests.Editor.Services
             });
             await db.SaveChangesAsync();
 
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
 
             // First call: article 60 is active, nothing filtered.
             var firstBatch = new List<FileManagerEntry> { ArticleEntry(60) };
@@ -303,7 +312,7 @@ namespace Sky.Tests.Editor.Services
                     IsDirectory = true,
                 },
             };
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             var result = await resolver.GetArticleTitlesByNumberAsync(entries, string.Empty);
 
             // Assert: Should return the title from version 3 (latest)
@@ -355,7 +364,7 @@ namespace Sky.Tests.Editor.Services
                     IsDirectory = true,
                 },
             };
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             var result = await resolver.GetArticleTitlesByNumberAsync(entries, string.Empty);
 
             // Assert: Should return "Good Title" from version 1 (latest non-empty)
@@ -445,7 +454,7 @@ namespace Sky.Tests.Editor.Services
 
             try
             {
-                var resolver = new FileEntryTitleService(cosmosDb);
+                var resolver = CreateService(cosmosDb);
                 var result = new Dictionary<int, string>();
                 var allNumbers = new List<int> { testArticleNumber };
 
@@ -490,7 +499,7 @@ namespace Sky.Tests.Editor.Services
         public async Task ResolveCanonicalPath_AlreadyCanonical_PassesThrough()
         {
             using var db = CreateDb(nameof(ResolveCanonicalPath_AlreadyCanonical_PassesThrough));
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
 
             var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/123/banner.jpg");
 
@@ -502,7 +511,7 @@ namespace Sky.Tests.Editor.Services
         public async Task ResolveCanonicalPath_NonArticlePath_PassesThrough()
         {
             using var db = CreateDb(nameof(ResolveCanonicalPath_NonArticlePath_PassesThrough));
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
 
             var result = await resolver.ResolveCanonicalPathAsync("/pub/static/logo.png");
 
@@ -523,7 +532,7 @@ namespace Sky.Tests.Editor.Services
             });
             await db.SaveChangesAsync();
 
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Getting Started Guide/banner.jpg");
 
             Assert.AreEqual("/pub/articles/456/banner.jpg", result);
@@ -544,7 +553,7 @@ namespace Sky.Tests.Editor.Services
             });
             await db.SaveChangesAsync();
 
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Draft Article");
 
             Assert.AreEqual("/pub/articles/789", result);
@@ -555,7 +564,7 @@ namespace Sky.Tests.Editor.Services
         public async Task ResolveCanonicalPath_NonexistentTitle_ReturnsOriginal()
         {
             using var db = CreateDb(nameof(ResolveCanonicalPath_NonexistentTitle_ReturnsOriginal));
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
 
             var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Nonexistent Article");
 
@@ -584,7 +593,7 @@ namespace Sky.Tests.Editor.Services
                 });
             await db.SaveChangesAsync();
 
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Duplicate Title/image.png");
 
             // Should return lowest article number (111)
@@ -596,7 +605,7 @@ namespace Sky.Tests.Editor.Services
         public async Task ResolveCanonicalPath_EmptyPath_ReturnsEmpty()
         {
             using var db = CreateDb(nameof(ResolveCanonicalPath_EmptyPath_ReturnsEmpty));
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
 
             var result = await resolver.ResolveCanonicalPathAsync(string.Empty);
 
@@ -608,7 +617,7 @@ namespace Sky.Tests.Editor.Services
         public async Task ResolveCanonicalPath_NullPath_ReturnsEmpty()
         {
             using var db = CreateDb(nameof(ResolveCanonicalPath_NullPath_ReturnsEmpty));
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
 
             var result = await resolver.ResolveCanonicalPathAsync(null!);
 
@@ -620,7 +629,7 @@ namespace Sky.Tests.Editor.Services
         public async Task ResolveCanonicalPath_ShortPath_PassesThrough()
         {
             using var db = CreateDb(nameof(ResolveCanonicalPath_ShortPath_PassesThrough));
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
 
             var result = await resolver.ResolveCanonicalPathAsync("/pub/articles");
 
@@ -641,7 +650,7 @@ namespace Sky.Tests.Editor.Services
             });
             await db.SaveChangesAsync();
 
-            var resolver = new FileEntryTitleService(db);
+            var resolver = CreateService(db);
             var result = await resolver.ResolveCanonicalPathAsync("/pub/articles/Deep Article/assets/images/photo.jpg");
 
             Assert.AreEqual("/pub/articles/555/assets/images/photo.jpg", result);
