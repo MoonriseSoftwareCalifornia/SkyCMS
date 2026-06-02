@@ -7,10 +7,10 @@
 
 namespace Sky.Cms.Services
 {
-    using Cosmos.DynamicConfig;
-    using SkyCMS.Drivers.ElFinder.Adapters;
     using System.Threading;
     using System.Threading.Tasks;
+    using Cosmos.DynamicConfig;
+    using SkyCMS.Drivers.ElFinder.Adapters;
 
     /// <summary>
     /// elFinder name resolver that substitutes canonical entity IDs with friendly titles

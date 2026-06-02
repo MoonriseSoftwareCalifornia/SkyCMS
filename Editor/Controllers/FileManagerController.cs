@@ -358,9 +358,17 @@ namespace Sky.Cms.Controllers
 
         private async Task<IActionResult> HandleTreeViaCqrsAsync()
         {
+            var target = GetParam("target");
+            var targetPath = string.IsNullOrWhiteSpace(target) ? RootPath : DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             var command = new TreeCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 Filter = GetParam("filter"),
                 VolumeId = VolumeId,
             };
@@ -379,6 +387,12 @@ namespace Sky.Cms.Controllers
             if (path == null || !IsAllowedPath(path))
             {
                 return Json(ElFinderError("errAccess"));
+            }
+
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+            if (blocked != null)
+            {
+                return blocked;
             }
 
             var hasBatchDirs = Request.Method == "POST" && Request.HasFormContentType && Request.Form.ContainsKey("dirs[]");
@@ -427,6 +441,12 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errAccess"));
             }
 
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             if (!IsSafeName(name))
             {
                 return Json(ElFinderError("errInvName"));
@@ -463,6 +483,12 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errAccess"));
             }
 
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             if (!IsSafeName(name))
             {
                 return Json(ElFinderError("errInvName"));
@@ -489,6 +515,12 @@ namespace Sky.Cms.Controllers
             if (targets.Length == 0)
             {
                 targets = GetParams("targets");
+            }
+
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
             }
 
             var removed = new List<string>();
@@ -540,6 +572,13 @@ namespace Sky.Cms.Controllers
         private async Task<IActionResult> HandleOpenViaCqrsAsync()
         {
             var target = GetParam("target");
+            var targetPath = string.IsNullOrWhiteSpace(target) ? RootPath : DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             var isInit = GetParam("init") == "1";
             var command = new OpenCommand(
                 target: target,
@@ -562,6 +601,12 @@ namespace Sky.Cms.Controllers
             if (path == null || !IsAllowedPath(path))
             {
                 return Json(ElFinderError("errAccess"));
+            }
+
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+            if (blocked != null)
+            {
+                return blocked;
             }
 
             var files = Request.Form.Files;
@@ -620,9 +665,17 @@ namespace Sky.Cms.Controllers
 
         private async Task<IActionResult> HandleGetViaCqrsAsync()
         {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             var command = new GetCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 VolumeId = VolumeId,
             };
 
@@ -633,9 +686,17 @@ namespace Sky.Cms.Controllers
 
         private async Task<IActionResult> HandlePutViaCqrsAsync()
         {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             var command = new PutCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 Content = GetParam("content"),
                 VolumeId = VolumeId,
             };
@@ -653,9 +714,23 @@ namespace Sky.Cms.Controllers
                 targets = GetParams("targets");
             }
 
+            var destination = GetParam("dst") ?? GetParam("target");
+            var destinationPath = DecodeHash(destination);
+            var blockedDestination = await DenyDeletedArticlePathForCqrsAsync(destinationPath);
+            if (blockedDestination != null)
+            {
+                return blockedDestination;
+            }
+
+            var blockedSources = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedSources != null)
+            {
+                return blockedSources;
+            }
+
             var command = new PasteCommand
             {
-                Target = GetParam("dst") ?? GetParam("target"),
+                Target = destination,
                 Sources = string.Join(',', targets),
                 Cut = GetParam("cut"),
                 VolumeId = VolumeId,
@@ -668,9 +743,17 @@ namespace Sky.Cms.Controllers
 
         private async Task<IActionResult> HandleParentsViaCqrsAsync()
         {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             var command = new ParentsCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 VolumeId = VolumeId,
             };
 
@@ -702,6 +785,12 @@ namespace Sky.Cms.Controllers
                 return Json(new { size = 0L });
             }
 
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
+            }
+
             long total = 0;
             foreach (var target in targets)
             {
@@ -724,10 +813,17 @@ namespace Sky.Cms.Controllers
         private async Task<IActionResult> HandleLsViaCqrsAsync()
         {
             var intersect = GetParams("intersect[]");
+            var target = GetParam("target");
+            var targetPath = string.IsNullOrWhiteSpace(target) ? RootPath : DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
 
             var command = new LsCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 Intersect = intersect,
                 VolumeId = VolumeId,
             };
@@ -743,6 +839,12 @@ namespace Sky.Cms.Controllers
             if (targets.Length == 0)
             {
                 targets = GetParams("targets");
+            }
+
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
             }
 
             var command = new TmbCommand
@@ -764,6 +866,12 @@ namespace Sky.Cms.Controllers
                 targets = GetParams("targets");
             }
 
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
+            }
+
             var command = new InfoCommand
             {
                 Targets = string.Join(',', targets),
@@ -778,11 +886,18 @@ namespace Sky.Cms.Controllers
         private async Task<IActionResult> HandleSearchViaCqrsAsync()
         {
             var mimes = GetParams("mimes[]");
+            var target = GetParam("target");
+            var targetPath = string.IsNullOrWhiteSpace(target) ? RootPath : DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
 
             var command = new SearchCommand
             {
                 Query = GetParam("q"),
-                Target = GetParam("target"),
+                Target = target,
                 Mimes = mimes.Length > 0 ? mimes : null,
                 VolumeId = VolumeId,
             };
@@ -800,9 +915,17 @@ namespace Sky.Cms.Controllers
 
         private async Task<IActionResult> HandleFileViaCqrsAsync()
         {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             var command = new FileCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 Download = GetParam("download"),
                 VolumeId = VolumeId,
             };
@@ -832,6 +955,12 @@ namespace Sky.Cms.Controllers
                 targets = GetParams("targets");
             }
 
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
+            }
+
             var command = new DuplicateCommand
             {
                 Targets = string.Join(',', targets),
@@ -857,10 +986,17 @@ namespace Sky.Cms.Controllers
             _ = int.TryParse(GetParam("y"), out var y);
             _ = int.TryParse(GetParam("degree"), out var degree);
             _ = int.TryParse(GetParam("quality"), out var quality);
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
 
             var command = new ResizeCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 Mode = GetParam("mode"),
                 Width = width,
                 Height = height,
@@ -885,9 +1021,17 @@ namespace Sky.Cms.Controllers
 
         private async Task<IActionResult> HandleUrlViaCqrsAsync()
         {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             var command = new UrlCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 BlobPublicUrl = editorSettings.BlobPublicUrl,
                 VolumeId = VolumeId,
             };
@@ -905,9 +1049,17 @@ namespace Sky.Cms.Controllers
 
         private async Task<IActionResult> HandleDimViaCqrsAsync()
         {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
             var command = new DimCommand
             {
-                Target = GetParam("target"),
+                Target = target,
                 VolumeId = VolumeId,
             };
 
@@ -1274,7 +1426,7 @@ namespace Sky.Cms.Controllers
 
             var titleResolver = new FileEntryTitleService(dbContext);
             var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
-            await titleResolver.FilterDeletedArticleEntriesAsync(items, this.memoryCache, tenantDomain);
+            await titleResolver.FilterDeletedArticleEntriesAsync(items, tenantDomain);
             var articleTitlesByNumber = await titleResolver.GetArticleTitlesByNumberAsync(items, tenantDomain);
             foreach (var item in items)
             {
@@ -1345,6 +1497,44 @@ namespace Sky.Cms.Controllers
             return name.EndsWith(ext, StringComparison.OrdinalIgnoreCase)
                 ? name
                 : name + ext;
+        }
+
+        private async Task<IActionResult> DenyDeletedArticlePathForCqrsAsync(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            var normalizedPath = NormalizePath(path);
+            var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
+            var titleResolver = new FileEntryTitleService(this.dbContext);
+            if (!await titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
+            {
+                return null;
+            }
+
+            return Json(ElFinderError("errAccess"));
+        }
+
+        private async Task<IActionResult> DenyDeletedArticleHashesForCqrsAsync(IEnumerable<string> hashes)
+        {
+            if (hashes == null)
+            {
+                return null;
+            }
+
+            foreach (var hash in hashes)
+            {
+                var path = DecodeHash(hash);
+                var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+                if (blocked != null)
+                {
+                    return blocked;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -1431,7 +1621,7 @@ namespace Sky.Cms.Controllers
 
             // GET FULL OR ABSOLUTE PATH ï¿½ delegated to the shared FolderListingService.
             var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
-            var entries = await this.folderListingService.GetEntriesAsync(target, this.memoryCache, tenantDomain);
+            var entries = await this.folderListingService.GetEntriesAsync(target, tenantDomain);
             IQueryable<FileManagerEntry> query = entries.AsQueryable();
 
             if (imagesOnly)

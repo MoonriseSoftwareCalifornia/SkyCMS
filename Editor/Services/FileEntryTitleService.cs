@@ -14,39 +14,47 @@ namespace Sky.Cms.Services
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
+    using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
+    using Sky.Editor.Data;
     using Sky.Editor.Models;
+    using Sky.Editor.Services;
 
     /// <summary>
-    /// Async helper for resolving article and template titles from the database.
-    /// Centralizes title-lookup patterns used across file controllers to reduce duplication.
+    /// Provides file-entry title enrichment for editor listings by resolving article and template
+    /// identifiers from file-system-style paths into human-readable titles from persistence.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This service is used by file controllers to keep title lookup logic in one place, including
+    /// extracting IDs from <see cref="FileManagerEntry"/> instances, performing batched database lookups,
+    /// and returning dictionary-based maps that callers can apply when building UI responses.
+    /// </para>
+    /// <para>
+    /// For articles, it supports both catalog-backed lookups and fallback resolution from versioned
+    /// article records so draft content can still display a meaningful title. For templates, it resolves
+    /// template folder identifiers to template titles.
+    /// </para>
+    /// </remarks>
     public class FileEntryTitleService : IFileEntryTitleService
     {
         private readonly IApplicationDbContext dbContext;
-        private readonly IMemoryCache? cache;
+        private readonly IMemoryCache memoryCache;
+        private readonly IDynamicConfigurationProvider dynamicConfigurationProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileEntryTitleService"/> class.
         /// </summary>
         /// <param name="dbContext">Database context.</param>
+        /// <param name="memoryCache">Memory cache</param>
+        /// <param name="dynamicConfigurationProvider">Dynamic configuration provider</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public FileEntryTitleService(IApplicationDbContext dbContext)
-            : this(dbContext, null)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FileEntryTitleService"/> class with optional caching.
-        /// </summary>
-        /// <param name="dbContext">Database context.</param>
-        /// <param name="cache">Optional memory cache for article title lookups. If provided, enables short-lived caching to reduce database chatty-ness.</param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public FileEntryTitleService(IApplicationDbContext dbContext, IMemoryCache? cache)
+        public FileEntryTitleService(IApplicationDbContext dbContext, IMemoryCache memoryCache, IDynamicConfigurationProvider dynamicConfigurationProvider)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            this.cache = cache;
+            this.memoryCache = memoryCache;
+            this.dynamicConfigurationProvider = dynamicConfigurationProvider;
         }
 
         /// <summary>
@@ -54,7 +62,7 @@ namespace Sky.Cms.Services
         /// </summary>
         /// <param name="entries">File entries to process (only from /pub/articles directory).</param>
         /// <param name="tenantDomain">
-        /// Optional tenant domain used to scope cache lookups. If caching is enabled, separate tenants will have isolated cache entries.
+        /// Optional tenant domain associated with the current request.
         /// Defaults to an empty string, which is safe for single-tenant deployments.
         /// </param>
         /// <returns>Dictionary mapping article numbers to titles, empty if no matches found.</returns>
@@ -141,40 +149,6 @@ namespace Sky.Cms.Services
         }
 
         /// <summary>
-        /// For each article number in <paramref name="allNumbers"/> that is not yet present in
-        /// <paramref name="result"/>, queries the <c>Articles</c> table and fills in the title
-        /// from the highest-version record found. This surfaces titles for draft articles that
-        /// have no <c>ArticleCatalog</c> entry.
-        /// </summary>
-        private async Task FillMissingTitlesFromArticlesAsync(Dictionary<int, string> result, List<int> allNumbers, string tenantDomain)
-        {
-            var missing = allNumbers.Where(n => !result.ContainsKey(n)).ToList();
-            if (missing.Count == 0)
-            {
-                return;
-            }
-
-            // Query each missing article number by equality so Cosmos can use the ArticleNumber
-            // partition key path directly. We still resolve the latest non-empty title client-side.
-            foreach (var articleNumber in missing)
-            {
-                var rows = await this.dbContext.Articles
-                    .Where(a => a.ArticleNumber == articleNumber)
-                    .Select(a => new { a.ArticleNumber, a.VersionNumber, a.Title })
-                    .ToListAsync();
-
-                foreach (var row in rows.OrderByDescending(r => r.VersionNumber))
-                {
-                    if (!result.ContainsKey(row.ArticleNumber) && !string.IsNullOrWhiteSpace(row.Title))
-                    {
-                        result[row.ArticleNumber] = row.Title;
-                        break;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Removes entries whose article number is associated with a soft-deleted
         /// (<see cref="StatusCodeEnum.Deleted"/>) article from <paramref name="entries"/>.
         /// </summary>
@@ -186,65 +160,21 @@ namespace Sky.Cms.Services
         /// be hidden. Permanently trashed articles are already gone from both the DB and
         /// blob storage, so they will simply have no matching entries to filter.
         /// </para>
-        /// <para>
-        /// Results are cached via <paramref name="cache"/> for 30 seconds to avoid a
-        /// round-trip to the database on every listing request. The short TTL means that
-        /// a restore or hard-delete will take effect within one cache window.
-        /// </para>
-        /// <para>
-        /// The cache key is scoped to <paramref name="tenantDomain"/> so that separate
-        /// tenants sharing a single process never see each other's deleted-article sets.
-        /// In single-tenant deployments the host name is used, which is equally safe.
-        /// Pass an empty string only from tests where tenant isolation is not relevant.
-        /// </para>
         /// </remarks>
         /// <param name="entries">Mutable list of entries to filter in place.</param>
-        /// <param name="cache">Application memory cache used for short-lived deleted-number lookup.</param>
         /// <param name="tenantDomain">
-        /// The tenant domain name used to scope the cache key. Obtain this from
-        /// <c>IDynamicConfigurationProvider.GetTenantDomainNameFromRequest()</c> in controllers.
+        /// The tenant domain name associated with the current request.
         /// Defaults to an empty string, which is safe for single-tenant and test scenarios.
         /// </param>
         /// <returns>A task that completes once filtering is done.</returns>
-        public async Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, IMemoryCache cache, string tenantDomain = "")
+        public async Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, string tenantDomain = "")
         {
             if (entries == null || entries.Count == 0)
             {
                 return;
             }
 
-            // Scope the cache key to the tenant so that multiple tenants sharing a
-            // single in-process IMemoryCache cannot bleed deleted-article sets into
-            // each other's file listings.
-            var cacheKey = $"FileEntryTitleService:DeletedArticleNumbers:{tenantDomain}";
-
-            if (!cache.TryGetValue(cacheKey, out HashSet<int>? deletedNumbers) || deletedNumbers == null)
-            {
-                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
-
-                // Materialise all article numbers that have at least one non-deleted version.
-                // Any article number NOT in this set is considered fully deleted.
-                var liveNumbers = await this.dbContext.Articles
-                    .Where(a => a.StatusCode != deletedStatusCode)
-                    .Select(a => a.ArticleNumber)
-                    .Distinct()
-                    .ToListAsync();
-
-                // Also pull every number in blob storage entries to know which ones are deleted.
-                var allNumbers = FileEntryPathHelper.ExtractArticleNumbersFromEntries(entries);
-
-                deletedNumbers = new HashSet<int>(
-                    allNumbers.Where(n => !liveNumbers.Contains(n)));
-
-                cache.Set(
-                    cacheKey,
-                    deletedNumbers,
-                    new MemoryCacheEntryOptions
-                    {
-                        SlidingExpiration = TimeSpan.FromSeconds(30),
-                    });
-            }
-
+            var deletedNumbers = await this.GetDeletedArticleNumbersAsync(entries, tenantDomain);
             if (deletedNumbers.Count == 0)
             {
                 return;
@@ -258,6 +188,55 @@ namespace Sky.Cms.Services
                     entries.RemoveAt(i);
                 }
             }
+        }
+
+        public async Task<bool> IsArticlePathDeletedAsync(string path, string tenantDomain)
+        {
+            if (!FileEntryPathHelper.TryGetArticleNumberFromPath(path, out var articleNumber))
+            {
+                return false;
+            }
+
+            // Scope the lookup to the current article number to keep query costs bounded.
+            var entries = new List<FileManagerEntry>
+            {
+                new FileManagerEntry { Path = $"/pub/articles/{articleNumber}", IsDirectory = true },
+            };
+
+            var deletedNumbers = await this.GetDeletedArticleNumbersAsync(entries, tenantDomain);
+            return deletedNumbers.Contains(articleNumber);
+        }
+
+        private async Task<HashSet<int>> GetDeletedArticleNumbersAsync(
+            IEnumerable<FileManagerEntry> entries,
+            string tenantDomain)
+        {
+            _ = tenantDomain;
+
+            var allNumbers = FileEntryPathHelper.ExtractArticleNumbersFromEntries(entries);
+            if (allNumbers.Count == 0)
+            {
+                return new HashSet<int>();
+            }
+
+            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
+            var deletedNumbers = new HashSet<int>();
+
+            // Query each candidate article number by equality so Cosmos can use partition keys.
+            foreach (var articleNumber in allNumbers)
+            {
+                var statuses = await this.dbContext.Articles
+                    .Where(a => a.ArticleNumber == articleNumber)
+                    .Select(a => a.StatusCode)
+                    .ToListAsync();
+
+                if (statuses.Count > 0 && statuses.All(s => s == deletedStatusCode))
+                {
+                    deletedNumbers.Add(articleNumber);
+                }
+            }
+
+            return deletedNumbers;
         }
 
         /// <summary>
@@ -288,10 +267,49 @@ namespace Sky.Cms.Services
 
             var numbersList = numbers.ToList();
             var articleTitlesByNumber = new Dictionary<int, string>();
-            var articleRows = await this.dbContext.ArticleCatalog
+            var articleRows = new List<ArticleTitleAndStatus>();
+
+            // Important, DO NOT USE ArticleCatalog for lookups by article number that may include drafts,
+            // because the catalog only contains published articles. We need to query the Articles table
+            // directly to ensure we surface titles for draft articles that have no catalog entry yet.
+            // This is a common scenario when resolving titles for article folders in the file manager,
+            // which must show all articles including drafts and deleted (or articles in Trash) articles.
+
+            if (this.dbContext.GetDatabaseProviderName().Contains("Cosmos", StringComparison.OrdinalIgnoreCase)
+                && this.dbContext is ApplicationDbContext cosmosDbContext)
+            {
+                // Execute through Cosmos SQL/SDK and then select the latest non-empty title per article number client-side.
+                var client = cosmosDbContext.Database.GetCosmosClient();
+                var databaseId = cosmosDbContext.Database.GetCosmosDatabaseId();
+                var queryService = new CosmosDbService(client, databaseId, "Articles");
+
+                foreach (var chunk in numbersList.Chunk(100))
+                {
+                    var articleNumbersArray = $"[{string.Join(",", chunk)}]";
+                    var query = $"SELECT c.ArticleNumber, c.VersionNumber, c.Title, c.StatusCode FROM c WHERE ARRAY_CONTAINS({articleNumbersArray}, c.ArticleNumber)";
+
+                    var cosmosRows = await queryService.QueryWithGroupByAsync<CosmosArticleTitleRow>(query);
+                    foreach (var group in cosmosRows.GroupBy(r => r.ArticleNumber))
+                    {
+                        var latest = group
+                            .OrderByDescending(r => r.VersionNumber)
+                            .FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.Title));
+
+                        if (latest != null)
+                        {
+                            articleTitlesByNumber[latest.ArticleNumber] = latest.Title;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                articleRows = await this.dbContext.Articles
                 .Where(a => numbersList.Contains(a.ArticleNumber))
-                .Select(a => new { a.ArticleNumber, a.Title })
+                .Select(a => new C { ArticleNumber = a.ArticleNumber, Title = a.Title, StatusCode = a.StatusCode })
+                .Distinct()
                 .ToListAsync();
+            }
 
             foreach (var row in articleRows)
             {
@@ -301,14 +319,59 @@ namespace Sky.Cms.Services
                 }
             }
 
-            // Fall back to the Articles table for any numbers not in the catalog.
-            // Keep this query shape because ArticleNumber is the Cosmos partition key and this path
-            // has already been proven compatible with the provider.
-            await this.FillMissingTitlesFromArticlesAsync(articleTitlesByNumber, numbersList, tenantDomain);
 
             return articleTitlesByNumber;
         }
 
+        /// <summary>
+        /// Retrieves a list of article numbers, titles, and status codes for all articles in the system.
+        /// </summary>
+        /// <returns>A list of <see cref="ArticleTitleAndStatus"/> objects representing all articles.</returns>
+        /// <remarks>This method retrieves the article information from the database and caches the results for 10 seconds.</remarks>
+        public async Task<List<ArticleTitleAndStatus>> GetArticleNumberTitleStatusList()
+        {
+            var cacheKey = $"{this.dynamicConfigurationProvider.GetTenantDomainNameFromRequest}-articlenumber-title-status";
+            if (memoryCache.TryGetValue(cacheKey, out var cachedValue))
+            {
+                return cachedValue as List<ArticleTitleAndStatus>;
+            }
+
+            var validStatuses = new[] { (int)StatusCodeEnum.Active, (int)StatusCodeEnum.Deleted };
+
+            // Important: we must query the Articles table directly to get all articles including
+            // drafts and deleted articles, since the catalog only contains published articles.
+            var articleTitlesAndStatuses = await this.dbContext.Articles
+                .Where(a => validStatuses.Contains(a.StatusCode))
+                .Select(s => new ArticleTitleAndStatus
+                {
+                    ArticleNumber = s.ArticleNumber,
+                    Title = s.Title,
+                    StatusCode = s.StatusCode
+                }).Distinct().AsNoTracking().ToListAsync();
+
+            var model = articleTitlesAndStatuses.GroupBy(a => a.ArticleNumber)
+                .Select(g =>
+                {
+                    var latest = g.OrderByDescending(a => a.StatusCode).FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.Title));
+                    return new ArticleTitleAndStatus
+                    {
+                        ArticleNumber = g.Key,
+                        Title = latest?.Title ?? string.Empty,
+                        StatusCode = latest?.StatusCode ?? (int)StatusCodeEnum.Active
+                    };
+                }).OrderBy(a => a.ArticleNumber).ToList();
+
+            memoryCache.Set(cacheKey, model, DateTimeOffset.UtcNow.AddSeconds(10));
+
+            return model;
+        }
+
+        /// <summary>
+        /// Resolves a friendly display path containing an article title to its canonical path with the article number.
+        /// </summary>
+        /// <param name="friendlyPath">The friendly display path containing the article title.</param>
+        /// <param name="tenantDomain">The tenant domain for which to resolve the path.</param>
+        /// <returns>The canonical path with the article number, or the original path if not found.</returns>
         public async Task<string> ResolveCanonicalPathAsync(string friendlyPath, string tenantDomain)
         {
             if (string.IsNullOrWhiteSpace(friendlyPath))

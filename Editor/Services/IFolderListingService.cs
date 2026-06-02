@@ -10,7 +10,6 @@ namespace Sky.Cms.Services
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Cosmos.BlobService;
-    using Microsoft.Extensions.Caching.Memory;
 
     /// <summary>
     /// Shared folder-listing service that produces a uniform <see cref="FileManagerEntry"/> list
@@ -32,14 +31,11 @@ namespace Sky.Cms.Services
         /// Normalised absolute path (e.g. <c>/pub</c>, <c>/pub/articles</c>,
         /// <c>/pub/articles/42</c>, <c>/pub/templates</c>).
         /// </param>
-        /// <param name="cache">
-        /// Shared memory cache used for the deleted-article filter TTL.
-        /// </param>
         /// <param name="tenantDomain">
-        /// Tenant domain name used to scope the deleted-article cache key.
+        /// Tenant domain associated with the current request.
         /// Obtain from <c>IDynamicConfigurationProvider.GetTenantDomainNameFromRequest()</c>.
         /// </param>
         /// <returns>Flat list of entries for the requested path.</returns>
-        Task<List<FileManagerEntry>> GetEntriesAsync(string path, IMemoryCache cache, string tenantDomain);
+        Task<List<FileManagerEntry>> GetEntriesAsync(string path, string tenantDomain);
     }
 }

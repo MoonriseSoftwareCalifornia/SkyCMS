@@ -74,6 +74,8 @@ namespace Sky.Cms.Controllers
         private readonly IContentCatalogService contentCatalog;
         private readonly IFileOperationsService fileOperations;
 
+        private const string DeletedArticleAccessMessage = "The requested file path belongs to a deleted article and is not accessible.";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="VsCodeController"/> class.
         /// </summary>
@@ -1635,10 +1637,16 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
                 var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
-                var entries = await this.folderListingService.GetEntriesAsync(path, this.memoryCache, tenantDomain);
+                var entries = await this.folderListingService.GetEntriesAsync(path, tenantDomain);
 
                 var articleTitlesByNumber = await this.titleResolver.GetArticleTitlesByNumberAsync(entries, tenantDomain);
                 var templateTitlesById = await this.titleResolver.GetTemplateTitlesByIdAsync(entries);
@@ -1692,6 +1700,12 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
                 var entry = await fileOperations.GetFileAsync(path);
@@ -1741,6 +1755,12 @@ namespace Sky.Cms.Controllers
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
+            }
+
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
             }
 
             try
@@ -1801,6 +1821,12 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
                 await fileOperations.DeleteFileAsync(path);
@@ -1841,6 +1867,12 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
                 await fileOperations.DeleteFolderAsync(path);
@@ -1879,6 +1911,12 @@ namespace Sky.Cms.Controllers
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
+            }
+
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
             }
 
             try
@@ -1925,6 +1963,12 @@ namespace Sky.Cms.Controllers
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
+            }
+
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
             }
 
             if (Request.ContentLength is null or 0)
@@ -2008,6 +2052,18 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Destination path is required." });
             }
 
+            var deniedSource = await this.DenyDeletedArticlePathAsync(sourcePath);
+            if (deniedSource != null)
+            {
+                return deniedSource;
+            }
+
+            var deniedDestination = await this.DenyDeletedArticlePathAsync(request.Destination);
+            if (deniedDestination != null)
+            {
+                return deniedDestination;
+            }
+
             try
             {
                 await fileOperations.MoveFileAsync(sourcePath, request.Destination);
@@ -2054,6 +2110,18 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Destination path is required." });
             }
 
+            var deniedSource = await this.DenyDeletedArticlePathAsync(sourcePath);
+            if (deniedSource != null)
+            {
+                return deniedSource;
+            }
+
+            var deniedDestination = await this.DenyDeletedArticlePathAsync(request.Destination);
+            if (deniedDestination != null)
+            {
+                return deniedDestination;
+            }
+
             try
             {
                 await fileOperations.MoveFolderAsync(sourcePath, request.Destination);
@@ -2068,6 +2136,23 @@ namespace Sky.Cms.Controllers
                 logger.LogError(ex, "Error moving folder from {Source} to {Destination}", sourcePath, request.Destination);
                 return StatusCode(500);
             }
+        }
+
+        private async Task<IActionResult?> DenyDeletedArticlePathAsync(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            var normalizedPath = FileEntryPathHelper.NormalizePath(path);
+            var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
+            if (!await this.titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
+            {
+                return null;
+            }
+
+            return NotFound(new { message = DeletedArticleAccessMessage });
         }
 
         /// <summary>

@@ -14,7 +14,6 @@ namespace Sky.Cms.Services
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Sky.Editor.Models;
 
     /// <summary>
@@ -51,7 +50,6 @@ namespace Sky.Cms.Services
         /// <inheritdoc/>
         public async Task<List<FileManagerEntry>> GetEntriesAsync(
             string path,
-            IMemoryCache cache,
             string tenantDomain)
         {
             var normalised = FileEntryPathHelper.NormalizePath(path ?? "/");
@@ -110,7 +108,7 @@ namespace Sky.Cms.Services
             // Filter soft-deleted article entries from any sub-folder of /pub/articles.
             if (trimmed.StartsWith(ArticlesRoot, StringComparison.OrdinalIgnoreCase))
             {
-                await this.titleResolver.FilterDeletedArticleEntriesAsync(entries, cache, tenantDomain);
+                await this.titleResolver.FilterDeletedArticleEntriesAsync(entries, tenantDomain);
             }
 
             return entries;

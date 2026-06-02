@@ -18,7 +18,6 @@ namespace Sky.Tests.Editor.Services
     using Cosmos.Common.Data.Logic;
     using Microsoft.Azure.Cosmos;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Services;
@@ -39,9 +38,6 @@ namespace Sky.Tests.Editor.Services
                 .Options;
             return new ApplicationDbContext(options);
         }
-
-        private static IMemoryCache NewCache() =>
-            new MemoryCache(new MemoryCacheOptions());
 
         private static FileManagerEntry ArticleEntry(int articleNumber, bool isDirectory = true) =>
             new FileManagerEntry
@@ -131,7 +127,7 @@ namespace Sky.Tests.Editor.Services
         {
             using var db = CreateDb(nameof(FilterDeleted_NullList_DoesNotThrow));
             var resolver = new FileEntryTitleService(db);
-            await resolver.FilterDeletedArticleEntriesAsync(null!, NewCache());
+            await resolver.FilterDeletedArticleEntriesAsync(null!);
         }
 
         [TestMethod]
@@ -141,7 +137,7 @@ namespace Sky.Tests.Editor.Services
             using var db = CreateDb(nameof(FilterDeleted_EmptyList_DoesNotThrow));
             var resolver = new FileEntryTitleService(db);
             var entries = new List<FileManagerEntry>();
-            await resolver.FilterDeletedArticleEntriesAsync(entries, NewCache());
+            await resolver.FilterDeletedArticleEntriesAsync(entries);
             Assert.AreEqual(0, entries.Count);
         }
 
@@ -161,7 +157,7 @@ namespace Sky.Tests.Editor.Services
 
             var entries = new List<FileManagerEntry> { ArticleEntry(10) };
             var resolver = new FileEntryTitleService(db);
-            await resolver.FilterDeletedArticleEntriesAsync(entries, NewCache());
+            await resolver.FilterDeletedArticleEntriesAsync(entries);
 
             Assert.AreEqual(1, entries.Count, "Active article folder should remain.");
         }
@@ -182,7 +178,7 @@ namespace Sky.Tests.Editor.Services
 
             var entries = new List<FileManagerEntry> { ArticleEntry(20) };
             var resolver = new FileEntryTitleService(db);
-            await resolver.FilterDeletedArticleEntriesAsync(entries, NewCache());
+            await resolver.FilterDeletedArticleEntriesAsync(entries);
 
             Assert.AreEqual(0, entries.Count, "Soft-deleted article folder should be removed.");
         }
@@ -204,7 +200,7 @@ namespace Sky.Tests.Editor.Services
                 FileEntry(40, "old-logo.png"),
             };
             var resolver = new FileEntryTitleService(db);
-            await resolver.FilterDeletedArticleEntriesAsync(entries, NewCache());
+            await resolver.FilterDeletedArticleEntriesAsync(entries);
 
             Assert.AreEqual(1, entries.Count);
             Assert.AreEqual("/pub/articles/30", entries[0].Path);
@@ -223,7 +219,7 @@ namespace Sky.Tests.Editor.Services
 
             var entries = new List<FileManagerEntry> { ArticleEntry(50) };
             var resolver = new FileEntryTitleService(db);
-            await resolver.FilterDeletedArticleEntriesAsync(entries, NewCache());
+            await resolver.FilterDeletedArticleEntriesAsync(entries);
 
             Assert.AreEqual(1, entries.Count, "Article with at least one live version must remain visible.");
         }
@@ -244,23 +240,22 @@ namespace Sky.Tests.Editor.Services
             });
             await db.SaveChangesAsync();
 
-            var cache = NewCache();
             var resolver = new FileEntryTitleService(db);
 
-            // First call â€” primes the cache: article 60 is active, nothing filtered.
+            // First call: article 60 is active, nothing filtered.
             var firstBatch = new List<FileManagerEntry> { ArticleEntry(60) };
-            await resolver.FilterDeletedArticleEntriesAsync(firstBatch, cache);
+            await resolver.FilterDeletedArticleEntriesAsync(firstBatch);
             Assert.AreEqual(1, firstBatch.Count, "First call: active article must not be filtered.");
 
-            // Simulate article being soft-deleted in DB after cache was primed.
+            // Simulate article being soft-deleted in DB after first lookup.
             var article = await db.Articles.FirstAsync(a => a.ArticleNumber == 60);
             article.StatusCode = (int)StatusCodeEnum.Deleted;
             await db.SaveChangesAsync();
 
-            // Second call â€” should still use the cached empty deleted-set, so article remains visible.
+            // Second call should reflect latest DB state and filter the deleted entry.
             var secondBatch = new List<FileManagerEntry> { ArticleEntry(60) };
-            await resolver.FilterDeletedArticleEntriesAsync(secondBatch, cache);
-            Assert.AreEqual(1, secondBatch.Count, "Second call within cache window: stale cache should keep the entry visible.");
+            await resolver.FilterDeletedArticleEntriesAsync(secondBatch);
+            Assert.AreEqual(0, secondBatch.Count, "Second call should reflect the latest deleted state.");
         }
 
         // â”€â”€â”€â”€â”€ GetArticleTitlesByNumberAsync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
