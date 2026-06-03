@@ -15,6 +15,7 @@ namespace Sky.Tests.Features.Articles.Restore
     using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.Slugs;
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -237,6 +238,185 @@ namespace Sky.Tests.Features.Articles.Restore
 
             // Assert
             Assert.IsFalse(result.IsSuccess);
+        }
+
+        [TestMethod]
+        public async Task HandleAsync_MultipleVersions_AllVersionsRestoredToActive()
+        {
+            // Arrange — three deleted versions of the same logical article
+            var v1 = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 50,
+                Title = "Multi-Version Restore",
+                VersionNumber = 1,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                UrlPath = "multi-version-restore",
+                Updated = DateTimeOffset.UtcNow,
+                Published = DateTimeOffset.UtcNow
+            };
+            var v2 = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 50,
+                Title = "Multi-Version Restore",
+                VersionNumber = 2,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                UrlPath = "multi-version-restore",
+                Updated = DateTimeOffset.UtcNow,
+                Published = DateTimeOffset.UtcNow
+            };
+            var v3 = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 50,
+                Title = "Multi-Version Restore",
+                VersionNumber = 3,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                UrlPath = "multi-version-restore",
+                Updated = DateTimeOffset.UtcNow,
+                Published = DateTimeOffset.UtcNow
+            };
+
+            this.dbContext.Articles.AddRange(v1, v2, v3);
+            await this.dbContext.SaveChangesAsync();
+
+            var command = new RestoreArticleCommand { ArticleNumber = 50, UserId = "test-user" };
+
+            // Act
+            var result = await this.handler.HandleAsync(command);
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess);
+
+            var restored = await this.dbContext.Articles
+                .Where(a => a.ArticleNumber == 50)
+                .ToListAsync();
+
+            Assert.AreEqual(3, restored.Count, "All versions must still exist");
+            Assert.IsTrue(restored.All(a => a.StatusCode == (int)StatusCodeEnum.Active),
+                "Every version must be restored to Active");
+            Assert.IsTrue(restored.All(a => a.Published == null),
+                "Published date must be cleared on every version");
+        }
+
+        [TestMethod]
+        public async Task HandleAsync_TitleConflict_UrlSlugAlsoRenamed()
+        {
+            // Arrange — trashed article; active article with the same title occupies the slug
+            var trashed = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 60,
+                Title = "Slug Conflict Article",
+                VersionNumber = 1,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                UrlPath = "slug-conflict-article",
+                Updated = DateTimeOffset.UtcNow,
+                Published = null
+            };
+
+            var active = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 61,
+                Title = "Slug Conflict Article",
+                VersionNumber = 1,
+                StatusCode = (int)StatusCodeEnum.Active,
+                UserId = "test-user",
+                UrlPath = "slug-conflict-article",
+                Updated = DateTimeOffset.UtcNow,
+                Published = DateTimeOffset.UtcNow
+            };
+
+            this.dbContext.Articles.AddRange(trashed, active);
+            this.dbContext.ArticleCatalog.Add(new CatalogEntry
+            {
+                ArticleNumber = active.ArticleNumber,
+                Title = active.Title,
+                UrlPath = active.UrlPath,
+                StatusCode = (int)StatusCodeEnum.Active,
+                Status = "Active",
+                Updated = active.Updated
+            });
+            await this.dbContext.SaveChangesAsync();
+
+            var command = new RestoreArticleCommand { ArticleNumber = 60, UserId = "test-user" };
+
+            // Act
+            var result = await this.handler.HandleAsync(command);
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess);
+
+            var restoredVersions = await this.dbContext.Articles
+                .Where(a => a.ArticleNumber == 60)
+                .ToListAsync();
+
+            foreach (var v in restoredVersions)
+            {
+                Assert.AreNotEqual("slug-conflict-article", v.UrlPath,
+                    "UrlPath must be renamed when a title conflict is detected");
+                Assert.AreNotEqual("Slug Conflict Article", v.Title,
+                    "Title must be renamed when a conflict is detected");
+            }
+        }
+
+        [TestMethod]
+        public async Task HandleAsync_Restore_CatalogUpsertCalledWithLatestVersion()
+        {
+            // Arrange
+            var capturedArticle = (Article)null;
+            this.mockCatalogService
+                .Setup(c => c.UpsertAsync(It.IsAny<Article>(), It.IsAny<System.Threading.CancellationToken>()))
+                .Callback<Article, System.Threading.CancellationToken>((a, _) => capturedArticle = a)
+                .ReturnsAsync(new CatalogEntry());
+
+            var v1 = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 70,
+                Title = "Catalog Upsert Test",
+                VersionNumber = 1,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                UrlPath = "catalog-upsert-test",
+                Updated = DateTimeOffset.UtcNow
+            };
+            var v2 = new Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 70,
+                Title = "Catalog Upsert Test",
+                VersionNumber = 2,
+                StatusCode = (int)StatusCodeEnum.Deleted,
+                UserId = "test-user",
+                UrlPath = "catalog-upsert-test",
+                Updated = DateTimeOffset.UtcNow
+            };
+
+            this.dbContext.Articles.AddRange(v1, v2);
+            await this.dbContext.SaveChangesAsync();
+
+            var command = new RestoreArticleCommand { ArticleNumber = 70, UserId = "test-user" };
+
+            // Act
+            var result = await this.handler.HandleAsync(command);
+
+            // Assert
+            Assert.IsTrue(result.IsSuccess);
+            this.mockCatalogService.Verify(
+                c => c.UpsertAsync(It.IsAny<Article>(), It.IsAny<System.Threading.CancellationToken>()),
+                Times.Once,
+                "CatalogService.UpsertAsync must be called exactly once on restore");
+            Assert.IsNotNull(capturedArticle);
+            Assert.AreEqual(2, capturedArticle.VersionNumber, "UpsertAsync must receive the latest (highest) version");
+            Assert.AreEqual((int)StatusCodeEnum.Active, capturedArticle.StatusCode,
+                "Article passed to UpsertAsync must already be restored to Active");
         }
     }
 }
