@@ -16,36 +16,36 @@ Implement ADR 0042 without breaking downstream `ArticleCatalog` consumers.
 - [x] Keep `Status` string for transitional compatibility.
 
 ### Commit 2 — Centralize lifecycle-faithful catalog writes
-- [ ] Update `CatalogService.UpsertAsync` to map canonical `StatusCode`.
-- [ ] Keep `Status` string aligned with `StatusCode`.
-- [ ] Ensure Deleted/Redirect entries are non-public in catalog projection (e.g., `Published = null`).
+- [x] Update `CatalogService.UpsertAsync` to map canonical `StatusCode`.
+- [x] Keep `Status` string aligned with `StatusCode`.
+- [x] Ensure Deleted/Redirect entries are non-public in catalog projection (e.g., `Published = null`).
 
 ### Commit 3 — Lifecycle handlers alignment
-- [ ] `DeleteArticleHandler`: stop deleting catalog row on soft delete; upsert instead.
-- [ ] `RestoreArticleHandler`: remove manual catalog row construction; use catalog upsert.
-- [ ] `TrashArticleHandler`: keep permanent catalog row removal unchanged.
+- [x] `DeleteArticleHandler`: stop deleting catalog row on soft delete; upsert instead.
+- [x] `RestoreArticleHandler`: remove manual catalog row construction; use catalog upsert.
+- [x] `TrashArticleHandler`: keep permanent catalog row removal unchanged.
 
 ### Commit 4 — Downstream guardrails
-- [ ] `FolderListingService`: exclude Deleted/Redirect from `/pub/articles` virtual root listing.
-- [ ] `DeleteTemplateHandler`: count only Active catalog rows for template usage blocking.
-- [ ] Add/confirm lifecycle filters in public-facing catalog query paths where needed.
+- [x] `FolderListingService`: exclude Deleted/Redirect from `/pub/articles` virtual root listing.
+- [x] `DeleteTemplateHandler`: count only Active catalog rows for template usage blocking.
+- [x] Add/confirm lifecycle filters in public-facing catalog query paths where needed.
 
 ### Commit 5 — FileEntryTitleService optimization path
-- [ ] Move `GetArticleNumberTitleStatusList()` to read from `ArticleCatalog`.
-- [ ] Use `StatusCode` for filtering.
-- [ ] Keep compatibility fallback if required during migration window.
+- [x] Move `GetArticleNumberTitleStatusList()` to read from `ArticleCatalog`.
+- [x] Use `StatusCode` for filtering.
+- [x] Keep compatibility fallback if required during migration window.
 
 ### Commit 6 — Legacy parity cleanup
-- [ ] Align obsolete `ArticleEditLogic` catalog status mapping to canonical semantics.
+- [x] Align obsolete `ArticleEditLogic` catalog status mapping to canonical semantics.
 
 ### Commit 7 — Tests
-- [ ] Soft delete keeps catalog row + marks Deleted.
-- [ ] Restore returns catalog row to Active and unpublished.
-- [ ] Permanent trash removes catalog row.
-- [ ] `/pub/articles` root listing excludes Deleted/Redirect.
-- [ ] Template delete ignores deleted catalog rows.
-- [ ] `GetArticleNumberTitleStatusList()` behaves correctly from catalog.
-- [ ] Public/search/sitemap/blog navigation regressions stay green.
+- [x] Soft delete keeps catalog row + marks Deleted.
+- [x] Restore returns catalog row to Active and unpublished.
+- [x] Permanent trash removes catalog row.
+- [x] `/pub/articles` root listing excludes Deleted/Redirect.
+- [x] Template delete ignores deleted catalog rows.
+- [x] `GetArticleNumberTitleStatusList()` behaves correctly from catalog.
+- [x] Public/search/sitemap/blog navigation regressions stay green.
 
 ## Validation Checklist
 
@@ -64,7 +64,7 @@ Implement ADR 0042 without breaking downstream `ArticleCatalog` consumers.
   - Suggested branch name: `feat/reenable-mysql-migrations`.
 
 ### Commit 8 — Article lifecycle documentation
-- [ ] Create `docs/adr/0043-article-lifecycle-events.md` documenting every lifecycle event with:
+- [x] Create `docs/adr/0043-article-lifecycle-events.md` documenting every lifecycle event with:
   - Trigger (what user action or system event causes it)
   - `StatusCode` value before and after
   - `Published` value before and after
@@ -73,7 +73,7 @@ Implement ADR 0042 without breaking downstream `ArticleCatalog` consumers.
   - What happens to static HTML artifact
   - What downstream systems are notified (TOC, sitemap, etc.)
   - Whether the event is reversible and how
-- [ ] Events to cover at minimum: Create, Save/Edit, Publish, Schedule (future publish), Unpublish, Soft-delete (trash), Restore, Permanent delete, URL redirect assignment, Title change, Template change.
+- [x] Events to cover at minimum: Create, Save/Edit, Publish, Schedule (future publish), Unpublish, Soft-delete (trash), Restore, Permanent delete, URL redirect assignment, Title change, Template change.
 
 ## Completion
 
