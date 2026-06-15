@@ -379,7 +379,7 @@ namespace Sky.Cms.Services
             if (!this.memoryCache.TryGetValue(cacheKey, out Dictionary<int, ArticleTitleAndStatus> cachedLookup))
             {
                 var catalogRows = await this.dbContext.ArticleCatalog
-                    .Select(a => new { a.ArticleNumber, a.Title, a.Status })
+                    .Select(a => new { a.ArticleNumber, a.Title, a.Status, a.StatusCode })
                     .ToListAsync(cancellationToken);
 
                 cachedLookup = catalogRows.ToDictionary(
@@ -388,7 +388,7 @@ namespace Sky.Cms.Services
                     {
                         ArticleNumber = a.ArticleNumber,
                         Title = a.Title,
-                        StatusCode = ConvertStatusToCode(a.Status),
+                        StatusCode = ResolveCatalogStatusCode(a.StatusCode, a.Status),
                     });
 
                 this.memoryCache.Set(cacheKey, cachedLookup, TimeSpan.FromSeconds(10));
@@ -510,6 +510,12 @@ namespace Sky.Cms.Services
                 "Redirect" => (int)StatusCodeEnum.Redirect,
                 _ => -1,
             };
+        }
+
+        private static int ResolveCatalogStatusCode(int statusCode, string? status)
+        {
+            var convertedStatusCode = ConvertStatusToCode(status ?? string.Empty);
+            return convertedStatusCode >= 0 ? convertedStatusCode : statusCode;
         }
 
         private static string ConvertStatusCodeToString(int statusCode)
