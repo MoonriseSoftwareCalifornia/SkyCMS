@@ -15,6 +15,8 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
     using Cosmos.Cms.Common.Services.Configurations;
     using Cosmos.Common.Data;
     using Cosmos.Common.Services;
+    using Cosmos.DynamicConfig;
+    using Cosmos.Editor.Services;
     using Microsoft.AspNetCore.Authentication;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
@@ -38,6 +40,7 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
         private readonly ILogger<LoginModel> logger;
         private readonly IOptions<SiteSettings> options;
         private readonly IServiceProvider services;
+        private readonly ILoginAssetBootstrapService loginAssetBootstrapService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LoginModel"/> class.
@@ -48,16 +51,19 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
         /// <param name="services">App services.</param>
         /// <param name="configuration">App configuration.</param>
         /// <param name="emailSender">Email sender service.</param>
+        /// <param name="loginAssetBootstrapService">Ensures login assets exist in blob storage.</param>
         public LoginModel(
             ILogger<LoginModel> logger,
             IOptions<SiteSettings> options,
             IServiceProvider services,
             IConfiguration configuration,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            ILoginAssetBootstrapService loginAssetBootstrapService)
         {
             this.logger = logger;
             this.options = options;
             this.services = services;
+            this.loginAssetBootstrapService = loginAssetBootstrapService;
         }
 
         /// <summary>
@@ -192,6 +198,7 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
                         return Page();
                     }
 
+                    await loginAssetBootstrapService.EnsureRequiredAssetsAsync(website);
                     logger.LogInformation("User logged in.");
                     var test = SignInManager.IsSignedIn(User);
                     return LocalRedirect(returnUrl);
@@ -255,6 +262,7 @@ namespace Sky.Cms.Areas.Identity.Pages.Account
             if (result == TokenVerificationResult.Valid)
             {
                 await SignInManager.SignInAsync(user, true, "TOTP");
+                await loginAssetBootstrapService.EnsureRequiredAssetsAsync(website);
 
                 var principal = await SignInManager.CreateUserPrincipalAsync(user);
 

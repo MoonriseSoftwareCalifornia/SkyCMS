@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using MimeTypes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
@@ -16,7 +15,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// Handles the "resize" command: resize, crop, or rotate an image using ImageSharp.
 /// See Docs/commands/resize.md.
 /// </summary>
-public class ResizeCommandHandler : IRequestHandler<ResizeCommand, IElFinderResponse>
+public class ResizeCommandHandler : IElFinderHandler<ResizeCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -25,7 +24,7 @@ public class ResizeCommandHandler : IRequestHandler<ResizeCommand, IElFinderResp
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(ResizeCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(ResizeCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Target))
         {

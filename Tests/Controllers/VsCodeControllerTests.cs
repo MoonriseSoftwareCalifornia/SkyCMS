@@ -19,6 +19,7 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Cms.Controllers;
+    using Sky.Cms.Services;
     using Sky.Editor.Models;
     using Sky.Editor.Services.Layouts;
 
@@ -74,6 +75,9 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
+            var titleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
+            var contentCatalog = new ContentCatalogService(Db);
+            var fileOperations = new FileOperationsService(mockStorageContext.Object, NullLogger<FileOperationsService>.Instance);
             controller = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -84,7 +88,11 @@ namespace Sky.Tests.Controllers
                 TemplateService,
                 DynamicConfigurationProvider,
                 ArticleEditLogic,
-                PublishingService);
+                PublishingService,
+                titleResolver,
+                new FolderListingService(Db, mockStorageContext.Object, titleResolver),
+                contentCatalog,
+                fileOperations);
 
             controller.ControllerContext = new ControllerContext
             {
@@ -1166,6 +1174,43 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task RestoreArticle_DeletedArticle_ReturnsOk()
+        {
+            var article = new Cosmos.Common.Data.Article
+            {
+                Id = Guid.NewGuid(),
+                ArticleNumber = 321,
+                Title = "Deleted Article",
+                VersionNumber = 1,
+                StatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted,
+                UserId = TestUserId.ToString(),
+                UrlPath = "deleted-article",
+                Updated = DateTimeOffset.UtcNow,
+                Published = DateTimeOffset.UtcNow,
+            };
+
+            Db.Articles.Add(article);
+            await Db.SaveChangesAsync();
+
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.RestoreArticle(article.ArticleNumber);
+
+            Assert.IsInstanceOfType(result, typeof(OkResult));
+            var restored = Db.Articles.First(a => a.ArticleNumber == article.ArticleNumber);
+            Assert.AreEqual((int)Cosmos.Common.Data.Logic.StatusCodeEnum.Active, restored.StatusCode);
+            Assert.IsNull(restored.Published);
+        }
+
+        [TestMethod]
+        public async Task RestoreArticle_MissingArticle_ReturnsNotFound()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+            var result = await controller.RestoreArticle(99999);
+            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+        }
+
+        [TestMethod]
         public async Task CreateArticle_ReturnsNewArticleNumber()
         {
             controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
@@ -1404,6 +1449,9 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
+            var localTitleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
+            var localContentCatalog = new ContentCatalogService(Db);
+            var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
             var localController = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -1414,7 +1462,11 @@ namespace Sky.Tests.Controllers
                 TemplateService,
                 DynamicConfigurationProvider,
                 ArticleEditLogic,
-                PublishingService);
+                PublishingService,
+                localTitleResolver,
+                new FolderListingService(Db, storageMock.Object, localTitleResolver),
+                localContentCatalog,
+                localFileOperations);
 
             localController.ControllerContext = new ControllerContext
             {
@@ -1430,10 +1482,198 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(result);
             var items = (result.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
             Assert.AreEqual(1, items.Count);
-            Assert.AreEqual("Mapped Folder Title", GetAnonymousProperty<string>(items[0], "name"));
-            Assert.AreEqual($"/pub/articles/{article.ArticleNumber}", GetAnonymousProperty<string>(items[0], "path"));
+
+            // friendly display name must be the article title, not the integer
+            Assert.AreEqual("Mapped Folder Title", GetAnonymousProperty<string>(items[0], "name"),
+                "name must be the article title, not the folder number.");
+
+            // canonical storage path must be preserved
+            Assert.AreEqual($"/pub/articles/{article.ArticleNumber}", GetAnonymousProperty<string>(items[0], "path"),
+                "path must be the canonical storage path.");
 
             localCache.Dispose();
+        }
+
+        [TestMethod]
+        public async Task GetFilesList_ArticlesRoot_DisplayPathContainsTitleNotNumber()
+        {
+            // Verifies that displayPath substitutes the article title in place of the
+            // folder number (e.g. /pub/articles/My Great Article, not /pub/articles/42).
+            var article = await CreateArticleAsync("My Great Article", TestUserId);
+
+            var localCache = new MemoryCache(new MemoryCacheOptions());
+            var storageMock = new Mock<IStorageContext>();
+            storageMock
+                .Setup(s => s.GetFilesAndDirectories("/pub/articles"))
+                .ReturnsAsync(new List<FileManagerEntry>
+                {
+                    new FileManagerEntry
+                    {
+                        Name = article.ArticleNumber.ToString(),
+                        Path = $"/pub/articles/{article.ArticleNumber}",
+                        IsDirectory = true,
+                        Size = 0,
+                        ModifiedUtc = DateTime.UtcNow,
+                        Extension = string.Empty,
+                    },
+                });
+
+            var layoutVersioningService = new LayoutVersioningService(
+                Db,
+                ArticleHtmlService,
+                NullLogger<LayoutVersioningService>.Instance);
+
+            var localTitleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
+            var localContentCatalog = new ContentCatalogService(Db);
+            var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
+            var localController = new VsCodeController(
+                Db,
+                NullLogger<VsCodeController>.Instance,
+                localCache,
+                storageMock.Object,
+                layoutVersioningService,
+                Mediator,
+                TemplateService,
+                DynamicConfigurationProvider,
+                ArticleEditLogic,
+                PublishingService,
+                localTitleResolver,
+                new FolderListingService(Db, storageMock.Object, localTitleResolver),
+                localContentCatalog,
+                localFileOperations);
+
+            localController.ControllerContext = new ControllerContext
+            {
+                HttpContext = CreateHttpContext(
+                    isAuthenticated: true,
+                    username: "editor@example.com",
+                    role: "Editors"),
+            };
+
+            var pathHash = EncodeTestPath("/pub/articles");
+            var result = await localController.GetFilesList(pathHash) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var items = (result.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
+            Assert.AreEqual(1, items.Count, "Expected exactly one article folder entry.");
+
+            var displayPath = GetAnonymousProperty<string>(items[0], "displayPath");
+            Assert.IsTrue(
+                displayPath.Contains("My Great Article", StringComparison.OrdinalIgnoreCase),
+                $"displayPath '{displayPath}' must contain the article title 'My Great Article', not the folder number.");
+
+            Assert.IsFalse(
+                displayPath.Contains(article.ArticleNumber.ToString(), StringComparison.Ordinal),
+                $"displayPath '{displayPath}' must NOT contain the raw article number '{article.ArticleNumber}'. " +
+                $"The integer must be replaced by the article title.");
+
+            localCache.Dispose();
+        }
+
+        [TestMethod]
+        public async Task GetFilesList_ArticlesRoot_CanonicalPathPreservesNumber()
+        {
+            // Verifies that 'path' (the real/canonical storage path) retains the integer
+            // folder name, distinct from the friendly 'displayPath'.
+            var article = await CreateArticleAsync("Canonical Path Test Article", TestUserId);
+
+            var localCache = new MemoryCache(new MemoryCacheOptions());
+            var storageMock = new Mock<IStorageContext>();
+            storageMock
+                .Setup(s => s.GetFilesAndDirectories("/pub/articles"))
+                .ReturnsAsync(new List<FileManagerEntry>
+                {
+                    new FileManagerEntry
+                    {
+                        Name = article.ArticleNumber.ToString(),
+                        Path = $"/pub/articles/{article.ArticleNumber}",
+                        IsDirectory = true,
+                        Size = 0,
+                        ModifiedUtc = DateTime.UtcNow,
+                        Extension = string.Empty,
+                    },
+                });
+
+            var layoutVersioningService = new LayoutVersioningService(
+                Db,
+                ArticleHtmlService,
+                NullLogger<LayoutVersioningService>.Instance);
+
+            var localTitleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
+            var localContentCatalog = new ContentCatalogService(Db);
+            var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
+            var localController = new VsCodeController(
+                Db,
+                NullLogger<VsCodeController>.Instance,
+                localCache,
+                storageMock.Object,
+                layoutVersioningService,
+                Mediator,
+                TemplateService,
+                DynamicConfigurationProvider,
+                ArticleEditLogic,
+                PublishingService,
+                localTitleResolver,
+                new FolderListingService(Db, storageMock.Object, localTitleResolver),
+                localContentCatalog,
+                localFileOperations);
+
+            localController.ControllerContext = new ControllerContext
+            {
+                HttpContext = CreateHttpContext(
+                    isAuthenticated: true,
+                    username: "editor@example.com",
+                    role: "Editors"),
+            };
+
+            var pathHash = EncodeTestPath("/pub/articles");
+            var result = await localController.GetFilesList(pathHash) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var items = (result.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
+            Assert.AreEqual(1, items.Count, "Expected exactly one article folder entry.");
+
+            var canonicalPath = GetAnonymousProperty<string>(items[0], "path");
+            var expectedPath = $"/pub/articles/{article.ArticleNumber}";
+            Assert.AreEqual(expectedPath, canonicalPath,
+                $"path must be the canonical storage path '{expectedPath}', not a title-substituted version. " +
+                $"Consumers depend on 'path' to make API calls back to the server.");
+
+            localCache.Dispose();
+        }
+
+        [TestMethod]
+        public async Task GetFilesList_ArticlesRoot_SkipsDeletedArticleFolders()
+        {
+            Db.ArticleCatalog.AddRange(
+                new Cosmos.Common.Data.CatalogEntry
+                {
+                    ArticleNumber = 910,
+                    Title = "Visible Article",
+                    UrlPath = "visible-article",
+                    Status = nameof(Cosmos.Common.Data.Logic.StatusCodeEnum.Active),
+                    Updated = DateTimeOffset.UtcNow,
+                },
+                new Cosmos.Common.Data.CatalogEntry
+                {
+                    ArticleNumber = 911,
+                    Title = "Hidden Article",
+                    UrlPath = "hidden-article",
+                    Status = nameof(Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted),
+                    Updated = DateTimeOffset.UtcNow,
+                });
+            await Db.SaveChangesAsync();
+
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var pathHash = EncodeTestPath("/pub/articles");
+            var result = await controller.GetFilesList(pathHash) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var items = (result.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
+            Assert.AreEqual(1, items.Count);
+            Assert.AreEqual("Visible Article", GetAnonymousProperty<string>(items[0], "name"));
+            Assert.AreEqual("/pub/articles/910", GetAnonymousProperty<string>(items[0], "path"));
         }
 
         [TestMethod]

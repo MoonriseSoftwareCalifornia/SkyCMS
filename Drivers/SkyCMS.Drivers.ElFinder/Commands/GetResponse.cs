@@ -12,11 +12,17 @@ public class GetResponse : IElFinderResponse
 {
     /// <summary>
     /// File content (as base64 or raw text depending on file type).
-    /// For binary files, the handler may write stream directly to response.
     /// </summary>
     [JsonPropertyName("content")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Content { get; set; }
+
+    /// <summary>
+    /// Encoding of the file content (e.g. "utf-8").
+    /// </summary>
+    [JsonPropertyName("encoding")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Encoding { get; set; }
 
     /// <summary>
     /// MIME type of the file.

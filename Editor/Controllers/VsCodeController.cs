@@ -1,4 +1,4 @@
-// <copyright file="VsCodeController.cs" company="Moonrise Software, LLC">
+﻿// <copyright file="VsCodeController.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -16,6 +16,7 @@ namespace Sky.Cms.Controllers
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
@@ -31,6 +32,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Data.Logic;
     using Sky.Editor.Features.Articles.GetEditable;
     using Sky.Editor.Features.Articles.Inventory;
+    using Sky.Editor.Features.Articles.Restore;
     using Sky.Editor.Features.Layouts.GetEditable;
     using Sky.Editor.Features.Templates.Create;
     using Sky.Editor.Features.Templates.Get;
@@ -68,6 +70,12 @@ namespace Sky.Cms.Controllers
         private readonly ITemplateService templateService;
         private readonly ArticleEditLogic articleLogic;
         private readonly IPublishingService publishingService;
+        private readonly IFileEntryTitleService titleResolver;
+        private readonly IFolderListingService folderListingService;
+        private readonly IContentCatalogService contentCatalog;
+        private readonly IFileOperationsService fileOperations;
+
+        private const string DeletedArticleAccessMessage = "The requested file path belongs to a deleted article and is not accessible.";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VsCodeController"/> class.
@@ -82,6 +90,10 @@ namespace Sky.Cms.Controllers
         /// <param name="configProvider">Dynamic configuration provider for tenant settings.</param>
         /// <param name="articleLogic">Article edit logic for publish/unpublish operations.</param>
         /// <param name="publishingService">Publishing service for unpublish operations.</param>
+        /// <param name="titleResolver">Shared file entry title resolver.</param>
+        /// <param name="folderListingService">Shared folder-listing service.</param>
+        /// <param name="contentCatalog">Content catalog service for article/template queries.</param>
+        /// <param name="fileOperations">File operations service for common file/folder operations.</param>
         public VsCodeController(
             ApplicationDbContext dbContext,
             ILogger<VsCodeController> logger,
@@ -92,7 +104,11 @@ namespace Sky.Cms.Controllers
             ITemplateService templateService,
             IDynamicConfigurationProvider configProvider,
             ArticleEditLogic articleLogic,
-            IPublishingService publishingService)
+            IPublishingService publishingService,
+            IFileEntryTitleService titleResolver,
+            IFolderListingService folderListingService,
+            IContentCatalogService contentCatalog,
+            IFileOperationsService fileOperations)
         {
             this.dbContext = dbContext;
             this.logger = logger;
@@ -104,6 +120,10 @@ namespace Sky.Cms.Controllers
             this.configProvider = configProvider;
             this.articleLogic = articleLogic;
             this.publishingService = publishingService;
+            this.titleResolver = titleResolver;
+            this.folderListingService = folderListingService;
+            this.contentCatalog = contentCatalog;
+            this.fileOperations = fileOperations;
         }
 
         /// <summary>
@@ -511,32 +531,16 @@ namespace Sky.Cms.Controllers
                 return authResult;
             }
 
-            var blogStreamType = (int)Cosmos.Cms.Common.ArticleType.BlogStream;
-            var all = await dbContext.Articles
-                .AsNoTracking()
-                .Where(a => a.ArticleType == blogStreamType)
-                .Select(a => new
-                {
-                    a.ArticleNumber,
-                    a.VersionNumber,
-                    a.Title,
-                    a.BlogKey,
-                })
-                .ToListAsync();
+            var latest = await contentCatalog.GetBlogStreamsAsync();
 
-            var latest = all
-                .GroupBy(a => a.ArticleNumber)
-                .Select(g => g.OrderByDescending(a => a.VersionNumber).First())
-                .OrderBy(a => a.Title)
-                .Select(a => new
-                {
-                    articleNumber = a.ArticleNumber,
-                    name = a.Title,
-                    blogKey = a.BlogKey,
-                })
-                .ToList();
+            var result = latest.Select(a => new
+            {
+                articleNumber = a.ArticleNumber,
+                name = a.Title,
+                blogKey = a.BlogKey,
+            }).ToList();
 
-            return Ok(latest);
+            return Ok(result);
         }
 
         /// <summary>
@@ -558,35 +562,17 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Blog key is required." });
             }
 
-            var blogPostType = (int)Cosmos.Cms.Common.ArticleType.BlogPost;
-            var all = await dbContext.Articles
-                .AsNoTracking()
-                .Where(a => a.BlogKey == blogKey && a.ArticleType == blogPostType)
-                .Select(a => new
-                {
-                    a.Id,
-                    a.ArticleNumber,
-                    a.VersionNumber,
-                    a.Title,
-                    a.Published,
-                })
-                .ToListAsync();
+            var latest = await contentCatalog.GetBlogPostsAsync(blogKey);
 
-            var now = DateTimeOffset.UtcNow;
-            var latest = all
-                .GroupBy(a => a.ArticleNumber)
-                .Select(g => g.OrderByDescending(a => a.VersionNumber).First())
-                .OrderByDescending(a => a.Published ?? DateTimeOffset.MinValue)
-                .Select(a => new
-                {
-                    id = a.Id,
-                    articleNumber = a.ArticleNumber,
-                    title = a.Title,
-                    isPublished = a.Published.HasValue && a.Published <= now,
-                })
-                .ToList();
+            var result = latest.Select(a => new
+            {
+                id = a.Id,
+                articleNumber = a.ArticleNumber,
+                title = a.Title,
+                isPublished = a.IsPublished,
+            }).ToList();
 
-            return Ok(latest);
+            return Ok(result);
         }
 
         /// <summary>
@@ -1070,6 +1056,40 @@ namespace Sky.Cms.Controllers
             }
 
             await publishingService.UnpublishAsync(article);
+            return Ok();
+        }
+
+        /// <summary>
+        /// Restores a deleted article back to active status.
+        /// </summary>
+        /// <param name="articleNumber">Article number.</param>
+        /// <returns>Success, not found, or bad request.</returns>
+        [HttpPost("articles/{articleNumber:int}/restore")]
+        public async Task<IActionResult> RestoreArticle(int articleNumber)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var article = await GetLatestArticleVersion(articleNumber);
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            var result = await mediator.SendAsync<CommandResult<Unit>>(new RestoreArticleCommand
+            {
+                ArticleNumber = articleNumber,
+                UserId = User.Identity?.Name ?? string.Empty,
+            });
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage ?? "Failed to restore article.");
+            }
+
             return Ok();
         }
 
@@ -1610,8 +1630,8 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = string.IsNullOrEmpty(pathHash) ? "/" : DecodePathHash(pathHash);
-                path = PublicFileEntryHelper.NormalizePath(path);
+                path = string.IsNullOrEmpty(pathHash) ? "/" : FileEntryPathHelper.DecodePathHash(pathHash);
+                path = FileEntryPathHelper.NormalizePath(path);
             }
             catch
             {
@@ -1620,16 +1640,19 @@ namespace Sky.Cms.Controllers
 
             try
             {
-                var entries = await storageContext.GetFilesAndDirectories(path);
+                var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
+                var entries = await this.folderListingService.GetEntriesAsync(path, tenantDomain);
+                var projectedEntries = await this.titleResolver.ProjectFriendlyEntriesAsync(
+                    entries,
+                    path,
+                    tenantDomain,
+                    HttpContext?.RequestAborted ?? default);
 
-                var titleResolver = new PublicFileEntryTitleResolver(dbContext);
-                var articleTitlesByNumber = await titleResolver.GetArticleTitlesByNumberAsync(entries);
-                var templateTitlesById = await titleResolver.GetTemplateTitlesByIdAsync(entries);
-
-                var result = entries.Select(e => new
+                var result = projectedEntries.Select(e => new
                 {
-                    name = PublicFileEntryHelper.ResolveFriendlyDisplayName(path, e, articleTitlesByNumber, templateTitlesById),
-                    path = PublicFileEntryHelper.ResolveEntryPath(path, e),
+                    name = e.Name,
+                    path = e.Path,
+                    displayPath = e.DisplayPath,
                     isDir = e.IsDirectory,
                     mimeType = e.IsDirectory ? "directory" : (string.IsNullOrWhiteSpace(e.ContentType) ? "application/octet-stream" : e.ContentType),
                     size = e.Size,
@@ -1665,16 +1688,22 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
-                var entry = await storageContext.GetFileAsync(path);
+                var entry = await fileOperations.GetFileAsync(path);
                 if (entry == null)
                 {
                     return NotFound();
@@ -1716,16 +1745,22 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
-                using (var stream = await storageContext.GetStreamAsync(path))
+                using (var stream = await fileOperations.GetFileStreamAsync(path))
                 {
                     if (stream == null)
                     {
@@ -1733,7 +1768,7 @@ namespace Sky.Cms.Controllers
                     }
 
                     // We need to get the content type.
-                    var metaData = await storageContext.GetFileAsync(path);
+                    var metaData = await fileOperations.GetFileAsync(path);
                     var contentType = string.IsNullOrWhiteSpace(metaData?.ContentType)
                         ? "application/octet-stream"
                         : metaData.ContentType;
@@ -1774,16 +1809,22 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
-                await storageContext.DeleteFileAsync(path);
+                await fileOperations.DeleteFileAsync(path);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1814,16 +1855,22 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
-                await storageContext.DeleteFolderAsync(path);
+                await fileOperations.DeleteFolderAsync(path);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1854,21 +1901,27 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
-                var entry = await storageContext.CreateFolder(path);
+                var entry = await fileOperations.CreateFolderAsync(path);
                 return StatusCode(201, new
                 {
                     name = entry.Name,
                     isDir = entry.IsDirectory,
-                    path = EncodePathHash(entry.Path),
+                    path = FileEntryPathHelper.EncodePathHash(entry.Path),
                 });
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1900,16 +1953,32 @@ namespace Sky.Cms.Controllers
             string path;
             try
             {
-                path = DecodePathHash(pathHash);
+                path = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch
             {
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
+            var denied = await this.DenyDeletedArticlePathAsync(path);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             if (Request.ContentLength is null or 0)
             {
                 return BadRequest(new { message = "Request body is empty." });
+            }
+
+            if (!FileEntryPathHelper.IsUploadPathSafe(path))
+            {
+                return BadRequest(new { message = "Uploads must target a path within the /pub directory." });
+            }
+
+            if (FileEntryPathHelper.IsDangerousExtension(System.IO.Path.GetFileName(path)))
+            {
+                return BadRequest(new { message = "This file type is not allowed for upload." });
             }
 
             try
@@ -1934,7 +2003,7 @@ namespace Sky.Cms.Controllers
                     TotalFileSize = memoryStream.Length,
                 };
 
-                await storageContext.AppendBlob(memoryStream, metaData, Cosmos.BlobService.StorageConstants.UploadModeBlock);
+                await fileOperations.UploadFileAsync(path, memoryStream, metaData);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -1966,7 +2035,7 @@ namespace Sky.Cms.Controllers
             string sourcePath;
             try
             {
-                sourcePath = DecodePathHash(pathHash);
+                sourcePath = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch (ArgumentException)
             {
@@ -1978,9 +2047,15 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Destination path is required." });
             }
 
+            var denied = await this.DenyDeletedArticlePathsAsync(sourcePath, request.Destination);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
-                await storageContext.MoveFileAsync(sourcePath, request.Destination);
+                await fileOperations.MoveFileAsync(sourcePath, request.Destination);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -2012,7 +2087,7 @@ namespace Sky.Cms.Controllers
             string sourcePath;
             try
             {
-                sourcePath = DecodePathHash(pathHash);
+                sourcePath = FileEntryPathHelper.DecodePathHash(pathHash);
             }
             catch (ArgumentException)
             {
@@ -2024,9 +2099,15 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Destination path is required." });
             }
 
+            var denied = await this.DenyDeletedArticlePathsAsync(sourcePath, request.Destination);
+            if (denied != null)
+            {
+                return denied;
+            }
+
             try
             {
-                await storageContext.MoveFolderAsync(sourcePath, request.Destination);
+                await fileOperations.MoveFolderAsync(sourcePath, request.Destination);
                 return NoContent();
             }
             catch (Cosmos.BlobService.Exceptions.StorageException)
@@ -2040,15 +2121,34 @@ namespace Sky.Cms.Controllers
             }
         }
 
-        /// <summary>
-        /// Encodes a file path to a base64 hash for safe transmission in URIs.
-        /// </summary>
-        /// <param name="path">File path to encode.</param>
-        /// <returns>Base64-encoded path.</returns>
-        private static string EncodePathHash(string path)
+        private Task<IActionResult?> DenyDeletedArticlePathAsync(string? path)
         {
-            var bytes = Encoding.UTF8.GetBytes(path);
-            return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+            return this.DenyDeletedArticlePathsAsync(path);
+        }
+
+        private async Task<IActionResult?> DenyDeletedArticlePathsAsync(params string?[] paths)
+        {
+            if (paths == null || paths.Length == 0)
+            {
+                return null;
+            }
+
+            var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
+            foreach (var path in paths)
+            {
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    continue;
+                }
+
+                var normalizedPath = FileEntryPathHelper.NormalizePath(path);
+                if (await this.titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
+                {
+                    return NotFound(new { message = DeletedArticleAccessMessage });
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -2096,38 +2196,6 @@ namespace Sky.Cms.Controllers
             }
 
             return layout;
-        }
-
-        /// <summary>
-        /// Decodes a base64 hash back to a file path.
-        /// </summary>
-        /// <param name="hash">Base64-encoded path hash.</param>
-        /// <returns>Decoded file path.</returns>
-        /// <exception cref="ArgumentException">Thrown if hash is invalid.</exception>
-        private static string DecodePathHash(string hash)
-        {
-            if (string.IsNullOrEmpty(hash))
-            {
-                throw new ArgumentException("Path hash cannot be empty.", nameof(hash));
-            }
-
-            // Restore base64 padding
-            var padded = hash.Replace('-', '+').Replace('_', '/');
-            var padding = 4 - (padded.Length % 4);
-            if (padding < 4)
-            {
-                padded += new string('=', padding);
-            }
-
-            try
-            {
-                var bytes = Convert.FromBase64String(padded);
-                return Encoding.UTF8.GetString(bytes);
-            }
-            catch (FormatException ex)
-            {
-                throw new ArgumentException("Invalid base64-encoded path hash.", nameof(hash), ex);
-            }
         }
 
         /// <summary>

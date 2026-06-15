@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -8,7 +7,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "size" command: calculates total size of files/folders.
 /// </summary>
-public class SizeCommandHandler : IRequestHandler<SizeCommand, IElFinderResponse>
+public class SizeCommandHandler : IElFinderHandler<SizeCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -17,7 +16,7 @@ public class SizeCommandHandler : IRequestHandler<SizeCommand, IElFinderResponse
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(SizeCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(SizeCommand request, CancellationToken cancellationToken)
     {
         try
         {

@@ -24,7 +24,7 @@
     <meta name="cwps-meta-path-updated" content="@Model.Updated" />
     @if (Model.ArticleType == ArticleType.BlogStream || Model.ArticleType == ArticleType.BlogPost)
     {
-        <link rel="stylesheet" href="/lib/picocss/pico.conditional.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@picocss/pico@2.1.1/css/pico.conditional.min.css" integrity="sha384-QfeWAE0GpftbPGpYsRxM9hV8glCwhQEin0VM1Nb3eiisL9ayUJiRyy2Db6kANFsn" crossorigin="anonymous">
     }
     <style>
         figure.media {
@@ -44,7 +44,7 @@
     </style>
     @Html.Raw(Model.Layout.Head)
     <link asp-append-version="true" rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/44.1.0/ckeditor5.css" />
-    <link asp-append-version="true" href="~/lib/filepond/filepond.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.css" rel="stylesheet" integrity="sha384-TclCA2vTcjELuMbsLCt9deOlUllk1dZV0XmFcwlYit0UgFaqL7EVKvGOgdfzRg3M" crossorigin="anonymous" />
     @Html.Raw(Model.HeadJavaScript)
     <script asp-append-version="true" src="~/lib/cosmos/image-widget/image-widget.js"></script>
     <script asp-append-version="true" src="~/lib/cosmos/dublicator/componets/components.js"></script>
@@ -67,8 +67,8 @@
     @Html.AntiForgeryToken()
     <script type="importmap" asp-importmap="@data">
     </script>
-    @* <link href="~/lib/cropperjs/cropper.min.css" rel="stylesheet" asp-append-version="true" /> *@
-    <script src="~/lib/cropperjs/cropper.min.js" asp-append-version="true"></script>
+    @* <link href="https://cdn.jsdelivr.net/npm/cropperjs@2.0.1/dist/cropper.min.css" rel="stylesheet" /> *@
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@2.0.1/dist/cropper.min.js" integrity="sha384-+4jB6ZLK6KT1AEmG+YM6qdVRVFhSjOTTQXKg/dfzjZ1c+vOtguwSHNO4nFhQWnI8" crossorigin="anonymous"></script>
     <script>
 
         // Create editors
@@ -218,6 +218,6 @@
     </script>
     @* FilePond and Image Widget *@
     <script asp-append-version="true" src="~/lib/filepond-plugin-file-metadata/dist/filepond-plugin-file-metadata.js"></script>
-    <script asp-append-version="true" src="~/lib/filepond/filepond.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.js" integrity="sha384-Eeqgmq0luVn6HThRQfVchBi+0ROgVXYcUDAsJHU+YDa7yUykpjzyq0R9iDB3ueal" crossorigin="anonymous"></script>
 </body>
 </html>

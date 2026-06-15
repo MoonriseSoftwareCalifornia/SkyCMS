@@ -37,7 +37,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Ls_ResponseKey_IsLowercaseList()
         {
             var command = new LsCommand { Target = RootHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -54,7 +54,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Ls_List_IsArray()
         {
             var command = new LsCommand { Target = RootHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             doc.RootElement.TryGetProperty("list", out var list);
@@ -68,7 +68,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Ls_List_ValuesAreNames()
         {
             var command = new LsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             doc.RootElement.TryGetProperty("list", out var list);
@@ -88,7 +88,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Ls_List_ContainsExpectedEntry()
         {
             var command = new LsCommand { Target = ImagesHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             doc.RootElement.TryGetProperty("list", out var list);
@@ -111,7 +111,7 @@ namespace Sky.Tests.ElFinder.Contracts
                 Target = ImagesHash,
                 Intersect = new[] { "logo.png", "does-not-exist.jpg" },
             };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             doc.RootElement.TryGetProperty("list", out var list);
@@ -138,7 +138,7 @@ namespace Sky.Tests.ElFinder.Contracts
                 Target = ImagesHash,
                 Intersect = new[] { "no-match.txt" },
             };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             doc.RootElement.TryGetProperty("list", out var list);
@@ -154,7 +154,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Ls_InvalidHash_ReturnsErrorResponse()
         {
             var command = new LsCommand { Target = "bad_hash" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Invalid hash must return ElFinderErrorResponse.");
@@ -170,7 +170,7 @@ namespace Sky.Tests.ElFinder.Contracts
         {
             var docsHash = AdapterHashHelper.Encode("pub/docs/");
             var command = new LsCommand { Target = docsHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
 
             Assert.IsFalse(response is ElFinderErrorResponse,
                 "An empty directory should return a list response, not an error.");

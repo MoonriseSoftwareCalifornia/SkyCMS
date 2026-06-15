@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Helpers;
@@ -9,7 +8,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "upload" command: processes file uploads.
 /// </summary>
-public class UploadCommandHandler : IRequestHandler<UploadCommand, IElFinderResponse>
+public class UploadCommandHandler : IElFinderHandler<UploadCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -18,7 +17,7 @@ public class UploadCommandHandler : IRequestHandler<UploadCommand, IElFinderResp
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(UploadCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(UploadCommand request, CancellationToken cancellationToken)
     {
         try
         {

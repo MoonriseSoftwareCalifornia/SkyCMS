@@ -76,6 +76,11 @@
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		  <TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <TreatAsUsed>true</TreatAsUsed>
+		</PackageReference>
 
 		<PackageReference Include="PasswordGenerator" />
 		<PackageReference Include="RestSharp" />
@@ -117,6 +122,8 @@
 		
 	<ItemGroup>
 	  <Folder Include="Services\Migrations\Testing\" />
+	  <Folder Include="wwwroot\lib\elfinder-material-theme\manifests\" />
+	  <Folder Include="wwwroot\lib\elfinder-material-theme\Material\" />
 	</ItemGroup>
 
 	<ProjectExtensions>

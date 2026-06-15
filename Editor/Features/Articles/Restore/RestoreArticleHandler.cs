@@ -16,14 +16,17 @@ namespace Sky.Editor.Features.Articles.Restore
     using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.Slugs;
 
     /// <summary>
     /// Handler for RestoreArticleCommand. Restores a deleted article from trash.
+    /// Resets <c>StatusCode = Active</c> on all versions and updates the catalog entry accordingly.
     /// </summary>
     public class RestoreArticleHandler : ICommandHandler<RestoreArticleCommand, CommandResult<Unit>>
     {
         private readonly ApplicationDbContext dbContext;
+        private readonly ICatalogService catalogService;
         private readonly ISlugService slugService;
         private readonly ILogger<RestoreArticleHandler> logger;
 
@@ -32,10 +35,12 @@ namespace Sky.Editor.Features.Articles.Restore
         /// </summary>
         public RestoreArticleHandler(
             ApplicationDbContext dbContext,
+            ICatalogService catalogService,
             ISlugService slugService,
             ILogger<RestoreArticleHandler> logger)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
             this.slugService = slugService ?? throw new ArgumentNullException(nameof(slugService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -73,12 +78,15 @@ namespace Sky.Editor.Features.Articles.Restore
 
                 var title = articles.First().Title.ToLower();
 
-                // Check if title conflicts with another deleted article
-                var deletedStatusCode = (int)StatusCodeEnum.Deleted;
-                var titleConflict = await dbContext.Articles.Where(a =>
+                // Check if an active article already occupies the same title/URL.
+                // This happens when a new article was created after this one was trashed.
+                // Uses ArticleCatalog (one row per article) for efficiency; avoids scanning
+                // all version rows in Articles and is compatible with Cosmos DB EF provider.
+                var activeStatusCode = (int)StatusCodeEnum.Active;
+                var titleConflict = await dbContext.ArticleCatalog.Where(a =>
                     a.Title.ToLower() == title &&
                     a.ArticleNumber != command.ArticleNumber &&
-                    a.StatusCode == deletedStatusCode).CosmosAnyAsync();
+                    a.StatusCode == activeStatusCode).CosmosAnyAsync();
 
                 if (titleConflict)
                 {
@@ -101,26 +109,11 @@ namespace Sky.Editor.Features.Articles.Restore
                     }
                 }
 
-                var sample = articles.First();
-                var existingCatalogEntry = await dbContext.ArticleCatalog
-                    .FirstOrDefaultAsync(f => f.ArticleNumber == command.ArticleNumber, cancellationToken);
-
-                if (existingCatalogEntry != null)
-                {
-                    dbContext.ArticleCatalog.Remove(existingCatalogEntry);
-                }
-
-                dbContext.ArticleCatalog.Add(new CatalogEntry
-                {
-                    ArticleNumber = sample.ArticleNumber,
-                    Published = null,
-                    Status = "Active",
-                    Title = sample.Title,
-                    Updated = DateTimeOffset.UtcNow,
-                    UrlPath = sample.UrlPath
-                });
-
                 await dbContext.SaveChangesAsync(cancellationToken);
+
+                // Update catalog entry via service to ensure proper lifecycle mapping
+                var latestArticle = articles.OrderByDescending(a => a.VersionNumber).First();
+                await catalogService.UpsertAsync(latestArticle, cancellationToken);
 
                 logger.LogInformation(
                     "Article number {ArticleNumber} restored successfully by user {UserId}",

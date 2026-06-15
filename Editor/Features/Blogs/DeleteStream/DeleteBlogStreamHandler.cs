@@ -17,7 +17,7 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
     using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
-    using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Delete;
 
     /// <summary>
     /// Handler for deleting blogs with cascade deletion of all associated blog posts.
@@ -26,22 +26,22 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
     public class DeleteBlogStreamHandler : ICommandHandler<DeleteBlogStreamCommand, CommandResult<bool>>
     {
         private readonly ApplicationDbContext dbContext;
-        private readonly ArticleEditLogic articleLogic;
+        private readonly ICommandHandler<DeleteArticleCommand, CommandResult<Unit>> deleteHandler;
         private readonly ILogger<DeleteBlogStreamHandler> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeleteBlogStreamHandler"/> class.
         /// </summary>
         /// <param name="dbContext">Application database context.</param>
-        /// <param name="articleLogic">Article deletion logic service.</param>
+        /// <param name="deleteHandler">Handler for deleting individual articles.</param>
         /// <param name="logger">Logger for diagnostics.</param>
         public DeleteBlogStreamHandler(
             ApplicationDbContext dbContext,
-            ArticleEditLogic articleLogic,
+            ICommandHandler<DeleteArticleCommand, CommandResult<Unit>> deleteHandler,
             ILogger<DeleteBlogStreamHandler> logger)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            this.articleLogic = articleLogic ?? throw new ArgumentNullException(nameof(articleLogic));
+            this.deleteHandler = deleteHandler ?? throw new ArgumentNullException(nameof(deleteHandler));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -115,8 +115,22 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                 {
                     try
                     {
-                        await articleLogic.DeleteArticle(entryNumber);
-                        deletedEntries++;
+                        var deleteResult = await deleteHandler.HandleAsync(
+                            new DeleteArticleCommand { ArticleNumber = entryNumber },
+                            cancellationToken);
+
+                        if (deleteResult.IsSuccess)
+                        {
+                            deletedEntries++;
+                        }
+                        else
+                        {
+                            logger.LogWarning(
+                                "Failed to delete blog post {ArticleNumber} from stream {BlogKey}: {Error}",
+                                entryNumber,
+                                blogKey,
+                                deleteResult.ErrorMessage);
+                        }
 
                         logger.LogDebug(
                             "Deleted blog post {ArticleNumber} from stream {BlogKey}",
@@ -141,8 +155,18 @@ namespace Sky.Editor.Features.Blogs.DeleteStream
                     entryArticleNumbers.Count,
                     blogKey);
 
-                // Delete the blog article itself
-                await articleLogic.DeleteArticle(streamArticleNumber);
+                // Delete the blog stream article itself
+                var streamResult = await deleteHandler.HandleAsync(
+                    new DeleteArticleCommand { ArticleNumber = streamArticleNumber },
+                    cancellationToken);
+
+                if (!streamResult.IsSuccess)
+                {
+                    logger.LogWarning(
+                        "Failed to delete blog stream article {ArticleNumber}: {Error}",
+                        streamArticleNumber,
+                        streamResult.ErrorMessage);
+                }
 
                 logger.LogInformation(
                     "Successfully deleted blog stream {Id} (BlogKey: {BlogKey}) and {EntryCount} entries",

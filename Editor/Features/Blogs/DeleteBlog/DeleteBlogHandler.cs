@@ -12,7 +12,7 @@ namespace Sky.Editor.Features.Blogs.DeleteBlog
     using Cosmos.Common.Data;
     using Cosmos.Common.Features.Shared;
     using Microsoft.Extensions.Logging;
-    using Sky.Editor.Data.Logic;
+    using Sky.Editor.Features.Articles.Delete;
     using Sky.Editor.Features.Blogs.DeleteStream;
 
     /// <summary>
@@ -22,9 +22,9 @@ namespace Sky.Editor.Features.Blogs.DeleteBlog
     {
         public DeleteBlogHandler(
             ApplicationDbContext dbContext,
-            ArticleEditLogic articleLogic,
+            ICommandHandler<DeleteArticleCommand, CommandResult<Unit>> deleteHandler,
             ILogger<DeleteBlogStreamHandler> logger)
-            : base(dbContext, articleLogic, logger)
+            : base(dbContext, deleteHandler, logger)
         {
         }
 

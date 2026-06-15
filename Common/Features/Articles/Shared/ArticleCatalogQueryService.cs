@@ -8,6 +8,7 @@
 namespace Cosmos.Common.Features.Articles.Shared;
 
 using Cosmos.Common.Data;
+using Cosmos.Common.Data.Logic;
 using Cosmos.Common.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -65,6 +66,10 @@ public class ArticleCatalogQueryService : IArticleCatalogQueryService
 
         var skip = pageNo * pageSize;
 
+        // Exclude deleted and redirect articles from public surfaces
+        var deletedStatusCode = (int)StatusCodeEnum.Deleted;
+        var redirectStatusCode = (int)StatusCodeEnum.Redirect;
+
         IQueryable<TableOfContentsItem> query;
 
         if (string.IsNullOrEmpty(prefix))
@@ -72,6 +77,8 @@ public class ArticleCatalogQueryService : IArticleCatalogQueryService
             // Root level articles
             query = from t in dbContext.ArticleCatalog
                     where t.Published.HasValue
+                          && t.StatusCode != deletedStatusCode
+                          && t.StatusCode != redirectStatusCode
                     select new TableOfContentsItem
                     {
                         UrlPath = t.UrlPath,
@@ -93,6 +100,8 @@ public class ArticleCatalogQueryService : IArticleCatalogQueryService
 
             query = from t in dbContext.ArticleCatalog
                     where t.Published.HasValue
+                          && t.StatusCode != deletedStatusCode
+                          && t.StatusCode != redirectStatusCode
                           && t.UrlPath != prefix
                           && t.UrlPath.StartsWith(prefix)
                           && Regex.IsMatch(t.UrlPath, pattern)
@@ -143,10 +152,16 @@ public class ArticleCatalogQueryService : IArticleCatalogQueryService
 
         searchText = searchText.ToLower();
 
+        // Exclude deleted and redirect articles from public search results
+        var deletedStatusCode = (int)StatusCodeEnum.Deleted;
+        var redirectStatusCode = (int)StatusCodeEnum.Redirect;
+
         var dt = DateTimeOffset.UtcNow;
         var query = dbContext.ArticleCatalog
             .Where(a => a.Published.HasValue
                         && a.Published <= dt
+                        && a.StatusCode != deletedStatusCode
+                        && a.StatusCode != redirectStatusCode
                         && (a.Introduction.ToLower().Contains(searchText) || a.Title.ToLower().Contains(searchText)))
             .AsQueryable();
 

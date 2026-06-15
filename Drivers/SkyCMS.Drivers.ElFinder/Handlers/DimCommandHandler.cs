@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using SixLabors.ImageSharp;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
@@ -13,7 +12,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// Handles the "dim" command: returns "WxH" pixel dimensions using ImageSharp.Identify.
 /// See Docs/commands/dim.md.
 /// </summary>
-public class DimCommandHandler : IRequestHandler<DimCommand, IElFinderResponse>
+public class DimCommandHandler : IElFinderHandler<DimCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -22,7 +21,7 @@ public class DimCommandHandler : IRequestHandler<DimCommand, IElFinderResponse>
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(DimCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(DimCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Target))
         {

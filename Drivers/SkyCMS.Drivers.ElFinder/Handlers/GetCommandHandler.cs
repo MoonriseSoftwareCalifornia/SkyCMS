@@ -1,4 +1,3 @@
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -9,7 +8,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// Handles the "get" command: downloads file content.
 /// Returns file stream for download to the client.
 /// </summary>
-public class GetCommandHandler : IRequestHandler<GetCommand, IElFinderResponse>
+public class GetCommandHandler : IElFinderHandler<GetCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -18,7 +17,7 @@ public class GetCommandHandler : IRequestHandler<GetCommand, IElFinderResponse>
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(GetCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(GetCommand request, CancellationToken cancellationToken)
     {
         try
         {
@@ -46,14 +45,21 @@ public class GetCommandHandler : IRequestHandler<GetCommand, IElFinderResponse>
                 return ElFinderErrorResponse.Open("Cannot open file");
             }
 
+            // Read content into the response
+            string content;
+            using (var reader = new StreamReader(stream, System.Text.Encoding.UTF8, leaveOpen: false))
+            {
+                content = await reader.ReadToEndAsync(cancellationToken);
+            }
+
             var response = new GetResponse
             {
+                Content = content,
+                Encoding = "utf-8",
                 Mime = GetMimeType(Path.GetFileName(filePath)),
                 VolumeId = request.VolumeId
             };
 
-            // Note: In actual controller usage, the file stream should be returned directly
-            // to HttpContext rather than as JSON content in the response
             return response;
         }
         catch (Exception ex)

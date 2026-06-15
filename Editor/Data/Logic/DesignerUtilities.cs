@@ -7,6 +7,7 @@
 
 namespace Sky.Editor.Data.Logic
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using HtmlAgilityPack;
@@ -110,7 +111,22 @@ namespace Sky.Editor.Data.Logic
 
             if (nodes != null)
             {
-                styles.AddRange(nodes.Select(n => n.Attributes["href"].Value).ToList());
+                foreach (var n in nodes)
+                {
+                    var href = n.Attributes["href"].Value;
+
+                    // Normalize /pub/lib/ paths to /lib/ so they resolve via the Editor's
+                    // static file middleware rather than the blob-storage PubController.
+                    if (href.StartsWith("/pub/lib/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        href = href[4..]; // strip "/pub" prefix
+                    }
+
+                    if (!styles.Contains(href, StringComparer.OrdinalIgnoreCase))
+                    {
+                        styles.Add(href);
+                    }
+                }
             }
 
             return styles;

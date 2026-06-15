@@ -12,6 +12,7 @@ namespace Sky.Tests.Services.Scheduling
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Services.BlogPublishing;
+    using Cosmos.DynamicConfig;
     using Cosmos.EmailServices;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
@@ -120,6 +121,52 @@ namespace Sky.Tests.Services.Scheduling
                 schedulerConfiguration,
                 Clock,
                 serviceProvider);
+        }
+
+        /// <summary>
+        /// Tests that multi-tenant mode iterates all configured tenant domains.
+        /// </summary>
+        [TestMethod]
+        public async Task ExecuteAsync_WhenMultiTenantEnabled_IteratesAllConfiguredTenantDomains()
+        {
+            // Arrange
+            var dynamicConfigProvider = new Mock<IDynamicConfigurationProvider>();
+            var tenantDomains = new List<string> { "tenant1.example.com", "tenant2.example.com" };
+
+            dynamicConfigProvider
+                .Setup(x => x.GetAllDomainNamesAsync())
+                .ReturnsAsync(tenantDomains);
+
+            dynamicConfigProvider
+                .Setup(x => x.GetTenantConnectionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Connection?)null);
+
+            var multiTenantConfiguration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["MultiTenantEditor"] = "true",
+                })
+                .Build();
+
+            var multiTenantServices = new ServiceCollection();
+            multiTenantServices.AddSingleton<IMemoryCache>(Cache);
+            multiTenantServices.AddSingleton(dynamicConfigProvider.Object);
+
+            var multiTenantServiceProvider = multiTenantServices.BuildServiceProvider();
+
+            var scheduler = new ArticleScheduler(
+                new NullLogger<ArticleScheduler>(),
+                multiTenantConfiguration,
+                Clock,
+                multiTenantServiceProvider);
+
+            // Act
+            await scheduler.ExecuteAsync();
+
+            // Assert
+            dynamicConfigProvider.Verify(x => x.GetAllDomainNamesAsync(), Times.Once);
+            dynamicConfigProvider.Verify(x => x.GetTenantConnectionAsync("tenant1.example.com", It.IsAny<CancellationToken>()), Times.Once);
+            dynamicConfigProvider.Verify(x => x.GetTenantConnectionAsync("tenant2.example.com", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         /// <summary>

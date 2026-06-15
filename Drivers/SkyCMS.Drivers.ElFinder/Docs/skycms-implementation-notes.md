@@ -6,7 +6,7 @@ Cross-cutting implementation details specific to the SkyCMS connector. Read alon
 
 ## Architecture: Legacy vs CQRS
 
-The connector supports two routing paths, selectable per-command via `UseCqrsForCommand(cmd)` in `ElFinderConnectorController`:
+The connector supports two routing paths, selectable per-command via `UseCqrsForCommand(cmd)` in `FileManagerController`:
 
 | Path | Entry point | When to use |
 |------|-------------|-------------|
@@ -136,7 +136,7 @@ When implementing or modifying any command that returns a `files[]` or `tree[]` 
 4. Always include the volume root with `volumeid` set and `phash` absent.
 5. Include the target's direct children last.
 
-The reference implementation is `HandleParentsAsync()` in `ElFinderConnectorController`. The `HandleOpenAsync()` fix mirrors this exactly.
+The reference implementation is `HandleParentsAsync()` in `FileManagerController`. The `HandleOpenAsync()` fix mirrors this exactly.
 
 ### Why it cannot be worked around client-side
 

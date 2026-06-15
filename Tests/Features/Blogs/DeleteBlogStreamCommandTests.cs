@@ -11,7 +11,9 @@ namespace Sky.Tests.Features.Blogs
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Sky.Editor.Features.Articles.Delete;
     using Sky.Editor.Features.Blogs.DeleteStream;
     using System;
     using System.Linq;
@@ -23,6 +25,8 @@ namespace Sky.Tests.Features.Blogs
     [TestClass]
     public class DeleteBlogStreamCommandTests : SkyCmsTestBase
     {
+        private DeleteArticleHandler deleteHandler;
+
         /// <summary>
         /// Initialize test context.
         /// </summary>
@@ -30,6 +34,13 @@ namespace Sky.Tests.Features.Blogs
         public new void Setup()
         {
             InitializeTestContext(seedLayout: true);
+            deleteHandler = new DeleteArticleHandler(
+                Db,
+                CatalogService,
+                PublishingService,
+                Storage,
+                EditorSettings,
+                new NullLogger<DeleteArticleHandler>());
         }
 
         /// <summary>
@@ -102,8 +113,8 @@ namespace Sky.Tests.Features.Blogs
 
             var handler = new DeleteBlogStreamHandler(
                 Db,
-                Logic,
-                new Microsoft.Extensions.Logging.Abstractions.NullLogger<DeleteBlogStreamHandler>());
+                deleteHandler,
+                new NullLogger<DeleteBlogStreamHandler>());
 
             // Act
             var result = await handler.HandleAsync(command);
@@ -150,8 +161,8 @@ namespace Sky.Tests.Features.Blogs
 
             var handler = new DeleteBlogStreamHandler(
                 Db,
-                Logic,
-                new Microsoft.Extensions.Logging.Abstractions.NullLogger<DeleteBlogStreamHandler>());
+                deleteHandler,
+                new NullLogger<DeleteBlogStreamHandler>());
 
             // Act
             var result = await handler.HandleAsync(command);
@@ -178,8 +189,8 @@ namespace Sky.Tests.Features.Blogs
 
             var handler = new DeleteBlogStreamHandler(
                 Db,
-                Logic,
-                new Microsoft.Extensions.Logging.Abstractions.NullLogger<DeleteBlogStreamHandler>());
+                deleteHandler,
+                new NullLogger<DeleteBlogStreamHandler>());
 
             // Act
             var result = await handler.HandleAsync(command);
@@ -204,8 +215,8 @@ namespace Sky.Tests.Features.Blogs
 
             var handler = new DeleteBlogStreamHandler(
                 Db,
-                Logic,
-                new Microsoft.Extensions.Logging.Abstractions.NullLogger<DeleteBlogStreamHandler>());
+                deleteHandler,
+                new NullLogger<DeleteBlogStreamHandler>());
 
             // Act
             var result = await handler.HandleAsync(command);
@@ -246,8 +257,8 @@ namespace Sky.Tests.Features.Blogs
 
             var handler = new DeleteBlogStreamHandler(
                 Db,
-                Logic,
-                new Microsoft.Extensions.Logging.Abstractions.NullLogger<DeleteBlogStreamHandler>());
+                deleteHandler,
+                new NullLogger<DeleteBlogStreamHandler>());
 
             // Act
             var result = await handler.HandleAsync(command);
@@ -332,8 +343,8 @@ namespace Sky.Tests.Features.Blogs
 
             var handler = new DeleteBlogStreamHandler(
                 Db,
-                Logic,
-                new Microsoft.Extensions.Logging.Abstractions.NullLogger<DeleteBlogStreamHandler>());
+                deleteHandler,
+                new NullLogger<DeleteBlogStreamHandler>());
 
             // Act
             var result = await handler.HandleAsync(command);
@@ -363,8 +374,8 @@ namespace Sky.Tests.Features.Blogs
             // Arrange
             var handler = new DeleteBlogStreamHandler(
                 Db,
-                Logic,
-                new Microsoft.Extensions.Logging.Abstractions.NullLogger<DeleteBlogStreamHandler>());
+                deleteHandler,
+                new NullLogger<DeleteBlogStreamHandler>());
 
             // Act & Assert
             try

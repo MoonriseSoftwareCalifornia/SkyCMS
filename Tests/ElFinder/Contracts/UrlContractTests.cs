@@ -34,7 +34,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Url_ResponseKey_IsLowercaseUrl()
         {
             var command = new UrlCommand { Target = LogoPngHash, BlobPublicUrl = "https://cdn.example.com" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -51,7 +51,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Url_Value_IsNonEmptyString()
         {
             var command = new UrlCommand { Target = LogoPngHash, BlobPublicUrl = "https://cdn.example.com" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var url = AssertStringProperty(doc.RootElement, "url");
@@ -63,7 +63,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Url_ContainsBlobBaseAndPath()
         {
             var command = new UrlCommand { Target = LogoPngHash, BlobPublicUrl = "https://cdn.example.com" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var url = AssertStringProperty(doc.RootElement, "url");
@@ -76,7 +76,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Url_MissingTarget_ReturnsError()
         {
             var command = new UrlCommand { Target = null, BlobPublicUrl = "https://cdn.example.com" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -89,7 +89,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Url_NoBlobBase_ReturnsRelativePath()
         {
             var command = new UrlCommand { Target = LogoPngHash, BlobPublicUrl = null };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var url = AssertStringProperty(doc.RootElement, "url");

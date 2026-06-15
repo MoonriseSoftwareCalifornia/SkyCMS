@@ -91,6 +91,13 @@ ADRs should be added intentionally and reviewed carefully.
 - [0034: Domain Events and Setup Audit Log Observability Model](0034-domain-events-and-setup-audit-log-observability-model.md)
 - [0035: File Explorer Modernization and Connector Adapter Strategy](0035-file-explorer-modernization-and-connector-adapter-strategy.md)
 - [0036: Layout Terminology Standardization and Documentation Strategy](0036-layout-terminology-standardization-and-documentation-strategy.md)
+- [0037: Article Lifecycle and Status Code Semantics](0037-article-lifecycle-and-status-code-semantics.md)
+- [0038: Article Trash and Permanent Delete Lifecycle](0038-article-trash-and-permanent-delete-lifecycle.md)
+- [0039: DRY Controller Unification: File Manager and VS Code Explorer](0039-dry-controller-unification-file-manager-and-vscode.md)
+- [0040: Use Human-Readable Article Titles in File Manager Display Paths](0040-article-title-display-paths.md)
+- [0041: Trashed Article Assets Must Be Hidden and Inaccessible in Editor File Surfaces](0041-trashed-article-assets-hidden-and-inaccessible.md)
+- [0042: ArticleCatalog Lifecycle Read-Model Alignment for Soft Delete](0042-article-catalog-lifecycle-read-model-alignment.md)
+- [0043: Article Lifecycle Events and Catalog/Asset Side-Effects](0043-article-lifecycle-events.md)
 
 ## Changing or Superseding ADRs
 

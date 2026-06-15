@@ -1,813 +1,701 @@
-@using Cosmos.Cms.Common.Services.Configurations
-@using Microsoft.Extensions.Options
-@using Sky.Editor.Data.Logic
 @using Sky.Editor.Services.EditorSettings
 @inject IEditorSettings options
-@model List<Cosmos.BlobService.FileManagerEntry>
 @{
-    var selectOne = (bool)ViewData["SelectOne"];
-    var publisherUrl = ViewData["PublisherUrl"];
-    var blobStaticWebsiteUrl = options.BlobPublicUrl;
-    var directoryOnly = (bool)ViewData["DirectoryOnly"];
-    var editorExtensions = Sky.Cms.Controllers.FileManagerController.ValidEditorExtensions;
-    var imageEditorExtensions = new string[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-    var topDirectory = (string)ViewData["TopDirectory"];
-    var rowCount = (int)ViewData["RowCount"];
-    var sortOrder = (string)ViewData["sortOrder"];
-    var currentSort = (string)ViewData["currentSort"];
-    var pageNumber = (int)ViewData["pageNo"];
-    var pageSize = (int)ViewData["pageSize"];
-    var controller = (string)ViewData["Controller"];
-    var action = (string)ViewData["Action"];
-    var imagesOnly = (bool)ViewData["ImagesOnly"];
-    var storageName = (string)ViewData["StorageName"];
-    var isNewSession = (bool)ViewData["isNewSession"];
-    var articleTitle = (string)ViewData["ArticleTitle"];
+    var selectOne = ViewData["SelectOne"] is bool s && s;
+    var directoryOnly = ViewData["DirectoryOnly"] is bool d && d;
+    var imagesOnly = ViewData["ImagesOnly"] is bool i && i;
+    var target = Context.Request.Query["target"].ToString();
+    if (string.IsNullOrEmpty(target)) { target = "/pub"; }
 
-    var target = Context.Request.Query["target"];
-
-    var baseUrl = @Url.Action(action, controller) + "?selectOne=" + selectOne + "&imagesOnly=" + imagesOnly + "&pageSize=" + pageSize + "&";
-    var showImageThumbUrl = @Url.Action(action, controller) + "?target=" + target + "&selectOne=" + selectOne + "&imagesOnly=true&pageSize=" + pageSize + "&";
-    var showFileListUrl = @Url.Action(action, controller) + "?target=" + target + "&selectOne=" + selectOne + "&imagesOnly=false&pageSize=" + pageSize + "&";
+    var connectorUrl = Url.Action("Connector", "FileManager") ?? "/FileManager/ElFinderConnector";
 
     if (directoryOnly)
     {
-        ViewData["Title"] = "File Manager" + " - Folder View";
+        ViewData["Title"] = "File Manager – Folder View";
     }
     else if (imagesOnly)
     {
-        ViewData["Title"] = "Select an image";
+        ViewData["Title"] = "Select an Image";
     }
     else
     {
-        ViewData["Title"] = "Folders and Files";
+        ViewData["Title"] = "File Manager";
     }
-
-    var isReviewer = User.IsInRole("Reviewers");
-    var canEdit = User.IsInRole("Administrators") || User.IsInRole("Editors");
-    var pathPrefix = (string)ViewData["PathPrefix"];
-    var pathNames = (string)(string)ViewData["PathNames"];
-    var pathParts = new List<string>();
-
-    if (!string.IsNullOrEmpty(pathPrefix) && pathPrefix != "/")
-    {
-        pathParts.AddRange(pathPrefix.Trim('/').Split('/').Where(w => w != "/"));
-    }
-
-    var pagerModel = new GridPagerPartialViewModel(pageNumber, rowCount, pageSize, sortOrder, currentSort, Url.Action(action, controller) + "?imagesOnly= " + imagesOnly + "&target=" + target + "&selectOne=" + selectOne.ToString().ToLower());
 }
+
+@* elFinder core – BSD-3-Clause license (Studio-42/elFinder) *@
+<link rel="stylesheet"
+      href="~/lib/elfinder/css/elfinder.min.css"
+      asp-append-version="true" />
+
+<link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.css"
+    integrity="sha384-TclCA2vTcjELuMbsLCt9deOlUllk1dZV0XmFcwlYit0UgFaqL7EVKvGOgdfzRg3M"
+    crossorigin="anonymous" />
+
 <style>
-    li.breadcrumb-item.active {
-        color: white;
-        font-weight: 900;
+    /* ── Layout shell ─────────────────────────────────────────── */
+    .ccms-elfinder-wrap {
+        --ef-bg: #14171d;
+        --ef-panel: #1a1f27;
+        --ef-panel-2: #202734;
+        --ef-border: #2e3646;
+        --ef-text: #dde6f3;
+        --ef-muted: #9aa7bc;
+        --ef-accent: #3da0ff;
+        --ef-accent-strong: #1f84e4;
+        --ef-selected: #1f4063;
+        --ef-hover: #273245;
+        --ef-danger: #e06d76;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 72px);
+        padding: 0;
+        background: radial-gradient(circle at 20% 10%, #1d2633 0%, var(--ef-bg) 55%);
     }
 
-    /* elFinder context menu contrast improvements */
+    /* ── elFinder context menu contrast ───────────────────────── */
     .elfinder .elfinder-contextmenu,
-    .elfinder .ui-menu {
-        background-color: #6b7280 !important;
+    .elfinder .elfinder-contextmenu-sub {
+        background: #6b7280 !important;
+        color: #ffffff !important;
         border-color: #7a7a7a !important;
     }
 
-    .elfinder .elfinder-contextmenu .ui-menu-item,
-    .elfinder .elfinder-contextmenu .ui-menu-item a,
-    .elfinder .ui-menu .ui-menu-item,
-    .elfinder .ui-menu .ui-menu-item a {
+    .elfinder .elfinder-contextmenu-item,
+    .elfinder .elfinder-contextmenu-item span,
+    .elfinder .elfinder-contextmenu-item .elfinder-contextmenu-arrow {
         color: #ffffff !important;
     }
 
-    .elfinder .elfinder-contextmenu .ui-menu-item:hover,
-    .elfinder .elfinder-contextmenu .ui-menu-item:hover > a,
-    .elfinder .elfinder-contextmenu .ui-state-hover,
-    .elfinder .elfinder-contextmenu .ui-state-focus,
-    .elfinder .ui-menu .ui-menu-item:hover,
-    .elfinder .ui-menu .ui-menu-item:hover > a,
-    .elfinder .ui-menu .ui-state-hover,
-    .elfinder .ui-menu .ui-state-focus {
+    .elfinder .elfinder-contextmenu-item.ui-state-active,
+    .elfinder .elfinder-contextmenu-item.ui-state-hover,
+    .elfinder .elfinder-contextmenu-item:hover {
         background: #116ab7 !important;
         color: #ffffff !important;
         border-color: #116ab7 !important;
     }
+
+    .ccms-upload-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background: linear-gradient(180deg, #1a2230 0%, #161d29 100%);
+        border: 1px solid var(--ef-border);
+        border-bottom: 0;
+    }
+
+    .ccms-upload-status {
+        margin: 0;
+        color: var(--ef-muted);
+        font-size: 0.875rem;
+        min-width: 180px;
+    }
+
+    .ccms-upload-btn {
+        border: 1px solid var(--ef-border);
+        background: #1b2737;
+        color: var(--ef-text);
+        border-radius: 6px;
+        padding: 6px 10px;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+        .ccms-upload-btn:hover {
+            background: #223148;
+        }
+
+        #ccmsPondDismissBtn {
+            display: none;
+        }
+
+    /* ── FilePond expanding panel ─────────────────────────────── */
+
+    /* Wrapper that sits in normal flow inside .ccms-upload-bar   */
+    #ccmsPondWrap {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* When active, the FilePond root lifts out of flow and       */
+    /* expands downward over the elFinder panel.                  */
+    .ccms-upload-bar.ccms-pond-active {
+        position: relative; /* anchor for absolute child */
+    }
+
+    .ccms-upload-bar.ccms-pond-active #ccmsPondWrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 200;
+        background: linear-gradient(180deg, #111825 0%, #0d1219 100%);
+        border: 1px solid var(--ef-border);
+        border-top: 0;
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+        max-height: 72vh;
+        overflow-y: auto;
+        padding: 8px 0;
+        animation: ccmsPondSlideIn 200ms ease forwards;
+    }
+
+    .ccms-upload-bar.ccms-pond-active #ccmsPondDismissBtn {
+        display: inline-block;
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        z-index: 230;
+    }
+
+    .ccms-upload-bar.ccms-pond-closing #ccmsPondWrap {
+        animation: ccmsPondSlideOut 180ms ease forwards;
+    }
+
+    @@keyframes ccmsPondSlideIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @@keyframes ccmsPondSlideOut {
+        from { opacity: 1; transform: translateY(0); }
+        to   { opacity: 0; transform: translateY(-6px); }
+    }
+
+    /* ── FilePond theme scoped to the panel ──────────────────── */
+    #ccmsPondWrap .filepond--root {
+        margin: 0;
+        font-family: inherit;
+    }
+
+    #ccmsPondWrap .filepond--panel-root {
+        background: transparent;
+        border: none;
+    }
+
+    #ccmsPondWrap .filepond--drop-label {
+        color: var(--ef-muted);
+        font-size: 0.875rem;
+    }
+
+    #ccmsPondWrap .filepond--credits {
+        display: none;
+    }
+
+    #ccmsPondWrap .filepond--item-panel {
+        background: #1a2231;
+        border-radius: 6px;
+    }
+
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-complete'] .filepond--item-panel {
+        background: #1f4b34;
+    }
+
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-error'] .filepond--item-panel,
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='load-error'] .filepond--item-panel,
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-revert-error'] .filepond--item-panel {
+        background: #5c2830;
+    }
+
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-complete'] .filepond--file-status-main {
+        color: #a9f5bd;
+    }
+
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-error'] .filepond--file-status-main,
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='load-error'] .filepond--file-status-main,
+    #ccmsPondWrap .filepond--item[data-filepond-item-state='processing-revert-error'] .filepond--file-status-main {
+        color: #ffd4d9;
+    }
+
+    #ccmsPondWrap .filepond--file {
+        color: var(--ef-text);
+    }
+
+    #ccmsPondWrap .filepond--file-action-button {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    #ccmsPondWrap .filepond--progress-indicator {
+        color: var(--ef-accent);
+    }
+
+    /* Ensure elFinder operation progress remains visible with custom theming. */
+    .ccms-elfinder-wrap .elfinder-ui-progressbar {
+        background-color: var(--ef-accent) !important;
+        filter: none;
+        height: 3px;
+        z-index: 4;
+    }
+
+    .ccms-elfinder-wrap .elfinder-notify-progressbar {
+        border-color: #4e5b70;
+        background: #0f1520;
+    }
+
+    .ccms-elfinder-wrap .elfinder-notify-progress {
+        background-color: var(--ef-accent) !important;
+    }
 </style>
-<link href="~/lib/filepond/filepond.css" rel="stylesheet" />
-<partial name="_ValidationScriptsPartial" />
-<div class="container mt-3">
-    <div class="row">
-        <div class="col-6">
-            @if (directoryOnly)
-            {
-                <h3 class="text-light">@ViewData["Title"]</h3>
-            }
-            else if (imagesOnly)
-            {
-                <h3 class="text-light">@ViewData["Title"]</h3>
-            }
-            else
-            {
-                <h3 class="text-light">@ViewData["Title"]</h3>
-            }
-        </div>
-        <div class="col-6">
-            @if (imagesOnly)
-            {
-                <div class="d-flex justify-content-end">
-                    <a href="@showFileListUrl"
-                       class="btn btn-sm btn-secondary">Show file list</a>
-                </div>
-            }
-            else
-            {
-                <div class="d-flex justify-content-end">
-                    <a href="@showImageThumbUrl"
-                       class="btn btn-sm btn-secondary">Show image thumbnails</a>
-                </div>
-            }
-        </div>
-    </div>
-    <div class="row mb-3 mt-3">
-        <div class="col-md-12 text-truncate">
-            <div class="d-flex">
-                <nav aria-label="breadcrumb mb-3 mt-3">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item active" aria-current="folder">
-                            <a class="btn btn-sm btn-primary" title="Click to navigate here" href="@Html.Raw(baseUrl)target=/"><i class="fa-solid fa-house"></i></a>
-                        </li>
-                        @{
-                            var p = "";
-                            int counter = 0;
-                        }
-                        @foreach (var item in pathParts)
-                        {
-                            counter++;
-                            p += "/" + item;
-                            var href = $"target={p}";
 
-                            var itemName = counter == 3 && !string.IsNullOrEmpty(articleTitle) ? articleTitle : item;
-
-                            if (counter == pathParts.Count)
-                            {
-                                <li class="breadcrumb-item active" aria-current="folder">
-                                    <a class="btn btn-sm btn-primary" title="Click to navigate here" href="@Html.Raw(baseUrl)@href.TrimStart('/')">@itemName</a>
-                                </li>
-                            }
-                            else
-                            {
-                                <li class="breadcrumb-item active" aria-current="folder">
-                                    <a class="btn btn-sm btn-primary" title="Click to navigate here" href="@Html.Raw(baseUrl)@href">@itemName.TrimStart('/')</a>
-                                </li>
-                            }
-                        }
-
-                        @if (pathPrefix.StartsWith(topDirectory))
-                        {
-                            <li class="breadcrumb-item active" aria-current="folder">
-                                <form id="frmNewFolder" class="d-flex" asp-action="NewFolder" method="post">
-                                    <input type="hidden" name="ParentFolder" id="ParentFolder" value="@pathPrefix" />
-                                    <input type="hidden" name="DirectoryOnly" id="DirectoryOnly" value="@directoryOnly.ToString().ToLower()" />
-                                    <input class="form-control form-control-sm me-2" name="FolderName" style="background-color:white !important;color: black !important" id="FolderName" type="text" placeholder="New folder name" aria-label="New folder name" minlength="2" required />
-                                    <button class="btn btn-sm btn-primary" type="submit">Create</button>
-                                </form>
-                            </li>
-                        }
-                    </ol>
-                </nav>
-            </div>
-        </div>
-    </div>
-
-    @if (pathPrefix.StartsWith(topDirectory) && directoryOnly == false)
+<div class="ccms-elfinder-wrap" id="ccmsElFinderWrap">
+    @if (!directoryOnly)
     {
-        <div class="row uploader" style="display:none;">
-            <div class="col-md-12 justify-content-center text-light">
-                <button id="btnProgress" class="btn btn-sm btn-primary" type="button" disabled style="display:none;">
-                    <span class="spinner-border spinner-border-sm text-light" role="status" aria-hidden="true"></span>
-                    <span role="status" id="fpMesageSpace"></span>
-                </button>
-            </div>
-        </div>
-        <div class="row uploader">
-            <div class="col-md-12">
-                <!-- Filepond File Uploader -->
+        <div class="ccms-upload-bar">
+            <p class="ccms-upload-status" id="ccmsUploadStatus">Ready to upload</p>
+            <button type="button" id="ccmsUploadBrowseBtn" class="ccms-upload-btn">Upload Files</button>
+            <button type="button" id="ccmsPondDismissBtn" class="ccms-upload-btn" aria-label="Close upload panel">Close</button>
+            <div id="ccmsPondWrap">
                 <input type="file"
-                       class="filepond"
-                       id="filepond"
+                       id="ccmsFilepond"
                        name="files"
-                       data-file-metadata-path="@pathPrefix"
+                       class="filepond"
+                       data-file-metadata-path="@target"
                        multiple>
             </div>
         </div>
     }
+    <div id="ccmsElFinder"></div>
+</div>
 
-    @if (pathPrefix.StartsWith(topDirectory))
-    {
-        <div class="row">
-            <div class="col-md-12">
-                <div id="bgroupCopyMove" class="btn-group" role="group" aria-label="Copy and move actions" style="display:none">
-                    <button type="button" class="btn btn-sm btn-success" title="Copy selected items to this folder." onclick="btnClick('copyItems')">Copy to here</button>
-                    <button type="button" class="btn btn-sm btn-success" title="Move selected items to this folder." onclick="btnClick('moveItems')">Move to here</button>
-                    <button type="button" class="btnShowSelected btn btn-sm btn-secondary" title="Show list of selected items" style="display:none">Show Selected</button>
-                    <button type="button" class="btn btn-sm btn-primary" title="Cancel copy or move operation." onclick="btnClick('cancel')">Cancel</button>
 
-                </div>
-            </div>
-        </div>
-    }
 
-    <div class="row cpws-table-pager-row-top">
-        <div class="col-md-4">
-            <div class="btn-group" role="group" aria-label="File and folder actions">
-                <button type="button" class="btn btn-sm btn-primary" title="Create a new text file." onclick="btnClick('createFile')">New file</button>
-                @if (directoryOnly)
-                {
-                    <button id="btnCancel" type="button" class="btn btn-sm btn-secondary" onclick="btnClick('cancel')">Cancel</button>
-                    <button id="btnMove" type="button" class="btn btn-sm btn-secondary" onclick="btnClick('move')" disabled>Copy/Move</button>
+@section Scripts {
+    <script src="~/lib/elfinder/js/elfinder.min.js"
+            asp-append-version="true"></script>
+    <script src="~/lib/filepond-plugin-file-metadata/dist/filepond-plugin-file-metadata.min.js"
+            asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.js" integrity="sha384-Eeqgmq0luVn6HThRQfVchBi+0ROgVXYcUDAsJHU+YDa7yUykpjzyq0R9iDB3ueal" crossorigin="anonymous"></script>
+    <script>
+            (function () {
+                // ── Encode path to elFinder hash ──────────────────────────
+                function encodePath(path) {
+                    var trimmed = path.replace(/^\//, '');
+                    var encoded = btoa(unescape(encodeURIComponent(trimmed)))
+                        .replace(/\+/g, '-')
+                        .replace(/\//g, '_')
+                        .replace(/=+$/, '');
+                    return 'l1_' + encoded;
                 }
-                else if (selectOne)
-                {
-                    <button id="btnClear" type="button" class="btn btn-sm btn-primary" title="Clear list of selected items" style="display:none">Clear Selected</button>
-                    <button type="button" class="btnShowSelected btn btn-sm btn-primary" title="Show list of selected items" style="display:none">Show Selected</button>
-                }
-                else if (!selectOne)
-                {
-                    <button id="btnRename" type="button" class="btn btn-sm btn-secondary" onclick="btnClick('rename')" disabled>Rename</button>
-                    <button id="btnDelete" type="button" class="btn btn-sm btn-secondary" onclick="btnClick('delete')" disabled>Delete</button>
-                    <button id="btnMove" type="button" class="btn btn-sm btn-secondary" onclick="btnClick('move')" disabled>Copy/Move</button>
-                    <button type="button" class="btnShowSelected btn btn-sm btn-primary" title="Show list of selected items" style="display:none">Show Selected</button>
-                }
-            </div>
-        </div>
-        <div class="col-md-4 d-flex justify-content-center">
-            <partial name="~/Views/Shared/GridPager/_GridPager.cshtml" model="pagerModel"></partial>
-        </div>
-        <div class="col-md-4">
-        </div>
-    </div>
 
-    <div class="row bg-dark">
-        <div class="col-md-12">
-            <!-- Flexbox container for aligning the toasts -->
-            <div aria-live="polite" aria-atomic="true" class="d-flex justify-content-center align-items-center" style="position:relative;">
-                <!-- Then put toasts within -->
-                <div id="copied-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" style="position: absolute; top: 0; left: 0;z-index:50000;">
-                    <div class="toast-body">
-                        Copied URL.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @if (imagesOnly)
-    {
-        <div class="row justify-content-center">
-            @if (Model.Count == 0)
-            {
-                <div class="d-flex text-center">
-                    <h4> ** EMPTY (no items to list) ** </h4>
-                </div>
-            }
-            <div class="row row-cols-1 row-cols-md-4 g-4">
-                @foreach (var row in Model)
-                {
-                    if (@row.IsDirectory)
-                    {
-                        <div class="col">
-                            <div class="card h-100">
-                                <a href='@Html.Raw(baseUrl)target=@row.Path'><img src="/images/folder.png" class="card-img-top" alt="Image preview"></a>
-                                <div class="card-body">
-                                    <h5 class="card-title">@(row.Name + row.Extension)</h5>
-                                    <p class="card-text">Created: <span class='toLocalTimeZone'>@row.CreatedUtc</span> </p>
-                                    <div class="btn-group" role="group">
-                                        <a href='@Html.Raw(baseUrl)target=@row.Path'>Open Folder</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                function decodePath(hash) {
+                    if (!hash || hash.indexOf('l1_') !== 0) {
+                        return null;
                     }
-                    else
-                    {
-                        <div class="col">
-                            <div class="card h-100">
-                                <a title="Click to select image" href="javascript:selectImage('@row.Path.Trim('/')')"><img src="@(blobStaticWebsiteUrl.TrimEnd('/') + "/" + row.Path.TrimStart('/'))" class="card-img-top" alt="Image preview"></a>
-                                <div class="card-body">
-                                    <h5 class="card-title">@(row.Name + row.Extension)</h5>
-                                    <div class="form-check">
-                                        <input class="form-check-input gridCheckBox" data-ccms-isdir='@row.IsDirectory' data-ccms-blob='@row.Path.Trim('/')' type="checkbox">
-                                        <label class="form-check-label">
-                                            Select image
-                                        </label>
-                                    </div>
-                                    <p class="card-text">Created: <span class='toLocalTimeZone'>@row.CreatedUtc</span> </p>
-                                    <div class="btn-group" role="group">
-                                        <a class="btn btn-sm btn-secondary" href="javascript:download('@row.Path')">Download</a>
-                                        <button class="btn btn-sm btn-secondary ccms-clip-board" title="Copy URL to clipbard" data-clipboard-text="@options.BlobPublicUrl.TrimEnd('/')/@row.Path"><i class="fa-regular fa-clipboard"></i></button>
-                                        <a class='btn btn-sm btn-secondary' title='Filerobot image editor' href='/FileManager/EditImage?target=@row.Path'><img src="/images/filerobot-icon.png" height="22" /></a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
+                    var encoded = hash.substring(3)
+                        .replace(/-/g, '+')
+                        .replace(/_/g, '/');
+
+                    while (encoded.length % 4 !== 0) {
+                        encoded += '=';
+                    }
+
+                    try {
+                        var decoded = decodeURIComponent(escape(atob(encoded)));
+                        return normalizePath('/' + decoded);
+                    } catch {
+                        return null;
                     }
                 }
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="row bg-dark">
-            <div class="col-md-12">
-                <div class="table-responsive custom-table-responsive">
-                    <table class="table custom-table">
-                        <thead>
-                            <tr>
-                                <th scope="col">
-                                    Select
-                                </th>
-                                <th>Type</th>
-                                <th></th>
-                                <th>Name</th>
-                                <th>Modified</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model.Count == 0)
-                            {
-                                <tr scope="row" style="height: auto !important">
-                                    <td colspan="5">
-                                        <div class="d-flex justify-content-center">
-                                            <h4 class="text-light"> ** EMPTY (no items to list) ** </h4>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                            @foreach (var row in Model)
-                            {
-                                <tr scope="row" style="height: auto !important">
-                                    <td scope="row" style="width:30px;">
-                                        @if (row.Path.Trim('/') != "pub/articles")
-                                        {
-                                            if (selectOne && row.IsDirectory)
-                                            {
 
-                                                <div class="form-check">
-                                                    <input class="form-check-input gridCheckBox" data-ccms-isdir='@row.IsDirectory' data-ccms-blob='@row.Path.Trim('/')' type="checkbox" disabled>
-                                                    <label class="form-check-label">
-                                                        Select
-                                                    </label>
-                                                </div>
+                function normalizePath(path) {
+                    if (!path) {
+                        return '/pub';
+                    }
 
-                                            }
-                                            else
-                                            {
-                                                <div class="form-check">
-                                                    <input class="form-check-input gridCheckBox" data-ccms-isdir='@row.IsDirectory' data-ccms-blob='@row.Path.Trim('/')' type="checkbox">
-                                                    <label class="form-check-label">
-                                                        Select
-                                                    </label>
-                                                </div>
-                                            }
-                                        }
-                                    </td>
-                                    <td style="width:30px;">
-                                        @if (row.IsDirectory)
-                                        {
-                                            <a href='@Html.Raw(baseUrl)target=@row.Path'><i class='fa-solid fa-folder'></i></a>
-                                        }
-                                        else
-                                        {
-                                            <div><i class='fa-solid fa-file'></i></div>
-                                        }
-                                    </td>
-                                    <td style="width:60px;">
-                                        <div class='btn-group' role='group'>
-                                            @if (row.IsDirectory == false)
-                                            {
-                                                <button class="btn btn-sm btn-secondary ccms-clip-board" title="Copy URL to clipbard" data-clipboard-text="@options.BlobPublicUrl.TrimEnd('/')/@row.Path"><i class="fa-regular fa-clipboard"></i></button>
-                                                @if (editorExtensions.Contains(row.Extension))
-                                                {
-                                                    <a class='btn btn-sm btn-secondary' title='Monaco/VS Code editor' href='/FileManager/EditCode?path=@row.Path'><img src="/images/monaco-vscode-logo.png" height="22" /></a>
-                                                }
-                                                @if (imageEditorExtensions.Contains(row.Extension))
-                                                {
-                                                    <a class='btn btn-sm btn-secondary' title='Filerobot image editor' href='/FileManager/EditImage?target=@row.Path'><img src="/images/filerobot-icon.png" height="22" /></a>
-                                                }
-                                            }
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @if (row.IsDirectory)
-                                        {
-                                            <a href='@Html.Raw(baseUrl)target=@row.Path'>@row.Name</a>
-                                        }
-                                        else
-                                        {
-                                            if (imagesOnly && imageEditorExtensions.Contains(row.Extension))
-                                            {
-                                                <a title="Click to download image" href="javascript:download('@row.Path')"><img class="image-fluid" src="@Url.Action("GetImageThumbnail", "FileManager")?target=@row.Path" /></a>
-                                            }
-                                            else
-                                            {
-                                                <a href="javascript:download('@row.Path')">@(row.Name + row.Extension)</a>
-                                            }
-                                        }
-                                    </td>
-                                    <td style="width:240px">
-                                        <div class='toLocalTimeZone'>@row.ModifiedUtc</div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    }
+                    var clean = path.replace(/\\/g, '/').replace(/\/+/g, '/');
+                    if (clean.charAt(0) !== '/') {
+                        clean = '/' + clean;
+                    }
 
-    <div class="row cpws-table-pager-row-bottom pb-3">
-        <div class="col-md-12 d-flex justify-content-center">
-            <partial name="~/Views/Shared/GridPager/_GridPager.cshtml" model="pagerModel"></partial>
-        </div>
-    </div>
-</div>
+                    if (clean.length > 1 && clean.endsWith('/')) {
+                        clean = clean.substring(0, clean.length - 1);
+                    }
 
-<form>
-    @Html.AntiForgeryToken()
-    <input id="frmPathList" name="frmPathList" type="hidden" />
-</form>
+                    return clean;
+                }
 
-<!-- Before the end of the body tag -->
-<script src="https://unpkg.com/filepond-plugin-file-metadata/dist/filepond-plugin-file-metadata.js"></script>
-<script src="https://unpkg.com/filepond@4/dist/filepond.js"></script>
+                function updateUploadStatus(message) {
+                    var status = document.getElementById('ccmsUploadStatus');
+                    if (!status) {
+                        return;
+                    }
 
-<div class="modal mt-5" id="showSelectedModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header">
-                <h5 id="showSelectedTitle" class="modal-title">Selected Item(s)</h5>
-            </div>
-            <div class="modal-body">
-                <div id="tblShowSelected" class="table-responsive">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button id="btnShowSelModalClear" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Clear Selected</button>
-            </div>
-        </div>
-    </div>
-</div>
+                    status.textContent = message;
+                }
 
-<div class="modal mt-5" id="modalCheckSaveFirst" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header">
-                <h5 id="checkFirstTitle" class="modal-title">Verification</h5>
-            </div>
-            <div class="modal-body">
-                <div id="checkFirstDialog"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="continueAction()" data-bs-dismiss="modal">Yes</button>
-                <button type="button" class="btn btn-secondary" onclick="cancelAction()" data-bs-dismiss="modal">No</button>
-            </div>
-        </div>
-    </div>
-</div>
+                function updateReadyUploadStatus() {
+                    updateUploadStatus('Ready to upload to ' + currentUploadPathDisplay);
+                }
 
-<div class="modal mt-5" id="busyModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col">
-                        <h5 id="busyModalTitle" class="modal-title">Working...</h5>
-                        <div id="busyModalDialog"></div>
-                    </div>
-                    <div class="col justify-content-end">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Working...</span>
-                        </div>
-                    </div>
-                </div>
+                function expandPond() {
+                    var bar = document.querySelector('.ccms-upload-bar');
+                    if (!bar) {
+                        return;
+                    }
 
-            </div>
-        </div>
-    </div>
-</div>
+                    if (autoCollapseHandle) {
+                        clearTimeout(autoCollapseHandle);
+                        autoCollapseHandle = null;
+                    }
 
-<div class="modal mt-5" id="renameModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <form id="frmChangeName" asp-action="Rename" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" id="BlobRootPath" name="BlobRootPath" value="@pathPrefix" />
-                <input type="hidden" id="FromBlobName" name="FromBlobName" value="@pathPrefix" />
-                <div class="modal-header">
-                    <h5 id="checkFirstTitle" class="modal-title">Rename Item</h5>
-                </div>
-                <div class="modal-body">
-                    <label for="FromBobName" class="form-label">Original name:</label>
-                    <div class="input-group mb-3 bg-dark text-light">
-                        <span id="itemPrefix1" class="input-group-text"></span>
-                        <input class="form-control" id="ctrlFromBlobName" aria-describedby="emailHelp" disabled>
-                    </div>
-                    <label for="ToBlobName" class="form-label">Change to:</label>
-                    <div class="input-group mb-3 bg-dark text-light">
-                        <span id="itemPrefix2" class="input-group-text"></span>
-                        <input title="Enter the new name of the item" class="form-control" id="ToBlobName" name="ToBlobName" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button id="btnSubmitChange" type="submit" value="submit" class="btn btn-secondary">Change</button>
-                    <div id="extAlert" class="alert alert-warning" role="alert" style="display:none"><i class="fa-solid fa-triangle-exclamation"></i> Warning: file extension does not match original.</div>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+                    bar.classList.remove('ccms-pond-closing');
+                    bar.classList.add('ccms-pond-active');
+                }
 
-<div class="modal mt-5" id="newFileModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <form id="frmNewFile" asp-action="NewFile" method="post">
-                <input type="hidden" name="ParentFolder" id="ParentFolder" value="@pathPrefix" />
-                <div class="modal-header">
-                    <h5 id="checkFirstTitle" class="modal-title">Create a new file</h5>
-                </div>
-                <div class="modal-body">
-                    <div class="input-group mb-3 bg-dark text-light">
-                        <span id="itemPrefix1" class="input-group-text">File name: </span>
-                        <input class="form-control text-dark" id="FileName" name="FileName" aria-describedby="emailHelp">
-                    </div>
-                    <p>
-                        Valid file extensions:
-                        @foreach (var ext in editorExtensions)
-                        {
-                            <span class="badge bg-secondary">@ext</span>
+                function collapsePond() {
+                    var bar = document.querySelector('.ccms-upload-bar');
+                    if (!bar || !bar.classList.contains('ccms-pond-active')) {
+                        return;
+                    }
+
+                    bar.classList.add('ccms-pond-closing');
+
+                    setTimeout(function () {
+                        bar.classList.remove('ccms-pond-active', 'ccms-pond-closing');
+                    }, 190);
+                }
+
+                function refreshElFinderFolder() {
+                    if (elFinderInstance && typeof elFinderInstance.reload === 'function') {
+                        elFinderInstance.reload();
+                    }
+                }
+
+                // ── Public blob base URL (used by Copy Public URL action) ─
+                var fileBaseUrl = '@Html.Raw(options.BlobPublicUrl.TrimEnd('/'))';
+
+                // ── Copy Public URL custom command ────────────────────────
+                (function () {
+                    if (typeof $ === 'undefined' || !$.fn || typeof $.fn.elfinder === 'undefined') { return; }
+
+                    $.fn.elfinder.commands = $.fn.elfinder.commands || {};
+                    if ($.fn.elfinder.commands.ccmscopyurl) { return; }
+
+                    $.fn.elfinder.commands.ccmscopyurl = function () {
+                        this.title = 'Copy Public URL';
+                        this.state = 0;
+                    };
+
+                    $.fn.elfinder.commands.ccmscopyurl.prototype = $.extend({}, $.fn.elfinder.prototype, {
+                        exec: function (hashes) {
+                            var fm = this.fm;
+                            var files = fm.files(hashes);
+                            if (!files || !files.length) { return $.Deferred().reject(); }
+
+                            var file = files[0];
+                            if (file.mime === 'directory') { return $.Deferred().reject(); }
+
+                            var decodedPath = decodePath(hashes[0]);
+                            var filePath = decodedPath || fm.path(hashes[0]);
+                            if (!filePath) { return $.Deferred().reject(); }
+
+                            var clean = normalizePath(filePath);
+                            var publicUrl = fileBaseUrl + encodeURI(clean);
+
+                            navigator.clipboard.writeText(publicUrl).then(function () {
+                                if (window.toastr && typeof window.toastr.success === 'function') {
+                                    window.toastr.success('Public URL copied to clipboard.');
+                                }
+                            }).catch(function () {
+                                if (window.toastr && typeof window.toastr.error === 'function') {
+                                    window.toastr.error('Could not copy URL. Please copy manually: ' + publicUrl);
+                                }
+                            });
+
+                            return $.Deferred().resolve();
+                        },
+                        getstate: function (sel) {
+                            var sel = sel || this.fm.selected();
+                            if (!sel || !sel.length) { return -1; }
+                            var files = this.fm.files(sel);
+                            // Enable only for single non-directory file selection.
+                            return (files && files.length === 1 && files[0].mime !== 'directory') ? 0 : -1;
                         }
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button id="btnCreateFile" type="submit" class="btn btn-primary">Create</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+                    });
+                })();
 
-<div class="modal mt-5" id="uploadProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header">
-                <h5 class="modal-title">Uploading files</h5>
-            </div>
-            <div class="modal-body">
-                <div id="uploadProgressMessage" class="mb-3">Preparing upload...</div>
-                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Upload progress">
-                    <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%">0%</div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" id="btnUploadCancel" class="btn btn-warning">Cancel uploads</button>
-                <button type="button" id="btnUploadClose" class="btn btn-secondary" style="display:none;" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
+                // ── Starting target hash ──────────────────────────────────
+                var startTarget = encodePath('@Html.Raw(target)');
+                var currentUploadPath = normalizePath('@Html.Raw(target)');
+                var currentUploadPathDisplay = currentUploadPath;
+                var elFinderInstance = null;
+                var pond = null;
+                var autoCollapseHandle = null;
 
-<script src="~/js/clipboard.min.js"></script>
+                // Tracks serverId → filename so the revert call can reconstruct the DELETE URL.
+                var pondFileMap = new Map();
 
-<script>
+                // ── File-selection callback (selectOne / imagesOnly) ──────
+                var pickCallback = null;
 
-    var paths = [];
-
-    // MODALS
-    let busyModal = new bootstrap.Modal(document.getElementById('busyModal'));
-    let renameModal = new bootstrap.Modal(document.getElementById('renameModal'));
-    let modalCheckSaveFirst = new bootstrap.Modal(document.getElementById('modalCheckSaveFirst'));
-    let showSelectedModal = new bootstrap.Modal(document.getElementById('showSelectedModal'));
-    let newFileModal  = new bootstrap.Modal(document.getElementById('newFileModal'));
-    let uploadProgressModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'));
-    let btnSelectFileAndClose = parent.document.getElementById("btnSelectFileAndClose");
-
-    const uploadProgressBar = $("#uploadProgressBar");
-    const uploadProgressMessage = $("#uploadProgressMessage");
-    const btnUploadCancel = $("#btnUploadCancel");
-    const btnUploadClose = $("#btnUploadClose");
-
-    const isNewSession = @isNewSession.ToString().ToLower();
-    const selectOneFile = @selectOne.ToString().ToLower();
-
-    const imageExtensions = [ ".jpg", ".jpeg", ".png", ".gif", ".webp" ];
-
-    // Image editor
-    let imageEditorWindow = null;
-
-    // Select one mode?
-    //
-    // Set mode
-    const directoryOnly = @(directoryOnly.ToString().ToLower());
-    // Image browser on?
-    const imageBrowserMode = @imagesOnly.ToString().ToLower();
-
-    let totalFileCount = 0;
-    let loadedFileCount = 0;
-    let uploadAutoCloseHandle = null;
-
-    function openImageEditor(url) {
-        imageEditorWindow = window.open(url, "_blank");
-    }
-
-    // shows a modal, closes all others.
-    function showModal(name, message, title) {
-        hideModals();
-        switch (name) {
-            case "busy":
-                $("#busyModalDialog").html(message);
-                busyModal.show();
-                break;
-            case "rename":
-                renameModal.show();
-                break;
-            case "checkFirst":
-                $("#checkFirstTitle").html(title);
-                $("#checkFirstDialog").html(message);
-                modalCheckSaveFirst.show();
-                break;
-        }
-    }
-
-    // Hides all modals
-    function hideModals() {
-        busyModal.hide();
-        renameModal.hide();
-        modalCheckSaveFirst.hide();
-    }
-
-    //
-    // CLIPBOARD
-    let btns = document.querySelectorAll(".ccms-clip-board");
-    let clipboard = new ClipboardJS(btns);
-
-    clipboard.on('success', function (e) {
-        $("#copied-toast").toast("show");
-    });
-
-    clipboard.on('error', function (e) {
-        console.info('Action:', e.action);
-        console.info('Text:', e.text);
-        console.info('Trigger:', e.trigger);
-    });
-    //
-
-    // Get a reference to the file input element
-    const inputElement = document.querySelector('input[type="file"]');
-
-    // Register meta data Plug-ins
-    FilePond.registerPlugin(FilePondPluginFileMetadata);
-
-    // Create a FilePond instance
-    const pond = FilePond.create(inputElement, {
-        chunkUploads: true,
-        chunkSize: 5242880, // bytes (5 MB) - AWS S3 multi upload requires 5 MB parts. Last part can be any size
-        chunkForce: true
-    });
-
-
-    FilePond.setOptions({
-        server: "@Url.Action("Process", controller)"
-    });
-
-    pond.on('addfile', (error, file) => {
-        if (error) {
-            console.log('Oh no');
-            return;
+        @if (selectOne || imagesOnly)
+        {
+                    <text>
+                        pickCallback = function (file) {
+                            var url = file.url || '';
+                            if (typeof window.parent !== 'undefined') {
+                                if (typeof window.parent.CCMS___FileManagerPick === 'function') {
+                                    window.parent.CCMS___FileManagerPick(url);
+                                } else if (typeof window.parent.selectImage === 'function') {
+                                    window.parent.selectImage(url);
+                                }
+                            }
+                        };
+                    </text>
         }
 
-        if (totalFileCount === 0 && loadedFileCount === 0) {
-            btnUploadClose.hide();
-            btnUploadCancel.show();
-            uploadProgressBar.removeClass("bg-danger bg-success").addClass("progress-bar-animated progress-bar-striped");
-            uploadProgressBar.css("width", "0%").text("0%");
-            uploadProgressMessage.text("Preparing upload...");
-            uploadProgressModal.show();
-        }
+                // ── elFinder initialisation ───────────────────────────────
+                var efOptions = {
+                    url: '@connectorUrl',
+                    lang: 'en',
+                    themes : {
+                        'mt-darkblue' : '../elfinder-material-theme/manifests/darkblue.json?v=2',
+                        'mt-gray'     : '../elfinder-material-theme/manifests/gray.json?v=2',
+                        'mt-light'    : '../elfinder-material-theme/manifests/light.json?v=2',
+                    },
+                    theme: 'mt-gray',
+                    resizable: false,
+                    baseUrl: '/lib/elfinder/',
+                    commands: ['*', '!upload', 'ccmscopyurl'],
+                    uiOptions: {
+                        toolbar: [
+                            ['back', 'forward'],
+                            ['reload'],
+                            ['home', 'up'],
+                            ['mkdir', 'mkfile'],
+                            ['open', 'download'],
+                            ['info'],
+                            ['quicklook'],
+                            ['copy', 'cut', 'paste'],
+                            ['rm'],
+                            ['rename'],
+                            ['search'],
+                            ['view', 'sort'],
+                            ['ccmscopyurl']
+                        ],
+                    },
+                    contextmenu: {
+                        files: [
+                            'getfile',
+                            '|',
+                            'open',
+                            'download',
+                            '|',
+                            'copy',
+                            'cut',
+                            'paste',
+                            'duplicate',
+                            '|',
+                            'rm',
+                            '|',
+                            'rename',
+                            '|',
+                            'ccmscopyurl',
+                            '|',
+                            'info'
+                        ]
+                    },
+                    startPathHash: startTarget,
+                    handlers: {
+                        open: function (event) {
+                            var cwd = null;
+                            var cwdDisplayPath = null;
 
-        file.setMetadata("relativePath", file.relativePath);
-        file.setMetadata("fileName", file.filename);
+                            if (event && event.data && event.data.cwd && event.data.cwd.hash) {
+                                cwd = decodePath(event.data.cwd.hash);
+                            }
 
-        const ext = "." + file.filename.split('.').pop();
-        totalFileCount++;
-        if (totalFileCount > 1) {
-            filePondMessage("Preparing to upload " + totalFileCount + " files...");
-        } else {
-            filePondMessage("Uploading file...");
-        }
+                            if (!cwd && elFinderInstance && typeof elFinderInstance.cwd === 'function') {
+                                var active = elFinderInstance.cwd();
+                                if (active && active.hash) {
+                                    cwd = decodePath(active.hash);
+                                }
+                            }
 
-        if (ext !== null && imageExtensions.includes(ext.toLowerCase())) {
-            getImageDimensions(file.file, function(dimensions) {
-                file.setMetadata('imageWidth', dimensions.width);
-                file.setMetadata('imageHeight', dimensions.height);
-            });
-        }
-    });
+                            if (event && event.data && event.data.cwd && event.data.cwd.displayPath) {
+                                cwdDisplayPath = normalizePath(event.data.cwd.displayPath);
+                            } else if (event && event.data && event.data.options && event.data.options.path) {
+                                cwdDisplayPath = normalizePath('/' + event.data.options.path);
+                            }
 
-    function getImageDimensions(blob, callback) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const dimensions = {
-                    width: img.naturalWidth,
-                    height: img.naturalHeight
+                            if (cwd) {
+                                currentUploadPath = cwd;
+                                currentUploadPathDisplay = cwdDisplayPath || cwd;
+                                updateReadyUploadStatus();
+                            }
+                        },
+                        error: function (event) {
+                            var err = event.data && event.data.error;
+                            if (window.console && err) { console.warn('[elFinder]', err); }
+                        }
+                    }
                 };
-                callback(dimensions);
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(blob);
-    }
 
-    pond.on('processfilestart', (e) => {
-        const metadata = e.getMetadata();
-    });
-
-    pond.on('processfile', (file) => {
-        loadedFileCount++;
-        const percent = Math.round((loadedFileCount / Math.max(totalFileCount, 1)) * 100);
-        filePondMessage("Uploaded " + loadedFileCount + " of " + totalFileCount + " files (" + percent + "%).");
-    });
-
-    pond.on('processfiles', () => {
-        filePondMessage("Upload complete.");
-        uploadProgressBar.removeClass("progress-bar-animated progress-bar-striped").addClass("bg-success");
-        btnUploadCancel.hide();
-        btnUploadClose.show();
-
-        if (uploadAutoCloseHandle) {
-            clearTimeout(uploadAutoCloseHandle);
+        @if (directoryOnly)
+        {
+                    <text>
+                        efOptions.commandsOptions = { open: { dirs: true } };
+                        efOptions.onlyMimes = ['directory'];
+                    </text>
         }
-
-        uploadAutoCloseHandle = setTimeout(() => {
-            btnUploadClose.trigger("click");
-            refreshFileExplorerAfterUpload();
-        }, 1200);
-    });
-
-    pond.on('processfilesabort', () => {
-        uploadProgressBar.removeClass("progress-bar-animated progress-bar-striped").addClass("bg-danger");
-        uploadProgressMessage.text("Upload canceled.");
-        btnUploadCancel.hide();
-        btnUploadClose.show();
-    });
-
-    pond.on('processfileabort', () => {
-        uploadProgressBar.removeClass("progress-bar-animated progress-bar-striped").addClass("bg-danger");
-        uploadProgressMessage.text("Upload canceled.");
-        btnUploadCancel.hide();
-        btnUploadClose.show();
-    });
-
-    btnUploadCancel.on("click", function() {
-        pond.removeFiles();
-        pond.abortProcessing();
-    });
-
-    btnUploadClose.on("click", function() {
-        if (uploadAutoCloseHandle) {
-            clearTimeout(uploadAutoCloseHandle);
-            uploadAutoCloseHandle = null;
+        @if (imagesOnly)
+        {
+                    <text>
+                        efOptions.onlyMimes = ['image'];
+                    </text>
         }
+                if (pickCallback !== null) {
+                    efOptions.getFileCallback = pickCallback;
+                }
 
-        refreshFileExplorerAfterUpload();
-    });
+                if (typeof $.fn.elfinder !== 'function') {
+                    $('#ccmsElFinder').html('<div class="alert alert-danger" role="alert">File manager failed to load. Please refresh or contact support.</div>');
+                    if (window.console) {
+                        console.error('[elFinder] Plugin did not load. Check CDN/network access.');
+                    }
 
-    function refreshFileExplorerAfterUpload() {
-        // If embedded in elFinder context, try to refresh current folder without full page jump.
-        try {
-            if (window.parent && window.parent.$ && window.parent.$.fn && window.parent.$.fn.elfinder) {
-                const parentElfinder = window.parent.$('.elfinder').elfinder('instance');
-                if (parentElfinder) {
-                    parentElfinder.exec('reload');
                     return;
                 }
-            }
-        } catch (err) {
-            // fallback below
-        }
 
-        window.location.href = "@Url.Action(action, controller)?target=@pathPrefix";
-    }
+                elFinderInstance = $('#ccmsElFinder').elfinder(efOptions).elfinder('instance');
 
-    function filePondMessage(message) {
-        uploadProgressMessage.text(message || "");
+                if (elFinderInstance && typeof elFinderInstance.cwd === 'function') {
+                    var initialCwd = elFinderInstance.cwd();
+                    if (initialCwd && initialCwd.hash) {
+                        var decodedStart = decodePath(initialCwd.hash);
+                        if (decodedStart) {
+                            currentUploadPath = decodedStart;
+                        }
 
-        const percent = Math.round((loadedFileCount / Math.max(totalFileCount, 1)) * 100);
-        uploadProgressBar.css("width", percent + "%").text(percent + "%");
-    }
+                        if (initialCwd.displayPath) {
+                            currentUploadPathDisplay = normalizePath(initialCwd.displayPath);
+                        } else if (initialCwd.options && initialCwd.options.path) {
+                            currentUploadPathDisplay = normalizePath('/' + initialCwd.options.path);
+                        }
+                    }
+                }
 
-    // Event handlers
-    document.addEventListener('FilePond:processfiles', (e) => {
-        // Handled by pond.on('processfiles') to support modal + in-place refresh.
-    });
+                updateReadyUploadStatus();
+
+                var inputElement = document.getElementById('ccmsFilepond');
+                if (!inputElement || typeof FilePond === 'undefined') {
+                    return;
+                }
+
+                if (typeof FilePondPluginFileMetadata !== 'undefined') {
+                    FilePond.registerPlugin(FilePondPluginFileMetadata);
+                }
+
+                pond = FilePond.create(inputElement, {
+                    dropOnPage: true,
+                    dropOnElement: false,
+                    chunkUploads: true,
+                    chunkSize: 5242880,
+                    chunkForce: true,
+                    credits: false,
+                    instantUpload: true,
+                    labelIdle: 'Drop files anywhere or <span class="filepond--label-action">Browse</span>',
+                    server: {
+                        process: '@Url.Action("Process", "FileManager")',
+                        patch: '@Url.Action("Process", "FileManager")',
+                        revert: function (uniqueFileId, load, error) {
+                            var filename = pondFileMap.get(uniqueFileId);
+                            if (!filename) {
+                                load();
+                                return;
+                            }
+
+                            fetch('@Url.Action("Process", "FileManager")?fileName=' + encodeURIComponent(filename), {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'text/plain' },
+                                body: uniqueFileId
+                            }).then(function (response) {
+                                if (response.ok) {
+                                    pondFileMap.delete(uniqueFileId);
+                                    refreshElFinderFolder();
+                                    load();
+                                } else {
+                                    error('Revert failed: ' + response.status);
+                                }
+                            }).catch(function (err) {
+                                error('Revert error: ' + err);
+                            });
+                        }
+                    }
+                });
+
+                pond.on('addfile', function (error, file) {
+                    if (error) {
+                        updateUploadStatus('Upload preparation failed');
+                        return;
+                    }
+
+                    file.setMetadata('path', currentUploadPath);
+                    file.setMetadata('relativePath', file.relativePath || file.filename);
+                    file.setMetadata('fileName', file.filename);
+
+                    expandPond();
+                    updateUploadStatus('Uploading ' + file.filename + '...');
+                });
+
+                pond.on('processfilestart', function (file) {
+                    updateUploadStatus('Uploading ' + file.filename + '...');
+                });
+
+                pond.on('processfile', function (error, file) {
+                    if (error) {
+                        updateUploadStatus('Upload failed for ' + file.filename);
+                        if (autoCollapseHandle) {
+                            clearTimeout(autoCollapseHandle);
+                            autoCollapseHandle = null;
+                        }
+                        return;
+                    }
+
+                    // Record serverId → filename so revert can build the DELETE URL.
+                    if (file.serverId) {
+                        pondFileMap.set(file.serverId, file.filename);
+                    }
+
+                    updateUploadStatus('Uploaded ' + file.filename + ' to ' + currentUploadPathDisplay);
+                });
+
+                pond.on('processfiles', function () {
+                    refreshElFinderFolder();
+                    updateReadyUploadStatus();
+
+                    if (autoCollapseHandle) {
+                        clearTimeout(autoCollapseHandle);
+                    }
+
+                    autoCollapseHandle = setTimeout(function () {
+                        collapsePond();
+                        autoCollapseHandle = null;
+                    }, 2500);
+                });
+
+                var browseButton = document.getElementById('ccmsUploadBrowseBtn');
+                if (browseButton) {
+                    browseButton.addEventListener('click', function () {
+                        if (pond && typeof pond.browse === 'function') {
+                            pond.browse();
+                            return;
+                        }
+
+                        inputElement.click();
+                    });
+                }
+
+                var dismissButton = document.getElementById('ccmsPondDismissBtn');
+                if (dismissButton) {
+                    dismissButton.addEventListener('click', function () {
+                        collapsePond();
+                    });
+                }
+            })();
+    </script>
+}

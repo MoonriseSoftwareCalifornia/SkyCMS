@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using MimeTypes;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
@@ -16,7 +15,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// Performs a recursive substring match on item names within the target directory.
 /// See Docs/commands/search.md.
 /// </summary>
-public class SearchCommandHandler : IRequestHandler<SearchCommand, IElFinderResponse>
+public class SearchCommandHandler : IElFinderHandler<SearchCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -25,7 +24,7 @@ public class SearchCommandHandler : IRequestHandler<SearchCommand, IElFinderResp
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(SearchCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(SearchCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Query))
         {

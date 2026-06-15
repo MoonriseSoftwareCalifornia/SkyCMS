@@ -461,6 +461,7 @@ namespace Sky.Tests
             serviceCollection.AddScoped<Cosmos.Common.Features.Shared.ICommandHandler<Sky.Editor.Features.Articles.Restore.RestoreArticleCommand, Cosmos.Common.Features.Shared.CommandResult<Cosmos.Common.Features.Shared.Unit>>>(sp =>
                 new Sky.Editor.Features.Articles.Restore.RestoreArticleHandler(
                     Db,
+                    CatalogService,
                     SlugService,
                     new NullLogger<Sky.Editor.Features.Articles.Restore.RestoreArticleHandler>()));
 
@@ -756,6 +757,7 @@ namespace Sky.Tests
             // ✅ CREATE DeleteArticleHandler
             var deleteArticleHandler = new Sky.Editor.Features.Articles.Delete.DeleteArticleHandler(
                 Db,
+                CatalogService,
                 PublishingService,
                 Storage,
                 EditorSettings,

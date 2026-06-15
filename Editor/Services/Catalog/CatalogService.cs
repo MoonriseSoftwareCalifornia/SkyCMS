@@ -10,6 +10,7 @@ namespace Sky.Editor.Services.Catalog
     using System.Linq;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Sky.Editor.Infrastructure.Time;
@@ -82,8 +83,11 @@ namespace Sky.Editor.Services.Catalog
         /// </list>
         /// Status Mapping:
         /// <list type="bullet">
-        /// <item><c>StatusCode == 0</c> → "Inactive"</item>
-        /// <item>Any other value → "Active"</item>
+        /// <item><c>StatusCode == Active (0)</c> → "Active"</item>
+        /// <item><c>StatusCode == Inactive (1)</c> → "Inactive"</item>
+        /// <item><c>StatusCode == Deleted (2)</c> → "Deleted"; <c>Published</c> is forced to <c>null</c>.</item>
+        /// <item><c>StatusCode == Redirect (3)</c> → "Redirect"; <c>Published</c> is forced to <c>null</c>.</item>
+        /// <item>Any unknown value → string representation of the numeric code.</item>
         /// </list>
         /// Future Enhancements:
         /// <list type="bullet">
@@ -120,13 +124,29 @@ namespace Sky.Editor.Services.Catalog
                 }
             }
 
+            var statusCodeEnum = (StatusCodeEnum)article.StatusCode;
+            var statusString = statusCodeEnum switch
+            {
+                StatusCodeEnum.Active => "Active",
+                StatusCodeEnum.Inactive => "Inactive",
+                StatusCodeEnum.Deleted => "Deleted",
+                StatusCodeEnum.Redirect => "Redirect",
+                _ => article.StatusCode.ToString()
+            };
+
+            // Deleted and Redirect entries must never appear as published in catalog queries.
+            var catalogPublished = statusCodeEnum is StatusCodeEnum.Deleted or StatusCodeEnum.Redirect
+                ? null
+                : article.Published;
+
             var entry = new CatalogEntry
             {
                 ArticleNumber = article.ArticleNumber,
                 BannerImage = article.BannerImage,
                 BlogKey = article.BlogKey,
-                Published = article.Published,
-                Status = article.StatusCode == 0 ? "Inactive" : "Active",
+                Published = catalogPublished,
+                StatusCode = article.StatusCode,
+                Status = statusString,
                 Title = article.Title,
                 Updated = article.Updated,
                 UrlPath = article.UrlPath,

@@ -81,10 +81,20 @@ namespace Cosmos.Common.Data
         public string Introduction { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the lifecycle status of the article (e.g., Draft, Review, Published, Archived).
+        /// Gets or sets the canonical lifecycle status code aligned with <c>StatusCodeEnum</c>.
         /// </summary>
         /// <remarks>
-        /// Not constrained here; enforcing an allowed set (enum or lookup) is left to the application layer.
+        /// This numeric status is the authoritative lifecycle indicator for catalog filtering
+        /// across providers. It is kept in sync with <see cref="Status"/> during transition.
+        /// </remarks>
+        public int StatusCode { get; set; } = 0;
+
+        /// <summary>
+        /// Gets or sets the lifecycle status of the article as a compatibility string label.
+        /// </summary>
+        /// <remarks>
+        /// Legacy field retained for backward compatibility. Prefer <see cref="StatusCode"/> for
+        /// lifecycle decisions and filtering.
         /// </remarks>
         [Display(Name = "Status")]
         public string Status { get; set; } = string.Empty;

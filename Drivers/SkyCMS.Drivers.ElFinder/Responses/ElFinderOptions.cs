@@ -80,6 +80,12 @@ namespace SkyCMS.Drivers.ElFinder.Responses
         [JsonPropertyName("uploadMaxSize")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public long? UploadMaxSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the UI command map. Required by the elFinder client on every open response.
+        /// </summary>
+        [JsonPropertyName("uiCmdMap")]
+        public Dictionary<string, object> UiCmdMap { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>

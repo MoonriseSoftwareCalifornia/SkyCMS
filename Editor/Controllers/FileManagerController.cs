@@ -1,166 +1,70 @@
-﻿// <copyright file="FileManagerController.cs" company="Moonrise Software, LLC">
+// <copyright file="FileManagerController.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web;
+using Cosmos.BlobService;
+using Cosmos.BlobService.Models;
+using Cosmos.Common.Data;
+using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Articles.EditorQueries;
+using Cosmos.Common.Services;
+using Cosmos.Common.Services.Caching;
+using Cosmos.DynamicConfig;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MimeTypes;
+using Newtonsoft.Json;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using Sky.Cms.Models;
+using Sky.Cms.Services;
+using Sky.Editor.Data.Logic;
+using Sky.Editor.Features.Articles.Save;
+using Sky.Editor.Services;
+using Sky.Editor.Services.CDN;
+using Sky.Editor.Services.EditorSettings;
+using SkyCMS.Drivers.ElFinder;
+using SkyCMS.Drivers.ElFinder.Commands;
+using SkyCMS.Drivers.ElFinder.Responses;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
-    using Cosmos.BlobService;
-    using Cosmos.BlobService.Models;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Articles.EditorQueries;
-    using Cosmos.Common.Features.Shared;
-    using Cosmos.Common.Services;
-    using Cosmos.Common.Services.Caching;
-    using Cosmos.DynamicConfig;
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Hosting;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.AspNetCore.Mvc.ModelBinding;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-    using MimeTypes;
-    using Newtonsoft.Json;
-    using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.Processing;
-    using Sky.Cms.Models;
-    using Sky.Cms.Services;
-    using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Articles.Save;
-    using Sky.Editor.Models;
-    using Sky.Editor.Services.CDN;
-    using Sky.Editor.Services.EditorSettings;
-    using SkyCMS.Drivers.ElFinder;
-
     /// <summary>
-    /// File manager controller.
+    /// Connector adapter controller that maps elFinder JSON protocol commands to SkyCMS
+    /// storage operations. Business commands are handled here; cross-cutting concerns
+    /// (tenancy, authentication) remain in middleware and the standard pipeline.
+    /// See ADR 0035.
     /// </summary>
-    // [ResponseCache(NoStore = true)]
     [Authorize(Roles = "Administrators, Editors, Authors, Team Members")]
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
     public class FileManagerController : BaseController
     {
-        // Private fields
-        private readonly ApplicationDbContext dbContext;
-        private readonly UserManager<IdentityUser> userManager;
-        private readonly ArticleEditLogic articleLogic;
-        private readonly IMediator articleQueries;
-        private readonly string blobPublicAbsoluteUrl;
-        private readonly IViewRenderService viewRenderService;
-        private readonly ILogger<FileManagerController> logger;
-        private readonly IStorageContext storageContext;
-        private readonly IWebHostEnvironment hostEnvironment;
-        private readonly IEditorSettings options;
+        private const string VolumeId = ElFinderHashEncoder.VolumeId;
+        private const string RootPath = "/pub";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileManagerController"/> class.
-        /// </summary>
-        /// <param name="options">Cosmos options.</param>
-        /// <param name="logger">Logger service.</param>
-        /// <param name="dbContext">Database context.</param>
-        /// <param name="storageContext">Storage context.</param>
-        /// <param name="userManager">User manager context.</param>
-        /// <param name="articleLogic">Article logic.</param>
-        /// <param name="mediator">Shared article queries mediator.</param>
-        /// <param name="hostEnvironment">Host environment.</param>
-        /// <param name="viewRenderService">View rendering service.</param>
-        /// <param name="memoryCache">Memory cache for layout caching.</param>
-        /// <param name="configProvider">Dynamic configuration provider for tenant-aware caching.</param>
-        [ActivatorUtilitiesConstructor]
-        public FileManagerController(
-            IEditorSettings options,
-            ILogger<FileManagerController> logger,
-            ApplicationDbContext dbContext,
-            IStorageContext storageContext,
-            UserManager<IdentityUser> userManager,
-            ArticleEditLogic articleLogic,
-            IMediator mediator,
-            IWebHostEnvironment hostEnvironment,
-            IViewRenderService viewRenderService,
-            ICacheService<Layout> memoryCache,
-            IDynamicConfigurationProvider configProvider)
-            : base(dbContext, userManager, mediator, memoryCache, configProvider)
-        {
-            this.options = options;
-            this.logger = logger;
-            this.storageContext = storageContext;
-
-            this.hostEnvironment = hostEnvironment;
-            this.userManager = userManager;
-            this.articleLogic = articleLogic;
-            this.articleQueries = mediator;
-            this.dbContext = dbContext;
-
-            var htmlUtilities = new HtmlUtilities();
-
-            blobPublicAbsoluteUrl = options.BlobPublicUrl.TrimStart('/');
-
-            this.viewRenderService = viewRenderService;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FileManagerController"/> class.
-        /// </summary>
-        /// <param name="options">Cosmos options.</param>
-        /// <param name="logger">Logger service.</param>
-        /// <param name="dbContext">Database context.</param>
-        /// <param name="storageContext">Storage context.</param>
-        /// <param name="userManager">User manager context.</param>
-        /// <param name="articleLogic">Article logic.</param>
-        /// <param name="mediator">Shared article queries mediator.</param>
-        /// <param name="hostEnvironment">Host environment.</param>
-        /// <param name="viewRenderService">View rendering service.</param>
-        /// <param name="layoutCache">Layout cache service.</param>
-        public FileManagerController(
-            IEditorSettings options,
-            ILogger<FileManagerController> logger,
-            ApplicationDbContext dbContext,
-            IStorageContext storageContext,
-            UserManager<IdentityUser> userManager,
-            ArticleEditLogic articleLogic,
-            IMediator mediator,
-            IWebHostEnvironment hostEnvironment,
-            IViewRenderService viewRenderService,
-            ICacheService<Layout> layoutCache)
-            : base(dbContext, userManager, mediator, layoutCache)
-        {
-            this.options = options;
-            this.logger = logger;
-            this.storageContext = storageContext;
-
-            this.hostEnvironment = hostEnvironment;
-            this.userManager = userManager;
-            this.articleLogic = articleLogic;
-            this.articleQueries = mediator;
-            this.dbContext = dbContext;
-
-            var htmlUtilities = new HtmlUtilities();
-
-            blobPublicAbsoluteUrl = options.BlobPublicUrl.TrimStart('/');
-
-            this.viewRenderService = viewRenderService;
-        }
-
-        /// <summary>
-        /// Gets a list of valid editor extensions.
-        /// </summary>
-        public static string[] ValidEditorExtensions => FileStorageConstants.ValidEditorExtensions;
-
-        /// <summary>
-        /// Gets a list of valid image extensions.
+        /// Gets the file extensions that are considered valid images.
         /// </summary>
         public static string[] ValidImageExtensions => FileStorageConstants.ValidImageExtensions;
 
@@ -170,10 +74,10 @@ namespace Sky.Cms.Controllers
         public static string[] DangerousFileExtensions => FileStorageConstants.DangerousFileExtensions;
 
         /// <summary>
-        /// Fixes the path for the image asset array method.
+        /// Fixes the path so it always starts with a forward slash.
         /// </summary>
         /// <param name="path">Path to fix.</param>
-        /// <returns>fixed path.</returns>
+        /// <returns>Fixed path string.</returns>
         public static string FixPath(string path)
         {
             if (string.IsNullOrEmpty(path))
@@ -186,32 +90,1211 @@ namespace Sky.Cms.Controllers
                 return path;
             }
 
-            return "/" + path.TrimStart('/'); // just in case
+            return "/" + path.TrimStart('/');
         }
 
         /// <summary>
-        /// Gets images for the design editor.
-        /// ///. </summary>
+        /// Gets an array of image asset URLs from the given storage path.
+        /// </summary>
         /// <param name="storageContext">Storage context.</param>
         /// <param name="path">Path to retrieve images.</param>
         /// <param name="exclude">Path to exclude images.</param>
-        /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
+        /// <returns>Array of image URLs.</returns>
         public static async Task<string[]> GetImageAssetArray(IStorageContext storageContext, string path, string exclude)
         {
             var blobs = await storageContext.GetFilesAndDirectories(path);
 
             if (!string.IsNullOrEmpty(exclude))
             {
-                return blobs.Where(w => FileManagerController.ValidImageExtensions.Contains(Path.GetExtension(w.Name).ToLower()) && !w.Path.ToLower().StartsWith(exclude.TrimStart('/').ToLower())).Select(s => new
+                return blobs.Where(w => ValidImageExtensions.Contains(Path.GetExtension(w.Name).ToLower()) && !w.Path.ToLower().StartsWith(exclude.TrimStart('/').ToLower())).Select(s => new
                 {
                     src = FixPath(s.Path),
                 }).ToList().Select(s => s.src).ToArray();
             }
 
-            return blobs.Where(w => FileManagerController.ValidImageExtensions.Contains(Path.GetExtension(w.Name).ToLower())).Select(s => new
+            return blobs.Where(w => ValidImageExtensions.Contains(Path.GetExtension(w.Name).ToLower())).Select(s => new
             {
                 src = FixPath(s.Path),
             }).ToList().Select(s => s.src).ToArray();
+        }
+
+        private readonly ApplicationDbContext dbContext;
+        private readonly IStorageContext storageContext;
+        private readonly IFileOperationsService fileOperations;
+        private readonly IEditorSettings editorSettings;
+        private readonly ILogger<FileManagerController> logger;
+        private readonly IConfiguration configuration;
+        private readonly IMemoryCache memoryCache;
+        private readonly IDynamicConfigurationProvider configProvider;
+        private readonly ArticleEditLogic articleLogic;
+        private readonly IWebHostEnvironment hostEnvironment;
+        private readonly IViewRenderService viewRenderService;
+        private readonly UserManager<IdentityUser> userManager;
+        private readonly IFolderListingService folderListingService;
+        private readonly IFileEntryTitleService titleResolver;
+        private readonly Cosmos.Common.Features.Shared.IMediator articleQueries;
+        private readonly SkyCMS.Drivers.ElFinder.IElFinderDispatcher elFinderMediator;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileManagerController"/> class.
+        /// </summary>
+        /// <param name="dbContext">Database context (required by BaseController).</param>
+        /// <param name="userManager">User manager (required by BaseController).</param>
+        /// <param name="mediator">Mediator (required by BaseController).</param>
+        /// <param name="layoutCache">Layout cache (required by BaseController).</param>
+        /// <param name="storageContext">Storage context for file operations.</param>
+        /// <param name="fileOperations">File operations service.</param>
+        /// <param name="editorSettings">Editor settings (blob URL, flags).</param>
+        /// <param name="logger">Logger.</param>
+        /// <param name="configuration">Configuration.</param>
+        /// <param name="memoryCache">Application memory cache for deleted-article filtering.</param>
+        /// <param name="configProvider">Dynamic configuration provider for tenant-scoped cache keys.</param>
+        [ActivatorUtilitiesConstructor]
+        public FileManagerController(
+            ApplicationDbContext dbContext,
+            UserManager<IdentityUser> userManager,
+            Cosmos.Common.Features.Shared.IMediator mediator,
+            ICacheService<Layout> layoutCache,
+            IStorageContext storageContext,
+            IFileOperationsService fileOperations,
+            IEditorSettings editorSettings,
+            ILogger<FileManagerController> logger,
+            IConfiguration configuration,
+            IMemoryCache memoryCache,
+            SkyCMS.Drivers.ElFinder.IElFinderDispatcher elFinderMediator,
+            IDynamicConfigurationProvider configProvider = null,
+            ArticleEditLogic articleLogic = null,
+            IWebHostEnvironment hostEnvironment = null,
+            IViewRenderService viewRenderService = null,
+            IFolderListingService folderListingService = null,
+            IFileEntryTitleService titleResolver = null)
+            : base(dbContext, userManager, mediator, layoutCache)
+        {
+            this.dbContext = dbContext;
+            this.storageContext = storageContext;
+            this.fileOperations = fileOperations;
+            this.editorSettings = editorSettings;
+            this.logger = logger;
+            this.configuration = configuration;
+            this.memoryCache = memoryCache;
+            this.configProvider = configProvider;
+            this.articleLogic = articleLogic;
+            this.hostEnvironment = hostEnvironment;
+            this.viewRenderService = viewRenderService;
+            this.userManager = userManager;
+            this.articleQueries = mediator;
+            this.titleResolver = titleResolver ?? new FileEntryTitleService(this.dbContext, this.memoryCache, this.configProvider);
+            this.folderListingService = folderListingService ?? new FolderListingService(this.dbContext, this.storageContext, this.titleResolver);
+            this.elFinderMediator = elFinderMediator;
+        }
+
+        /// <summary>
+        /// elFinder connector endpoint. Accepts all elFinder JSON protocol commands via
+        /// GET or POST and dispatches to the appropriate storage operation.
+        /// </summary>
+        /// <returns>JSON response conforming to the elFinder 2.1 API.</returns>
+        [HttpGet]
+        [HttpPost]
+        [Route("FileManager/ElFinderConnector")]
+        public async Task<IActionResult> Connector()
+        {
+            var cmd = GetParam("cmd");
+
+            if (string.IsNullOrEmpty(cmd))
+            {
+                return Json(ElFinderError("errUnknownCmd"));
+            }
+
+            try
+            {
+                return cmd switch
+                {
+                    "open" => await HandleOpenViaCqrsAsync(),
+                    "tree" => await HandleTreeViaCqrsAsync(),
+                    "ls" => await HandleLsViaCqrsAsync(),
+                    "mkdir" => await HandleMkdirViaCqrsAsync(),
+                    "mkfile" => await HandleMkfileViaCqrsAsync(),
+                    "rename" => await HandleRenameViaCqrsAsync(),
+                    "rm" => await HandleRmViaCqrsAsync(),
+                    "upload" => await HandleUploadViaCqrsAsync(),
+                    "get" => await HandleGetViaCqrsAsync(),
+                    "put" => await HandlePutViaCqrsAsync(),
+                    "paste" => await HandlePasteViaCqrsAsync(),
+                    "tmb" => await HandleTmbViaCqrsAsync(),
+                    "info" => await HandleInfoViaCqrsAsync(),
+                    "size" => await HandleSizeViaCqrsAsync(),
+                    "parents" => await HandleParentsViaCqrsAsync(),
+                    "search" => await HandleSearchViaCqrsAsync(),
+                    "file" => await HandleFileViaCqrsAsync(),
+                    "duplicate" => await HandleDuplicateViaCqrsAsync(),
+                    "resize" => await HandleResizeViaCqrsAsync(),
+                    "url" => await HandleUrlViaCqrsAsync(),
+                    "dim" => await HandleDimViaCqrsAsync(),
+                    _ => Json(ElFinderError("errUnknownCmd"))
+                };
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ElFinder connector error handling command '{Cmd}'", cmd);
+                return Json(ElFinderError(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Validates that no display paths in the response contain article IDs (integers) instead of article titles.
+        /// ADR 0040 requires that display paths NEVER show `/pub/articles/{integer}` - they must show `/pub/articles/{title}`.
+        /// This method enforces that contract by throwing an exception if a violation is detected.
+        /// </summary>
+        /// <param name="response">The elFinder response to validate.</param>
+        /// <exception cref="InvalidOperationException">Thrown if any display path contains `/pub/articles/{integer}`.</exception>
+        private void ValidateDisplayPathsForArticles(IElFinderResponse response)
+        {
+            if (response == null)
+            {
+                return;
+            }
+
+            var displayPaths = new List<string>();
+
+            // Extract displayPath fields from various response types
+            if (response is OpenResponse openResponse)
+            {
+                if (openResponse.Cwd?.DisplayPath != null)
+                {
+                    displayPaths.Add(openResponse.Cwd.DisplayPath);
+                }
+
+                if (openResponse.Files != null)
+                {
+                    foreach (var file in openResponse.Files)
+                    {
+                        if (file?.DisplayPath != null)
+                        {
+                            displayPaths.Add(file.DisplayPath);
+                        }
+                    }
+                }
+            }
+            else if (response is TreeResponse treeResponse)
+            {
+                if (treeResponse.Tree != null)
+                {
+                    foreach (var item in treeResponse.Tree)
+                    {
+                        if (item?.DisplayPath != null)
+                        {
+                            displayPaths.Add(item.DisplayPath);
+                        }
+                    }
+                }
+            }
+            else if (response is InfoResponse infoResponse)
+            {
+                if (infoResponse.Files != null)
+                {
+                    foreach (var file in infoResponse.Files)
+                    {
+                        if (file?.DisplayPath != null)
+                        {
+                            displayPaths.Add(file.DisplayPath);
+                        }
+                    }
+                }
+            }
+
+            // Check each display path for violations
+            foreach (var displayPath in displayPaths)
+            {
+                if (string.IsNullOrEmpty(displayPath))
+                {
+                    continue;
+                }
+
+                // Check if path matches /pub/articles/{integer}
+                // Pattern: /pub/articles/ followed by one or more digits, optionally followed by more path segments
+                var segments = displayPath.Split('/', System.StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length >= 3
+                    && segments[0].Equals("pub", System.StringComparison.OrdinalIgnoreCase)
+                    && segments[1].Equals("articles", System.StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(segments[2], out _))
+                {
+                    throw new InvalidOperationException(
+                        $"VIOLATION: DisplayPath contains article ID instead of title: '{displayPath}'. " +
+                        $"ADR 0040 requires display paths to show article titles, not numeric IDs. " +
+                        $"Expected format: /pub/articles/{{ArticleTitle}}, not /pub/articles/{{ArticleId}}. " +
+                        $"This indicates the ElFinderNameResolver failed to resolve the article title.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Serializes a CQRS response using System.Text.Json so that
+        /// <c>[JsonPropertyName]</c> attributes on response DTOs are honoured.
+        /// The MVC pipeline is configured with Newtonsoft + DefaultContractResolver
+        /// (PascalCase), which ignores those attributes; using System.Text.Json here
+        /// ensures the elFinder client receives the expected lowercase keys.
+        /// </summary>
+        private ContentResult JsonCqrs(IElFinderResponse response)
+        {
+            // Validate ADR 0040 contract before serializing
+            ValidateDisplayPathsForArticles(response);
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response, response.GetType());
+            return Content(json, "application/json; charset=utf-8");
+        }
+
+        private static IActionResult MapCqrsError(Controller controller, IElFinderResponse response)
+        {
+            if (response is not ElFinderErrorResponse error)
+            {
+                return null;
+            }
+
+            var code = error.ErrorCode;
+            var mapped = code switch
+            {
+                "errCmdParams" => "errAccess",
+                "errNotFound" => "errOpen",
+                _ => code
+            };
+
+            return controller.Json(new { error = mapped });
+        }
+
+        private async Task<IActionResult> HandleTreeViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var targetPath = string.IsNullOrWhiteSpace(target) ? RootPath : DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new TreeCommand
+            {
+                Target = target,
+                Filter = GetParam("filter"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandleMkdirViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var name = NormalizeElFinderName(GetParam("name"));
+            var path = DecodeHash(target);
+
+            if (path == null || !IsAllowedPath(path))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var hasBatchDirs = Request.Method == "POST" && Request.HasFormContentType && Request.Form.ContainsKey("dirs[]");
+            if (!hasBatchDirs && string.IsNullOrWhiteSpace(name))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(name) && !IsSafeName(name))
+            {
+                return Json(ElFinderError("errInvName"));
+            }
+
+            var uniqueName = (!string.IsNullOrWhiteSpace(name))
+                ? await GetUniqueNameAsync(path, name)
+                : null;
+
+            var batchDirs = hasBatchDirs
+                ? GetParams("dirs[]")
+                    .Select(NormalizeElFinderName)
+                    .Where(d => !string.IsNullOrWhiteSpace(d) && IsSafeName(d))
+                    .ToList()
+                : null;
+
+            var command = new MkdirCommand
+            {
+                Target = target,
+                Name = uniqueName,
+                Dirs = batchDirs,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandleMkfileViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var name = NormalizeElFinderName(GetParam("name"));
+            var path = DecodeHash(target);
+
+            if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            if (!IsSafeName(name))
+            {
+                return Json(ElFinderError("errInvName"));
+            }
+
+            var ext = Path.GetExtension(name).ToLowerInvariant();
+            if (FileStorageConstants.DangerousFileExtensions.Contains(ext))
+            {
+                return Json(ElFinderError("errUploadFile"));
+            }
+
+            var uniqueName = await GetUniqueNameAsync(path, name);
+
+            var command = new MkfileCommand
+            {
+                Target = target,
+                Name = uniqueName,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandleRenameViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var name = NormalizeElFinderName(GetParam("name"));
+            var path = DecodeHash(target);
+
+            if (path == null || !IsAllowedPath(path) || string.IsNullOrWhiteSpace(name))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            if (!IsSafeName(name))
+            {
+                return Json(ElFinderError("errInvName"));
+            }
+
+            var parentPath = GetParentPath(path);
+            var uniqueName = await GetUniqueNameAsync(parentPath, name, path);
+
+            var command = new RenameCommand
+            {
+                Target = target,
+                Name = uniqueName,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandleRmViaCqrsAsync()
+        {
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
+            }
+
+            var removed = new List<string>();
+            var notFound = new List<string>();
+            var notRemoved = new List<string>();
+            var notFoundDetails = new List<RmDiagnosticEntry>();
+            var notRemovedDetails = new List<RmDiagnosticEntry>();
+            foreach (var t in targets)
+            {
+                var command = new RmCommand
+                {
+                    Target = t,
+                    VolumeId = VolumeId,
+                };
+
+                var response = await elFinderMediator.SendAsync(command);
+                if (response is RmResponse rm)
+                {
+                    removed.AddRange(rm.Removed ?? new List<string>());
+                    notFound.AddRange(rm.NotFound ?? new List<string>());
+                    notRemoved.AddRange(rm.NotRemoved ?? new List<string>());
+                    notFoundDetails.AddRange(rm.NotFoundDetails ?? new List<RmDiagnosticEntry>());
+                    notRemovedDetails.AddRange(rm.NotRemovedDetails ?? new List<RmDiagnosticEntry>());
+                }
+            }
+
+            return Json(new
+            {
+                removed = removed.Distinct().ToList(),
+                notFound = notFound.Distinct().ToList(),
+                notRemoved = notRemoved.Distinct().ToList(),
+                notFoundDetails = notFoundDetails.Select(d => new
+                {
+                    hash = d.Hash,
+                    path = d.Path,
+                    reason = d.Reason,
+                    reasonCode = d.ReasonCode,
+                }).ToList(),
+                notRemovedDetails = notRemovedDetails.Select(d => new
+                {
+                    hash = d.Hash,
+                    path = d.Path,
+                    reason = d.Reason,
+                    reasonCode = d.ReasonCode,
+                }).ToList(),
+            });
+        }
+
+        private async Task<IActionResult> HandleOpenViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var targetPath = string.IsNullOrWhiteSpace(target) ? RootPath : DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var isInit = GetParam("init") == "1";
+            var command = new OpenCommand(
+                target: target,
+                init: isInit,
+                volumeId: VolumeId,
+                tree: GetParam("tree") == "1",
+                blobPublicUrl: editorSettings.BlobPublicUrl,
+                tmbUrl: "/FileManager/GetImageThumbnail?target=",
+                rootPath: RootPath);
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            if (response is not OpenResponse openResponse)
+            {
+                return Json(ElFinderError("errOpen"));
+            }
+
+            openResponse.Files = await FilterEntries(openResponse.Files, targetPath);
+            return JsonCqrs(openResponse);
+        }
+
+        private async Task<IActionResult> HandleUploadViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var path = DecodeHash(target);
+            if (path == null || !IsAllowedPath(path))
+            {
+                return Json(ElFinderError("errAccess"));
+            }
+
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var files = Request.Form.Files;
+            if (files == null || files.Count == 0)
+            {
+                return Json(ElFinderError("errUploadNoFiles"));
+            }
+
+            var added = new List<object>();
+            foreach (var file in files)
+            {
+                var normalizedName = NormalizeElFinderName(Path.GetFileName(file.FileName));
+                if (string.IsNullOrWhiteSpace(normalizedName))
+                {
+                    continue;
+                }
+
+                if (!IsSafeName(normalizedName))
+                {
+                    return Json(ElFinderError("errInvName"));
+                }
+
+                var ext = Path.GetExtension(normalizedName).ToLowerInvariant();
+                if (FileStorageConstants.DangerousFileExtensions.Contains(ext))
+                {
+                    return Json(ElFinderError("errUploadFile"));
+                }
+
+                var uniqueName = await GetUniqueNameAsync(path, normalizedName);
+
+                var command = new UploadCommand
+                {
+                    Target = target,
+                    FileStream = file.OpenReadStream(),
+                    Filename = uniqueName,
+                    VolumeId = VolumeId,
+                };
+
+                var response = await elFinderMediator.SendAsync(command);
+                var mappedError = MapCqrsError(this, response);
+                if (mappedError != null)
+                {
+                    return mappedError;
+                }
+
+                if (response is UploadResponse upload)
+                {
+                    added.AddRange(upload.Added);
+                }
+            }
+
+            return Content(
+                System.Text.Json.JsonSerializer.Serialize(new { added }),
+                "application/json; charset=utf-8");
+        }
+
+        private async Task<IActionResult> HandleGetViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new GetCommand
+            {
+                Target = target,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandlePutViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new PutCommand
+            {
+                Target = target,
+                Content = GetParam("content"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandlePasteViaCqrsAsync()
+        {
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var destination = GetParam("dst") ?? GetParam("target");
+            var destinationPath = DecodeHash(destination);
+            var blockedDestination = await DenyDeletedArticlePathForCqrsAsync(destinationPath);
+            if (blockedDestination != null)
+            {
+                return blockedDestination;
+            }
+
+            var blockedSources = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedSources != null)
+            {
+                return blockedSources;
+            }
+
+            var command = new PasteCommand
+            {
+                Target = destination,
+                Sources = string.Join(',', targets),
+                Cut = GetParam("cut"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandleParentsViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new ParentsCommand
+            {
+                Target = target,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            // Use System.Text.Json so [JsonPropertyName] / [JsonIgnore] attributes on
+            // the CQRS response DTOs are honored (the app uses Newtonsoft with
+            // DefaultContractResolver which would otherwise produce PascalCase keys).
+            // Serialize using runtime type so properties from concrete response classes are included.
+            var json = System.Text.Json.JsonSerializer.Serialize(response, response.GetType());
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleSizeViaCqrsAsync()
+        {
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            if (targets.Length == 0)
+            {
+                return Json(new { size = 0L });
+            }
+
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
+            }
+
+            long total = 0;
+            foreach (var target in targets)
+            {
+                var command = new SizeCommand
+                {
+                    Target = target,
+                    VolumeId = VolumeId,
+                };
+
+                var response = await elFinderMediator.SendAsync(command);
+                if (response is SizeResponse sizeResponse)
+                {
+                    total += sizeResponse.Size;
+                }
+            }
+
+            return Json(new { size = total });
+        }
+
+        private async Task<IActionResult> HandleLsViaCqrsAsync()
+        {
+            var intersect = GetParams("intersect[]");
+            var target = GetParam("target");
+            var targetPath = string.IsNullOrWhiteSpace(target) ? RootPath : DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new LsCommand
+            {
+                Target = target,
+                Intersect = intersect,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandleTmbViaCqrsAsync()
+        {
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
+            }
+
+            var command = new TmbCommand
+            {
+                Targets = string.Join(',', targets),
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandleInfoViaCqrsAsync()
+        {
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
+            }
+
+            var command = new InfoCommand
+            {
+                Targets = string.Join(',', targets),
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            return mappedError ?? JsonCqrs(response);
+        }
+
+        private async Task<IActionResult> HandleSearchViaCqrsAsync()
+        {
+            var mimes = GetParams("mimes[]");
+            var target = GetParam("target");
+            var targetPath = string.IsNullOrWhiteSpace(target) ? RootPath : DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new SearchCommand
+            {
+                Query = GetParam("q"),
+                Target = target,
+                Mimes = mimes.Length > 0 ? mimes : null,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleFileViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new FileCommand
+            {
+                Target = target,
+                Download = GetParam("download"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+
+            if (response is FileResponse fileResponse && fileResponse.Stream != null)
+            {
+                if (fileResponse.ForceDownload)
+                {
+                    return File(fileResponse.Stream, fileResponse.ContentType, fileResponse.FileName);
+                }
+
+                Response.Headers["Content-Disposition"] = $"inline; filename=\"{fileResponse.FileName}\"";
+                return File(fileResponse.Stream, fileResponse.ContentType);
+            }
+
+            var mappedError2 = MapCqrsError(this, response);
+            return mappedError2 ?? Json(ElFinderError("errOpen"));
+        }
+
+        private async Task<IActionResult> HandleDuplicateViaCqrsAsync()
+        {
+            var targets = GetParams("targets[]");
+            if (targets.Length == 0)
+            {
+                targets = GetParams("targets");
+            }
+
+            var blockedTargets = await DenyDeletedArticleHashesForCqrsAsync(targets);
+            if (blockedTargets != null)
+            {
+                return blockedTargets;
+            }
+
+            var command = new DuplicateCommand
+            {
+                Targets = string.Join(',', targets),
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleResizeViaCqrsAsync()
+        {
+            _ = int.TryParse(GetParam("width"), out var width);
+            _ = int.TryParse(GetParam("height"), out var height);
+            _ = int.TryParse(GetParam("x"), out var x);
+            _ = int.TryParse(GetParam("y"), out var y);
+            _ = int.TryParse(GetParam("degree"), out var degree);
+            _ = int.TryParse(GetParam("quality"), out var quality);
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new ResizeCommand
+            {
+                Target = target,
+                Mode = GetParam("mode"),
+                Width = width,
+                Height = height,
+                X = x,
+                Y = y,
+                Degree = degree,
+                Quality = quality > 0 ? quality : 100,
+                CopyName = GetParam("copyname"),
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleUrlViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new UrlCommand
+            {
+                Target = target,
+                BlobPublicUrl = editorSettings.BlobPublicUrl,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        private async Task<IActionResult> HandleDimViaCqrsAsync()
+        {
+            var target = GetParam("target");
+            var targetPath = DecodeHash(target);
+            var blocked = await DenyDeletedArticlePathForCqrsAsync(targetPath);
+            if (blocked != null)
+            {
+                return blocked;
+            }
+
+            var command = new DimCommand
+            {
+                Target = target,
+                VolumeId = VolumeId,
+            };
+
+            var response = await elFinderMediator.SendAsync(command);
+            var mappedError = MapCqrsError(this, response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(response);
+            return Content(json, "application/json");
+        }
+
+        // Helpers
+        private async Task<string> GetUniqueNameAsync(string parentPath, string requestedName, string ignorePath = null)
+        {
+            var desired = NormalizeElFinderName(requestedName);
+            if (string.IsNullOrWhiteSpace(desired))
+            {
+                return requestedName;
+            }
+
+            var entries = await storageContext.GetFilesAndDirectories(parentPath);
+            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var normalizedIgnore = string.IsNullOrWhiteSpace(ignorePath) ? null : NormalizePath(ignorePath);
+
+            foreach (var entry in entries)
+            {
+                var entryPath = NormalizePath(entry.Path.StartsWith("/") ? entry.Path : "/" + entry.Path);
+                if (normalizedIgnore != null && string.Equals(entryPath, normalizedIgnore, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(entry.Name))
+                {
+                    existing.Add(entry.Name);
+                }
+
+                var ext = entry.Extension ?? string.Empty;
+                if (!string.IsNullOrEmpty(ext) && !ext.StartsWith('.'))
+                {
+                    ext = "." + ext;
+                }
+
+                if (!entry.IsDirectory && !string.IsNullOrWhiteSpace(entry.Name) && !string.IsNullOrEmpty(ext))
+                {
+                    existing.Add(entry.Name + ext);
+                }
+
+                var fileNameFromPath = Path.GetFileName(entryPath);
+                if (!string.IsNullOrWhiteSpace(fileNameFromPath))
+                {
+                    existing.Add(fileNameFromPath);
+                }
+            }
+
+            if (!existing.Contains(desired))
+            {
+                return desired;
+            }
+
+            var desiredExt = Path.GetExtension(desired);
+            var desiredBaseName = Path.GetFileNameWithoutExtension(desired);
+
+            if (string.IsNullOrEmpty(desiredExt))
+            {
+                desiredBaseName = desired;
+            }
+
+            for (var i = 1; i < 10000; i++)
+            {
+                var candidate = $"{desiredBaseName}-{i}{desiredExt}";
+                if (!existing.Contains(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return desired;
+        }
+
+        private static string EncodeHash(string path) =>
+            ElFinderHashEncoder.Encode(NormalizePath(path));
+
+        private static string DecodeHash(string hash) =>
+            ElFinderHashEncoder.Decode(hash) is string decoded ? NormalizePath(decoded) : null;
+
+        private static string NormalizePath(string path)
+        {
+            var normalized = FileEntryPathHelper.NormalizePath(path);
+            return normalized == "/" ? RootPath : normalized;
+        }
+
+        private static string GetParentPath(string path)
+        {
+            var trimmed = NormalizePath(path);
+            var idx = trimmed.LastIndexOf('/');
+            if (idx <= 0)
+            {
+                return "/";
+            }
+
+            return trimmed.Substring(0, idx);
+        }
+
+        private static string GetParentHash(string path)
+        {
+            var parent = GetParentPath(path);
+            if (parent == "/" || string.IsNullOrEmpty(parent))
+            {
+                return null;
+            }
+
+            return EncodeHash(parent);
+        }
+
+        private static bool IsAllowedPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return false;
+            }
+
+            return FileEntryPathHelper.IsPathWithinRoot(path, RootPath);
+        }
+
+        private static bool IsSafeName(string name)
+        {
+            return !name.Contains('/') && !name.Contains('\\') && !name.Contains("..") && !name.Contains('\0');
+        }
+
+        private static string NormalizeElFinderName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return name;
+            }
+
+            var normalized = name.Trim().ToLowerInvariant().Replace(' ', '-');
+
+            // Collapse repeated dashes to keep generated names readable.
+            while (normalized.Contains("--", StringComparison.Ordinal))
+            {
+                normalized = normalized.Replace("--", "-", StringComparison.Ordinal);
+            }
+
+            return normalized;
+        }
+
+        private static object ElFinderError(string message)
+        {
+            return new { error = message };
+        }
+
+        private string GetParam(string key)
+        {
+            if (Request.Method == "POST" && Request.HasFormContentType)
+            {
+                var formVal = Request.Form[key].ToString();
+                if (!string.IsNullOrEmpty(formVal))
+                {
+                    return formVal;
+                }
+            }
+
+            return Request.Query[key].ToString();
+        }
+
+        private string[] GetParams(string key)
+        {
+            if (Request.Method == "POST" && Request.HasFormContentType)
+            {
+                var vals = Request.Form[key];
+                if (vals.Count > 0)
+                {
+                    return vals.ToArray();
+                }
+            }
+
+            return Request.Query[key].ToArray();
+        }
+
+        private async Task<IActionResult> DenyDeletedArticlePathForCqrsAsync(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            var normalizedPath = NormalizePath(path);
+            var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
+            if (!await this.titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
+            {
+                return null;
+            }
+
+            return Json(ElFinderError("errAccess"));
+        }
+
+        private async Task<IActionResult> DenyDeletedArticleHashesForCqrsAsync(IEnumerable<string> hashes)
+        {
+            if (hashes == null)
+            {
+                return null;
+            }
+
+            foreach (var hash in hashes)
+            {
+                var path = DecodeHash(hash);
+                var blocked = await DenyDeletedArticlePathForCqrsAsync(path);
+                if (blocked != null)
+                {
+                    return blocked;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -253,7 +1336,7 @@ namespace Sky.Cms.Controllers
 
             if (target.Trim('/').StartsWith("pub/articles"))
             {
-                if (PublicFileEntryHelper.TryGetArticleNumber(target, out var articleNumber))
+                if (FileEntryPathHelper.TryGetArticleNumber(target, out var articleNumber))
                 {
                     var article = await dbContext.ArticleCatalog
                         .Select(s => new { s.ArticleNumber, s.Title })
@@ -267,7 +1350,7 @@ namespace Sky.Cms.Controllers
 
             if (target.Trim('/').StartsWith("pub/templates"))
             {
-                if (PublicFileEntryHelper.TryGetTemplateId(target, out var templateId))
+                if (FileEntryPathHelper.TryGetTemplateId(target, out var templateId))
                 {
                     var template = await dbContext.Templates
                         .Select(s => new { s.Id, s.Title })
@@ -296,49 +1379,10 @@ namespace Sky.Cms.Controllers
             ViewData["pageNo"] = pageNo;
             ViewData["pageSize"] = pageSize;
 
-            // GET FULL OR ABSOLUTE PATH
-            //
-            // List<FileManagerEntry> model = await _storageContext.GetFolderContents(target);
-            IQueryable<FileManagerEntry> query;
-            if (target.Trim('/') == "pub/articles")
-            {
-                var model = dbContext.ArticleCatalog.Select(s => new FileManagerEntry()
-                {
-                    Created = s.Updated.DateTime,
-                    CreatedUtc = s.Updated.UtcDateTime,
-                    Extension = string.Empty,
-                    HasDirectories = true,
-                    IsDirectory = true,
-                    Modified = s.Updated.DateTime,
-                    ModifiedUtc = s.Updated.UtcDateTime,
-                    Name = s.Title,
-                    Path = $"/pub/articles/{s.ArticleNumber}",
-                    Size = 0
-                });
-                query = model.AsQueryable();
-            }
-            else if (target.Trim('/') == "pub/templates")
-            {
-                var model = dbContext.Templates.Select(s => new FileManagerEntry()
-                {
-                    Created = DateTimeOffset.UtcNow.DateTime,
-                    CreatedUtc = DateTimeOffset.UtcNow.DateTime,
-                    Extension = string.Empty,
-                    HasDirectories = true,
-                    IsDirectory = true,
-                    Modified = DateTimeOffset.UtcNow.DateTime,
-                    ModifiedUtc = DateTimeOffset.UtcNow.DateTime,
-                    Name = s.Title,
-                    Path = $"/pub/templates/{s.Id}",
-                    Size = 0
-                });
-                query = model.AsQueryable();
-            }
-            else
-            {
-                var model = await storageContext.GetFilesAndDirectories(target);
-                query = model.AsQueryable();
-            }
+            // GET FULL OR ABSOLUTE PATH ï¿½ delegated to the shared FolderListingService.
+            var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
+            var entries = await this.folderListingService.GetEntriesAsync(target, tenantDomain);
+            IQueryable<FileManagerEntry> query = entries.AsQueryable();
 
             if (imagesOnly)
             {
@@ -417,85 +1461,11 @@ namespace Sky.Cms.Controllers
             if (directoryOnly)
             {
                 var ddata = query.Where(w => w.IsDirectory).ToList();
-
-                if (this.options.UseModernFileExplorer)
-                {
-                    return View("~/Views/Shared/FileExplorer/IndexModern.cshtml", ddata);
-                }
-
-                return View(ddata);
+                return View("~/Views/Shared/FileExplorer/Index.cshtml", ddata);
             }
 
             var data = query.Skip(pageNo * pageSize).Take(pageSize).ToList();
-
-            if (this.options.UseModernFileExplorer)
-            {
-                return View("~/Views/Shared/FileExplorer/IndexModern.cshtml", data);
-            }
-
             return View("~/Views/Shared/FileExplorer/Index.cshtml", data);
-        }
-
-        /// <summary>
-        /// Moves items to a new folder.
-        /// </summary>
-        /// <param name="model">Post model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Copy(MoveFilesViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            try
-            {
-                // Validate that the destination folder exists
-                var destinationExists = await storageContext.BlobExistsAsync(model.Destination + "/folder.stubxx");
-                if (!destinationExists)
-                {
-                    return BadRequest($"Destination folder '{model.Destination}' does not exist.");
-                }
-
-                foreach (var item in model.Items)
-                {
-                    string dest;
-
-                    if (item.EndsWith("/"))
-                    {
-                        // copying a directory
-                        var folderExists = await storageContext.BlobExistsAsync(item + "folder.stubxx");
-                        if (!folderExists)
-                        {
-                            return BadRequest($"Source folder '{item}' does not exist.");
-                        }
-
-                        dest = model.Destination + item.TrimEnd('/').Split('/').LastOrDefault();
-                    }
-                    else
-                    {
-                        // copying a file
-                        var fileExists = await storageContext.BlobExistsAsync(item);
-                        if (!fileExists)
-                        {
-                            return BadRequest($"Source file '{item}' does not exist.");
-                        }
-
-                        var fileName = Path.GetFileName(item);
-                        dest = model.Destination + "/" + fileName;
-                    }
-
-                    await storageContext.CopyAsync(item, dest);
-                }
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-
-            return Ok();
         }
 
         /// <summary>
@@ -508,68 +1478,6 @@ namespace Sky.Cms.Controllers
         public async Task<IActionResult> GetImageAssets(string path, string exclude = "")
         {
             return Json(await GetImageAssetArray(storageContext, path, exclude));
-        }
-
-        /// <summary>
-        /// Moves items to a new folder.
-        /// </summary>
-        /// <param name="model">Move file post model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Move(MoveFilesViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            try
-            {
-                // Validate that the destination folder exists
-                var destinationExists = await storageContext.BlobExistsAsync(model.Destination + "/folder.stubxx");
-                if (!destinationExists)
-                {
-                    return BadRequest($"Destination folder '{model.Destination}' does not exist.");
-                }
-
-                foreach (var item in model.Items)
-                {
-                    string dest;
-
-                    if (item.EndsWith("/"))
-                    {
-                        // moving a directory
-                        var folderExists = await storageContext.BlobExistsAsync(item + "folder.stubxx");
-                        if (!folderExists)
-                        {
-                            return BadRequest($"Source folder '{item}' does not exist.");
-                        }
-
-                        dest = model.Destination + item.TrimEnd('/').Split('/').LastOrDefault();
-                        await storageContext.MoveFolderAsync(item, dest);
-                    }
-                    else
-                    {
-                        // moving a file
-                        var fileExists = await storageContext.BlobExistsAsync(item);
-                        if (!fileExists)
-                        {
-                            return BadRequest($"Source file '{item}' does not exist.");
-                        }
-
-                        var fileName = Path.GetFileName(item);
-                        dest = model.Destination + "/" + fileName;
-                        await storageContext.MoveFileAsync(item, dest);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e.Message);
-            }
-
-            return Ok();
         }
 
         /// <summary>
@@ -623,7 +1531,7 @@ namespace Sky.Cms.Controllers
                 return Json(ReturnSimpleErrorMessage($"The file '{file.FileName}' is not a valid image file."));
             }
 
-            var blobEndPoint = options.BlobPublicUrl.TrimEnd('/');
+            var blobEndPoint = this.editorSettings.BlobPublicUrl.TrimEnd('/');
             var directory = parsed.Path.TrimEnd('/');
             var fileName = file.FileName.ToLower();
 
@@ -637,7 +1545,7 @@ namespace Sky.Cms.Controllers
                 return Json(ReturnSimpleErrorMessage($"The file '{file.FileName}' could not be loaded as an image."));
             }
 
-            string relativePath = UrlEncode($"{directory}/{fileName}");
+            string relativePath = FileEntryPathHelper.UrlEncodePath($"{directory}/{fileName}");
 
             var contentType = MimeTypeMap.GetMimeType(extension);
 
@@ -712,15 +1620,15 @@ namespace Sky.Cms.Controllers
 
             var totalChunks = DivideByAndRoundUp(uploadLenth, contentSize);
 
-            var blobName = UrlEncode(uploadName);
+            var blobName = FileEntryPathHelper.UrlEncodePath(uploadName);
 
-            var relativePath = UrlEncode(patchArray[0].TrimEnd('/'));
+            var relativePath = FileEntryPathHelper.UrlEncodePath(patchArray[0].TrimEnd('/'));
 
             if (!string.IsNullOrEmpty(patchArray[1]))
             {
                 var dpath = Path.GetDirectoryName(patchArray[1]).Replace('\\', '/'); // Convert windows paths to unix style.
-                var epath = UrlEncode(dpath);
-                relativePath += "/" + UrlEncode(epath);
+                var epath = FileEntryPathHelper.UrlEncodePath(dpath);
+                relativePath += "/" + FileEntryPathHelper.UrlEncodePath(epath);
             }
 
             var extension = Path.GetExtension(blobName).ToLower();
@@ -756,7 +1664,7 @@ namespace Sky.Cms.Controllers
                 if (part != "/pub")
                 {
                     var folder = part.Trim('/');
-                    await storageContext.CreateFolder(folder);
+                    await fileOperations.CreateFolderAsync(folder);
                 }
             }
 
@@ -807,7 +1715,7 @@ namespace Sky.Cms.Controllers
             }
 
             // Reconstruct blob path the same way the PATCH action does.
-            var basePath = UrlEncode(parts[0].TrimEnd('/'));
+            var basePath = FileEntryPathHelper.UrlEncodePath(parts[0].TrimEnd('/'));
             var subDir = parts.Length > 1 ? parts[1].TrimStart('/') : string.Empty;
 
             string blobPath;
@@ -816,16 +1724,16 @@ namespace Sky.Cms.Controllers
                 var dpath = Path.GetDirectoryName(subDir)?.Replace('\\', '/') ?? string.Empty;
                 if (!string.IsNullOrEmpty(dpath))
                 {
-                    blobPath = $"{basePath}/{UrlEncode(dpath)}/{UrlEncode(fileName)}";
+                    blobPath = $"{basePath}/{FileEntryPathHelper.UrlEncodePath(dpath)}/{FileEntryPathHelper.UrlEncodePath(fileName)}";
                 }
                 else
                 {
-                    blobPath = $"{basePath}/{UrlEncode(fileName)}";
+                    blobPath = $"{basePath}/{FileEntryPathHelper.UrlEncodePath(fileName)}";
                 }
             }
             else
             {
-                blobPath = $"{basePath}/{UrlEncode(fileName)}";
+                blobPath = $"{basePath}/{FileEntryPathHelper.UrlEncodePath(fileName)}";
             }
 
             storageContext.DeleteFile(blobPath);
@@ -856,12 +1764,12 @@ namespace Sky.Cms.Controllers
 
             var extension = Path.GetExtension(file.FileName).ToLower();
             var directory = $"/pub/{entityType}/{id}/";
-            var blobEndPoint = options.BlobPublicUrl.TrimEnd('/');
+            var blobEndPoint = this.editorSettings.BlobPublicUrl.TrimEnd('/');
             var fileName = $"{Guid.NewGuid().ToString().ToLower()}{extension}";
 
             var image = await Image.LoadAsync(file.OpenReadStream());
 
-            string relativePath = UrlEncode(directory + fileName);
+            string relativePath = FileEntryPathHelper.UrlEncodePath(directory + fileName);
 
             var contentType = MimeTypeMap.GetMimeType(Path.GetExtension(fileName));
 
@@ -963,7 +1871,7 @@ namespace Sky.Cms.Controllers
             // Get information about the chunk we are on.
             var ms = new MemoryStream(Encoding.UTF8.GetBytes(metaData));
 
-            var serializer = new JsonSerializer();
+            var serializer = new Newtonsoft.Json.JsonSerializer();
             FileUploadMetaData fileMetaData;
             using (var streamReader = new StreamReader(ms))
             {
@@ -1127,116 +2035,6 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        ///     Encodes a URL.
-        /// </summary>
-        /// <param name="path">URL path to encode.</param>
-        /// <returns>Returns a URL Encoded string.</returns>
-        /// <remarks>
-        ///     For more information, see
-        ///     <a
-        ///         href="https://docs.microsoft.com/en-us/rest/api/storageservices/Naming-and-Referencing-Containers--Blobs--and-Metadata#blob-names">
-        ///         documentation
-        ///     </a>
-        ///     .
-        /// </remarks>
-        public string UrlEncode(string path)
-        {
-            if (!ModelState.IsValid)
-            {
-                return string.Empty;
-            }
-
-            var parts = ParsePath(path);
-            var urlEncodedParts = new List<string>();
-            foreach (var part in parts)
-            {
-                urlEncodedParts.Add(HttpUtility.UrlEncode(part.Replace(" ", "-")).Replace("%40", "@"));
-            }
-
-            return TrimPathPart(string.Join('/', urlEncodedParts));
-        }
-
-        /// <summary>
-        /// Creates a new file in a given folder.
-        /// </summary>
-        /// <param name="model">New file post model.</param>
-        /// <returns>IActionResult。</returns>
-        public async Task<IActionResult> NewFile(NewFileViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (!ValidEditorExtensions.Contains(Path.GetExtension(model.FileName).ToLower()))
-            {
-                return BadRequest("Invalid file extension.");
-            }
-
-            var relativePath = string.Join('/', ParsePath(model.ParentFolder, model.FileName));
-            relativePath = UrlEncode(relativePath);
-
-            // Check for duplicate entries
-            var existingEntries = await storageContext.GetFilesAndDirectories(model.ParentFolder);
-
-            if (!existingEntries.Exists(f => f.Name.Equals(model.FileName)))
-            {
-                using var memoryStream = new MemoryStream();
-                await memoryStream.WriteAsync(Encoding.UTF8.GetBytes(string.Empty));
-                await storageContext.AppendBlob(memoryStream, new FileUploadMetaData()
-                {
-                    ChunkIndex = 0,
-                    ContentType = MimeTypeMap.GetMimeType(Path.GetExtension(model.FileName)),
-                    FileName = model.FileName,
-                    RelativePath = relativePath,
-                    TotalChunks = 1,
-                    TotalFileSize = memoryStream.Length,
-                    UploadUid = Guid.NewGuid().ToString()
-                });
-            }
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// New folder action.
-        /// </summary>
-        /// <param name="model">New folder model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> NewFolder(NewFolderViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (string.IsNullOrWhiteSpace(model.FolderName))
-            {
-                return BadRequest("Folder name is required.");
-            }
-
-            // Validate against path traversal attempts
-            if (model.FolderName.Contains("..") || model.ParentFolder?.Contains("..") == true)
-            {
-                return BadRequest("Path traversal attempts are not allowed.");
-            }
-
-            var relativePath = string.Join('/', ParsePath(model.ParentFolder, model.FolderName));
-            relativePath = UrlEncode(relativePath);
-
-            // Check for duplicate entries
-            var existingEntries = await storageContext.GetFilesAndDirectories(model.ParentFolder);
-
-            if (!existingEntries.Exists(f => f.Name.Equals(model.FolderName)))
-            {
-                _ = storageContext.CreateFolder(relativePath);
-            }
-
-            return Ok();
-        }
-
-        /// <summary>
         /// Download a file.
         /// </summary>
         /// <param name="path">Path to the file to retrieve.</param>
@@ -1261,7 +2059,7 @@ namespace Sky.Cms.Controllers
                     return NotFound();
                 }
 
-                var blob = await storageContext.GetFileAsync(path);
+                var blob = await fileOperations.GetFileAsync(path);
 
                 if (blob == null)
                 {
@@ -1285,191 +2083,6 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
-        ///     Creates a new entry, using relative path-ing, and normalizes entry name to lower case.
-        /// </summary>
-        /// <param name="target">File or folder target.</param>
-        /// <param name="entry">File manager entry model.</param>
-        /// <returns><see cref="JsonResult" />(<see cref="FileManagerEntry" />).</returns>
-        public async Task<ActionResult> Create(string target, FileManagerEntry entry)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            target = target == null ? string.Empty : target;
-            entry.Path = target;
-            entry.Name = UrlEncode(entry.Name);
-            entry.Extension = entry.Extension;
-
-            if (!entry.Path.StartsWith("/pub", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return Unauthorized("New folders can't be created here using this tool. Please select the 'pub' folder and try again.");
-            }
-
-            // Check for duplicate entries
-            var existingEntries = await storageContext.GetFilesAndDirectories(target);
-
-            if (existingEntries != null && existingEntries.Any())
-            {
-                var results = existingEntries.FirstOrDefault(f => f.Name.Equals(entry.Name));
-
-                if (results != null)
-                {
-                    // var i = 1;
-                    var originalName = entry.Name;
-                    for (var i = 0; i < existingEntries.Count; i++)
-                    {
-                        entry.Name = originalName + "-" + (i + 1);
-                        if (!existingEntries.Any(f => f.Name.Equals(entry.Name)))
-                        {
-                            break;
-                        }
-
-                        i++;
-                    }
-                }
-            }
-
-            var relativePath = string.Join('/', ParsePath(entry.Path, entry.Name));
-            relativePath = UrlEncode(relativePath);
-
-            var fileManagerEntry = storageContext.CreateFolder(relativePath);
-
-            return Json(fileManagerEntry);
-        }
-
-        /// <summary>
-        ///     Deletes a folder, normalizes entry to lower case.
-        /// </summary>
-        /// <param name="model">Item to delete using relative path.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(DeleteBlobItemsViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            foreach (var item in model.Paths)
-            {
-                if (item.EndsWith('/'))
-                {
-                    await storageContext.DeleteFolderAsync(item.TrimEnd('/'));
-                }
-                else
-                {
-                    storageContext.DeleteFile(item);
-                }
-            }
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Rename a blob item.
-        /// </summary>
-        /// <param name="model">Post view model.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Rename(RenameBlobViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            if (!string.IsNullOrEmpty(model.ToBlobName))
-            {
-                // Note rules:
-                // 1. New folder names must end with slash.
-                // 2. New file names must never end with a slash.
-                if (model.FromBlobName.EndsWith("/"))
-                {
-                    if (!model.ToBlobName.EndsWith("/"))
-                    {
-                        model.ToBlobName = model.ToBlobName + "/";
-                    }
-                }
-                else
-                {
-                    model.ToBlobName = model.ToBlobName.TrimEnd('/');
-                }
-
-                var target = $"{model.BlobRootPath.TrimEnd('/')}/{model.FromBlobName}";
-
-                var dest = $"{model.BlobRootPath.TrimEnd('/')}/{UrlEncode(model.ToBlobName)}";
-
-                // Skip move operation if source and destination are the same
-                if (!target.Equals(dest, StringComparison.OrdinalIgnoreCase))
-                {
-                    await storageContext.MoveFileAsync(target, dest);
-                }
-            }
-
-            return Ok();
-        }
-
-        /// <summary>
-        ///     Parses out a path into a string array.
-        /// </summary>
-        /// <param name="pathParts">URL path as an arrayto parse out.</param>
-        /// <returns>Processed path as an array.</returns>
-        public string[] ParsePath(params string[] pathParts)
-        {
-            if (!ModelState.IsValid)
-            {
-                return new string[] { string.Empty };
-            }
-
-            if (pathParts == null)
-            {
-                return new string[] { };
-            }
-
-            var paths = new List<string>();
-
-            foreach (var part in pathParts)
-            {
-                if (!string.IsNullOrEmpty(part))
-                {
-                    var split = part.Split("/");
-                    foreach (var p in split)
-                    {
-                        if (!string.IsNullOrEmpty(p))
-                        {
-                            var path = TrimPathPart(p);
-                            if (!string.IsNullOrEmpty(path))
-                            {
-                                paths.Add(path);
-                            }
-                        }
-                    }
-                }
-            }
-
-            return paths.ToArray();
-        }
-
-        /// <summary>
-        ///     Trims leading and trailing slashes and white space from a path part.
-        /// </summary>
-        /// <param name="part">URL path part to trim.</param>
-        /// <returns>Returns trimmed path.</returns>
-        public string TrimPathPart(string part)
-        {
-            if (string.IsNullOrEmpty(part))
-            {
-                return string.Empty;
-            }
-
-            return part.Trim('/').Trim('\\').Trim();
-        }
-
-        /// <summary>
         /// Edit code for a file.
         /// </summary>
         /// <param name="path">URL or path to code.</param>
@@ -1485,7 +2098,7 @@ namespace Sky.Cms.Controllers
             {
                 var extension = Path.GetExtension(path.ToLower());
 
-                var filter = options.AllowedFileTypes.Split(',');
+                var filter = this.editorSettings.AllowedFileTypes.Split(',');
                 var editorField = new EditorField
                 {
                     FieldId = "Content",
@@ -1538,7 +2151,7 @@ namespace Sky.Cms.Controllers
                     await stream.CopyToAsync(memoryStream);
                 }
 
-                var metaData = await storageContext.GetFileAsync(path);
+                var metaData = await fileOperations.GetFileAsync(path);
 
                 ViewData["PageTitle"] = metaData.Name;
                 ViewData[" Published"] = DateTimeOffset.FromFileTime(metaData.ModifiedUtc.Ticks);
@@ -1582,7 +2195,7 @@ namespace Sky.Cms.Controllers
 
             var extension = Path.GetExtension(model.Path.ToLower());
 
-            var filter = options.AllowedFileTypes.Split(',');
+            var filter = this.editorSettings.AllowedFileTypes.Split(',');
             var editorField = new EditorField
             {
                 FieldId = "Content",
@@ -1805,11 +2418,20 @@ namespace Sky.Cms.Controllers
 
             var extension = Path.GetExtension(target.ToLower());
 
-            var filter = new[] { ".png", ".jpg", ".gif", ".jpeg", ".webp" };
+            var filter = new[] { ".png", ".jpg", ".gif", ".jpeg", ".webp", ".svg" };
 
             if (!filter.Contains(extension))
             {
                 throw new NotSupportedException($"Image type {extension} not supported.");
+            }
+
+            if (extension == ".svg")
+            {
+                // For SVGs, return the original file since they are vector-based and scale without losing quality
+                using var svgstream = await storageContext.GetStreamAsync(target);
+                using var memStream = new MemoryStream();
+                await svgstream.CopyToAsync(memStream);
+                return File(memStream.ToArray(), "image/svg+xml");
             }
 
             using var stream = await storageContext.GetStreamAsync(target);
@@ -1845,21 +2467,15 @@ namespace Sky.Cms.Controllers
                 return Json(string.Empty);
             }
 
-            if (string.IsNullOrEmpty(path) || path.Trim('/') == string.Empty)
+            if (!FileEntryPathHelper.IsUploadPathSafe(path))
             {
                 return Unauthorized("Cannot upload here. Please select the 'pub' folder first, or sub-folder below that, then try again.");
-            }
-
-            // Validate against path traversal attempts
-            if (path.Contains(".."))
-            {
-                return Unauthorized("Path traversal attempts are not allowed.");
             }
 
             // Get information about the chunk we are on.
             var ms = new MemoryStream(Encoding.UTF8.GetBytes(metaData));
 
-            var serializer = new JsonSerializer();
+            var serializer = new Newtonsoft.Json.JsonSerializer();
             FileUploadMetaData fileMetaData;
             using (var streamReader = new StreamReader(ms))
             {
@@ -1873,14 +2489,13 @@ namespace Sky.Cms.Controllers
             }
 
             // Validate against path traversal in metadata
-            if (fileMetaData.RelativePath?.Contains("..") == true || fileMetaData.FileName?.Contains("..") == true)
+            if (!FileEntryPathHelper.IsUploadPathSafe(fileMetaData.RelativePath) || fileMetaData.FileName?.Contains("..") == true)
             {
                 return Unauthorized("Path traversal attempts are not allowed.");
             }
 
             // Validate against dangerous file extensions
-            var fileExtension = Path.GetExtension(fileMetaData.FileName).ToLower();
-            if (DangerousFileExtensions.Contains(fileExtension))
+            if (FileEntryPathHelper.IsDangerousExtension(fileMetaData.FileName))
             {
                 return Json(new FileUploadResult
                 {
@@ -1896,7 +2511,7 @@ namespace Sky.Cms.Controllers
                 throw new ArgumentException("No file found to upload.");
             }
 
-            var blobName = UrlEncode(fileMetaData.FileName);
+            var blobName = FileEntryPathHelper.UrlEncodePath(fileMetaData.FileName);
             fileMetaData.ContentType = MimeTypeMap.GetMimeType(Path.GetExtension(fileMetaData.FileName));
 
             fileMetaData.FileName = blobName;
@@ -1909,11 +2524,11 @@ namespace Sky.Cms.Controllers
             {
                 if (i == 0 && parts[i] != "pub")
                 {
-                    return Unauthorized("Must upload folders and files under /pub directory.");
+                    return Unauthorized("Must upload folders and files under /pub directory."); // guarded above by IsUploadPathSafe; defensive fallback
                 }
 
                 part = $"{part}/{parts[i]}";
-                await storageContext.CreateFolder(part.Trim('/'));
+                await fileOperations.CreateFolderAsync(part.Trim('/'));
             }
 
             await using (var stream = file.OpenReadStream())
@@ -2074,6 +2689,105 @@ namespace Sky.Cms.Controllers
             }
 
             return nodes;
+        }
+
+        /// <summary>
+        /// Filters and projects open-listing entries using shared title-resolution rules.
+        /// </summary>
+        /// <param name="objects">The elFinder objects to process.</param>
+        /// <param name="listedParentPath">The opened parent path for this listing.</param>
+        /// <param name="cancellationToken">A token used to cancel database and filtering operations.</param>
+        /// <returns>A filtered list with synchronized friendly <c>Name</c> and <c>DisplayPath</c>.</returns>
+        private async Task<List<ElFinderObject>> FilterEntries(
+            List<ElFinderObject> objects,
+            string? listedParentPath,
+            CancellationToken cancellationToken = default)
+        {
+            if (objects == null || objects.Count == 0)
+            {
+                return new List<ElFinderObject>();
+            }
+
+            var listingPath = NormalizePath(string.IsNullOrWhiteSpace(listedParentPath) ? RootPath : listedParentPath);
+            var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
+
+            var mappings = objects.Select(o =>
+            {
+                var canonicalPath = NormalizePath(string.IsNullOrWhiteSpace(o.RealPath) ? o.DisplayPath : o.RealPath);
+                return new
+                {
+                    Object = o,
+                    Entry = new FileManagerEntry
+                    {
+                        Path = canonicalPath,
+                        DisplayPath = NormalizePath(string.IsNullOrWhiteSpace(o.DisplayPath) ? canonicalPath : o.DisplayPath),
+                        Name = o.Name,
+                        IsDirectory = string.Equals(o.Mime, "directory", StringComparison.OrdinalIgnoreCase),
+                        Size = o.Size,
+                        ContentType = o.Mime,
+                    },
+                };
+            }).ToList();
+
+            var projected = await this.titleResolver.ProjectFriendlyEntriesAsync(
+                mappings.Select(m => m.Entry),
+                listingPath,
+                tenantDomain,
+                cancellationToken);
+            var projectedByPath = projected.ToDictionary(
+                p => NormalizePath(p.Path),
+                p => p,
+                StringComparer.OrdinalIgnoreCase);
+
+            var listedEntries = await this.folderListingService.GetEntriesAsync(listingPath, tenantDomain);
+            var listedProjected = await this.titleResolver.ProjectFriendlyEntriesAsync(
+                listedEntries,
+                listingPath,
+                tenantDomain,
+                cancellationToken);
+            var listedByPath = listedProjected.ToDictionary(
+                p => NormalizePath(p.Path),
+                p => p,
+                StringComparer.OrdinalIgnoreCase);
+
+            var model = new List<ElFinderObject>();
+
+            foreach (var mapping in mappings)
+            {
+                var entryPath = NormalizePath(mapping.Entry.Path);
+                if (!projectedByPath.TryGetValue(entryPath, out var projectedEntry))
+                {
+                    continue;
+                }
+
+                mapping.Entry.Name = projectedEntry.Name;
+                mapping.Entry.DisplayPath = projectedEntry.DisplayPath;
+
+                if (IsDirectChildPath(entryPath, listingPath)
+                    && listedByPath.TryGetValue(entryPath, out var listedEntry))
+                {
+                    mapping.Entry.Name = listedEntry.Name;
+                    mapping.Entry.DisplayPath = listedEntry.DisplayPath;
+                }
+
+                mapping.Object.Name = mapping.Entry.Name;
+                mapping.Object.DisplayPath = mapping.Entry.DisplayPath;
+                model.Add(mapping.Object);
+            }
+
+            return model;
+        }
+
+        private static bool IsDirectChildPath(string candidatePath, string parentPath)
+        {
+            var normalizedCandidate = NormalizePath(candidatePath);
+            var normalizedParent = NormalizePath(parentPath);
+            if (string.Equals(normalizedCandidate, normalizedParent, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return string.Equals(GetParentPath(normalizedCandidate), normalizedParent, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

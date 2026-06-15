@@ -42,7 +42,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Dim_ResponseKey_IsLowercaseDim()
         {
             var command = new DimCommand { Target = LogoPngHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -59,7 +59,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Dim_Value_IsWxHFormat()
         {
             var command = new DimCommand { Target = LogoPngHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var dim = AssertStringProperty(doc.RootElement, "dim");
@@ -76,7 +76,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Dim_OnePxImage_Returns1x1()
         {
             var command = new DimCommand { Target = LogoPngHash };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var dim = AssertStringProperty(doc.RootElement, "dim");
@@ -88,7 +88,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Dim_MissingTarget_ReturnsError()
         {
             var command = new DimCommand { Target = null };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -101,7 +101,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Dim_InvalidHash_ReturnsError()
         {
             var command = new DimCommand { Target = "not_a_real_hash" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(

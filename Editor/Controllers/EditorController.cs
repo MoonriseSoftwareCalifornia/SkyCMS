@@ -42,6 +42,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Features.Articles.Delete;
     using Sky.Editor.Features.Articles.GetEditable;
     using Sky.Editor.Features.Articles.Inventory;
+    using Sky.Editor.Features.Articles.Restore;
     using Sky.Editor.Features.Articles.Save;
     using Sky.Editor.Features.Articles.Trash;
     using Sky.Editor.Features.Templates.Get;
@@ -370,31 +371,23 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Gets the article trash list.
         /// </summary>
-        /// <returns>Trask list.</returns>
+        /// <returns>Trash list.</returns>
         [Authorize(Roles = "Administrators, Editors, Authors")]
         public async Task<IActionResult> GetTrashList()
         {
-            if (dbContext.Database.IsCosmos())
-            {
-                var query = "SELECT c.ArticleNumber, c.Title, c.UrlPath, MAX(c.Published) as Published, MAX(c.Updated) as Updated FROM Articles c WHERE c.StatusCode = 2 GROUP BY c.ArticleNumber, c.Title, c.UrlPath";
-                var client = dbContext.Database.GetCosmosClient();
-                var queryService = new CosmosDbService(client, dbContext.Database.GetCosmosDatabaseId(), "Articles");
-
-                return Json(await queryService.QueryWithGroupByAsync(query));
-            }
-
             var deletedStatusCode = (int)StatusCodeEnum.Deleted;
-            var data = await dbContext.Articles
+            var data = await dbContext.ArticleCatalog
                 .Where(w => w.StatusCode == deletedStatusCode)
-                .GroupBy(g => new { g.ArticleNumber, g.Title, g.UrlPath })
                 .Select(s => new
                 {
-                    ArticleNumber = s.Key.ArticleNumber,
-                    Title = s.Key.Title,
-                    UrlPath = s.Key.UrlPath,
-                    Published = s.Max(m => m.Published),
-                    Updated = s.Max(m => m.Updated)
-                }).ToListAsync();
+                    ArticleNumber = s.ArticleNumber,
+                    Title = s.Title,
+                    UrlPath = s.UrlPath,
+                    Published = s.Published,
+                    Updated = s.Updated
+                })
+                .AsNoTracking()
+                .ToListAsync();
 
             return Json(data);
         }
@@ -632,8 +625,10 @@ namespace Sky.Cms.Controllers
         /// <summary>
         /// Restore an article from trash.
         /// </summary>
-        /// <param name="id">Article ID to recover from trash.</param>
+        /// <param name="id">Article number to recover from trash.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrators, Editors, Authors")]
         public async Task<IActionResult> Restore(int id)
         {
@@ -643,7 +638,16 @@ namespace Sky.Cms.Controllers
                 return invalidModelState;
             }
 
-            await articleLogic.RestoreArticle(id, await GetUserId());
+            var result = await mediator.SendAsync<CommandResult<Unit>>(new RestoreArticleCommand
+            {
+                ArticleNumber = id,
+                UserId = await GetUserId()
+            });
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage ?? "Failed to restore article.");
+            }
 
             return Ok();
         }

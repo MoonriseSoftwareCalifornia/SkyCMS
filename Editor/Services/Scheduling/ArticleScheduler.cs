@@ -14,15 +14,25 @@ namespace Sky.Editor.Services.Scheduling
     using AspNetCore.Identity.FlexDb;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Features.Articles.Shared;
+    using Cosmos.Common.Services.BlogPublishing;
+    using Cosmos.Common.Services.Caching;
     using Cosmos.DynamicConfig;
     using Cosmos.EmailServices;
+    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
+    using Sky.Cms.Services;
     using Sky.Editor.Infrastructure.Time;
+    using Sky.Editor.Services.Authors;
+    using Sky.Editor.Services.Catalog;
+    using Sky.Editor.Services.EditorSettings;
+    using Sky.Editor.Services.Html;
+    using Sky.Editor.Services.Publishing;
 
     /// <inheritdoc/>
     /// <remarks>
@@ -239,10 +249,17 @@ namespace Sky.Editor.Services.Scheduling
                     activeVersion.VersionNumber,
                     activeVersion.Published);
 
-                // ✅ Publish active version FIRST
-                var factory = scopedServices.GetRequiredService<ITenantArticleLogicFactory>();
-                var articleLogic = await factory.CreateForTenantAsync(domainName);
-                await articleLogic.PublishArticle(activeVersion.Id, activeVersion.Published);
+                if (isMultiTenantEditor)
+                {
+                    // Publish active version using tenant-bound services (no request-scoped DbContext resolution)
+                    await PublishActiveVersionAsync(activeVersion, dbContext, storageContext, domainName, scopedServices);
+                }
+                else
+                {
+                    var factory = scopedServices.GetRequiredService<ITenantArticleLogicFactory>();
+                    var articleLogic = await factory.CreateForTenantAsync(domainName);
+                    await articleLogic.PublishArticle(activeVersion.Id, activeVersion.Published);
+                }
 
                 // ✅ THEN unpublish old versions (after successful publication)
                 var oldVersions = versions.Where(v =>
@@ -277,6 +294,53 @@ namespace Sky.Editor.Services.Scheduling
                     articleNumber,
                     domainName);
             }
+        }
+
+        private async Task PublishActiveVersionAsync(
+            Article activeVersion,
+            ApplicationDbContext dbContext,
+            IStorageContext storageContext,
+            string domainName,
+            IServiceProvider scopedServices)
+        {
+            var memoryCache = scopedServices.GetRequiredService<IMemoryCache>();
+            var editorSettings = new EditorSettings(
+                scopedServices.GetRequiredService<IConfiguration>(),
+                dbContext,
+                null,
+                memoryCache,
+                scopedServices,
+                domainName);
+
+            var authorInfoService = new AuthorInfoService(
+                dbContext,
+                scopedServices.GetRequiredService<ICacheService<AuthorInfo>>());
+
+            var publishingService = new PublishingService(
+                dbContext,
+                storageContext,
+                editorSettings,
+                scopedServices.GetRequiredService<ILogger<PublishingService>>(),
+                scopedServices.GetRequiredService<IHttpContextAccessor>(),
+                authorInfoService,
+                clock,
+                new BlogStreamRenderingService(dbContext),
+                scopedServices.GetRequiredService<IViewRenderService>(),
+                scopedServices,
+                new NoOpPublishingProgressReporter(),
+                new ArticleCatalogQueryService(dbContext, editorSettings.PublisherUrl, editorSettings.BlobPublicUrl));
+
+            var publishTimestamp = activeVersion.Published ?? clock.UtcNow;
+            activeVersion.Published = publishTimestamp;
+            await publishingService.PublishAsync(activeVersion);
+
+            var catalogService = new CatalogService(
+                dbContext,
+                scopedServices.GetRequiredService<IArticleHtmlService>(),
+                clock,
+                scopedServices.GetRequiredService<ILogger<CatalogService>>());
+
+            await catalogService.UpsertAsync(activeVersion, default);
         }
 
         /// <summary>

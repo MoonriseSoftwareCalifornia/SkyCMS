@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using MimeTypes;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
@@ -16,7 +15,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// a FileStreamResult rather than serialising to JSON.
 /// See Docs/commands/file.md.
 /// </summary>
-public class FileCommandHandler : IRequestHandler<FileCommand, IElFinderResponse>
+public class FileCommandHandler : IElFinderHandler<FileCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -25,7 +24,7 @@ public class FileCommandHandler : IRequestHandler<FileCommand, IElFinderResponse
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(FileCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(FileCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Target))
         {

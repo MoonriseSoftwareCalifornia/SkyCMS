@@ -1,4 +1,3 @@
-using MediatR;
 using Cosmos.BlobService;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
@@ -10,7 +9,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// <summary>
 /// Handles the "paste" command: copies or moves files/folders.
 /// </summary>
-public class PasteCommandHandler : IRequestHandler<PasteCommand, IElFinderResponse>
+public class PasteCommandHandler : IElFinderHandler<PasteCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -19,7 +18,7 @@ public class PasteCommandHandler : IRequestHandler<PasteCommand, IElFinderRespon
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(PasteCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(PasteCommand request, CancellationToken cancellationToken)
     {
         try
         {

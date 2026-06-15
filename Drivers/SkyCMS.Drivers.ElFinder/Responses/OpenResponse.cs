@@ -31,7 +31,8 @@ namespace SkyCMS.Drivers.ElFinder.Responses
         /// Gets or sets optional API version information.
         /// </summary>
         [JsonPropertyName("api")]
-        public string Api { get; set; } = "2.1049";
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Api { get; set; }
 
         /// <summary>
         /// Gets or sets optional upload size limit.
@@ -88,6 +89,15 @@ namespace SkyCMS.Drivers.ElFinder.Responses
         [JsonPropertyName("isroot")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int IsRoot { get; set; }
+
+        /// <summary>
+        /// Gets or sets the hash of the volume root. Required on all directory objects
+        /// (both root and non-root) so the elFinder client can resolve which volume
+        /// the directory belongs to.
+        /// </summary>
+        [JsonPropertyName("root")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Root { get; set; }
 
         /// <summary>
         /// Gets or sets the parent hash (folder path).
@@ -188,5 +198,24 @@ namespace SkyCMS.Drivers.ElFinder.Responses
         [JsonPropertyName("url")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string Url { get; set; }
+
+        /// <summary>
+        /// Gets or sets the canonical storage path for this entry (e.g. <c>/pub/articles/42</c>).
+        /// This value is always canonical and stable, and is used for all backend operations.
+        /// Only emitted when the display name differs from the raw storage name (i.e. for
+        /// article/template folders whose numeric/GUID name has been substituted with a title).
+        /// </summary>
+        [JsonPropertyName("realPath")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string RealPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the user-facing display path for this entry (e.g. <c>/pub/articles/My Article</c>).
+        /// This value is presentation-only and may diverge from <see cref="RealPath"/> for
+        /// article/template title substitutions.
+        /// </summary>
+        [JsonPropertyName("displayPath")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string DisplayPath { get; set; }
     }
 }

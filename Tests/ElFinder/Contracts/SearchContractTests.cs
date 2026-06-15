@@ -68,7 +68,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Search_ResponseKey_IsLowercaseFiles()
         {
             var command = new SearchCommand { Query = "logo" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(
@@ -85,7 +85,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Search_Files_IsArray()
         {
             var command = new SearchCommand { Query = "logo" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var files = AssertArrayProperty(doc.RootElement, "files");
@@ -97,7 +97,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Search_FileObjects_HaveRequiredFields()
         {
             var command = new SearchCommand { Query = "logo" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
@@ -112,7 +112,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Search_NoMatch_ReturnsEmptyArray()
         {
             var command = new SearchCommand { Query = "nomatch" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var files = AssertArrayProperty(doc.RootElement, "files");
@@ -126,7 +126,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Search_DirectoryResult_HasDirectoryMime()
         {
             var command = new SearchCommand { Query = "images" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
@@ -142,7 +142,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Search_EmptyQuery_ReturnsError()
         {
             var command = new SearchCommand { Query = "" };
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(

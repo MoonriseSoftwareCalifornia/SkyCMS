@@ -5,6 +5,7 @@
 
 namespace Sky.Tests.ElFinder.Contracts
 {
+    using System;
     using System.Text.Json;
     using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -32,7 +33,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public void Setup()
         {
             var adapter = BuildAdapter();
-            _handler = new OpenCommandHandler(adapter.Object);
+            _handler = new OpenCommandHandler(adapter.Object, BuildPassThroughNameResolver());
         }
 
         // ------------------------------------------------------------------ //
@@ -43,8 +44,8 @@ namespace Sky.Tests.ElFinder.Contracts
         [Description("Response must contain 'cwd', 'files', and 'api' keys.")]
         public async Task Open_Response_HasRequiredTopLevelKeys()
         {
-            var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var command = new OpenCommand(target: ImagesHash, init: true);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out _),
@@ -52,15 +53,15 @@ namespace Sky.Tests.ElFinder.Contracts
             Assert.IsTrue(doc.RootElement.TryGetProperty("files", out _),
                 "Contract violation: 'files' key missing from open response.");
             Assert.IsTrue(doc.RootElement.TryGetProperty("api", out _),
-                "Contract violation: 'api' key missing from open response.");
+                "Contract violation: 'api' key missing from init=1 open response.");
         }
 
         [TestMethod]
         [Description("'api' must be '2.1049' — the protocol version the client expects.")]
         public async Task Open_Api_IsVersion21()
         {
-            var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var command = new OpenCommand(target: ImagesHash, init: true);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var api = AssertStringProperty(doc.RootElement, "api");
@@ -74,7 +75,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_Files_IsArray()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             AssertArrayProperty(doc.RootElement, "files");
@@ -89,7 +90,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_Cwd_IsValidElFinderObject()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd),
@@ -106,7 +107,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_Cwd_MimeIsDirectory()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             doc.RootElement.TryGetProperty("cwd", out var cwd);
@@ -124,7 +125,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_FilesEntries_AreValidElFinderObjects()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var files = AssertArrayProperty(doc.RootElement, "files");
@@ -141,7 +142,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_NoPascalCaseKeysLeak()
         {
             var command = new OpenCommand(target: ImagesHash);
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             foreach (var forbiddenKey in new[] { "Cwd", "Files", "Api", "UplMaxSize", "VolumeId" })
@@ -162,7 +163,7 @@ namespace Sky.Tests.ElFinder.Contracts
         public async Task Open_InvalidHash_ReturnsErrorResponse()
         {
             var command = new OpenCommand(target: "not_a_valid_hash");
-            var response = await _handler.Handle(command, default);
+            var response = await _handler.HandleAsync(command, default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Invalid hash must return ElFinderErrorResponse.");
@@ -184,11 +185,66 @@ namespace Sky.Tests.ElFinder.Contracts
                 It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(false);
 
-            var handler = new OpenCommandHandler(adapter.Object);
-            var response = await handler.Handle(new OpenCommand(target: ImagesHash), default);
+            var handler = new OpenCommandHandler(adapter.Object, BuildPassThroughNameResolver());
+            var response = await handler.HandleAsync(new OpenCommand(target: ImagesHash), default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Access denied must return ElFinderErrorResponse.");
+        }
+
+        // ------------------------------------------------------------------ //
+        //  Article-path: title substitution and dual-path contract             //
+        // ------------------------------------------------------------------ //
+
+        [TestMethod]
+        [Description("When opening /pub/articles/42, the cwd 'name' must be the article title, not the number.")]
+        public async Task Open_ArticleFolder_CwdNameIsArticleTitle()
+        {
+            var adapter = BuildAdapterWithArticles();
+            var resolver = BuildElFinderNameResolver(ArticleNumber, ArticleTitle);
+            var handler = new OpenCommandHandler(adapter.Object, resolver);
+
+            var response = await handler.HandleAsync(new OpenCommand(target: ArticleFolderHash), default);
+            using var doc = SerializeResponse(response);
+
+            Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd),
+                "Response must contain 'cwd'.");
+            var name = AssertStringProperty(cwd, "name");
+            Assert.AreEqual(ArticleTitle, name,
+                $"cwd.name must be the article title '{ArticleTitle}', not the raw number '{ArticleNumber}'. " +
+                $"Check ElFinderNameResolver and OpenCommandHandler.BuildElFinderObjectAsync.");
+        }
+
+        [TestMethod]
+        [Description("When opening /pub/articles, the article-folder child 'name' must be the article title.")]
+        public async Task Open_ArticlesRootFolder_ChildNameIsArticleTitle()
+        {
+            var adapter = BuildAdapterWithArticles();
+            var resolver = BuildElFinderNameResolver(ArticleNumber, ArticleTitle);
+            var handler = new OpenCommandHandler(adapter.Object, resolver);
+
+            var response = await handler.HandleAsync(new OpenCommand(target: ArticlesRootHash), default);
+            using var doc = SerializeResponse(response);
+
+            var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
+            var found = false;
+            foreach (var entry in files.EnumerateArray())
+            {
+                if (!entry.TryGetProperty("name", out var nameProp))
+                {
+                    continue;
+                }
+
+                if (string.Equals(nameProp.GetString(), ArticleTitle, StringComparison.Ordinal))
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(found,
+                $"No file entry with name='{ArticleTitle}' found in 'files'. " +
+                $"Article folder names under /pub/articles/{{number}} must use the article title.");
         }
     }
 }

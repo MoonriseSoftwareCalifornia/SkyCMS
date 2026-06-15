@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="~/lib/grapesjsui/stylesheets/demos.css?v3.1">
 <link href="~/lib/grapick/grapick.min.css" rel="stylesheet" />
 <link href="~/lib/grapesjs/build_20241212/ccms-designer.css" rel="stylesheet" />
-<link href="~/lib/filepond/filepond.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.css" rel="stylesheet" integrity="sha384-TclCA2vTcjELuMbsLCt9deOlUllk1dZV0XmFcwlYit0UgFaqL7EVKvGOgdfzRg3M" crossorigin="anonymous" />
 <script src="~/lib/grapesjsui/js/toastr.min.js"></script>
 <script asp-append-version="true" src="~/lib/grapesjs/grapes.min.js"></script>
 <script asp-append-version="true" src="~/lib/grapesjs/skycms-grapes-plugins.js"></script>
@@ -365,19 +365,23 @@
 
     let editor; // Define globally as is used by methods.
 
-    window.onload = () => {
-        editor = grapesjs.init({
-            // Indicate where to init the editor. You can also pass an HTMLElement
-            container: '#gjs',
-            // Get the content for the canvas directly from the element
-            // As an alternative we could use: `components: '<h1>Hello World Component!</h1>,
-            // Size of the editor
-            height: "100%",
-            width: 'auto',
-            canvas: {
-                styles: grapesjs__canvas__styles,
-                scripts: grapesjs__canvas__scripts
-            },
+    if (!window.ccmsGrapesJsEditorInitialized) {
+        window.ccmsGrapesJsEditorInitialized = true;
+        window.addEventListener('load', () => {
+            editor = grapesjs.init({
+                // Indicate where to init the editor. You can also pass an HTMLElement
+                container: '#gjs',
+                fromElement: true,
+                showOffsets: true,
+                // Get the content for the canvas directly from the element
+                // As an alternative we could use: `components: '<h1>Hello World Component!</h1>,
+                // Size of the editor
+                height: "100%",
+                width: 'auto',
+                canvas: {
+                    styles: grapesjs__canvas__styles,
+                    scripts: grapesjs__canvas__scripts
+                },
             assetManager: {
                 upload: cosmos__designerUploadEndpoint,
                 embedAsBase64: false,
@@ -821,6 +825,7 @@
             var openBlocksBtn = editor.Panels.getButton('views', 'open-blocks');
             openBlocksBtn && openBlocksBtn.set('active', 1);
 
+        });
         });
     }
 

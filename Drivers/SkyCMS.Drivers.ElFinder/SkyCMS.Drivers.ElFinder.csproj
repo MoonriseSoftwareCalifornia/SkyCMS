@@ -27,4 +27,8 @@
     <ProjectReference Include="..\..\Cosmos.BlobService\Cosmos.BlobService.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+
 </Project>

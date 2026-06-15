@@ -8,6 +8,7 @@
 namespace Sky.Editor.Models.GrapesJs
 {
     using System.Collections.Generic;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Represents a project in GrapesJs.
@@ -35,6 +36,7 @@ namespace Sky.Editor.Models.GrapesJs
         /// <summary>
         /// Gets or sets the project pages.
         /// </summary>
+        [JsonProperty("pages")]
         public List<Page> Pages { get; set; } = new List<Page>();
     }
 
@@ -64,6 +66,7 @@ namespace Sky.Editor.Models.GrapesJs
         /// <summary>
         /// Gets or sets the page component (HTML content).
         /// </summary>
+        [JsonProperty("component")]
         public string Component { get; set; } = string.Empty;
     }
 }

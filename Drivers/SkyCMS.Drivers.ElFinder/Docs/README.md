@@ -20,7 +20,7 @@ This document set exists for four reasons:
 
 ## Architecture
 
-Commands reach the connector via `ElFinderConnectorController`. Two dispatch paths exist:
+Commands reach the connector via `FileManagerController`. Two dispatch paths exist:
 
 - **Legacy path** — inline handler methods on the controller (all 15 commands have this).
 - **CQRS path** — MediatR command/handler pairs in this library, opt-in per command via config or `__cqrs` query param.

@@ -63,6 +63,15 @@ namespace Cosmos.Common.Data
         }
 
         /// <summary>
+        /// Gets the name of the database provider.
+        /// </summary>
+        /// <returns></returns>
+        public string? GetDatabaseProviderName()
+        {
+            return this.Database.ProviderName;
+        }
+
+        /// <summary>
         /// Gets the current tenant domain captured at DbContext creation time.
         /// </summary>
         /// <remarks>

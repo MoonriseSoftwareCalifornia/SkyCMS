@@ -17,15 +17,21 @@ namespace Sky.Editor.Features.Articles.Delete
     using Cosmos.Common.Features.Shared;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using Sky.Editor.Services.Catalog;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Publishing;
 
     /// <summary>
-    /// Handler for DeleteArticleCommand. Soft-deletes an article and removes artifacts.
+    /// Handler for DeleteArticleCommand. Moves an article to the trash (soft delete).
+    /// Sets <c>StatusCode = Deleted</c> on all versions, removes page entries,
+    /// updates the catalog entry with Deleted status, and deletes the static HTML artifact.
+    /// Blob assets are intentionally preserved so the article can be recovered.
+    /// See also: <see cref="Sky.Editor.Features.Articles.Trash.TrashArticleHandler"/>.
     /// </summary>
     public class DeleteArticleHandler : ICommandHandler<DeleteArticleCommand, CommandResult<Unit>>
     {
         private readonly ApplicationDbContext dbContext;
+        private readonly ICatalogService catalogService;
         private readonly IPublishingService publishingService;
         private readonly IStorageContext storageContext;
         private readonly IEditorSettings settings;
@@ -35,18 +41,21 @@ namespace Sky.Editor.Features.Articles.Delete
         /// Initializes a new instance of the <see cref="DeleteArticleHandler"/> class.
         /// </summary>
         /// <param name="dbContext">The database context.</param>
+        /// <param name="catalogService">The catalog service.</param>
         /// <param name="publishingService">The publishing service.</param>
         /// <param name="storageContext">The storage context.</param>
         /// <param name="settings">The editor settings.</param>
         /// <param name="logger">The logger.</param>
         public DeleteArticleHandler(
             ApplicationDbContext dbContext,
+            ICatalogService catalogService,
             IPublishingService publishingService,
             IStorageContext storageContext,
             IEditorSettings settings,
             ILogger<DeleteArticleHandler> logger)
         {
             this.dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            this.catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
             this.publishingService = publishingService ?? throw new ArgumentNullException(nameof(publishingService));
             this.storageContext = storageContext ?? throw new ArgumentNullException(nameof(storageContext));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -101,8 +110,10 @@ namespace Sky.Editor.Features.Articles.Delete
 
                 await dbContext.SaveChangesAsync(cancellationToken);
 
-                // Clean up catalog and artifacts
-                await DeleteCatalogEntry(command.ArticleNumber, cancellationToken);
+                // Update catalog entry to Deleted state (preserve the row for trash listing)
+                var latestArticle = articles.OrderByDescending(a => a.VersionNumber).First();
+                await catalogService.UpsertAsync(latestArticle, cancellationToken);
+
                 DeleteStaticWebpage(urlPath);
                 await publishingService.WriteTocAsync();
 
@@ -138,17 +149,6 @@ namespace Sky.Editor.Features.Articles.Delete
 
             filePath = filePath.Equals("root", StringComparison.OrdinalIgnoreCase) ? "/index.html" : filePath;
             storageContext.DeleteFile(filePath);
-        }
-
-        private async Task DeleteCatalogEntry(int articleNumber, CancellationToken cancellationToken)
-        {
-            var catalogEntry = await dbContext.ArticleCatalog
-                .FirstOrDefaultAsync(f => f.ArticleNumber == articleNumber, cancellationToken);
-            if (catalogEntry != null)
-            {
-                dbContext.ArticleCatalog.Remove(catalogEntry);
-                await dbContext.SaveChangesAsync(cancellationToken);
-            }
         }
     }
 }

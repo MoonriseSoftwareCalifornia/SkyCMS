@@ -200,7 +200,7 @@ namespace Sky.Editor.Data.Logic
         /// </summary>
         /// <param name="articleNumber">Target article number.</param>
         /// <returns>Awaitable task.</returns>
-        [Obsolete("Use TrashArticle instead. This method will be removed in version 3.0.", error: false)]
+        [Obsolete("Use DeleteArticleHandler via mediator (DeleteArticleCommand) instead. This method will be removed in version 3.0.", error: false)]
         public async Task DeleteArticle(int articleNumber)
         {
             var doomed = await DbContext.Articles
@@ -227,7 +227,12 @@ namespace Sky.Editor.Data.Logic
             DbContext.Pages.RemoveRange(doomedPages);
 
             await DbContext.SaveChangesAsync();
-            await DeleteCatalogEntry(articleNumber);
+
+            // Upsert catalog with Deleted status so the article appears in trash
+            // (matches DeleteArticleHandler behavior; do not delete the catalog row)
+            var latest = doomed.OrderByDescending(a => a.VersionNumber).First();
+            await catalogService.UpsertAsync(latest);
+
             DeleteStaticWebpage(url);
             await publishingService.WriteTocAsync();
         }
@@ -238,6 +243,7 @@ namespace Sky.Editor.Data.Logic
         /// <param name="articleNumber">Article number.</param>
         /// <param name="userId">User restoring the article (unused currently).</param>
         /// <returns>Awaitable task.</returns>
+        [Obsolete("Use RestoreArticleHandler via mediator (RestoreArticleCommand) instead. This method will be removed in version 3.0.", error: false)]
         public async Task RestoreArticle(int articleNumber, string userId)
         {
             var redeemed = await DbContext.Articles
@@ -248,11 +254,11 @@ namespace Sky.Editor.Data.Logic
             }
 
             var title = redeemed.First().Title.ToLower();
-            var deletedStatusCode = (int)StatusCodeEnum.Deleted;
+            var activeStatusCode = (int)StatusCodeEnum.Active;
             if (await DbContext.Articles.Where(a =>
                     a.Title.ToLower() == title &&
                     a.ArticleNumber != articleNumber &&
-                    a.StatusCode == deletedStatusCode).CosmosAnyAsync())
+                    a.StatusCode == activeStatusCode).CosmosAnyAsync())
             {
                 var newTitle = title + " (" + await DbContext.Articles.CountAsync() + ")";
                 var url = slugService.Normalize(newTitle);
@@ -273,17 +279,11 @@ namespace Sky.Editor.Data.Logic
                 }
             }
 
-            var sample = redeemed.First();
-            DbContext.ArticleCatalog.Add(new CatalogEntry
-            {
-                ArticleNumber = sample.ArticleNumber,
-                Published = null,
-                Status = "Active",
-                Title = sample.Title,
-                Updated = DateTimeOffset.UtcNow,
-                UrlPath = sample.UrlPath
-            });
             await DbContext.SaveChangesAsync();
+
+            // Upsert catalog via service so lifecycle state and StatusCode are correctly set
+            var latest = redeemed.OrderByDescending(a => a.VersionNumber).First();
+            await catalogService.UpsertAsync(latest);
         }
 
         /// <summary>

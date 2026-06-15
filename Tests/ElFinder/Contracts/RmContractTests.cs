@@ -37,7 +37,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RmCommandHandler(adapter.Object);
             var command = new RmCommand { Target = LogoPngHash };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             AssertArrayProperty(doc.RootElement, "removed");
@@ -58,7 +58,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RmCommandHandler(adapter.Object);
             var command = new RmCommand { Target = LogoPngHash };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var removed = AssertArrayProperty(doc.RootElement, "removed", minLength: 1);
@@ -89,7 +89,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RmCommandHandler(adapter.Object);
             var command = new RmCommand { Target = $"{LogoPngHash},{docsHash}" };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var removed = AssertArrayProperty(doc.RootElement, "removed", minLength: 2);
@@ -108,7 +108,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RmCommandHandler(adapter.Object);
             var command = new RmCommand { Target = missingHash };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var notFound = AssertArrayProperty(doc.RootElement, "notFound", minLength: 1);
@@ -137,7 +137,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RmCommandHandler(adapter.Object);
             var command = new RmCommand { Target = LogoPngHash };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var notRemoved = AssertArrayProperty(doc.RootElement, "notRemoved", minLength: 1);
@@ -160,7 +160,7 @@ namespace Sky.Tests.ElFinder.Contracts
         {
             var handler = new RmCommandHandler(BuildAdapter().Object);
             var command = new RmCommand { Target = string.Empty };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
 
             Assert.IsTrue(response is ElFinderErrorResponse,
                 "Missing target must return ElFinderErrorResponse.");
@@ -181,7 +181,7 @@ namespace Sky.Tests.ElFinder.Contracts
 
             var handler = new RmCommandHandler(adapter.Object);
             var command = new RmCommand { Target = LogoPngHash };
-            var response = await handler.Handle(command, default);
+            var response = await handler.HandleAsync(command, default);
             using var doc = SerializeResponse(response);
 
             var removed = AssertArrayProperty(doc.RootElement, "removed");

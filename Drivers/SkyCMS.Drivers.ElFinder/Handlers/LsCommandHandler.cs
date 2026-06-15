@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cosmos.BlobService;
-using MediatR;
 using SkyCMS.Drivers.ElFinder.Adapters;
 using SkyCMS.Drivers.ElFinder.Commands;
 using SkyCMS.Drivers.ElFinder.Responses;
@@ -17,7 +16,7 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 /// for conflict detection before rename/paste operations.
 /// See Docs/commands/ls.md.
 /// </summary>
-public class LsCommandHandler : IRequestHandler<LsCommand, IElFinderResponse>
+public class LsCommandHandler : IElFinderHandler<LsCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
 
@@ -26,7 +25,7 @@ public class LsCommandHandler : IRequestHandler<LsCommand, IElFinderResponse>
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
     }
 
-    public async Task<IElFinderResponse> Handle(LsCommand request, CancellationToken cancellationToken)
+    public async Task<IElFinderResponse> HandleAsync(LsCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Target))
         {

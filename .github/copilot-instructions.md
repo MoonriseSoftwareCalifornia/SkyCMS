@@ -6,8 +6,13 @@
 - When updating EF queries, preserve cross-provider compatibility for SQLite, MySQL, and MS SQL; avoid provider-specific behavior.
 - All LINQ queries throughout the application must support Cosmos DB as a database provider. Cosmos DB does not support joins between different entity types (cross-container joins). Queries must be rewritten to avoid Join operations — use sequential queries with client-side correlation instead.
 - All LINQ queries used with Entity Framework must avoid inline casts (e.g., `(int)SomeEnum.Value`) inside lambda/predicate expressions. The Cosmos DB EF Core provider cannot translate inline casts within expression trees. Always pre-compute enum-to-int conversions (and similar casts) into local variables before the query, then reference those variables in the predicate. This applies solution-wide to maintain cross-provider compatibility (MS SQL, MySQL, SQLite, and Cosmos DB).
+- In this codebase, ArticleNumber is a Cosmos DB partition key; query patterns should preserve equality filtering on ArticleNumber for efficient cross-provider-compatible access.
 - Provide clear in-chat progress updates in small steps while working so the user can tell the task is still active.
 - Prefer vendor-neutral AI naming (e.g., AiSettings, AiProxyController) instead of Copilot-branded names in the codebase.
+- In multi-tenant mode, background scheduler logic must not resolve ApplicationDbContext from DI/HTTP request context; iterate tenant connections and run per-tenant using explicit connection-based DbContext creation.
+
+## Content Management Guidelines
+- For elFinder article paths, update Name to article title only when listing direct children under `/pub/articles`; for deeper paths like `/pub/articles/{id}/sub-folder`, keep Name unchanged and only adjust DisplayPath.
 
 ## Testing Guidelines
 - Create richer Copilot integration tests with varied request types; a single simple hello-world style test is not sufficient.
@@ -85,3 +90,4 @@ Provide concise, actionable guidance for AI coding agents working in this reposi
 ## Editor Functionality
 - When rewiring visual editor iframe/autosave save paths, editable content regions should route to `parent.saveEditorRegion` rather than `SavePageProperties`.
 - For the blog banner image widget, ensure that banner image changes save immediately on upload or delete rather than waiting for a manual save.
+- Prefer DRY implementation by sharing article display-path/title filtering logic between `FileManagerController.FilterEntries` and `VsCodeController.GetFilesList` rather than maintaining parallel logic.

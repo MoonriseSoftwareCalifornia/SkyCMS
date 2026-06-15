@@ -1,0 +1,36 @@
+// <copyright file="20260602120000_AddCatalogEntryStatusCode_SqlServer.cs" company="Moonrise Software, LLC">
+// Copyright (c) Moonrise Software, LLC. All rights reserved.
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+// See https://github.com/CWALabs/SkyCMS
+// for more information concerning the license and the contributors participating to this project.
+// </copyright>
+
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Sky.Editor.Data.Migrations.SqlServer
+{
+    /// <inheritdoc />
+    public partial class AddCatalogEntryStatusCode_SqlServer : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<int>(
+                name: "StatusCode",
+                table: "ArticleCatalog",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "StatusCode",
+                table: "ArticleCatalog");
+        }
+    }
+}

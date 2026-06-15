@@ -1,4 +1,4 @@
-﻿// <copyright file="Program.cs" company="Moonrise Software, LLC">
+// <copyright file="Program.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -74,6 +74,7 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
+using Cosmos.Editor.Services;
 using SkyCMS.Drivers.ElFinder;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
@@ -318,6 +319,8 @@ builder.Services.AddTransient<ISmtpEmailTester, SmtpEmailTester>();
 builder.Services.AddScoped<ISetupService, SetupService>();
 builder.Services.AddScoped<ILayoutFamilyService, LayoutFamilyService>();
 builder.Services.AddScoped<IStorageContext, StorageContext>();
+builder.Services.AddSingleton<ILoginAssetBlobClient, LoginAssetBlobClient>();
+builder.Services.AddSingleton<ILoginAssetBootstrapService, LoginAssetBootstrapService>();
 builder.Services.AddScoped<IEditorSettings, EditorSettings>();
 builder.Services.AddScoped<ICopilotProxyOptionsService, CopilotProxyOptionsService>();
 builder.Services.AddScoped<IAiProviderModelCatalogService, AiProviderModelCatalogService>();
@@ -327,6 +330,10 @@ builder.Services.AddScoped<IAiLayoutContextService, AiLayoutContextService>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();
 builder.Services.AddScoped<ILayoutVersioningService, LayoutVersioningService>();
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
+builder.Services.AddScoped<IFileEntryTitleService, FileEntryTitleService>();
+builder.Services.AddScoped<IFolderListingService, FolderListingService>();
+builder.Services.AddScoped<IContentCatalogService, ContentCatalogService>();
+builder.Services.AddScoped<IFileOperationsService, FileOperationsService>();
 
 // Register shared query services (Common namespace - used by both Editor and Publisher)
 builder.Services.AddScoped<IArticleCatalogQueryService>(sp =>
@@ -344,6 +351,9 @@ builder.Services.AddCosmosMediator();
 
 // Register elFinder CQRS driver services (MediatR handlers + storage adapter)
 // Current controller flow stays legacy by default; CQRS paths are opt-in.
+// ElFinderNameResolver must be registered BEFORE AddElFinderDriver so it
+// wins the TryAddScoped for IElFinderNameResolver.
+builder.Services.AddScoped<SkyCMS.Drivers.ElFinder.Adapters.IElFinderNameResolver, Sky.Cms.Services.ElFinderNameResolver>();
 builder.Services.AddElFinderDriver();
 
 // Auto-register all command and query handlers from Editor and Common assemblies

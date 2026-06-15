@@ -158,6 +158,12 @@ namespace Cosmos.Common.Data
         Task<bool> IsConfigured();
 
         /// <summary>
+        /// Gets the name of the database provider.
+        /// </summary>
+        /// <returns>Database provider name.</returns>
+        string GetDatabaseProviderName();
+
+        /// <summary>
         /// Saves all changes made in this context to the underlying database.
         /// </summary>
         /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
