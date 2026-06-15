@@ -65,11 +65,12 @@ namespace Sky.Cms.Services
                 var redirectStatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Redirect;
 
                 var raw = await this.dbContext.ArticleCatalog
-                    .Where(c => c.StatusCode != deletedStatusCode && c.StatusCode != redirectStatusCode)
-                    .Select(s => new { s.ArticleNumber, s.Title, s.Updated })
+                    .Select(s => new { s.ArticleNumber, s.Title, s.Updated, s.StatusCode, s.Status })
                     .ToListAsync();
 
-                return raw.Select(s => new FileManagerEntry
+                return raw
+                    .Where(s => !IsDeletedOrRedirected(s.StatusCode, s.Status, deletedStatusCode, redirectStatusCode))
+                    .Select(s => new FileManagerEntry
                 {
                     Created = s.Updated.DateTime,
                     CreatedUtc = s.Updated.UtcDateTime,
@@ -119,6 +120,17 @@ namespace Sky.Cms.Services
             }
 
             return entries;
+        }
+
+        private static bool IsDeletedOrRedirected(int statusCode, string? status, int deletedStatusCode, int redirectStatusCode)
+        {
+            if (statusCode == deletedStatusCode || statusCode == redirectStatusCode)
+            {
+                return true;
+            }
+
+            return string.Equals(status, "Deleted", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(status, "Redirect", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
