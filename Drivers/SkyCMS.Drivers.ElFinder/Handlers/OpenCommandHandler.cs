@@ -128,7 +128,7 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
             // All children have isRoot=false (only the actual volume root is marked as root).
             foreach (var entry in entries)
             {
-                var entryPath = targetPath.TrimEnd('/') + "/" + entry.Name;
+                var entryPath = GetEntryPath(targetPath, entry);
                 response.Files.Add(await BuildElFinderObjectAsync(entry, entryPath, request.VolumeId, false, cancellationToken, request.RootPath));
             }
 
@@ -152,7 +152,7 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
                     var cwdSiblings = await _adapter.GetEntriesAsync(targetParentPath, cancellationToken);
                     foreach (var sibling in cwdSiblings.Where(e => e.IsDirectory))
                     {
-                        var siblingPath = targetParentPath.TrimEnd('/') + "/" + sibling.Name;
+                        var siblingPath = GetEntryPath(targetParentPath, sibling);
                         if (seen.Add(siblingPath))
                         {
                             response.Files.Add(await BuildElFinderObjectAsync(sibling, siblingPath, request.VolumeId, false, cancellationToken, request.RootPath));
@@ -193,7 +193,7 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
                                 var siblingsFromParent = await _adapter.GetEntriesAsync(parentPath, cancellationToken);
                                 foreach (var sibling in siblingsFromParent.Where(e => e.IsDirectory))
                                 {
-                                    var siblingPath = parentPath.TrimEnd('/') + "/" + sibling.Name;
+                                    var siblingPath = GetEntryPath(parentPath, sibling);
                                     if (seen.Add(siblingPath))
                                     {
                                         // Insert siblings after the ancestor so they are available near their related ancestor in the files payload.
@@ -482,6 +482,16 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
         return "/" + string.Join('/', segments);
     }
 
+    private static string GetEntryPath(string parentPath, Cosmos.BlobService.FileManagerEntry entry)
+    {
+        if (!string.IsNullOrWhiteSpace(entry.Path))
+        {
+            return "/" + entry.Path.Trim('/');
+        }
+
+        return parentPath.TrimEnd('/') + "/" + entry.Name;
+    }
+
     /// <summary>
     /// Determines whether a target path is the configured volume root path.
     /// </summary>
@@ -515,4 +525,3 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
     private static string NormalizeRootPath(string rootPath) =>
         string.IsNullOrEmpty(rootPath) ? "/" : rootPath;
 }
-

@@ -52,7 +52,7 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
             var entries = await _adapter.GetEntriesAsync(targetPath, cancellationToken);
             foreach (var entry in entries.Where(e => e.IsDirectory))
             {
-                var entryPath = "/" + (targetPath.TrimEnd('/') + "/" + entry.Name).TrimStart('/');
+                var entryPath = GetEntryPath(targetPath, entry);
                 response.Tree.Add(await ConvertToElFinderObjectAsync(entry, entryPath, cancellationToken));
             }
 
@@ -139,5 +139,15 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
         }
 
         return "/" + string.Join('/', segments);
+    }
+
+    private static string GetEntryPath(string parentPath, Cosmos.BlobService.FileManagerEntry entry)
+    {
+        if (!string.IsNullOrWhiteSpace(entry.Path))
+        {
+            return "/" + entry.Path.Trim('/');
+        }
+
+        return "/" + (parentPath.TrimEnd('/') + "/" + entry.Name).TrimStart('/');
     }
 }
