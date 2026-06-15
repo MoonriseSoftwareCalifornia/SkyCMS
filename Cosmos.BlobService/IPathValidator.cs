@@ -15,7 +15,6 @@ namespace Cosmos.BlobService
     /// - Path traversal attacks (e.g., `../../../etc/passwd`)
     /// - Reserved or dangerous filenames (e.g., `CON`, `PRN`, `.`, `..`)
     /// - Invalid path structures (empty segments, invalid characters in specific contexts)
-    /// 
     /// Validation is performed at the StorageContext entry points to ensure that only safe,
     /// well-formed paths reach the underlying storage drivers. This defense-in-depth approach
     /// complements normalization by ensuring consistency and security.
@@ -36,12 +35,10 @@ namespace Cosmos.BlobService
         /// - Rejects reserved/dangerous names (`.`, `..`, Windows reserved names)
         /// - Validates path structure (no leading/trailing slashes expected on normalized input)
         /// - Ensures no null bytes or other control characters
-        /// 
         /// A normalized path is expected to be:
         /// - Without leading or trailing slashes
         /// - With forward slashes as separators
         /// - With consecutive slashes already collapsed
-        /// 
         /// This method should be called for every path operation at the StorageContext level.
         /// </remarks>
         /// <example>
@@ -68,7 +65,6 @@ namespace Cosmos.BlobService
         /// - Special dot names (`.`, `..`)
         /// - Null bytes or control characters
         /// - Names that are empty or only whitespace
-        /// 
         /// Note: This method validates the filename component only, not the full path.
         /// For full path validation, use <see cref="ValidatePath(string)"/> instead.
         /// </remarks>

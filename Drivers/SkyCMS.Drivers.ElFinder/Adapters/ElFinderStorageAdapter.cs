@@ -34,9 +34,6 @@ public class ElFinderStorageAdapter : IElFinderStorageAdapter
     /// <param name="pathValidator">
     /// The path validator used to reject invalid or unsafe paths before storage access.
     /// </param>
-    /// <param name="memoryCache">
-    /// The memory cache used for caching frequently accessed data.
-    /// </param>
     /// <exception cref="ArgumentNullException">
     /// Thrown when any required dependency is <see langword="null"/>.
     /// </exception>

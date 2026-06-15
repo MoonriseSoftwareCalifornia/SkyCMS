@@ -21,7 +21,6 @@ namespace Cosmos.BlobService
     /// - Paths are normalized to a canonical form (forward slashes, no leading/trailing separators, collapsed consecutive separators).
     /// - Paths are validated to prevent traversal attacks (e.g., `../../../etc/passwd`), reserved names (e.g., `CON`, `PRN`), and invalid structures.
     /// - Invalid paths result in a <see cref="StorageException"/> being thrown.
-    /// 
     /// This defense-in-depth approach ensures:
     /// - Consistent behavior across storage providers (Azure, S3, local, etc.)
     /// - Protection against common file system attacks
