@@ -359,9 +359,19 @@
                     }, 190);
                 }
 
-                function refreshElFinderFolder() {
-                    if (elFinderInstance && typeof elFinderInstance.reload === 'function') {
-                        elFinderInstance.reload();
+                function refreshElFinderFolder(delayMs = 0) {
+                    if (delayMs > 0) {
+                        setTimeout(function () {
+                            if (elFinderInstance && typeof elFinderInstance.sync === 'function') {
+                                // Use sync() which forces a full re-query instead of reload()
+                                // which may use cached data
+                                elFinderInstance.sync();
+                            }
+                        }, delayMs);
+                    } else {
+                        if (elFinderInstance && typeof elFinderInstance.sync === 'function') {
+                            elFinderInstance.sync();
+                        }
                     }
                 }
 
@@ -428,6 +438,19 @@
 
                 // Tracks serverId → filename so the revert call can reconstruct the DELETE URL.
                 var pondFileMap = new Map();
+
+                // ── Upload UI Configuration ──────────────────────────────────
+                // Delay (in ms) before refreshing ElFinder after each file upload,
+                // allowing blob storage time to be ready. Adjust if files appear
+                // as 404 in ElFinder immediately after upload.
+                var elfFinderRefreshDelayMs = 750;
+
+                // Auto-close delay (in ms) for the upload bar after all files
+                // are processed. Set to 0 to disable auto-close.
+                var uploadBarAutoCloseDelayMs = 2500;
+
+                // Clear Filepond items after successful upload and refresh
+                var clearPondAfterUpload = true;
 
                 // ── File-selection callback (selectOne / imagesOnly) ──────
                 var pickCallback = null;
@@ -598,32 +621,15 @@
                     chunkForce: true,
                     credits: false,
                     instantUpload: true,
+                    allowRevert: false,
                     labelIdle: 'Drop files anywhere or <span class="filepond--label-action">Browse</span>',
                     server: {
                         process: '@Url.Action("Process", "FileManager")',
                         patch: '@Url.Action("Process", "FileManager")',
                         revert: function (uniqueFileId, load, error) {
-                            var filename = pondFileMap.get(uniqueFileId);
-                            if (!filename) {
-                                load();
-                                return;
-                            }
-
-                            fetch('@Url.Action("Process", "FileManager")?fileName=' + encodeURIComponent(filename), {
-                                method: 'DELETE',
-                                headers: { 'Content-Type': 'text/plain' },
-                                body: uniqueFileId
-                            }).then(function (response) {
-                                if (response.ok) {
-                                    pondFileMap.delete(uniqueFileId);
-                                    refreshElFinderFolder();
-                                    load();
-                                } else {
-                                    error('Revert failed: ' + response.status);
-                                }
-                            }).catch(function (err) {
-                                error('Revert error: ' + err);
-                            });
+                            // Revert is disabled for users (allowRevert: false),
+                            // but we define it to keep FilePond's internal state clean
+                            load();
                         }
                     }
                 });
@@ -662,20 +668,40 @@
                     }
 
                     updateUploadStatus('Uploaded ' + file.filename + ' to ' + currentUploadPathDisplay);
+
+                    // Refresh ElFinder with a delay to allow blob storage to be ready
+                    refreshElFinderFolder(elfFinderRefreshDelayMs);
                 });
 
                 pond.on('processfiles', function () {
-                    refreshElFinderFolder();
+                    // Final refresh with delay to ensure all files are ready in storage
+                    refreshElFinderFolder(elfFinderRefreshDelayMs);
                     updateReadyUploadStatus();
 
                     if (autoCollapseHandle) {
                         clearTimeout(autoCollapseHandle);
                     }
 
-                    autoCollapseHandle = setTimeout(function () {
-                        collapsePond();
-                        autoCollapseHandle = null;
-                    }, 2500);
+                    // Clear pond items after files are uploaded and ElFinder is refreshed
+                    if (clearPondAfterUpload && pond) {
+                        setTimeout(function () {
+                            try {
+                                pond.removeFiles();
+                            } catch (e) {
+                                if (window.console) {
+                                    console.warn('[FilePond] Could not clear items:', e);
+                                }
+                            }
+                        }, elfFinderRefreshDelayMs + 100);
+                    }
+
+                    // Auto-close the upload bar after all files are processed
+                    if (uploadBarAutoCloseDelayMs > 0) {
+                        autoCollapseHandle = setTimeout(function () {
+                            collapsePond();
+                            autoCollapseHandle = null;
+                        }, uploadBarAutoCloseDelayMs);
+                    }
                 });
 
                 var browseButton = document.getElementById('ccmsUploadBrowseBtn');

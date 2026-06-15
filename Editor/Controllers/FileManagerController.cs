@@ -1686,6 +1686,14 @@ namespace Sky.Cms.Controllers
             if (metaData.TotalChunks - 1 == metaData.ChunkIndex)
             {
                 await PurgeCdnPath(metaData);
+
+                // Invalidate the storage driver cache so ElFinder sees the newly uploaded file
+                var connectionString = configuration.GetConnectionString("StorageConnectionString")
+                    ?? configuration.GetConnectionString("AzureBlobStorageConnectionString");
+                if (!string.IsNullOrWhiteSpace(connectionString))
+                {
+                    storageContext.InvalidateStorageDriverCache(connectionString);
+                }
             }
 
             return Ok();

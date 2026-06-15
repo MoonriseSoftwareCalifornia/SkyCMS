@@ -241,5 +241,14 @@ namespace Cosmos.BlobService
 
             return await GetFilesAndDirectories(path);
         }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// This operation is a no-op for FileStorageContext as it does not use driver caching.
+        /// </remarks>
+        public void InvalidateStorageDriverCache(string connectionString)
+        {
+            // File Share storage doesn't use driver caching, so nothing to invalidate
+        }
     }
 }

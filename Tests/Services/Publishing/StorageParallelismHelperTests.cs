@@ -1,4 +1,4 @@
-﻿// <copyright file="StorageParallelismHelperTests.cs" company="Moonrise Software, LLC">
+// <copyright file="StorageParallelismHelperTests.cs" company="Moonrise Software, LLC">
 // Copyright (c) Moonrise Software, LLC. All rights reserved.
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 // See https://github.com/CWALabs/SkyCMS
@@ -487,6 +487,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
 
             Task<FileManagerEntry> IStorageContext.CreateFolder(string path)
             {
@@ -521,6 +522,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class CloudflareR2TestDouble : IStorageContext
@@ -540,6 +542,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class LocalFileStorageTestDouble : IStorageContext
@@ -559,6 +562,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class UnknownStorageTestDouble : IStorageContext
@@ -578,6 +582,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWithAzureUrl : IStorageContext
@@ -599,6 +604,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWithLocalhostUrl : IStorageContext
@@ -620,6 +626,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWith127Url : IStorageContext
@@ -641,6 +648,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWithDevStoreUrl : IStorageContext
@@ -662,6 +670,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWithS3Url : IStorageContext
@@ -683,6 +692,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWithR2Url : IStorageContext
@@ -704,6 +714,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWithR2DevUrl : IStorageContext
@@ -725,6 +736,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWithEndpointUrl : IStorageContext
@@ -746,6 +758,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         private class StorageContextWithServiceUrl : IStorageContext
@@ -767,6 +780,7 @@ namespace Sky.Tests.Services.Publishing
             public System.Threading.Tasks.Task AppendBlob(System.IO.MemoryStream stream, Cosmos.BlobService.Models.FileUploadMetaData fileMetaData, string mode = "append") => throw new NotImplementedException();
             public System.Threading.Tasks.Task<FileManagerEntry> CreateFolder(string path) => throw new NotImplementedException();
             public System.Threading.Tasks.Task<System.Collections.Generic.List<FileManagerEntry>> GetFilesAndDirectories(string path) => throw new NotImplementedException();
+            public void InvalidateStorageDriverCache(string connectionString) { }
         }
 
         #endregion
