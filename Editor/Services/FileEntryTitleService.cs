@@ -10,6 +10,7 @@ namespace Sky.Cms.Services
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
@@ -17,8 +18,6 @@ namespace Sky.Cms.Services
     using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
-    using Sky.Editor.Data;
-    using Sky.Editor.Models;
     using Sky.Editor.Services;
 
     /// <summary>
@@ -108,7 +107,8 @@ namespace Sky.Cms.Services
         /// <returns>Dictionary mapping article numbers to titles, empty if no matches found.</returns>
         public Task<IReadOnlyDictionary<int, string>> GetArticleTitlesByNumberAsync(IEnumerable<int> articleNumbers)
         {
-            return this.GetArticleTitlesByNumberAsync(articleNumbers, string.Empty);
+            var tenantDomain = this.dynamicConfigurationProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
+            return this.GetArticleTitlesByNumberAsync(articleNumbers, tenantDomain);
         }
 
         /// <summary>
@@ -190,6 +190,92 @@ namespace Sky.Cms.Services
             }
         }
 
+        public async Task<List<FileManagerEntry>> ProjectFriendlyEntriesAsync(
+            IEnumerable<FileManagerEntry> entries,
+            string listingParentPath,
+            string tenantDomain,
+            CancellationToken cancellationToken = default)
+        {
+            if (entries == null)
+            {
+                return new List<FileManagerEntry>();
+            }
+
+            var normalizedParent = FileEntryPathHelper.NormalizePath(listingParentPath);
+            var normalizedEntries = entries.Select(entry =>
+            {
+                entry.Path = FileEntryPathHelper.ResolveEntryPath(normalizedParent, entry);
+                return entry;
+            }).ToList();
+
+            if (normalizedEntries.Count == 0)
+            {
+                return normalizedEntries;
+            }
+
+            var articleNumbers = FileEntryPathHelper.ExtractArticleNumbersFromEntries(normalizedEntries);
+            var articleStatusByNumber = await this.GetArticleTitleStatusByNumberAsync(
+                articleNumbers,
+                tenantDomain,
+                backfillCatalog: true,
+                cancellationToken);
+
+            var deletedStatus = (int)StatusCodeEnum.Deleted;
+            var visibleEntries = normalizedEntries
+                .Where(e =>
+                {
+                    if (!FileEntryPathHelper.TryGetArticleNumberFromPath(e.Path, out var articleNumber))
+                    {
+                        return true;
+                    }
+
+                    return articleStatusByNumber.TryGetValue(articleNumber, out var articleInfo)
+                        && articleInfo != null
+                        && articleInfo.StatusCode != deletedStatus;
+                })
+                .ToList();
+
+            var articleTitlesByNumber = articleStatusByNumber
+                .Where(kvp => kvp.Value != null
+                    && kvp.Value.StatusCode != deletedStatus
+                    && !string.IsNullOrWhiteSpace(kvp.Value.Title))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Title);
+
+            var templateTitlesById = await this.GetTemplateTitlesByIdAsync(visibleEntries);
+            var isArticlesRootListing = string.Equals(normalizedParent, "/pub/articles", StringComparison.OrdinalIgnoreCase);
+
+            foreach (var entry in visibleEntries)
+            {
+                entry.DisplayPath = FileEntryPathHelper.ResolveFriendlyDisplayPath(entry.Path, articleTitlesByNumber);
+
+                if (isArticlesRootListing && entry.IsDirectory)
+                {
+                    var segments = FileEntryPathHelper.NormalizePath(entry.Path)
+                        .Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+                    if (segments.Length == 3
+                        && FileEntryPathHelper.TryGetArticleNumberFromPath(entry.Path, out var articleNumber)
+                        && articleTitlesByNumber.TryGetValue(articleNumber, out var articleTitle)
+                        && !string.IsNullOrWhiteSpace(articleTitle))
+                    {
+                        entry.Name = articleTitle;
+                        continue;
+                    }
+
+                    entry.Name = entry.Name ?? string.Empty;
+                    continue;
+                }
+
+                entry.Name = FileEntryPathHelper.ResolveFriendlyDisplayName(
+                    normalizedParent,
+                    entry,
+                    articleTitlesByNumber,
+                    templateTitlesById);
+            }
+
+            return visibleEntries;
+        }
+
         public async Task<bool> IsArticlePathDeletedAsync(string path, string tenantDomain)
         {
             if (!FileEntryPathHelper.TryGetArticleNumberFromPath(path, out var articleNumber))
@@ -252,80 +338,190 @@ namespace Sky.Cms.Services
             return this.ResolveCanonicalPathAsync(friendlyPath, string.Empty);
         }
 
+        /// <summary>
+        /// Retrieves article titles for a given set of article numbers, scoped to a tenant domain.
+        /// </summary>
+        /// <param name="articleNumbers">The article numbers to retrieve titles for.</param>
+        /// <param name="tenantDomain">The tenant domain to scope the lookup to.</param>
+        /// <returns>A dictionary mapping article numbers to their titles.</returns>
         public async Task<IReadOnlyDictionary<int, string>> GetArticleTitlesByNumberAsync(IEnumerable<int> articleNumbers, string tenantDomain)
+        {
+            var records = await this.GetArticleTitleStatusByNumberAsync(articleNumbers, tenantDomain, backfillCatalog: false);
+            return records.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Title);
+        }
+
+        /// <summary>
+        /// Retrieves article number/title/status records for supplied numbers and optionally backfills missing catalog rows.
+        /// </summary>
+        /// <param name="articleNumbers">Article numbers to resolve.</param>
+        /// <param name="tenantDomain">Tenant domain used for cache scoping.</param>
+        /// <param name="backfillCatalog">When true, missing catalog rows may be created for legacy data.</param>
+        /// <param name="cancellationToken">Cancellation token for async operations.</param>
+        /// <returns>A dictionary keyed by article number with title and status details.</returns>
+        public async Task<IReadOnlyDictionary<int, ArticleTitleAndStatus>> GetArticleTitleStatusByNumberAsync(
+            IEnumerable<int> articleNumbers,
+            string tenantDomain,
+            bool backfillCatalog,
+            CancellationToken cancellationToken = default)
         {
             if (articleNumbers == null)
             {
-                return new Dictionary<int, string>();
+                return new Dictionary<int, ArticleTitleAndStatus>();
             }
 
             var numbers = articleNumbers.ToHashSet();
             if (numbers.Count == 0)
             {
-                return new Dictionary<int, string>();
+                return new Dictionary<int, ArticleTitleAndStatus>();
             }
 
-            var numbersList = numbers.ToList();
-            var articleTitlesByNumber = new Dictionary<int, string>();
-            var articleRows = new List<ArticleTitleAndStatus>();
-
-            // Important, DO NOT USE ArticleCatalog for lookups by article number that may include drafts,
-            // because the catalog only contains published articles. We need to query the Articles table
-            // directly to ensure we surface titles for draft articles that have no catalog entry yet.
-            // This is a common scenario when resolving titles for article folders in the file manager,
-            // which must show all articles including drafts and deleted (or articles in Trash) articles.
-
-            if (this.dbContext.GetDatabaseProviderName().Contains("Cosmos", StringComparison.OrdinalIgnoreCase)
-                && this.dbContext is ApplicationDbContext cosmosDbContext)
+            var cacheKey = $"{tenantDomain}-articlenumber-title-status-map";
+            if (!this.memoryCache.TryGetValue(cacheKey, out Dictionary<int, ArticleTitleAndStatus> cachedLookup))
             {
-                // Execute through Cosmos SQL/SDK and then select the latest non-empty title per article number client-side.
-                var client = cosmosDbContext.Database.GetCosmosClient();
-                var databaseId = cosmosDbContext.Database.GetCosmosDatabaseId();
-                var queryService = new CosmosDbService(client, databaseId, "Articles");
+                var catalogRows = await this.dbContext.ArticleCatalog
+                    .Select(a => new { a.ArticleNumber, a.Title, a.Status })
+                    .ToListAsync(cancellationToken);
 
-                foreach (var chunk in numbersList.Chunk(100))
-                {
-                    var articleNumbersArray = $"[{string.Join(",", chunk)}]";
-                    var query = $"SELECT c.ArticleNumber, c.VersionNumber, c.Title, c.StatusCode FROM c WHERE ARRAY_CONTAINS({articleNumbersArray}, c.ArticleNumber)";
-
-                    var cosmosRows = await queryService.QueryWithGroupByAsync<CosmosArticleTitleRow>(query);
-                    foreach (var group in cosmosRows.GroupBy(r => r.ArticleNumber))
-                    {
-                        var latest = group
-                            .OrderByDescending(r => r.VersionNumber)
-                            .FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.Title));
-
-                        if (latest != null)
-                        {
-                            articleTitlesByNumber[latest.ArticleNumber] = latest.Title;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                articleRows = await this.dbContext.Articles
-                    .Where(a => numbersList.Contains(a.ArticleNumber))
-                    .Select(a => new ArticleTitleAndStatus
+                cachedLookup = catalogRows.ToDictionary(
+                    a => a.ArticleNumber,
+                    a => new ArticleTitleAndStatus
                     {
                         ArticleNumber = a.ArticleNumber,
                         Title = a.Title,
-                        StatusCode = a.StatusCode,
-                    })
-                    .Distinct()
-                    .ToListAsync();
+                        StatusCode = ConvertStatusToCode(a.Status),
+                    });
+
+                this.memoryCache.Set(cacheKey, cachedLookup, TimeSpan.FromSeconds(10));
             }
 
-            foreach (var row in articleRows)
+            var result = cachedLookup
+                .Where(kvp => numbers.Contains(kvp.Key))
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => new ArticleTitleAndStatus
+                    {
+                        ArticleNumber = kvp.Value.ArticleNumber,
+                        Title = kvp.Value.Title,
+                        StatusCode = kvp.Value.StatusCode,
+                    });
+
+            if (!backfillCatalog)
             {
-                if (!string.IsNullOrWhiteSpace(row.Title))
+                foreach (var articleNumber in numbers)
                 {
-                    articleTitlesByNumber[row.ArticleNumber] = row.Title;
+                    if (result.ContainsKey(articleNumber))
+                    {
+                        continue;
+                    }
+
+                    var articleVersions = await this.dbContext.Articles
+                        .Where(a => a.ArticleNumber == articleNumber)
+                        .OrderByDescending(a => a.VersionNumber)
+                        .Select(a => new { a.ArticleNumber, a.Title, a.StatusCode })
+                        .ToListAsync(cancellationToken);
+
+                    var article = articleVersions.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.Title))
+                        ?? articleVersions.FirstOrDefault();
+                    if (article == null)
+                    {
+                        continue;
+                    }
+
+                    result[article.ArticleNumber] = new ArticleTitleAndStatus
+                    {
+                        ArticleNumber = article.ArticleNumber,
+                        Title = article.Title,
+                        StatusCode = article.StatusCode,
+                    };
                 }
+
+                return result;
             }
 
+            var deletedStatus = (int)StatusCodeEnum.Deleted;
+            var inactiveStatus = (int)StatusCodeEnum.Inactive;
+            var pendingBackfillRows = new List<CatalogEntry>();
 
-            return articleTitlesByNumber;
+            foreach (var articleNumber in numbers)
+            {
+                if (result.ContainsKey(articleNumber))
+                {
+                    continue;
+                }
+
+                var article = await this.dbContext.Articles
+                    .Where(a => a.ArticleNumber == articleNumber)
+                    .OrderByDescending(a => a.VersionNumber)
+                    .Select(a => new { a.ArticleNumber, a.Title, a.StatusCode })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (article == null)
+                {
+                    continue;
+                }
+
+                if (article.StatusCode == deletedStatus || article.StatusCode == inactiveStatus)
+                {
+                    pendingBackfillRows.Add(new CatalogEntry
+                    {
+                        ArticleNumber = article.ArticleNumber,
+                        Title = article.Title,
+                        Status = ConvertStatusCodeToString(article.StatusCode),
+                        StatusCode = article.StatusCode,
+                    });
+                }
+
+                result[article.ArticleNumber] = new ArticleTitleAndStatus
+                {
+                    ArticleNumber = article.ArticleNumber,
+                    Title = article.Title,
+                    StatusCode = article.StatusCode,
+                };
+            }
+
+            if (pendingBackfillRows.Count > 0)
+            {
+                await this.dbContext.ArticleCatalog.AddRangeAsync(pendingBackfillRows, cancellationToken);
+                await this.dbContext.SaveChangesAsync(cancellationToken);
+
+                foreach (var row in pendingBackfillRows)
+                {
+                    cachedLookup[row.ArticleNumber] = new ArticleTitleAndStatus
+                    {
+                        ArticleNumber = row.ArticleNumber,
+                        Title = row.Title,
+                        StatusCode = row.StatusCode,
+                    };
+                }
+
+                this.memoryCache.Set(cacheKey, cachedLookup, TimeSpan.FromSeconds(10));
+            }
+
+            return result;
+        }
+
+        private static int ConvertStatusToCode(string status)
+        {
+            return status switch
+            {
+                "Active" => (int)StatusCodeEnum.Active,
+                "Inactive" => (int)StatusCodeEnum.Inactive,
+                "Deleted" => (int)StatusCodeEnum.Deleted,
+                "Redirect" => (int)StatusCodeEnum.Redirect,
+                _ => -1,
+            };
+        }
+
+        private static string ConvertStatusCodeToString(int statusCode)
+        {
+            return statusCode switch
+            {
+                (int)StatusCodeEnum.Active => "Active",
+                (int)StatusCodeEnum.Inactive => "Inactive",
+                (int)StatusCodeEnum.Deleted => "Deleted",
+                (int)StatusCodeEnum.Redirect => "Redirect",
+                _ => "Unknown",
+            };
         }
 
         /// <summary>
@@ -374,8 +570,6 @@ namespace Sky.Cms.Services
         /// <summary>
         /// Resolves a friendly display path containing an article title to its canonical path with the article number.
         /// </summary>
-        /// <param name="friendlyPath">The friendly display path containing the article title.</param>
-        /// <param name="tenantDomain">The tenant domain for which to resolve the path.</param>
         /// <returns>The canonical path with the article number, or the original path if not found.</returns>
         private sealed class CosmosArticleTitleRow
         {

@@ -5,49 +5,51 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Web;
+using Cosmos.BlobService;
+using Cosmos.BlobService.Models;
+using Cosmos.Common.Data;
+using Cosmos.Common.Data.Logic;
+using Cosmos.Common.Features.Articles.EditorQueries;
+using Cosmos.Common.Services;
+using Cosmos.Common.Services.Caching;
+using Cosmos.DynamicConfig;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MimeTypes;
+using Newtonsoft.Json;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using Sky.Cms.Models;
+using Sky.Cms.Services;
+using Sky.Editor.Data.Logic;
+using Sky.Editor.Features.Articles.Save;
+using Sky.Editor.Services;
+using Sky.Editor.Services.CDN;
+using Sky.Editor.Services.EditorSettings;
+using SkyCMS.Drivers.ElFinder;
+using SkyCMS.Drivers.ElFinder.Commands;
+using SkyCMS.Drivers.ElFinder.Responses;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 namespace Sky.Cms.Controllers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Web;
-    using Cosmos.BlobService;
-    using Cosmos.BlobService.Models;
-    using Cosmos.Common.Data;
-    using Cosmos.Common.Features.Articles.EditorQueries;
-    using Cosmos.Common.Features.Shared;
-    using Cosmos.Common.Services;
-    using Cosmos.Common.Services.Caching;
-    using Cosmos.DynamicConfig;
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Hosting;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.AspNetCore.Mvc.ModelBinding;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-    using MimeTypes;
-    using Newtonsoft.Json;
-    using SixLabors.ImageSharp;
-    using SixLabors.ImageSharp.Processing;
-    using Sky.Cms.Models;
-    using Sky.Cms.Services;
-    using Sky.Editor.Data.Logic;
-    using Sky.Editor.Features.Articles.Save;
-    using Sky.Editor.Models;
-    using Sky.Editor.Services.CDN;
-    using Sky.Editor.Services.EditorSettings;
-    using SkyCMS.Drivers.ElFinder;
-    using SkyCMS.Drivers.ElFinder.Commands;
-    using SkyCMS.Drivers.ElFinder.Responses;
-
     /// <summary>
     /// Connector adapter controller that maps elFinder JSON protocol commands to SkyCMS
     /// storage operations. Business commands are handled here; cross-cutting concerns
@@ -129,6 +131,7 @@ namespace Sky.Cms.Controllers
         private readonly IViewRenderService viewRenderService;
         private readonly UserManager<IdentityUser> userManager;
         private readonly IFolderListingService folderListingService;
+        private readonly IFileEntryTitleService titleResolver;
         private readonly Cosmos.Common.Features.Shared.IMediator articleQueries;
         private readonly SkyCMS.Drivers.ElFinder.IElFinderDispatcher elFinderMediator;
 
@@ -163,7 +166,8 @@ namespace Sky.Cms.Controllers
             ArticleEditLogic articleLogic = null,
             IWebHostEnvironment hostEnvironment = null,
             IViewRenderService viewRenderService = null,
-            IFolderListingService folderListingService = null)
+            IFolderListingService folderListingService = null,
+            IFileEntryTitleService titleResolver = null)
             : base(dbContext, userManager, mediator, layoutCache)
         {
             this.dbContext = dbContext;
@@ -179,7 +183,8 @@ namespace Sky.Cms.Controllers
             this.viewRenderService = viewRenderService;
             this.userManager = userManager;
             this.articleQueries = mediator;
-            this.folderListingService = folderListingService;
+            this.titleResolver = titleResolver ?? new FileEntryTitleService(this.dbContext, this.memoryCache, this.configProvider);
+            this.folderListingService = folderListingService ?? new FolderListingService(this.dbContext, this.storageContext, this.titleResolver);
             this.elFinderMediator = elFinderMediator;
         }
 
@@ -200,7 +205,7 @@ namespace Sky.Cms.Controllers
                 return Json(ElFinderError("errUnknownCmd"));
             }
 
-             try
+            try
             {
                 return cmd switch
                 {
@@ -591,7 +596,18 @@ namespace Sky.Cms.Controllers
 
             var response = await elFinderMediator.SendAsync(command);
             var mappedError = MapCqrsError(this, response);
-            return mappedError ?? JsonCqrs(response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            if (response is not OpenResponse openResponse)
+            {
+                return Json(ElFinderError("errOpen"));
+            }
+
+            openResponse.Files = await FilterEntries(openResponse.Files, targetPath);
+            return JsonCqrs(openResponse);
         }
 
         private async Task<IActionResult> HandleUploadViaCqrsAsync()
@@ -1211,168 +1227,9 @@ namespace Sky.Cms.Controllers
             return normalized;
         }
 
-        private object ToElFinderObject(FileManagerEntry entry, string parentHash)
-        {
-            var fullPath = NormalizePath(entry.Path.StartsWith("/") ? entry.Path : "/" + entry.Path);
-            var hash = EncodeHash(fullPath);
-            var displayName = GetDisplayName(entry);
-            var mime = entry.IsDirectory ? "directory" : GetMimeType(entry.Extension);
-            var ts = new DateTimeOffset(entry.ModifiedUtc == default ? DateTime.UtcNow : entry.ModifiedUtc, TimeSpan.Zero)
-                         .ToUnixTimeSeconds();
-            var isRoot = fullPath == RootPath;
-            var displayPath = NormalizePath(!string.IsNullOrWhiteSpace(entry.DisplayPath) ? entry.DisplayPath : fullPath);
-
-            var obj = new Dictionary<string, object>
-            {
-                ["hash"] = hash,
-                ["name"] = displayName,
-                ["size"] = entry.IsDirectory ? 0L : entry.Size,
-                ["mime"] = mime,
-                ["ts"] = ts,
-                ["read"] = 1,
-                ["write"] = 1,
-                ["locked"] = 0,
-                ["realPath"] = fullPath,
-                ["displayPath"] = displayPath,
-            };
-
-            if (entry.IsDirectory && entry.HasDirectories)
-            {
-                obj["dirs"] = 1;
-            }
-
-            if (isRoot)
-            {
-                // Root volume node: isroot and an empty phash are required by the
-                // elFinder protocol so the JS client anchors the node correctly.
-                obj["isroot"] = 1;
-                obj["phash"] = string.Empty;
-            }
-            else if (parentHash != null)
-            {
-                obj["phash"] = parentHash;
-            }
-
-            if (entry.IsDirectory)
-            {
-                obj["volumeid"] = VolumeId;
-            }
-
-            if (isRoot)
-            {
-                obj["dirs"] = 1;
-            }
-
-            if (!entry.IsDirectory)
-            {
-                var blobBase = editorSettings.BlobPublicUrl.TrimEnd('/');
-                obj["url"] = $"{blobBase}/{fullPath.TrimStart("/")}";
-
-                var ext = (entry.Extension ?? string.Empty).ToLowerInvariant();
-                if (FileStorageConstants.ValidImageExtensions.Contains(ext))
-                {
-                    obj["tmb"] = $"{Uri.EscapeDataString(fullPath)}&width=80&height=80";
-                }
-            }
-
-            return obj;
-        }
-
-        private object SyntheticDirObject(string path, string parentHash, bool isRoot)
-        {
-            path = NormalizePath(path);
-            var hash = EncodeHash(path);
-            var name = isRoot ? "pub" : path.TrimEnd('/').Split('/').Last();
-            var obj = new Dictionary<string, object>
-            {
-                ["hash"] = hash,
-                ["name"] = name,
-                ["size"] = 0L,
-                ["mime"] = "directory",
-                ["ts"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                ["read"] = 1,
-                ["write"] = 1,
-                ["locked"] = 0,
-                ["dirs"] = 1,
-                ["realPath"] = path,
-                ["displayPath"] = path,
-            };
-
-            obj["volumeid"] = VolumeId;
-            if (isRoot)
-            {
-                // Root volume node: isroot and an empty phash are required by the
-                // elFinder protocol so the JS client anchors the node correctly.
-                obj["isroot"] = 1;
-                obj["phash"] = string.Empty;
-            }
-            else if (parentHash != null)
-            {
-                obj["phash"] = parentHash;
-            }
-
-            return obj;
-        }
-
-        private static FileManagerEntry BuildSyntheticFileEntry(string path, string nameWithoutExt, string ext, long size, bool isDir = false)
-        {
-            return new FileManagerEntry
-            {
-                Path = path.StartsWith("/") ? path : "/" + path,
-                Name = nameWithoutExt,
-                Extension = ext ?? string.Empty,
-                Size = size,
-                IsDirectory = isDir,
-                HasDirectories = false,
-                Created = DateTime.UtcNow,
-                CreatedUtc = DateTime.UtcNow,
-                Modified = DateTime.UtcNow,
-                ModifiedUtc = DateTime.UtcNow,
-            };
-        }
-
-        private Dictionary<string, object> BuildOptions(string path, string displayPath = null)
-        {
-            var blobBase = editorSettings.BlobPublicUrl.TrimEnd('/');
-            var humanPath = !string.IsNullOrEmpty(displayPath)
-                ? displayPath.TrimStart('/')
-                : NormalizePath(path).TrimStart('/');
-            var canonicalPath = NormalizePath(path).TrimStart('/');
-
-            return new Dictionary<string, object>
-            {
-                ["path"] = humanPath,
-                ["url"] = $"{blobBase}/{canonicalPath.TrimEnd('/')}/",
-                ["tmbUrl"] = "/FileManager/GetImageThumbnail?target=",
-                ["separator"] = "/",
-                ["copyOverwrite"] = 1,
-                ["uploadOverwrite"] = 1,
-                ["archivers"] = new { create = Array.Empty<string>(), extract = Array.Empty<string>() },
-                ["disabled"] = new[] { "chmod", "zipdl", "archive", "extract" },
-                ["uploadMaxConn"] = 3,
-            };
-        }
-
         private static object ElFinderError(string message)
         {
             return new { error = message };
-        }
-
-        private static string GetMimeType(string extension)
-        {
-            if (string.IsNullOrEmpty(extension))
-            {
-                return "application/octet-stream";
-            }
-
-            try
-            {
-                return MimeTypeMap.GetMimeType(extension);
-            }
-            catch
-            {
-                return "application/octet-stream";
-            }
         }
 
         private string GetParam(string key)
@@ -1403,102 +1260,6 @@ namespace Sky.Cms.Controllers
             return Request.Query[key].ToArray();
         }
 
-        private async Task<List<FileManagerEntry>> GetEntriesWithFriendlyTitlesAsync(string parentPath)
-        {
-            var items = await storageContext.GetFilesAndDirectories(parentPath);
-            var normalizedParent = NormalizePath(parentPath);
-
-            // Only get friendly names for folders and files that are children of the /pub/articles folder.
-            if (!normalizedParent.StartsWith("/pub/articles", StringComparison.OrdinalIgnoreCase) && normalizedParent.Split('/').Length < 3)
-            {
-                // Don't bother with further processing.
-                return items;
-            }
-
-            /*
-             * If we reach here, it means the path is a child of /pub/articles.
-             * 
-             *  IMPORTANT !!!!!
-             *  All child entried be they directories or files must have their friendly titles resolved.
-             *  This is because article entries can be either folders or files, and we want to ensure that
-             *  all of them have friendly titles if they are article entries.
-            */
-
-            var titleResolver = new FileEntryTitleService(dbContext, memoryCache, configProvider);
-            var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
-            await titleResolver.FilterDeletedArticleEntriesAsync(items, tenantDomain);
-            var articleTitlesByNumber = await titleResolver.GetArticleTitlesByNumberAsync(items, tenantDomain);
-            foreach (var item in items)
-            {
-                FileEntryPathHelper.TryGetArticleNumber(item, out var articleNumber);
-                articleTitlesByNumber.TryGetValue(articleNumber, out var articleTitle);
-
-                // Get the "friendly" display path for the entry, which will be used by the UI to display the entry path.
-                if (item.IsDirectory && item.Path.Split('/', StringSplitOptions.RemoveEmptyEntries).Length == 3)
-                {
-                    // This is a top-level article folder under /pub/articles/{integer}/ (note trailing backslash).
-                    // we should use the article title as the display name if possible.
-                    item.Title = articleTitle;
-                }
-
-                item.DisplayPath = FileEntryPathHelper.ResolveFriendlyDisplayPath(item.Path, articleNumber, articleTitle);
-            }
-
-            return items;
-        }
-
-        private async Task ApplyFriendlyTitleAsync(FileManagerEntry entry)
-        {
-            if (entry == null)
-            {
-                return;
-            }
-
-            var normalizedPath = NormalizePath(entry.Path);
-            if (!FileEntryPathHelper.TryGetArticleNumberFromPath(normalizedPath, out var articleNumber))
-            {
-                return;
-            }
-
-            var titleResolver = new FileEntryTitleService(dbContext, memoryCache, configProvider);
-            var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
-            var titles = await titleResolver.GetArticleTitlesByNumberAsync(new[] { articleNumber }, tenantDomain);
-            if (titles.TryGetValue(articleNumber, out var articleTitle) && !string.IsNullOrWhiteSpace(articleTitle))
-            {
-                entry.Title = articleTitle;
-                entry.DisplayPath = FileEntryPathHelper.ResolveFriendlyDisplayPath(normalizedPath, articleNumber, articleTitle);
-            }
-            else
-            {
-                entry.DisplayPath = normalizedPath;
-            }
-        }
-
-        private static string GetDisplayName(FileManagerEntry entry)
-        {
-            if (entry.IsDirectory)
-            {
-                return !string.IsNullOrWhiteSpace(entry.Title) ? entry.Title : (entry.Name ?? string.Empty);
-            }
-
-            var name = entry.Name ?? string.Empty;
-            var ext = entry.Extension ?? string.Empty;
-
-            if (!string.IsNullOrEmpty(ext) && !ext.StartsWith(".", StringComparison.Ordinal))
-            {
-                ext = "." + ext;
-            }
-
-            if (string.IsNullOrEmpty(ext))
-            {
-                return name;
-            }
-
-            return name.EndsWith(ext, StringComparison.OrdinalIgnoreCase)
-                ? name
-                : name + ext;
-        }
-
         private async Task<IActionResult> DenyDeletedArticlePathForCqrsAsync(string? path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -1508,8 +1269,7 @@ namespace Sky.Cms.Controllers
 
             var normalizedPath = NormalizePath(path);
             var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
-            var titleResolver = new FileEntryTitleService(this.dbContext, this.memoryCache, this.configProvider);
-            if (!await titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
+            if (!await this.titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
             {
                 return null;
             }
@@ -2926,9 +2686,104 @@ namespace Sky.Cms.Controllers
 
             return nodes;
         }
+
+        /// <summary>
+        /// Filters and projects open-listing entries using shared title-resolution rules.
+        /// </summary>
+        /// <param name="objects">The elFinder objects to process.</param>
+        /// <param name="listedParentPath">The opened parent path for this listing.</param>
+        /// <param name="cancellationToken">A token used to cancel database and filtering operations.</param>
+        /// <returns>A filtered list with synchronized friendly <c>Name</c> and <c>DisplayPath</c>.</returns>
+        private async Task<List<ElFinderObject>> FilterEntries(
+            List<ElFinderObject> objects,
+            string? listedParentPath,
+            CancellationToken cancellationToken = default)
+        {
+            if (objects == null || objects.Count == 0)
+            {
+                return new List<ElFinderObject>();
+            }
+
+            var listingPath = NormalizePath(string.IsNullOrWhiteSpace(listedParentPath) ? RootPath : listedParentPath);
+            var tenantDomain = this.configProvider?.GetTenantDomainNameFromRequest() ?? string.Empty;
+
+            var mappings = objects.Select(o =>
+            {
+                var canonicalPath = NormalizePath(string.IsNullOrWhiteSpace(o.RealPath) ? o.DisplayPath : o.RealPath);
+                return new
+                {
+                    Object = o,
+                    Entry = new FileManagerEntry
+                    {
+                        Path = canonicalPath,
+                        DisplayPath = NormalizePath(string.IsNullOrWhiteSpace(o.DisplayPath) ? canonicalPath : o.DisplayPath),
+                        Name = o.Name,
+                        IsDirectory = string.Equals(o.Mime, "directory", StringComparison.OrdinalIgnoreCase),
+                        Size = o.Size,
+                        ContentType = o.Mime,
+                    },
+                };
+            }).ToList();
+
+            var projected = await this.titleResolver.ProjectFriendlyEntriesAsync(
+                mappings.Select(m => m.Entry),
+                listingPath,
+                tenantDomain,
+                cancellationToken);
+            var projectedByPath = projected.ToDictionary(
+                p => NormalizePath(p.Path),
+                p => p,
+                StringComparer.OrdinalIgnoreCase);
+
+            var listedEntries = await this.folderListingService.GetEntriesAsync(listingPath, tenantDomain);
+            var listedProjected = await this.titleResolver.ProjectFriendlyEntriesAsync(
+                listedEntries,
+                listingPath,
+                tenantDomain,
+                cancellationToken);
+            var listedByPath = listedProjected.ToDictionary(
+                p => NormalizePath(p.Path),
+                p => p,
+                StringComparer.OrdinalIgnoreCase);
+
+            var model = new List<ElFinderObject>();
+
+            foreach (var mapping in mappings)
+            {
+                var entryPath = NormalizePath(mapping.Entry.Path);
+                if (!projectedByPath.TryGetValue(entryPath, out var projectedEntry))
+                {
+                    continue;
+                }
+
+                mapping.Entry.Name = projectedEntry.Name;
+                mapping.Entry.DisplayPath = projectedEntry.DisplayPath;
+
+                if (IsDirectChildPath(entryPath, listingPath)
+                    && listedByPath.TryGetValue(entryPath, out var listedEntry))
+                {
+                    mapping.Entry.Name = listedEntry.Name;
+                    mapping.Entry.DisplayPath = listedEntry.DisplayPath;
+                }
+
+                mapping.Object.Name = mapping.Entry.Name;
+                mapping.Object.DisplayPath = mapping.Entry.DisplayPath;
+                model.Add(mapping.Object);
+            }
+
+            return model;
+        }
+
+        private static bool IsDirectChildPath(string candidatePath, string parentPath)
+        {
+            var normalizedCandidate = NormalizePath(candidatePath);
+            var normalizedParent = NormalizePath(parentPath);
+            if (string.Equals(normalizedCandidate, normalizedParent, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return string.Equals(GetParentPath(normalizedCandidate), normalizedParent, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
-
-
-
-

@@ -389,13 +389,12 @@
                             var file = files[0];
                             if (file.mime === 'directory') { return $.Deferred().reject(); }
 
-                            var filePath = fm.path(hashes[0]);
+                            var decodedPath = decodePath(hashes[0]);
+                            var filePath = decodedPath || fm.path(hashes[0]);
                             if (!filePath) { return $.Deferred().reject(); }
 
-                            // Normalise: ensure leading slash, no double-slashes.
-                            var clean = filePath.replace(/\\/g, '/');
-                            if (clean.charAt(0) !== '/') { clean = '/' + clean; }
-                            var publicUrl = fileBaseUrl + clean;
+                            var clean = normalizePath(filePath);
+                            var publicUrl = fileBaseUrl + encodeURI(clean);
 
                             navigator.clipboard.writeText(publicUrl).then(function () {
                                 if (window.toastr && typeof window.toastr.success === 'function') {

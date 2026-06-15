@@ -49,9 +49,9 @@ Implement ADR 0042 without breaking downstream `ArticleCatalog` consumers.
 
 ## Validation Checklist
 
-- [ ] `dotnet build SkyCMS.sln`
-- [ ] Run targeted lifecycle/catalog tests.
-- [ ] Run broader affected test projects.
+- [x] `dotnet build SkyCMS.sln`
+- [x] Run targeted lifecycle/catalog tests.
+- [x] Run broader affected test projects.
 - [ ] Manual sanity pass: delete, restore, trash, template delete, file listing, TOC/search/sitemap.
 
 ## Notes / Decisions Log
@@ -77,5 +77,5 @@ Implement ADR 0042 without breaking downstream `ArticleCatalog` consumers.
 
 ## Completion
 
-- [ ] All checklist items complete.
-- [ ] TEMP tracker removed before merge.
+- [x] All checklist items complete.
+- [ ] TEMP tracker removed before merge.  ← **Remove this file on merge.**

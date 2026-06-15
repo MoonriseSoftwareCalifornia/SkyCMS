@@ -16,6 +16,7 @@ namespace Sky.Tests.Controllers
     using Microsoft.AspNetCore.Http.Features;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
@@ -83,6 +84,7 @@ namespace Sky.Tests.Controllers
                 .AddLogging()
                 .AddSingleton<IPathNormalizer, PathNormalizer>()
                 .AddSingleton<IPathValidator, PathValidator>()
+                .AddSingleton<IMemoryCache>(_ => Cache)
                 .AddScoped<IElFinderStorageAdapter>(
                     svc => new ElFinderStorageAdapter(
                         storage,
@@ -2536,6 +2538,66 @@ namespace Sky.Tests.Controllers
         /// FAILS before fix (the article folder appears with name="504", the raw number).
         /// PASSES after fix (ElFinderNameResolver wired in Setup()).
         /// </summary>
+        [TestMethod]
+        public async Task Connector_Open_ArticlesRoot_SkipsDeletedArticleFolders()
+        {
+            const int activeArticleNumber = 601;
+            const int deletedArticleNumber = 602;
+            const string activeTitle = "Visible Article";
+            const string deletedTitle = "Hidden Article";
+            var articlesPath = "/pub/articles";
+            await storage.CreateFolder(articlesPath);
+
+            dbContext.ArticleCatalog.AddRange(
+                new Cosmos.Common.Data.CatalogEntry
+                {
+                    ArticleNumber = activeArticleNumber,
+                    Title = activeTitle,
+                    UrlPath = "visible-article",
+                    Status = nameof(Cosmos.Common.Data.Logic.StatusCodeEnum.Active),
+                    Updated = DateTimeOffset.UtcNow,
+                },
+                new Cosmos.Common.Data.CatalogEntry
+                {
+                    ArticleNumber = deletedArticleNumber,
+                    Title = deletedTitle,
+                    UrlPath = "hidden-article",
+                    Status = nameof(Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted),
+                    Updated = DateTimeOffset.UtcNow,
+                });
+            await dbContext.SaveChangesAsync();
+
+            // Create folders for both articles, but only the active one should appear in the tree.
+            storage.CreateFolder($"{articlesPath}/{activeArticleNumber}").Wait();
+            storage.CreateFolder($"{articlesPath}/{deletedArticleNumber}").Wait();
+
+            try
+            {
+                SetGetRequest(new Dictionary<string, string>
+                {
+                    ["cmd"] = "open",
+                    ["target"] = EncodeHash(articlesPath),
+                });
+
+                var result = await controller.Connector();
+                var json = AsJsonObject(result);
+
+                Assert.IsNull(json["error"], $"Unexpected error: {json["error"]}");
+                var files = json["files"] as JArray;
+                Assert.IsNotNull(files);
+
+                var visible = files!.FirstOrDefault(f => f["name"]?.ToString() == activeTitle);
+                Assert.IsNotNull(visible, $"Expected visible article '{activeTitle}' in files[].");
+
+                var hidden = files!.FirstOrDefault(f => f["name"]?.ToString() == deletedTitle);
+                Assert.IsNull(hidden, $"Deleted article '{deletedTitle}' must not appear in files[].");
+            }
+            finally
+            {
+                try { await storage.DeleteFolderAsync(articlesPath); } catch { }
+            }
+        }
+
         [TestMethod]
         public async Task Connector_Tree_ArticleFolder_TreeItemNameIsArticleTitle_NotNumericId()
         {

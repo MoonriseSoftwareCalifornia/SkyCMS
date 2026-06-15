@@ -17,11 +17,11 @@ Use this section to quickly validate implementation against design intent:
 - **Implementation:** `FileManagerEntry.Path` vs `FileManagerEntry.DisplayPath`
 
 ### ✅ Server-Side Responsibilities
-1. Fetch article titles from `ArticleCatalog` table (published versions) or `Articles` table (drafts)
-2. Populate `FileManagerEntry.DisplayPath` and `Name` with friendly titles
+1. Fetch article titles/status from `ArticleCatalog` table (with legacy backfill support)
+2. In `FileManagerController.FilterEntries(...)`, filter deleted article entries and shape Open responses with friendly display metadata
 3. Encode **only canonical paths** in elFinder hash values (`ElFinderObject.Hash`)
-4. Filter out deleted/unpublished articles via `FilterDeletedArticleEntriesAsync()`
-5. Cache title lookups (30s TTL) to minimize database queries
+4. Rewrite `ElFinderObject.Name` to article title only for direct children when listing `/pub/articles`
+5. Cache deleted/article-status lookups (30s TTL) to minimize database queries
 
 ### ✅ Client-Side Responsibilities (elFinder UI)
 1. Display `ElFinderObject.Name` field (friendly title) in folder trees and breadcrumbs
@@ -36,7 +36,7 @@ Use this section to quickly validate implementation against design intent:
 - **VS Code Extension:** Not yet implemented (future work)
 
 ### 📋 Key Files to Validate
-- **Server:** `FileEntryPathHelper.cs`, `FileEntryTitleService.cs`, `ElFinderNameResolver.cs`, `FolderListingService.cs`, `OpenCommandHandler.cs`
+- **Server:** `Editor/Controllers/FileManagerController.cs` (`HandleOpenViaCqrsAsync`, `FilterEntries`), `FileEntryPathHelper.cs`, `FileEntryTitleService.cs`, `FolderListingService.cs`
 - **Client:** `Editor/wwwroot/js/file-manager.js` (or elFinder integration code)
 - **Models:** `FileManagerEntry.cs` (`Path` vs `DisplayPath`), `ElFinderObject.cs` (`Hash` vs `Name`)
 
@@ -218,21 +218,25 @@ Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, IMemoryCa
 
 #### Layer 3: Integration Points
 
-**3a. `ElFinderNameResolver` (elFinder Driver Integration)**
+**3a. `FileManagerController.FilterEntries` (Open Response Shaping)**
 
-Implements `IElFinderNameResolver` to hook into the elFinder file manager driver's name resolution pipeline.
+`HandleOpenViaCqrsAsync()` dispatches the CQRS `OpenCommand`, then applies `FilterEntries(...)` to the returned `OpenResponse.Files`.
 
 **Behavior**:
-- Only replaces the third path segment (article number) with the article title
-- Leaves all other path segments unchanged (subdirectories, filenames)
-- Only activates for paths matching `/pub/articles/{number}/...`
-- Fetches title from database on-demand for each resolution request
+- Filters out deleted article entries before serialization
+- Rewrites only the third path segment (article number) in `DisplayPath` to the article title
+- Rewrites `Name` only when the active listing parent is `/pub/articles` and the entry is a direct child (`/pub/articles/{number}`)
+- Leaves nested child names unchanged (for example, `/pub/articles/{number}/assets` keeps `Name = "assets"`)
 
 **Example**:
 ```
-Path: /pub/articles/123/assets/logo.png
-Segment being resolved: "123"
-Result: "Getting Started Guide"
+Listing parent: /pub/articles
+Entry real path: /pub/articles/123
+Result: Name = "Getting Started Guide", DisplayPath = "/pub/articles/Getting Started Guide"
+
+Listing parent: /pub/articles/123
+Entry real path: /pub/articles/123/assets
+Result: Name = "assets", DisplayPath = "/pub/articles/Getting Started Guide/assets"
 ```
 
 **3b. `FolderListingService` (Virtual Root Listings)**
@@ -344,7 +348,7 @@ FileManagerEntry:
   DisplayPath = "/pub/articles/Getting Started Guide"
   Name = "Getting Started Guide"
 
-↓ (ElFinderNameResolver applied)
+↓ (FileManagerController.FilterEntries applied for Open responses)
 
 ElFinderObject:
   Hash = "bDFfL3B1Yi9hcnRpY2xlcy8xMjM"  ← Base64("/pub/articles/123")
@@ -366,18 +370,16 @@ GET /FileManager/ElFinderConnector?cmd=open&target=bDFfL3B1Yi9hcnRpY2xlcy8xMjM&i
 **2. Server Processing**
 
 ```
-OpenCommandHandler.Handle()
+FileManagerController.HandleOpenViaCqrsAsync()
   ↓
 1. Decode target hash → "/pub/articles/123"
-2. Fetch files from blob storage using canonical path
-3. Query ArticleCatalog for article #123 title → "Getting Started Guide"
-4. Build FileManagerEntry objects:
-     Path = "/pub/articles/123/banner.jpg"
-     DisplayPath = "/pub/articles/Getting Started Guide/banner.jpg"
-     Name = "banner.jpg"
-5. ElFinderNameResolver transforms folder name "123" → "Getting Started Guide"
-6. Encode canonical paths as hashes for elFinder protocol
-7. Set Name field to friendly title
+2. Dispatch OpenCommand through elFinder CQRS dispatcher
+3. Receive OpenResponse containing canonical-path-backed ElFinder objects
+4. Call FilterEntries(openResponse.Files, targetPath)
+5. FilterEntries loads article title/status lookup and removes deleted entries
+6. FilterEntries rewrites DisplayPath article segment id → title for article paths
+7. FilterEntries rewrites Name only for direct `/pub/articles/{id}` entries when listing `/pub/articles`
+8. Return JSON with canonical hashes unchanged for protocol operations
 ```
 
 **3. Server Response**
@@ -424,10 +426,10 @@ When the user clicks a file or performs an operation (upload, delete, rename), t
 
 The system supports reverse resolution through these mechanisms:
 
-1. **ElFinderNameResolver.ResolveNameAsync()**
-   - Given a path like `/pub/articles/Getting Started Guide/banner.jpg`
-   - Extracts the article number from the canonical path structure
-   - **Limitation**: Requires the canonical path to already contain the article number
+1. **Canonical-First elFinder protocol flow**
+   - The client sends hashes that decode to canonical paths (for example, `/pub/articles/123/banner.jpg`)
+   - Friendly titles are applied server-side only to response display fields (`Name`/`DisplayPath`)
+   - **Limitation**: Free-form friendly path input is still not resolved end-to-end
 
 2. **Manual Reverse Lookup (Not Yet Implemented)**
    - **Missing**: Direct API endpoint for friendly path → canonical path conversion
@@ -578,12 +580,10 @@ Titles are displayed with special characters intact (no URL encoding or sanitiza
 ### Affected Components
 
 - ✅ `Editor/Services/FileEntryPathHelper.cs` - Path transformation utilities
-- ✅ `Editor/Services/FileEntryTitleService.cs` - Database title lookups
-- ✅ `Editor/Services/ElFinderNameResolver.cs` - elFinder driver integration
+- ✅ `Editor/Services/FileEntryTitleService.cs` - Database title/status lookups and deleted checks
 - ✅ `Editor/Services/FolderListingService.cs` - Virtual root listings
-- ✅ `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs` - elFinder open command
-- ✅ `Drivers/SkyCMS.Drivers.ElFinder/Adapters/IElFinderNameResolver.cs` - Name resolver interface
-- ⏳ `Editor/Controllers/FileManagerController.cs` - File Manager API endpoints
+- ✅ `Editor/Controllers/FileManagerController.cs` - Open response shaping (`FilterEntries`) and deleted-path guards
+- ✅ `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs` - canonical open payload provider (pre-controller shaping)
 - ⏳ `Editor/wwwroot/js/file-manager.js` - File Manager UI (if applicable)
 
 ---

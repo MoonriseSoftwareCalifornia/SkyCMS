@@ -9,8 +9,10 @@ namespace Sky.Cms.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Cosmos.BlobService;
+    using Sky.Editor.Services;
 
     /// <summary>
     /// Resolves article and template titles from the database for file listing entries,
@@ -41,6 +43,21 @@ namespace Sky.Cms.Services
         Task<IReadOnlyDictionary<int, string>> GetArticleTitlesByNumberAsync(IEnumerable<int> articleNumbers, string tenantDomain);
 
         /// <summary>
+        /// Retrieves article number/title/status records for the supplied article numbers.
+        /// Can optionally backfill missing catalog rows using the Articles table for legacy installs.
+        /// </summary>
+        /// <param name="articleNumbers">Article numbers to resolve.</param>
+        /// <param name="tenantDomain">Tenant domain used for cache scoping.</param>
+        /// <param name="backfillCatalog">When <see langword="true"/>, missing catalog rows may be created for legacy data.</param>
+        /// <param name="cancellationToken">Cancellation token for async database operations.</param>
+        /// <returns>A dictionary keyed by article number with title and status details.</returns>
+        Task<IReadOnlyDictionary<int, ArticleTitleAndStatus>> GetArticleTitleStatusByNumberAsync(
+            IEnumerable<int> articleNumbers,
+            string tenantDomain,
+            bool backfillCatalog,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Extracts template IDs from file entries and resolves their titles from the database.
         /// </summary>
         /// <param name="entries">File entries to process (typically from /pub/templates directory).</param>
@@ -65,6 +82,21 @@ namespace Sky.Cms.Services
         /// </param>
         /// <returns>A task that completes once filtering is done.</returns>
         Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, string tenantDomain);
+
+        /// <summary>
+        /// Applies shared listing projection rules used by editor file APIs:
+        /// resolves friendly names/display paths and filters deleted article entries.
+        /// </summary>
+        /// <param name="entries">Entries to project.</param>
+        /// <param name="listingParentPath">Canonical path of the listing parent folder.</param>
+        /// <param name="tenantDomain">Tenant domain associated with the current request.</param>
+        /// <param name="cancellationToken">Cancellation token for async operations.</param>
+        /// <returns>Projected entries in original order, with deleted article entries removed.</returns>
+        Task<List<FileManagerEntry>> ProjectFriendlyEntriesAsync(
+            IEnumerable<FileManagerEntry> entries,
+            string listingParentPath,
+            string tenantDomain,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Determines whether a canonical path is under a soft-deleted article folder.

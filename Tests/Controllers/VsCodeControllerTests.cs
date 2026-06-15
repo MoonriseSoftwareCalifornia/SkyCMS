@@ -1643,6 +1643,40 @@ namespace Sky.Tests.Controllers
         }
 
         [TestMethod]
+        public async Task GetFilesList_ArticlesRoot_SkipsDeletedArticleFolders()
+        {
+            Db.ArticleCatalog.AddRange(
+                new Cosmos.Common.Data.CatalogEntry
+                {
+                    ArticleNumber = 910,
+                    Title = "Visible Article",
+                    UrlPath = "visible-article",
+                    Status = nameof(Cosmos.Common.Data.Logic.StatusCodeEnum.Active),
+                    Updated = DateTimeOffset.UtcNow,
+                },
+                new Cosmos.Common.Data.CatalogEntry
+                {
+                    ArticleNumber = 911,
+                    Title = "Hidden Article",
+                    UrlPath = "hidden-article",
+                    Status = nameof(Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted),
+                    Updated = DateTimeOffset.UtcNow,
+                });
+            await Db.SaveChangesAsync();
+
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var pathHash = EncodeTestPath("/pub/articles");
+            var result = await controller.GetFilesList(pathHash) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var items = (result.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
+            Assert.AreEqual(1, items.Count);
+            Assert.AreEqual("Visible Article", GetAnonymousProperty<string>(items[0], "name"));
+            Assert.AreEqual("/pub/articles/910", GetAnonymousProperty<string>(items[0], "path"));
+        }
+
+        [TestMethod]
         public async Task GetFilesList_InvalidHash_ReturnsBadRequest()
         {
             controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();

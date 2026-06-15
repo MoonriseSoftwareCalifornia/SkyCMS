@@ -30,8 +30,6 @@ namespace Sky.Tests.Editor.Services
     [TestClass]
     public class FileEntryTitleServiceTests
     {
-        // â”€â”€â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
         private static ApplicationDbContext CreateDb(string name)
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -235,6 +233,64 @@ namespace Sky.Tests.Editor.Services
 
         [TestMethod]
         [TestCategory("FileEntryTitleService")]
+        public async Task ProjectFriendlyEntries_ArticlesRoot_RewritesRootNameAndFiltersDeleted()
+        {
+            using var db = CreateDb(nameof(ProjectFriendlyEntries_ArticlesRoot_RewritesRootNameAndFiltersDeleted));
+            db.Articles.AddRange(
+                new Cosmos.Common.Data.Article { ArticleNumber = 601, StatusCode = (int)StatusCodeEnum.Active, Title = "Visible Article", UrlPath = "visible", VersionNumber = 1 },
+                new Cosmos.Common.Data.Article { ArticleNumber = 602, StatusCode = (int)StatusCodeEnum.Deleted, Title = "Hidden Article", UrlPath = "hidden", VersionNumber = 1 });
+            await db.SaveChangesAsync();
+
+            var entries = new List<FileManagerEntry>
+            {
+                ArticleEntry(601),
+                ArticleEntry(602),
+            };
+
+            var resolver = CreateService(db);
+            var projected = await resolver.ProjectFriendlyEntriesAsync(entries, "/pub/articles", string.Empty);
+
+            Assert.AreEqual(1, projected.Count, "Deleted article entries should be removed from root listing.");
+            Assert.AreEqual("Visible Article", projected[0].Name);
+            Assert.AreEqual("/pub/articles/Visible Article", projected[0].DisplayPath);
+            Assert.AreEqual("/pub/articles/601", projected[0].Path);
+        }
+
+        [TestMethod]
+        [TestCategory("FileEntryTitleService")]
+        public async Task ProjectFriendlyEntries_ArticlesRoot_NestedDirectoryNameIsNotRewritten()
+        {
+            using var db = CreateDb(nameof(ProjectFriendlyEntries_ArticlesRoot_NestedDirectoryNameIsNotRewritten));
+            db.Articles.Add(new Cosmos.Common.Data.Article
+            {
+                ArticleNumber = 777,
+                StatusCode = (int)StatusCodeEnum.Active,
+                Title = "Nested Name Rule",
+                UrlPath = "nested-name-rule",
+                VersionNumber = 1,
+            });
+            await db.SaveChangesAsync();
+
+            var entries = new List<FileManagerEntry>
+            {
+                new FileManagerEntry
+                {
+                    Path = "/pub/articles/777/assets",
+                    Name = "assets",
+                    IsDirectory = true,
+                },
+            };
+
+            var resolver = CreateService(db);
+            var projected = await resolver.ProjectFriendlyEntriesAsync(entries, "/pub/articles", string.Empty);
+
+            Assert.AreEqual(1, projected.Count);
+            Assert.AreEqual("assets", projected[0].Name, "Nested directory names must remain unchanged.");
+            Assert.AreEqual("/pub/articles/Nested Name Rule/assets", projected[0].DisplayPath);
+        }
+
+        [TestMethod]
+        [TestCategory("FileEntryTitleService")]
         public async Task FilterDeleted_CachedResult_IsReused()
         {
             // Prime the cache with one call, then add a new deleted record without clearing the cache.
@@ -375,124 +431,50 @@ namespace Sky.Tests.Editor.Services
 
         [TestMethod]
         [TestCategory("FileEntryTitleService")]
-        [TestCategory("Cosmos")]
-        public async Task FillMissingTitlesFromArticlesAsync_CosmosPartitionKeyPath_ReturnsLatestNonEmptyTitle()
+        public async Task GetArticleTitlesByNumber_NumericOverload_ReturnsCatalogTitle()
         {
-            var configuration = new ConfigurationBuilder()
-                .AddUserSecrets(typeof(SkyCmsTestBase).Assembly, optional: true)
-                .AddEnvironmentVariables()
-                .Build();
-
-            var cosmosConnectionString = configuration.GetConnectionString("CosmosDB");
-            if (string.IsNullOrWhiteSpace(cosmosConnectionString))
+            using var db = CreateDb(nameof(GetArticleTitlesByNumber_NumericOverload_ReturnsCatalogTitle));
+            db.ArticleCatalog.Add(new Cosmos.Common.Data.CatalogEntry
             {
-                Assert.Inconclusive("Cosmos integration test skipped: 'ConnectionStrings:CosmosDB' is not configured.");
-            }
+                ArticleNumber = 900,
+                Title = "Numeric Title",
+                UrlPath = "numeric-title",
+                Status = nameof(StatusCodeEnum.Active),
+            });
+            await db.SaveChangesAsync();
 
-            var endpointMatch = System.Text.RegularExpressions.Regex.Match(
-                cosmosConnectionString!, @"AccountEndpoint=https?://([^:/]+)");
-            if (endpointMatch.Success)
-            {
-                var host = endpointMatch.Groups[1].Value;
-                try
-                {
-                    await Dns.GetHostEntryAsync(host);
-                }
-                catch (System.Net.Sockets.SocketException ex)
-                {
-                    Assert.Inconclusive($"Cosmos integration test skipped: DNS resolution failed for '{host}'. {ex.Message}");
-                }
-            }
+            var resolver = CreateService(db);
+            var result = await resolver.GetArticleTitlesByNumberAsync(new[] { 900 }, string.Empty);
 
-            await using var cosmosDb = new ApplicationDbContext(cosmosConnectionString!);
-
-            try
-            {
-                await cosmosDb.Database.EnsureCreatedAsync();
-            }
-            catch (Exception ex) when (ex is HttpRequestException or CosmosException)
-            {
-                Assert.Inconclusive($"Cosmos integration test skipped: endpoint unreachable. {ex.Message}");
-            }
-
-            var testArticleNumber = Math.Abs((int)(DateTime.UtcNow.Ticks % int.MaxValue));
-            var titlePrefix = $"Cosmos-TitleResolver-{Guid.NewGuid():N}";
-
-            cosmosDb.Articles.AddRange(
-                new Cosmos.Common.Data.Article
-                {
-                    Id = Guid.NewGuid(),
-                    ArticleNumber = testArticleNumber,
-                    VersionNumber = 1,
-                    Title = $"{titlePrefix}-v1",
-                    UrlPath = $"{titlePrefix.ToLowerInvariant()}-v1",
-                    StatusCode = (int)StatusCodeEnum.Active,
-                    UserId = "cosmos-test",
-                },
-                new Cosmos.Common.Data.Article
-                {
-                    Id = Guid.NewGuid(),
-                    ArticleNumber = testArticleNumber,
-                    VersionNumber = 2,
-                    Title = string.Empty,
-                    UrlPath = $"{titlePrefix.ToLowerInvariant()}-v2",
-                    StatusCode = (int)StatusCodeEnum.Active,
-                    UserId = "cosmos-test",
-                },
-                new Cosmos.Common.Data.Article
-                {
-                    Id = Guid.NewGuid(),
-                    ArticleNumber = testArticleNumber,
-                    VersionNumber = 3,
-                    Title = $"{titlePrefix}-v3",
-                    UrlPath = $"{titlePrefix.ToLowerInvariant()}-v3",
-                    StatusCode = (int)StatusCodeEnum.Active,
-                    UserId = "cosmos-test",
-                });
-
-            await cosmosDb.SaveChangesAsync();
-
-            try
-            {
-                var resolver = CreateService(cosmosDb);
-                var result = new Dictionary<int, string>();
-                var allNumbers = new List<int> { testArticleNumber };
-
-                var method = typeof(FileEntryTitleService).GetMethod(
-                    "FillMissingTitlesFromArticlesAsync",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-
-                Assert.IsNotNull(method, "Expected private method FillMissingTitlesFromArticlesAsync to exist.");
-
-                var task = method!.Invoke(resolver, new object[] { result, allNumbers, string.Empty }) as Task;
-                Assert.IsNotNull(task, "Expected reflected invocation to return a Task.");
-                await task!;
-
-                Assert.IsTrue(result.ContainsKey(testArticleNumber), "Expected article title to be resolved for the missing number.");
-                Assert.AreEqual($"{titlePrefix}-v3", result[testArticleNumber], "Expected latest non-empty title from Cosmos path.");
-            }
-            finally
-            {
-                try
-                {
-                    var seededRows = await cosmosDb.Articles
-                        .Where(a => a.ArticleNumber == testArticleNumber)
-                        .ToListAsync();
-
-                    if (seededRows.Count > 0)
-                    {
-                        cosmosDb.Articles.RemoveRange(seededRows);
-                        await cosmosDb.SaveChangesAsync();
-                    }
-                }
-                catch (Exception ex) when (ex is HttpRequestException or CosmosException)
-                {
-                    // Ignore cleanup failures due to transient emulator connectivity.
-                }
-            }
+            Assert.AreEqual(1, result.Count);
+            Assert.IsTrue(result.ContainsKey(900));
+            Assert.AreEqual("Numeric Title", result[900]);
         }
 
-        // â”€â”€â”€â”€â”€ ResolveCanonicalPathAsync Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        [TestMethod]
+        [TestCategory("FileEntryTitleService")]
+        public async Task GetArticleTitleStatusByNumber_BackfillsMissingLegacyCatalogRow()
+        {
+            using var db = CreateDb(nameof(GetArticleTitleStatusByNumber_BackfillsMissingLegacyCatalogRow));
+            db.Articles.Add(new Cosmos.Common.Data.Article
+            {
+                ArticleNumber = 901,
+                VersionNumber = 1,
+                Title = "Legacy Inactive Article",
+                UrlPath = "legacy-inactive",
+                StatusCode = (int)StatusCodeEnum.Inactive,
+            });
+            await db.SaveChangesAsync();
+
+            var resolver = CreateService(db);
+            var result = await resolver.GetArticleTitleStatusByNumberAsync(new[] { 901 }, string.Empty, backfillCatalog: true);
+
+            Assert.AreEqual(1, result.Count);
+            Assert.IsTrue(result.ContainsKey(901));
+            Assert.AreEqual("Legacy Inactive Article", result[901].Title);
+            Assert.AreEqual((int)StatusCodeEnum.Inactive, result[901].StatusCode);
+            Assert.AreEqual(1, await db.ArticleCatalog.CountAsync(a => a.ArticleNumber == 901));
+        }
 
         [TestMethod]
         [TestCategory("FileEntryTitleService")]

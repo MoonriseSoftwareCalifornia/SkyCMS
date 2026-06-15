@@ -16,6 +16,7 @@ namespace Sky.Cms.Controllers
     using System.Threading.Tasks;
     using Cosmos.BlobService;
     using Cosmos.Common.Data;
+    using Cosmos.Common.Data.Logic;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
     using Cosmos.DynamicConfig;
@@ -1637,27 +1638,21 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Invalid path hash." });
             }
 
-            var denied = await this.DenyDeletedArticlePathAsync(path);
-            if (denied != null)
-            {
-                return denied;
-            }
-
             try
             {
                 var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
                 var entries = await this.folderListingService.GetEntriesAsync(path, tenantDomain);
+                var projectedEntries = await this.titleResolver.ProjectFriendlyEntriesAsync(
+                    entries,
+                    path,
+                    tenantDomain,
+                    HttpContext?.RequestAborted ?? default);
 
-                var articleTitlesByNumber = await this.titleResolver.GetArticleTitlesByNumberAsync(entries, tenantDomain);
-                var templateTitlesById = await this.titleResolver.GetTemplateTitlesByIdAsync(entries);
-
-                var result = entries.Select(e => new
+                var result = projectedEntries.Select(e => new
                 {
-                    name = FileEntryPathHelper.ResolveFriendlyDisplayName(path, e, articleTitlesByNumber, templateTitlesById),
-                    path = FileEntryPathHelper.ResolveEntryPath(path, e),
-                    displayPath = FileEntryPathHelper.ResolveFriendlyDisplayPath(
-                        FileEntryPathHelper.ResolveEntryPath(path, e),
-                        articleTitlesByNumber),
+                    name = e.Name,
+                    path = e.Path,
+                    displayPath = e.DisplayPath,
                     isDir = e.IsDirectory,
                     mimeType = e.IsDirectory ? "directory" : (string.IsNullOrWhiteSpace(e.ContentType) ? "application/octet-stream" : e.ContentType),
                     size = e.Size,
@@ -2052,16 +2047,10 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Destination path is required." });
             }
 
-            var deniedSource = await this.DenyDeletedArticlePathAsync(sourcePath);
-            if (deniedSource != null)
+            var denied = await this.DenyDeletedArticlePathsAsync(sourcePath, request.Destination);
+            if (denied != null)
             {
-                return deniedSource;
-            }
-
-            var deniedDestination = await this.DenyDeletedArticlePathAsync(request.Destination);
-            if (deniedDestination != null)
-            {
-                return deniedDestination;
+                return denied;
             }
 
             try
@@ -2110,16 +2099,10 @@ namespace Sky.Cms.Controllers
                 return BadRequest(new { message = "Destination path is required." });
             }
 
-            var deniedSource = await this.DenyDeletedArticlePathAsync(sourcePath);
-            if (deniedSource != null)
+            var denied = await this.DenyDeletedArticlePathsAsync(sourcePath, request.Destination);
+            if (denied != null)
             {
-                return deniedSource;
-            }
-
-            var deniedDestination = await this.DenyDeletedArticlePathAsync(request.Destination);
-            if (deniedDestination != null)
-            {
-                return deniedDestination;
+                return denied;
             }
 
             try
@@ -2138,21 +2121,34 @@ namespace Sky.Cms.Controllers
             }
         }
 
-        private async Task<IActionResult?> DenyDeletedArticlePathAsync(string? path)
+        private Task<IActionResult?> DenyDeletedArticlePathAsync(string? path)
         {
-            if (string.IsNullOrWhiteSpace(path))
+            return this.DenyDeletedArticlePathsAsync(path);
+        }
+
+        private async Task<IActionResult?> DenyDeletedArticlePathsAsync(params string?[] paths)
+        {
+            if (paths == null || paths.Length == 0)
             {
                 return null;
             }
 
-            var normalizedPath = FileEntryPathHelper.NormalizePath(path);
             var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
-            if (!await this.titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
+            foreach (var path in paths)
             {
-                return null;
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    continue;
+                }
+
+                var normalizedPath = FileEntryPathHelper.NormalizePath(path);
+                if (await this.titleResolver.IsArticlePathDeletedAsync(normalizedPath, tenantDomain))
+                {
+                    return NotFound(new { message = DeletedArticleAccessMessage });
+                }
             }
 
-            return NotFound(new { message = DeletedArticleAccessMessage });
+            return null;
         }
 
         /// <summary>

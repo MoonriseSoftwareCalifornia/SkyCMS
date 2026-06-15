@@ -654,6 +654,7 @@
         "type": "Project",
         "dependencies": {
           "Cosmos.BlobService": "[12.4.0, )",
+          "Cosmos.Common": "[12.4.0, )",
           "MediatR": "[14.1.0, )",
           "MimeTypeMapOfficial": "[1.0.17, 2.0.0)",
           "SixLabors.ImageSharp": "[3.1.12, 4.0.0)"
