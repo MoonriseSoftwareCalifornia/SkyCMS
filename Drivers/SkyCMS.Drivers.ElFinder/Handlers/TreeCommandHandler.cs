@@ -75,8 +75,8 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
         var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
         var normalizedPath = "/" + path.Trim('/');
 
-        // Only emit RealPath and DisplayPath when name substitution occurred
-        // (per ElFinderObject contract: realPath is "Only emitted when the display name differs from the raw storage name")
+        // Always set RealPath for proper entry identification (required by FilterEntries).
+        // DisplayPath is only computed when name substitution occurred for friendly display.
         var nameWasSubstituted = !string.Equals(resolvedName, entry.Name, StringComparison.Ordinal);
 
         return new ElFinderObject
@@ -91,7 +91,7 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
             Write = 1,
             Locked = 0,
             Dirs = 1,
-            RealPath = nameWasSubstituted ? normalizedPath : null,
+            RealPath = normalizedPath,
             DisplayPath = nameWasSubstituted ? await BuildDisplayPathAsync(path, cancellationToken) : null,
         };
     }

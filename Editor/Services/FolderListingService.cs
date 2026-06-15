@@ -58,7 +58,14 @@ namespace Sky.Cms.Services
             // ── /pub/articles root: virtual list from ArticleCatalog ──────────────
             if (string.Equals(trimmed, ArticlesRoot, StringComparison.OrdinalIgnoreCase))
             {
+                // Filter: only include articles that are NOT deleted or redirected.
+                // StatusCode 2 = Deleted, StatusCode 3 = Redirect (deprecated entry).
+                // Keep Active (0) and Inactive (1).
+                var deletedStatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Deleted;
+                var redirectStatusCode = (int)Cosmos.Common.Data.Logic.StatusCodeEnum.Redirect;
+
                 var raw = await this.dbContext.ArticleCatalog
+                    .Where(c => c.StatusCode != deletedStatusCode && c.StatusCode != redirectStatusCode)
                     .Select(s => new { s.ArticleNumber, s.Title, s.Updated })
                     .ToListAsync();
 

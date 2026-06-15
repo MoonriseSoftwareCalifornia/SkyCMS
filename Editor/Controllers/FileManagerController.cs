@@ -380,7 +380,18 @@ namespace Sky.Cms.Controllers
 
             var response = await elFinderMediator.SendAsync(command);
             var mappedError = MapCqrsError(this, response);
-            return mappedError ?? JsonCqrs(response);
+            if (mappedError != null)
+            {
+                return mappedError;
+            }
+
+            if (response is not TreeResponse treeResponse)
+            {
+                return Json(ElFinderError("errOpen"));
+            }
+
+            treeResponse.Tree = await FilterEntries(treeResponse.Tree, targetPath);
+            return JsonCqrs(response);
         }
 
         private async Task<IActionResult> HandleMkdirViaCqrsAsync()
