@@ -2724,7 +2724,10 @@ namespace Sky.Cms.Controllers
 
             var mappings = objects.Select(o =>
             {
-                var canonicalPath = NormalizePath(string.IsNullOrWhiteSpace(o.RealPath) ? o.DisplayPath : o.RealPath);
+                var canonicalPathSource = !string.IsNullOrWhiteSpace(o.RealPath)
+                    ? o.RealPath
+                    : DecodeHash(o.Hash) ?? o.DisplayPath;
+                var canonicalPath = NormalizePath(canonicalPathSource);
                 return new
                 {
                     Object = o,
