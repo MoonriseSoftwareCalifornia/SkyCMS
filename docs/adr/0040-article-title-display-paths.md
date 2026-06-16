@@ -17,11 +17,12 @@ Use this section to quickly validate implementation against design intent:
 - **Implementation:** `FileManagerEntry.Path` vs `FileManagerEntry.DisplayPath`
 
 ### ✅ Server-Side Responsibilities
-1. Fetch article titles/status from `ArticleCatalog` table (with legacy backfill support)
-2. In `FileManagerController.FilterEntries(...)`, filter deleted article entries and shape Open responses with friendly display metadata
-3. Encode **only canonical paths** in elFinder hash values (`ElFinderObject.Hash`)
-4. Rewrite `ElFinderObject.Name` to article title only for direct children when listing `/pub/articles`
-5. Cache deleted/article-status lookups (30s TTL) to minimize database queries
+1. Resolve canonical paths from elFinder hashes and keep canonical paths authoritative for storage operations
+2. Translate canonical → friendly display metadata in `IFileEntryTitleService.ProjectFriendlyEntriesAsync(...)` (invoked by `FileManagerController.FilterEntries(...)`)
+3. Encode **only canonical paths** in elFinder hash values (`ElFinderObject.Hash`, `ElFinderObject.PHash`)
+4. Rewrite `Name` to article title only for direct children when listing `/pub/articles`; keep deeper child names unchanged
+5. Filter deleted article entries before response serialization; this filtering is based on article status lookups
+6. Apply the same projection rules to VS Code explorer listings via `VsCodeController.GetFilesList(...)`
 
 ### ✅ Client-Side Responsibilities (elFinder UI)
 1. Display `ElFinderObject.Name` field (friendly title) in folder trees and breadcrumbs
@@ -30,14 +31,33 @@ Use this section to quickly validate implementation against design intent:
 4. Handle errors gracefully when titles cannot be resolved
 
 ### ⚠️ Known Gaps (Validation Focus)
-- **Reverse Resolution:** Friendly → Canonical path conversion is incomplete
-- **Title Collisions:** No disambiguation when two articles have identical titles
+- **Reverse Resolution Wiring:** `ResolveCanonicalPathAsync(...)` exists but is not currently part of the active elFinder command flow
+- **Title Collisions:** No explicit disambiguation strategy in display naming
 - **Client Tests:** Missing breadcrumb/navigation validation tests
-- **VS Code Extension:** Not yet implemented (future work)
+- **Flow Duplication:** Friendly display translation exists in both driver handlers and controller-side projection; final response output is governed by controller-side filtering/projection
 
 ### 📋 Key Files to Validate
-- **Server:** `Editor/Controllers/FileManagerController.cs` (`HandleOpenViaCqrsAsync`, `FilterEntries`), `FileEntryPathHelper.cs`, `FileEntryTitleService.cs`, `FolderListingService.cs`
-- **Client:** `Editor/wwwroot/js/file-manager.js` (or elFinder integration code)
+- **Primary ownership (final response shaping):**
+  - `Editor/Controllers/FileManagerController.cs`
+    - `HandleOpenViaCqrsAsync(...)`
+    - `HandleTreeViaCqrsAsync(...)`
+    - `FilterEntries(...)`
+  - `Editor/Services/FileEntryTitleService.cs`
+    - `ProjectFriendlyEntriesAsync(...)`
+    - `FilterDeletedArticleEntriesAsync(...)`
+  - `Editor/Services/FileEntryPathHelper.cs`
+    - `TryGetArticleNumberFromPath(...)`
+    - `ResolveFriendlyDisplayPath(...)`
+    - `ResolveFriendlyDisplayName(...)`
+  - `Editor/Services/FolderListingService.cs`
+    - `GetEntriesAsync(...)`
+- **Driver-level pre-shaping (then overridden/finalized by controller-side projection):**
+  - `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs`
+    - `BuildEntryDisplayPathAsync(...)`
+  - `Drivers/SkyCMS.Drivers.ElFinder/Handlers/TreeCommandHandler.cs`
+    - `BuildDisplayPathAsync(...)`
+  - `Editor/Services/ElFinderNameResolver.cs`
+    - `ResolveNameAsync(...)`
 - **Models:** `FileManagerEntry.cs` (`Path` vs `DisplayPath`), `ElFinderObject.cs` (`Hash` vs `Name`)
 
 ---
@@ -197,11 +217,11 @@ Async service responsible for:
 - Soft-delete filtering (excludes articles where all versions are marked `StatusCodeEnum.Deleted`)
 - Batch lookup of template titles by GUID from `Templates` table
 
-**Caching Strategy**:
-- **Deleted article numbers cached for 30 seconds** (sliding expiration)
-- **Cache key scoped by tenant domain** to prevent cross-tenant bleed in multi-tenant deployments
-- **Title lookups are NOT cached** to ensure immediate reflection of title changes in the UI
-- **Rationale**: Caching by article number (not title) prevents cache invalidation issues when titles change
+**Caching Strategy (Current Code)**:
+- Article number → title/status maps are cached using tenant-scoped keys in `GetArticleTitleStatusByNumberAsync(...)`
+- Current TTL is short (10 seconds)
+- Deleted-entry filtering does not maintain a separate dedicated deleted-number cache map
+- Rationale: reduce repeated lookup cost while keeping friendly metadata reasonably fresh
 
 **Performance Characteristics**:
 - Uses batch queries to minimize database round-trips
@@ -277,10 +297,11 @@ The elFinder-based File Manager UI:
 4. Backend resolves article title "Getting Started Guide" from database
 5. UI displays "Getting Started Guide" breadcrumb while working with canonical path internally
 
-**Bi-directional Path Resolution**:
-- **User types friendly path**: UI reverse-resolves to canonical path before sending to backend
-- **User pastes friendly path**: Same reverse-resolution logic applies
-- **Bookmarks/URLs**: Always use canonical paths to ensure stability
+**Runtime Path Resolution (Current Behavior)**:
+- **Canonical-first operations**: elFinder requests use hashes that decode to canonical paths
+- **Server-side friendly projection**: backend sets friendly `Name`/`DisplayPath` in response payloads
+- **No client-side rewriting requirement**: client should not rewrite path segments; it should send canonical hashes
+- **Bookmarks/URLs**: canonical paths remain the operational source of truth for stability
 
 ---
 
@@ -422,30 +443,24 @@ When the user clicks a file or performs an operation (upload, delete, rename), t
 
 ### Reverse Resolution (Friendly → Canonical)
 
-**Current Implementation Status:** ⏳ **Partially implemented**
+**Current Implementation Status:** ⏳ **Implemented in service, not wired into active elFinder request flow**
 
-The system supports reverse resolution through these mechanisms:
+`IFileEntryTitleService.ResolveCanonicalPathAsync(...)` exists and performs friendly → canonical conversion for `/pub/articles/{title}/...` by looking up title matches in `ArticleCatalog`, then `Articles` as fallback.
 
-1. **Canonical-First elFinder protocol flow**
-   - The client sends hashes that decode to canonical paths (for example, `/pub/articles/123/banner.jpg`)
-   - Friendly titles are applied server-side only to response display fields (`Name`/`DisplayPath`)
-   - **Limitation**: Free-form friendly path input is still not resolved end-to-end
+What is true today:
 
-2. **Manual Reverse Lookup (Not Yet Implemented)**
-   - **Missing**: Direct API endpoint for friendly path → canonical path conversion
-   - **Workaround**: Client must maintain a mapping from titles to article numbers
-   - **Future Work**: Add `IFileEntryTitleService.ResolveCanonicalPathAsync(string friendlyPath)`
+1. **Service capability exists**
+   - Friendly path `/pub/articles/Getting Started Guide/banner.jpg` can be translated to `/pub/articles/123/banner.jpg`
+   - Already-canonical numeric paths pass through unchanged
 
-**Expected Behavior for Edge Cases:**
+2. **Runtime flow limitation**
+   - The active elFinder command flow is canonical-hash first
+   - Free-form friendly path input is not currently part of the normal elFinder connector navigation flow
+   - Therefore, this reverse conversion is available for explicit use, but is not the primary runtime path for elFinder operations
 
-| User Input | Expected Resolution | Error Handling |
-|------------|---------------------|----------------|
-| `/pub/articles/Getting Started Guide/` | Lookup title → article #123 → `/pub/articles/123/` | 404 if title not found |
-| `/pub/articles/Nonexistent Title/` | Title not in catalog | Return error or empty result |
-| `/pub/articles/123/` (numeric input) | Already canonical | Pass through unchanged |
-| `/pub/articles/Draft Article/` (draft only) | Lookup in Articles table (not just catalog) | Find latest version title |
-
-**Current Gap:** The reverse resolution logic is **incomplete**. Users typing friendly paths directly would not be properly resolved to canonical paths in all scenarios.
+**Why this matters for tests:**
+- Tests for normal open/tree/list operations should primarily validate controller + projection ownership (`FilterEntries` + `ProjectFriendlyEntriesAsync`)
+- Reverse-resolution tests should target `FileEntryTitleService.ResolveCanonicalPathAsync(...)` directly, as a separate concern
 
 ---
 
@@ -457,7 +472,7 @@ The dual-path approach was chosen because it satisfies competing constraints:
 
 1. **UX Requirement**: Editors need human-readable folder names
 2. **Storage Stability**: Blob storage paths must never change (external references, CDN caching)
-3. **Performance**: Dynamic resolution is fast enough with proper caching (30-second window for deleted articles)
+3. **Performance**: Dynamic resolution is fast enough with short-lived lookup caching and canonical-path-first operations
 4. **Maintainability**: Clean separation between storage (canonical) and presentation (display) layers
 
 ### Why Not Rename Folders in Storage?
@@ -479,11 +494,18 @@ Slug-based paths (e.g., `/pub/articles/getting-started-guide/`) were rejected be
 - **Reverse lookup required**: Still need article number for database operations
 - **Lost clarity**: Slugs don't always match exact article titles
 
-### Why Cache Deleted Articles But Not Titles?
+### Why This Translation Is Done Server-Side (The "Why")
 
-- **Deleted articles**: Status changes rarely (only on trash/restore), so 30-second cache is safe
-- **Article titles**: Must update immediately when editors change titles, so no title caching
-- **Cache by article number**: Ensures cache entries remain valid even when titles change
+- **Stable operations:** all storage and protocol operations must use canonical numeric paths so uploads/deletes/renames remain deterministic and do not break when titles change.
+- **Editor usability:** users need friendly titles in tree/breadcrumb/list views to navigate content efficiently.
+- **Single source of truth for shaping:** server-side projection keeps UI clients thin and avoids duplicated path-substitution logic across clients.
+- **Safety and compatibility:** canonical hashes avoid ambiguity and preserve existing links/bookmarks while still allowing user-friendly display metadata.
+
+### Caching Behavior (Current Implementation)
+
+- `GetArticleTitleStatusByNumberAsync(...)` caches an article number → title/status lookup map (tenant-scoped key) for a short TTL (currently 10 seconds).
+- Deleted-entry filtering in `FilterDeletedArticleEntriesAsync(...)` uses per-article status checks and does not maintain a separate deleted-number cache structure in this implementation.
+- Practical effect: display/title/status data may lag briefly within TTL windows, while canonical paths remain unaffected.
 
 ### Why Verbatim Title Display?
 
@@ -511,7 +533,7 @@ Titles are displayed with special characters intact (no URL encoding or sanitiza
 
 1. **Added Complexity**: Dual-path architecture requires careful handling throughout the codebase
 2. **Performance Overhead**: Title resolution requires database lookups on every directory listing
-3. **Caching Considerations**: Must balance real-time title updates with performance (30-second cache window chosen)
+3. **Caching Considerations**: Must balance near-real-time title updates with performance (short tenant-scoped TTL used in lookup caching)
 4. **Testing Burden**: Must test both canonical and display path code paths
 5. **Migration Challenge**: Existing URLs/documentation may reference numeric paths (though they continue to work)
 6. **Edge Case Handling**: Must handle scenarios like:
@@ -524,8 +546,8 @@ Titles are displayed with special characters intact (no URL encoding or sanitiza
 
 | Aspect | Choice | Alternative | Rationale |
 |--------|--------|-------------|-----------|
-| **Cache duration** | 30 seconds sliding | No cache / Longer cache | Balances real-time updates with DB load |
-| **Cache scope** | Deleted article numbers only | All titles | Titles must update immediately; deleted status changes rarely |
+| **Cache duration** | Short TTL (current code: 10s) | No cache / Longer cache | Balances freshness with DB load |
+| **Cache scope** | Article number → title/status lookup maps | Cache nothing / cache broader projections | Keep canonical operations stable while reducing repeated status/title queries |
 | **Title display** | Verbatim with special chars | URL-encoded / Sanitized | Preserves exact article title for clarity |
 | **Path resolution** | On-demand per request | Pre-computed at storage time | Ensures display always reflects current title |
 | **Reverse resolution** | Supported | Not supported | Allows users to type/paste friendly paths |
@@ -575,6 +597,42 @@ Titles are displayed with special characters intact (no URL encoding or sanitiza
 - Duplicate logic between client and server
 - Harder to maintain and debug
 
+## Runtime Translation Ownership (Authoritative)
+
+Use this section as the source of truth when deciding where translation tests should live.
+
+### Primary Ownership (final output sent to clients)
+
+1. `Editor/Controllers/FileManagerController.cs`
+   - `HandleOpenViaCqrsAsync(...)` and `HandleTreeViaCqrsAsync(...)` call `FilterEntries(...)` before JSON serialization.
+   - `FilterEntries(...)` is the last server-side shaping step for `Name` and `DisplayPath` in elFinder responses.
+
+2. `Editor/Services/FileEntryTitleService.cs`
+   - `ProjectFriendlyEntriesAsync(...)` applies friendly display projection rules and deleted-entry filtering behavior.
+   - `FilterDeletedArticleEntriesAsync(...)` removes deleted article entries from listings.
+
+3. `Editor/Services/FileEntryPathHelper.cs`
+   - `TryGetArticleNumberFromPath(...)` extracts article-number segments from canonical paths.
+   - `ResolveFriendlyDisplayPath(...)` rewrites only the article-number segment in display output.
+   - `ResolveFriendlyDisplayName(...)` controls when folder names are replaced with friendly titles.
+
+### Supporting / Pre-Projection Components
+
+These participate in name/display shaping earlier, but final observable output is still governed by controller-side projection above:
+
+- `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs`
+  - `BuildEntryDisplayPathAsync(...)`
+- `Drivers/SkyCMS.Drivers.ElFinder/Handlers/TreeCommandHandler.cs`
+  - `BuildDisplayPathAsync(...)`
+- `Editor/Services/ElFinderNameResolver.cs`
+  - `ResolveNameAsync(...)`
+
+### Testing Guidance From Ownership
+
+- **Open/tree/file-manager integration translation assertions** should target the `FileManagerController -> FilterEntries -> ProjectFriendlyEntriesAsync` path.
+- **Helper-only unit tests** should validate pure transformation behavior (`FileEntryPathHelper`).
+- **Reverse translation unit tests** should target `FileEntryTitleService.ResolveCanonicalPathAsync(...)` and not be conflated with normal open/tree command tests.
+
 ## Implementation Notes
 
 ### Affected Components
@@ -595,12 +653,12 @@ Titles are displayed with special characters intact (no URL encoding or sanitiza
 | Scenario | Path Behavior | Display Behavior | Error Handling |
 |----------|---------------|------------------|----------------|
 | **Article Published** | Canonical path `/pub/articles/123` remains stable | Folder name shows current published title | Title updates on next catalog sync |
-| **Article Title Changed** | Canonical path unchanged | New title displayed after catalog sync (30s cache) | Old title shown until cache expires |
-| **Article Unpublished** | Canonical path still exists in blob storage | Folder **hidden** from listings (filtered by `FilterDeletedArticleEntriesAsync`) | 404 or access denied if user navigates directly |
-| **Article Re-published** | Same canonical path `/pub/articles/123` reused | Folder reappears with current title | Cached deleted state expires (30s) |
+| **Article Title Changed** | Canonical path unchanged | New title displayed after catalog/data refresh | Old title can appear briefly within short cache windows |
+| **Article Unpublished** | Canonical path still exists in blob storage | Folder visibility follows status-based filtering rules in `FilterDeletedArticleEntriesAsync(...)` | 404 or access denied if user navigates directly |
+| **Article Re-published** | Same canonical path `/pub/articles/123` reused | Folder visibility/name reflects current status/title after refresh | Short cache windows may briefly delay visibility updates |
 | **Article Deleted** | Blob storage may retain files (soft delete) | Folder **removed** from listings permanently | Number may be reused for future articles |
 
-**Critical Behavior:** `FileEntryTitleService.FilterDeletedArticleEntriesAsync()` actively removes entries for article numbers not present in the `ArticleCatalog`. This means **unpublished articles disappear from File Manager** even if their blob storage files remain.
+**Critical Behavior:** `FileEntryTitleService.FilterDeletedArticleEntriesAsync()` removes entries whose article versions are all marked deleted for that article number. This is status-based filtering, not simply "missing from `ArticleCatalog`" filtering.
 
 ### Title Conflict Resolution
 
@@ -644,20 +702,14 @@ TryGetArticleNumberFromPath("/pub/articles/123/")   → true, articleNumber = 12
 
 ### Caching & Staleness
 
-**Title Resolution Cache:**
-- **TTL:** 30 seconds (configurable per tenant via `MemoryCache`)
-- **Cache Key:** `article-titles-{tenantDomain}`
-- **Invalidation:** Time-based expiration only (no active invalidation on publish/unpublish)
-
-**Deleted Article Cache:**
-- **TTL:** 30 seconds (tenant-scoped)
-- **Cache Key:** `deleted-article-numbers-{tenantDomain}`
-- **Purpose:** Avoid querying `ArticleCatalog` on every request for known-deleted articles
+**Current Cache Usage in Translation Pipeline:**
+- Article title/status lookup maps are cached with tenant-scoped keys in `GetArticleTitleStatusByNumberAsync(...)`.
+- Current TTL in code is short-lived (10 seconds).
+- Deleted filtering path (`FilterDeletedArticleEntriesAsync(...)`) performs article-number status checks and does not rely on a separate deleted-number cache map.
 
 **Staleness Implications:**
-- Title changes may take **up to 30 seconds** to reflect in File Manager
-- Deleted articles may still appear for **up to 30 seconds** after unpublish
-- This is considered acceptable for the current use case (content authoring is not millisecond-sensitive)
+- Friendly display metadata can lag briefly within the active TTL window.
+- Canonical paths/hashes are unaffected by cache staleness and remain stable for operations.
 
 ### File Upload & Path Safety
 
@@ -734,9 +786,9 @@ FileEntryPathHelper.IsDangerousExtension(filename)
 **Server-Side:**
 - ✅ `TryGetArticleNumberFromPath` handles valid/invalid paths
 - ✅ `ResolveFriendlyDisplayPath` returns titles when present
-- ✅ `FilterDeletedArticleEntriesAsync` removes unpublished articles
-- ⏳ **Missing:** Reverse resolution test (friendly path input → canonical path output)
-- ⏳ **Missing:** Title collision scenario test
+- ✅ `FilterDeletedArticleEntriesAsync` removes deleted-article entries from listings
+- ✅ Reverse resolution tests exist for `ResolveCanonicalPathAsync(...)`
+- ✅ Title collision resolution test exists (deterministic lowest-number match)
 
 **Integration:**
 - ✅ elFinder open command returns correct `name` and `hash` values
@@ -748,9 +800,9 @@ FileEntryPathHelper.IsDangerousExtension(filename)
 - ⏳ **Missing:** Verify operations send canonical hashes
 - ⏳ **Missing:** Test error display when article not found
 
-**VS Code Extension (Future):**
-- ⏳ **Not Yet Implemented:** Extension does not yet support article title resolution
-- ⏳ **Future Work:** Add similar logic to workspace file trees
+**VS Code Endpoint Coverage:**
+- ✅ `VsCodeController.GetFilesList(...)` uses `ProjectFriendlyEntriesAsync(...)` for the same friendly display projection rules
+- ⏳ **Future Work:** Extend equivalent behavior to any additional explorer/workspace surfaces not yet using this shared projection path
 
 ---
 
