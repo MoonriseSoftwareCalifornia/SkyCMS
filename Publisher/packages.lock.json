@@ -366,16 +366,16 @@
           "AWSSDK.S3": "[4.0.22.1, )",
           "Azure.Extensions.AspNetCore.DataProtection.Blobs": "[1.5.2, )",
           "Azure.Storage.Files.Shares": "[12.25.0, )",
-          "Cosmos.DynamicConfig": "[12.3.0, )"
+          "Cosmos.DynamicConfig": "[12.4.0, )"
         }
       },
       "cosmos.common": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[12.3.0, )",
+          "AspNetCore.Identity.FlexDb": "[12.4.0, )",
           "Azure.Monitor.Query.Logs": "[1.0.0, )",
-          "Cosmos.BlobService": "[12.3.0, )",
-          "Cosmos.DynamicConfig": "[12.3.0, )",
+          "Cosmos.BlobService": "[12.4.0, )",
+          "Cosmos.DynamicConfig": "[12.4.0, )",
           "MailChimp.Net.V3": "[5.8.2, 6.0.0)",
           "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore": "[10.0.7, )",
           "Otp.NET": "[1.4.1, )",
@@ -385,7 +385,7 @@
       "cosmos.dynamicconfig": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[12.3.0, )",
+          "AspNetCore.Identity.FlexDb": "[12.4.0, )",
           "IPAddressRange": "[6.3.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.7, )",
           "Microsoft.EntityFrameworkCore.Cosmos": "[10.0.7, )"
@@ -394,10 +394,10 @@
       "cosmos.emailservices": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[12.3.0, )",
+          "AspNetCore.Identity.FlexDb": "[12.4.0, )",
           "Azure.Communication.Email": "[1.1.0, )",
           "Azure.Identity": "[1.21.0, )",
-          "Cosmos.Common": "[12.3.0, )",
+          "Cosmos.Common": "[12.4.0, )",
           "HtmlAgilityPack": "[1.12.4, )",
           "Microsoft.AspNetCore.Identity.UI": "[10.0.7, )",
           "Newtonsoft.Json": "[13.0.4, 14.0.0)",
@@ -423,7 +423,7 @@
       "sky.shared.razor": {
         "type": "Project",
         "dependencies": {
-          "Cosmos.Common": "[12.3.0, )"
+          "Cosmos.Common": "[12.4.0, )"
         }
       },
       "AspNetCore.Identity.CosmosDb": {

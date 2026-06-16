@@ -473,7 +473,7 @@
       "cosmos.dynamicconfig": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[12.2.1, )",
+          "AspNetCore.Identity.FlexDb": "[12.4.0, )",
           "IPAddressRange": "[6.3.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.7, )",
           "Microsoft.EntityFrameworkCore.Cosmos": "[10.0.7, )"

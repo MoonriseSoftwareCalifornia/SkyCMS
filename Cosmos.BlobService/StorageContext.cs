@@ -605,6 +605,23 @@ namespace Cosmos.BlobService
         }
 
         /// <summary>
+        /// Invalidates the cached storage driver for the given connection string.
+        /// Call this method after uploading files to ensure ElFinder and other file
+        /// managers see the newly uploaded files on their next refresh.
+        /// </summary>
+        /// <param name="connectionString">The storage connection string whose driver cache should be invalidated.</param>
+        public void InvalidateStorageDriverCache(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return;
+            }
+
+            var cacheKey = CreateDriverCacheKey(connectionString);
+            memoryCache.Remove(cacheKey);
+        }
+
+        /// <summary>
         /// Validates a normalized path and throws a StorageException if validation fails.
         /// </summary>
         /// <param name="path">The normalized path to validate.</param>

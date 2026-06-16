@@ -1686,6 +1686,14 @@ namespace Sky.Cms.Controllers
             if (metaData.TotalChunks - 1 == metaData.ChunkIndex)
             {
                 await PurgeCdnPath(metaData);
+
+                // Invalidate the storage driver cache so ElFinder sees the newly uploaded file
+                var connectionString = configuration.GetConnectionString("StorageConnectionString")
+                    ?? configuration.GetConnectionString("AzureBlobStorageConnectionString");
+                if (!string.IsNullOrWhiteSpace(connectionString))
+                {
+                    storageContext.InvalidateStorageDriverCache(connectionString);
+                }
             }
 
             return Ok();
@@ -2724,7 +2732,10 @@ namespace Sky.Cms.Controllers
 
             var mappings = objects.Select(o =>
             {
-                var canonicalPath = NormalizePath(string.IsNullOrWhiteSpace(o.RealPath) ? o.DisplayPath : o.RealPath);
+                var canonicalPathSource = !string.IsNullOrWhiteSpace(o.RealPath)
+                    ? o.RealPath
+                    : DecodeHash(o.Hash) ?? o.DisplayPath;
+                var canonicalPath = NormalizePath(canonicalPathSource);
                 return new
                 {
                     Object = o,

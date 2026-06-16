@@ -52,7 +52,7 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
             var entries = await _adapter.GetEntriesAsync(targetPath, cancellationToken);
             foreach (var entry in entries.Where(e => e.IsDirectory))
             {
-                var entryPath = "/" + (targetPath.TrimEnd('/') + "/" + entry.Name).TrimStart('/');
+                var entryPath = GetEntryPath(targetPath, entry);
                 response.Tree.Add(await ConvertToElFinderObjectAsync(entry, entryPath, cancellationToken));
             }
 
@@ -75,8 +75,9 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
         var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
         var normalizedPath = "/" + path.Trim('/');
 
-        // Always set RealPath for proper entry identification (required by FilterEntries).
-        // DisplayPath is only computed when name substitution occurred for friendly display.
+        // Only emit RealPath when the name was substituted to a friendly display value.
+        // Plain folders keep their canonical path implicit in the hash, matching the
+        // documented tree contract and avoiding extra JSON noise.
         var nameWasSubstituted = !string.Equals(resolvedName, entry.Name, StringComparison.Ordinal);
 
         return new ElFinderObject
@@ -91,7 +92,7 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
             Write = 1,
             Locked = 0,
             Dirs = 1,
-            RealPath = normalizedPath,
+            RealPath = nameWasSubstituted ? normalizedPath : null,
             DisplayPath = nameWasSubstituted ? await BuildDisplayPathAsync(path, cancellationToken) : null,
         };
     }
@@ -138,5 +139,15 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
         }
 
         return "/" + string.Join('/', segments);
+    }
+
+    private static string GetEntryPath(string parentPath, Cosmos.BlobService.FileManagerEntry entry)
+    {
+        if (!string.IsNullOrWhiteSpace(entry.Path))
+        {
+            return "/" + entry.Path.Trim('/');
+        }
+
+        return "/" + (parentPath.TrimEnd('/') + "/" + entry.Name).TrimStart('/');
     }
 }

@@ -1428,6 +1428,8 @@ namespace Sky.Tests.Controllers
 
             public Task MoveFolderAsync(string sourceFolder, string destinationFolder) => inner.MoveFolderAsync(MapPath(sourceFolder), MapPath(destinationFolder));
 
+            public void InvalidateStorageDriverCache(string connectionString) => inner.InvalidateStorageDriverCache(connectionString);
+
             private static string NormalizePath(string path)
             {
                 return path.Replace('\\', '/').TrimEnd('/');

@@ -46,6 +46,7 @@ namespace Sky.Tests.Controllers
     /// Unit tests for <see cref="FileManagerController"/>.
     /// </summary>
     [TestClass]
+    [DoNotParallelize]
     public class FileManagerElFinderTests : SkyCmsTestBase
     {
         private const string VolumeId = "l1_";
@@ -2541,8 +2542,8 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task Connector_Open_ArticlesRoot_SkipsDeletedArticleFolders()
         {
-            const int activeArticleNumber = 601;
-            const int deletedArticleNumber = 602;
+            var activeArticleNumber = 600000 + Math.Abs(Guid.NewGuid().GetHashCode() % 100000);
+            var deletedArticleNumber = activeArticleNumber + 1;
             const string activeTitle = "Visible Article";
             const string deletedTitle = "Hidden Article";
             var articlesPath = "/pub/articles";
@@ -2601,7 +2602,7 @@ namespace Sky.Tests.Controllers
         [TestMethod]
         public async Task Connector_Tree_ArticleFolder_TreeItemNameIsArticleTitle_NotNumericId()
         {
-            const int articleNumber = 504;
+            var articleNumber = 700000 + Math.Abs(Guid.NewGuid().GetHashCode() % 100000);
             const string articleTitle = "Tree Article Title";
             var articlesPath = "/pub/articles";
             var articlePath = $"/pub/articles/{articleNumber}";
@@ -2677,5 +2678,3 @@ namespace Sky.Tests.Controllers
         }
     }
 }
-
-

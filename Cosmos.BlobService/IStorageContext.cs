@@ -148,13 +148,21 @@ namespace Cosmos.BlobService
         /// <returns>A <see cref="Task"/> that represents the asynchronous move operation.</returns>
         Task MoveFileAsync(string sourceFile, string destinationFile);
 
-        /// <summary>
-        /// Moves a folder from the specified source path to the specified destination path,
-        /// including any contained files and subfolders.
-        /// </summary>
-        /// <param name="sourceFolder">The source folder path. Paths are normalized to a canonical form.</param>
-        /// <param name="destinationFolder">The destination folder path. Paths are normalized to a canonical form.</param>
-        /// <returns>A <see cref="Task"/> that represents the asynchronous move operation.</returns>
-        Task MoveFolderAsync(string sourceFolder, string destinationFolder);
-    }
+             /// <summary>
+            /// Moves a folder from the specified source path to the specified destination path,
+            /// including any contained files and subfolders.
+            /// </summary>
+            /// <param name="sourceFolder">The source folder path. Paths are normalized to a canonical form.</param>
+            /// <param name="destinationFolder">The destination folder path. Paths are normalized to a canonical form.</param>
+            /// <returns>A <see cref="Task"/> that represents the asynchronous move operation.</returns>
+            Task MoveFolderAsync(string sourceFolder, string destinationFolder);
+
+            /// <summary>
+            /// Invalidates the cached storage driver for the given connection string.
+            /// Call this method after uploading files to ensure ElFinder and other file
+            /// managers see the newly uploaded files on their next refresh.
+            /// </summary>
+            /// <param name="connectionString">The storage connection string whose driver cache should be invalidated.</param>
+            void InvalidateStorageDriverCache(string connectionString);
+        }
 }
