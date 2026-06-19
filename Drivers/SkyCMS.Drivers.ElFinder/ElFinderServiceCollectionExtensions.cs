@@ -43,15 +43,11 @@ public static class ElFinderServiceCollectionExtensions
         services.TryAddScoped<IElFinderHandler<SearchCommand>, SearchCommandHandler>();
         services.TryAddScoped<IElFinderHandler<SizeCommand>, SizeCommandHandler>();
         services.TryAddScoped<IElFinderHandler<TmbCommand>, TmbCommandHandler>();
-        services.TryAddScoped<IElFinderHandler<TreeCommand>, TreeCommandHandler>();
         services.TryAddScoped<IElFinderHandler<UploadCommand>, UploadCommandHandler>();
         services.TryAddScoped<IElFinderHandler<UrlCommand>, UrlCommandHandler>();
 
         // Register storage adapter (keep first registration if app overrides in tests/startup).
         services.TryAddScoped<IElFinderStorageAdapter, ElFinderStorageAdapter>();
-
-        // Register default no-op name resolver; host can substitute a richer one before calling AddElFinderDriver.
-        services.TryAddScoped<IElFinderNameResolver, PassThroughNameResolver>();
 
         // Required path services for ElFinderStorageAdapter.
         services.AddSingleton<IPathNormalizer, PathNormalizer>();

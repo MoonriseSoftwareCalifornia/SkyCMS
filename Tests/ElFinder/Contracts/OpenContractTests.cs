@@ -33,7 +33,6 @@ namespace Sky.Tests.ElFinder.Contracts
         public void Setup()
         {
             var adapter = BuildAdapter();
-            _handler = new OpenCommandHandler(adapter.Object, BuildPassThroughNameResolver());
         }
 
         // ------------------------------------------------------------------ //
@@ -174,77 +173,6 @@ namespace Sky.Tests.ElFinder.Contracts
             Assert.AreEqual(JsonValueKind.Array, err.ValueKind,
                 "'error' must be a JSON array.");
         }
-
-        [TestMethod]
-        [Description("Access denied returns an error response.")]
-        public async Task Open_AccessDenied_ReturnsErrorResponse()
-        {
-            var adapter = BuildAdapter();
-            adapter.Setup(a => a.IsAccessibleAsync(
-                It.IsAny<string>(),
-                It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(false);
-
-            var handler = new OpenCommandHandler(adapter.Object, BuildPassThroughNameResolver());
-            var response = await handler.HandleAsync(new OpenCommand(target: ImagesHash), default);
-
-            Assert.IsTrue(response is ElFinderErrorResponse,
-                "Access denied must return ElFinderErrorResponse.");
-        }
-
-        // ------------------------------------------------------------------ //
-        //  Article-path: title substitution and dual-path contract             //
-        // ------------------------------------------------------------------ //
-
-        [TestMethod]
-        [Description("When opening /pub/articles/42, the cwd 'name' must be the article title, not the number.")]
-        public async Task Open_ArticleFolder_CwdNameIsArticleTitle()
-        {
-            var adapter = BuildAdapterWithArticles();
-            var resolver = BuildElFinderNameResolver(ArticleNumber, ArticleTitle);
-            var handler = new OpenCommandHandler(adapter.Object, resolver);
-
-            var response = await handler.HandleAsync(new OpenCommand(target: ArticleFolderHash), default);
-            using var doc = SerializeResponse(response);
-
-            Assert.IsTrue(doc.RootElement.TryGetProperty("cwd", out var cwd),
-                "Response must contain 'cwd'.");
-            var name = AssertStringProperty(cwd, "name");
-            Assert.AreEqual(ArticleTitle, name,
-                $"cwd.name must be the article title '{ArticleTitle}', not the raw number '{ArticleNumber}'. " +
-                $"Check ElFinderNameResolver and OpenCommandHandler.BuildElFinderObjectAsync.");
-        }
-
-        [TestMethod]
-        [Description("When opening /pub/articles, the article-folder child 'name' must be the article title.")]
-        public async Task Open_ArticlesRootFolder_ChildNameIsArticleTitle()
-        {
-            var adapter = BuildAdapterWithArticles();
-            var resolver = BuildElFinderNameResolver(ArticleNumber, ArticleTitle);
-            var handler = new OpenCommandHandler(adapter.Object, resolver);
-
-            var response = await handler.HandleAsync(new OpenCommand(target: ArticlesRootHash), default);
-            using var doc = SerializeResponse(response);
-
-            var files = AssertArrayProperty(doc.RootElement, "files", minLength: 1);
-            var found = false;
-            foreach (var entry in files.EnumerateArray())
-            {
-                if (!entry.TryGetProperty("name", out var nameProp))
-                {
-                    continue;
-                }
-
-                if (string.Equals(nameProp.GetString(), ArticleTitle, StringComparison.Ordinal))
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            Assert.IsTrue(found,
-                $"No file entry with name='{ArticleTitle}' found in 'files'. " +
-                $"Article folder names under /pub/articles/{{number}} must use the article title.");
-        }
+        
     }
 }

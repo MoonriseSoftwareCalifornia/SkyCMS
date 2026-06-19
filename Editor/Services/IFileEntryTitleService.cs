@@ -48,13 +48,11 @@ namespace Sky.Cms.Services
         /// </summary>
         /// <param name="articleNumbers">Article numbers to resolve.</param>
         /// <param name="tenantDomain">Tenant domain used for cache scoping.</param>
-        /// <param name="backfillCatalog">When <see langword="true"/>, missing catalog rows may be created for legacy data.</param>
         /// <param name="cancellationToken">Cancellation token for async database operations.</param>
         /// <returns>A dictionary keyed by article number with title and status details.</returns>
         Task<IReadOnlyDictionary<int, ArticleTitleAndStatus>> GetArticleTitleStatusByNumberAsync(
             IEnumerable<int> articleNumbers,
             string tenantDomain,
-            bool backfillCatalog,
             CancellationToken cancellationToken = default);
 
         /// <summary>

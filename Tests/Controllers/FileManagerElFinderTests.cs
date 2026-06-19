@@ -93,7 +93,6 @@ namespace Sky.Tests.Controllers
                         svc.GetRequiredService<IPathValidator>()))
                 .AddScoped<IFileEntryTitleService>(_ => new FileEntryTitleService(dbContext, Cache, DynamicConfigurationProvider))
                 .AddSingleton<Cosmos.DynamicConfig.IDynamicConfigurationProvider>(_ => DynamicConfigurationProvider)
-                .AddScoped<IElFinderNameResolver, ElFinderNameResolver>()
                 .AddElFinderDriver()
                 .BuildServiceProvider();
             elFinderMediator = sp.GetRequiredService<IElFinderDispatcher>();

@@ -353,7 +353,6 @@ builder.Services.AddCosmosMediator();
 // Current controller flow stays legacy by default; CQRS paths are opt-in.
 // ElFinderNameResolver must be registered BEFORE AddElFinderDriver so it
 // wins the TryAddScoped for IElFinderNameResolver.
-builder.Services.AddScoped<SkyCMS.Drivers.ElFinder.Adapters.IElFinderNameResolver, Sky.Cms.Services.ElFinderNameResolver>();
 builder.Services.AddElFinderDriver();
 
 // Auto-register all command and query handlers from Editor and Common assemblies

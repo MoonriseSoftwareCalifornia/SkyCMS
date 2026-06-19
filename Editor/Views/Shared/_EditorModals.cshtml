@@ -151,22 +151,26 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="modalSelectFile" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-body" style="height: 100vh;position:relative;">
-                    <div style="height:100%;width:100%;">
-                        <button id="btnSelectFileAndClose" type="button" class="btn btn-sm btn-success" data-bs-dismiss="modal" disabled>Select and Close</button>
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-dismiss="modal">Cancel</button>
-                        <button id="btnClear" type="button" class="btn btn-sm btn-primary" title="Clear list of selected items" style="display:none">Clear Selected</button>
-                        <div id="spinFileMgrLoading" class="btn btn-sm btn-primary mt-1 ms-3 me-3">
-                            <div class="align-items-center text-light">
-                                <strong>Loading...</strong>
-                                <div class="spinner-border spinner-border-sm text-light" role="status"></div>
-                            </div>
-                        </div>
+    <div class="modal fade" id="modalSelectFile" tabindex="-1" aria-labelledby="filePickerTitle" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white border-secondary-subtle">
+                    <div>
+                        <h5 id="filePickerTitle" class="modal-title">Select from website storage</h5>
+                        <small id="filePickerSubtitle" class="text-light-emphasis">Choose an item to insert into the editor.</small>
                     </div>
-                    <iframe id="iframeSelectFile" class="m-fileselector-container" style="height: 100%; width: 100%;"></iframe>
+                    <div class="d-flex align-items-center gap-2">
+                        <div id="spinFileMgrLoading" class="d-inline-flex align-items-center text-light" style="display:none;">
+                            <strong class="me-2">Loading</strong>
+                            <div class="spinner-border spinner-border-sm text-light" role="status"></div>
+                        </div>
+                        <button id="btnClear" type="button" class="btn btn-sm btn-outline-light" title="Clear selected item">Clear</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+                        <button id="btnSelectFileAndClose" type="button" class="btn btn-sm btn-success" disabled>Insert</button>
+                    </div>
+                </div>
+                <div class="modal-body p-0 position-relative" style="min-height: 70vh;">
+                    <iframe id="iframeSelectFile" class="m-fileselector-container border-0" style="height: 100%; width: 100%;"></iframe>
                 </div>
             </div>
         </div>

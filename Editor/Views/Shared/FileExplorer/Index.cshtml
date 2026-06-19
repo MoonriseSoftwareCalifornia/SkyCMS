@@ -471,6 +471,43 @@
                     </text>
         }
 
+                function getCurrentSelectionPathOrUrl() {
+                    if (!elFinderInstance || typeof elFinderInstance.selected !== 'function') {
+                        return null;
+                    }
+
+                    var selected = elFinderInstance.selected();
+                    if (!selected || selected.length < 1) {
+                        return null;
+                    }
+
+                    var file = typeof elFinderInstance.file === 'function' ? elFinderInstance.file(selected[0]) : null;
+                    if (file && file.url) {
+                        return file.url;
+                    }
+
+                    return decodePath(selected[0]);
+                }
+
+                window.CCMS___GetFilePickerSelection = function () {
+                    return getCurrentSelectionPathOrUrl();
+                };
+
+                // Legacy bridge for existing parent scripts.
+                window.paths = [];
+
+                window.clearPaths = function () {
+                    window.paths = [];
+                };
+
+                window.clearSelection = function () {
+                    if (elFinderInstance && typeof elFinderInstance.select === 'function') {
+                        elFinderInstance.select([]);
+                    }
+
+                    window.paths = [];
+                };
+
                 // ── elFinder initialisation ───────────────────────────────
                 var efOptions = {
                     url: '@connectorUrl',
@@ -600,6 +637,17 @@
                             currentUploadPathDisplay = normalizePath('/' + initialCwd.options.path);
                         }
                     }
+                }
+
+                if (elFinderInstance && typeof elFinderInstance.bind === 'function') {
+                    elFinderInstance.bind('select', function () {
+                        var current = getCurrentSelectionPathOrUrl();
+                        window.paths = current ? [current] : [];
+                    });
+
+                    elFinderInstance.bind('unselect', function () {
+                        window.paths = [];
+                    });
                 }
 
                 updateReadyUploadStatus();

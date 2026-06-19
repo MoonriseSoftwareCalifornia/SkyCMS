@@ -1214,6 +1214,30 @@ namespace Sky.Cms.Controllers
 
             return FileEntryPathHelper.IsPathWithinRoot(path, RootPath);
         }
+        
+        private static string TryGetArticleRootFolderPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            var normalized = NormalizePath(path);
+            var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length < 3)
+            {
+                return null;
+            }
+
+            if (!segments[0].Equals("pub", StringComparison.OrdinalIgnoreCase)
+                || !segments[1].Equals("articles", StringComparison.OrdinalIgnoreCase)
+                || !int.TryParse(segments[2], out _))
+            {
+                return null;
+            }
+
+            return $"pub/articles/{segments[2]}";
+        }
 
         private static bool IsSafeName(string name)
         {

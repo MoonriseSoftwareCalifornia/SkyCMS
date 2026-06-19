@@ -347,7 +347,7 @@ namespace Cosmos.BlobService.Drivers
             var info = await file.GetPropertiesAsync();
 
             DateTime dateTime;
-            if (info.Value.Metadata.TryGetValue("ccmsdatetime", out string uploaded))
+            if (info.Value.Metadata?.TryGetValue("ccmsdatetime", out string uploaded) ?? false)
             {
                 dateTime = DateTimeOffset.Parse(uploaded).UtcDateTime;
             }
@@ -510,7 +510,7 @@ namespace Cosmos.BlobService.Drivers
                         var info = await file.GetPropertiesAsync();
 
                         DateTime dateTime;
-                        if (info.Value.Metadata.TryGetValue("ccmsdatetime", out string uploaded))
+                        if (info.Value.Metadata?.TryGetValue("ccmsdatetime", out string uploaded) ?? false)
                         {
                             dateTime = DateTimeOffset.Parse(uploaded).UtcDateTime;
                         }

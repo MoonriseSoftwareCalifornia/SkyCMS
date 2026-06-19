@@ -22,6 +22,104 @@
     <meta name="cwps-meta-path-title" content="@Model.Title" />
     <meta name="cwps-meta-path-url" content="@Model.UrlPath" />
     <meta name="cwps-meta-path-updated" content="@Model.Updated" />
+    <script>
+        (function installCcmsTimerGuard(win) {
+            if (!win || win.__ccmsTimerGuardInstalled) {
+                return;
+            }
+
+            win.__ccmsTimerGuardInstalled = true;
+
+            function isKnownNullTextContentError(error) {
+                if (!error) {
+                    return false;
+                }
+
+                var message = '';
+                var stack = '';
+
+                if (typeof error === 'string') {
+                    message = error;
+                } else {
+                    message = error.message || '';
+                    stack = error.stack || '';
+                }
+
+                var isMissingTextTarget = /Cannot set properties of null \(setting 'textContent'\)/.test(message);
+                var isRotateCallback = stack.length === 0 || /\brotate\b/i.test(stack);
+
+                return isMissingTextTarget && isRotateCallback;
+            }
+
+            var originalSetInterval = win.setInterval ? win.setInterval.bind(win) : null;
+            if (originalSetInterval) {
+                win.setInterval = function (callback, delay) {
+                    if (typeof callback !== 'function') {
+                        return originalSetInterval.apply(win, arguments);
+                    }
+
+                    var timerId = null;
+                    var args = Array.prototype.slice.call(arguments, 2);
+                    var wrapped = function () {
+                        try {
+                            return callback.apply(this, arguments);
+                        } catch (error) {
+                            if (isKnownNullTextContentError(error)) {
+                                if (timerId !== null) {
+                                    win.clearInterval(timerId);
+                                }
+
+                                console.warn('CCMS stopped a repeating timer because its target element was missing.', error);
+                                return;
+                            }
+
+                            throw error;
+                        }
+                    };
+
+                    timerId = originalSetInterval.apply(win, [wrapped, delay].concat(args));
+                    return timerId;
+                };
+            }
+
+            var originalSetTimeout = win.setTimeout ? win.setTimeout.bind(win) : null;
+            if (originalSetTimeout) {
+                win.setTimeout = function (callback, delay) {
+                    if (typeof callback !== 'function') {
+                        return originalSetTimeout.apply(win, arguments);
+                    }
+
+                    var args = Array.prototype.slice.call(arguments, 2);
+                    var wrapped = function () {
+                        try {
+                            return callback.apply(this, arguments);
+                        } catch (error) {
+                            if (isKnownNullTextContentError(error)) {
+                                console.warn('CCMS ignored a one-shot timer because its target element was missing.', error);
+                                return;
+                            }
+
+                            throw error;
+                        }
+                    };
+
+                    return originalSetTimeout.apply(win, [wrapped, delay].concat(args));
+                };
+            }
+
+            win.addEventListener('error', function (event) {
+                if (isKnownNullTextContentError(event && (event.error || event.message))) {
+                    event.preventDefault();
+                }
+            });
+
+            win.addEventListener('unhandledrejection', function (event) {
+                if (isKnownNullTextContentError(event && event.reason)) {
+                    event.preventDefault();
+                }
+            });
+        })(window);
+    </script>
     @if (Model.ArticleType == ArticleType.BlogStream || Model.ArticleType == ArticleType.BlogPost)
     {
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@picocss/pico@2.1.1/css/pico.conditional.min.css" integrity="sha384-QfeWAE0GpftbPGpYsRxM9hV8glCwhQEin0VM1Nb3eiisL9ayUJiRyy2Db6kANFsn" crossorigin="anonymous">

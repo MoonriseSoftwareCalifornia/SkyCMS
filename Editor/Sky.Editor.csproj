@@ -132,4 +132,8 @@
 		</VisualStudio>
 	</ProjectExtensions>
 
+	<Target Name="UnblockReferencedAssembliesInOutput" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+		<Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Get-ChildItem -Path '$(TargetDir)' -Filter *.dll | Unblock-File&quot;" />
+	</Target>
+
 </Project>

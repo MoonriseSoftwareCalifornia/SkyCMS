@@ -467,7 +467,7 @@ namespace Sky.Tests.Editor.Services
             await db.SaveChangesAsync();
 
             var resolver = CreateService(db);
-            var result = await resolver.GetArticleTitleStatusByNumberAsync(new[] { 901 }, string.Empty, backfillCatalog: true);
+            var result = await resolver.GetArticleTitleStatusByNumberAsync(new[] { 901 }, string.Empty);
 
             Assert.AreEqual(1, result.Count);
             Assert.IsTrue(result.ContainsKey(901));

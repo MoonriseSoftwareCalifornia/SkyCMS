@@ -569,9 +569,66 @@
             }
         };
 
+        function updateFilePickerModalUi(mode) {
+            const titleElement = document.getElementById("filePickerTitle");
+            const subtitleElement = document.getElementById("filePickerSubtitle");
+            const actionButton = document.getElementById("btnSelectFileAndClose");
+
+            if (!titleElement || !subtitleElement || !actionButton) {
+                return;
+            }
+
+            if (mode === "image") {
+                titleElement.textContent = "Select an image";
+                subtitleElement.textContent = "Choose an image from website storage to insert.";
+                actionButton.textContent = "Insert Image";
+                return;
+            }
+
+            if (mode === "bannerimage") {
+                titleElement.textContent = "Select a banner image";
+                subtitleElement.textContent = "Choose a banner image from website storage.";
+                actionButton.textContent = "Use Banner Image";
+                return;
+            }
+
+            titleElement.textContent = "Select a file";
+            subtitleElement.textContent = "Choose a file from website storage to insert.";
+            actionButton.textContent = "Insert File Link";
+        }
+
+        function getFilePickerFrameWindow() {
+            const iframe = document.getElementById("iframeSelectFile");
+            if (!iframe) {
+                return null;
+            }
+
+            return iframe.contentWindow || (iframe.contentDocument ? iframe.contentDocument.parentWindow : null);
+        }
+
+        function getSelectedFileFromPickerFrame() {
+            const iframeWin = getFilePickerFrameWindow();
+            if (!iframeWin) {
+                return null;
+            }
+
+            if (typeof iframeWin.CCMS___GetFilePickerSelection === "function") {
+                return iframeWin.CCMS___GetFilePickerSelection();
+            }
+
+            if (Array.isArray(iframeWin.paths) && iframeWin.paths.length > 0) {
+                return iframeWin.paths[0];
+            }
+
+            return null;
+        }
+
         function openSelectFileModal(mode, options) {
             selectFileMode = mode;
             pendingFilePickerOptions = options || null;
+            updateFilePickerModalUi(mode);
+            $("#spinFileMgrLoading").show();
+            $("#btnSelectFileAndClose").prop("disabled", false);
 
             let id = $("#ArticleNumber").val();
             let url = "@Url.Action("Index", "FileManager")";
@@ -890,12 +947,10 @@
         }
 
         function clearFileMgrPaths() {
-            let iframe = document.getElementById("iframeSelectFile");
-            let iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
-            if (iframeWin.clearPaths !== "undefined" && iframeWin.clearPaths !== null) {
+            const iframeWin = getFilePickerFrameWindow();
+            if (iframeWin && typeof iframeWin.clearPaths === "function") {
                 iframeWin.clearPaths();
             }
-            //iframeWin.reloadPaths();
         }
 
         function checkBannerImage() {
@@ -1043,24 +1098,27 @@
             });
 
             $("#btnClear").click(function () {
-                // 'next' is the function that needs to be executed after close.
-                let iframe = document.getElementById("iframeSelectFile");
-                let iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
-                iframeWin.clearSelection();
+                const iframeWin = getFilePickerFrameWindow();
+                if (iframeWin && typeof iframeWin.clearSelection === "function") {
+                    iframeWin.clearSelection();
+                } else if (iframeWin && typeof iframeWin.clearPaths === "function") {
+                    iframeWin.clearPaths();
+                }
             });
 
             $("#btnSelectFileAndClose").click(function () {
-                // 'next' is the function that needs to be executed after close.
-                let iframe = document.getElementById("iframeSelectFile");
-                let iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
-                let p = iframeWin.paths;
-
-                if (typeof iframeWin.paths === "undefined" || iframeWin.paths === null || iframeWin.paths.length < 1) {
+                const selectedPath = getSelectedFileFromPickerFrame();
+                if (!selectedPath) {
                     alert("Please select a file.");
                     return false;
                 }
 
-                return completeFilePickerSelection(p[0]) !== false;
+                const handled = completeFilePickerSelection(selectedPath) !== false;
+                if (handled) {
+                    modalSelectFile.hide();
+                }
+
+                return handled;
             });
 
             $("#btnOpenBannerImage").click(function () {

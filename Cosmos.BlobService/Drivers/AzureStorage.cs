@@ -533,7 +533,8 @@ namespace Cosmos.BlobService.Drivers
                 return null;
             }
 
-            properties.Value.Metadata.TryGetValue("ccmsuploaduid", out var uploadUid);
+            string? uploadUid = null;
+            _ = properties.Value.Metadata?.TryGetValue("ccmsuploaduid", out uploadUid) ?? false;
             _ = long.TryParse(uploadUid, out var mark);
 
             var eTag = properties.Value.ETag.ToString("H").Trim('"');

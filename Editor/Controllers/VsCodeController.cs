@@ -120,8 +120,8 @@ namespace Sky.Cms.Controllers
             this.configProvider = configProvider;
             this.articleLogic = articleLogic;
             this.publishingService = publishingService;
-            this.titleResolver = titleResolver;
-            this.folderListingService = folderListingService;
+            this.titleResolver = titleResolver ?? new FileEntryTitleService(this.dbContext, this.memoryCache, this.configProvider);
+            this.folderListingService = folderListingService ?? new FolderListingService(this.dbContext, this.storageContext, this.titleResolver);
             this.contentCatalog = contentCatalog;
             this.fileOperations = fileOperations;
         }
@@ -1642,6 +1642,7 @@ namespace Sky.Cms.Controllers
             {
                 var tenantDomain = this.configProvider.GetTenantDomainNameFromRequest();
                 var entries = await this.folderListingService.GetEntriesAsync(path, tenantDomain);
+                
                 var projectedEntries = await this.titleResolver.ProjectFriendlyEntriesAsync(
                     entries,
                     path,

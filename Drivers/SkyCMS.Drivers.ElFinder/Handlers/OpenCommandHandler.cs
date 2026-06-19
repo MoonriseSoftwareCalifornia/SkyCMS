@@ -17,12 +17,10 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 public class OpenCommandHandler : IElFinderHandler<OpenCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
-    private readonly IElFinderNameResolver _nameResolver;
 
-    public OpenCommandHandler(IElFinderStorageAdapter adapter, IElFinderNameResolver nameResolver)
+    public OpenCommandHandler(IElFinderStorageAdapter adapter)
     {
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
-        _nameResolver = nameResolver ?? throw new ArgumentNullException(nameof(nameResolver));
     }
 
     /// <summary>
@@ -302,23 +300,18 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
             ? _adapter.EncodePath(normalizedPath.Substring(0, lastSlash + 1))
             : _adapter.EncodePath("/");
 
-        // Step 2: Resolve a user-friendly name for UI display.
-        // The resolver can map internal ids/paths to friendlier labels.
-        var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
-
-        // Step 3: Build the core elFinder object fields.
+        // Step 2: Build the core elFinder object fields.
         // Most fields here are direct protocol fields consumed by the client.
         var sourceDisplayPath = string.IsNullOrWhiteSpace(entry.DisplayPath)
             ? normalizedPath
             : (entry.DisplayPath!.StartsWith("/", StringComparison.Ordinal) ? entry.DisplayPath : "/" + entry.DisplayPath.TrimStart('/'));
-        var resolvedDisplayPath = await BuildEntryDisplayPathAsync(sourceDisplayPath, cancellationToken);
 
         var obj = new ElFinderObject
         {
             Hash = hash,
             // Root nodes must not have phash, so use empty string when isRoot is true.
             PHash = isRoot ? string.Empty : phash,
-            Name = resolvedName,
+            Name = entry.Name,
             Size = entry.Size,
             Mime = entry.IsDirectory ? "directory" : ElFinderMimeHelper.GetMimeType(entry.Name),
             Ts = new DateTimeOffset(entry.Modified).ToUnixTimeSeconds(),
@@ -331,7 +324,7 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
             // RealPath is canonical path used by connector-side logic.
             RealPath = normalizedPath,
             // DisplayPath is UI-oriented and should resolve friendly article/template segment names.
-            DisplayPath = resolvedDisplayPath,
+            DisplayPath = sourceDisplayPath,
         };
 
         // Step 4: Attach directory-only volume metadata.
@@ -402,12 +395,7 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
         // Step 2: Normalize target path to a canonical folder segment (no leading/trailing slash).
         var canonicalPath = targetPath.TrimStart('/').TrimEnd('/');
 
-        // Step 3: Build a friendly path for UI display.
-        // For article folder paths like /pub/articles/12345, resolve the article title.
-        // Other paths are returned as-is.
-        var displayPath = await BuildFolderDisplayPathAsync(targetPath, cancellationToken);
-
-        // Step 4: Build the navigable folder URL for this volume/path.
+        // Step 3: Build the navigable folder URL for this volume/path.
         // If no blob base URL is configured, use a root-relative URL.
         var volumeUrl = string.IsNullOrEmpty(blobBase)
             ? "/" + canonicalPath + "/"
@@ -418,69 +406,10 @@ public class OpenCommandHandler : IElFinderHandler<OpenCommand>
         {
             Url = volumeUrl,
             TmbUrl = tmbUrl ?? "/FileManager/GetImageThumbnail?target=",
-            Path = string.IsNullOrEmpty(displayPath) ? "Media" : displayPath,
+            Path = targetPath,
         };
     }
-
-    /// <summary>
-    /// Builds a user-friendly display path for a folder (used in breadcrumb/navigation UI).
-    /// </summary>
-    /// <param name="folderPath">The canonical folder path to transform for UI display.</param>
-    /// <param name="cancellationToken">A token used to cancel name resolution calls.</param>
-    /// <returns>
-    /// A display-friendly path string. For article/template folders like
-    /// <c>/pub/articles/{id}</c> and <c>/pub/templates/{id}</c>, the ID segment is replaced
-    /// with the resolved friendly title. Other paths are returned unchanged.
-    /// </returns>
-    private async Task<string> BuildFolderDisplayPathAsync(string folderPath, CancellationToken cancellationToken)
-    {
-        var friendlyPath = await BuildEntryDisplayPathAsync(folderPath, cancellationToken);
-        return friendlyPath.Trim('/');
-    }
-
-    /// <summary>
-    /// Builds a user-friendly absolute display path by replacing article/template identifier
-    /// segments with resolved titles where applicable.
-    /// </summary>
-    /// <param name="path">Canonical or display path.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Absolute display path beginning with <c>/</c>.</returns>
-    private async Task<string> BuildEntryDisplayPathAsync(string path, CancellationToken cancellationToken)
-    {
-        var normalizedPath = string.IsNullOrWhiteSpace(path) ? "/" : "/" + path.Trim('/');
-        var segments = normalizedPath
-            .TrimStart('/')
-            .Split('/', StringSplitOptions.RemoveEmptyEntries)
-            .ToList();
-
-        if (segments.Count >= 3
-            && segments[0].Equals("pub", StringComparison.OrdinalIgnoreCase))
-        {
-            var kind = segments[1];
-            var idSegment = segments[2];
-
-            if (kind.Equals("articles", StringComparison.OrdinalIgnoreCase)
-                && int.TryParse(idSegment, out var articleNumber))
-            {
-                var friendly = await _nameResolver.ResolveNameAsync($"/pub/articles/{articleNumber}", idSegment, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(friendly))
-                {
-                    segments[2] = friendly;
-                }
-            }
-            else if (kind.Equals("templates", StringComparison.OrdinalIgnoreCase)
-                && Guid.TryParse(idSegment, out var templateId))
-            {
-                var friendly = await _nameResolver.ResolveNameAsync($"/pub/templates/{templateId}", idSegment, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(friendly))
-                {
-                    segments[2] = friendly;
-                }
-            }
-        }
-
-        return "/" + string.Join('/', segments);
-    }
+       
 
     private static string GetEntryPath(string parentPath, Cosmos.BlobService.FileManagerEntry entry)
     {

@@ -7,18 +7,19 @@
 
 namespace Sky.Cms.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Cosmos.BlobService;
+    using Cosmos.Common.Constants;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Editor.Services;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Provides file-entry title enrichment for editor listings by resolving article and template
@@ -217,7 +218,6 @@ namespace Sky.Cms.Services
             var articleStatusByNumber = await this.GetArticleTitleStatusByNumberAsync(
                 articleNumbers,
                 tenantDomain,
-                backfillCatalog: true,
                 cancellationToken);
 
             var deletedStatus = (int)StatusCodeEnum.Deleted;
@@ -346,7 +346,7 @@ namespace Sky.Cms.Services
         /// <returns>A dictionary mapping article numbers to their titles.</returns>
         public async Task<IReadOnlyDictionary<int, string>> GetArticleTitlesByNumberAsync(IEnumerable<int> articleNumbers, string tenantDomain)
         {
-            var records = await this.GetArticleTitleStatusByNumberAsync(articleNumbers, tenantDomain, backfillCatalog: false);
+            var records = await this.GetArticleTitleStatusByNumberAsync(articleNumbers, tenantDomain, default);
             return records.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Title);
         }
 
@@ -355,13 +355,11 @@ namespace Sky.Cms.Services
         /// </summary>
         /// <param name="articleNumbers">Article numbers to resolve.</param>
         /// <param name="tenantDomain">Tenant domain used for cache scoping.</param>
-        /// <param name="backfillCatalog">When true, missing catalog rows may be created for legacy data.</param>
         /// <param name="cancellationToken">Cancellation token for async operations.</param>
         /// <returns>A dictionary keyed by article number with title and status details.</returns>
         public async Task<IReadOnlyDictionary<int, ArticleTitleAndStatus>> GetArticleTitleStatusByNumberAsync(
             IEnumerable<int> articleNumbers,
             string tenantDomain,
-            bool backfillCatalog,
             CancellationToken cancellationToken = default)
         {
             if (articleNumbers == null)
@@ -378,20 +376,36 @@ namespace Sky.Cms.Services
             var cacheKey = $"{tenantDomain}-articlenumber-title-status-map";
             if (!this.memoryCache.TryGetValue(cacheKey, out Dictionary<int, ArticleTitleAndStatus> cachedLookup))
             {
-                var catalogRows = await this.dbContext.ArticleCatalog
-                    .Select(a => new { a.ArticleNumber, a.Title, a.Status, a.StatusCode })
-                    .ToListAsync(cancellationToken);
+                try
+                {
+                    var catalogRows = await this.dbContext.ArticleCatalog
+                        .Select(a => new { a.ArticleNumber, a.Title, a.Status, a.StatusCode })
+                        .ToListAsync(cancellationToken);
 
-                cachedLookup = catalogRows.ToDictionary(
-                    a => a.ArticleNumber,
-                    a => new ArticleTitleAndStatus
+                    cachedLookup = catalogRows.ToDictionary(
+                        a => a.ArticleNumber,
+                        a => new ArticleTitleAndStatus
+                        {
+                            ArticleNumber = a.ArticleNumber,
+                            Title = a.Title,
+                            StatusCode = ResolveCatalogStatusCode(a.StatusCode, a.Status),
+                        });
+
+                    this.memoryCache.Set(cacheKey, cachedLookup, TimeSpan.FromSeconds(10));
+                }
+                catch (Exception ex)
+                {
+                    // The crash will likely be from Cosmos EF because StatusCode is non-nullable but in the Cosmos DB it is missing or null.
+                    // Backfill the missing values here
+                    if (ex is Microsoft.EntityFrameworkCore.DbUpdateException || ex is Microsoft.Azure.Cosmos.CosmosException)
                     {
-                        ArticleNumber = a.ArticleNumber,
-                        Title = a.Title,
-                        StatusCode = ResolveCatalogStatusCode(a.StatusCode, a.Status),
-                    });
-
-                this.memoryCache.Set(cacheKey, cachedLookup, TimeSpan.FromSeconds(10));
+                        cachedLookup = await BackfillCatalog(numbers, cancellationToken);
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
             }
 
             var result = cachedLookup
@@ -405,50 +419,29 @@ namespace Sky.Cms.Services
                         StatusCode = kvp.Value.StatusCode,
                     });
 
-            if (!backfillCatalog)
-            {
-                foreach (var articleNumber in numbers)
-                {
-                    if (result.ContainsKey(articleNumber))
-                    {
-                        continue;
-                    }
+            return result;
+        }
 
-                    var articleVersions = await this.dbContext.Articles
-                        .Where(a => a.ArticleNumber == articleNumber)
-                        .OrderByDescending(a => a.VersionNumber)
-                        .Select(a => new { a.ArticleNumber, a.Title, a.StatusCode })
-                        .ToListAsync(cancellationToken);
-
-                    var article = articleVersions.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.Title))
-                        ?? articleVersions.FirstOrDefault();
-                    if (article == null)
-                    {
-                        continue;
-                    }
-
-                    result[article.ArticleNumber] = new ArticleTitleAndStatus
-                    {
-                        ArticleNumber = article.ArticleNumber,
-                        Title = article.Title,
-                        StatusCode = article.StatusCode,
-                    };
-                }
-
-                return result;
-            }
-
+        /// <summary>
+        /// For any article numbers missing from the initial catalog lookup, queries the Articles table for their latest title and status,
+        /// and updates the catalog and cache accordingly.
+        /// </summary>
+        /// <param name="articleNumbers">Article numbers to backfill.</param>
+        /// <param name="result">The current result dictionary to update.</param>
+        /// <param name="cachedLookup">The cached lookup dictionary to update.</param>
+        /// <param name="cacheKey">The cache key for updating the memory cache.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The updated result dictionary.</returns>
+        /// <remarks>This method updates the catalog and cache for any missing article numbers. It is mainly to fix older installations of SkyCMS.</remarks>
+        private async Task<Dictionary<int, ArticleTitleAndStatus>> BackfillCatalog(IEnumerable<int> articleNumbers, CancellationToken cancellationToken)
+        {
             var deletedStatus = (int)StatusCodeEnum.Deleted;
             var inactiveStatus = (int)StatusCodeEnum.Inactive;
             var pendingBackfillRows = new List<CatalogEntry>();
+            var result = new Dictionary<int, ArticleTitleAndStatus>();
 
-            foreach (var articleNumber in numbers)
+            foreach (var articleNumber in articleNumbers)
             {
-                if (result.ContainsKey(articleNumber))
-                {
-                    continue;
-                }
-
                 var article = await this.dbContext.Articles
                     .Where(a => a.ArticleNumber == articleNumber)
                     .OrderByDescending(a => a.VersionNumber)
@@ -483,18 +476,6 @@ namespace Sky.Cms.Services
             {
                 await this.dbContext.ArticleCatalog.AddRangeAsync(pendingBackfillRows, cancellationToken);
                 await this.dbContext.SaveChangesAsync(cancellationToken);
-
-                foreach (var row in pendingBackfillRows)
-                {
-                    cachedLookup[row.ArticleNumber] = new ArticleTitleAndStatus
-                    {
-                        ArticleNumber = row.ArticleNumber,
-                        Title = row.Title,
-                        StatusCode = row.StatusCode,
-                    };
-                }
-
-                this.memoryCache.Set(cacheKey, cachedLookup, TimeSpan.FromSeconds(10));
             }
 
             return result;

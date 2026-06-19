@@ -5,7 +5,15 @@
 
         // Strip meta refresh tags before writing
         var content = @Html.Raw(Json.Serialize(ViewData["RenderedView"]));
+        var timerGuardScript = '<script>(function installCcmsTimerGuard(win){if(!win||win.__ccmsTimerGuardInstalled){return;}win.__ccmsTimerGuardInstalled=true;function isKnownNullTextContentError(error){if(!error){return false;}var message="";var stack="";if(typeof error==="string"){message=error;}else{message=error.message||"";stack=error.stack||"";}var isMissingTextTarget=/Cannot set properties of null \\(setting \'textContent\'\\)/.test(message);var isRotateCallback=stack.length===0||/\\brotate\\b/i.test(stack);return isMissingTextTarget&&isRotateCallback;}var originalSetInterval=win.setInterval?win.setInterval.bind(win):null;if(originalSetInterval){win.setInterval=function(callback,delay){if(typeof callback!=="function"){return originalSetInterval.apply(win,arguments);}var timerId=null;var args=Array.prototype.slice.call(arguments,2);var wrapped=function(){try{return callback.apply(this,arguments);}catch(error){if(isKnownNullTextContentError(error)){if(timerId!==null){win.clearInterval(timerId);}console.warn("CCMS stopped a repeating timer because its target element was missing.",error);return;}throw error;}};timerId=originalSetInterval.apply(win,[wrapped,delay].concat(args));return timerId;};}var originalSetTimeout=win.setTimeout?win.setTimeout.bind(win):null;if(originalSetTimeout){win.setTimeout=function(callback,delay){if(typeof callback!=="function"){return originalSetTimeout.apply(win,arguments);}var args=Array.prototype.slice.call(arguments,2);var wrapped=function(){try{return callback.apply(this,arguments);}catch(error){if(isKnownNullTextContentError(error)){console.warn("CCMS ignored a one-shot timer because its target element was missing.",error);return;}throw error;}};return originalSetTimeout.apply(win,[wrapped,delay].concat(args));};}win.addEventListener("error",function(event){if(isKnownNullTextContentError(event&&(event.error||event.message))){event.preventDefault();}});win.addEventListener("unhandledrejection",function(event){if(isKnownNullTextContentError(event&&event.reason)){event.preventDefault();}});})(window);<\/script>';
         content = content.replace(/<meta[^>]*http-equiv=["']?refresh["']?[^>]*>/gi, '');
+        if (/<head[^>]*>/i.test(content)) {
+            content = content.replace(/<head[^>]*>/i, function (match) { return match + timerGuardScript; });
+        } else if (/<html[^>]*>/i.test(content)) {
+            content = content.replace(/<html[^>]*>/i, function (match) { return match + '<head>' + timerGuardScript + '</head>'; });
+        } else {
+            content = timerGuardScript + content;
+        }
         
         iframeDoc.open();
         iframeDoc.write(content);

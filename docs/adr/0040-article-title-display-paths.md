@@ -18,11 +18,13 @@ Use this section to quickly validate implementation against design intent:
 
 ### ✅ Server-Side Responsibilities
 1. Resolve canonical paths from elFinder hashes and keep canonical paths authoritative for storage operations
-2. Translate canonical → friendly display metadata in `IFileEntryTitleService.ProjectFriendlyEntriesAsync(...)` (invoked by `FileManagerController.FilterEntries(...)`)
+2. Translate canonical → friendly display metadata in `IFileEntryTitleService.ProjectFriendlyEntriesAsync(...)` at controller integration points:
+   - `FileManagerController.FilterEntries(...)`
+   - `VsCodeController.GetFilesList(...)`
 3. Encode **only canonical paths** in elFinder hash values (`ElFinderObject.Hash`, `ElFinderObject.PHash`)
 4. Rewrite `Name` to article title only for direct children when listing `/pub/articles`; keep deeper child names unchanged
 5. Filter deleted article entries before response serialization; this filtering is based on article status lookups
-6. Apply the same projection rules to VS Code explorer listings via `VsCodeController.GetFilesList(...)`
+6. Keep canonical paths in operation payloads (`path`, `hash`) while exposing friendly `displayPath` and context-appropriate `name`
 
 ### ✅ Client-Side Responsibilities (elFinder UI)
 1. Display `ElFinderObject.Name` field (friendly title) in folder trees and breadcrumbs
@@ -34,14 +36,15 @@ Use this section to quickly validate implementation against design intent:
 - **Reverse Resolution Wiring:** `ResolveCanonicalPathAsync(...)` exists but is not currently part of the active elFinder command flow
 - **Title Collisions:** No explicit disambiguation strategy in display naming
 - **Client Tests:** Missing breadcrumb/navigation validation tests
-- **Flow Duplication:** Friendly display translation exists in both driver handlers and controller-side projection; final response output is governed by controller-side filtering/projection
 
 ### 📋 Key Files to Validate
 - **Primary ownership (final response shaping):**
   - `Editor/Controllers/FileManagerController.cs`
-    - `HandleOpenViaCqrsAsync(...)`
-    - `HandleTreeViaCqrsAsync(...)`
-    - `FilterEntries(...)`
+    - `HandleOpenViaCqrsAsync(...)` (applies `FilterEntries(...)` to `openResponse.Files`)
+    - `HandleTreeViaCqrsAsync(...)` (applies `FilterEntries(...)` to `treeResponse.Tree`)
+    - `FilterEntries(...)` (final `Name` / `DisplayPath` assignment for elFinder payload entries)
+  - `Editor/Controllers/VsCodeController.cs`
+    - `GetFilesList(...)` (gets entries from `folderListingService`, then projects with `titleResolver.ProjectFriendlyEntriesAsync(...)`)
   - `Editor/Services/FileEntryTitleService.cs`
     - `ProjectFriendlyEntriesAsync(...)`
     - `FilterDeletedArticleEntriesAsync(...)`
@@ -51,13 +54,6 @@ Use this section to quickly validate implementation against design intent:
     - `ResolveFriendlyDisplayName(...)`
   - `Editor/Services/FolderListingService.cs`
     - `GetEntriesAsync(...)`
-- **Driver-level pre-shaping (then overridden/finalized by controller-side projection):**
-  - `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs`
-    - `BuildEntryDisplayPathAsync(...)`
-  - `Drivers/SkyCMS.Drivers.ElFinder/Handlers/TreeCommandHandler.cs`
-    - `BuildDisplayPathAsync(...)`
-  - `Editor/Services/ElFinderNameResolver.cs`
-    - `ResolveNameAsync(...)`
 - **Models:** `FileManagerEntry.cs` (`Path` vs `DisplayPath`), `ElFinderObject.cs` (`Hash` vs `Name`)
 
 ---
@@ -108,11 +104,11 @@ This decision aims to achieve:
 This decision explicitly does **not** attempt to:
 
 1. **Replace canonical paths in storage**: Blob storage will continue using numeric paths; only the UI display changes
-2. **Address VSCode extension immediately**: The SkyCMS Explorer extension will be updated in a separate follow-on project
-3. **Cache article titles aggressively**: Title updates must reflect immediately in the UI (within cache window constraints)
-4. **Support URL slugs**: We are not introducing slug-based paths (e.g., `getting-started-guide`) as an alternative
-5. **Migrate existing URLs**: All existing canonical path URLs will continue to work indefinitely
-6. **Solve template GUID display**: While the architecture supports it, template title display is future work
+2. **Cache article titles aggressively**: Title updates must reflect immediately in the UI (within cache window constraints)
+3. **Support URL slugs**: We are not introducing slug-based paths (e.g., `getting-started-guide`) as an alternative
+4. **Migrate existing URLs**: All existing canonical path URLs will continue to work indefinitely
+5. **Change hash semantics**: elFinder and VS Code operations must continue to use canonical paths/hashes for all file operations
+6. **Solve template GUID display everywhere**: While the architecture supports it, some template-friendly display surfaces remain follow-up work
 
 ---
 
@@ -238,9 +234,10 @@ Task FilterDeletedArticleEntriesAsync(IList<FileManagerEntry> entries, IMemoryCa
 
 #### Layer 3: Integration Points
 
-**3a. `FileManagerController.FilterEntries` (Open Response Shaping)**
+**3a. `FileManagerController.FilterEntries` (elFinder Response Shaping)**
 
 `HandleOpenViaCqrsAsync()` dispatches the CQRS `OpenCommand`, then applies `FilterEntries(...)` to the returned `OpenResponse.Files`.
+`HandleTreeViaCqrsAsync()` dispatches the CQRS `TreeCommand`, then applies `FilterEntries(...)` to `TreeResponse.Tree`.
 
 **Behavior**:
 - Filters out deleted article entries before serialization
@@ -276,6 +273,15 @@ Provides catalog-driven virtual listings for special root directories:
 - **All other paths**: Delegates to blob storage for real directory listings, then applies soft-delete filtering for article subfolders
 
 **Rationale**: Virtual listings allow the File Manager to show article/template titles directly in the root folder view without requiring blob storage folder renames.
+
+**3c. `VsCodeController.GetFilesList` (VS Code Explorer Response Shaping)**
+
+`GetFilesList(...)` obtains canonical entries from `folderListingService.GetEntriesAsync(path, tenantDomain)`, then applies `titleResolver.ProjectFriendlyEntriesAsync(...)` before constructing the JSON response.
+
+**Behavior**:
+- Preserves canonical `path` in payloads for operations
+- Emits friendly `displayPath` values with `/pub/articles/{number}` translated to article titles
+- Emits context-appropriate `name` values (article titles for direct children of `/pub/articles`, unchanged deeper folder names)
 
 #### Layer 4: File Manager UI Integration
 
@@ -603,29 +609,28 @@ Use this section as the source of truth when deciding where translation tests sh
 
 ### Primary Ownership (final output sent to clients)
 
-1. `Editor/Controllers/FileManagerController.cs`
-   - `HandleOpenViaCqrsAsync(...)` and `HandleTreeViaCqrsAsync(...)` call `FilterEntries(...)` before JSON serialization.
-   - `FilterEntries(...)` is the last server-side shaping step for `Name` and `DisplayPath` in elFinder responses.
-
-2. `Editor/Services/FileEntryTitleService.cs`
+1. `Editor/Services/FileEntryTitleService.cs` (**source of truth**)
    - `ProjectFriendlyEntriesAsync(...)` applies friendly display projection rules and deleted-entry filtering behavior.
    - `FilterDeletedArticleEntriesAsync(...)` removes deleted article entries from listings.
+   - `ResolveCanonicalPathAsync(...)` provides reverse translation for friendly → canonical paths.
 
-3. `Editor/Services/FileEntryPathHelper.cs`
+2. `Editor/Controllers/FileManagerController.cs`
+   - `HandleOpenViaCqrsAsync(...)` and `HandleTreeViaCqrsAsync(...)` call `FilterEntries(...)` before JSON serialization.
+   - `FilterEntries(...)` delegates translation/shaping to `titleResolver.ProjectFriendlyEntriesAsync(...)` and applies the projected `Name`/`DisplayPath` to elFinder payload entries.
+
+3. `Editor/Controllers/VsCodeController.cs`
+   - `GetFilesList(...)` calls `folderListingService.GetEntriesAsync(...)` and then `titleResolver.ProjectFriendlyEntriesAsync(...)` before returning the API payload.
+
+4. `Editor/Services/FileEntryPathHelper.cs`
    - `TryGetArticleNumberFromPath(...)` extracts article-number segments from canonical paths.
    - `ResolveFriendlyDisplayPath(...)` rewrites only the article-number segment in display output.
    - `ResolveFriendlyDisplayName(...)` controls when folder names are replaced with friendly titles.
 
-### Supporting / Pre-Projection Components
-
-These participate in name/display shaping earlier, but final observable output is still governed by controller-side projection above:
+### Supporting Components
 
 - `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs`
-  - `BuildEntryDisplayPathAsync(...)`
-- `Drivers/SkyCMS.Drivers.ElFinder/Handlers/TreeCommandHandler.cs`
-  - `BuildDisplayPathAsync(...)`
-- `Editor/Services/ElFinderNameResolver.cs`
-  - `ResolveNameAsync(...)`
+  - Emits canonical entries/hashes and passes through entry metadata for controller-level projection.
+  - Does **not** own article-number → article-title translation.
 
 ### Testing Guidance From Ownership
 
@@ -640,8 +645,9 @@ These participate in name/display shaping earlier, but final observable output i
 - ✅ `Editor/Services/FileEntryPathHelper.cs` - Path transformation utilities
 - ✅ `Editor/Services/FileEntryTitleService.cs` - Database title/status lookups and deleted checks
 - ✅ `Editor/Services/FolderListingService.cs` - Virtual root listings
-- ✅ `Editor/Controllers/FileManagerController.cs` - Open response shaping (`FilterEntries`) and deleted-path guards
-- ✅ `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs` - canonical open payload provider (pre-controller shaping)
+- ✅ `Editor/Controllers/FileManagerController.cs` - Open/tree response shaping (`FilterEntries`) and deleted-path guards
+- ✅ `Editor/Controllers/VsCodeController.cs` - VS Code explorer response shaping (`GetFilesList` + `ProjectFriendlyEntriesAsync`)
+- ✅ `Drivers/SkyCMS.Drivers.ElFinder/Handlers/OpenCommandHandler.cs` - canonical elFinder payload provider (no title translation ownership)
 - ⏳ `Editor/wwwroot/js/file-manager.js` - File Manager UI (if applicable)
 
 ---
