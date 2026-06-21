@@ -16,12 +16,10 @@ namespace SkyCMS.Drivers.ElFinder.Handlers;
 public class TreeCommandHandler : IElFinderHandler<TreeCommand>
 {
     private readonly IElFinderStorageAdapter _adapter;
-    private readonly IElFinderNameResolver _nameResolver;
 
-    public TreeCommandHandler(IElFinderStorageAdapter adapter, IElFinderNameResolver nameResolver)
+    public TreeCommandHandler(IElFinderStorageAdapter adapter)
     {
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
-        _nameResolver = nameResolver ?? throw new ArgumentNullException(nameof(nameResolver));
     }
 
     public async Task<IElFinderResponse> HandleAsync(TreeCommand request, CancellationToken cancellationToken)
@@ -72,19 +70,19 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
         var lastSlash = parentPath.LastIndexOf('/');
         var phash = lastSlash >= 0 ? _adapter.EncodePath(parentPath.Substring(0, lastSlash + 1)) : _adapter.EncodePath("/");
 
-        var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
+        //  var resolvedName = await _nameResolver.ResolveNameAsync(path, entry.Name ?? string.Empty, cancellationToken);
         var normalizedPath = "/" + path.Trim('/');
 
         // Only emit RealPath when the name was substituted to a friendly display value.
         // Plain folders keep their canonical path implicit in the hash, matching the
         // documented tree contract and avoiding extra JSON noise.
-        var nameWasSubstituted = !string.Equals(resolvedName, entry.Name, StringComparison.Ordinal);
+        //  var nameWasSubstituted = !string.Equals(resolvedName, entry.Name, StringComparison.Ordinal);
 
         return new ElFinderObject
         {
             Hash = hash,
             PHash = phash,
-            Name = resolvedName,
+            Name = entry.Name,
             Size = entry.Size,
             Mime = "directory",
             Ts = new DateTimeOffset(entry.Modified).ToUnixTimeSeconds(),
@@ -92,53 +90,9 @@ public class TreeCommandHandler : IElFinderHandler<TreeCommand>
             Write = 1,
             Locked = 0,
             Dirs = 1,
-            RealPath = nameWasSubstituted ? normalizedPath : null,
-            DisplayPath = nameWasSubstituted ? await BuildDisplayPathAsync(path, cancellationToken) : null,
+            RealPath = normalizedPath,
+            DisplayPath = path,
         };
-    }
-
-    private async Task<string> BuildDisplayPathAsync(string canonicalPath, CancellationToken cancellationToken)
-    {
-        var normalizedPath = canonicalPath.TrimEnd('/');
-        if (string.IsNullOrWhiteSpace(normalizedPath))
-        {
-            return "/";
-        }
-
-        var segments = normalizedPath
-            .TrimStart('/')
-            .Split('/', StringSplitOptions.RemoveEmptyEntries)
-            .ToList();
-
-        if (segments.Count >= 3)
-        {
-            var scope = segments[0];
-            var kind = segments[1];
-            var idSegment = segments[2];
-
-            if (scope.Equals("pub", StringComparison.OrdinalIgnoreCase)
-                && kind.Equals("articles", StringComparison.OrdinalIgnoreCase)
-                && int.TryParse(idSegment, out var articleNumber))
-            {
-                var friendly = await _nameResolver.ResolveNameAsync($"/{scope}/{kind}/{articleNumber}", idSegment, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(friendly))
-                {
-                    segments[2] = friendly;
-                }
-            }
-            else if (scope.Equals("pub", StringComparison.OrdinalIgnoreCase)
-                && kind.Equals("templates", StringComparison.OrdinalIgnoreCase)
-                && Guid.TryParse(idSegment, out _))
-            {
-                var friendly = await _nameResolver.ResolveNameAsync($"/{scope}/{kind}/{idSegment}", idSegment, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(friendly))
-                {
-                    segments[2] = friendly;
-                }
-            }
-        }
-
-        return "/" + string.Join('/', segments);
     }
 
     private static string GetEntryPath(string parentPath, Cosmos.BlobService.FileManagerEntry entry)

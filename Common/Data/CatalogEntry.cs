@@ -87,7 +87,7 @@ namespace Cosmos.Common.Data
         /// This numeric status is the authoritative lifecycle indicator for catalog filtering
         /// across providers. It is kept in sync with <see cref="Status"/> during transition.
         /// </remarks>
-        public int StatusCode { get; set; } = 0;
+        public int? StatusCode { get; set; } = 0;
 
         /// <summary>
         /// Gets or sets the lifecycle status of the article as a compatibility string label.

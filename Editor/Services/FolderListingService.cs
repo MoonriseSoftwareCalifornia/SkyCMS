@@ -69,7 +69,7 @@ namespace Sky.Cms.Services
                     .ToListAsync();
 
                 return raw
-                    .Where(s => !IsDeletedOrRedirected(s.StatusCode, s.Status, deletedStatusCode, redirectStatusCode))
+                    .Where(s => !IsDeletedOrRedirected(s.StatusCode ?? 0, s.Status, deletedStatusCode, redirectStatusCode))
                     .Select(s => new FileManagerEntry
                 {
                     Created = s.Updated.DateTime,

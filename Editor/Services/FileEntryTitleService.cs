@@ -379,7 +379,6 @@ namespace Sky.Cms.Services
                 try
                 {
                     var catalogRows = await this.dbContext.ArticleCatalog
-                        .Select(a => new { a.ArticleNumber, a.Title, a.Status, a.StatusCode })
                         .ToListAsync(cancellationToken);
 
                     cachedLookup = catalogRows.ToDictionary(
@@ -388,7 +387,7 @@ namespace Sky.Cms.Services
                         {
                             ArticleNumber = a.ArticleNumber,
                             Title = a.Title,
-                            StatusCode = ResolveCatalogStatusCode(a.StatusCode, a.Status),
+                            StatusCode = ResolveCatalogStatusCode(a.StatusCode ?? 0, a.Status),
                         });
 
                     this.memoryCache.Set(cacheKey, cachedLookup, TimeSpan.FromSeconds(10));
@@ -397,7 +396,7 @@ namespace Sky.Cms.Services
                 {
                     // The crash will likely be from Cosmos EF because StatusCode is non-nullable but in the Cosmos DB it is missing or null.
                     // Backfill the missing values here
-                    if (ex is Microsoft.EntityFrameworkCore.DbUpdateException || ex is Microsoft.Azure.Cosmos.CosmosException)
+                    if (ex.Message.Equals("Nullable object must have a value."))
                     {
                         cachedLookup = await BackfillCatalog(numbers, cancellationToken);
                     }
@@ -447,6 +446,17 @@ namespace Sky.Cms.Services
                     .OrderByDescending(a => a.VersionNumber)
                     .Select(a => new { a.ArticleNumber, a.Title, a.StatusCode })
                     .FirstOrDefaultAsync(cancellationToken);
+
+                // Using a Cosmos safe query to delete the existing catalog entry if it exists, since the presence of a bad row with null StatusCode is likely what caused the original query to fail.
+                var existingCatalogEntry = await this.dbContext.ArticleCatalog
+                   .Where(c => c.ArticleNumber == articleNumber)
+                   .FirstOrDefaultAsync(cancellationToken);
+
+                if (existingCatalogEntry != null)
+                {
+                    dbContext.ArticleCatalog.Remove(existingCatalogEntry);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
 
                 if (article == null)
                 {
