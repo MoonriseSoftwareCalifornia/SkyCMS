@@ -58,6 +58,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Include="Data\Migrations\MySql\20260105143022_InitialCreate_MySql.cs" />
+	  <None Include="Data\Migrations\MySql\20260105143022_InitialCreate_MySql.Designer.cs" />
+	  <None Include="Data\Migrations\MySql\20260105185819_AddPageDesignVersionEntity_MySql.cs" />
+	  <None Include="Data\Migrations\MySql\20260105185819_AddPageDesignVersionEntity_MySql.Designer.cs" />
+	  <None Include="Data\Migrations\MySql\20260602120020_AddCatalogEntryStatusCode_MySql.cs" />
 	  <None Include="Views\Templates\EditCode.cshtml" />
 	  <None Include="Views\Templates\Index.cshtml" />
 	</ItemGroup>
@@ -118,6 +123,14 @@
 		<None Include="wwwroot\**\*">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <Compile Remove="Data\Migrations\MySql\20260105143022_InitialCreate_MySql.cs" />
+	  <Compile Remove="Data\Migrations\MySql\20260105143022_InitialCreate_MySql.Designer.cs" />
+	  <Compile Remove="Data\Migrations\MySql\20260105185819_AddPageDesignVersionEntity_MySql.cs" />
+	  <Compile Remove="Data\Migrations\MySql\20260105185819_AddPageDesignVersionEntity_MySql.Designer.cs" />
+	  <Compile Remove="Data\Migrations\MySql\20260602120020_AddCatalogEntryStatusCode_MySql.cs" />
 	</ItemGroup>
 		
 	<ItemGroup>

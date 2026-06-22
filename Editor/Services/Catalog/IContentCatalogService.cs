@@ -142,7 +142,7 @@ namespace Sky.Cms.Services
         public string Title { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets whether the post is currently published.
+        /// Gets or sets a value indicating whether the post is currently published.
         /// </summary>
         public bool IsPublished { get; set; }
 

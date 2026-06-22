@@ -21,7 +21,7 @@ namespace Sky.Editor.Data.Migrations.Sqlite
                 name: "StatusCode",
                 table: "ArticleCatalog",
                 type: "INTEGER",
-                nullable: false,
+                nullable: true,
                 defaultValue: 0);
         }
 

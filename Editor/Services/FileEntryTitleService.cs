@@ -7,19 +7,18 @@
 
 namespace Sky.Cms.Services
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Cosmos.BlobService;
-    using Cosmos.Common.Constants;
     using Cosmos.Common.Data;
     using Cosmos.Common.Data.Logic;
     using Cosmos.DynamicConfig;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Caching.Memory;
     using Sky.Editor.Services;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Provides file-entry title enrichment for editor listings by resolving article and template
@@ -426,9 +425,6 @@ namespace Sky.Cms.Services
         /// and updates the catalog and cache accordingly.
         /// </summary>
         /// <param name="articleNumbers">Article numbers to backfill.</param>
-        /// <param name="result">The current result dictionary to update.</param>
-        /// <param name="cachedLookup">The cached lookup dictionary to update.</param>
-        /// <param name="cacheKey">The cache key for updating the memory cache.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The updated result dictionary.</returns>
         /// <remarks>This method updates the catalog and cache for any missing article numbers. It is mainly to fix older installations of SkyCMS.</remarks>

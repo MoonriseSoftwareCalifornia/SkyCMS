@@ -21,7 +21,7 @@ namespace Sky.Editor.Data.Migrations.SqlServer
                 name: "StatusCode",
                 table: "ArticleCatalog",
                 type: "int",
-                nullable: false,
+                nullable: true,
                 defaultValue: 0);
         }
 
