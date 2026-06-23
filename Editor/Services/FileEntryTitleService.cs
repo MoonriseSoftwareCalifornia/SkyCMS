@@ -417,6 +417,25 @@ namespace Sky.Cms.Services
                         StatusCode = kvp.Value.StatusCode,
                     });
 
+            // Check if any requested article numbers are missing from the catalog
+            var missingNumbers = numbers.Except(result.Keys).ToList();
+            if (missingNumbers.Count > 0)
+            {
+                var backfilledData = await BackfillCatalog(missingNumbers, cancellationToken);
+                foreach (var kvp in backfilledData)
+                {
+                    result[kvp.Key] = kvp.Value;
+                }
+
+                // Update cache with the backfilled data
+                foreach (var kvp in backfilledData)
+                {
+                    cachedLookup[kvp.Key] = kvp.Value;
+                }
+
+                this.memoryCache.Set(cacheKey, cachedLookup, TimeSpan.FromSeconds(10));
+            }
+
             return result;
         }
 
@@ -441,7 +460,10 @@ namespace Sky.Cms.Services
                     .Where(a => a.ArticleNumber == articleNumber)
                     .OrderByDescending(a => a.VersionNumber)
                     .Select(a => new { a.ArticleNumber, a.Title, a.StatusCode })
-                    .FirstOrDefaultAsync(cancellationToken);
+                    .ToListAsync(cancellationToken);
+
+                // Find the latest version with a non-empty title
+                var latestNonEmptyArticle = article.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.Title));
 
                 // Using a Cosmos safe query to delete the existing catalog entry if it exists, since the presence of a bad row with null StatusCode is likely what caused the original query to fail.
                 var existingCatalogEntry = await this.dbContext.ArticleCatalog
@@ -454,27 +476,27 @@ namespace Sky.Cms.Services
                     await dbContext.SaveChangesAsync(cancellationToken);
                 }
 
-                if (article == null)
+                if (latestNonEmptyArticle == null)
                 {
                     continue;
                 }
 
-                if (article.StatusCode == deletedStatus || article.StatusCode == inactiveStatus)
+                if (latestNonEmptyArticle.StatusCode == deletedStatus || latestNonEmptyArticle.StatusCode == inactiveStatus)
                 {
                     pendingBackfillRows.Add(new CatalogEntry
                     {
-                        ArticleNumber = article.ArticleNumber,
-                        Title = article.Title,
-                        Status = ConvertStatusCodeToString(article.StatusCode),
-                        StatusCode = article.StatusCode,
+                        ArticleNumber = latestNonEmptyArticle.ArticleNumber,
+                        Title = latestNonEmptyArticle.Title,
+                        Status = ConvertStatusCodeToString(latestNonEmptyArticle.StatusCode),
+                        StatusCode = latestNonEmptyArticle.StatusCode,
                     });
                 }
 
-                result[article.ArticleNumber] = new ArticleTitleAndStatus
+                result[latestNonEmptyArticle.ArticleNumber] = new ArticleTitleAndStatus
                 {
-                    ArticleNumber = article.ArticleNumber,
-                    Title = article.Title,
-                    StatusCode = article.StatusCode,
+                    ArticleNumber = latestNonEmptyArticle.ArticleNumber,
+                    Title = latestNonEmptyArticle.Title,
+                    StatusCode = latestNonEmptyArticle.StatusCode,
                 };
             }
 

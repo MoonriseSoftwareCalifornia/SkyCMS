@@ -32,7 +32,7 @@ namespace Sky.Tests.ElFinder.Contracts
         [TestInitialize]
         public void Setup()
         {
-            var adapter = BuildAdapter();
+            _handler = new OpenCommandHandler(BuildAdapter().Object);
         }
 
         // ------------------------------------------------------------------ //
