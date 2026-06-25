@@ -12,6 +12,7 @@ namespace Sky.Tests.Controllers
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using Cosmos.BlobService;
+    using Cosmos.Common.Data;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Caching.Memory;
@@ -19,8 +20,10 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Sky.Cms.Controllers;
+    using Cosmos.Common.Models;
     using Sky.Cms.Services;
     using Sky.Editor.Models;
+    using Sky.Editor.Services.Copilot;
     using Sky.Editor.Services.Layouts;
 
     /// <summary>
@@ -78,6 +81,12 @@ namespace Sky.Tests.Controllers
             var titleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
             var contentCatalog = new ContentCatalogService(Db);
             var fileOperations = new FileOperationsService(mockStorageContext.Object, NullLogger<FileOperationsService>.Instance);
+            
+            var editorContextServiceMock = new Mock<IEditorContextPayloadService>();
+            editorContextServiceMock
+                .Setup(s => s.BuildPayloadAsync(It.IsAny<EditorContextPayloadRequest>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync("Test context payload for article/layout/template.");
+            
             controller = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -92,7 +101,8 @@ namespace Sky.Tests.Controllers
                 titleResolver,
                 new FolderListingService(Db, mockStorageContext.Object, titleResolver),
                 contentCatalog,
-                fileOperations);
+                fileOperations,
+                editorContextServiceMock.Object);
 
             controller.ControllerContext = new ControllerContext
             {
@@ -1452,6 +1462,10 @@ namespace Sky.Tests.Controllers
             var localTitleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
             var localContentCatalog = new ContentCatalogService(Db);
             var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
+            var contextServiceMock = new Mock<IEditorContextPayloadService>();
+            contextServiceMock
+                .Setup(s => s.BuildPayloadAsync(It.IsAny<EditorContextPayloadRequest>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync("Test context payload.");
             var localController = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -1466,7 +1480,8 @@ namespace Sky.Tests.Controllers
                 localTitleResolver,
                 new FolderListingService(Db, storageMock.Object, localTitleResolver),
                 localContentCatalog,
-                localFileOperations);
+                localFileOperations,
+                contextServiceMock.Object);
 
             localController.ControllerContext = new ControllerContext
             {
@@ -1523,9 +1538,13 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
-            var localTitleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
-            var localContentCatalog = new ContentCatalogService(Db);
-            var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
+            var localTitleResolver2 = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
+            var localContentCatalog2 = new ContentCatalogService(Db);
+            var localFileOperations2 = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
+            var contextServiceMock2 = new Mock<IEditorContextPayloadService>();
+            contextServiceMock2
+                .Setup(s => s.BuildPayloadAsync(It.IsAny<EditorContextPayloadRequest>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync("Test context payload.");
             var localController = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -1537,10 +1556,11 @@ namespace Sky.Tests.Controllers
                 DynamicConfigurationProvider,
                 ArticleEditLogic,
                 PublishingService,
-                localTitleResolver,
-                new FolderListingService(Db, storageMock.Object, localTitleResolver),
-                localContentCatalog,
-                localFileOperations);
+                localTitleResolver2,
+                new FolderListingService(Db, storageMock.Object, localTitleResolver2),
+                localContentCatalog2,
+                localFileOperations2,
+                contextServiceMock2.Object);
 
             localController.ControllerContext = new ControllerContext
             {
@@ -1599,9 +1619,13 @@ namespace Sky.Tests.Controllers
                 ArticleHtmlService,
                 NullLogger<LayoutVersioningService>.Instance);
 
-            var localTitleResolver = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
-            var localContentCatalog = new ContentCatalogService(Db);
-            var localFileOperations = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
+            var localTitleResolver3 = new FileEntryTitleService(Db, Cache, DynamicConfigurationProvider);
+            var localContentCatalog3 = new ContentCatalogService(Db);
+            var localFileOperations3 = new FileOperationsService(storageMock.Object, NullLogger<FileOperationsService>.Instance);
+            var contextServiceMock3 = new Mock<IEditorContextPayloadService>();
+            contextServiceMock3
+                .Setup(s => s.BuildPayloadAsync(It.IsAny<EditorContextPayloadRequest>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync("Test context payload.");
             var localController = new VsCodeController(
                 Db,
                 NullLogger<VsCodeController>.Instance,
@@ -1613,10 +1637,11 @@ namespace Sky.Tests.Controllers
                 DynamicConfigurationProvider,
                 ArticleEditLogic,
                 PublishingService,
-                localTitleResolver,
-                new FolderListingService(Db, storageMock.Object, localTitleResolver),
-                localContentCatalog,
-                localFileOperations);
+                localTitleResolver3,
+                new FolderListingService(Db, storageMock.Object, localTitleResolver3),
+                localContentCatalog3,
+                localFileOperations3,
+                contextServiceMock3.Object);
 
             localController.ControllerContext = new ControllerContext
             {
@@ -1640,6 +1665,141 @@ namespace Sky.Tests.Controllers
                 $"Consumers depend on 'path' to make API calls back to the server.");
 
             localCache.Dispose();
+        }
+
+        [TestMethod]
+        public async Task GetArticleContext_WithValidArticle_ReturnsContextPayload()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+            var article = await CreateArticleAsync("Test Article", TestUserId);
+
+            var result = await controller.GetArticleContext(article.ArticleNumber) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var payload = result.Value;
+            Assert.IsNotNull(payload);
+
+            var articleNumber = GetAnonymousProperty<int>(payload, "articleNumber");
+            var title = GetAnonymousProperty<string>(payload, "title");
+            var context = GetAnonymousProperty<string>(payload, "context");
+
+            Assert.AreEqual(article.ArticleNumber, articleNumber);
+            Assert.AreEqual("Test Article", title);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(context));
+            Assert.IsTrue(context.Contains("Test context payload", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [TestMethod]
+        public async Task GetArticleContext_WithInvalidArticle_ReturnsNotFound()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetArticleContext(999999);
+
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        [TestMethod]
+        public async Task GetArticleContext_Unauthenticated_ReturnsUnauthorized()
+        {
+            controller.ControllerContext.HttpContext = CreateHttpContext();
+
+            var result = await controller.GetArticleContext(1);
+
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
+        }
+
+        [TestMethod]
+        public async Task GetLayoutContext_WithValidLayout_ReturnsContextPayload()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetLayoutContext(1) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var payload = result.Value;
+            Assert.IsNotNull(payload);
+
+            var layoutNumber = GetAnonymousProperty<int>(payload, "layoutNumber");
+            var name = GetAnonymousProperty<string>(payload, "name");
+            var context = GetAnonymousProperty<string>(payload, "context");
+
+            Assert.AreEqual(1, layoutNumber);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(name));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(context));
+            Assert.IsTrue(context.Contains("Test context payload", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [TestMethod]
+        public async Task GetLayoutContext_WithInvalidLayout_ReturnsNotFound()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetLayoutContext(999999);
+
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        [TestMethod]
+        public async Task GetLayoutContext_Unauthenticated_ReturnsUnauthorized()
+        {
+            controller.ControllerContext.HttpContext = CreateHttpContext();
+
+            var result = await controller.GetLayoutContext(1);
+
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
+        }
+
+        [TestMethod]
+        public async Task GetTemplateContext_WithValidTemplate_ReturnsContextPayload()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+            
+            var template = new Template
+            {
+                Id = Guid.NewGuid(),
+                Title = "Test Template",
+                PageType = "test",
+                Content = "<p>Template content</p>",
+                LayoutId = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db)
+            };
+            Db.Templates.Add(template);
+            await Db.SaveChangesAsync();
+
+            var result = await controller.GetTemplateContext(template.Id) as OkObjectResult;
+
+            Assert.IsNotNull(result);
+            var payload = result.Value;
+            Assert.IsNotNull(payload);
+
+            var templateId = GetAnonymousProperty<Guid>(payload, "templateId");
+            var title = GetAnonymousProperty<string>(payload, "title");
+            var context = GetAnonymousProperty<string>(payload, "context");
+
+            Assert.AreEqual(template.Id, templateId);
+            Assert.AreEqual("Test Template", title);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(context));
+            Assert.IsTrue(context.Contains("Test context payload", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [TestMethod]
+        public async Task GetTemplateContext_WithInvalidTemplate_ReturnsNotFound()
+        {
+            controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+
+            var result = await controller.GetTemplateContext(Guid.NewGuid());
+
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+        }
+
+        [TestMethod]
+        public async Task GetTemplateContext_Unauthenticated_ReturnsUnauthorized()
+        {
+            controller.ControllerContext.HttpContext = CreateHttpContext();
+
+            var result = await controller.GetTemplateContext(Guid.NewGuid());
+
+            Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
         }
 
         [TestMethod]

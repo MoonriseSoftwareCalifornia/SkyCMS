@@ -45,6 +45,7 @@ public class CopilotControllerTests
     private Mock<IEditorContextPayloadService> editorContextPayloadServiceMock = null!;
     private Mock<IAiDocumentationContextService> documentationContextServiceMock = null!;
     private Mock<IAiSourceCodeIndexService> sourceCodeIndexServiceMock = null!;
+    private Mock<IAiHelpQueryContextService> helpQueryContextServiceMock = null!;
     private Mock<IAiLayoutContextService> layoutContextServiceMock = null!;
     private Mock<ILogger<AiProxyController>> loggerMock = null!;
     private AiProxyController controller = null!;
@@ -59,6 +60,7 @@ public class CopilotControllerTests
         editorContextPayloadServiceMock = new Mock<IEditorContextPayloadService>();
         documentationContextServiceMock = new Mock<IAiDocumentationContextService>();
         sourceCodeIndexServiceMock = new Mock<IAiSourceCodeIndexService>();
+        helpQueryContextServiceMock = new Mock<IAiHelpQueryContextService>();
         layoutContextServiceMock = new Mock<IAiLayoutContextService>();
         loggerMock = new Mock<ILogger<AiProxyController>>();
 
@@ -78,6 +80,22 @@ public class CopilotControllerTests
             .Setup(s => s.SearchSourceCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<AiSourceCodeSearchResult>());
 
+        helpQueryContextServiceMock
+            .Setup(s => s.BuildContextAsync(It.IsAny<AiHelpQueryContextRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AiHelpQueryContextResult
+            {
+                ContextText = "Documentation context from docs.sky-cms.com:\n- SkyCMS docs snippet\nSources:\n- https://docs.sky-cms.com/",
+                Sources =
+                [
+                    new AiHelpSourceAttribution
+                    {
+                        SourceType = "docs",
+                        Title = "SkyCMS Docs",
+                        Url = "https://docs.sky-cms.com/",
+                    },
+                ],
+            });
+
         layoutContextServiceMock
             .Setup(s => s.GetLayoutContextAsync(It.IsAny<AiContextEnrichmentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AiLayoutContextResult());
@@ -90,6 +108,7 @@ public class CopilotControllerTests
             editorContextPayloadServiceMock.Object,
             documentationContextServiceMock.Object,
             sourceCodeIndexServiceMock.Object,
+            helpQueryContextServiceMock.Object,
             layoutContextServiceMock.Object,
             loggerMock.Object);
 
@@ -603,6 +622,67 @@ public class CopilotControllerTests
         Assert.IsFalse(systemPrompt.Contains("single rich-text editor region only", StringComparison.Ordinal));
         Assert.IsNotNull(userPrompt);
         Assert.IsTrue(userPrompt.Contains("Editor context payload:", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task HelpQuery_WithValidRequest_ReturnsReplyAndSourceAttribution()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+            Model = "gpt-4o-mini",
+            MaxTokens = 512,
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        string? capturedJson = null;
+
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Use the page editor and publish.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.HelpQuery(new AiProxyController.AiHelpQueryRequest
+        {
+            Query = "How do I publish a page?",
+            ChatMode = "general-help",
+            DocumentKind = "article",
+            SectionKind = "article-content",
+            UrlPath = "sample-page",
+        });
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+
+        var payload = ok.Value as AiProxyController.AiHelpQueryResponse;
+        Assert.IsNotNull(payload);
+        Assert.IsTrue(payload.Reply.Contains("publish", StringComparison.OrdinalIgnoreCase));
+        Assert.AreEqual(1, payload.Sources.Count);
+        Assert.AreEqual("docs", payload.Sources[0].SourceType);
+        Assert.AreEqual("https://docs.sky-cms.com/", payload.Sources[0].Url);
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+        using var document = JsonDocument.Parse(capturedJson!);
+        var messages = document.RootElement.GetProperty("messages");
+        var systemPrompt = messages[0].GetProperty("content").GetString();
+        var userPrompt = messages[1].GetProperty("content").GetString();
+
+        Assert.IsNotNull(systemPrompt);
+        Assert.IsTrue(systemPrompt.Contains("AI help assistant", StringComparison.Ordinal));
+        Assert.IsNotNull(userPrompt);
+        Assert.IsTrue(userPrompt.Contains("Documentation context from docs.sky-cms.com", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("User request:", StringComparison.Ordinal));
     }
 
     [TestMethod]

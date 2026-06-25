@@ -331,6 +331,8 @@ builder.Services.AddScoped<IEditorContextBuilder, EditorContextBuilder>();
 builder.Services.AddScoped<IEditorContextPayloadService, EditorContextPayloadService>();
 builder.Services.AddScoped<IAiDocumentationIndexService, AiDocumentationIndexService>();
 builder.Services.AddScoped<IAiSourceCodeIndexService, AiSourceCodeIndexService>();
+builder.Services.AddScoped<IAiFaqIndexService, AiFaqIndexService>();
+builder.Services.AddScoped<IAiHelpQueryContextService, AiHelpQueryContextService>();
 builder.Services.AddScoped<IAiDocumentationContextService, AiDocumentationContextService>();
 builder.Services.AddScoped<IAiLayoutContextService, AiLayoutContextService>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();

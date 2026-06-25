@@ -45,6 +45,7 @@ public sealed class AiProxyController : ControllerBase
     private readonly IEditorContextPayloadService editorContextPayloadService;
     private readonly IAiDocumentationContextService aiDocumentationContextService;
     private readonly IAiSourceCodeIndexService aiSourceCodeIndexService;
+    private readonly IAiHelpQueryContextService aiHelpQueryContextService;
     private readonly IAiLayoutContextService aiLayoutContextService;
     private readonly ILogger<AiProxyController> logger;
 
@@ -58,6 +59,7 @@ public sealed class AiProxyController : ControllerBase
     /// <param name="editorContextPayloadService">Editor context payload service.</param>
     /// <param name="aiDocumentationContextService">Documentation context enrichment service.</param>
     /// <param name="aiSourceCodeIndexService">Source code index service.</param>
+    /// <param name="aiHelpQueryContextService">Help query context service.</param>
     /// <param name="aiLayoutContextService">Layout context enrichment service.</param>
     /// <param name="logger">Logger instance.</param>
     public AiProxyController(
@@ -68,6 +70,7 @@ public sealed class AiProxyController : ControllerBase
         IEditorContextPayloadService editorContextPayloadService,
         IAiDocumentationContextService aiDocumentationContextService,
         IAiSourceCodeIndexService aiSourceCodeIndexService,
+        IAiHelpQueryContextService aiHelpQueryContextService,
         IAiLayoutContextService aiLayoutContextService,
         ILogger<AiProxyController> logger)
     {
@@ -78,6 +81,7 @@ public sealed class AiProxyController : ControllerBase
         this.editorContextPayloadService = editorContextPayloadService;
         this.aiDocumentationContextService = aiDocumentationContextService;
         this.aiSourceCodeIndexService = aiSourceCodeIndexService;
+        this.aiHelpQueryContextService = aiHelpQueryContextService;
         this.aiLayoutContextService = aiLayoutContextService;
         this.logger = logger;
     }
@@ -472,6 +476,133 @@ public sealed class AiProxyController : ControllerBase
         {
             this.logger.LogError(ex, "Copilot chat request failed.");
             return this.StatusCode(500, new { error = "Copilot chat request failed." });
+        }
+    }
+
+    /// <summary>
+    /// Handles dedicated help-query requests and returns grounded responses with source attribution.
+    /// </summary>
+    /// <param name="request">Help query request payload.</param>
+    /// <returns>Help response with optional source attributions.</returns>
+    [HttpPost("/api/ai-help/query")]
+    [EnableRateLimiting("copilot-chat")]
+    public async Task<IActionResult> HelpQuery([FromBody] AiHelpQueryRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.Query))
+        {
+            return this.BadRequest(new { error = "Query is required." });
+        }
+
+        var options = await this.copilotProxyOptionsService.GetOptionsAsync();
+        if (!options.Enabled)
+        {
+            return this.StatusCode(503, new { error = "Copilot proxy is disabled." });
+        }
+
+        if (string.IsNullOrWhiteSpace(options.Endpoint) || string.IsNullOrWhiteSpace(options.AccessToken))
+        {
+            this.logger.LogWarning("Copilot proxy endpoint/token is not configured.");
+            return this.StatusCode(503, new { error = "Copilot proxy is not configured." });
+        }
+
+        var contextResult = await this.aiHelpQueryContextService.BuildContextAsync(
+            new AiHelpQueryContextRequest
+            {
+                Query = request.Query,
+                ChatMode = request.ChatMode,
+                DocumentKind = request.DocumentKind,
+                SectionKind = request.SectionKind,
+                ArticleNumber = request.ArticleNumber,
+                TemplateId = request.TemplateId,
+                LayoutId = request.LayoutId,
+                UrlPath = request.UrlPath,
+            },
+            this.HttpContext.RequestAborted);
+
+        var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
+
+        try
+        {
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(this.HttpContext.RequestAborted);
+            linkedCts.CancelAfter(Math.Clamp(options.TimeoutMs, 1000, 60000));
+
+            var helpPromptRequest = new CopilotChatRequest
+            {
+                EditorKind = "help",
+                ChatMode = request.ChatMode,
+                Message = request.Query,
+                DocumentKind = request.DocumentKind,
+                SectionKind = request.SectionKind,
+                ArticleNumber = request.ArticleNumber,
+                TemplateId = request.TemplateId,
+                LayoutId = request.LayoutId,
+                UrlPath = request.UrlPath,
+                Messages = request.Messages,
+            };
+
+            var helpMessages = BuildChatMessages(helpPromptRequest, contextResult.ContextText, null, null, null);
+
+            var httpClient = this.httpClientFactory.CreateClient();
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, options.Endpoint);
+            ApplyAuthenticationHeaders(httpRequest, options.Endpoint, options.AccessToken);
+
+            var upstreamRequest = new UpstreamChatCompletionRequest
+            {
+                Model = resolvedModel,
+                Messages = helpMessages,
+                Temperature = Math.Clamp(Math.Max(options.Temperature, 0.2d), 0, 1),
+                MaxTokens = Math.Clamp(Math.Max(options.MaxTokens, 500), 128, 1600),
+                Stream = false,
+            };
+
+            httpRequest.Content = JsonContent.Create(upstreamRequest, options: JsonOptions);
+
+            using var response = await httpClient.SendAsync(httpRequest, linkedCts.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                if ((int)response.StatusCode == 429)
+                {
+                    var retryAfterSeconds = GetRetryAfterSeconds(response);
+                    this.logger.LogWarning(
+                        "Help query upstream rate-limited (429). Retry-After={RetryAfterSeconds}s.",
+                        retryAfterSeconds);
+
+                    return this.StatusCode(429, new
+                    {
+                        error = "Copilot upstream rate limit reached.",
+                        retryAfterSeconds,
+                    });
+                }
+
+                this.logger.LogWarning("Help query upstream call failed with status {StatusCode}.", (int)response.StatusCode);
+                return this.StatusCode(502, new
+                {
+                    error = "Copilot upstream provider returned an error.",
+                    upstreamStatusCode = (int)response.StatusCode,
+                });
+            }
+
+            await using var responseStream = await response.Content.ReadAsStreamAsync(linkedCts.Token);
+            var payload = await JsonSerializer.DeserializeAsync<UpstreamChatCompletionResponse>(responseStream, JsonOptions, linkedCts.Token);
+            var replyText = payload?.Choices?[0]?.Message?.Content?.Trim();
+
+            return this.Ok(new AiHelpQueryResponse
+            {
+                Reply = string.IsNullOrWhiteSpace(replyText)
+                    ? "I don't have a useful answer for that yet."
+                    : replyText,
+                Model = resolvedModel,
+                Sources = contextResult.Sources,
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            return this.StatusCode(504, new { error = "Help query request timed out." });
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Help query request failed.");
+            return this.StatusCode(500, new { error = "Help query request failed." });
         }
     }
 
@@ -998,6 +1129,83 @@ public sealed class AiProxyController : ControllerBase
         /// Gets or sets the resolved model.
         /// </summary>
         public string? Model { get; set; }
+    }
+
+    /// <summary>
+    /// Request payload for help chat queries.
+    /// </summary>
+    public sealed class AiHelpQueryRequest
+    {
+        /// <summary>
+        /// Gets or sets the user query text.
+        /// </summary>
+        public string Query { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets optional chat mode.
+        /// </summary>
+        public string? ChatMode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the document kind context.
+        /// </summary>
+        public string? DocumentKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the section kind context.
+        /// </summary>
+        public string? SectionKind { get; set; }
+
+        /// <summary>
+        /// Gets or sets the article number context.
+        /// </summary>
+        public string? ArticleNumber { get; set; }
+
+        /// <summary>
+        /// Gets or sets the template ID context.
+        /// </summary>
+        public string? TemplateId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the layout ID context.
+        /// </summary>
+        public string? LayoutId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the URL path context.
+        /// </summary>
+        public string? UrlPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets conversation history.
+        /// </summary>
+        public List<CopilotConversationMessage> Messages { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets an optional per-request selected model.
+        /// </summary>
+        public string? SelectedModel { get; set; }
+    }
+
+    /// <summary>
+    /// Response payload for help chat queries.
+    /// </summary>
+    public sealed class AiHelpQueryResponse
+    {
+        /// <summary>
+        /// Gets or sets the assistant reply.
+        /// </summary>
+        public string Reply { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets resolved model.
+        /// </summary>
+        public string? Model { get; set; }
+
+        /// <summary>
+        /// Gets or sets source attributions used by the response.
+        /// </summary>
+        public List<AiHelpSourceAttribution> Sources { get; set; } = [];
     }
 
     /// <summary>

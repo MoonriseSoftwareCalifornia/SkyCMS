@@ -36,6 +36,7 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Features.Layouts.GetEditable;
     using Sky.Editor.Features.Templates.Create;
     using Sky.Editor.Features.Templates.Get;
+    using Sky.Editor.Services.Copilot;
     using Sky.Editor.Services.Layouts;
     using Sky.Editor.Services.Publishing;
     using Sky.Editor.Services.Templates;
@@ -74,6 +75,7 @@ namespace Sky.Cms.Controllers
         private readonly IFolderListingService folderListingService;
         private readonly IContentCatalogService contentCatalog;
         private readonly IFileOperationsService fileOperations;
+        private readonly IEditorContextPayloadService editorContextPayloadService;
 
         private const string DeletedArticleAccessMessage = "The requested file path belongs to a deleted article and is not accessible.";
 
@@ -94,6 +96,7 @@ namespace Sky.Cms.Controllers
         /// <param name="folderListingService">Shared folder-listing service.</param>
         /// <param name="contentCatalog">Content catalog service for article/template queries.</param>
         /// <param name="fileOperations">File operations service for common file/folder operations.</param>
+        /// <param name="editorContextPayloadService">Service for building AI context payloads.</param>
         public VsCodeController(
             ApplicationDbContext dbContext,
             ILogger<VsCodeController> logger,
@@ -108,7 +111,8 @@ namespace Sky.Cms.Controllers
             IFileEntryTitleService titleResolver,
             IFolderListingService folderListingService,
             IContentCatalogService contentCatalog,
-            IFileOperationsService fileOperations)
+            IFileOperationsService fileOperations,
+            IEditorContextPayloadService editorContextPayloadService)
         {
             this.dbContext = dbContext;
             this.logger = logger;
@@ -124,6 +128,7 @@ namespace Sky.Cms.Controllers
             this.folderListingService = folderListingService ?? new FolderListingService(this.dbContext, this.storageContext, this.titleResolver);
             this.contentCatalog = contentCatalog;
             this.fileOperations = fileOperations;
+            this.editorContextPayloadService = editorContextPayloadService;
         }
 
         /// <summary>
@@ -421,6 +426,55 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
+        /// Returns AI context for a given layout for VS Code extension consumption.
+        /// </summary>
+        /// <param name="layoutNumber">Layout number identifier.</param>
+        /// <returns>Context payload for AI integration.</returns>
+        [HttpGet("layouts/{layoutNumber:int}/context")]
+        public async Task<IActionResult> GetLayoutContext(int layoutNumber)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var layout = await GetEditableLayout(layoutNumber);
+            if (layout == null)
+            {
+                return NotFound(new { message = "Layout not found." });
+            }
+
+            try
+            {
+                var payload = await this.editorContextPayloadService.BuildPayloadAsync(
+                    new EditorContextPayloadRequest
+                    {
+                        EditorSurface = "vscode",
+                        DocumentKind = "layout",
+                        CurrentField = "head",
+                        CurrentFieldValue = layout.Head,
+                        Title = layout.LayoutName,
+                        LayoutId = layout.Id.ToString(),
+                        Lightweight = false,
+                    },
+                    HttpContext.RequestAborted);
+
+                return Ok(new
+                {
+                    layoutNumber,
+                    name = layout.LayoutName,
+                    context = payload,
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error building context for layout {LayoutNumber}.", layoutNumber);
+                return StatusCode(500, new { message = "Failed to build context." });
+            }
+        }
+
+        /// <summary>
         /// Lists all versions for a layout family, newest first.
         /// </summary>
         /// <param name="layoutNumber">Stable layout family number.</param>
@@ -498,6 +552,55 @@ namespace Sky.Cms.Controllers
         }
 
         /// <summary>
+        /// Returns AI context for a given template for VS Code extension consumption.
+        /// </summary>
+        /// <param name="templateId">Template ID identifier.</param>
+        /// <returns>Context payload for AI integration.</returns>
+        [HttpGet("templates/{templateId:guid}/context")]
+        public async Task<IActionResult> GetTemplateContext(Guid templateId)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var template = await GetTemplateAsync(templateId);
+            if (template == null)
+            {
+                return NotFound(new { message = "Template not found." });
+            }
+
+            try
+            {
+                var payload = await this.editorContextPayloadService.BuildPayloadAsync(
+                    new EditorContextPayloadRequest
+                    {
+                        EditorSurface = "vscode",
+                        DocumentKind = "template",
+                        CurrentField = "content",
+                        CurrentFieldValue = template.Content,
+                        Title = template.Title,
+                        TemplateId = templateId.ToString(),
+                        Lightweight = false,
+                    },
+                    HttpContext.RequestAborted);
+
+                return Ok(new
+                {
+                    templateId,
+                    title = template.Title,
+                    context = payload,
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error building context for template {TemplateId}.", templateId);
+                return StatusCode(500, new { message = "Failed to build context." });
+            }
+        }
+
+        /// <summary>
         /// Lists editor inventory rows for articles, including nested blog children.
         /// </summary>
         /// <returns>Editor inventory rows.</returns>
@@ -516,6 +619,55 @@ namespace Sky.Cms.Controllers
             });
 
             return Ok(inventory);
+        }
+
+        /// <summary>
+        /// Returns AI context for a given article for VS Code extension consumption.
+        /// </summary>
+        /// <param name="articleNumber">Article number identifier.</param>
+        /// <returns>Context payload for AI integration.</returns>
+        [HttpGet("articles/{articleNumber:int}/context")]
+        public async Task<IActionResult> GetArticleContext(int articleNumber)
+        {
+            var authResult = EnsureVsCodeRequestAuthorized();
+            if (authResult != null)
+            {
+                return authResult;
+            }
+
+            var article = await GetEditableArticle(articleNumber);
+            if (article == null)
+            {
+                return NotFound(new { message = "Article not found." });
+            }
+
+            try
+            {
+                var payload = await this.editorContextPayloadService.BuildPayloadAsync(
+                    new EditorContextPayloadRequest
+                    {
+                        EditorSurface = "vscode",
+                        DocumentKind = "article",
+                        CurrentField = "content",
+                        CurrentFieldValue = article.Content,
+                        Title = article.Title,
+                        ArticleNumber = articleNumber.ToString(),
+                        Lightweight = false,
+                    },
+                    HttpContext.RequestAborted);
+
+                return Ok(new
+                {
+                    articleNumber,
+                    title = article.Title,
+                    context = payload,
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error building context for article {ArticleNumber}.", articleNumber);
+                return StatusCode(500, new { message = "Failed to build context." });
+            }
         }
 
         /// <summary>
