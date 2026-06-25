@@ -8,7 +8,9 @@
 namespace Cosmos.Cms.Editor.Controllers;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -33,6 +35,9 @@ using Sky.Editor.Services.Copilot;
 [Authorize(Roles = "Reviewers, Administrators, Editors, Authors")]
 public sealed class AiProxyController : ControllerBase
 {
+    private static readonly int[] HistogramUpperBounds = [1000, 2000, 4000, 8000];
+    private static readonly ConcurrentDictionary<string, TokenTelemetryAccumulator> TokenTelemetryByDocumentKind = new(StringComparer.OrdinalIgnoreCase);
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -249,6 +254,10 @@ public sealed class AiProxyController : ControllerBase
 
         var prompt = BuildCompletionPrompt(request, language, editorContextPayload);
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
+        var baseContextTokens = EstimateTokenCount($"Language:{language};FieldId:{request.FieldId};DocumentKind:{request.DocumentKind};SectionKind:{request.SectionKind}");
+        var entityContextTokens = EstimateTokenCount(editorContextPayload);
+        var renderingContextTokens = 0;
+        var knowledgeContextTokens = 0;
 
         try
         {
@@ -279,6 +288,8 @@ public sealed class AiProxyController : ControllerBase
                 MaxTokens = Math.Clamp(options.MaxTokens, 16, 1024),
                 Stream = false,
             };
+
+            var promptTokens = EstimateTokenCount(upstreamRequest.Messages);
 
             httpRequest.Content = JsonContent.Create(upstreamRequest, options: JsonOptions);
 
@@ -313,8 +324,30 @@ public sealed class AiProxyController : ControllerBase
 
             if (string.IsNullOrWhiteSpace(completionText))
             {
+                this.LogTokenAccounting(
+                    operation: "complete",
+                    documentKind: request.DocumentKind,
+                    baseContextTokens: baseContextTokens,
+                    entityContextTokens: entityContextTokens,
+                    renderingContextTokens: renderingContextTokens,
+                    knowledgeContextTokens: knowledgeContextTokens,
+                    promptTokens: promptTokens,
+                    responseTokens: 0,
+                    model: resolvedModel);
+
                 return this.Ok(new CopilotCompletionResponse());
             }
+
+            this.LogTokenAccounting(
+                operation: "complete",
+                documentKind: request.DocumentKind,
+                baseContextTokens: baseContextTokens,
+                entityContextTokens: entityContextTokens,
+                renderingContextTokens: renderingContextTokens,
+                knowledgeContextTokens: knowledgeContextTokens,
+                promptTokens: promptTokens,
+                responseTokens: EstimateTokenCount(completionText),
+                model: resolvedModel);
 
             return this.Ok(new CopilotCompletionResponse
             {
@@ -401,6 +434,10 @@ public sealed class AiProxyController : ControllerBase
         var layoutContext = layoutContextTask.Result.ContextText;
         var sourceCodeContext = BuildSourceCodeContext(sourceCodeContextTask.Result);
         var editorContextPayload = editorContextPayloadTask.Result;
+        var baseContextTokens = EstimateTokenCount($"EditorKind:{request.EditorKind};Action:{request.Action};Language:{request.Language};Field:{request.FieldName};DocumentKind:{request.DocumentKind};SectionKind:{request.SectionKind};ArticleNumber:{request.ArticleNumber};TemplateId:{request.TemplateId};LayoutId:{request.LayoutId};UrlPath:{request.UrlPath}");
+        var entityContextTokens = EstimateTokenCount(editorContextPayload);
+        var renderingContextTokens = EstimateTokenCount(layoutContext);
+        var knowledgeContextTokens = EstimateTokenCount(documentationContext) + EstimateTokenCount(sourceCodeContext);
 
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
@@ -421,6 +458,8 @@ public sealed class AiProxyController : ControllerBase
                 MaxTokens = Math.Clamp(Math.Max(options.MaxTokens, 400), 128, 1200),
                 Stream = false,
             };
+
+            var promptTokens = EstimateTokenCount(upstreamRequest.Messages);
 
             httpRequest.Content = JsonContent.Create(upstreamRequest, options: JsonOptions);
 
@@ -455,12 +494,34 @@ public sealed class AiProxyController : ControllerBase
 
             if (string.IsNullOrWhiteSpace(replyText))
             {
+                this.LogTokenAccounting(
+                    operation: "chat",
+                    documentKind: request.DocumentKind,
+                    baseContextTokens: baseContextTokens,
+                    entityContextTokens: entityContextTokens,
+                    renderingContextTokens: renderingContextTokens,
+                    knowledgeContextTokens: knowledgeContextTokens,
+                    promptTokens: promptTokens,
+                    responseTokens: 0,
+                    model: resolvedModel);
+
                 return this.Ok(new CopilotChatResponse
                 {
                     Reply = "I don't have a useful answer for that yet.",
                     Model = resolvedModel,
                 });
             }
+
+            this.LogTokenAccounting(
+                operation: "chat",
+                documentKind: request.DocumentKind,
+                baseContextTokens: baseContextTokens,
+                entityContextTokens: entityContextTokens,
+                renderingContextTokens: renderingContextTokens,
+                knowledgeContextTokens: knowledgeContextTokens,
+                promptTokens: promptTokens,
+                responseTokens: EstimateTokenCount(replyText),
+                model: resolvedModel);
 
             return this.Ok(new CopilotChatResponse
             {
@@ -519,6 +580,11 @@ public sealed class AiProxyController : ControllerBase
             },
             this.HttpContext.RequestAborted);
 
+        var baseContextTokens = EstimateTokenCount($"ChatMode:{request.ChatMode};DocumentKind:{request.DocumentKind};SectionKind:{request.SectionKind};ArticleNumber:{request.ArticleNumber};TemplateId:{request.TemplateId};LayoutId:{request.LayoutId};UrlPath:{request.UrlPath};Query:{request.Query}");
+        var entityContextTokens = 0;
+        var renderingContextTokens = 0;
+        var knowledgeContextTokens = EstimateTokenCount(contextResult.ContextText);
+
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
         try
@@ -555,6 +621,8 @@ public sealed class AiProxyController : ControllerBase
                 Stream = false,
             };
 
+            var promptTokens = EstimateTokenCount(upstreamRequest.Messages);
+
             httpRequest.Content = JsonContent.Create(upstreamRequest, options: JsonOptions);
 
             using var response = await httpClient.SendAsync(httpRequest, linkedCts.Token);
@@ -585,6 +653,17 @@ public sealed class AiProxyController : ControllerBase
             await using var responseStream = await response.Content.ReadAsStreamAsync(linkedCts.Token);
             var payload = await JsonSerializer.DeserializeAsync<UpstreamChatCompletionResponse>(responseStream, JsonOptions, linkedCts.Token);
             var replyText = payload?.Choices?[0]?.Message?.Content?.Trim();
+
+            this.LogTokenAccounting(
+                operation: "help-query",
+                documentKind: request.DocumentKind,
+                baseContextTokens: baseContextTokens,
+                entityContextTokens: entityContextTokens,
+                renderingContextTokens: renderingContextTokens,
+                knowledgeContextTokens: knowledgeContextTokens,
+                promptTokens: promptTokens,
+                responseTokens: EstimateTokenCount(replyText),
+                model: resolvedModel);
 
             return this.Ok(new AiHelpQueryResponse
             {
@@ -935,6 +1014,132 @@ public sealed class AiProxyController : ControllerBase
 
         return text[^maxLength..];
     }
+
+    private static int EstimateTokenCount(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return 0;
+        }
+
+        return Math.Max(1, (int)Math.Ceiling(text.Length / 4.0d));
+    }
+
+    private static int EstimateTokenCount(IEnumerable<UpstreamChatMessage> messages)
+    {
+        if (messages == null)
+        {
+            return 0;
+        }
+
+        return messages.Sum(message => EstimateTokenCount(message.Content));
+    }
+
+    private static int GetHistogramBucketIndex(int promptTokens)
+    {
+        for (var i = 0; i < HistogramUpperBounds.Length; i++)
+        {
+            if (promptTokens <= HistogramUpperBounds[i])
+            {
+                return i;
+            }
+        }
+
+        return HistogramUpperBounds.Length;
+    }
+
+    private static string GetHistogramLabel(int index)
+    {
+        return index switch
+        {
+            0 => "<=1000",
+            1 => "1001-2000",
+            2 => "2001-4000",
+            3 => "4001-8000",
+            _ => ">8000",
+        };
+    }
+
+    private void LogTokenAccounting(
+        string operation,
+        string? documentKind,
+        int baseContextTokens,
+        int entityContextTokens,
+        int renderingContextTokens,
+        int knowledgeContextTokens,
+        int promptTokens,
+        int responseTokens,
+        string? model)
+    {
+        var normalizedDocumentKind = string.IsNullOrWhiteSpace(documentKind) ? "unknown" : documentKind.Trim().ToLowerInvariant();
+        var contextTokens = baseContextTokens + entityContextTokens + renderingContextTokens + knowledgeContextTokens;
+        var responseToPromptRatio = promptTokens > 0
+            ? Math.Round((double)responseTokens / promptTokens, 3)
+            : 0;
+
+        var telemetry = TokenTelemetryByDocumentKind.GetOrAdd(normalizedDocumentKind, _ => new TokenTelemetryAccumulator());
+        var bucketIndex = GetHistogramBucketIndex(promptTokens);
+        var snapshot = telemetry.Record(promptTokens, responseTokens, contextTokens, bucketIndex);
+
+        this.logger.LogInformation(
+            "AI token accounting: op={Operation}; docKind={DocumentKind}; model={Model}; base={BaseTokens}; entity={EntityTokens}; rendering={RenderingTokens}; knowledge={KnowledgeTokens}; context={ContextTokens}; prompt={PromptTokens}; response={ResponseTokens}; responseToPrompt={ResponseToPromptRatio}; avgPrompt={AvgPromptTokens}; histogram={HistogramLabel}; requests={RequestCount}",
+            operation,
+            normalizedDocumentKind,
+            model ?? "default",
+            baseContextTokens,
+            entityContextTokens,
+            renderingContextTokens,
+            knowledgeContextTokens,
+            contextTokens,
+            promptTokens,
+            responseTokens,
+            responseToPromptRatio,
+            Math.Round(snapshot.AveragePromptTokens, 2),
+            GetHistogramLabel(bucketIndex),
+            snapshot.RequestCount);
+
+        if (snapshot.AveragePromptTokens > 4000)
+        {
+            this.logger.LogWarning(
+                "AI payload average exceeds budget: docKind={DocumentKind}; avgPrompt={AveragePromptTokens}; histogram[<=1000]={Bucket0}; histogram[1001-2000]={Bucket1}; histogram[2001-4000]={Bucket2}; histogram[4001-8000]={Bucket3}; histogram[>8000]={Bucket4}",
+                normalizedDocumentKind,
+                Math.Round(snapshot.AveragePromptTokens, 2),
+                snapshot.Histogram[0],
+                snapshot.Histogram[1],
+                snapshot.Histogram[2],
+                snapshot.Histogram[3],
+                snapshot.Histogram[4]);
+        }
+    }
+
+    private sealed class TokenTelemetryAccumulator
+    {
+        private readonly object gate = new();
+        private long requestCount;
+        private long totalPromptTokens;
+        private long totalResponseTokens;
+        private long totalContextTokens;
+        private readonly long[] histogram = new long[HistogramUpperBounds.Length + 1];
+
+        public TokenTelemetrySnapshot Record(int promptTokens, int responseTokens, int contextTokens, int bucketIndex)
+        {
+            lock (this.gate)
+            {
+                this.requestCount++;
+                this.totalPromptTokens += promptTokens;
+                this.totalResponseTokens += responseTokens;
+                this.totalContextTokens += contextTokens;
+                this.histogram[bucketIndex]++;
+
+                return new TokenTelemetrySnapshot(
+                    this.requestCount,
+                    this.requestCount == 0 ? 0 : (double)this.totalPromptTokens / this.requestCount,
+                    this.histogram.ToArray());
+            }
+        }
+    }
+
+    private sealed record TokenTelemetrySnapshot(long RequestCount, double AveragePromptTokens, long[] Histogram);
 
     /// <summary>
     /// Request payload for inline completion.
