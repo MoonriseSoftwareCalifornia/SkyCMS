@@ -42,6 +42,7 @@ public class CopilotControllerTests
     private Mock<ICopilotProxyOptionsService> optionsServiceMock = null!;
     private Mock<IAiProviderModelCatalogService> modelCatalogServiceMock = null!;
     private Mock<IAiUserPreferenceService> userPreferenceServiceMock = null!;
+    private Mock<IEditorContextPayloadService> editorContextPayloadServiceMock = null!;
     private Mock<IAiDocumentationContextService> documentationContextServiceMock = null!;
     private Mock<IAiSourceCodeIndexService> sourceCodeIndexServiceMock = null!;
     private Mock<IAiLayoutContextService> layoutContextServiceMock = null!;
@@ -55,6 +56,7 @@ public class CopilotControllerTests
         optionsServiceMock = new Mock<ICopilotProxyOptionsService>();
         modelCatalogServiceMock = new Mock<IAiProviderModelCatalogService>();
         userPreferenceServiceMock = new Mock<IAiUserPreferenceService>();
+        editorContextPayloadServiceMock = new Mock<IEditorContextPayloadService>();
         documentationContextServiceMock = new Mock<IAiDocumentationContextService>();
         sourceCodeIndexServiceMock = new Mock<IAiSourceCodeIndexService>();
         layoutContextServiceMock = new Mock<IAiLayoutContextService>();
@@ -63,6 +65,10 @@ public class CopilotControllerTests
         userPreferenceServiceMock
             .Setup(s => s.GetSelectedModelAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string?)null);
+
+        editorContextPayloadServiceMock
+            .Setup(s => s.BuildPayloadAsync(It.IsAny<EditorContextPayloadRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("Editor context payload:\n- Surface: Monaco\n- EditorKind: Article");
 
         documentationContextServiceMock
             .Setup(s => s.GetDocumentationContextAsync(It.IsAny<AiContextEnrichmentRequest>(), It.IsAny<CancellationToken>()))
@@ -81,6 +87,7 @@ public class CopilotControllerTests
             optionsServiceMock.Object,
             modelCatalogServiceMock.Object,
             userPreferenceServiceMock.Object,
+            editorContextPayloadServiceMock.Object,
             documentationContextServiceMock.Object,
             sourceCodeIndexServiceMock.Object,
             layoutContextServiceMock.Object,
@@ -337,6 +344,85 @@ public class CopilotControllerTests
     }
 
     [TestMethod]
+    public async Task Complete_WithLargePromptSections_ComposesPromptWithContextAndAppliesTruncationRules()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+            Model = "gpt-4o-mini",
+            MaxTokens = 128,
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        string? capturedJson = null;
+        const string responseJson = "{\"choices\":[{\"message\":{\"content\":\"inline();\"}}]}";
+
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(responseJson, Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var longPrefix = "LEAD-START-" + new string('a', 4500) + "-TAIL-END";
+        var longSuffix = "SFX-KEEP-" + new string('b', 1200) + "-SFX-DROP";
+
+        var requestModel = new AiProxyController.CopilotCompletionRequest
+        {
+            Prefix = longPrefix,
+            Suffix = longSuffix,
+            Language = "csharp",
+            FieldId = "MainField",
+            DocumentKind = "layout",
+            SectionKind = "layout-css",
+        };
+
+        var result = await controller.Complete(requestModel);
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+        using var document = JsonDocument.Parse(capturedJson!);
+        var messages = document.RootElement.GetProperty("messages");
+        var userPrompt = messages[1].GetProperty("content").GetString();
+
+        Assert.IsNotNull(userPrompt);
+        Assert.IsTrue(userPrompt.Contains("Language: csharp", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("FieldId: MainField", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("DocumentKind: layout", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("SectionKind: layout-css", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("Editor context payload:", StringComparison.Ordinal));
+        Assert.IsFalse(userPrompt.Contains("LEAD-START-", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("-TAIL-END", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("SFX-KEEP-", StringComparison.Ordinal));
+        Assert.IsFalse(userPrompt.Contains("-SFX-DROP", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("Return only inline completion text.", StringComparison.Ordinal));
+
+        editorContextPayloadServiceMock.Verify(
+            s => s.BuildPayloadAsync(
+                It.Is<EditorContextPayloadRequest>(r =>
+                    string.Equals(r.EditorSurface, "monaco", StringComparison.Ordinal)
+                    && string.Equals(r.DocumentKind, "layout", StringComparison.Ordinal)
+                    && string.Equals(r.SectionKind, "layout-css", StringComparison.Ordinal)
+                    && string.Equals(r.Language, "csharp", StringComparison.Ordinal)
+                    && string.Equals(r.CurrentField, "MainField", StringComparison.Ordinal)
+                    && string.Equals(r.CurrentFieldValue, longPrefix, StringComparison.Ordinal)
+                    && r.Lightweight),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [TestMethod]
     public async Task Complete_WithUpstreamEmptyContent_ReturnsEmptyResponse()
     {
         var options = new CopilotProxyOptions
@@ -464,6 +550,7 @@ public class CopilotControllerTests
         Assert.IsTrue(userPrompt.Contains("EditorKind: ckeditor", StringComparison.Ordinal));
         Assert.IsTrue(userPrompt.Contains("Selected HTML fragment", StringComparison.Ordinal));
         Assert.IsTrue(userPrompt.Contains("Current editor HTML fragment", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("Editor context payload:", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -509,10 +596,13 @@ public class CopilotControllerTests
 
         using var document = JsonDocument.Parse(capturedJson!);
         var systemPrompt = document.RootElement.GetProperty("messages")[0].GetProperty("content").GetString();
+        var userPrompt = document.RootElement.GetProperty("messages")[1].GetProperty("content").GetString();
 
         Assert.IsNotNull(systemPrompt);
         Assert.IsTrue(systemPrompt.Contains("AI coding assistant", StringComparison.Ordinal));
         Assert.IsFalse(systemPrompt.Contains("single rich-text editor region only", StringComparison.Ordinal));
+        Assert.IsNotNull(userPrompt);
+        Assert.IsTrue(userPrompt.Contains("Editor context payload:", StringComparison.Ordinal));
     }
 
     [TestMethod]

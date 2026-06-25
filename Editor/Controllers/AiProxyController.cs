@@ -42,6 +42,7 @@ public sealed class AiProxyController : ControllerBase
     private readonly ICopilotProxyOptionsService copilotProxyOptionsService;
     private readonly IAiProviderModelCatalogService aiProviderModelCatalogService;
     private readonly IAiUserPreferenceService aiUserPreferenceService;
+    private readonly IEditorContextPayloadService editorContextPayloadService;
     private readonly IAiDocumentationContextService aiDocumentationContextService;
     private readonly IAiSourceCodeIndexService aiSourceCodeIndexService;
     private readonly IAiLayoutContextService aiLayoutContextService;
@@ -54,6 +55,7 @@ public sealed class AiProxyController : ControllerBase
     /// <param name="copilotProxyOptionsService">Tenant-aware Copilot proxy options service.</param>
     /// <param name="aiProviderModelCatalogService">Provider model catalog service.</param>
     /// <param name="aiUserPreferenceService">User AI preference service.</param>
+    /// <param name="editorContextPayloadService">Editor context payload service.</param>
     /// <param name="aiDocumentationContextService">Documentation context enrichment service.</param>
     /// <param name="aiSourceCodeIndexService">Source code index service.</param>
     /// <param name="aiLayoutContextService">Layout context enrichment service.</param>
@@ -63,6 +65,7 @@ public sealed class AiProxyController : ControllerBase
         ICopilotProxyOptionsService copilotProxyOptionsService,
         IAiProviderModelCatalogService aiProviderModelCatalogService,
         IAiUserPreferenceService aiUserPreferenceService,
+        IEditorContextPayloadService editorContextPayloadService,
         IAiDocumentationContextService aiDocumentationContextService,
         IAiSourceCodeIndexService aiSourceCodeIndexService,
         IAiLayoutContextService aiLayoutContextService,
@@ -72,6 +75,7 @@ public sealed class AiProxyController : ControllerBase
         this.copilotProxyOptionsService = copilotProxyOptionsService;
         this.aiProviderModelCatalogService = aiProviderModelCatalogService;
         this.aiUserPreferenceService = aiUserPreferenceService;
+        this.editorContextPayloadService = editorContextPayloadService;
         this.aiDocumentationContextService = aiDocumentationContextService;
         this.aiSourceCodeIndexService = aiSourceCodeIndexService;
         this.aiLayoutContextService = aiLayoutContextService;
@@ -226,7 +230,20 @@ public sealed class AiProxyController : ControllerBase
         }
 
         var language = string.IsNullOrWhiteSpace(request.Language) ? "plaintext" : request.Language;
-        var prompt = BuildCompletionPrompt(request, language);
+        var editorContextPayload = await this.editorContextPayloadService.BuildPayloadAsync(
+            new EditorContextPayloadRequest
+            {
+                EditorSurface = "monaco",
+                DocumentKind = request.DocumentKind,
+                SectionKind = request.SectionKind,
+                Language = language,
+                CurrentField = request.FieldId,
+                CurrentFieldValue = request.Prefix,
+                Lightweight = true,
+            },
+            this.HttpContext.RequestAborted);
+
+        var prompt = BuildCompletionPrompt(request, language, editorContextPayload);
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
         try
@@ -349,17 +366,37 @@ public sealed class AiProxyController : ControllerBase
             UrlPath = request.UrlPath,
         };
 
+        var editorContextPayloadTask = this.editorContextPayloadService.BuildPayloadAsync(
+            new EditorContextPayloadRequest
+            {
+                EditorSurface = request.EditorKind,
+                DocumentKind = request.DocumentKind,
+                SectionKind = request.SectionKind,
+                Language = request.Language,
+                CurrentField = request.FieldName,
+                CurrentFieldValue = request.CurrentCode,
+                Selection = request.Selection,
+                ArticleNumber = request.ArticleNumber,
+                LayoutId = request.LayoutId,
+                TemplateId = request.TemplateId,
+                Title = request.Title,
+                UrlPath = request.UrlPath,
+                Lightweight = false,
+            },
+            this.HttpContext.RequestAborted);
+
         var docsContextTask = this.aiDocumentationContextService.GetDocumentationContextAsync(contextRequest, this.HttpContext.RequestAborted);
         var layoutContextTask = this.aiLayoutContextService.GetLayoutContextAsync(contextRequest, this.HttpContext.RequestAborted);
         var sourceCodeContextTask = IsHelpChatRequest(request)
             ? this.aiSourceCodeIndexService.SearchSourceCodeAsync(request.Message, this.HttpContext.RequestAborted)
             : Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
 
-        await Task.WhenAll(docsContextTask, layoutContextTask, sourceCodeContextTask);
+        await Task.WhenAll(docsContextTask, layoutContextTask, sourceCodeContextTask, editorContextPayloadTask);
 
         var documentationContext = docsContextTask.Result.ContextText;
         var layoutContext = layoutContextTask.Result.ContextText;
         var sourceCodeContext = BuildSourceCodeContext(sourceCodeContextTask.Result);
+        var editorContextPayload = editorContextPayloadTask.Result;
 
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
@@ -375,7 +412,7 @@ public sealed class AiProxyController : ControllerBase
             var upstreamRequest = new UpstreamChatCompletionRequest
             {
                 Model = resolvedModel,
-                Messages = BuildChatMessages(request, documentationContext, layoutContext, sourceCodeContext),
+                Messages = BuildChatMessages(request, documentationContext, layoutContext, sourceCodeContext, editorContextPayload),
                 Temperature = Math.Max(options.Temperature, 0.2d),
                 MaxTokens = Math.Clamp(Math.Max(options.MaxTokens, 400), 128, 1200),
                 Stream = false,
@@ -484,7 +521,7 @@ public sealed class AiProxyController : ControllerBase
         return endpointUri.Host.EndsWith(".openai.azure.com", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string BuildCompletionPrompt(CopilotCompletionRequest request, string language)
+    private static string BuildCompletionPrompt(CopilotCompletionRequest request, string language, string? editorContextPayload)
     {
         var prefix = request.Prefix.Length > 4000 ? request.Prefix[^4000..] : request.Prefix;
         var suffix = string.IsNullOrEmpty(request.Suffix) ? string.Empty : request.Suffix;
@@ -507,6 +544,12 @@ public sealed class AiProxyController : ControllerBase
             sb.AppendLine($"SectionKind: {request.SectionKind}");
         }
 
+        if (!string.IsNullOrWhiteSpace(editorContextPayload))
+        {
+            sb.AppendLine();
+            sb.AppendLine(editorContextPayload);
+        }
+
         sb.AppendLine();
         sb.AppendLine($"Prefix:\n{prefix}");
         sb.AppendLine($"\nSuffix:\n{suffix}");
@@ -515,7 +558,7 @@ public sealed class AiProxyController : ControllerBase
         return sb.ToString();
     }
 
-    private static List<UpstreamChatMessage> BuildChatMessages(CopilotChatRequest request, string? documentationContext = null, string? layoutContext = null, string? sourceCodeContext = null)
+    private static List<UpstreamChatMessage> BuildChatMessages(CopilotChatRequest request, string? documentationContext = null, string? layoutContext = null, string? sourceCodeContext = null, string? editorContextPayload = null)
     {
         var messages = new List<UpstreamChatMessage>
         {
@@ -618,6 +661,12 @@ public sealed class AiProxyController : ControllerBase
         {
             promptBuilder.AppendLine();
             promptBuilder.AppendLine(sourceCodeContext);
+        }
+
+        if (!string.IsNullOrWhiteSpace(editorContextPayload))
+        {
+            promptBuilder.AppendLine();
+            promptBuilder.AppendLine(editorContextPayload);
         }
 
         promptBuilder.AppendLine();
