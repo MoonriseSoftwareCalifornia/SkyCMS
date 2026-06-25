@@ -165,8 +165,9 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
         }
 
         var start = Math.Max(0, matchLineIndex - 2);
-        var end = Math.Min(lines.Length - 1, matchLineIndex + 4);
-        var snippet = string.Join(Environment.NewLine, lines[start..(end + 1)]);
+        var endInclusive = Math.Min(lines.Length - 1, matchLineIndex + 4);
+        var endExclusive = endInclusive + 1;
+        var snippet = string.Join(Environment.NewLine, lines[start..endExclusive]);
         return snippet.Length > MaxSnippetLength ? snippet[..MaxSnippetLength] : snippet;
     }
 

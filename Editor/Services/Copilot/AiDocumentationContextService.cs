@@ -235,5 +235,4 @@ public sealed class AiDocumentationContextService : IAiDocumentationContextServi
         var decoded = WebUtility.HtmlDecode(withoutTags);
         return Regex.Replace(decoded, "\\s+", " ").Trim();
     }
-
 }

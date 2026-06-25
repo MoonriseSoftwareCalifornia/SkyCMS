@@ -28,6 +28,7 @@ using Cosmos.Common.Services.Email;
 using Cosmos.Common.Services.PublishedBlog;
 using Cosmos.DynamicConfig;
 using Cosmos.DynamicConfig.Configurations;
+using Cosmos.Editor.Services;
 using Cosmos.EmailServices;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
@@ -74,7 +75,6 @@ using Sky.Editor.Services.Setup;
 using Sky.Editor.Services.Slugs;
 using Sky.Editor.Services.Templates;
 using Sky.Editor.Services.Titles;
-using Cosmos.Editor.Services;
 using SkyCMS.Drivers.ElFinder;
 
 var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder(args);
