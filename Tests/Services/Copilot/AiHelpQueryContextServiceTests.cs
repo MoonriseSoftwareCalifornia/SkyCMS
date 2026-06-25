@@ -5,6 +5,7 @@
 
 namespace Sky.Tests.Services.Copilot;
 
+using Microsoft.Extensions.Logging;
 using Moq;
 using Sky.Editor.Services.Copilot;
 
@@ -17,6 +18,7 @@ public class AiHelpQueryContextServiceTests
     private Mock<IAiDocumentationContextService> documentationContextServiceMock = null!;
     private Mock<IAiSourceCodeIndexService> sourceCodeIndexServiceMock = null!;
     private Mock<IAiFaqIndexService> faqIndexServiceMock = null!;
+    private Mock<ILogger<AiHelpQueryContextService>> loggerMock = null!;
     private AiHelpQueryContextService service = null!;
 
     [TestInitialize]
@@ -25,6 +27,7 @@ public class AiHelpQueryContextServiceTests
         documentationContextServiceMock = new Mock<IAiDocumentationContextService>();
         sourceCodeIndexServiceMock = new Mock<IAiSourceCodeIndexService>();
         faqIndexServiceMock = new Mock<IAiFaqIndexService>();
+        loggerMock = new Mock<ILogger<AiHelpQueryContextService>>();
 
         documentationContextServiceMock
             .Setup(s => s.GetDocumentationContextAsync(It.IsAny<AiContextEnrichmentRequest>(), It.IsAny<CancellationToken>()))
@@ -64,7 +67,8 @@ public class AiHelpQueryContextServiceTests
         service = new AiHelpQueryContextService(
             documentationContextServiceMock.Object,
             sourceCodeIndexServiceMock.Object,
-            faqIndexServiceMock.Object);
+            faqIndexServiceMock.Object,
+            loggerMock.Object);
     }
 
     [TestMethod]

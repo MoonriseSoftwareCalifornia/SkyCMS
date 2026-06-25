@@ -10,6 +10,7 @@ namespace Cosmos.Cms.Editor.Controllers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -322,10 +323,12 @@ public sealed class AiProxyController : ControllerBase
 
         var prompt = BuildCompletionPrompt(request, language, editorContextPayload);
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
+        var tokenEstimationStopwatch = Stopwatch.StartNew();
         var baseContextTokens = EstimateTokenCount($"Language:{language};FieldId:{request.FieldId};DocumentKind:{request.DocumentKind};SectionKind:{request.SectionKind}");
         var entityContextTokens = EstimateTokenCount(editorContextPayload);
         var renderingContextTokens = 0;
         var knowledgeContextTokens = 0;
+        var responseTokenEstimationMs = 0d;
 
         try
         {
@@ -358,6 +361,7 @@ public sealed class AiProxyController : ControllerBase
             };
 
             var promptTokens = EstimateTokenCount(upstreamRequest.Messages);
+            tokenEstimationStopwatch.Stop();
 
             httpRequest.Content = JsonContent.Create(upstreamRequest, options: JsonOptions);
 
@@ -392,6 +396,12 @@ public sealed class AiProxyController : ControllerBase
 
             if (string.IsNullOrWhiteSpace(completionText))
             {
+                this.logger.LogInformation(
+                    "Token estimation profile: op={Operation}; model={Model}; elapsedMs={ElapsedMs}",
+                    "complete",
+                    resolvedModel ?? "default",
+                    Math.Round(tokenEstimationStopwatch.Elapsed.TotalMilliseconds, 2));
+
                 this.LogTokenAccounting(
                     operation: "complete",
                     documentKind: request.DocumentKind,
@@ -406,6 +416,19 @@ public sealed class AiProxyController : ControllerBase
                 return this.Ok(new CopilotCompletionResponse());
             }
 
+            var responseTokenStopwatch = Stopwatch.StartNew();
+            var responseTokens = EstimateTokenCount(completionText);
+            responseTokenStopwatch.Stop();
+            responseTokenEstimationMs = responseTokenStopwatch.Elapsed.TotalMilliseconds;
+
+            this.logger.LogInformation(
+                "Token estimation profile: op={Operation}; model={Model}; promptEstimationMs={PromptEstimationMs}; responseEstimationMs={ResponseEstimationMs}; totalMs={TotalMs}",
+                "complete",
+                resolvedModel ?? "default",
+                Math.Round(tokenEstimationStopwatch.Elapsed.TotalMilliseconds, 2),
+                Math.Round(responseTokenEstimationMs, 2),
+                Math.Round(tokenEstimationStopwatch.Elapsed.TotalMilliseconds + responseTokenEstimationMs, 2));
+
             this.LogTokenAccounting(
                 operation: "complete",
                 documentKind: request.DocumentKind,
@@ -414,7 +437,7 @@ public sealed class AiProxyController : ControllerBase
                 renderingContextTokens: renderingContextTokens,
                 knowledgeContextTokens: knowledgeContextTokens,
                 promptTokens: promptTokens,
-                responseTokens: EstimateTokenCount(completionText),
+                responseTokens: responseTokens,
                 model: resolvedModel);
 
             return this.Ok(new CopilotCompletionResponse
@@ -502,10 +525,12 @@ public sealed class AiProxyController : ControllerBase
         var layoutContext = layoutContextTask.Result.ContextText;
         var sourceCodeContext = BuildSourceCodeContext(sourceCodeContextTask.Result);
         var editorContextPayload = editorContextPayloadTask.Result;
+        var tokenEstimationStopwatch = Stopwatch.StartNew();
         var baseContextTokens = EstimateTokenCount($"EditorKind:{request.EditorKind};Action:{request.Action};Language:{request.Language};Field:{request.FieldName};DocumentKind:{request.DocumentKind};SectionKind:{request.SectionKind};ArticleNumber:{request.ArticleNumber};TemplateId:{request.TemplateId};LayoutId:{request.LayoutId};UrlPath:{request.UrlPath}");
         var entityContextTokens = EstimateTokenCount(editorContextPayload);
         var renderingContextTokens = EstimateTokenCount(layoutContext);
         var knowledgeContextTokens = EstimateTokenCount(documentationContext) + EstimateTokenCount(sourceCodeContext);
+        var responseTokenEstimationMs = 0d;
 
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
@@ -528,6 +553,7 @@ public sealed class AiProxyController : ControllerBase
             };
 
             var promptTokens = EstimateTokenCount(upstreamRequest.Messages);
+            tokenEstimationStopwatch.Stop();
 
             httpRequest.Content = JsonContent.Create(upstreamRequest, options: JsonOptions);
 
@@ -562,6 +588,12 @@ public sealed class AiProxyController : ControllerBase
 
             if (string.IsNullOrWhiteSpace(replyText))
             {
+                this.logger.LogInformation(
+                    "Token estimation profile: op={Operation}; model={Model}; elapsedMs={ElapsedMs}",
+                    "chat",
+                    resolvedModel ?? "default",
+                    Math.Round(tokenEstimationStopwatch.Elapsed.TotalMilliseconds, 2));
+
                 this.LogTokenAccounting(
                     operation: "chat",
                     documentKind: request.DocumentKind,
@@ -580,6 +612,19 @@ public sealed class AiProxyController : ControllerBase
                 });
             }
 
+            var responseTokenStopwatch = Stopwatch.StartNew();
+            var responseTokens = EstimateTokenCount(replyText);
+            responseTokenStopwatch.Stop();
+            responseTokenEstimationMs = responseTokenStopwatch.Elapsed.TotalMilliseconds;
+
+            this.logger.LogInformation(
+                "Token estimation profile: op={Operation}; model={Model}; promptEstimationMs={PromptEstimationMs}; responseEstimationMs={ResponseEstimationMs}; totalMs={TotalMs}",
+                "chat",
+                resolvedModel ?? "default",
+                Math.Round(tokenEstimationStopwatch.Elapsed.TotalMilliseconds, 2),
+                Math.Round(responseTokenEstimationMs, 2),
+                Math.Round(tokenEstimationStopwatch.Elapsed.TotalMilliseconds + responseTokenEstimationMs, 2));
+
             this.LogTokenAccounting(
                 operation: "chat",
                 documentKind: request.DocumentKind,
@@ -588,7 +633,7 @@ public sealed class AiProxyController : ControllerBase
                 renderingContextTokens: renderingContextTokens,
                 knowledgeContextTokens: knowledgeContextTokens,
                 promptTokens: promptTokens,
-                responseTokens: EstimateTokenCount(replyText),
+                responseTokens: responseTokens,
                 model: resolvedModel);
 
             return this.Ok(new CopilotChatResponse
@@ -652,6 +697,8 @@ public sealed class AiProxyController : ControllerBase
         var entityContextTokens = 0;
         var renderingContextTokens = 0;
         var knowledgeContextTokens = EstimateTokenCount(contextResult.ContextText);
+        var tokenEstimationStopwatch = Stopwatch.StartNew();
+        var responseTokenEstimationMs = 0d;
 
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
@@ -690,6 +737,7 @@ public sealed class AiProxyController : ControllerBase
             };
 
             var promptTokens = EstimateTokenCount(upstreamRequest.Messages);
+            tokenEstimationStopwatch.Stop();
 
             httpRequest.Content = JsonContent.Create(upstreamRequest, options: JsonOptions);
 
@@ -722,6 +770,19 @@ public sealed class AiProxyController : ControllerBase
             var payload = await JsonSerializer.DeserializeAsync<UpstreamChatCompletionResponse>(responseStream, JsonOptions, linkedCts.Token);
             var replyText = payload?.Choices?[0]?.Message?.Content?.Trim();
 
+            var responseTokenStopwatch = Stopwatch.StartNew();
+            var responseTokens = EstimateTokenCount(replyText);
+            responseTokenStopwatch.Stop();
+            responseTokenEstimationMs = responseTokenStopwatch.Elapsed.TotalMilliseconds;
+
+            this.logger.LogInformation(
+                "Token estimation profile: op={Operation}; model={Model}; promptEstimationMs={PromptEstimationMs}; responseEstimationMs={ResponseEstimationMs}; totalMs={TotalMs}",
+                "help-query",
+                resolvedModel ?? "default",
+                Math.Round(tokenEstimationStopwatch.Elapsed.TotalMilliseconds, 2),
+                Math.Round(responseTokenEstimationMs, 2),
+                Math.Round(tokenEstimationStopwatch.Elapsed.TotalMilliseconds + responseTokenEstimationMs, 2));
+
             this.LogTokenAccounting(
                 operation: "help-query",
                 documentKind: request.DocumentKind,
@@ -730,7 +791,7 @@ public sealed class AiProxyController : ControllerBase
                 renderingContextTokens: renderingContextTokens,
                 knowledgeContextTokens: knowledgeContextTokens,
                 promptTokens: promptTokens,
-                responseTokens: EstimateTokenCount(replyText),
+                responseTokens: responseTokens,
                 model: resolvedModel);
 
             return this.Ok(new AiHelpQueryResponse
