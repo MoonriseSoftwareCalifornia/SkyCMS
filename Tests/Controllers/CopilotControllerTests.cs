@@ -43,6 +43,7 @@ public class CopilotControllerTests
     private Mock<IAiProviderModelCatalogService> modelCatalogServiceMock = null!;
     private Mock<IAiUserPreferenceService> userPreferenceServiceMock = null!;
     private Mock<IAiDocumentationContextService> documentationContextServiceMock = null!;
+    private Mock<IAiSourceCodeIndexService> sourceCodeIndexServiceMock = null!;
     private Mock<IAiLayoutContextService> layoutContextServiceMock = null!;
     private Mock<ILogger<AiProxyController>> loggerMock = null!;
     private AiProxyController controller = null!;
@@ -55,6 +56,7 @@ public class CopilotControllerTests
         modelCatalogServiceMock = new Mock<IAiProviderModelCatalogService>();
         userPreferenceServiceMock = new Mock<IAiUserPreferenceService>();
         documentationContextServiceMock = new Mock<IAiDocumentationContextService>();
+        sourceCodeIndexServiceMock = new Mock<IAiSourceCodeIndexService>();
         layoutContextServiceMock = new Mock<IAiLayoutContextService>();
         loggerMock = new Mock<ILogger<AiProxyController>>();
 
@@ -66,6 +68,10 @@ public class CopilotControllerTests
             .Setup(s => s.GetDocumentationContextAsync(It.IsAny<AiContextEnrichmentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AiDocumentationContextResult());
 
+        sourceCodeIndexServiceMock
+            .Setup(s => s.SearchSourceCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AiSourceCodeSearchResult>());
+
         layoutContextServiceMock
             .Setup(s => s.GetLayoutContextAsync(It.IsAny<AiContextEnrichmentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AiLayoutContextResult());
@@ -76,6 +82,7 @@ public class CopilotControllerTests
             modelCatalogServiceMock.Object,
             userPreferenceServiceMock.Object,
             documentationContextServiceMock.Object,
+            sourceCodeIndexServiceMock.Object,
             layoutContextServiceMock.Object,
             loggerMock.Object);
 
@@ -1082,6 +1089,120 @@ public class CopilotControllerTests
         Assert.IsNotNull(userPrompt);
         Assert.IsTrue(userPrompt.Contains("ChatMode: site-help", StringComparison.Ordinal));
         Assert.IsTrue(userPrompt.Contains("UrlPath: about/team", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Chat_WithHelpMode_IncludesSourceCodeContext_AndCallsSourceIndex()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        sourceCodeIndexServiceMock
+            .Setup(s => s.SearchSourceCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                new AiSourceCodeSearchResult
+                {
+                    FilePath = "Editor/Controllers/AiProxyController.cs",
+                    SymbolName = "AiProxyController",
+                    Signature = "public async Task<IActionResult> Chat(CopilotChatRequest request)",
+                    Snippet = "var sourceCodeContext = BuildSourceCodeContext(sourceCodeContextTask.Result);",
+                    GitHubUrl = "https://github.com/CWALabs/SkyCMS/blob/main/Editor/Controllers/AiProxyController.cs",
+                    RelevanceScore = 42,
+                },
+            ]);
+
+        string? capturedJson = null;
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Help answer.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
+        {
+            EditorKind = "help",
+            ChatMode = "general-help",
+            Action = "chat",
+            Message = "How does chat prompt composition work in SkyCMS?",
+        });
+
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var userPrompt = document.RootElement.GetProperty("messages")[1].GetProperty("content").GetString();
+
+        Assert.IsNotNull(userPrompt);
+        Assert.IsTrue(userPrompt.Contains("Source code context from SkyCMS repository", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("AiProxyController", StringComparison.Ordinal));
+        Assert.IsTrue(userPrompt.Contains("Signature:", StringComparison.Ordinal));
+
+        sourceCodeIndexServiceMock.Verify(
+            s => s.SearchSourceCodeAsync("How does chat prompt composition work in SkyCMS?", It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Chat_WithEditorRequest_DoesNotCallSourceIndex_AndSkipsSourceContext()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://upstream.example/v1/chat/completions",
+            AccessToken = "token",
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        string? capturedJson = null;
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            capturedJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Editor answer.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
+        {
+            EditorKind = "monaco",
+            Action = "chat",
+            Message = "Refactor this method.",
+            CurrentCode = "public void Run() { }",
+            Language = "csharp",
+        });
+
+        Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedJson));
+
+        using var document = JsonDocument.Parse(capturedJson!);
+        var userPrompt = document.RootElement.GetProperty("messages")[1].GetProperty("content").GetString();
+
+        Assert.IsNotNull(userPrompt);
+        Assert.IsFalse(userPrompt.Contains("Source code context from SkyCMS repository", StringComparison.Ordinal));
+
+        sourceCodeIndexServiceMock.Verify(
+            s => s.SearchSourceCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private sealed class DelegateHttpMessageHandler : HttpMessageHandler

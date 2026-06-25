@@ -325,6 +325,8 @@ builder.Services.AddScoped<IEditorSettings, EditorSettings>();
 builder.Services.AddScoped<ICopilotProxyOptionsService, CopilotProxyOptionsService>();
 builder.Services.AddScoped<IAiProviderModelCatalogService, AiProviderModelCatalogService>();
 builder.Services.AddScoped<IAiUserPreferenceService, AiUserPreferenceService>();
+builder.Services.AddScoped<IAiDocumentationIndexService, AiDocumentationIndexService>();
+builder.Services.AddScoped<IAiSourceCodeIndexService, AiSourceCodeIndexService>();
 builder.Services.AddScoped<IAiDocumentationContextService, AiDocumentationContextService>();
 builder.Services.AddScoped<IAiLayoutContextService, AiLayoutContextService>();
 builder.Services.AddScoped<ILayoutTemplateService, LayoutTemplateService>();

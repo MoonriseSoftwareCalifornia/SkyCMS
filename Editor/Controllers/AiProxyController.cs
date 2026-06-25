@@ -43,6 +43,7 @@ public sealed class AiProxyController : ControllerBase
     private readonly IAiProviderModelCatalogService aiProviderModelCatalogService;
     private readonly IAiUserPreferenceService aiUserPreferenceService;
     private readonly IAiDocumentationContextService aiDocumentationContextService;
+    private readonly IAiSourceCodeIndexService aiSourceCodeIndexService;
     private readonly IAiLayoutContextService aiLayoutContextService;
     private readonly ILogger<AiProxyController> logger;
 
@@ -54,6 +55,7 @@ public sealed class AiProxyController : ControllerBase
     /// <param name="aiProviderModelCatalogService">Provider model catalog service.</param>
     /// <param name="aiUserPreferenceService">User AI preference service.</param>
     /// <param name="aiDocumentationContextService">Documentation context enrichment service.</param>
+    /// <param name="aiSourceCodeIndexService">Source code index service.</param>
     /// <param name="aiLayoutContextService">Layout context enrichment service.</param>
     /// <param name="logger">Logger instance.</param>
     public AiProxyController(
@@ -62,6 +64,7 @@ public sealed class AiProxyController : ControllerBase
         IAiProviderModelCatalogService aiProviderModelCatalogService,
         IAiUserPreferenceService aiUserPreferenceService,
         IAiDocumentationContextService aiDocumentationContextService,
+        IAiSourceCodeIndexService aiSourceCodeIndexService,
         IAiLayoutContextService aiLayoutContextService,
         ILogger<AiProxyController> logger)
     {
@@ -70,6 +73,7 @@ public sealed class AiProxyController : ControllerBase
         this.aiProviderModelCatalogService = aiProviderModelCatalogService;
         this.aiUserPreferenceService = aiUserPreferenceService;
         this.aiDocumentationContextService = aiDocumentationContextService;
+        this.aiSourceCodeIndexService = aiSourceCodeIndexService;
         this.aiLayoutContextService = aiLayoutContextService;
         this.logger = logger;
     }
@@ -347,10 +351,15 @@ public sealed class AiProxyController : ControllerBase
 
         var docsContextTask = this.aiDocumentationContextService.GetDocumentationContextAsync(contextRequest, this.HttpContext.RequestAborted);
         var layoutContextTask = this.aiLayoutContextService.GetLayoutContextAsync(contextRequest, this.HttpContext.RequestAborted);
-        await Task.WhenAll(docsContextTask, layoutContextTask);
+        var sourceCodeContextTask = IsHelpChatRequest(request)
+            ? this.aiSourceCodeIndexService.SearchSourceCodeAsync(request.Message, this.HttpContext.RequestAborted)
+            : Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
+
+        await Task.WhenAll(docsContextTask, layoutContextTask, sourceCodeContextTask);
 
         var documentationContext = docsContextTask.Result.ContextText;
         var layoutContext = layoutContextTask.Result.ContextText;
+        var sourceCodeContext = BuildSourceCodeContext(sourceCodeContextTask.Result);
 
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
@@ -366,7 +375,7 @@ public sealed class AiProxyController : ControllerBase
             var upstreamRequest = new UpstreamChatCompletionRequest
             {
                 Model = resolvedModel,
-                Messages = BuildChatMessages(request, documentationContext, layoutContext),
+                Messages = BuildChatMessages(request, documentationContext, layoutContext, sourceCodeContext),
                 Temperature = Math.Max(options.Temperature, 0.2d),
                 MaxTokens = Math.Clamp(Math.Max(options.MaxTokens, 400), 128, 1200),
                 Stream = false,
@@ -506,7 +515,7 @@ public sealed class AiProxyController : ControllerBase
         return sb.ToString();
     }
 
-    private static List<UpstreamChatMessage> BuildChatMessages(CopilotChatRequest request, string? documentationContext = null, string? layoutContext = null)
+    private static List<UpstreamChatMessage> BuildChatMessages(CopilotChatRequest request, string? documentationContext = null, string? layoutContext = null, string? sourceCodeContext = null)
     {
         var messages = new List<UpstreamChatMessage>
         {
@@ -605,6 +614,12 @@ public sealed class AiProxyController : ControllerBase
             promptBuilder.AppendLine(documentationContext);
         }
 
+        if (!string.IsNullOrWhiteSpace(sourceCodeContext))
+        {
+            promptBuilder.AppendLine();
+            promptBuilder.AppendLine(sourceCodeContext);
+        }
+
         promptBuilder.AppendLine();
         promptBuilder.AppendLine("User request:");
         promptBuilder.AppendLine(TrimForPrompt(request.Message, 3000));
@@ -616,6 +631,45 @@ public sealed class AiProxyController : ControllerBase
         });
 
         return messages;
+    }
+
+    private static bool IsHelpChatRequest(CopilotChatRequest request)
+    {
+        return string.Equals(request.EditorKind, "help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(request.ChatMode, "help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(request.Action, "help", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildSourceCodeContext(IReadOnlyList<AiSourceCodeSearchResult> results)
+    {
+        if (results.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine("Source code context from SkyCMS repository:");
+
+        foreach (var result in results)
+        {
+            sb.AppendLine($"- {result.SymbolName ?? result.FilePath}");
+            if (!string.IsNullOrWhiteSpace(result.Signature))
+            {
+                sb.AppendLine($"  Signature: {result.Signature}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.Snippet))
+            {
+                sb.AppendLine($"  Snippet: {TrimForPrompt(result.Snippet, 1200)}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.GitHubUrl))
+            {
+                sb.AppendLine($"  Source: {result.GitHubUrl}");
+            }
+        }
+
+        return sb.ToString();
     }
 
     private static string BuildChatSystemPrompt(CopilotChatRequest request)
