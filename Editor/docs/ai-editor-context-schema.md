@@ -701,6 +701,89 @@ public class ContextPayloadValidator
 
 ---
 
+## Developer Guide
+
+### How To Add A New Entity Type (Example: Blog)
+
+Use this checklist to add a new entity context without breaking existing Monaco, CKEditor, or VS Code flows.
+
+1. Add request and payload contract fields.
+  - Add any new identifiers to the request model used by context assembly.
+  - Keep new fields optional first to preserve backward compatibility.
+
+2. Extend context assembly service.
+  - Update `EditorContextPayloadRequest` handling in `EditorContextPayloadService`.
+  - Reuse existing truncation and token budgeting helpers rather than adding one-off logic.
+
+3. Keep cross-provider query compatibility.
+  - Avoid joins across entity types in EF queries.
+  - Precompute enum-to-int values before LINQ expressions.
+  - Preserve `ArticleNumber` equality filtering where article data is involved.
+
+4. Wire controller endpoints.
+  - Web editor: pass through from `/api/ai-proxy/chat` and `/api/ai-proxy/complete` request metadata.
+  - VS Code: add corresponding context endpoint in `VsCodeController` if required.
+
+5. Add tests before merge.
+  - Add or update controller tests in `Tests/Controllers/CopilotControllerTests.cs`.
+  - Add or update VS Code context tests in `Tests/Controllers/VsCodeControllerTests.cs`.
+  - Verify context builder orchestration tests still pass.
+
+### How To Update Knowledge Constraints Safely
+
+1. Update constraints in one place (knowledge/context service).
+2. Keep constraints action-oriented and explicit.
+3. Prefer additive changes over removing existing preservation rules.
+4. Validate both chat and completion prompts after changes.
+5. Add at least one test asserting the new guidance appears in prompt context.
+
+### Debugging Context Payloads
+
+When AI output looks wrong, inspect the payload that was actually sent upstream.
+
+1. Reproduce with a focused controller test.
+  - `Complete_WithLargePromptSections_ComposesPromptWithContextAndAppliesTruncationRules`
+  - `Chat_WithMonacoRequest_KeepsCodingPrompt`
+  - `HelpQuery_WithValidRequest_ReturnsReplyAndSourceAttribution`
+
+2. Inspect captured upstream JSON.
+  - In controller tests, use the existing `capturedJson` pattern to read `messages[0]` (system) and `messages[1]` (user).
+  - Confirm editor metadata (document kind, section kind, field) is present.
+
+3. Validate truncation behavior.
+  - Prefix and suffix truncation for completions should preserve nearest cursor context.
+  - Context payload truncation should include an explicit truncation marker.
+
+4. Validate model routing and availability.
+  - Confirm status/config endpoint is enabled and configured.
+  - Confirm selected model normalization against discovered model catalog.
+
+### Troubleshooting Guide
+
+Use these quick checks for common issues.
+
+1. Empty or generic AI responses.
+  - Verify `currentField` and `currentFieldValue` are being sent.
+  - Confirm `documentKind` and `sectionKind` are mapped from the active editor field.
+
+2. Wrong response style (help vs coding).
+  - Verify `editorKind` value in request payload.
+  - Confirm system prompt selection in `AiProxyController` for that editor kind.
+
+3. Missing source attribution in help flows.
+  - Verify help context service returns non-empty `Sources`.
+  - Verify response model includes source list serialization.
+
+4. Rate limit or upstream errors.
+  - Check `429` handling and retry-after behavior.
+  - Confirm endpoint and token settings are present for tenant options.
+
+5. VS Code context endpoint returning NotFound.
+  - Validate hashed path resolves to expected article/layout/template.
+  - Confirm entity exists and auth headers for VS Code request are valid.
+
+---
+
 ## References
 
 - ADR 0044: AI Editor Context Schema with Layered Delivery and Entity Awareness
