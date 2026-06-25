@@ -43,6 +43,7 @@ public static class ElFinderServiceCollectionExtensions
         services.TryAddScoped<IElFinderHandler<SearchCommand>, SearchCommandHandler>();
         services.TryAddScoped<IElFinderHandler<SizeCommand>, SizeCommandHandler>();
         services.TryAddScoped<IElFinderHandler<TmbCommand>, TmbCommandHandler>();
+        services.TryAddScoped<IElFinderHandler<TreeCommand>, TreeCommandHandler>();
         services.TryAddScoped<IElFinderHandler<UploadCommand>, UploadCommandHandler>();
         services.TryAddScoped<IElFinderHandler<UrlCommand>, UrlCommandHandler>();
 

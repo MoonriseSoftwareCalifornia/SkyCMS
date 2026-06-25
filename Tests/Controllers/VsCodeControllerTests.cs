@@ -1713,8 +1713,9 @@ namespace Sky.Tests.Controllers
         public async Task GetLayoutContext_WithValidLayout_ReturnsContextPayload()
         {
             controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
+            var layout = Db.Layouts.First();
 
-            var result = await controller.GetLayoutContext(1) as OkObjectResult;
+            var result = await controller.GetLayoutContext(layout.LayoutNumber) as OkObjectResult;
 
             Assert.IsNotNull(result);
             var payload = result.Value;
@@ -1724,7 +1725,7 @@ namespace Sky.Tests.Controllers
             var name = GetAnonymousProperty<string>(payload, "name");
             var context = GetAnonymousProperty<string>(payload, "context");
 
-            Assert.AreEqual(1, layoutNumber);
+            Assert.AreEqual(layout.LayoutNumber, layoutNumber);
             Assert.IsFalse(string.IsNullOrWhiteSpace(name));
             Assert.IsFalse(string.IsNullOrWhiteSpace(context));
             Assert.IsTrue(context.Contains("Test context payload", StringComparison.OrdinalIgnoreCase));
@@ -1754,15 +1755,17 @@ namespace Sky.Tests.Controllers
         public async Task GetTemplateContext_WithValidTemplate_ReturnsContextPayload()
         {
             controller.ControllerContext.HttpContext = await CreateAuthorizedContextAsync();
-            
+            var layout = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db);
+
             var template = new Template
             {
                 Id = Guid.NewGuid(),
                 Title = "Test Template",
                 PageType = "test",
                 Content = "<p>Template content</p>",
-                LayoutId = await Cosmos.Common.Data.Logic.LayoutHelper.GetCurrentDefaultLayoutAsync(Db)
+                LayoutId = layout.Id,
             };
+
             Db.Templates.Add(template);
             await Db.SaveChangesAsync();
 
