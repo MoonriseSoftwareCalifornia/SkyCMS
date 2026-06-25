@@ -25,6 +25,15 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
 {
     private const int MaxResults = 3;
     private const int MaxSnippetLength = 700;
+    private static readonly object HealthGate = new();
+
+    private static DateTimeOffset? lastSuccessfulRefreshUtc;
+    private static DateTimeOffset? lastAttemptUtc;
+    private static DateTimeOffset? lastFetchErrorUtc;
+    private static DateTimeOffset? lastParseErrorUtc;
+    private static int lastIndexedEntryCount;
+    private static string? lastFetchError;
+    private static string? lastParseError;
 
     private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -50,6 +59,8 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
     /// <inheritdoc />
     public Task<IReadOnlyList<AiSourceCodeSearchResult>> SearchSourceCodeAsync(string query, CancellationToken cancellationToken = default)
     {
+        RecordAttempt();
+
         if (string.IsNullOrWhiteSpace(query))
         {
             return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
@@ -58,6 +69,8 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
         var repositoryRoot = ResolveRepositoryRoot(this.hostEnvironment.ContentRootPath);
         if (string.IsNullOrWhiteSpace(repositoryRoot) || !Directory.Exists(repositoryRoot))
         {
+            RecordFetchError("Repository root could not be resolved or does not exist.");
+            this.logger.LogWarning("Source-code index fetch error: repository root was not found. ContentRootPath={ContentRootPath}", this.hostEnvironment.ContentRootPath);
             return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
         }
 
@@ -74,7 +87,20 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
         }
 
         var matches = new List<AiSourceCodeSearchResult>();
-        foreach (var filePath in Directory.EnumerateFiles(repositoryRoot, "*.cs", SearchOption.AllDirectories))
+        IEnumerable<string> filePaths;
+        try
+        {
+            filePaths = Directory.EnumerateFiles(repositoryRoot, "*.cs", SearchOption.AllDirectories);
+        }
+        catch (Exception ex)
+        {
+            RecordFetchError(ex.Message);
+            this.logger.LogWarning(ex, "Source-code index fetch error while enumerating files under {RepositoryRoot}.", repositoryRoot);
+            return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
+        }
+
+        var processedFiles = 0;
+        foreach (var filePath in filePaths)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -84,7 +110,19 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
                 continue;
             }
 
-            var text = File.ReadAllText(filePath);
+            string text;
+            try
+            {
+                text = File.ReadAllText(filePath);
+            }
+            catch (Exception ex)
+            {
+                RecordParseError(ex.Message);
+                this.logger.LogWarning(ex, "Source-code index parse error while reading {FilePath}.", relativePath);
+                continue;
+            }
+
+            processedFiles++;
             var score = keywords.Sum(keyword => CountOccurrences(text, keyword))
                 + keywords.Sum(keyword => CountOccurrences(relativePath, keyword));
 
@@ -119,7 +157,70 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
             this.logger.LogInformation("No source-code matches found for query {Query}.", query);
         }
 
+        RecordSuccess(processedFiles);
+
         return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>(topResults);
+    }
+
+    /// <summary>
+    /// Returns source-code index freshness and health metadata.
+    /// </summary>
+    /// <returns>Index health snapshot.</returns>
+    public static AiIndexHealthSnapshot GetHealthSnapshot()
+    {
+        lock (HealthGate)
+        {
+            return new AiIndexHealthSnapshot
+            {
+                IndexName = "source-code",
+                LastSuccessfulRefreshUtc = lastSuccessfulRefreshUtc,
+                LastAttemptUtc = lastAttemptUtc,
+                LastIndexedEntryCount = lastIndexedEntryCount,
+                LastFetchError = lastFetchError,
+                LastFetchErrorUtc = lastFetchErrorUtc,
+                LastParseError = lastParseError,
+                LastParseErrorUtc = lastParseErrorUtc,
+            };
+        }
+    }
+
+    private static void RecordAttempt()
+    {
+        lock (HealthGate)
+        {
+            lastAttemptUtc = DateTimeOffset.UtcNow;
+        }
+    }
+
+    private static void RecordSuccess(int indexedEntryCount)
+    {
+        lock (HealthGate)
+        {
+            lastSuccessfulRefreshUtc = DateTimeOffset.UtcNow;
+            lastIndexedEntryCount = indexedEntryCount;
+            lastFetchError = null;
+            lastFetchErrorUtc = null;
+            lastParseError = null;
+            lastParseErrorUtc = null;
+        }
+    }
+
+    private static void RecordFetchError(string message)
+    {
+        lock (HealthGate)
+        {
+            lastFetchError = message;
+            lastFetchErrorUtc = DateTimeOffset.UtcNow;
+        }
+    }
+
+    private static void RecordParseError(string message)
+    {
+        lock (HealthGate)
+        {
+            lastParseError = message;
+            lastParseErrorUtc = DateTimeOffset.UtcNow;
+        }
     }
 
     private static string ResolveRepositoryRoot(string contentRootPath)

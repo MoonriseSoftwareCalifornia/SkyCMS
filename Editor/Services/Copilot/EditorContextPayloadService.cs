@@ -8,6 +8,7 @@
 namespace Sky.Editor.Services.Copilot;
 
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,7 @@ public sealed class EditorContextPayloadService : IEditorContextPayloadService
 {
     // Rough 4k-token budget approximation (4 chars/token).
     private const int MaxPayloadChars = 16_000;
+    private const int ContextAssemblyTargetMs = 200;
     private const string TruncationMarker = "\n\n... (context payload truncated to token budget)";
 
     private readonly IEditorContextBuilder editorContextBuilder;
@@ -45,6 +47,7 @@ public sealed class EditorContextPayloadService : IEditorContextPayloadService
     public async Task<string> BuildPayloadAsync(EditorContextPayloadRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var overallStopwatch = Stopwatch.StartNew();
 
         var editorKind = ResolveEditorKind(request.EditorSurface, request.DocumentKind, request.SectionKind);
         var documentKind = ResolveDocumentKind(request.DocumentKind, request.SectionKind, request.Language);
@@ -62,9 +65,14 @@ public sealed class EditorContextPayloadService : IEditorContextPayloadService
         string compactKnowledgeSection = string.Empty;
         string validationSection = string.Empty;
         var usedCompactEntityFallback = false;
+        var baseBuilderMs = 0d;
+        var entityBuilderMs = 0d;
+        var knowledgeBuilderMs = 0d;
+        var validationBuilderMs = 0d;
 
         try
         {
+            var baseStopwatch = Stopwatch.StartNew();
             var baseContext = await this.editorContextBuilder.BuildEditorContextBaseAsync(
                 surface,
                 editorKind,
@@ -72,6 +80,8 @@ public sealed class EditorContextPayloadService : IEditorContextPayloadService
                 currentField,
                 language,
                 cancellationToken);
+            baseStopwatch.Stop();
+            baseBuilderMs = baseStopwatch.Elapsed.TotalMilliseconds;
 
             baseContext.ArticleNumber = ParseNullableInt(request.ArticleNumber);
             baseContext.LayoutId = request.LayoutId;
@@ -98,7 +108,10 @@ public sealed class EditorContextPayloadService : IEditorContextPayloadService
 
         if (!request.Lightweight)
         {
+            var entityStopwatch = Stopwatch.StartNew();
             entitySection = await BuildEntityContextSectionAsync(request, editorKind, cancellationToken);
+            entityStopwatch.Stop();
+            entityBuilderMs = entityStopwatch.Elapsed.TotalMilliseconds;
         }
         else
         {
@@ -107,9 +120,12 @@ public sealed class EditorContextPayloadService : IEditorContextPayloadService
 
         try
         {
+            var knowledgeStopwatch = Stopwatch.StartNew();
             var knowledge = await this.editorContextBuilder.BuildKnowledgeContextAsync(documentKind, editorKind, cancellationToken);
             knowledgeSection = BuildKnowledgeContextSection(knowledge, defaultKnowledgeRuleLimit, defaultKnowledgeDocLimit);
             compactKnowledgeSection = BuildKnowledgeContextSection(knowledge, compactKnowledgeRuleLimit, compactKnowledgeDocLimit);
+            knowledgeStopwatch.Stop();
+            knowledgeBuilderMs = knowledgeStopwatch.Elapsed.TotalMilliseconds;
         }
         catch (Exception ex)
         {
@@ -118,8 +134,11 @@ public sealed class EditorContextPayloadService : IEditorContextPayloadService
 
         try
         {
+            var validationStopwatch = Stopwatch.StartNew();
             var validation = await this.editorContextBuilder.BuildValidationContextAsync(ParseNullableInt(request.ArticleNumber), cancellationToken);
             validationSection = BuildValidationContextSection(validation);
+            validationStopwatch.Stop();
+            validationBuilderMs = validationStopwatch.Elapsed.TotalMilliseconds;
         }
         catch (Exception ex)
         {
@@ -161,6 +180,31 @@ public sealed class EditorContextPayloadService : IEditorContextPayloadService
             {
                 payload = TruncateToBudget(payload);
             }
+        }
+
+        overallStopwatch.Stop();
+        this.logger.LogInformation(
+            "AI context assembly profile: surface={Surface}; editorKind={EditorKind}; documentKind={DocumentKind}; lightweight={Lightweight}; totalMs={TotalMs}; baseMs={BaseMs}; entityMs={EntityMs}; knowledgeMs={KnowledgeMs}; validationMs={ValidationMs}; payloadChars={PayloadChars}",
+            request.EditorSurface,
+            editorKind,
+            documentKind,
+            request.Lightweight,
+            Math.Round(overallStopwatch.Elapsed.TotalMilliseconds, 2),
+            Math.Round(baseBuilderMs, 2),
+            Math.Round(entityBuilderMs, 2),
+            Math.Round(knowledgeBuilderMs, 2),
+            Math.Round(validationBuilderMs, 2),
+            payload.Length);
+
+        if (overallStopwatch.Elapsed.TotalMilliseconds > ContextAssemblyTargetMs)
+        {
+            this.logger.LogWarning(
+                "AI context assembly exceeded target: targetMs={TargetMs}; actualMs={ActualMs}; surface={Surface}; editorKind={EditorKind}; documentKind={DocumentKind}",
+                ContextAssemblyTargetMs,
+                Math.Round(overallStopwatch.Elapsed.TotalMilliseconds, 2),
+                request.EditorSurface,
+                editorKind,
+                documentKind);
         }
 
         return payload;

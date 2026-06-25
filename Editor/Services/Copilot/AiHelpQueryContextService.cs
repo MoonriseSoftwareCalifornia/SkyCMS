@@ -9,11 +9,13 @@ namespace Sky.Editor.Services.Copilot;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Assembles docs and source-code context for help chat prompts.
@@ -21,6 +23,7 @@ using System.Threading.Tasks;
 public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
 {
     private const int MaxContextChars = 12000;
+    private const int ContextAssemblyTargetMs = 200;
 
     /// <summary>
     /// Marker appended when context text exceeds the configured budget.
@@ -30,6 +33,7 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
     private readonly IAiDocumentationContextService documentationContextService;
     private readonly IAiSourceCodeIndexService sourceCodeIndexService;
     private readonly IAiFaqIndexService faqIndexService;
+    private readonly ILogger<AiHelpQueryContextService> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AiHelpQueryContextService"/> class.
@@ -37,20 +41,24 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
     /// <param name="documentationContextService">Documentation context service.</param>
     /// <param name="sourceCodeIndexService">Source code index service.</param>
     /// <param name="faqIndexService">FAQ index service.</param>
+    /// <param name="logger">Logger.</param>
     public AiHelpQueryContextService(
         IAiDocumentationContextService documentationContextService,
         IAiSourceCodeIndexService sourceCodeIndexService,
-        IAiFaqIndexService faqIndexService)
+        IAiFaqIndexService faqIndexService,
+        ILogger<AiHelpQueryContextService> logger)
     {
         this.documentationContextService = documentationContextService;
         this.sourceCodeIndexService = sourceCodeIndexService;
         this.faqIndexService = faqIndexService;
+        this.logger = logger;
     }
 
     /// <inheritdoc />
     public async Task<AiHelpQueryContextResult> BuildContextAsync(AiHelpQueryContextRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var overallStopwatch = Stopwatch.StartNew();
 
         if (string.IsNullOrWhiteSpace(request.Query))
         {
@@ -68,22 +76,52 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
             UrlPath = request.UrlPath,
         };
 
-        var docsTask = this.documentationContextService.GetDocumentationContextAsync(enrichmentRequest, cancellationToken);
-        var sourceTask = this.sourceCodeIndexService.SearchSourceCodeAsync(request.Query, cancellationToken);
-        var faqTask = this.faqIndexService.SearchFaqAsync(request.Query, cancellationToken);
+        var docsTask = MeasureAsync(() => this.documentationContextService.GetDocumentationContextAsync(enrichmentRequest, cancellationToken));
+        var sourceTask = MeasureAsync(() => this.sourceCodeIndexService.SearchSourceCodeAsync(request.Query, cancellationToken));
+        var faqTask = MeasureAsync(() => this.faqIndexService.SearchFaqAsync(request.Query, cancellationToken));
 
         await Task.WhenAll(docsTask, sourceTask, faqTask);
 
-        var docsContext = docsTask.Result.ContextText;
-        var sourceResults = sourceTask.Result;
-        var faqResults = faqTask.Result;
+        var docsMeasured = docsTask.Result;
+        var sourceMeasured = sourceTask.Result;
+        var faqMeasured = faqTask.Result;
+
+        var docsContext = docsMeasured.Result.ContextText;
+        var sourceResults = sourceMeasured.Result;
+        var faqResults = faqMeasured.Result;
 
         var sources = BuildSourceAttributions(docsContext, sourceResults, faqResults);
+        var tokenEstimateStopwatch = Stopwatch.StartNew();
         var contextText = BuildContextText(docsContext, sourceResults, faqResults);
+        var estimatedTokens = Math.Max(1, (int)Math.Ceiling(contextText.Length / 4.0d));
+        tokenEstimateStopwatch.Stop();
 
         if (contextText.Length > MaxContextChars)
         {
             contextText = TruncateContext(contextText);
+        }
+
+        overallStopwatch.Stop();
+        this.logger.LogInformation(
+            "Help context assembly profile: totalMs={TotalMs}; docsMs={DocsMs}; sourceMs={SourceMs}; faqMs={FaqMs}; tokenEstimationMs={TokenEstimationMs}; contextChars={ContextChars}; estimatedTokens={EstimatedTokens}; sourceCount={SourceCount}",
+            Math.Round(overallStopwatch.Elapsed.TotalMilliseconds, 2),
+            Math.Round(docsMeasured.Elapsed.TotalMilliseconds, 2),
+            Math.Round(sourceMeasured.Elapsed.TotalMilliseconds, 2),
+            Math.Round(faqMeasured.Elapsed.TotalMilliseconds, 2),
+            Math.Round(tokenEstimateStopwatch.Elapsed.TotalMilliseconds, 2),
+            contextText.Length,
+            estimatedTokens,
+            sources.Count);
+
+        if (overallStopwatch.Elapsed.TotalMilliseconds > ContextAssemblyTargetMs)
+        {
+            this.logger.LogWarning(
+                "Help context assembly exceeded target: targetMs={TargetMs}; actualMs={ActualMs}; docsMs={DocsMs}; sourceMs={SourceMs}; faqMs={FaqMs}",
+                ContextAssemblyTargetMs,
+                Math.Round(overallStopwatch.Elapsed.TotalMilliseconds, 2),
+                Math.Round(docsMeasured.Elapsed.TotalMilliseconds, 2),
+                Math.Round(sourceMeasured.Elapsed.TotalMilliseconds, 2),
+                Math.Round(faqMeasured.Elapsed.TotalMilliseconds, 2));
         }
 
         return new AiHelpQueryContextResult
@@ -91,6 +129,14 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
             ContextText = contextText,
             Sources = sources,
         };
+    }
+
+    private static async Task<MeasuredResult<T>> MeasureAsync<T>(Func<Task<T>> func)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var result = await func();
+        stopwatch.Stop();
+        return new MeasuredResult<T>(result, stopwatch.Elapsed);
     }
 
     private static string BuildContextText(string docsContext, IReadOnlyList<AiSourceCodeSearchResult> sourceResults, IReadOnlyList<AiFaqMatch> faqResults)
@@ -234,4 +280,6 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
 
         return text[..cutIndex].TrimEnd() + TruncationMarker;
     }
+
+    private sealed record MeasuredResult<T>(T Result, TimeSpan Elapsed);
 }

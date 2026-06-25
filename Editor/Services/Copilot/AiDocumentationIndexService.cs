@@ -30,6 +30,15 @@ public sealed class AiDocumentationIndexService : IAiDocumentationIndexService
 
     private static readonly TimeSpan SearchIndexCacheDuration = TimeSpan.FromHours(1);
     private static readonly JsonSerializerOptions SearchIndexJsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly object HealthGate = new();
+
+    private static DateTimeOffset? lastSuccessfulRefreshUtc;
+    private static DateTimeOffset? lastAttemptUtc;
+    private static DateTimeOffset? lastFetchErrorUtc;
+    private static DateTimeOffset? lastParseErrorUtc;
+    private static int lastIndexedEntryCount;
+    private static string? lastFetchError;
+    private static string? lastParseError;
 
     private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -106,30 +115,112 @@ public sealed class AiDocumentationIndexService : IAiDocumentationIndexService
         return new AiDocumentationContextResult { ContextText = resultText };
     }
 
+    /// <summary>
+    /// Returns documentation-index freshness and health metadata.
+    /// </summary>
+    /// <returns>Index health snapshot.</returns>
+    public static AiIndexHealthSnapshot GetHealthSnapshot()
+    {
+        lock (HealthGate)
+        {
+            return new AiIndexHealthSnapshot
+            {
+                IndexName = "docs",
+                LastSuccessfulRefreshUtc = lastSuccessfulRefreshUtc,
+                LastAttemptUtc = lastAttemptUtc,
+                LastIndexedEntryCount = lastIndexedEntryCount,
+                LastFetchError = lastFetchError,
+                LastFetchErrorUtc = lastFetchErrorUtc,
+                LastParseError = lastParseError,
+                LastParseErrorUtc = lastParseErrorUtc,
+            };
+        }
+    }
+
     private async Task<List<SearchIndexEntry>> GetIndexEntriesAsync(CancellationToken cancellationToken)
     {
         const string cacheKey = "ai-docs:search-index";
+
+        RecordAttempt();
 
         if (this.memoryCache.TryGetValue(cacheKey, out List<SearchIndexEntry>? entries) && entries != null)
         {
             return entries;
         }
 
+        string json;
         try
         {
             var client = this.httpClientFactory.CreateClient();
             client.Timeout = TimeSpan.FromSeconds(6);
 
-            var json = await client.GetStringAsync(SearchIndexUrl, cancellationToken);
-            var index = JsonSerializer.Deserialize<SearchIndex>(json, SearchIndexJsonOptions);
-            entries = index?.Docs ?? [];
-            this.memoryCache.Set(cacheKey, entries, SearchIndexCacheDuration);
-            return entries;
+            json = await client.GetStringAsync(SearchIndexUrl, cancellationToken);
         }
         catch (Exception ex)
         {
-            this.logger.LogWarning(ex, "Failed to load docs search index from {Url}.", SearchIndexUrl);
+            RecordFetchError(ex.Message);
+            this.logger.LogWarning(ex, "Docs index fetch error from {Url}.", SearchIndexUrl);
             return [];
+        }
+
+        try
+        {
+            var index = JsonSerializer.Deserialize<SearchIndex>(json, SearchIndexJsonOptions);
+            entries = index?.Docs ?? [];
+            this.memoryCache.Set(cacheKey, entries, SearchIndexCacheDuration);
+            RecordSuccess(entries.Count);
+            return entries;
+        }
+        catch (JsonException ex)
+        {
+            RecordParseError(ex.Message);
+            this.logger.LogWarning(ex, "Docs index parse error for {Url}.", SearchIndexUrl);
+            return [];
+        }
+        catch (Exception ex)
+        {
+            RecordParseError(ex.Message);
+            this.logger.LogWarning(ex, "Docs index parse error for {Url}.", SearchIndexUrl);
+            return [];
+        }
+    }
+
+    private static void RecordAttempt()
+    {
+        lock (HealthGate)
+        {
+            lastAttemptUtc = DateTimeOffset.UtcNow;
+        }
+    }
+
+    private static void RecordSuccess(int indexedEntryCount)
+    {
+        lock (HealthGate)
+        {
+            lastSuccessfulRefreshUtc = DateTimeOffset.UtcNow;
+            lastIndexedEntryCount = indexedEntryCount;
+            lastFetchError = null;
+            lastFetchErrorUtc = null;
+            lastParseError = null;
+            lastParseErrorUtc = null;
+        }
+    }
+
+    private static void RecordFetchError(string message)
+    {
+        lock (HealthGate)
+        {
+            lastFetchError = message;
+            lastFetchErrorUtc = DateTimeOffset.UtcNow;
+        }
+    }
+
+    private static void RecordParseError(string message)
+    {
+        lock (HealthGate)
+        {
+            lastParseError = message;
+            lastParseErrorUtc = DateTimeOffset.UtcNow;
         }
     }
 

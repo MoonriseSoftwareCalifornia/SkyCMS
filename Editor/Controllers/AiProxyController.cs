@@ -171,6 +171,74 @@ public sealed class AiProxyController : ControllerBase
     }
 
     /// <summary>
+    /// Returns staleness/health diagnostics for AI documentation and source-code indices.
+    /// This endpoint is intended for dashboard visualization and monitoring.
+    /// </summary>
+    /// <returns>Index health response.</returns>
+    [HttpGet("index-health")]
+    public IActionResult IndexHealth()
+    {
+        var docsSnapshot = AiDocumentationIndexService.GetHealthSnapshot();
+        var sourceSnapshot = AiSourceCodeIndexService.GetHealthSnapshot();
+        var now = DateTimeOffset.UtcNow;
+
+        var docsThreshold = TimeSpan.FromHours(24);
+        var sourceThreshold = TimeSpan.FromDays(7);
+
+        var docsStale = IsStale(docsSnapshot.LastSuccessfulRefreshUtc, docsThreshold, now);
+        var sourceStale = IsStale(sourceSnapshot.LastSuccessfulRefreshUtc, sourceThreshold, now);
+
+        if (docsStale)
+        {
+            this.logger.LogWarning(
+                "AI docs index is stale. LastSuccessfulRefreshUtc={LastSuccessfulRefreshUtc}; ThresholdHours={ThresholdHours}",
+                docsSnapshot.LastSuccessfulRefreshUtc,
+                docsThreshold.TotalHours);
+        }
+
+        if (sourceStale)
+        {
+            this.logger.LogWarning(
+                "AI source-code index is stale. LastSuccessfulRefreshUtc={LastSuccessfulRefreshUtc}; ThresholdDays={ThresholdDays}",
+                sourceSnapshot.LastSuccessfulRefreshUtc,
+                sourceThreshold.TotalDays);
+        }
+
+        return this.Ok(new
+        {
+            generatedAtUtc = now,
+            documentation = new
+            {
+                name = docsSnapshot.IndexName,
+                stale = docsStale,
+                staleThresholdHours = docsThreshold.TotalHours,
+                lastSuccessfulRefreshUtc = docsSnapshot.LastSuccessfulRefreshUtc,
+                ageHours = GetAgeHours(docsSnapshot.LastSuccessfulRefreshUtc, now),
+                lastAttemptUtc = docsSnapshot.LastAttemptUtc,
+                lastIndexedEntryCount = docsSnapshot.LastIndexedEntryCount,
+                lastFetchError = docsSnapshot.LastFetchError,
+                lastFetchErrorUtc = docsSnapshot.LastFetchErrorUtc,
+                lastParseError = docsSnapshot.LastParseError,
+                lastParseErrorUtc = docsSnapshot.LastParseErrorUtc,
+            },
+            sourceCode = new
+            {
+                name = sourceSnapshot.IndexName,
+                stale = sourceStale,
+                staleThresholdDays = sourceThreshold.TotalDays,
+                lastSuccessfulRefreshUtc = sourceSnapshot.LastSuccessfulRefreshUtc,
+                ageHours = GetAgeHours(sourceSnapshot.LastSuccessfulRefreshUtc, now),
+                lastAttemptUtc = sourceSnapshot.LastAttemptUtc,
+                lastIndexedEntryCount = sourceSnapshot.LastIndexedEntryCount,
+                lastFetchError = sourceSnapshot.LastFetchError,
+                lastFetchErrorUtc = sourceSnapshot.LastFetchErrorUtc,
+                lastParseError = sourceSnapshot.LastParseError,
+                lastParseErrorUtc = sourceSnapshot.LastParseErrorUtc,
+            },
+        });
+    }
+
+    /// <summary>
     /// Saves the current user's selected model for a specific editor/document context.
     /// </summary>
     /// <param name="request">Model preference request.</param>
@@ -708,6 +776,26 @@ public sealed class AiProxyController : ControllerBase
         }
 
         return 5;
+    }
+
+    private static bool IsStale(DateTimeOffset? lastRefreshUtc, TimeSpan threshold, DateTimeOffset now)
+    {
+        if (!lastRefreshUtc.HasValue)
+        {
+            return true;
+        }
+
+        return (now - lastRefreshUtc.Value) > threshold;
+    }
+
+    private static double? GetAgeHours(DateTimeOffset? lastRefreshUtc, DateTimeOffset now)
+    {
+        if (!lastRefreshUtc.HasValue)
+        {
+            return null;
+        }
+
+        return Math.Round((now - lastRefreshUtc.Value).TotalHours, 2);
     }
 
     private static void ApplyAuthenticationHeaders(HttpRequestMessage request, string endpoint, string accessToken)
