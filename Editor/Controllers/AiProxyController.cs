@@ -12,6 +12,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -382,6 +383,50 @@ public sealed class AiProxyController : ControllerBase
                     });
                 }
 
+                var unknownModelFailure = await TryGetUnknownModelFailureAsync(
+                    response,
+                    request.SelectedModel,
+                    resolvedModel,
+                    options.Endpoint,
+                    options.Model);
+
+                if (unknownModelFailure != null)
+                {
+                    await this.ClearInvalidModelPreferenceAsync(request.SelectedModel, options.Endpoint, "monaco", request.DocumentKind, linkedCts.Token);
+
+                    if (options.AutoRetryUnknownModel &&
+                        !string.IsNullOrWhiteSpace(request.SelectedModel) &&
+                        !string.IsNullOrWhiteSpace(unknownModelFailure.FallbackModel) &&
+                        !string.Equals(unknownModelFailure.FallbackModel, resolvedModel, StringComparison.OrdinalIgnoreCase))
+                    {
+                        this.logger.LogInformation(
+                            "Retrying completion with fallback model {FallbackModel} after unknown_model for selected model {SelectedModel}.",
+                            unknownModelFailure.FallbackModel,
+                            request.SelectedModel);
+
+                        return await this.Complete(new CopilotCompletionRequest
+                        {
+                            Prefix = request.Prefix,
+                            Suffix = request.Suffix,
+                            Language = request.Language,
+                            FieldId = request.FieldId,
+                            DocumentKind = request.DocumentKind,
+                            SectionKind = request.SectionKind,
+                            SelectedModel = null,
+                        });
+                    }
+
+                    return this.BadRequest(new
+                    {
+                        error = "Selected model is not available for the configured provider.",
+                        attemptedModel = unknownModelFailure.AttemptedModel,
+                        selectedModel = unknownModelFailure.SelectedModel,
+                        fallbackModel = unknownModelFailure.FallbackModel,
+                        upstreamCode = unknownModelFailure.UpstreamCode,
+                        upstreamMessage = unknownModelFailure.UpstreamMessage,
+                    });
+                }
+
                 this.logger.LogWarning("Copilot upstream call failed with status {StatusCode}.", (int)response.StatusCode);
                 return this.StatusCode(502, new
                 {
@@ -534,8 +579,8 @@ public sealed class AiProxyController : ControllerBase
 
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
-        try
-        {
+        //try
+        //{
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(this.HttpContext.RequestAborted);
             linkedCts.CancelAfter(Math.Clamp(options.TimeoutMs, 1000, 60000));
 
@@ -571,6 +616,60 @@ public sealed class AiProxyController : ControllerBase
                     {
                         error = "Copilot chat rate limit reached.",
                         retryAfterSeconds,
+                    });
+                }
+
+                var unknownModelFailure = await TryGetUnknownModelFailureAsync(
+                    response,
+                    request.SelectedModel,
+                    resolvedModel,
+                    options.Endpoint,
+                    options.Model);
+
+                if (unknownModelFailure != null)
+                {
+                    await this.ClearInvalidModelPreferenceAsync(request.SelectedModel, options.Endpoint, request.EditorKind, request.DocumentKind, linkedCts.Token);
+
+                    if (options.AutoRetryUnknownModel &&
+                        !string.IsNullOrWhiteSpace(request.SelectedModel) &&
+                        !string.IsNullOrWhiteSpace(unknownModelFailure.FallbackModel) &&
+                        !string.Equals(unknownModelFailure.FallbackModel, resolvedModel, StringComparison.OrdinalIgnoreCase))
+                    {
+                        this.logger.LogInformation(
+                            "Retrying chat with fallback model {FallbackModel} after unknown_model for selected model {SelectedModel}.",
+                            unknownModelFailure.FallbackModel,
+                            request.SelectedModel);
+
+                        return await this.Chat(new CopilotChatRequest
+                        {
+                            EditorKind = request.EditorKind,
+                            Action = request.Action,
+                            Message = request.Message,
+                            Selection = request.Selection,
+                            CurrentCode = request.CurrentCode,
+                            Language = request.Language,
+                            FieldName = request.FieldName,
+                            Title = request.Title,
+                            ArticleNumber = request.ArticleNumber,
+                            TemplateId = request.TemplateId,
+                            LayoutId = request.LayoutId,
+                            UrlPath = request.UrlPath,
+                            DocumentKind = request.DocumentKind,
+                            SectionKind = request.SectionKind,
+                            ChatMode = request.ChatMode,
+                            Messages = request.Messages,
+                            SelectedModel = null,
+                        });
+                    }
+
+                    return this.BadRequest(new
+                    {
+                        error = "Selected model is not available for the configured provider.",
+                        attemptedModel = unknownModelFailure.AttemptedModel,
+                        selectedModel = unknownModelFailure.SelectedModel,
+                        fallbackModel = unknownModelFailure.FallbackModel,
+                        upstreamCode = unknownModelFailure.UpstreamCode,
+                        upstreamMessage = unknownModelFailure.UpstreamMessage,
                     });
                 }
 
@@ -641,16 +740,16 @@ public sealed class AiProxyController : ControllerBase
                 Reply = replyText,
                 Model = resolvedModel,
             });
-        }
-        catch (OperationCanceledException)
-        {
-            return this.StatusCode(504, new { error = "Copilot chat request timed out." });
-        }
-        catch (Exception ex)
-        {
-            this.logger.LogError(ex, "Copilot chat request failed.");
-            return this.StatusCode(500, new { error = "Copilot chat request failed." });
-        }
+        //}
+        //catch (OperationCanceledException)
+        //{
+        //    return this.StatusCode(504, new { error = "Copilot chat request timed out." });
+        //}
+        //catch (Exception ex)
+        //{
+        //    this.logger.LogError(ex, "Copilot chat request failed.");
+        //    return this.StatusCode(500, new { error = "Copilot chat request failed." });
+        //}
     }
 
     /// <summary>
@@ -758,6 +857,53 @@ public sealed class AiProxyController : ControllerBase
                     });
                 }
 
+                var unknownModelFailure = await TryGetUnknownModelFailureAsync(
+                    response,
+                    request.SelectedModel,
+                    resolvedModel,
+                    options.Endpoint,
+                    options.Model);
+
+                if (unknownModelFailure != null)
+                {
+                    await this.ClearInvalidModelPreferenceAsync(request.SelectedModel, options.Endpoint, "help", request.DocumentKind, linkedCts.Token);
+
+                    if (options.AutoRetryUnknownModel &&
+                        !string.IsNullOrWhiteSpace(request.SelectedModel) &&
+                        !string.IsNullOrWhiteSpace(unknownModelFailure.FallbackModel) &&
+                        !string.Equals(unknownModelFailure.FallbackModel, resolvedModel, StringComparison.OrdinalIgnoreCase))
+                    {
+                        this.logger.LogInformation(
+                            "Retrying help-query with fallback model {FallbackModel} after unknown_model for selected model {SelectedModel}.",
+                            unknownModelFailure.FallbackModel,
+                            request.SelectedModel);
+
+                        return await this.HelpQuery(new AiHelpQueryRequest
+                        {
+                            Query = request.Query,
+                            ChatMode = request.ChatMode,
+                            DocumentKind = request.DocumentKind,
+                            SectionKind = request.SectionKind,
+                            ArticleNumber = request.ArticleNumber,
+                            TemplateId = request.TemplateId,
+                            LayoutId = request.LayoutId,
+                            UrlPath = request.UrlPath,
+                            Messages = request.Messages,
+                            SelectedModel = null,
+                        });
+                    }
+
+                    return this.BadRequest(new
+                    {
+                        error = "Selected model is not available for the configured provider.",
+                        attemptedModel = unknownModelFailure.AttemptedModel,
+                        selectedModel = unknownModelFailure.SelectedModel,
+                        fallbackModel = unknownModelFailure.FallbackModel,
+                        upstreamCode = unknownModelFailure.UpstreamCode,
+                        upstreamMessage = unknownModelFailure.UpstreamMessage,
+                    });
+                }
+
                 this.logger.LogWarning("Help query upstream call failed with status {StatusCode}.", (int)response.StatusCode);
                 return this.StatusCode(502, new
                 {
@@ -837,6 +983,74 @@ public sealed class AiProxyController : ControllerBase
         }
 
         return 5;
+    }
+
+    private async Task ClearInvalidModelPreferenceAsync(string? selectedModel, string endpoint, string? editorKind, string? documentKind, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(selectedModel))
+        {
+            return;
+        }
+
+        try
+        {
+            var providerKey = AiProviderMetadataResolver.ResolveProviderKey(endpoint, selectedModel);
+            await this.aiUserPreferenceService.SaveSelectedModelAsync(
+                this.User,
+                providerKey,
+                editorKind,
+                documentKind,
+                selectedModel: null,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogWarning(ex, "Failed to clear invalid saved model preference after unknown_model response.");
+        }
+    }
+
+    private static async Task<UnknownModelFailure?> TryGetUnknownModelFailureAsync(
+        HttpResponseMessage response,
+        string? selectedModel,
+        string? attemptedModel,
+        string endpoint,
+        string configuredModel)
+    {
+        if (response.StatusCode != HttpStatusCode.BadRequest)
+        {
+            return null;
+        }
+
+        var upstreamBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(upstreamBody))
+        {
+            return null;
+        }
+
+        try
+        {
+            var errorEnvelope = JsonSerializer.Deserialize<UpstreamErrorEnvelope>(upstreamBody, JsonOptions);
+            var errorCode = errorEnvelope?.Error?.Code;
+
+            if (!string.Equals(errorCode, "unknown_model", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var fallbackModel = AiProviderMetadataResolver.ResolveEffectiveModel(endpoint, configuredModel, null);
+            return new UnknownModelFailure
+            {
+                SelectedModel = selectedModel,
+                AttemptedModel = attemptedModel,
+                FallbackModel = fallbackModel,
+                UpstreamCode = errorCode,
+                UpstreamMessage = errorEnvelope?.Error?.Message,
+            };
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static bool IsStale(DateTimeOffset? lastRefreshUtc, TimeSpan threshold, DateTimeOffset now)
@@ -1815,5 +2029,30 @@ public sealed class AiProxyController : ControllerBase
     private sealed class UpstreamChoice
     {
         public UpstreamChatMessage? Message { get; set; }
+    }
+
+    private sealed class UpstreamErrorEnvelope
+    {
+        public UpstreamError? Error { get; set; }
+    }
+
+    private sealed class UpstreamError
+    {
+        public string? Code { get; set; }
+
+        public string? Message { get; set; }
+    }
+
+    private sealed class UnknownModelFailure
+    {
+        public string? SelectedModel { get; set; }
+
+        public string? AttemptedModel { get; set; }
+
+        public string? FallbackModel { get; set; }
+
+        public string? UpstreamCode { get; set; }
+
+        public string? UpstreamMessage { get; set; }
     }
 }

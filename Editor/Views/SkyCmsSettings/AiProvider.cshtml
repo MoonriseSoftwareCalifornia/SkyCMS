@@ -133,6 +133,13 @@
 
                         <div class="border rounded p-3 mb-3">
                             <div class="mb-3 form-check form-switch">
+                                <input class="form-check-input" asp-for="AutoRetryUnknownModel" type="checkbox" />
+                                <label asp-for="AutoRetryUnknownModel" class="form-check-label"></label>
+                                <span class="text-muted d-block">When enabled, SkyCMS retries once with the provider default model if upstream rejects the selected model with <code>unknown_model</code>.</span>
+                                <span asp-validation-for="AutoRetryUnknownModel" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3 form-check form-switch">
                                 <input class="form-check-input" asp-for="EnableEmbeddingSemanticRerank" type="checkbox" />
                                 <label asp-for="EnableEmbeddingSemanticRerank" class="form-check-label"></label>
                                 <span asp-validation-for="EnableEmbeddingSemanticRerank" class="text-danger"></span>

@@ -60,4 +60,9 @@ public sealed class CopilotProxyOptions
     /// Gets or sets the embedding model used when semantic reranking is enabled.
     /// </summary>
     public string EmbeddingModel { get; set; } = "text-embedding-3-small";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether SkyCMS should retry once with a fallback model when upstream returns unknown_model.
+    /// </summary>
+    public bool AutoRetryUnknownModel { get; set; } = true;
 }

@@ -170,6 +170,7 @@ public class CopilotProxyOptionsServiceTests
             MaxTokens = 300,
             EnableEmbeddingSemanticRerank = true,
             EmbeddingModel = "text-embedding-3-small",
+            AutoRetryUnknownModel = true,
         };
 
         dbContext.Settings.Add(new Setting
@@ -192,6 +193,7 @@ public class CopilotProxyOptionsServiceTests
         Assert.AreEqual(expected.MaxTokens, actual.MaxTokens);
         Assert.AreEqual(expected.EnableEmbeddingSemanticRerank, actual.EnableEmbeddingSemanticRerank);
         Assert.AreEqual(expected.EmbeddingModel, actual.EmbeddingModel);
+        Assert.AreEqual(expected.AutoRetryUnknownModel, actual.AutoRetryUnknownModel);
     }
 
     [TestMethod]

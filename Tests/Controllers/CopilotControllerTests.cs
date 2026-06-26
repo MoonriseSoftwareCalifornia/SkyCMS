@@ -625,6 +625,139 @@ public class CopilotControllerTests
     }
 
     [TestMethod]
+    public async Task Chat_WithUnknownModelFromUpstream_AndAutoRetryDisabled_ReturnsBadRequestWithFallbackModel()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://models.inference.ai.azure.com/chat/completions",
+            AccessToken = "token",
+            Model = "auto",
+            MaxTokens = 512,
+            AutoRetryUnknownModel = false,
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        var httpClient = CreateHttpClient((_, _) =>
+            new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("{\"error\":{\"code\":\"unknown_model\",\"message\":\"Unknown model: openai/gpt-4.1\"}}", Encoding.UTF8, "application/json"),
+            });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
+        {
+            Action = "fix-syntax",
+            Message = "Fix this method.",
+            CurrentCode = "public void Run() {",
+            Language = "csharp",
+            SelectedModel = "openai/gpt-4.1",
+        });
+
+        var badRequest = result as BadRequestObjectResult;
+        Assert.IsNotNull(badRequest);
+
+        var json = JsonSerializer.Serialize(badRequest.Value);
+        using var payload = JsonDocument.Parse(json);
+
+        Assert.AreEqual("unknown_model", payload.RootElement.GetProperty("upstreamCode").GetString());
+        Assert.AreEqual("openai/gpt-4.1", payload.RootElement.GetProperty("attemptedModel").GetString());
+        Assert.AreEqual("openai/gpt-4.1", payload.RootElement.GetProperty("selectedModel").GetString());
+        Assert.AreEqual("gpt-4o-mini", payload.RootElement.GetProperty("fallbackModel").GetString());
+
+        userPreferenceServiceMock.Verify(
+            s => s.SaveSelectedModelAsync(
+                It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
+                "github-models",
+                null,
+                null,
+                null,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Chat_WithUnknownModelFromUpstream_AndAutoRetryEnabled_RetriesWithFallbackModel()
+    {
+        var options = new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = "https://models.inference.ai.azure.com/chat/completions",
+            AccessToken = "token",
+            Model = "auto",
+            MaxTokens = 512,
+            AutoRetryUnknownModel = true,
+        };
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(options);
+
+        var callCount = 0;
+        string? firstRequestJson = null;
+        string? secondRequestJson = null;
+
+        var httpClient = CreateHttpClient((request, _) =>
+        {
+            callCount++;
+            var requestJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+
+            if (callCount == 1)
+            {
+                firstRequestJson = requestJson;
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("{\"error\":{\"code\":\"unknown_model\",\"message\":\"Unknown model: openai/gpt-4.1\"}}", Encoding.UTF8, "application/json"),
+                };
+            }
+
+            secondRequestJson = requestJson;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"Use a guard clause.\"}}]}", Encoding.UTF8, "application/json"),
+            };
+        });
+
+        httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var result = await controller.Chat(new AiProxyController.CopilotChatRequest
+        {
+            Action = "fix-syntax",
+            Message = "Fix this method.",
+            CurrentCode = "public void Run() {",
+            Language = "csharp",
+            SelectedModel = "openai/gpt-4.1",
+        });
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+        Assert.AreEqual(2, callCount);
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(firstRequestJson));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(secondRequestJson));
+
+        using var firstDoc = JsonDocument.Parse(firstRequestJson!);
+        using var secondDoc = JsonDocument.Parse(secondRequestJson!);
+
+        Assert.AreEqual("openai/gpt-4.1", firstDoc.RootElement.GetProperty("model").GetString());
+        Assert.AreEqual("gpt-4o-mini", secondDoc.RootElement.GetProperty("model").GetString());
+
+        userPreferenceServiceMock.Verify(
+            s => s.SaveSelectedModelAsync(
+                It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
+                "github-models",
+                null,
+                null,
+                null,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [TestMethod]
     public async Task HelpQuery_WithValidRequest_ReturnsReplyAndSourceAttribution()
     {
         var options = new CopilotProxyOptions
