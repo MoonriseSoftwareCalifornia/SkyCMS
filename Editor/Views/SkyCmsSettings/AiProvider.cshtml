@@ -131,6 +131,21 @@
                             </div>
                         </div>
 
+                        <div class="border rounded p-3 mb-3">
+                            <div class="mb-3 form-check form-switch">
+                                <input class="form-check-input" asp-for="EnableEmbeddingSemanticRerank" type="checkbox" />
+                                <label asp-for="EnableEmbeddingSemanticRerank" class="form-check-label"></label>
+                                <span asp-validation-for="EnableEmbeddingSemanticRerank" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-0">
+                                <label asp-for="EmbeddingModel"></label>
+                                <input asp-for="EmbeddingModel" class="form-control" placeholder="text-embedding-3-small" />
+                                <span class="text-muted">Used only when embedding reranking is enabled. Current implementation uses this with OpenAI-compatible embedding endpoints and falls back automatically when unavailable.</span>
+                                <span asp-validation-for="EmbeddingModel" class="text-danger"></span>
+                            </div>
+                        </div>
+
                         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
                         <button id="btnSave" type="submit" class="btn btn-sm btn-primary">Save settings <i class="fa-solid fa-circle-arrow-right"></i></button>
@@ -197,6 +212,8 @@
         const $maxTokens = $("#MaxTokens");
         const $providerPreset = $("#providerPreset");
         const $accessToken = $("#AccessToken");
+        const $enableEmbeddingSemanticRerank = $("#EnableEmbeddingSemanticRerank");
+        const $embeddingModel = $("#EmbeddingModel");
         const $catalogSelect = $("#providerModelCatalogSelect");
         const $catalogHelp = $("#providerModelCatalogHelp");
         const $loadModels = $("#btnLoadProviderModels");
@@ -204,6 +221,19 @@
         const $previewStatusBadge = $("#providerPreviewStatusBadge");
         const $previewStatusText = $("#providerPreviewStatusText");
         const previewEndpoint = '@Url.Action("PreviewAiProviderModels", "SkyCmsSettings")';
+
+        function syncEmbeddingUiState() {
+            if (!$enableEmbeddingSemanticRerank.length || !$embeddingModel.length) {
+                return;
+            }
+
+            const enabled = $enableEmbeddingSemanticRerank.is(":checked");
+            $embeddingModel.prop("disabled", !enabled);
+
+            if (enabled && !$embeddingModel.val()) {
+                $embeddingModel.val("text-embedding-3-small");
+            }
+        }
 
         function getAntiForgeryToken() {
             return $('input[name="__RequestVerificationToken"]').val() || '';
@@ -411,6 +441,14 @@
                 $(this).autocomplete("search", $(this).val());
             });
         }
+
+        if ($enableEmbeddingSemanticRerank.length) {
+            $enableEmbeddingSemanticRerank.on("change", function () {
+                syncEmbeddingUiState();
+            });
+        }
+
+        syncEmbeddingUiState();
 
         clearModelCatalog();
     });

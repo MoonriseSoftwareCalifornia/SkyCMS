@@ -50,4 +50,14 @@ public sealed class CopilotProxyOptions
     /// Gets or sets the maximum completion tokens returned by the upstream provider.
     /// </summary>
     public int MaxTokens { get; set; } = 160;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether embedding-based semantic reranking is enabled.
+    /// </summary>
+    public bool EnableEmbeddingSemanticRerank { get; set; }
+
+    /// <summary>
+    /// Gets or sets the embedding model used when semantic reranking is enabled.
+    /// </summary>
+    public string EmbeddingModel { get; set; } = "text-embedding-3-small";
 }

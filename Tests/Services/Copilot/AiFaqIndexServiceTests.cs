@@ -108,14 +108,61 @@ public class AiFaqIndexServiceTests
         Assert.IsTrue(results[0].Answer.Length <= 600);
     }
 
+    [TestMethod]
+    public async Task SearchFaqAsync_PrioritizesMoreRelevantFaqMatch()
+    {
+        const string json = """
+        {
+          "docs": [
+            { "location": "faq/multi-tenant", "title": "How do I configure multi-tenant cookie isolation?", "text": "Set CookieDomain per tenant and validate host header mapping in tenant resolution." },
+            { "location": "faq/content", "title": "How do I create content?", "text": "Open the editor and create a new article." }
+          ]
+        }
+        """;
+
+        var service = CreateService(json);
+
+        var results = await service.SearchFaqAsync("tenant cookie isolation host mapping");
+
+        Assert.IsTrue(results.Count >= 1);
+        Assert.IsTrue(results[0].Question.Contains("multi-tenant", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public async Task SearchFaqAsync_HandlesPunctuationAndStillFindsFaq()
+    {
+        const string json = """
+        {
+          "docs": [
+            { "location": "faq/rate-limit", "title": "How do I handle contact form rate limits?", "text": "Use the contact-form policy and retry guidance." }
+          ]
+        }
+        """;
+
+        var service = CreateService(json);
+
+        var results = await service.SearchFaqAsync("contact-form?? rate-limits!!");
+
+        Assert.AreEqual(1, results.Count);
+        Assert.IsTrue(results[0].Question.Contains("rate limits", StringComparison.OrdinalIgnoreCase));
+    }
+
     private AiFaqIndexService CreateService(string responseText)
     {
         var handler = new StaticResponseHandler(responseText);
         var httpClient = new HttpClient(handler);
         IHttpClientFactory factory = new FakeHttpClientFactory(httpClient);
 
-        return new AiFaqIndexService(factory, memoryCache, Mock.Of<ILogger<AiFaqIndexService>>());
+        return new AiFaqIndexService(factory, memoryCache, new StubEmbeddingSemanticRanker(), Mock.Of<ILogger<AiFaqIndexService>>());
     }
+
+      private sealed class StubEmbeddingSemanticRanker : IAiEmbeddingSemanticRanker
+      {
+        public Task<IReadOnlyList<AiEmbeddingSemanticScore>> ScoreAsync(string query, IReadOnlyList<string> candidates, CancellationToken cancellationToken = default)
+        {
+          return Task.FromResult<IReadOnlyList<AiEmbeddingSemanticScore>>([]);
+        }
+      }
 
     private sealed class StaticResponseHandler : HttpMessageHandler
     {

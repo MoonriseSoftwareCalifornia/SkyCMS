@@ -62,6 +62,11 @@ namespace Sky.Editor.Features.Copilot.SaveSettings
                 errors[nameof(options.MaxTokens)] = new[] { "Max tokens must be between 16 and 1024." };
             }
 
+            if (!string.IsNullOrWhiteSpace(options.EmbeddingModel) && options.EmbeddingModel.Length > 128)
+            {
+                errors[nameof(options.EmbeddingModel)] = new[] { "Embedding model must be 128 characters or fewer." };
+            }
+
             return errors;
         }
     }

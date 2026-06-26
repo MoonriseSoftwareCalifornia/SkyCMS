@@ -168,6 +168,8 @@ public class CopilotProxyOptionsServiceTests
             TimeoutMs = 10000,
             Temperature = 0.4,
             MaxTokens = 300,
+            EnableEmbeddingSemanticRerank = true,
+            EmbeddingModel = "text-embedding-3-small",
         };
 
         dbContext.Settings.Add(new Setting
@@ -188,6 +190,8 @@ public class CopilotProxyOptionsServiceTests
         Assert.AreEqual(expected.TimeoutMs, actual.TimeoutMs);
         Assert.AreEqual(expected.Temperature, actual.Temperature);
         Assert.AreEqual(expected.MaxTokens, actual.MaxTokens);
+        Assert.AreEqual(expected.EnableEmbeddingSemanticRerank, actual.EnableEmbeddingSemanticRerank);
+        Assert.AreEqual(expected.EmbeddingModel, actual.EmbeddingModel);
     }
 
     [TestMethod]

@@ -25,6 +25,7 @@ using Microsoft.Extensions.Logging;
 public sealed class AiFaqIndexService : IAiFaqIndexService
 {
     private const int MaxFaqResults = 2;
+    private const int EmbeddingCandidateLimit = 6;
     private const int MaxAnswerLength = 600;
     private const string SearchIndexUrl = "https://docs.sky-cms.com/search/search_index.json";
 
@@ -47,6 +48,7 @@ public sealed class AiFaqIndexService : IAiFaqIndexService
 
     private readonly IHttpClientFactory httpClientFactory;
     private readonly IMemoryCache memoryCache;
+    private readonly IAiEmbeddingSemanticRanker embeddingSemanticRanker;
     private readonly ILogger<AiFaqIndexService> logger;
 
     /// <summary>
@@ -58,10 +60,12 @@ public sealed class AiFaqIndexService : IAiFaqIndexService
     public AiFaqIndexService(
         IHttpClientFactory httpClientFactory,
         IMemoryCache memoryCache,
+        IAiEmbeddingSemanticRanker embeddingSemanticRanker,
         ILogger<AiFaqIndexService> logger)
     {
         this.httpClientFactory = httpClientFactory;
         this.memoryCache = memoryCache;
+        this.embeddingSemanticRanker = embeddingSemanticRanker;
         this.logger = logger;
     }
 
@@ -91,16 +95,46 @@ public sealed class AiFaqIndexService : IAiFaqIndexService
             return [];
         }
 
-        var faqMatches = entries
+        var scoredFaqMatches = entries
             .Where(e => !string.IsNullOrWhiteSpace(e.Text) && IsFaqEntry(e.Title))
             .Select(e =>
             {
                 var searchable = $"{e.Title} {e.Text}";
-                var score = keywords.Sum(kw => CountOccurrences(searchable, kw));
-                return (Entry: e, Score: score);
+                var keywordScore = keywords.Sum(kw => CountOccurrences(searchable, kw));
+                var semanticScore = ComputeSemanticSimilarity(query, searchable);
+                var score = keywordScore + (int)Math.Round(semanticScore * 5, MidpointRounding.AwayFromZero);
+                return (Entry: e, Searchable: searchable, Score: score, SemanticScore: semanticScore, EmbeddingScore: 0d);
             })
             .Where(x => x.Score > 0)
             .OrderByDescending(x => x.Score)
+            .ThenByDescending(x => x.SemanticScore)
+            .Take(EmbeddingCandidateLimit)
+            .ToList();
+
+        if (scoredFaqMatches.Count > 0)
+        {
+            var embeddingScores = await this.embeddingSemanticRanker
+                .ScoreAsync(query, scoredFaqMatches.Select(x => x.Searchable).ToList(), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (embeddingScores.Count > 0)
+            {
+                var scoreByIndex = embeddingScores.ToDictionary(x => x.CandidateIndex, x => x.Score);
+                scoredFaqMatches = scoredFaqMatches
+                    .Select((candidate, index) =>
+                    {
+                        scoreByIndex.TryGetValue(index, out var embeddingScore);
+                        var adjustedScore = candidate.Score + (int)Math.Round(embeddingScore * 12, MidpointRounding.AwayFromZero);
+                        return (candidate.Entry, candidate.Searchable, Score: adjustedScore, candidate.SemanticScore, EmbeddingScore: embeddingScore);
+                    })
+                    .ToList();
+            }
+        }
+
+        var faqMatches = scoredFaqMatches
+            .OrderByDescending(x => x.Score)
+            .ThenByDescending(x => x.EmbeddingScore)
+            .ThenByDescending(x => x.SemanticScore)
             .Take(MaxFaqResults)
             .Select(x => new AiFaqMatch
             {
@@ -114,6 +148,69 @@ public sealed class AiFaqIndexService : IAiFaqIndexService
             .ToList();
 
         return faqMatches;
+    }
+
+    private static double ComputeSemanticSimilarity(string query, string content)
+    {
+        try
+        {
+            var queryVector = BuildTermVector(query);
+            var contentVector = BuildTermVector(content);
+            if (queryVector.Count == 0 || contentVector.Count == 0)
+            {
+                return 0;
+            }
+
+            var dot = 0d;
+            foreach (var term in queryVector)
+            {
+                if (contentVector.TryGetValue(term.Key, out var contentWeight))
+                {
+                    dot += term.Value * contentWeight;
+                }
+            }
+
+            if (dot <= 0)
+            {
+                return 0;
+            }
+
+            var queryNorm = Math.Sqrt(queryVector.Values.Sum(v => v * v));
+            var contentNorm = Math.Sqrt(contentVector.Values.Sum(v => v * v));
+            if (queryNorm <= 0 || contentNorm <= 0)
+            {
+                return 0;
+            }
+
+            return dot / (queryNorm * contentNorm);
+        }
+        catch
+        {
+            // Fallback to keyword-only ranking if semantic scoring fails.
+            return 0;
+        }
+    }
+
+    private static Dictionary<string, double> BuildTermVector(string text)
+    {
+        var tokens = Regex.Matches(text ?? string.Empty, "[A-Za-z0-9]+")
+            .Select(match => match.Value.ToLowerInvariant())
+            .Where(token => token.Length > 2 && !StopWords.Contains(token))
+            .ToList();
+
+        var total = tokens.Count;
+        if (total == 0)
+        {
+            return new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var vector = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        foreach (var group in tokens.GroupBy(t => t, StringComparer.OrdinalIgnoreCase))
+        {
+            vector[group.Key] = (double)group.Count() / total;
+        }
+
+        return vector;
     }
 
     private static bool IsFaqEntry(string title)

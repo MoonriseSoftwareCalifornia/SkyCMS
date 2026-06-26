@@ -4,6 +4,14 @@
 
 Accepted
 
+## Implementation Status
+
+Implemented (v1 complete, 2026-06-26)
+
+## Implementation Note (v1)
+
+The ADR target remains semantic search with embeddings. In v1, SkyCMS ships a hybrid ranking approach that combines keyword relevance with cosine similarity over normalized term vectors for docs, source code, and FAQ entries. This delivers semantic reranking behavior with no external model dependency and preserves a keyword-only fallback path on scoring failure. Embedding-model integration can be introduced in a future iteration without changing the external HelpQueryContext contract.
+
 ## Context
 
 SkyCMS provides an AI Help chat surface (separate from the editor context in ADR 0044) for users seeking general guidance on SkyCMS concepts, troubleshooting, best practices, and API usage. Unlike editor context (which is entity-focused and request-time), help queries are open-ended, knowledge-seeking questions.

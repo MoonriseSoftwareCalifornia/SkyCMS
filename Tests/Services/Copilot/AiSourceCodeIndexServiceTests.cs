@@ -44,7 +44,7 @@ public class AiSourceCodeIndexServiceTests
 
         hostEnvironmentMock = new Mock<IHostEnvironment>();
         hostEnvironmentMock.SetupGet(x => x.ContentRootPath).Returns(editorDir);
-        service = new AiSourceCodeIndexService(hostEnvironmentMock.Object, Mock.Of<ILogger<AiSourceCodeIndexService>>());
+        service = new AiSourceCodeIndexService(hostEnvironmentMock.Object, new StubEmbeddingSemanticRanker(), Mock.Of<ILogger<AiSourceCodeIndexService>>());
     }
 
     [TestCleanup]
@@ -72,5 +72,31 @@ public class AiSourceCodeIndexServiceTests
         var results = await service.SearchSourceCodeAsync(string.Empty);
 
         Assert.AreEqual(0, results.Count);
+    }
+
+    [TestMethod]
+    public async Task SearchSourceCodeAsync_PrioritizesMoreRelevantFile()
+    {
+        var results = await service.SearchSourceCodeAsync("help context query");
+
+        Assert.IsTrue(results.Count >= 2);
+        Assert.IsTrue(results[0].FilePath.EndsWith("KnowledgeHelper.cs", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public async Task SearchSourceCodeAsync_HandlesPunctuationInQuery()
+    {
+        var results = await service.SearchSourceCodeAsync("help-context?? query!!");
+
+        Assert.IsTrue(results.Count >= 1);
+        Assert.IsTrue(results.Any(result => result.FilePath.EndsWith("KnowledgeHelper.cs", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private sealed class StubEmbeddingSemanticRanker : IAiEmbeddingSemanticRanker
+    {
+        public Task<IReadOnlyList<AiEmbeddingSemanticScore>> ScoreAsync(string query, IReadOnlyList<string> candidates, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<AiEmbeddingSemanticScore>>([]);
+        }
     }
 }

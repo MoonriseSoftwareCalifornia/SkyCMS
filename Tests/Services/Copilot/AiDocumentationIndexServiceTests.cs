@@ -60,6 +60,75 @@ public class AiDocumentationIndexServiceTests
     }
 
     [TestMethod]
+    public async Task SearchDocsAsync_PrioritizesMoreRelevantDocument()
+    {
+        var json = """
+        {
+            "docs": [
+                { "location": "configuration/cookie-domain.md", "title": "Cookie Domain Isolation", "text": "Configure tenant cookie domain isolation and host strategy." },
+                { "location": "for-editors/quick-start.md", "title": "Editor Quick Start", "text": "Basic editor workflow and publishing actions." }
+            ]
+        }
+        """;
+
+        service = CreateService(json);
+
+        var result = await service.SearchDocsAsync("tenant cookie domain isolation strategy");
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.ContextText));
+        var highRelevanceIndex = result.ContextText.IndexOf("Cookie Domain Isolation", StringComparison.OrdinalIgnoreCase);
+        Assert.IsTrue(highRelevanceIndex >= 0);
+    }
+
+    [TestMethod]
+    public async Task SearchDocsAsync_HandlesPunctuationAndStillFindsMatches()
+    {
+        var json = """
+        {
+            "docs": [
+                { "location": "configuration/rate-limits.md", "title": "Rate Limiting", "text": "Configure contact-form rate limiting policy for production and development." }
+            ]
+        }
+        """;
+
+        service = CreateService(json);
+
+        var result = await service.SearchDocsAsync("rate-limiting?? contact-form!!");
+
+        Assert.IsTrue(result.ContextText.Contains("Rate Limiting", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public async Task SearchDocsAsync_EmbeddingRerankerCanPromoteLowerKeywordCandidate()
+    {
+        var json = """
+        {
+          "docs": [
+            { "location": "reference/base.md", "title": "Base Result", "text": "tenant routing and cache" },
+            { "location": "reference/promoted.md", "title": "Promoted Result", "text": "routing architecture" }
+          ]
+        }
+        """;
+
+        service = CreateService(
+            json,
+            new FixedScoreEmbeddingSemanticRanker(
+            [
+                new AiEmbeddingSemanticScore(0, 0.0),
+                new AiEmbeddingSemanticScore(1, 1.0),
+            ]));
+
+        var result = await service.SearchDocsAsync("tenant routing cache");
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.ContextText));
+        var promotedIndex = result.ContextText.IndexOf("Promoted Result", StringComparison.OrdinalIgnoreCase);
+        var baseIndex = result.ContextText.IndexOf("Base Result", StringComparison.OrdinalIgnoreCase);
+        Assert.IsTrue(promotedIndex >= 0);
+        Assert.IsTrue(baseIndex >= 0);
+        Assert.IsTrue(promotedIndex < baseIndex);
+    }
+
+    [TestMethod]
     public async Task SearchDocsAsync_ReturnsEmptyResult_ForBlankQuery()
     {
         service = CreateService("{\"docs\":[]}");
@@ -69,7 +138,7 @@ public class AiDocumentationIndexServiceTests
         Assert.AreEqual(string.Empty, result.ContextText);
     }
 
-    private AiDocumentationIndexService CreateService(string responseText)
+    private AiDocumentationIndexService CreateService(string responseText, IAiEmbeddingSemanticRanker? semanticRanker = null)
     {
         var handler = new StaticResponseHandler(responseText);
         var httpClient = new HttpClient(handler);
@@ -78,7 +147,31 @@ public class AiDocumentationIndexServiceTests
         return new AiDocumentationIndexService(
             httpClientFactory,
             memoryCache,
+            semanticRanker ?? new StubEmbeddingSemanticRanker(),
             Mock.Of<ILogger<AiDocumentationIndexService>>());
+    }
+
+    private sealed class StubEmbeddingSemanticRanker : IAiEmbeddingSemanticRanker
+    {
+        public Task<IReadOnlyList<AiEmbeddingSemanticScore>> ScoreAsync(string query, IReadOnlyList<string> candidates, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<AiEmbeddingSemanticScore>>([]);
+        }
+    }
+
+    private sealed class FixedScoreEmbeddingSemanticRanker : IAiEmbeddingSemanticRanker
+    {
+        private readonly IReadOnlyList<AiEmbeddingSemanticScore> scores;
+
+        public FixedScoreEmbeddingSemanticRanker(IReadOnlyList<AiEmbeddingSemanticScore> scores)
+        {
+            this.scores = scores;
+        }
+
+        public Task<IReadOnlyList<AiEmbeddingSemanticScore>> ScoreAsync(string query, IReadOnlyList<string> candidates, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(scores);
+        }
     }
 
     private sealed class StaticResponseHandler : HttpMessageHandler

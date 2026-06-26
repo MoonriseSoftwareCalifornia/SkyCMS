@@ -329,6 +329,7 @@ builder.Services.AddScoped<IAiUserPreferenceService, AiUserPreferenceService>();
 builder.Services.AddScoped<IKnowledgeContextProvider, KnowledgeContextProvider>();
 builder.Services.AddScoped<IEditorContextBuilder, EditorContextBuilder>();
 builder.Services.AddScoped<IEditorContextPayloadService, EditorContextPayloadService>();
+builder.Services.AddScoped<IAiEmbeddingSemanticRanker, AiEmbeddingSemanticRanker>();
 builder.Services.AddScoped<IAiDocumentationIndexService, AiDocumentationIndexService>();
 builder.Services.AddScoped<IAiSourceCodeIndexService, AiSourceCodeIndexService>();
 builder.Services.AddScoped<IAiFaqIndexService, AiFaqIndexService>();

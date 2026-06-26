@@ -24,6 +24,7 @@ using Microsoft.Extensions.Logging;
 public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
 {
     private const int MaxResults = 3;
+    private const int EmbeddingCandidateLimit = 8;
     private const int MaxSnippetLength = 700;
     private static readonly object HealthGate = new();
 
@@ -43,6 +44,7 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
     };
 
     private readonly IHostEnvironment hostEnvironment;
+    private readonly IAiEmbeddingSemanticRanker embeddingSemanticRanker;
     private readonly ILogger<AiSourceCodeIndexService> logger;
 
     /// <summary>
@@ -50,20 +52,21 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
     /// </summary>
     /// <param name="hostEnvironment">Host environment used to locate the repository root.</param>
     /// <param name="logger">Logger.</param>
-    public AiSourceCodeIndexService(IHostEnvironment hostEnvironment, ILogger<AiSourceCodeIndexService> logger)
+    public AiSourceCodeIndexService(IHostEnvironment hostEnvironment, IAiEmbeddingSemanticRanker embeddingSemanticRanker, ILogger<AiSourceCodeIndexService> logger)
     {
         this.hostEnvironment = hostEnvironment;
+        this.embeddingSemanticRanker = embeddingSemanticRanker;
         this.logger = logger;
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<AiSourceCodeSearchResult>> SearchSourceCodeAsync(string query, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<AiSourceCodeSearchResult>> SearchSourceCodeAsync(string query, CancellationToken cancellationToken = default)
     {
         RecordAttempt();
 
         if (string.IsNullOrWhiteSpace(query))
         {
-            return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
+            return [];
         }
 
         var repositoryRoot = ResolveRepositoryRoot(this.hostEnvironment.ContentRootPath);
@@ -71,7 +74,7 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
         {
             RecordFetchError("Repository root could not be resolved or does not exist.");
             this.logger.LogWarning("Source-code index fetch error: repository root was not found. ContentRootPath={ContentRootPath}", this.hostEnvironment.ContentRootPath);
-            return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
+            return [];
         }
 
         var keywords = query
@@ -83,7 +86,7 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
 
         if (keywords.Count == 0)
         {
-            return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
+            return [];
         }
 
         var matches = new List<AiSourceCodeSearchResult>();
@@ -96,7 +99,7 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
         {
             RecordFetchError(ex.Message);
             this.logger.LogWarning(ex, "Source-code index fetch error while enumerating files under {RepositoryRoot}.", repositoryRoot);
-            return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>([]);
+            return [];
         }
 
         var processedFiles = 0;
@@ -123,8 +126,12 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
             }
 
             processedFiles++;
-            var score = keywords.Sum(keyword => CountOccurrences(text, keyword))
+            var keywordScore = keywords.Sum(keyword => CountOccurrences(text, keyword))
                 + keywords.Sum(keyword => CountOccurrences(relativePath, keyword));
+
+            var semanticSearchable = $"{relativePath}\n{ExtractSymbolName(text)}\n{ExtractSignature(text)}\n{ExtractSnippet(text, keywords)}";
+            var semanticScore = ComputeSemanticSimilarity(query, semanticSearchable);
+            var score = keywordScore + (int)Math.Round(semanticScore * 8, MidpointRounding.AwayFromZero);
 
             if (score <= 0)
             {
@@ -146,7 +153,34 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
             });
         }
 
-        var topResults = matches
+        var topCandidates = matches
+            .OrderByDescending(match => match.RelevanceScore)
+            .ThenBy(match => match.FilePath, StringComparer.OrdinalIgnoreCase)
+            .Take(EmbeddingCandidateLimit)
+            .ToList();
+
+        if (topCandidates.Count > 0)
+        {
+            var embeddingScores = await this.embeddingSemanticRanker
+                .ScoreAsync(query, topCandidates.Select(c => $"{c.FilePath}\n{c.SymbolName}\n{c.Signature}\n{c.Snippet}").ToList(), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (embeddingScores.Count > 0)
+            {
+                var scoreByIndex = embeddingScores.ToDictionary(x => x.CandidateIndex, x => x.Score);
+                for (var index = 0; index < topCandidates.Count; index++)
+                {
+                    if (!scoreByIndex.TryGetValue(index, out var embeddingScore))
+                    {
+                        continue;
+                    }
+
+                    topCandidates[index].RelevanceScore += (int)Math.Round(embeddingScore * 12, MidpointRounding.AwayFromZero);
+                }
+            }
+        }
+
+        var topResults = topCandidates
             .OrderByDescending(match => match.RelevanceScore)
             .ThenBy(match => match.FilePath, StringComparer.OrdinalIgnoreCase)
             .Take(MaxResults)
@@ -159,7 +193,70 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
 
         RecordSuccess(processedFiles);
 
-        return Task.FromResult<IReadOnlyList<AiSourceCodeSearchResult>>(topResults);
+        return topResults;
+    }
+
+    private static double ComputeSemanticSimilarity(string query, string content)
+    {
+        try
+        {
+            var queryVector = BuildTermVector(query);
+            var contentVector = BuildTermVector(content);
+            if (queryVector.Count == 0 || contentVector.Count == 0)
+            {
+                return 0;
+            }
+
+            var dot = 0d;
+            foreach (var term in queryVector)
+            {
+                if (contentVector.TryGetValue(term.Key, out var contentWeight))
+                {
+                    dot += term.Value * contentWeight;
+                }
+            }
+
+            if (dot <= 0)
+            {
+                return 0;
+            }
+
+            var queryNorm = Math.Sqrt(queryVector.Values.Sum(v => v * v));
+            var contentNorm = Math.Sqrt(contentVector.Values.Sum(v => v * v));
+            if (queryNorm <= 0 || contentNorm <= 0)
+            {
+                return 0;
+            }
+
+            return dot / (queryNorm * contentNorm);
+        }
+        catch
+        {
+            // Fallback to keyword-only ranking if semantic scoring fails.
+            return 0;
+        }
+    }
+
+    private static Dictionary<string, double> BuildTermVector(string text)
+    {
+        var tokens = Regex.Matches(text ?? string.Empty, "[A-Za-z0-9]+")
+            .Select(match => match.Value.ToLowerInvariant())
+            .Where(token => token.Length > 2 && !StopWords.Contains(token))
+            .ToList();
+
+        var total = tokens.Count;
+        if (total == 0)
+        {
+            return new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var vector = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        foreach (var group in tokens.GroupBy(t => t, StringComparer.OrdinalIgnoreCase))
+        {
+            vector[group.Key] = (double)group.Count() / total;
+        }
+
+        return vector;
     }
 
     /// <summary>

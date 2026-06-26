@@ -714,6 +714,8 @@ namespace Sky.Tests.Controllers
                 TimeoutMs = 12000,
                 Temperature = 0.4,
                 MaxTokens = 256,
+                EnableEmbeddingSemanticRerank = true,
+                EmbeddingModel = "text-embedding-3-small",
             };
 
             mediatorMock
@@ -734,6 +736,8 @@ namespace Sky.Tests.Controllers
             Assert.AreEqual(12000, model.TimeoutMs);
             Assert.AreEqual(0.4, model.Temperature);
             Assert.AreEqual(256, model.MaxTokens);
+            Assert.IsTrue(model.EnableEmbeddingSemanticRerank);
+            Assert.AreEqual("text-embedding-3-small", model.EmbeddingModel);
         }
 
         [TestMethod]
@@ -749,6 +753,8 @@ namespace Sky.Tests.Controllers
                 TimeoutMs = 9000,
                 Temperature = 0.3,
                 MaxTokens = 180,
+                EnableEmbeddingSemanticRerank = true,
+                EmbeddingModel = "text-embedding-3-small",
             };
 
             // Act
@@ -763,10 +769,15 @@ namespace Sky.Tests.Controllers
             Assert.IsNotNull(returnedModel);
             Assert.IsTrue(returnedModel.Enabled);
             Assert.AreEqual("https://example.ai/v1/chat/completions", returnedModel.Endpoint);
+            Assert.IsTrue(returnedModel.EnableEmbeddingSemanticRerank);
+            Assert.AreEqual("text-embedding-3-small", returnedModel.EmbeddingModel);
 
             mediatorMock.Verify(
                 m => m.SendAsync(
-                    It.Is<SaveCopilotProxyOptionsCommand>(c => c.Options.Endpoint == "https://example.ai/v1/chat/completions"),
+                    It.Is<SaveCopilotProxyOptionsCommand>(c =>
+                        c.Options.Endpoint == "https://example.ai/v1/chat/completions" &&
+                        c.Options.EnableEmbeddingSemanticRerank &&
+                        c.Options.EmbeddingModel == "text-embedding-3-small"),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
         }

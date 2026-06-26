@@ -4,6 +4,10 @@
 
 Accepted
 
+## Implementation Status
+
+Implemented (v1 complete, 2026-06-26)
+
 ## Context
 
 SkyCMS integrates AI assistance (inline completions, chat, and actions) into Monaco and CKEditor instances.
@@ -185,7 +189,9 @@ Implement service methods to construct payloads per entity type:
   - Editor/wwwroot/js/editors/monaco-editor-chat.js
   - Editor/wwwroot/js/editors/monaco-editor-copilot.js
 - AI proxy context handling:
-  - Sky.Api/Controllers/AiProxyController.cs (planned)
+  - Editor/Controllers/AiProxyController.cs
+- VS Code context endpoint integration:
+  - Editor/Controllers/VsCodeController.cs
 
 ## Related Documentation
 
