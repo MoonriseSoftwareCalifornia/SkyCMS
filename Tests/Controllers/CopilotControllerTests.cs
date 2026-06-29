@@ -36,6 +36,9 @@ public class CopilotControllerTests
     private const string LiveCopilotModelEnvVar = "SKYCMS_COPILOT_MODEL";
     private const string DefaultLiveCopilotEndpoint = "https://models.inference.ai.azure.com/chat/completions";
     private const string DefaultLiveCopilotModel = "gpt-4o-mini";
+    private const int LiveRateLimitMaxAttempts = 3;
+    private const int LiveRateLimitDefaultRetrySeconds = 5;
+    private const int LiveRateLimitMaxRetrySeconds = 20;
     private const string UserSecretsId = "c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1";
 
     private Mock<IHttpClientFactory> httpClientFactoryMock = null!;
@@ -197,7 +200,9 @@ public class CopilotControllerTests
             Prefix = string.Empty,
         };
 
-        var result = await controller.Complete(request);
+        var result = await ExecuteLiveRequestWithRateLimitRetryAsync(
+            "Complete",
+            () => controller.Complete(request));
 
         var ok = result as OkObjectResult;
         Assert.IsNotNull(ok);
@@ -624,6 +629,171 @@ public class CopilotControllerTests
         Assert.IsTrue(userPrompt.Contains("Editor context payload:", StringComparison.Ordinal));
     }
 
+        [TestMethod]
+        public async Task Chat_WithVisualEditorPayload_AndUnknownModelFromUpstream_ReturnsBadRequestWithFallbackModel()
+        {
+        string? capturedRequestJson = null;
+
+        var requestPayload = new AiProxyController.CopilotChatRequest
+        {
+            EditorKind = "monaco",
+            Action = "improve-selection",
+            Message = "Improve the current selection while preserving intent and surrounding style.",
+            Selection = """
+<div class="container mx-auto mt-4" style="margin-top:100px;">
+    <div style="width: 100%;padding-left: 20px;padding-right: 20px;margin-left: auto;margin-right: auto;"
+        data-ccms-ceid="e066a7c173c540689ab1c52637152644" data-ccms-index="0" class="mt-4">
+        <h1>Why Lorem Ipsum?</h1>
+        <p>&nbsp;</p>
+        <p><img class="image_resized" style="aspect-ratio:1346/1356;width:25%;" src="/pub/articles/22/96b221d8-c82f-4981-9f40-9a37a2825561.png" width="1346" height="1356">
+        </p>
+        <p>&nbsp;</p>
+        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's
+            standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a
+            type specimen book. It has survived not only five centuries, but also the lep into electronic typesetting,
+            remaining essentially unchanged. It was popularized in the 1960s with the release of Letraset sheets containing
+            Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions
+            of Lorem Ipsum.</p>
+        <p>&nbsp;</p>
+        <p><img class="image_resized" style="aspect-ratio:1100/825;width:25%;" src="/pub/articles/22/20150605_022052000_ios.jpg" width="1100" height="825">
+        </p>
+        <p>&nbsp;</p>
+    </div>
+</div>
+""",
+            CurrentCode = """
+<div class="container mx-auto mt-4" style="margin-top:100px;">
+    <div style="width: 100%;padding-left: 20px;padding-right: 20px;margin-left: auto;margin-right: auto;"
+        data-ccms-ceid="e066a7c173c540689ab1c52637152644" data-ccms-index="0" class="mt-4">
+        <h1>Why Lorem Ipsum?</h1>
+        <p>&nbsp;</p>
+        <p><img class="image_resized" style="aspect-ratio:1346/1356;width:25%;" src="/pub/articles/22/96b221d8-c82f-4981-9f40-9a37a2825561.png" width="1346" height="1356">
+        </p>
+        <p>&nbsp;</p>
+        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's
+            standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a
+            type specimen book. It has survived not only five centuries, but also the lep into electronic typesetting,
+            remaining essentially unchanged. It was popularized in the 1960s with the release of Letraset sheets containing
+            Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions
+            of Lorem Ipsum.</p>
+        <p>&nbsp;</p>
+        <p><img class="image_resized" style="aspect-ratio:1100/825;width:25%;" src="/pub/articles/22/20150605_022052000_ios.jpg" width="1100" height="825">
+        </p>
+        <p>&nbsp;</p>
+    </div>
+</div>
+""",
+            Language = "html",
+            FieldName = "Html Content",
+            Title = "Example Visual Editor Page",
+            ArticleNumber = "22",
+            DocumentKind = "article",
+            SectionKind = null,
+            ArticleType = "General",
+            Category = null,
+            UrlPath = "example-visual-editor-page",
+            TemplateId = null,
+            LayoutId = null,
+            SelectedModel = "openai/gpt-4.1",
+            Messages = [],
+        };
+
+        if (IsLiveTestEnabled())
+        {
+            var token = ResolveLiveCopilotToken();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Assert.Inconclusive(
+                    $"Live token not found. Set {LiveCopilotTokenEnvVar} or CoPilotAccessToken in user secrets.");
+            }
+
+            var liveOptions = BuildLiveOptions(token);
+            liveOptions.AutoRetryUnknownModel = false;
+            liveOptions.Model = "auto";
+
+            optionsServiceMock
+                .Setup(s => s.GetOptionsAsync())
+                .ReturnsAsync(liveOptions);
+
+            httpClientFactoryMock
+                .Setup(f => f.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient());
+        }
+        else
+        {
+            var options = new CopilotProxyOptions
+            {
+                Enabled = true,
+                Endpoint = "https://models.inference.ai.azure.com/chat/completions",
+                AccessToken = "token",
+                Model = "auto",
+                MaxTokens = 512,
+                AutoRetryUnknownModel = false,
+            };
+
+            optionsServiceMock
+                .Setup(s => s.GetOptionsAsync())
+                .ReturnsAsync(options);
+
+            var httpClient = CreateHttpClient((request, _) =>
+            {
+                capturedRequestJson = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("{\"error\":{\"code\":\"unknown_model\",\"message\":\"Unknown model: openai/gpt-4.1\"}}", Encoding.UTF8, "application/json"),
+                };
+            });
+
+            httpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        }
+
+        var result = await controller.Chat(requestPayload);
+
+        if (IsLiveTestEnabled())
+        {
+            Assert.IsTrue(
+                result is OkObjectResult || result is BadRequestObjectResult || result is ObjectResult,
+                "Expected live request to return a valid action result.");
+
+            if (result is BadRequestObjectResult liveBadRequest)
+            {
+                var liveJson = JsonSerializer.Serialize(liveBadRequest.Value);
+                using var livePayload = JsonDocument.Parse(liveJson);
+                if (livePayload.RootElement.TryGetProperty("upstreamCode", out var upstreamCodeElement))
+                {
+                    Assert.AreEqual("unknown_model", upstreamCodeElement.GetString());
+                }
+            }
+
+            return;
+        }
+
+        var badRequest = result as BadRequestObjectResult;
+        Assert.IsNotNull(badRequest);
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(capturedRequestJson));
+        using var upstreamDoc = JsonDocument.Parse(capturedRequestJson!);
+        Assert.AreEqual("openai/gpt-4.1", upstreamDoc.RootElement.GetProperty("model").GetString());
+
+        var json = JsonSerializer.Serialize(badRequest.Value);
+        using var payload = JsonDocument.Parse(json);
+
+        Assert.AreEqual("unknown_model", payload.RootElement.GetProperty("upstreamCode").GetString());
+        Assert.AreEqual("openai/gpt-4.1", payload.RootElement.GetProperty("attemptedModel").GetString());
+        Assert.AreEqual("openai/gpt-4.1", payload.RootElement.GetProperty("selectedModel").GetString());
+        Assert.AreEqual("gpt-4o-mini", payload.RootElement.GetProperty("fallbackModel").GetString());
+
+        userPreferenceServiceMock.Verify(
+            s => s.SaveSelectedModelAsync(
+                It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
+                "github-models",
+                "monaco",
+                "article",
+                null,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     [TestMethod]
     public async Task Chat_WithUnknownModelFromUpstream_AndAutoRetryDisabled_ReturnsBadRequestWithFallbackModel()
     {
@@ -897,6 +1067,40 @@ public class CopilotControllerTests
         Assert.IsFalse(payload.Completion!.Contains(suffixMarker, StringComparison.Ordinal));
     }
 
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task Chat_WithLiveGitHubCopilotConnection_ReturnsReply()
+    {
+        var payload = await ExecuteLiveChatAsync(new AiProxyController.CopilotChatRequest
+        {
+            Action = "chat",
+            Message = "Explain how to improve null checks in this code.",
+            CurrentCode = "public string Name(User user) => user.Name;",
+            Language = "csharp",
+            DocumentKind = "article",
+            SectionKind = "article-content",
+            EditorKind = "monaco",
+        });
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(payload.Reply));
+    }
+
+    [TestMethod]
+    [TestCategory("Integration")]
+    public async Task HelpQuery_WithLiveGitHubCopilotConnection_ReturnsReply()
+    {
+        var payload = await ExecuteLiveHelpQueryAsync(new AiProxyController.AiHelpQueryRequest
+        {
+            Query = "How do I publish a page in SkyCMS?",
+            ChatMode = "general-help",
+            DocumentKind = "article",
+            SectionKind = "article-content",
+            UrlPath = "live-test-page",
+        });
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(payload.Reply));
+    }
+
     private static HttpClient CreateHttpClient(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> send)
     {
         var handler = new DelegateHttpMessageHandler(send);
@@ -920,16 +1124,7 @@ public class CopilotControllerTests
 
         optionsServiceMock
             .Setup(s => s.GetOptionsAsync())
-            .ReturnsAsync(new CopilotProxyOptions
-            {
-                Enabled = true,
-                Endpoint = ResolveLiveCopilotEndpoint(),
-                AccessToken = token,
-                Model = ResolveLiveCopilotModel(),
-                TimeoutMs = 30000,
-                MaxTokens = 96,
-                Temperature = 0.1,
-            });
+            .ReturnsAsync(BuildLiveOptions(token));
 
         httpClientFactoryMock
             .Setup(f => f.CreateClient(It.IsAny<string>()))
@@ -939,7 +1134,7 @@ public class CopilotControllerTests
 
         if (result is ObjectResult error && error.StatusCode >= StatusCodes.Status400BadRequest)
         {
-            Assert.Fail($"Live Copilot request failed with status {error.StatusCode}.");
+            Assert.Fail(BuildLiveRequestFailureMessage("Complete", error));
         }
 
         var ok = result as OkObjectResult;
@@ -950,6 +1145,199 @@ public class CopilotControllerTests
 
         AssertLiveCompletionShape(payload);
         return payload;
+    }
+
+    private async Task<AiProxyController.CopilotChatResponse> ExecuteLiveChatAsync(
+        AiProxyController.CopilotChatRequest request)
+    {
+        if (!IsLiveTestEnabled())
+        {
+            Assert.Inconclusive($"Set {LiveCopilotEnabledEnvVar}=true to run live Copilot integration tests.");
+        }
+
+        var token = ResolveLiveCopilotToken();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Assert.Inconclusive(
+                $"Live token not found. Set {LiveCopilotTokenEnvVar} or CoPilotAccessToken in user secrets.");
+        }
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(BuildLiveOptions(token));
+
+        httpClientFactoryMock
+            .Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(new HttpClient());
+
+        var result = await ExecuteLiveRequestWithRateLimitRetryAsync(
+            "Chat",
+            () => controller.Chat(request));
+
+        if (result is ObjectResult error && error.StatusCode >= StatusCodes.Status400BadRequest)
+        {
+            Assert.Fail(BuildLiveRequestFailureMessage("Chat", error));
+        }
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+
+        var payload = ok.Value as AiProxyController.CopilotChatResponse;
+        Assert.IsNotNull(payload);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(payload.Reply));
+        return payload;
+    }
+
+    private async Task<AiProxyController.AiHelpQueryResponse> ExecuteLiveHelpQueryAsync(
+        AiProxyController.AiHelpQueryRequest request)
+    {
+        if (!IsLiveTestEnabled())
+        {
+            Assert.Inconclusive($"Set {LiveCopilotEnabledEnvVar}=true to run live Copilot integration tests.");
+        }
+
+        var token = ResolveLiveCopilotToken();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Assert.Inconclusive(
+                $"Live token not found. Set {LiveCopilotTokenEnvVar} or CoPilotAccessToken in user secrets.");
+        }
+
+        optionsServiceMock
+            .Setup(s => s.GetOptionsAsync())
+            .ReturnsAsync(BuildLiveOptions(token));
+
+        httpClientFactoryMock
+            .Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(new HttpClient());
+
+        var result = await ExecuteLiveRequestWithRateLimitRetryAsync(
+            "HelpQuery",
+            () => controller.HelpQuery(request));
+
+        if (result is ObjectResult error && error.StatusCode >= StatusCodes.Status400BadRequest)
+        {
+            Assert.Fail(BuildLiveRequestFailureMessage("HelpQuery", error));
+        }
+
+        var ok = result as OkObjectResult;
+        Assert.IsNotNull(ok);
+
+        var payload = ok.Value as AiProxyController.AiHelpQueryResponse;
+        Assert.IsNotNull(payload);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(payload.Reply));
+        return payload;
+    }
+
+    private static CopilotProxyOptions BuildLiveOptions(string token)
+    {
+        return new CopilotProxyOptions
+        {
+            Enabled = true,
+            Endpoint = ResolveLiveCopilotEndpoint(),
+            AccessToken = token,
+            Model = ResolveLiveCopilotModel(),
+            TimeoutMs = 30000,
+            MaxTokens = 256,
+            Temperature = 0.1,
+        };
+    }
+
+    private static string BuildLiveRequestFailureMessage(string operation, ObjectResult error)
+    {
+        var endpoint = ResolveLiveCopilotEndpoint();
+        var model = ResolveLiveCopilotModel();
+        var details = TrySerializeObject(error.Value);
+        return $"Live Copilot {operation} failed. Status={error.StatusCode}; Endpoint={endpoint}; Model={model}; Payload={details}";
+    }
+
+    private async Task<IActionResult> ExecuteLiveRequestWithRateLimitRetryAsync(
+        string operation,
+        Func<Task<IActionResult>> execute)
+    {
+        for (var attempt = 1; attempt <= LiveRateLimitMaxAttempts; attempt++)
+        {
+            var result = await execute();
+            if (result is not ObjectResult error || error.StatusCode < StatusCodes.Status400BadRequest)
+            {
+                return result;
+            }
+
+            var isRateLimited = error.StatusCode == StatusCodes.Status429TooManyRequests;
+            if (!isRateLimited || attempt == LiveRateLimitMaxAttempts)
+            {
+                Assert.Fail(BuildLiveRequestFailureMessage(operation, error));
+                throw new InvalidOperationException("Unreachable after Assert.Fail");
+            }
+
+            var retryAfterSeconds = ResolveRetryAfterSeconds(error);
+            await Task.Delay(TimeSpan.FromSeconds(retryAfterSeconds));
+        }
+
+        Assert.Fail($"Live Copilot {operation} failed after retry attempts.");
+        throw new InvalidOperationException("Unreachable after Assert.Fail");
+    }
+
+    private static int ResolveRetryAfterSeconds(ObjectResult error)
+    {
+        var retryAfterSeconds = TryGetRetryAfterSeconds(error.Value) ?? LiveRateLimitDefaultRetrySeconds;
+        return Math.Clamp(retryAfterSeconds, 1, LiveRateLimitMaxRetrySeconds);
+    }
+
+    private static int? TryGetRetryAfterSeconds(object? value)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(JsonSerializer.Serialize(value));
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            if (!document.RootElement.TryGetProperty("retryAfterSeconds", out var retryAfterElement))
+            {
+                return null;
+            }
+
+            if (retryAfterElement.ValueKind == JsonValueKind.Number && retryAfterElement.TryGetInt32(out var seconds))
+            {
+                return seconds;
+            }
+
+            if (retryAfterElement.ValueKind == JsonValueKind.String
+                && int.TryParse(retryAfterElement.GetString(), out var parsedSeconds))
+            {
+                return parsedSeconds;
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static string TrySerializeObject(object? value)
+    {
+        if (value == null)
+        {
+            return "<null>";
+        }
+
+        try
+        {
+            return JsonSerializer.Serialize(value);
+        }
+        catch
+        {
+            return value.ToString() ?? "<unserializable>";
+        }
     }
 
     private static void AssertLiveCompletionShape(AiProxyController.CopilotCompletionResponse payload)

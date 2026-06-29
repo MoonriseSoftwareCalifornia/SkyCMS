@@ -579,8 +579,8 @@ public sealed class AiProxyController : ControllerBase
 
         var resolvedModel = AiProviderMetadataResolver.ResolveEffectiveModel(options.Endpoint, options.Model, request.SelectedModel);
 
-        //try
-        //{
+        try
+        {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(this.HttpContext.RequestAborted);
             linkedCts.CancelAfter(Math.Clamp(options.TimeoutMs, 1000, 60000));
 
@@ -740,16 +740,16 @@ public sealed class AiProxyController : ControllerBase
                 Reply = replyText,
                 Model = resolvedModel,
             });
-        //}
-        //catch (OperationCanceledException)
-        //{
-        //    return this.StatusCode(504, new { error = "Copilot chat request timed out." });
-        //}
-        //catch (Exception ex)
-        //{
-        //    this.logger.LogError(ex, "Copilot chat request failed.");
-        //    return this.StatusCode(500, new { error = "Copilot chat request failed." });
-        //}
+        }
+        catch (OperationCanceledException)
+        {
+            return this.StatusCode(504, new { error = "Copilot chat request timed out." });
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Copilot chat request failed.");
+            return this.StatusCode(500, new { error = "Copilot chat request failed." });
+        }
     }
 
     /// <summary>

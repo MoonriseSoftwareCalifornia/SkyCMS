@@ -3,6 +3,10 @@
  * Wires Monaco inline completions to the SkyCMS Copilot proxy API.
  */
 (function () {
+    function getAiModelCatalog() {
+        return window.ccmsAiModelCatalog;
+    }
+
     function buildPreferenceQueryString() {
         const editorContext = window.ccmsEditorContext || {};
         const params = new URLSearchParams();
@@ -96,20 +100,23 @@
 
         async _getStatus() {
             try {
-                const queryString = buildPreferenceQueryString();
-                const response = await fetch(`/api/ai-proxy/status${queryString ? `?${queryString}` : ''}`, {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json'
+                const catalog = getAiModelCatalog();
+                const status = catalog ? await catalog.getStatus() : await (async () => {
+                    const queryString = buildPreferenceQueryString();
+                    const response = await fetch(`/api/ai-proxy/status${queryString ? `?${queryString}` : ''}`, {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        return null;
                     }
-                });
 
-                if (!response.ok) {
-                    return null;
-                }
-
-                const status = await response.json();
+                    return await response.json();
+                })();
                 syncSharedAiSelectionState(status);
                 return status;
             } catch (error) {

@@ -1,4 +1,8 @@
 (function () {
+    function getAiModelCatalog() {
+        return window.ccmsAiModelCatalog;
+    }
+
     function getAiModelSelectionState() {
         if (!window.ccmsAiModelSelection) {
             window.ccmsAiModelSelection = {
@@ -174,6 +178,11 @@
         }
 
         async getStatus() {
+            const catalog = getAiModelCatalog();
+            if (catalog) {
+                return await catalog.getStatus();
+            }
+
             try {
                 const queryString = buildPreferenceQueryString();
                 const response = await fetch(`/api/ai-proxy/status${queryString ? `?${queryString}` : ''}`, {
@@ -232,6 +241,18 @@
         }
 
         async loadModelCatalog(forceRefresh) {
+            const catalog = getAiModelCatalog();
+            if (catalog) {
+                this.catalog = await catalog.getCatalog({
+                    forceRefresh: !!forceRefresh,
+                    providerKey: 'monaco'
+                });
+                getAiModelSelectionState().selectedModel = catalog.getSelectedModel();
+                await catalog.updateModelSelectionFromCatalog(this.catalog, (selectedModel) => catalog.saveSelectedModelPreference(selectedModel));
+                this.updateModelPicker();
+                return this.catalog;
+            }
+
             if (this.catalogPromise && !forceRefresh) {
                 return this.catalogPromise;
             }

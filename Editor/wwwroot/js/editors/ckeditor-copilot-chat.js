@@ -1,4 +1,8 @@
 (function () {
+    function getAiModelCatalog() {
+        return window.ccmsAiModelCatalog;
+    }
+
     function getAiModelSelectionState() {
         if (!window.ccmsAiModelSelection) {
             window.ccmsAiModelSelection = {
@@ -249,6 +253,11 @@
         }
 
         async getStatus() {
+            const catalog = getAiModelCatalog();
+            if (catalog) {
+                return await catalog.getStatus();
+            }
+
             try {
                 const queryString = buildPreferenceQueryString();
                 const response = await fetch(`/api/ai-proxy/status${queryString ? `?${queryString}` : ''}`, {
@@ -308,6 +317,18 @@
         }
 
         async loadModelCatalog(forceRefresh) {
+            const catalog = getAiModelCatalog();
+            if (catalog) {
+                this.catalog = await catalog.getCatalog({
+                    forceRefresh: !!forceRefresh,
+                    providerKey: 'ckeditor'
+                });
+                getAiModelSelectionState().selectedModel = catalog.getSelectedModel();
+                await catalog.updateModelSelectionFromCatalog(this.catalog, (selectedModel) => catalog.saveSelectedModelPreference(selectedModel));
+                this.updateModelPicker();
+                return this.catalog;
+            }
+
             if (this.catalogPromise && !forceRefresh) {
                 return this.catalogPromise;
             }
@@ -360,6 +381,16 @@
         }
 
         async saveSelectedModelPreference(selectedModel) {
+            const catalog = getAiModelCatalog();
+            if (catalog) {
+                return await catalog.saveSelectedModelPreference(selectedModel, {
+                    context: {
+                        editorKind: 'ckeditor',
+                        documentKind: window.ccmsEditorContext && window.ccmsEditorContext.documentKind
+                    }
+                });
+            }
+
             try {
                 const context = getAiPreferenceContext();
                 const response = await fetch('/api/ai-proxy/preferences/model', {

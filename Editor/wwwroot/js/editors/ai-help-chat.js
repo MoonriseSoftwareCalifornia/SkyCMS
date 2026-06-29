@@ -1,4 +1,8 @@
 (function () {
+    function getAiModelCatalog() {
+        return window.ccmsAiModelCatalog;
+    }
+
     class AiHelpChat {
         constructor() {
             this.messages = [];
@@ -30,7 +34,8 @@
         }
 
         async initializeAsync() {
-            this.status = await this.getStatus();
+            const catalog = getAiModelCatalog();
+            this.status = catalog ? await catalog.getStatus(this.getCatalogContext()) : await this.getStatus();
             this.updateAvailability();
             await this.loadModelCatalog();
             this.renderMessages();
@@ -117,14 +122,26 @@
             }
         }
 
+        getCatalogContext() {
+            return {
+                editorKind: 'help',
+                documentKind: this.context.documentKind || this.currentMode
+            };
+        }
+
         getContextQueryString() {
-            const params = new URLSearchParams();
-            params.set('editorKind', 'help');
-            params.set('documentKind', this.context.documentKind || this.currentMode);
-            return params.toString();
+            const catalog = getAiModelCatalog();
+            return catalog
+                ? catalog.buildPreferenceQueryString(this.getCatalogContext())
+                : new URLSearchParams({ editorKind: 'help', documentKind: this.context.documentKind || this.currentMode }).toString();
         }
 
         async getStatus() {
+            const catalog = getAiModelCatalog();
+            if (catalog) {
+                return await catalog.getStatus(this.getCatalogContext());
+            }
+
             try {
                 const query = this.getContextQueryString();
                 const response = await fetch(`/api/ai-proxy/status?${query}`, {
@@ -146,6 +163,18 @@
         }
 
         async loadModelCatalog(forceRefresh) {
+            const catalog = getAiModelCatalog();
+            if (catalog) {
+                this.catalog = await catalog.getCatalog({
+                    context: this.getCatalogContext(),
+                    forceRefresh: !!forceRefresh,
+                    providerKey: 'help'
+                });
+                this.selectedModel = catalog.getSelectedModel();
+                this.updateModelPicker();
+                return;
+            }
+
             try {
                 const query = new URLSearchParams(this.getContextQueryString());
                 if (forceRefresh) {
@@ -344,6 +373,13 @@
         }
 
         async saveSelectedModelPreference(selectedModel) {
+            const catalog = getAiModelCatalog();
+            if (catalog) {
+                return await catalog.saveSelectedModelPreference(selectedModel, {
+                    context: this.getCatalogContext()
+                });
+            }
+
             try {
                 const response = await fetch('/api/ai-proxy/preferences/model', {
                     method: 'POST',
