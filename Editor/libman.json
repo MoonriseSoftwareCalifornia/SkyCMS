@@ -56,6 +56,10 @@
     {
       "library": "tippy.js@6.3.7",
       "destination": "wwwroot/lib/tippy/"
+    },
+    {
+      "library": "filepond@4.32.9",
+      "destination": "wwwroot/lib/filepond/"
     }
   ]
 }

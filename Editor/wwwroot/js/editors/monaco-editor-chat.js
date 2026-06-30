@@ -1,4 +1,79 @@
 (function () {
+    function escapeHtml(value) {
+        return (value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function appendTextSegment(container, text) {
+        if (!text) {
+            return;
+        }
+
+        const textBlock = document.createElement('div');
+        textBlock.className = 'copilot-chat-markdown-text';
+        textBlock.textContent = text;
+        container.appendChild(textBlock);
+    }
+
+    function appendCodeFence(container, language, codeText) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'copilot-chat-code-wrapper';
+
+        if (language) {
+            const label = document.createElement('div');
+            label.className = 'copilot-chat-code-language';
+            label.textContent = language;
+            wrapper.appendChild(label);
+        }
+
+        const pre = document.createElement('pre');
+        pre.className = 'copilot-chat-code-block';
+        const code = document.createElement('code');
+        if (language) {
+            code.className = `language-${escapeHtml(language.toLowerCase())}`;
+        }
+
+        code.textContent = codeText || '';
+        pre.appendChild(code);
+        wrapper.appendChild(pre);
+        container.appendChild(wrapper);
+    }
+
+    function renderMarkdownLikeContent(container, text) {
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = '';
+
+        if (!text) {
+            return;
+        }
+
+        const source = String(text).replace(/\r\n/g, '\n');
+        const fenceRegex = /```([a-zA-Z0-9_-]+)?\n?([\s\S]*?)```/g;
+        let lastIndex = 0;
+        let match;
+
+        while ((match = fenceRegex.exec(source)) !== null) {
+            const preceding = source.slice(lastIndex, match.index);
+            appendTextSegment(container, preceding);
+
+            const language = (match[1] || '').trim();
+            const codeText = (match[2] || '').replace(/\n$/, '');
+            appendCodeFence(container, language, codeText);
+
+            lastIndex = fenceRegex.lastIndex;
+        }
+
+        const trailing = source.slice(lastIndex);
+        appendTextSegment(container, trailing);
+    }
+
     function getAiModelCatalog() {
         return window.ccmsAiModelCatalog;
     }
@@ -103,6 +178,7 @@
             this.syncStateFromStatus();
             this.updateAvailability();
             await this.loadModelCatalog();
+            this.renderMessages();
             this.initialized = true;
         }
 
@@ -614,7 +690,7 @@
 
                 const content = document.createElement('div');
                 content.className = 'copilot-chat-message-content';
-                content.textContent = entry.content;
+                renderMarkdownLikeContent(content, entry.content);
                 item.appendChild(content);
 
                 this.messagesContainer.appendChild(item);

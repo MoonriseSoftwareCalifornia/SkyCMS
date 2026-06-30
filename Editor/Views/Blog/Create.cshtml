@@ -4,7 +4,7 @@
     var hasId = Model != null && Model.Id != Guid.Empty;
 }
 <!-- FilePond -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.css" integrity="sha384-TclCA2vTcjELuMbsLCt9deOlUllk1dZV0XmFcwlYit0UgFaqL7EVKvGOgdfzRg3M" crossorigin="anonymous" />
+<link rel="stylesheet" href="~/lib/filepond/filepond.min.css" asp-append-version="true" />
 <!-- Image Widget -->
 <script src="~/lib/cosmos/image-widget/image-widget.js"></script>
 <style>
@@ -136,6 +136,6 @@
     </script>
     @* FilePond and Image Widget *@
     <script asp-append-version="true" src="~/lib/filepond-plugin-file-metadata/dist/filepond-plugin-file-metadata.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/filepond@4.32.6/dist/filepond.min.js" integrity="sha384-Eeqgmq0luVn6HThRQfVchBi+0ROgVXYcUDAsJHU+YDa7yUykpjzyq0R9iDB3ueal" crossorigin="anonymous"></script>
+    <script asp-append-version="true" src="~/lib/filepond/filepond.min.js"></script>
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

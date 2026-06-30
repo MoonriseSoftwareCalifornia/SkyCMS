@@ -60,6 +60,18 @@
         return params.toString();
     }
 
+    function resolveRequestContext(options) {
+        if (!options) {
+            return getAiPreferenceContext();
+        }
+
+        if (options.context) {
+            return options.context;
+        }
+
+        return options;
+    }
+
     function isSelectionSupported(catalog) {
         return !!(catalog && (catalog.supportsUserModelSelection ?? catalog.SupportsUserModelSelection));
     }
@@ -103,7 +115,11 @@
         const sessionState = getAiCatalogSessionState();
         const cachedEntry = sessionState.entries.get(cacheKey);
         if (cachedEntry && !forceRefresh) {
-            return cachedEntry.promise;
+            if (cachedEntry.promise) {
+                return await cachedEntry.promise;
+            }
+
+            return cachedEntry.value ?? null;
         }
 
         const fetchPromise = fetch(url, {
@@ -145,7 +161,7 @@
     }
 
     async function getStatus(options) {
-        const context = options || getAiPreferenceContext();
+        const context = resolveRequestContext(options);
         const queryString = buildPreferenceQueryString(context);
         const cacheKey = `status:${buildContextKey({
             providerKey: options && options.providerKey ? options.providerKey : 'status',
@@ -187,7 +203,7 @@
     }
 
     async function getCatalog(options) {
-        const context = options && options.context ? options.context : getAiPreferenceContext();
+        const context = resolveRequestContext(options);
         const forceRefresh = !!(options && options.forceRefresh);
         const status = await getStatus({
             context: context,

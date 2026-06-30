@@ -174,7 +174,40 @@
 }
 
 .copilot-chat-message-content {
+    white-space: normal;
+}
+
+.copilot-chat-markdown-text {
     white-space: pre-wrap;
+}
+
+.copilot-chat-code-wrapper {
+    margin-top: 8px;
+}
+
+.copilot-chat-code-language {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9da5af;
+    margin-bottom: 4px;
+}
+
+.copilot-chat-code-block {
+    margin: 0;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #3e3e42;
+    background-color: #111318;
+    color: #e7ecf3;
+    white-space: pre;
+    overflow-x: auto;
+}
+
+.copilot-chat-code-block code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.78rem;
+    line-height: 1.45;
 }
 
 .copilot-chat-message-actions {
