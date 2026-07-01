@@ -256,8 +256,8 @@
     };
 
     let grapesJsPlugins = [
-        'grapesjs-plugin-ckeditor',
-        ckeditorBlockPlugin,
+        // 'grapesjs-plugin-ckeditor',
+        // ckeditorBlockPlugin,
         cosmosImageWidgetPlugin,
     @foreach (var plugin in Model.Plugins)
     {
@@ -280,12 +280,6 @@
 
     const pluginOptions = {
         'gjs-blocks-basic': { flexGrid: true },
-        'grapesjs-plugin-ckeditor': {
-            ckeditor: 'https://cdn.ckeditor.com/4.25.1-lts/standard-all/ckeditor.js',
-            customRte: {
-                parseContent: false,
-            },
-        },
         'grapesjs-tui-image-editor': {
             script: [
                 // 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.6.7/fabric.min.js',

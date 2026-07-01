@@ -90,4 +90,5 @@ Provide concise, actionable guidance for AI coding agents working in this reposi
 ## Editor Functionality
 - When rewiring visual editor iframe/autosave save paths, editable content regions should route to `parent.saveEditorRegion` rather than `SavePageProperties`.
 - For the blog banner image widget, ensure that banner image changes save immediately on upload or delete rather than waiting for a manual save.
-- Prefer DRY implementation by sharing article display-path/title filtering logic between `FileManagerController.FilterEntries` and `VsCodeController.GetFilesList` rather than maintaining parallel logic.
+- Prefer DRY implementation by sharing article display-path/title filtering logic between `FileManagerController.FilterEntries` and `VsCodeController.GetFilesList`.
+- Use the built-in GrapesJS text editor for Page Builder text editing instead of CKEditor.
