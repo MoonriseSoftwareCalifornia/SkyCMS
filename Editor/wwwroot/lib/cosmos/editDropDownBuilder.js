@@ -18,7 +18,6 @@ function ccms___buildEditDropDownMenu(articleNumber, usesPageEditor, buttonText)
     const list = dropdown.querySelector(".dropdown-menu");
 
     const visualEditor = ccms___buildEditDropDownMenuItem(articleNumber, "VisualEditor");
-    const pageBuilder = ccms___buildEditDropDownMenuItem(articleNumber, "PageBuilder");
     const editCode = ccms___buildEditDropDownMenuItem(articleNumber, "EditCode");
 
     // Disable visual editor option when page editor support is not enabled.
@@ -33,7 +32,6 @@ function ccms___buildEditDropDownMenu(articleNumber, usesPageEditor, buttonText)
     }
 
     list.appendChild(visualEditor);
-    list.appendChild(pageBuilder);
     list.appendChild(editCode);
 
     return dropdown;
@@ -42,7 +40,7 @@ function ccms___buildEditDropDownMenu(articleNumber, usesPageEditor, buttonText)
 /**
  * Builds one editor menu item.
  * @param {string|number} articleNumber Article identifier used in editor URLs.
- * @param {"VisualEditor"|"PageBuilder"|"EditCode"} editorType Type of editor destination.
+ * @param {"VisualEditor"|"EditCode"} editorType Type of editor destination.
  * @returns {HTMLLIElement} Menu item element.
  */
 function ccms___buildEditDropDownMenuItem(articleNumber, editorType) {
@@ -51,11 +49,6 @@ function ccms___buildEditDropDownMenuItem(articleNumber, editorType) {
             title: "Visually edit content much like a word processor.",
             text: "Visual Editor",
             iconClasses: "fa-solid fa-pen-to-square me-2"
-        },
-        PageBuilder: {
-            title: "Build more complex pages by drag-and-drop components onto the page.",
-            text: "Page Builder",
-            iconClasses: "fa-solid fa-table-columns me-2"
         },
         EditCode: {
             title: "Edit the code on a web page (HTML, JavaScript, CSS).",

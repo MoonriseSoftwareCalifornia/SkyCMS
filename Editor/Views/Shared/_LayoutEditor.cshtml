@@ -10,7 +10,6 @@
     var isAuthor = User.IsInRole("Authors");
     var title = ViewData["PageTitle"];
     var requiresAuth = options.CosmosRequiresAuthentication;
-    var isPageBuilder = (bool?)ViewData["IsPageBuilder"];
     var controllerName = ViewContext.RouteData.Values["controller"].ToString();
     var actionName = ViewContext.RouteData.Values["action"].ToString();
     var lastPublishedDateTimeOffset = (DateTimeOffset?)ViewData["LastPubDateTime"];
@@ -169,9 +168,6 @@
                                     <a class="dropdown-item" onclick="bgEditClick('VisualEditor')">Visual Editor</a>
                                 </li>
                             }
-                            <li id="btnCcmsGrapesJsEditor" style="display:none">
-                                <a class="dropdown-item" onclick="bgEditClick('PageBuilder')">Page Builder</a>
-                            </li>
                             <li id="liBtnVersions" style="display:none">
                                 <a id="btnVersions" class="dropdown-item" href="#" target="_blank">Page versions</a>
                             </li>
@@ -305,7 +301,6 @@
     <partial name="_EditorModals" />
 
     <script>
-        const isPageBuilder = @((isPageBuilder.HasValue ? isPageBuilder : false).ToString().ToLower());
         const modalRecoverData = new bootstrap.Modal(document.getElementById('modalRecoverData'));
         const modalChangeTitle = new bootstrap.Modal(document.getElementById('modalChangeTitle'));
         const modalCheckSaveFirst = new bootstrap.Modal(document.getElementById('modalCheckSaveFirst'));
@@ -316,11 +311,6 @@
         const modalCheckPermissions = new bootstrap.Modal(document.getElementById('modalCheckPermissions'));
         const fileBaseUrl = "@(options.BlobPublicUrl.TrimEnd('/'))";
         const errorModal = new bootstrap.Modal(document.getElementById('modalSavingError'));
-        document.getElementById('modalFileMgr').addEventListener('hidden.bs.modal', event => {
-            if (isPageBuilder) {
-                cosmos__designerLoadAssets("/pub", "pub/articles");
-            }
-        });
 
         // Indicates a save is in progress - used to deconflict simultaneous saves
         let saveInProgress = false;
@@ -719,17 +709,6 @@
                         }
                     }
                     $("#divSaveFirstDialog").html("Save before opening code editor?");
-                    modalCheckSaveFirst.show();
-                    break;
-                case "PageBuilder":
-                    next = function () {
-                        if ("@controllerName" == "Editor") {
-                            window.location.href = "/Editor/PageBuilder/" + articleNumber;
-                        } else {
-                            window.location.href = "/@controllerName/PageBuilder/" + itemId;
-                        }
-                    }
-                    $("#divSaveFirstDialog").html("Save before opening Page Builder?");
                     modalCheckSaveFirst.show();
                     break;
                 case "VisualEditor":

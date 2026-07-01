@@ -708,132 +708,6 @@ namespace Sky.Tests.Controllers
 
         #endregion
 
-        #region Phase 3: Designer Operations
-
-        /// <summary>
-        /// Test that Designer GET returns designer view.
-        /// </summary>
-        [TestMethod]
-        public async Task PageBuilder_Get_ReturnsPageBuilderView()
-        {
-            // Arrange
-            var layout = new Layout
-            {
-                Id = Guid.NewGuid(),
-                LayoutName = "Test Layout",
-                IsDefault = true,
-                LayoutNumber = 1,
-                Version = 1
-            };
-            Db.Layouts.Add(layout);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await controller.PageBuilder();
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(ViewResult));
-            var viewResult = (ViewResult)result;
-            Assert.AreEqual(true, viewResult.ViewData["IsPageBuilder"]);
-        }
-
-        /// <summary>
-        /// Test that DesignerData GET returns project JSON.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Get_ReturnsProjectJson()
-        {
-            // Arrange
-            var layout = new Layout
-            {
-                Id = Guid.NewGuid(),
-                LayoutName = "Test Layout",
-                HtmlHeader = "<header>Test Header</header>",
-                FooterHtmlContent = "<footer>Test Footer</footer>",
-                IsDefault = true,
-                LayoutNumber = 1,
-                Version = 1
-            };
-            Db.Layouts.Add(layout);
-            await Db.SaveChangesAsync();
-
-            // Act
-            var result = await controller.DesignerData();
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.IsNotNull(jsonResult.Value);
-        }
-
-        /// <summary>
-        /// Test that DesignerData POST saves designer changes.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_SavesDesignerChanges()
-        {
-            // Arrange
-            var layout = new Layout
-            {
-                Id = Guid.NewGuid(),
-                LayoutName = "Test Layout",
-                IsDefault = false,
-                LayoutNumber = 1,
-                Version = 1
-            };
-            Db.Layouts.Add(layout);
-            await Db.SaveChangesAsync();
-
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(
-                "<body><!--CCMS--START--HEADER--><header>New Header</header><!--CCMS--END--HEADER-->" +
-                "<!--CCMS--START--FOOTER--><footer>New Footer</footer><!--CCMS--END--FOOTER--></body>");
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(".test { color: red; }");
-
-            // Act
-            var result = await controller.DesignerData(layout.Id, "Test", htmlContent, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-
-            // Verify changes were saved
-            var updatedLayout = await Db.Layouts.FindAsync(layout.Id);
-            Assert.Contains("New Header", updatedLayout.HtmlHeader);
-            Assert.Contains("New Footer", updatedLayout.FooterHtmlContent);
-        }
-
-        /// <summary>
-        /// Test that DesignerData POST validates nested regions.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_ValidatesNestedRegions()
-        {
-            // Arrange
-            var layout = new Layout
-            {
-                Id = Guid.NewGuid(),
-                LayoutName = "Test Layout",
-                IsDefault = false,
-                LayoutNumber = 1,
-                Version = 1
-            };
-            Db.Layouts.Add(layout);
-            await Db.SaveChangesAsync();
-
-            var htmlWithNestedRegions = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(
-                "<div contenteditable='true'><div contenteditable='true'>Nested</div></div>");
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(string.Empty);
-
-            // Act
-            var result = await controller.DesignerData(layout.Id, "Test", htmlWithNestedRegions, cssContent);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-            var badRequest = (BadRequestObjectResult)result;
-            Assert.IsTrue(badRequest.Value.ToString().Contains("nested editable regions"));
-        }
-
-        #endregion
-
         #region Phase 5: Import/Export & Community Features
 
         /// <summary>
@@ -1133,31 +1007,6 @@ namespace Sky.Tests.Controllers
         }
 
         /// <summary>
-        /// Test that DesignerData POST returns BadRequest when HTML content missing.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_ReturnsBadRequest_WhenHtmlContentMissing()
-        {
-            // Arrange
-            var layout = new Layout
-            {
-                Id = Guid.NewGuid(),
-                LayoutName = "Test",
-                IsDefault = false,
-                LayoutNumber = 1,
-                Version = 1
-            };
-            Db.Layouts.Add(layout);
-            await Db.SaveChangesAsync();
-
-            // Act - Pass empty HTML content
-            var result = await controller.DesignerData(layout.Id, "Test", string.Empty, string.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
         /// Test that Index validates pagination parameters.
         /// </summary>
         [TestMethod]
@@ -1428,38 +1277,6 @@ namespace Sky.Tests.Controllers
 
             // Act
             var result = await controller.EditNotes(model);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
-        }
-
-        /// <summary>
-        /// Test that DesignerData POST returns BadRequest for empty GUID.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_ReturnsBadRequest_ForEmptyGuid()
-        {
-            // Act
-            var result = await controller.DesignerData(Guid.Empty, "Test", "<div>content</div>", string.Empty);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
-        }
-
-        /// <summary>
-        /// Test that DesignerData POST returns NotFound when layout does not exist.
-        /// </summary>
-        [TestMethod]
-        public async Task DesignerData_Post_ReturnsNotFound_WhenLayoutDoesNotExist()
-        {
-            // Arrange
-            var htmlContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(
-                "<body><!--CCMS--START--HEADER--><header>Header</header><!--CCMS--END--HEADER-->" +
-                "<!--CCMS--START--FOOTER--><footer>Footer</footer><!--CCMS--END--FOOTER--></body>");
-            var cssContent = Cosmos.Common.Services.CryptoJsDecryption.Encrypt(".test { color: red; }");
-
-            // Act
-            var result = await controller.DesignerData(Guid.NewGuid(), "Test", htmlContent, cssContent);
 
             // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));

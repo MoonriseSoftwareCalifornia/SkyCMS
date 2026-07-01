@@ -25,31 +25,6 @@
       "destination": "wwwroot/lib/monaco"
     },
     {
-      "library": "node_modules/grapesjs-blocks-basic/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-blocks-basic/"
-    },
-    {
-      "library": "node_modules/grapesjs-plugin-forms/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs-plugin-forms/"
-    },
-    {
-      "library": "node_modules/grapesjs/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs/"
-    },
-    {
-      "library": "node_modules/grapesjs/dist/css/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapesjs/css/"
-    },
-    {
-      "library": "node_modules/grapick/dist/",
-      "provider": "filesystem",
-      "destination": "wwwroot/lib/grapick/"
-    },
-    {
       "library": "popper.js@2.11.8",
       "destination": "wwwroot/lib/popper"
     },

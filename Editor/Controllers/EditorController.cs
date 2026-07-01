@@ -47,7 +47,6 @@ namespace Sky.Cms.Controllers
     using Sky.Editor.Features.Articles.Trash;
     using Sky.Editor.Features.Templates.Get;
     using Sky.Editor.Models;
-    using Sky.Editor.Models.GrapesJs;
     using Sky.Editor.Services.CDN;
     using Sky.Editor.Services.EditorSettings;
     using Sky.Editor.Services.Html;
@@ -169,106 +168,6 @@ namespace Sky.Cms.Controllers
             return View();
         }
 
-        /// <summary>
-        /// Loads the page builder GUI.
-        /// </summary>
-        /// <param name="id">Article number.</param>
-        /// <returns>View.</returns>
-        public async Task<IActionResult> PageBuilder(int id)
-        {
-            var invalidModelState = GetInvalidModelStateResult();
-            if (invalidModelState != null)
-            {
-                return invalidModelState;
-            }
-
-            ViewData["IsPageBuilder"] = true;
-
-            var context = await GetEditableArticleContextAsync(id);
-            if (context == null)
-            {
-                return NotFound();
-            }
-
-            var (article, catalogEntry) = context.Value;
-
-            var defaultLayout = await GetCurrentLayoutAsync();
-            var config = new DesignerConfig(defaultLayout, article.ArticleNumber.ToString(), article.Title);
-            var assets = await FileManagerController.GetImageAssetArray(storageContext, $"/pub/articles/{id}", string.Empty);
-            if (assets != null)
-            {
-                config.ImageAssets.AddRange(assets);
-            }
-
-            ViewData["DesignerConfig"] = config;
-            await PopulateEditorViewDataAsync(article.ArticleNumber, article.Title, article.Content, article.VersionNumber);
-
-            var designerUtils = new DesignerUtilities();
-            var data = designerUtils.ExtractDesignerData(article.Content);
-
-            return View("Designer", new ArticleDesignerDataViewModel
-            {
-                Id = article.Id,
-                ArticleNumber = article.ArticleNumber,
-                VersionNumber = article.VersionNumber,
-                Title = article.Title,
-                Published = null,
-                ArticlePermissions = catalogEntry.ArticlePermissions,
-                UrlPath = article.UrlPath,
-                BannerImage = article.BannerImage,
-                Updated = article.Updated,
-                HtmlContent = data.HtmlContent,
-                CssContent = data.CssContent,
-            });
-        }
-
-        /// <summary>
-        /// Preserves the legacy designer route.
-        /// </summary>
-        /// <param name="id">Article number.</param>
-        /// <returns>Redirect to the canonical page builder route.</returns>
-        [HttpGet]
-        public IActionResult Designer(int id)
-        {
-            return RedirectToActionPermanent(nameof(PageBuilder), new { id });
-        }
-
-        /// <summary>
-        /// Gets page builder data for GrapesJS.
-        /// </summary>
-        /// <param name="id">Article number.</param>
-        /// <returns>IActionResult.</returns>
-        [HttpGet]
-        public async Task<IActionResult> GetPageBuilderData(int id)
-        {
-            var invalidModelState = GetInvalidModelStateResult();
-            if (invalidModelState != null)
-            {
-                return invalidModelState;
-            }
-
-            var article = await GetArticleViewModelAsync(id);
-
-            if (article == null)
-            {
-                return NotFound();
-            }
-
-            var htmlContent = htmlService.EnsureEditableMarkers(article.Content);
-
-            return Json(new Project(htmlContent));
-        }
-
-        /// <summary>
-        /// Preserves the legacy page builder data route.
-        /// </summary>
-        /// <param name="id">Article number.</param>
-        /// <returns>IActionResult.</returns>
-        [HttpGet]
-        public Task<IActionResult> GetDesignerData(int id)
-        {
-            return GetPageBuilderData(id);
-        }
 
         /// <summary>
         ///     Gets all the versions for an article.
@@ -1216,18 +1115,6 @@ namespace Sky.Cms.Controllers
                 Model = result.Data.Model,
                 CdnResults = result.Data.CdnResults
             });
-        }
-
-        /// <summary>
-        /// Saves article properties from the page builder.
-        /// </summary>
-        /// <param name="model">Page builder post model from JSON body.</param>
-        /// <param name="queryModel">Optional query string overrides.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        [HttpPost]
-        public Task<IActionResult> PageBuilder([FromBody] EditPostViewModel model, [FromQuery] EditPostViewModel? queryModel = null)
-        {
-            return VisualEditor(model, queryModel);
         }
 
         /// <summary>

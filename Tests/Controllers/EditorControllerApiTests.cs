@@ -15,7 +15,6 @@ namespace Sky.Tests.Controllers
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Sky.Cms.Controllers;
     using Sky.Editor.Models;
-    using Sky.Editor.Models.GrapesJs;
     using System;
     using System.Collections;
     using System.Linq;
@@ -67,67 +66,6 @@ namespace Sky.Tests.Controllers
                 HttpContext = new DefaultHttpContext { User = user }
             };
         }
-
-        #region GetDesignerData Tests
-
-        /// <summary>
-        /// Tests that GetDesignerData returns article content for GrapeJS.
-        /// </summary>
-        [TestMethod]
-        public async Task GetDesignerData_ReturnsArticleContent()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Test Article", TestUserId);
-            article.Content = "<div>Test content for designer</div>";
-            await SaveArticleAsync(article, TestUserId);
-
-            // Act
-            var result = await controller.GetDesignerData(article.ArticleNumber);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            Assert.IsNotNull(jsonResult.Value);
-            Assert.IsInstanceOfType(jsonResult.Value, typeof(Project));
-        }
-
-        /// <summary>
-        /// Tests that GetDesignerData returns NotFound for non-existent article.
-        /// </summary>
-        [TestMethod]
-        public async Task GetDesignerData_ReturnsNotFound_WhenArticleDoesNotExist()
-        {
-            // Act
-            var result = await controller.GetDesignerData(99999);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
-
-        /// <summary>
-        /// Tests that GetDesignerData ensures editable markers in content.
-        /// </summary>
-        [TestMethod]
-        public async Task GetDesignerData_EnsuresEditableMarkers()
-        {
-            // Arrange
-            var article = await CreateArticleAsync("Test Article", TestUserId);
-            article.Content = "<div contenteditable='true'>Editable content</div>";
-            await SaveArticleAsync(article, TestUserId);
-
-            // Act
-            var result = await controller.GetDesignerData(article.ArticleNumber);
-
-            // Assert
-            Assert.IsInstanceOfType(result, typeof(JsonResult));
-            var jsonResult = (JsonResult)result;
-            var projectData = (Project)jsonResult.Value!;
-
-            // The ArticleHtmlService should have processed the content
-            Assert.IsNotNull(projectData);
-        }
-
-        #endregion
 
         #region GetTemplateInfo Tests
 

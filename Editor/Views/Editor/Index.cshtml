@@ -212,8 +212,7 @@
 
     function buildEditorDropDownMarkup(articleNumber, usesPageEditor) {
         if (typeof ccms___buildEditDropDownMenu !== "function") {
-            let fallback = "<a class='btn btn-sm btn-secondary' title='Drag-and-drop page layout builder' href='/Editor/PageBuilder/" + articleNumber + "'><i class='fa-solid fa-table-columns me-2'></i> Page Builder</a>";
-            fallback += "<a class='btn btn-sm btn-secondary' title='Edit HTML and template markup' href='/Editor/EditCode/" + articleNumber + "'><i class='fa-solid fa-code me-2'></i> Code Editor</a>";
+            let fallback = "<a class='btn btn-sm btn-secondary' title='Edit HTML and template markup' href='/Editor/EditCode/" + articleNumber + "'><i class='fa-solid fa-code me-2'></i> Code Editor</a>";
             if (usesPageEditor) {
                 fallback += "<a class='btn btn-sm btn-secondary' title='Visual editor for rich content' href='/Editor/VisualEditor/" + articleNumber + "'><i class='fa-solid fa-pen-to-square me-2'></i> Visual Editor</a>";
             }

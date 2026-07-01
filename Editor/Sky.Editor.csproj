@@ -134,6 +134,7 @@
 	</ItemGroup>
 		
 	<ItemGroup>
+	  <Folder Include="Models\GrapesJs\" />
 	  <Folder Include="Services\Migrations\Testing\" />
 	  <Folder Include="wwwroot\lib\elfinder-material-theme\manifests\" />
 	  <Folder Include="wwwroot\lib\elfinder-material-theme\Material\" />
