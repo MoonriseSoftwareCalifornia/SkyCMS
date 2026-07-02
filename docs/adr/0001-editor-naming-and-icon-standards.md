@@ -16,6 +16,9 @@ save changes automatically and behave “live” in some sense. The name also
 failed to communicate whether the editor was intended for content, layout, or
 code-level work.
 
+Later product evolution removed the Page Builder (GrapesJS) experience. This
+ADR now captures the current naming baseline for active editor experiences.
+
 Because editor selection is a critical decision point for users, this naming
 ambiguity increased hesitation, misclicks, and reliance on external guidance.
 
@@ -34,7 +37,7 @@ This decision aims to:
 2. Be understandable to non‑technical users  
 3. Scale across UI, documentation, and accessibility contexts  
 4. Remain stable even if editor implementations change  
-5. Clearly differentiate content editing, layout design, and code editing  
+5. Clearly differentiate content editing, code editing, and image editing  
 
 ---
 
@@ -42,7 +45,7 @@ This decision aims to:
 
 This decision does not attempt to:
 
-- Expose or brand specific editor implementations (e.g., CKEditor, GrapesJS)
+- Expose or brand specific editor implementations (e.g., CKEditor, Monaco, Filerobot)
 - Collapse all editing experiences into a single editor
 - Optimize naming for marketing or feature differentiation
 
@@ -53,8 +56,8 @@ This decision does not attempt to:
 SkyCMS standardizes on exactly three editor categories:
 
 - **Visual Editor**
-- **Page Builder**
 - **Code Editor**
+- **Image Editor**
 
 Each editor is defined not only by name, but also by:
 - documentation‑friendly long names,
@@ -79,8 +82,8 @@ and makes the system more durable over time.
 Each editor is paired with a widely recognized, monochrome‑friendly icon:
 
 - Visual Editor → writing/editing metaphor (pencil)
-- Page Builder → structural layout metaphor (columns/grid)
 - Code Editor → logic/code metaphor (brackets)
+- Image Editor → media/image metaphor (image/photo)
 
 Icons were selected to:
 - work without color,
@@ -95,8 +98,8 @@ Icons were selected to:
 
 Examples:
 - CKEditor
-- GrapesJS Editor
 - Monaco Editor
+- Filerobot Image Editor
 
 Rejected because these expose internal details and provide little value to
 non‑technical users.

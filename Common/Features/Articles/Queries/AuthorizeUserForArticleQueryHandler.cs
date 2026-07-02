@@ -37,7 +37,7 @@ public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext
         List<ArticlePermission> permissions = null;
         try
         {
-            permissions = dbContext.ArticleCatalog
+            permissions = dbContext.ArticleCatalog.AsNoTracking()
                 .FirstOrDefault(l => l.ArticleNumber == query.articleNumber)
                 ?.ArticlePermissions;
 
@@ -54,7 +54,7 @@ public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext
         var roleIds = permissions.Where(w => w.IsRoleObject).Select(s => s.IdentityObjectId).ToArray();
 
         // Check for anonymous user access.
-        if (await dbContext.Roles
+        if (await dbContext.Roles.AsNoTracking()
             .Where(w => roleIds.Contains(w.Id) && w.NormalizedName == "ANONYMOUS")
             .AnyAsync(cancellationToken))
         {
@@ -62,7 +62,7 @@ public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext
         }
 
         if (query.user.Identity.IsAuthenticated &&
-            await dbContext.Roles
+            await dbContext.Roles.AsNoTracking()
                 .Where(w => roleIds.Contains(w.Id) && w.NormalizedName == "AUTHENTICATED")
                 .AnyAsync(cancellationToken))
         {
@@ -77,7 +77,7 @@ public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext
         }
 
         // Finally, if a user has role permissions, grant access here.
-        return (await dbContext.UserRoles
+        return (await dbContext.UserRoles.AsNoTracking()
             .CountAsync(a => a.UserId == userId && roleIds.Contains(a.RoleId), cancellationToken)) > 0;
     }
 }

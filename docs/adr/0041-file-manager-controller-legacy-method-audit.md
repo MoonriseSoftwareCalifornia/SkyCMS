@@ -24,6 +24,10 @@ The audit covered:
 - All `public` action methods from the original file manager UI
 - Cross-references in views (`.cshtml`), JavaScript (`.js`, `.ts`), and C# callers
 
+Historical note (2026-07-01): this audit reflects the codebase state at the
+time of the May 2025 review. References to Page Builder / GrapesJS surfaces in
+this ADR are historical findings, not a statement of current product direction.
+
 ---
 
 ## Findings
@@ -99,9 +103,9 @@ These are `public` actions from the Kendo grid / classic file manager era.
 | `EditCode()` GET + POST | `EditCode.cshtml` (self-referencing POST), `ChatHub.cs` (server-side redirect), `_DocsHelpFloatingWindow.cshtml` (URL pattern match for help overlay), tests. |
 | `EditImage()` GET + POST | `EditImage.cshtml` (self-referencing POST via `Url.Action("EditImage","FileManager")`), linked from file manager edit flows. |
 | `ImportPage()` GET + POST | `ImportPage.cshtml` (uses `.Save("ImportPage", "FileManager", …)`). |
-| `SimpleUpload()` | `Edit.cshtml` (CKEditor article editor), `Designer.cshtml` (GrapesJS — articles and templates), `ckeditor-widget.301.js` (`/FileManager/SimpleUpload/` hardcoded). |
+| `SimpleUpload()` | `Edit.cshtml` (CKEditor article editor), plus historical GrapesJS-era references captured at audit time (`Designer.cshtml`, `ckeditor-widget.301.js` hardcoded to `/FileManager/SimpleUpload/`). |
 | `UploadImage()` | `image-widget.js` (`/FileManager/UploadImage` hardcoded, documented in file header). |
-| `GetImageAssets()` | `_GrapesJsEditor.cshtml`, `image-widget.js`, `designer.js` (all hardcoded to `/FileManager/GetImageAssets`). |
+| `GetImageAssets()` | `image-widget.js`, plus historical GrapesJS-era references captured at audit time (`_GrapesJsEditor.cshtml`, `designer.js` hardcoded to `/FileManager/GetImageAssets`). |
 | `Process()` POST | `Index.cshtml` (FilePond `server.process` and `server.patch`). |
 | `Process()` PATCH | `Index.cshtml` (FilePond chunked upload). |
 | `Process()` DELETE | `Index.cshtml` (FilePond revert). |
@@ -188,7 +192,7 @@ tests must pass before merge.
 - `Editor/Views/Shared/_CosmosMainMenuPartial.cshtml` — nav link to `Index()`
 - `Editor/Views/Shared/_LayoutEditor.cshtml` — folder picker and edit redirects to `Index()`
 - `Editor/wwwroot/js/image-widget.js` — hardcoded `/FileManager/UploadImage` and `/FileManager/GetImageAssets`
-- `Editor/wwwroot/js/designer.js` — hardcoded `/FileManager/GetImageAssets`
-- `Editor/wwwroot/lib/grapesjsui/js/ckeditor-widget.301.js` — hardcoded `/FileManager/SimpleUpload`
+- `Editor/wwwroot/js/designer.js` — historical GrapesJS-era reference: hardcoded `/FileManager/GetImageAssets`
+- `Editor/wwwroot/lib/grapesjsui/js/ckeditor-widget.301.js` — historical GrapesJS-era reference: hardcoded `/FileManager/SimpleUpload`
 - `docs/adr/0035-file-explorer-modernization-and-connector-adapter-strategy.md`
 - `docs/adr/0039-dry-controller-unification-file-manager-and-vscode.md`
