@@ -85,7 +85,9 @@ namespace Cosmos.Common.Services
                 return TokenVerificationResult.Invalid;
             }
 
-            var identityUser = await dbContext.Users.FirstOrDefaultAsync(u => u.NormalizedEmail == user.NormalizedEmail);
+            var identityUser = await dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.NormalizedEmail == user.NormalizedEmail);
 
             if (!identityUser.EmailConfirmed)
             {

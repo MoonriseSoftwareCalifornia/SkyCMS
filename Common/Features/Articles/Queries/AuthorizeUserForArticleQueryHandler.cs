@@ -38,6 +38,7 @@ public class AuthorizeUserForArticleQueryHandler(IApplicationDbContext dbContext
         try
         {
             permissions = dbContext.ArticleCatalog.AsNoTracking()
+                .Include(l => l.ArticlePermissions)
                 .FirstOrDefault(l => l.ArticleNumber == query.articleNumber)
                 ?.ArticlePermissions;
 

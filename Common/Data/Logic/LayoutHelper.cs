@@ -134,7 +134,9 @@ namespace Cosmos.Common.Data.Logic
                 return null;
             }
 
-            return await dbContext.Layouts.FirstOrDefaultAsync(l => l.Id == layoutId);
+            return await dbContext.Layouts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Id == layoutId);
         }
     }
 }

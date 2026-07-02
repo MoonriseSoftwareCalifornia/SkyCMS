@@ -48,6 +48,7 @@ namespace Cosmos.Common.Services.PublishedBlog
             var blogStreamType = (int)ArticleType.BlogStream;
 
             return await dbContext.Pages
+                .AsNoTracking()
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogStreamType
                     && p.Published.HasValue
@@ -69,6 +70,7 @@ namespace Cosmos.Common.Services.PublishedBlog
             var blogPostType = (int)ArticleType.BlogPost;
 
             return await dbContext.Pages
+                .AsNoTracking()
                 .Where(p => p.UrlPath == urlPath
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue
@@ -98,6 +100,7 @@ namespace Cosmos.Common.Services.PublishedBlog
             var skip = (pageNumber - 1) * pageSize;
 
             return await dbContext.Pages
+                .AsNoTracking()
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType // Exclude the blog stream article itself
                     && p.Published.HasValue
@@ -143,6 +146,7 @@ namespace Cosmos.Common.Services.PublishedBlog
 
             // Get the most recent published entry with a date earlier than the reference date
             return await dbContext.Pages
+                .AsNoTracking()
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue
@@ -166,6 +170,7 @@ namespace Cosmos.Common.Services.PublishedBlog
 
             // Get the earliest published entry with a date later than the reference date
             return await dbContext.Pages
+                .AsNoTracking()
                 .Where(p => p.BlogKey == blogKey
                     && p.ArticleType == blogPostType
                     && p.Published.HasValue

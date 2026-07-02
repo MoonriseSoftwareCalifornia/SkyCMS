@@ -77,7 +77,10 @@ namespace Cosmos.Common.Services
             await dbContext.SaveChangesAsync();
 
             // MailChimp? If so add contact to list.
-            var settings = await dbContext.Settings.Where(w => w.Group == "MailChimp").ToListAsync();
+            var settings = await dbContext.Settings
+                .AsNoTracking()
+                .Where(w => w.Group == "MailChimp")
+                .ToListAsync();
             if (settings.Count > 0)
             {
                 var key = settings.FirstOrDefault(f => f.Name == "ApiKey");
@@ -107,12 +110,16 @@ namespace Cosmos.Common.Services
             }
 
             var httpContext = httpContextAccessor.HttpContext;
-            var alertsSetting = await dbContext.Settings.FirstOrDefaultAsync(w => w.Group == "ContactsConfig" && w.Name == "EnableAlerts");
+            var alertsSetting = await dbContext.Settings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(w => w.Group == "ContactsConfig" && w.Name == "EnableAlerts");
 
             if (alertsSetting != null && bool.Parse(alertsSetting.Value) == true)
             {
                 // Not using UserManager because we don't want to require injection for that in this base class.
-                var adminUserGroup = await dbContext.Roles.FirstOrDefaultAsync(w => w.NormalizedName == "ADMINISTRATORS");
+                var adminUserGroup = await dbContext.Roles
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(w => w.NormalizedName == "ADMINISTRATORS");
                 if (adminUserGroup == null)
                 {
                     logger.LogWarning("Administrators role not found. Cannot send contact alerts.");
