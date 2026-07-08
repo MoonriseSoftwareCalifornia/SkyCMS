@@ -7,12 +7,10 @@
 
 namespace Sky.Editor.Boot
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Azure.Identity;
     using Cosmos.Common.Data;
+    using Cosmos.Common.DataProtection;
     using Cosmos.DynamicConfig;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Http;
@@ -20,6 +18,9 @@ namespace Sky.Editor.Boot
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Multi-tenant configuration for the application.
@@ -64,6 +65,13 @@ namespace Sky.Editor.Boot
 
             // Configure the DynamicConfigDbContext
             builder.Services.AddDbContext<DynamicConfigDbContext>(options =>
+            {
+                CosmosDbOptionsBuilder.ConfigureDbOptions(options, configConnectionString);
+            });
+
+            // Register DataProtectionDbContext scoped using the shared config database.
+            // TenantDataProtectionProvider handles per-tenant key isolation by prefixing purposes with the tenant domain.
+            builder.Services.AddDbContext<DataProtectionDbContext>(options =>
             {
                 CosmosDbOptionsBuilder.ConfigureDbOptions(options, configConnectionString);
             });

@@ -355,14 +355,14 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
             var user = await GetMockRandomUserAsync(userStore);
             var phoneNumber = "1234567899";
             await userStore.SetPhoneNumberAsync(user, phoneNumber);
-            //user = await userStore.FindByIdAsync(user.Id);
+            await userStore.UpdateAsync(user);
 
             // Act
             user = await userStore.FindByIdAsync(user.Id);
             var result2 = await userStore.GetPhoneNumberAsync(user);
 
             // Assert
-            Assert.AreSame(phoneNumber, result2);
+            Assert.AreEqual(phoneNumber, result2);
         }
 
         /// <summary>
@@ -471,6 +471,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Act
             await userStore.SetEmailAsync(user, TestUtilities.IDENUSER2EMAIL);
+            await userStore.UpdateAsync(user);
 
             // Assert
             var user2 = await userStore.FindByIdAsync(user.Id);
@@ -497,6 +498,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Act
             await userStore.SetEmailConfirmedAsync(user, true);
+            await userStore.UpdateAsync(user);
 
             // Assert
             var result = await userStore.GetEmailConfirmedAsync(user);
@@ -522,6 +524,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Act
             await userStore.SetNormalizedEmailAsync(user, newEmail.ToUpper());
+            await userStore.UpdateAsync(user);
 
             // Assert
             user = await userStore.FindByIdAsync(user.Id);
@@ -590,6 +593,7 @@ namespace AspNetCore.Identity.CosmosDb.Tests.Net9.Stores
 
             // Act
             await userStore.SetPhoneNumberAsync(user, phoneNumber);
+            await userStore.UpdateAsync(user);
 
             // Assert
             var user2 = await userStore.FindByIdAsync(user.Id);

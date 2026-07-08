@@ -10,14 +10,14 @@ namespace Cosmos.Common.Tests.Extensions
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using Cosmos.Common.Data;
+    using Cosmos.Common.DataProtection;
     using Microsoft.AspNetCore.DataProtection;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     /// <summary>
-    /// Tests for <see cref="Cosmos.Common.Extensions"/>.
+    /// Tests for <see cref="DataProtection.Extensions"/>.
     /// </summary>
     [TestClass]
     public class ExtensionsTests

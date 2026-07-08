@@ -69,6 +69,23 @@ namespace Cosmos.BlobService.Drivers
         /// </remarks>
         public async Task AppendBlobAsync(byte[] data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode)
         {
+            using var stream = new MemoryStream(data);
+            await AppendBlobAsync(stream, fileMetaData, uploadDateTime, mode);
+        }
+
+        /// <summary>
+        ///     Appends byte array to an existing blob.
+        /// </summary>
+        /// <param name="streamData">Stream containing the bytes to append.</param>
+        /// <param name="fileMetaData">'Chunk' metadata being appended as a <see cref="FileUploadMetaData"/>.</param>
+        /// <param name="uploadDateTime">Date and time uploaded as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="mode">Mode is either append or block.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <remarks>
+        /// Existing blobs will be overwritten if they already exists, otherwise a new blob is created.
+        /// </remarks>AppendBlobAsync(Stream streamData, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode)
+        public async Task AppendBlobAsync(Stream streamData, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode)
+        {
             fileMetaData.RelativePath = PathUtilities.NormalizePath(fileMetaData.RelativePath);
 
             // ReSharper disable once PossibleNullReferenceException
@@ -78,15 +95,14 @@ namespace Cosmos.BlobService.Drivers
             {
                 // This is NOT a multi part upload
                 await DeleteIfExistsAsync(fileMetaData.RelativePath);
-
-                await using var memoryStream = new MemoryStream(data);
+                streamData.Position = 0;
 
                 // 2. Put the object-set ContentType and add metadata.
                 var putRequest = new PutObjectRequest
                 {
                     BucketName = config.BucketName,
                     Key = fileMetaData.RelativePath,
-                    InputStream = memoryStream,
+                    InputStream = streamData,
                     ContentType = Utilities.GetContentType(fileMetaData),
                     DisablePayloadSigning = usingCloudFlareR2,
                     DisableDefaultChecksumValidation = usingCloudFlareR2
@@ -140,8 +156,7 @@ namespace Cosmos.BlobService.Drivers
                         ? new List<UploadPartResponse>()
                         : JsonConvert.DeserializeObject<List<UploadPartResponse>>(Encoding.UTF32.GetString(bytes));
 
-                    await using Stream stream = new MemoryStream(data);
-                    stream.Position = 0;
+                    streamData.Position = 0;
 
                     // Upload 5 MB chunk here
                     var uploadRequest = new UploadPartRequest
@@ -150,8 +165,8 @@ namespace Cosmos.BlobService.Drivers
                         Key = fileMetaData.RelativePath,
                         UploadId = uploadId, // get this from initiation
                         PartNumber = Convert.ToInt32(fileMetaData.ChunkIndex) + 1, // not 0 index based
-                        PartSize = stream.Length,
-                        InputStream = stream
+                        PartSize = streamData.Length,
+                        InputStream = streamData
                     };
                     var uploadResult = await client.UploadPartAsync(uploadRequest);
                     responses.Add(uploadResult);

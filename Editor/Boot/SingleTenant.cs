@@ -7,15 +7,16 @@
 
 namespace Sky.Editor.Boot
 {
-    using System;
-    using System.Linq;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data;
+    using Cosmos.Common.DataProtection;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
+    using System;
+    using System.Linq;
 
     /// <summary>
     /// Single-tenant configuration for the application.
@@ -61,6 +62,12 @@ namespace Sky.Editor.Boot
 
             // Configure the ApplicationDbContext with the appropriate provider
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            {
+                CosmosDbOptionsBuilder.ConfigureDbOptions(options, connectionString);
+            });
+
+            // Register DataProtectionDbContext scoped so PersistKeysToDbContext can resolve it.
+            builder.Services.AddDbContext<DataProtectionDbContext>(options =>
             {
                 CosmosDbOptionsBuilder.ConfigureDbOptions(options, connectionString);
             });

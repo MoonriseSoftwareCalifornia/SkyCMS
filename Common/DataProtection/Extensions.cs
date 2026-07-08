@@ -5,7 +5,7 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-namespace Cosmos.Common
+namespace Cosmos.Common.DataProtection
 {
     using System;
     using AspNetCore.Identity.FlexDb;
@@ -54,8 +54,9 @@ namespace Cosmos.Common
             // to handle Cosmos DB conflicts gracefully (409 errors when concurrent requests
             // try to create the same key).
             services.AddDataProtection()
+                .SetApplicationName("SkyCMS")
                 .PersistKeysToDbContext<DataProtectionDbContext>()
-                .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
+                .SetDefaultKeyLifetime(TimeSpan.FromDays(1));
 
             // Override with resilient repository that handles 409 conflicts
             services.AddSingleton<IXmlRepository>(sp =>

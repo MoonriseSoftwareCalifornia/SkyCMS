@@ -5,9 +5,13 @@
 // for more information concerning the license and the contributors participating to this project.
 // </copyright>
 
-namespace Cosmos.Common.Data
+namespace Cosmos.Common.DataProtection
 {
     using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
+    using System.Security.Cryptography;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore;
 
@@ -43,6 +47,27 @@ namespace Cosmos.Common.Data
             modelBuilder.Entity<DataProtectionKey>()
                 .ToContainer("DataProtectionKeys")
                 .HasPartitionKey(k => k.Id);
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            AssignDataProtectionKeyIds();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            AssignDataProtectionKeyIds();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        private void AssignDataProtectionKeyIds()
+        {
+            foreach (var entry in ChangeTracker.Entries<DataProtectionKey>()
+                     .Where(e => e.State == EntityState.Added && e.Entity.Id == 0))
+            {
+                entry.Entity.Id = RandomNumberGenerator.GetInt32(1, int.MaxValue);
+            }
         }
     }
 }

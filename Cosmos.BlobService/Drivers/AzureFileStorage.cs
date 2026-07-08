@@ -38,7 +38,7 @@ namespace Cosmos.BlobService.Drivers
         }
 
         /// <inheritdoc/>
-        public async Task AppendBlobAsync(byte[] data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode)
+        public async Task AppendBlobAsync(Stream data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode)
         {
             fileMetaData.RelativePath = fileMetaData.RelativePath.TrimStart('/');
 
@@ -54,14 +54,18 @@ namespace Cosmos.BlobService.Drivers
 
             // Get a reference to a file and upload it.
             ShareFileClient file = directory.GetFileClient(fileMetaData.FileName);
-            using var memStream = new MemoryStream(data);
+
+            if (data.CanSeek)
+            {
+                data.Position = 0;
+            }
 
             if (!await file.ExistsAsync())
             {
                 await file.CreateAsync(fileMetaData.TotalFileSize);
             }
 
-            await file.UploadAsync(memStream);
+            await file.UploadAsync(data);
         }
 
         /// <inheritdoc/>

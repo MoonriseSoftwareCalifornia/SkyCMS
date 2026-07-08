@@ -331,10 +331,15 @@ namespace Cosmos.BlobService
             fileMetaData.RelativePath = PathUtilities.NormalizePath(fileMetaData.RelativePath);
             var mark = DateTimeOffset.UtcNow;
 
+            if (stream.CanSeek)
+            {
+                stream.Position = 0;
+            }
+
             // Gets the primary driver based on the configuration.
             var driver = await this.GetPrimaryDriverAsync().ConfigureAwait(false);
 
-            await driver.AppendBlobAsync(stream.ToArray(), fileMetaData, mark, mode).ConfigureAwait(false);
+            await driver.AppendBlobAsync(stream, fileMetaData, mark, mode).ConfigureAwait(false);
         }
 
         /// <summary>

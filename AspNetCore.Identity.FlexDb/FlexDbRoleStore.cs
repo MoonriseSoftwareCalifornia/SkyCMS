@@ -6,12 +6,14 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AspNetCore.Identity.CosmosDb.Contracts;
 using AspNetCore.Identity.CosmosDb.Stores;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace AspNetCore.Identity.FlexDb
 {
@@ -25,7 +27,7 @@ namespace AspNetCore.Identity.FlexDb
     /// that lack a unique index (e.g., Cosmos DB). This class adds that check.
     /// </remarks>
     public class FlexDbRoleStore<TRoleEntity, TKey>
-        : CosmosRoleStore<TRoleEntity, TKey>
+        : CosmosRoleStore<TRoleEntity, TKey>, IRoleStore<TRoleEntity>
         where TRoleEntity : IdentityRole<TKey>, new()
         where TKey : IEquatable<TKey>
     {
@@ -51,6 +53,7 @@ namespace AspNetCore.Identity.FlexDb
             if (!string.IsNullOrEmpty(role.NormalizedName))
             {
                 var existing = await _repo.Table<TRoleEntity>()
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(
                         r => r.NormalizedName == role.NormalizedName,
                         cancellationToken);
@@ -87,6 +90,7 @@ namespace AspNetCore.Identity.FlexDb
                 .ConvertFromInvariantString(roleId)!;
 
             return await _repo.Table<TRoleEntity>()
+                .AsNoTracking()
                 .SingleOrDefaultAsync(r => r.Id.Equals(typedId), cancellationToken);
         }
 
@@ -107,9 +111,113 @@ namespace AspNetCore.Identity.FlexDb
 
             var upperName = normalizedRoleName.ToUpperInvariant();
             return await _repo.Table<TRoleEntity>()
+                .AsNoTracking()
                 .FirstOrDefaultAsync(
                     r => r.NormalizedName == upperName,
                     cancellationToken);
+        }
+
+        async Task IRoleStore<TRoleEntity>.SetRoleNameAsync(TRoleEntity role, string roleName, CancellationToken cancellationToken)
+        {
+            await SetRoleNameAsync(role, roleName, cancellationToken);
+        }
+
+        async Task IRoleStore<TRoleEntity>.SetNormalizedRoleNameAsync(TRoleEntity role, string normalizedName, CancellationToken cancellationToken)
+        {
+            await SetNormalizedRoleNameAsync(role, normalizedName, cancellationToken);
+        }
+
+        public new async Task SetRoleNameAsync(TRoleEntity role, string roleName, CancellationToken cancellationToken = default)
+        {
+            await base.SetRoleNameAsync(role, roleName, cancellationToken);
+            await PersistIfExistingAsync(role, cancellationToken);
+        }
+
+        public new async Task SetNormalizedRoleNameAsync(TRoleEntity role, string normalizedName, CancellationToken cancellationToken = default)
+        {
+            await base.SetNormalizedRoleNameAsync(role, normalizedName, cancellationToken);
+            await PersistIfExistingAsync(role, cancellationToken);
+        }
+
+        public new async Task<IdentityResult> UpdateAsync(TRoleEntity role, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            if (role == null)
+            {
+                throw new ArgumentNullException(nameof(role));
+            }
+
+            var roles = _repo.Table<TRoleEntity>();
+            var dbContext = GetDbContext(roles);
+
+            var localEntries = dbContext.ChangeTracker
+                .Entries<TRoleEntity>()
+                .Where(e => e.Entity.Id.Equals(role.Id))
+                .ToList();
+
+            foreach (var entry in localEntries)
+            {
+                entry.State = EntityState.Detached;
+            }
+
+            var tracked = await roles.FirstOrDefaultAsync(r => r.Id.Equals(role.Id), cancellationToken);
+            if (tracked == null)
+            {
+                return IdentityResult.Failed(new IdentityError
+                {
+                    Code = "NotFound",
+                    Description = "Role does not exist."
+                });
+            }
+
+            dbContext.Entry(tracked).CurrentValues.SetValues(role);
+
+            var newConcurrencyStamp = Guid.NewGuid().ToString();
+            tracked.ConcurrencyStamp = newConcurrencyStamp;
+            role.ConcurrencyStamp = newConcurrencyStamp;
+
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return IdentityResult.Success;
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return IdentityResult.Failed(new IdentityError
+                {
+                    Code = "ConcurrencyFailure",
+                    Description = "Optimistic concurrency failure, object has been modified."
+                });
+            }
+        }
+
+        private async Task PersistIfExistingAsync(TRoleEntity role, CancellationToken cancellationToken)
+        {
+            var result = await UpdateAsync(role, cancellationToken);
+            if (!result.Succeeded)
+            {
+                var isNotFound = result.Errors.Any(e => e.Code == "NotFound");
+                if (isNotFound)
+                {
+                    return;
+                }
+
+                var message = string.Join(", ", result.Errors.Select(e => $"[{e.Code}] {e.Description}"));
+                throw new InvalidOperationException($"Unable to persist role changes. {message}");
+            }
+        }
+
+        private static DbContext GetDbContext(IQueryable<TRoleEntity> queryable)
+        {
+            if (queryable is IInfrastructure<IServiceProvider> infrastructure
+                && infrastructure.Instance.GetService(typeof(ICurrentDbContext)) is ICurrentDbContext currentDbContext)
+            {
+                return currentDbContext.Context;
+            }
+
+            throw new InvalidOperationException("Unable to resolve DbContext from repository queryable.");
         }
     }
 }

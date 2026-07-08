@@ -87,9 +87,9 @@ namespace Cosmos.BlobService.Drivers
         }
 
         /// <summary>
-        ///     Appends byte array to an existing blob.
+        ///     Appends stream data to an existing blob.
         /// </summary>
-        /// <param name="data">Bytes to append.</param>
+        /// <param name="data">Stream to append.</param>
         /// <param name="fileMetaData">'Chunk' metadata being appended as a <see cref="FileUploadMetaData"/>.</param>
         /// <param name="uploadDateTime">Date and time uploaded as a <see cref="DateTimeOffset"/>.</param>
         /// <param name="mode">Mode is either append or block.</param>
@@ -97,11 +97,16 @@ namespace Cosmos.BlobService.Drivers
         /// <remarks>
         /// Existing blobs will be overwritten if they already exists, otherwise a new blob is created.
         /// </remarks>
-        public async Task AppendBlobAsync(byte[] data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode = StorageConstants.UploadModeBlock)
+        public async Task AppendBlobAsync(Stream data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode = StorageConstants.UploadModeBlock)
         {
+            if (data.CanSeek)
+            {
+                data.Position = 0;
+            }
+
             if (mode.Equals(StorageConstants.UploadModeBlock, StringComparison.CurrentCultureIgnoreCase) || fileMetaData.TotalChunks == 1)
             {
-                await this.UpdloadBlockBlobAsync(new MemoryStream(data), fileMetaData, uploadDateTime);
+                await this.UpdloadBlockBlobAsync(data, fileMetaData, uploadDateTime);
                 return;
             }
 
@@ -211,15 +216,11 @@ namespace Cosmos.BlobService.Drivers
 
             // AWS Multi part upload requires parts or chunks to be 5MB, which
             // are too big for Azure append blobs, so buffer the upload size here.
-            await using var loadMemoryStream = new MemoryStream(data);
-
-            loadMemoryStream.Position = 0;
             int bytesRead;
             var buffer = new byte[2621440]; // 2.5 MB.
-            while ((bytesRead = await loadMemoryStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            while ((bytesRead = await data.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
-                var newArray = new Span<byte>(buffer, 0, bytesRead).ToArray();
-                Stream stream = new MemoryStream(newArray)
+                await using Stream stream = new MemoryStream(buffer, 0, bytesRead, writable: false, publiclyVisible: true)
                 {
                     Position = 0
                 };
@@ -334,17 +335,18 @@ namespace Cosmos.BlobService.Drivers
             var containerClient =
                 this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
-            var pageable = containerClient.GetBlobsAsync(prefix: path).AsPages();
+            var folderStub = path + "folder.stubxx";
+            var blobNames = new List<string>();
 
-            var results = new List<BlobItem>();
-            await foreach (var page in pageable)
+            await foreach (var blob in containerClient.GetBlobsAsync(prefix: path))
             {
-                results.AddRange(page.Values);
+                if (!blob.Name.Equals(folderStub, StringComparison.Ordinal))
+                {
+                    blobNames.Add(blob.Name);
+                }
             }
 
-            var folderStub = path + "folder.stubxx";
-
-            return results.Where(w => w.Name != folderStub).Select(s => s.Name).ToList();
+            return blobNames;
         }
 
         /// <summary>
@@ -354,18 +356,30 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Returns the number of deleted obhects as an <see cref="int"/>.</returns>
         public async Task<int> DeleteFolderAsync(string path)
         {
-            var blobs = await this.GetBlobItemsByPath(path);
+            if (path == "/")
+            {
+                path = string.Empty;
+            }
+            else if (!string.IsNullOrEmpty(path))
+            {
+                path = path.TrimStart('/');
+            }
+
             var containerClient =
                 this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
-            var responses = new List<Response<bool>>();
+            int deletedCount = 0;
 
-            foreach (var blob in blobs)
+            await foreach (var blob in containerClient.GetBlobsAsync(prefix: path))
             {
-                responses.Add(await containerClient.DeleteBlobIfExistsAsync(blob.Name, DeleteSnapshotsOption.IncludeSnapshots));
+                var response = await containerClient.DeleteBlobIfExistsAsync(blob.Name, DeleteSnapshotsOption.IncludeSnapshots);
+                if (response.Value)
+                {
+                    deletedCount++;
+                }
             }
 
-            return responses.Count(r => r.Value);
+            return deletedCount;
         }
 
         /// <summary>
@@ -592,65 +606,88 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>List of File Manager Entries.</returns>
         public async Task<List<FileManagerEntry>> GetFilesAndDirectories(string path)
         {
-            if (!string.IsNullOrEmpty(path))
+            if (path == "/")
+            {
+                path = string.Empty;
+            }
+            else if (!string.IsNullOrEmpty(path))
             {
                 path = path.TrimStart('/');
             }
 
             var entries = new List<FileManagerEntry>();
+            var prefix = string.IsNullOrEmpty(path) ? string.Empty : path.TrimEnd('/') + "/";
+            var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
-            var blobOjects = await GetBlobHierarchyItemsAsync(path);
-
-            foreach (var blob in blobOjects)
+            await foreach (var page in containerClient.GetBlobsByHierarchyAsync(prefix: prefix, delimiter: "/").AsPages())
             {
-                if (blob.IsBlob)
+                foreach (var blob in page.Values)
                 {
-                    if (blob.Blob.Name.EndsWith("folder.stubxx"))
+                    if (blob.IsBlob)
                     {
-                        continue;
+                        if (blob.Blob.Name.EndsWith("folder.stubxx"))
+                        {
+                            continue;
+                        }
+
+                        var fileName = Path.GetFileName(blob.Blob.Name);
+
+                        var modified = blob.Blob.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
+
+                        entries.Add(new FileManagerEntry
+                        {
+                            Created = DateTime.Now,
+                            CreatedUtc = DateTime.UtcNow,
+                            Extension = Path.GetExtension(blob.Blob.Name),
+                            HasDirectories = false,
+                            IsDirectory = false,
+                            Modified = modified,
+                            ModifiedUtc = modified,
+                            Name = fileName,
+                            Path = blob.Blob.Name,
+                            Size = blob.Blob.Properties.ContentLength ?? 0
+                        });
                     }
-
-                    var fileName = Path.GetFileName(blob.Blob.Name);
-
-                    var modified = blob.Blob.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
-
-                    entries.Add(new FileManagerEntry
+                    else
                     {
-                        Created = DateTime.Now,
-                        CreatedUtc = DateTime.UtcNow,
-                        Extension = Path.GetExtension(blob.Blob.Name),
-                        HasDirectories = false,
-                        IsDirectory = false,
-                        Modified = modified,
-                        ModifiedUtc = modified,
-                        Name = fileName,
-                        Path = blob.Blob.Name,
-                        Size = blob.Blob.Properties.ContentLength ?? 0
-                    });
-                }
-                else
-                {
-                    var parse = blob.Prefix.TrimEnd('/').Split('/');
+                        var parse = blob.Prefix.TrimEnd('/').Split('/');
 
-                    var subDirectory = await GetBlobHierarchyItemsAsync(blob.Prefix);
-
-                    entries.Add(new FileManagerEntry
-                    {
-                        Created = DateTime.Now,
-                        CreatedUtc = DateTime.UtcNow,
-                        Extension = string.Empty,
-                        HasDirectories = subDirectory.Any(a => a.IsPrefix),
-                        IsDirectory = true,
-                        Modified = DateTime.Now,
-                        ModifiedUtc = DateTime.UtcNow,
-                        Name = parse.Last(),
-                        Path = blob.Prefix.TrimEnd('/'),
-                        Size = 0
-                    });
+                        entries.Add(new FileManagerEntry
+                        {
+                            Created = DateTime.Now,
+                            CreatedUtc = DateTime.UtcNow,
+                            Extension = string.Empty,
+                            HasDirectories = await this.HasSubdirectoriesAsync(blob.Prefix),
+                            IsDirectory = true,
+                            Modified = DateTime.Now,
+                            ModifiedUtc = DateTime.UtcNow,
+                            Name = parse.Last(),
+                            Path = blob.Prefix.TrimEnd('/'),
+                            Size = 0
+                        });
+                    }
                 }
             }
 
             return entries;
+        }
+
+        private async Task<bool> HasSubdirectoriesAsync(string path)
+        {
+            var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
+
+            await foreach (var page in containerClient.GetBlobsByHierarchyAsync(prefix: path, delimiter: "/").AsPages())
+            {
+                foreach (var blob in page.Values)
+                {
+                    if (blob.IsPrefix)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -884,13 +921,15 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task MoveFolderAsync(string sourceFolder, string destinationFolder)
         {
-            var blobs = await GetBlobNamesByPath(sourceFolder);
+            sourceFolder = sourceFolder.TrimStart('/');
+            destinationFolder = destinationFolder.TrimStart('/');
 
-            // Work through the list here.
-            foreach (var srcBlobName in blobs)
+            var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
+
+            await foreach (var blob in containerClient.GetBlobsAsync(prefix: sourceFolder))
             {
-                var fileName = Path.GetFileName(srcBlobName);
-                var destBlobName = destinationFolder.TrimEnd('/') + "/" + fileName.TrimStart('/');
+                var srcBlobName = blob.Name;
+                var destBlobName = srcBlobName.Replace(sourceFolder, destinationFolder, StringComparison.Ordinal);
 
                 await CopyBlobAsync(srcBlobName, destBlobName);
 

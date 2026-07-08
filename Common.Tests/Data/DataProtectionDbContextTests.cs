@@ -9,6 +9,7 @@ namespace Cosmos.Common.Tests.Data
     using System;
     using System.Threading.Tasks;
     using Cosmos.Common.Data;
+    using Cosmos.Common.DataProtection;
     using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.VisualStudio.TestTools.UnitTesting;

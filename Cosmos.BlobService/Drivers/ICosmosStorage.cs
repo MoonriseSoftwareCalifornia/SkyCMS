@@ -19,14 +19,14 @@ namespace Cosmos.BlobService.Drivers
     public interface ICosmosStorage
     {
         /// <summary>
-        ///     Appends byte array to blob(s).
+        ///     Appends stream data to blob(s).
         /// </summary>
-        /// <param name="data">Byte array to a blob.</param>
+        /// <param name="data">Stream containing the blob data.</param>
         /// <param name="fileMetaData">File metadata.</param>
         /// <param name="uploadDateTime">Upload date and time.</param>
         /// <param name="mode">Either append or block.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task AppendBlobAsync(byte[] data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode);
+        Task AppendBlobAsync(Stream data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime, string mode);
 
         /// <summary>
         ///     Checks to see if a blob exists.

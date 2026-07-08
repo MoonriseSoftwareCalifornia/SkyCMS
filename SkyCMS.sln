@@ -24,9 +24,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCore.Identity.FlexDb", "AspNetCore.Identity.FlexDb\AspNetCore.Identity.FlexDb.csproj", "{F9CA3D7A-2839-16ED-5B32-587FE415EDDF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
-	ProjectSection(SolutionItems) = preProject
-		C:\Users\toiya\Downloads\localhost.har = C:\Users\toiya\Downloads\localhost.har
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sky.Tests", "Tests\Sky.Tests.csproj", "{631AF051-D045-4D90-9D21-6134ED5325DB}"
 EndProject

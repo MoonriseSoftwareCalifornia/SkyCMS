@@ -18,6 +18,7 @@ using Cosmos.BlobService;
 using Cosmos.Cms.Common.Services.Configurations;
 using Cosmos.Common;
 using Cosmos.Common.Data;
+using Cosmos.Common.DataProtection;
 using Cosmos.Common.Features.Articles.Shared;
 using Cosmos.Common.Features.Shared;
 using Cosmos.Common.Services;
@@ -33,6 +34,8 @@ using Cosmos.EmailServices;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -415,9 +418,44 @@ builder.Services.AddAuthorization();
 builder.Services.AddHostedService<ArticleSchedulerBackgroundService>();
 
 // ---------------------------------------------------------------
-// STEP 9: Register Data Protection & SignalR
+// STEP 9: Register Data Protection Services
 // ---------------------------------------------------------------
-builder.Services.AddFlexDbDataProtection(builder.Configuration);
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<DataProtectionDbContext>()
+    .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
+
+// ---------------------------------------------------------------
+// STEP 10: Override with resilient repository that handles 409 conflicts
+// ---------------------------------------------------------------
+builder.Services.AddSingleton<IXmlRepository>(sp =>
+    new ResilientEntityFrameworkCoreXmlRepository<DataProtectionDbContext>(
+        sp,
+        sp.GetRequiredService<ILoggerFactory>()));
+
+// ---------------------------------------------------------------
+// STEP 10.5: Wrap data protection with tenant isolation (multi-tenant only)
+// ---------------------------------------------------------------
+if (isMultiTenantEditor)
+{
+    // Capture the IDataProtectionProvider registered by AddDataProtection() and replace it
+    // with TenantDataProtectionProvider, which prefixes the purpose chain with the tenant
+    // domain so that protected data is isolated between tenants.
+    var innerDescriptor = builder.Services
+        .Last(d => d.ServiceType == typeof(IDataProtectionProvider));
+    builder.Services.Remove(innerDescriptor);
+
+    builder.Services.AddSingleton<IDataProtectionProvider>(sp =>
+    {
+        IDataProtectionProvider inner = innerDescriptor switch
+        {
+            { ImplementationFactory: { } factory } => (IDataProtectionProvider)factory(sp),
+            { ImplementationType: { } type } => (IDataProtectionProvider)ActivatorUtilities.CreateInstance(sp, type),
+            _ => (IDataProtectionProvider)innerDescriptor.ImplementationInstance!
+        };
+
+        return new TenantDataProtectionProvider(inner, sp.GetRequiredService<IDynamicConfigurationProvider>());
+    });
+}
 
 // Add SignalR with tenant isolation
 builder.Services.AddSignalR(options =>
@@ -434,7 +472,7 @@ builder.Services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>();
 builder.Services.AddScoped<IPublishingProgressReporter, PublishingProgressReporter>();
 
 // ---------------------------------------------------------------
-// STEP 10: Register MVC & Razor Pages
+// STEP 11: Register MVC & Razor Pages
 // ---------------------------------------------------------------
 // Normal mode: Full controller registration with API support
 // Api route is /_api/*
@@ -464,7 +502,7 @@ builder.Services.Configure<IdentityPasskeyOptions>(options =>
 });
 
 // ---------------------------------------------------------------
-// STEP 11: Configure OAuth Providers
+// STEP 12: Configure OAuth Providers
 // ---------------------------------------------------------------
 var googleOAuth = builder.Configuration.GetSection("GoogleOAuth").Get<OAuth>();
 if (googleOAuth != null && googleOAuth.IsConfigured())
@@ -503,7 +541,7 @@ if (entraIdOAuth != null && entraIdOAuth.IsConfigured())
 }
 
 // ---------------------------------------------------------------
-// STEP 12: Configure Session & Razor Pages Routes
+// STEP 13: Configure Session & Razor Pages Routes
 // ---------------------------------------------------------------
 builder.Services.AddSession(options =>
 {
@@ -547,7 +585,7 @@ builder.Services.AddMvc()
     });
 
 // ---------------------------------------------------------------
-// STEP 13: Configure CORS & Security
+// STEP 14: Configure CORS & Security
 // ---------------------------------------------------------------
 builder.Services.AddCors(options =>
 {
@@ -644,7 +682,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // ---------------------------------------------------------------
-// STEP 14: Configure Rate Limiting
+// STEP 15: Configure Rate Limiting
 // ---------------------------------------------------------------
 builder.Services.AddRateLimiter(options =>
 {
@@ -767,8 +805,6 @@ if (allowSetup)
 {
     app.UseSetupDetection(isMultiTenantEditor);
 }
-
-app.UseCosmosCmsDataProtection();
 
 // CloudFront protocol mapping (before UseForwardedHeaders)
 app.Use(async (context, next) =>

@@ -448,7 +448,7 @@ namespace Cosmos.DynamicConfig
             if (!memoryCache.TryGetValue<Connection>(cacheKey, out var connection))
             {
                 await using var dbContext = GetDbContext();
-                connection = await dbContext.Connections.FirstOrDefaultAsync(c =>
+                connection = await dbContext.Connections.AsNoTracking().FirstOrDefaultAsync(c =>
                     c.DomainNames != null &&
                     c.DomainNames.Contains(domainName));
 

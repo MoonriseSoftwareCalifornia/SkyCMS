@@ -166,7 +166,12 @@ namespace Cosmos.BlobService
         /// <inheritdoc/>
         public async Task AppendBlob(MemoryStream stream, FileUploadMetaData fileMetaData, string mode = StorageConstants.UploadModeAppend)
         {
-            await this.driver.AppendBlobAsync(stream.ToArray(), fileMetaData, DateTimeOffset.UtcNow, mode);
+            if (stream.CanSeek)
+            {
+                stream.Position = 0;
+            }
+
+            await this.driver.AppendBlobAsync(stream, fileMetaData, DateTimeOffset.UtcNow, mode);
         }
 
         /// <summary>

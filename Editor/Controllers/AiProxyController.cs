@@ -1477,12 +1477,12 @@ public sealed class AiProxyController : ControllerBase
 
     private sealed class TokenTelemetryAccumulator
     {
+        private readonly long[] histogram = new long[HistogramUpperBounds.Length + 1];
         private readonly object gate = new();
         private long requestCount;
         private long totalPromptTokens;
         private long totalResponseTokens;
         private long totalContextTokens;
-        private readonly long[] histogram = new long[HistogramUpperBounds.Length + 1];
 
         public TokenTelemetrySnapshot Record(int promptTokens, int responseTokens, int contextTokens, int bucketIndex)
         {
