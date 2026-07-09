@@ -31,6 +31,6 @@ public interface IAiEmbeddingSemanticRanker
 /// <summary>
 /// Embedding score for a ranked candidate.
 /// </summary>
-/// <param name="CandidateIndex">Index in the original candidate list.</param>
-/// <param name="Score">Cosine similarity score.</param>
-public sealed record AiEmbeddingSemanticScore(int CandidateIndex, double Score);
+/// <param name="candidateIndex">Index in the original candidate list.</param>
+/// <param name="score">Cosine similarity score.</param>
+public sealed record AiEmbeddingSemanticScore(int candidateIndex, double score);

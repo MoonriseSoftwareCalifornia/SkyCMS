@@ -86,9 +86,9 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
         var sourceMeasured = sourceTask.Result;
         var faqMeasured = faqTask.Result;
 
-        var docsContext = docsMeasured.Result.ContextText;
-        var sourceResults = sourceMeasured.Result;
-        var faqResults = faqMeasured.Result;
+        var docsContext = docsMeasured.result.ContextText;
+        var sourceResults = sourceMeasured.result;
+        var faqResults = faqMeasured.result;
 
         var sources = BuildSourceAttributions(docsContext, sourceResults, faqResults);
         var tokenEstimateStopwatch = Stopwatch.StartNew();
@@ -105,9 +105,9 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
         this.logger.LogInformation(
             "Help context assembly profile: totalMs={TotalMs}; docsMs={DocsMs}; sourceMs={SourceMs}; faqMs={FaqMs}; tokenEstimationMs={TokenEstimationMs}; contextChars={ContextChars}; estimatedTokens={EstimatedTokens}; sourceCount={SourceCount}",
             Math.Round(overallStopwatch.Elapsed.TotalMilliseconds, 2),
-            Math.Round(docsMeasured.Elapsed.TotalMilliseconds, 2),
-            Math.Round(sourceMeasured.Elapsed.TotalMilliseconds, 2),
-            Math.Round(faqMeasured.Elapsed.TotalMilliseconds, 2),
+            Math.Round(docsMeasured.elapsed.TotalMilliseconds, 2),
+            Math.Round(sourceMeasured.elapsed.TotalMilliseconds, 2),
+            Math.Round(faqMeasured.elapsed.TotalMilliseconds, 2),
             Math.Round(tokenEstimateStopwatch.Elapsed.TotalMilliseconds, 2),
             contextText.Length,
             estimatedTokens,
@@ -119,9 +119,9 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
                 "Help context assembly exceeded target: targetMs={TargetMs}; actualMs={ActualMs}; docsMs={DocsMs}; sourceMs={SourceMs}; faqMs={FaqMs}",
                 ContextAssemblyTargetMs,
                 Math.Round(overallStopwatch.Elapsed.TotalMilliseconds, 2),
-                Math.Round(docsMeasured.Elapsed.TotalMilliseconds, 2),
-                Math.Round(sourceMeasured.Elapsed.TotalMilliseconds, 2),
-                Math.Round(faqMeasured.Elapsed.TotalMilliseconds, 2));
+                Math.Round(docsMeasured.elapsed.TotalMilliseconds, 2),
+                Math.Round(sourceMeasured.elapsed.TotalMilliseconds, 2),
+                Math.Round(faqMeasured.elapsed.TotalMilliseconds, 2));
         }
 
         return new AiHelpQueryContextResult
@@ -281,5 +281,5 @@ public sealed class AiHelpQueryContextService : IAiHelpQueryContextService
         return text[..cutIndex].TrimEnd() + TruncationMarker;
     }
 
-    private sealed record MeasuredResult<T>(T Result, TimeSpan Elapsed);
+    private sealed record MeasuredResult<T>(T result, TimeSpan elapsed);
 }

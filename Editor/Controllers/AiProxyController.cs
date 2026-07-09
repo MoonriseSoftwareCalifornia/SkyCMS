@@ -1457,21 +1457,21 @@ public sealed class AiProxyController : ControllerBase
             promptTokens,
             responseTokens,
             responseToPromptRatio,
-            Math.Round(snapshot.AveragePromptTokens, 2),
+            Math.Round(snapshot.averagePromptTokens, 2),
             GetHistogramLabel(bucketIndex),
-            snapshot.RequestCount);
+            snapshot.requestCount);
 
-        if (snapshot.AveragePromptTokens > 4000)
+        if (snapshot.averagePromptTokens > 4000)
         {
             this.logger.LogWarning(
                 "AI payload average exceeds budget: docKind={DocumentKind}; avgPrompt={AveragePromptTokens}; histogram[<=1000]={Bucket0}; histogram[1001-2000]={Bucket1}; histogram[2001-4000]={Bucket2}; histogram[4001-8000]={Bucket3}; histogram[>8000]={Bucket4}",
                 normalizedDocumentKind,
-                Math.Round(snapshot.AveragePromptTokens, 2),
-                snapshot.Histogram[0],
-                snapshot.Histogram[1],
-                snapshot.Histogram[2],
-                snapshot.Histogram[3],
-                snapshot.Histogram[4]);
+                Math.Round(snapshot.averagePromptTokens, 2),
+                snapshot.histogram[0],
+                snapshot.histogram[1],
+                snapshot.histogram[2],
+                snapshot.histogram[3],
+                snapshot.histogram[4]);
         }
     }
 
@@ -1502,7 +1502,7 @@ public sealed class AiProxyController : ControllerBase
         }
     }
 
-    private sealed record TokenTelemetrySnapshot(long RequestCount, double AveragePromptTokens, long[] Histogram);
+    private sealed record TokenTelemetrySnapshot(long requestCount, double averagePromptTokens, long[] histogram);
 
     /// <summary>
     /// Request payload for inline completion.

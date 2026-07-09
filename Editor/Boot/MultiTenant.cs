@@ -7,6 +7,9 @@
 
 namespace Sky.Editor.Boot
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Azure.Identity;
     using Cosmos.Common.Data;
@@ -18,9 +21,6 @@ namespace Sky.Editor.Boot
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Multi-tenant configuration for the application.

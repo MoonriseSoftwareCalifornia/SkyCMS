@@ -103,6 +103,7 @@ namespace Cosmos.BlobService.Drivers
                     BucketName = config.BucketName,
                     Key = fileMetaData.RelativePath,
                     InputStream = streamData,
+                    AutoCloseStream = false,
                     ContentType = Utilities.GetContentType(fileMetaData),
                     DisablePayloadSigning = usingCloudFlareR2,
                     DisableDefaultChecksumValidation = usingCloudFlareR2

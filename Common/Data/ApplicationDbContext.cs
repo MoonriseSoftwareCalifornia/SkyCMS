@@ -14,7 +14,6 @@ namespace Cosmos.Common.Data
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data.SQlite;
     using Cosmos.DynamicConfig;
-    using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.Azure.Cosmos;
     using Microsoft.EntityFrameworkCore;
@@ -162,11 +161,6 @@ namespace Cosmos.Common.Data
         /// Gets or sets the identity user passkeys for users.
         /// </summary>
         public DbSet<IdentityUserPasskey<string>> IdentityUserPasskeys { get; set; } = null!;
-
-        /// <summary>
-        /// Gets or sets the data protection keys for the application.
-        /// </summary>
-        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
         /// <summary>
         /// Ensure database exists and returns status.
@@ -418,11 +412,6 @@ namespace Cosmos.Common.Data
                     .ToContainer("MigrationHistory")
                     .HasPartitionKey(k => k.Id)
                     .HasKey(k => k.Id);
-
-                // Configure DataProtectionKey for Cosmos DB with proper partitioning
-                modelBuilder.Entity<DataProtectionKey>()
-                    .ToContainer("DataProtectionKeys")
-                    .HasPartitionKey(k => k.Id);
             }
             else
             {

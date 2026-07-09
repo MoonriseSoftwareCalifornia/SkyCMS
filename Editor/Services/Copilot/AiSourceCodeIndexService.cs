@@ -23,6 +23,16 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
 {
+    private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "a", "an", "the", "is", "it", "in", "of", "to", "and", "or", "for",
+        "on", "at", "by", "with", "do", "be", "as", "up", "my", "we", "i",
+        "can", "how", "what", "when", "where", "why", "who", "this", "that",
+    };
+    private readonly IHostEnvironment hostEnvironment;
+    private readonly IAiEmbeddingSemanticRanker embeddingSemanticRanker;
+    private readonly ILogger<AiSourceCodeIndexService> logger;
+
     private const int MaxResults = 3;
     private const int EmbeddingCandidateLimit = 8;
     private const int MaxSnippetLength = 700;
@@ -35,17 +45,6 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
     private static int lastIndexedEntryCount;
     private static string? lastFetchError;
     private static string? lastParseError;
-
-    private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "a", "an", "the", "is", "it", "in", "of", "to", "and", "or", "for",
-        "on", "at", "by", "with", "do", "be", "as", "up", "my", "we", "i",
-        "can", "how", "what", "when", "where", "why", "who", "this", "that",
-    };
-
-    private readonly IHostEnvironment hostEnvironment;
-    private readonly IAiEmbeddingSemanticRanker embeddingSemanticRanker;
-    private readonly ILogger<AiSourceCodeIndexService> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AiSourceCodeIndexService"/> class.
@@ -167,7 +166,7 @@ public sealed class AiSourceCodeIndexService : IAiSourceCodeIndexService
 
             if (embeddingScores.Count > 0)
             {
-                var scoreByIndex = embeddingScores.ToDictionary(x => x.CandidateIndex, x => x.Score);
+                var scoreByIndex = embeddingScores.ToDictionary(x => x.candidateIndex, x => x.score);
                 for (var index = 0; index < topCandidates.Count; index++)
                 {
                     if (!scoreByIndex.TryGetValue(index, out var embeddingScore))

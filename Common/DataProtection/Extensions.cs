@@ -56,7 +56,7 @@ namespace Cosmos.Common.DataProtection
             services.AddDataProtection()
                 .SetApplicationName("SkyCMS")
                 .PersistKeysToDbContext<DataProtectionDbContext>()
-                .SetDefaultKeyLifetime(TimeSpan.FromDays(1));
+                .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
             // Override with resilient repository that handles 409 conflicts
             services.AddSingleton<IXmlRepository>(sp =>

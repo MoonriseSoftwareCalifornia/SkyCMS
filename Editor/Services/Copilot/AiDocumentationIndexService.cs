@@ -23,6 +23,16 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public sealed class AiDocumentationIndexService : IAiDocumentationIndexService
 {
+    private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "a", "an", "the", "is", "it", "in", "of", "to", "and", "or", "for",
+        "on", "at", "by", "with", "do", "be", "as", "up", "my", "we", "i",
+        "can", "how", "what", "when", "where", "why", "who", "this", "that",
+    };
+    private readonly IHttpClientFactory httpClientFactory;
+    private readonly IMemoryCache memoryCache;
+    private readonly IAiEmbeddingSemanticRanker embeddingSemanticRanker;
+    private readonly ILogger<AiDocumentationIndexService> logger;
     private const int MaxSearchResults = 3;
     private const int EmbeddingCandidateLimit = 8;
     private const int MaxSearchSectionLength = 500;
@@ -40,18 +50,6 @@ public sealed class AiDocumentationIndexService : IAiDocumentationIndexService
     private static int lastIndexedEntryCount;
     private static string? lastFetchError;
     private static string? lastParseError;
-
-    private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "a", "an", "the", "is", "it", "in", "of", "to", "and", "or", "for",
-        "on", "at", "by", "with", "do", "be", "as", "up", "my", "we", "i",
-        "can", "how", "what", "when", "where", "why", "who", "this", "that",
-    };
-
-    private readonly IHttpClientFactory httpClientFactory;
-    private readonly IMemoryCache memoryCache;
-    private readonly IAiEmbeddingSemanticRanker embeddingSemanticRanker;
-    private readonly ILogger<AiDocumentationIndexService> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AiDocumentationIndexService"/> class.
@@ -121,7 +119,7 @@ public sealed class AiDocumentationIndexService : IAiDocumentationIndexService
 
             if (embeddingScores.Count > 0)
             {
-                var scoreByIndex = embeddingScores.ToDictionary(x => x.CandidateIndex, x => x.Score);
+                var scoreByIndex = embeddingScores.ToDictionary(x => x.candidateIndex, x => x.score);
                 scored = scored
                     .Select((candidate, index) =>
                     {

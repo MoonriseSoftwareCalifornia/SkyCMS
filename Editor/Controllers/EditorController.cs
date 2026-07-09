@@ -168,7 +168,6 @@ namespace Sky.Cms.Controllers
             return View();
         }
 
-
         /// <summary>
         ///     Gets all the versions for an article.
         /// </summary>

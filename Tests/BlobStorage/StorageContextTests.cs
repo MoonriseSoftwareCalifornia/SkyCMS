@@ -284,10 +284,13 @@ namespace Sky.Tests.BlobStorage
                 await state.StorageContext.CreateFolder(folder1);
                 await state.StorageContext.CreateFolder(folder2);
 
-                await using var memStream = new MemoryStream();
-                await using var fileStream = File.OpenRead(state.TestImagePath);
-                await fileStream.CopyToAsync(memStream);
-                memStream.Position = 0;
+                byte[] fileBytes;
+                await using (var fileStream = File.OpenRead(state.TestImagePath))
+                {
+                    using var tempStream = new MemoryStream();
+                    await fileStream.CopyToAsync(tempStream);
+                    fileBytes = tempStream.ToArray();
+                }
 
                 const int FilesInFolder1 = 5;
                 const int FilesInFolder2 = 9;
@@ -295,14 +298,14 @@ namespace Sky.Tests.BlobStorage
                 // Act - Upload files to folder1
                 for (var i = 0; i < FilesInFolder1; i++)
                 {
-                    memStream.Position = 0;
+                    await using var memStream = new MemoryStream(fileBytes);
                     await UploadTestFileWithStream(state.StorageContext, folder1, $"file{i}.jpg", memStream);
                 }
 
                 // Act - Upload files to folder2
                 for (var i = 0; i < FilesInFolder2; i++)
                 {
-                    memStream.Position = 0;
+                    await using var memStream = new MemoryStream(fileBytes);
                     await UploadTestFileWithStream(state.StorageContext, folder2, $"file{i}.jpg", memStream);
                 }
 

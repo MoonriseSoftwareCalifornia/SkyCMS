@@ -119,7 +119,7 @@ public sealed class AiFaqIndexService : IAiFaqIndexService
 
             if (embeddingScores.Count > 0)
             {
-                var scoreByIndex = embeddingScores.ToDictionary(x => x.CandidateIndex, x => x.Score);
+                var scoreByIndex = embeddingScores.ToDictionary(x => x.candidateIndex, x => x.score);
                 scoredFaqMatches = scoredFaqMatches
                     .Select((candidate, index) =>
                     {
