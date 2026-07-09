@@ -374,3 +374,6 @@ FodyWeavers.xsd
 Docs/_site/
 .jekyll-cache/
 .jekyll-metadata
+
+# Diagnostics
+Diagnostics/
