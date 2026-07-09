@@ -7,12 +7,16 @@
 
 namespace Sky.Tests.Features.Shared
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Cosmos.Common.Features.Articles.Queries;
     using Cosmos.Common.Features.Shared;
     using Cosmos.Common.Models;
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Sky.Editor.Extensions;
     using Sky.Editor.Features.Articles.Create;
-    using System;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Unit tests for the <see cref="Mediator"/> class.
@@ -122,6 +126,17 @@ namespace Sky.Tests.Features.Shared
             // Assert
             Assert.IsTrue(result.IsSuccess);
             Assert.IsInstanceOfType(result, typeof(CommandResult<ArticleViewModel>));
+        }
+
+        [TestMethod]
+        public void AddMediatorHandlers_RegistersKnownCommandAndQueryHandlers()
+        {
+            var services = new ServiceCollection();
+
+            services.AddMediatorHandlers(typeof(CreateArticleCommand).Assembly, typeof(BuildArticleViewModelQuery).Assembly);
+
+            Assert.IsTrue(services.Any(sd => sd.ServiceType == typeof(ICommandHandler<CreateArticleCommand, CommandResult<ArticleViewModel>>) && sd.ImplementationType == typeof(CreateArticleHandler)));
+            Assert.IsTrue(services.Any(sd => sd.ServiceType == typeof(IQueryHandler<BuildArticleViewModelQuery, ArticleViewModel>) && sd.ImplementationType == typeof(BuildArticleViewModelQueryHandler)));
         }
 
         #endregion

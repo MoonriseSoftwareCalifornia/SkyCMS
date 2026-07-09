@@ -98,6 +98,27 @@ public class AiProviderModelCatalogServiceTests
         Assert.IsFalse(string.IsNullOrWhiteSpace(result.DiscoveryError));
     }
 
+    [TestMethod]
+    public async Task GetCatalogAsync_WhenCancelled_PropagatesCancellation()
+    {
+        var httpClientFactory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        var httpClient = CreateHttpClient((_, cancellationToken) => throw new OperationCanceledException(cancellationToken));
+        httpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+
+        var service = new AiProviderModelCatalogService(httpClientFactory.Object, new MemoryCache(new MemoryCacheOptions()), Mock.Of<ILogger<AiProviderModelCatalogService>>());
+
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(async () =>
+        {
+            await service.GetCatalogAsync(new CopilotProxyOptions
+            {
+                Enabled = true,
+                Endpoint = "https://api.openai.com/v1/chat/completions",
+                AccessToken = "token",
+                Model = "auto",
+            }, cancellationToken: new CancellationToken(canceled: true));
+        });
+    }
+
     private static HttpClient CreateHttpClient(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> send)
     {
         return new HttpClient(new DelegateHttpMessageHandler(send));

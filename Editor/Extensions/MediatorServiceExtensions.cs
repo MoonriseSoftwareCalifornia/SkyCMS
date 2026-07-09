@@ -7,6 +7,8 @@
 
 namespace Sky.Editor.Extensions
 {
+    using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
     using Cosmos.Common.Features.Shared;
@@ -25,61 +27,24 @@ namespace Sky.Editor.Extensions
         /// <returns>The service collection for chaining.</returns>
         public static IServiceCollection AddMediatorHandlers(this IServiceCollection services, params Assembly[] assemblies)
         {
-            // Default assemblies to scan if none provided
             if (assemblies == null || assemblies.Length == 0)
             {
                 assemblies = new[]
                 {
-                    Assembly.GetExecutingAssembly(), // Sky.Editor
-                    typeof(IMediator).Assembly // Cosmos.Common
+                    Assembly.GetExecutingAssembly(),
+                    typeof(IMediator).Assembly,
                 };
             }
 
-            // Find and register all ICommandHandler<,> implementations
-            var commandHandlerType = typeof(ICommandHandler<,>);
-            var commandHandlers = assemblies
-                .SelectMany(a => a.GetTypes())
-                .Where(t => !t.IsAbstract && !t.IsInterface)
-                .Select(t => new
-                {
-                    Implementation = t,
-                    Interfaces = t.GetInterfaces()
-                        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == commandHandlerType)
-                        .ToList()
-                })
-                .Where(x => x.Interfaces.Any())
-                .ToList();
-
-            foreach (var handler in commandHandlers)
+            var loadableTypes = new List<Type>();
+            foreach (var assembly in assemblies)
             {
-                foreach (var @interface in handler.Interfaces)
-                {
-                    services.AddScoped(@interface, handler.Implementation);
-                }
+                loadableTypes.AddRange(GetLoadableTypes(assembly));
             }
 
-            // Find and register all IQueryHandler<,> implementations
-            var queryHandlerType = typeof(IQueryHandler<,>);
-            var queryHandlers = assemblies
-                .SelectMany(a => a.GetTypes())
-                .Where(t => !t.IsAbstract && !t.IsInterface)
-                .Select(t => new
-                {
-                    Implementation = t,
-                    Interfaces = t.GetInterfaces()
-                        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == queryHandlerType)
-                        .ToList()
-                })
-                .Where(x => x.Interfaces.Any())
-                .ToList();
-
-            foreach (var handler in queryHandlers)
-            {
-                foreach (var @interface in handler.Interfaces)
-                {
-                    services.AddScoped(@interface, handler.Implementation);
-                }
-            }
+            var loadableTypesArray = loadableTypes.ToArray();
+            RegisterHandlers(services, loadableTypesArray, typeof(ICommandHandler<,>));
+            RegisterHandlers(services, loadableTypesArray, typeof(IQueryHandler<,>));
 
             return services;
         }
@@ -91,13 +56,11 @@ namespace Sky.Editor.Extensions
         /// <returns>The service collection for chaining.</returns>
         public static IServiceCollection AddCosmosMediator(this IServiceCollection services)
         {
-            // Register concrete mediator with logger support
             services.AddScoped<Cosmos.Common.Features.Shared.Mediator>(sp =>
                 new Cosmos.Common.Features.Shared.Mediator(
                     sp,
                     sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Cosmos.Common.Features.Shared.Mediator>>()));
 
-            // Register interface with multi-tenant wrapper
             services.AddScoped<IMediator>(sp =>
                 new Sky.Editor.Features.Shared.MultiTenantMediator(
                     new Cosmos.Common.Features.Shared.Mediator(
@@ -108,6 +71,35 @@ namespace Sky.Editor.Extensions
                     sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Sky.Editor.Features.Shared.MultiTenantMediator>>()));
 
             return services;
+        }
+
+        private static Type[] GetLoadableTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.Where(type => type is not null).Select(type => type!).ToArray();
+            }
+        }
+
+        private static void RegisterHandlers(IServiceCollection services, Type[] types, Type openGenericHandlerType)
+        {
+            foreach (var implementation in types)
+            {
+                if (implementation.IsAbstract || implementation.IsInterface)
+                {
+                    continue;
+                }
+
+                foreach (var handlerInterface in implementation.GetInterfaces()
+                    .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == openGenericHandlerType))
+                {
+                    services.AddScoped(handlerInterface, implementation);
+                }
+            }
         }
     }
 }

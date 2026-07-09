@@ -69,17 +69,7 @@ public sealed class AiProviderModelCatalogService : IAiProviderModelCatalogServi
         }
 
         var metadata = AiProviderMetadataResolver.Describe(options.Endpoint, options.Model);
-        var result = new AiProviderModelCatalogResult
-        {
-            ProviderKey = metadata.ProviderKey,
-            ProviderDisplayName = metadata.ProviderDisplayName,
-            SupportsModelDiscovery = metadata.SupportsModelDiscovery,
-            SupportsUserModelSelection = metadata.SupportsUserModelSelection,
-            SupportsAutoMode = metadata.SupportsAutoMode,
-            DiscoveryState = metadata.DiscoveryState,
-            DiscoveryStateMessage = metadata.DiscoveryStateMessage,
-            DefaultModeDescription = metadata.DefaultModeDescription,
-        };
+        var result = CreateResult(metadata);
 
         if (metadata.ProviderKey == "azure-openai")
         {
@@ -88,26 +78,18 @@ public sealed class AiProviderModelCatalogService : IAiProviderModelCatalogServi
 
         if (metadata.ProviderKey == "azure-ai-foundry")
         {
-            result.DiscoveryState = AiProviderDiscoveryStates.NeedsAdditionalConfiguration;
-            result.DiscoveryStateMessage = metadata.DiscoveryStateMessage;
-            result.DiscoveryError = metadata.DiscoveryStateMessage;
-            return CacheAndReturn(cacheKey, result);
+            return CacheAndReturn(cacheKey, CreateDiscoveryResult(result, AiProviderDiscoveryStates.NeedsAdditionalConfiguration, metadata.DiscoveryStateMessage, metadata.DiscoveryStateMessage));
         }
 
         if (!metadata.SupportsModelDiscovery)
         {
-            result.DiscoveryState = AiProviderDiscoveryStates.Unsupported;
-            result.DiscoveryStateMessage = metadata.DiscoveryStateMessage;
-            result.DiscoveryError = metadata.DefaultModeDescription;
-            return CacheAndReturn(cacheKey, result);
+            return CacheAndReturn(cacheKey, CreateDiscoveryResult(result, AiProviderDiscoveryStates.Unsupported, metadata.DiscoveryStateMessage, metadata.DefaultModeDescription));
         }
 
         if (string.IsNullOrWhiteSpace(options.Endpoint) || string.IsNullOrWhiteSpace(options.AccessToken))
         {
-            result.DiscoveryState = AiProviderDiscoveryStates.NeedsAdditionalConfiguration;
-            result.DiscoveryStateMessage = "AI provider endpoint and token must be configured before models can be loaded.";
-            result.DiscoveryError = "AI provider endpoint and token must be configured before models can be loaded.";
-            return CacheAndReturn(cacheKey, result);
+            const string message = "AI provider endpoint and token must be configured before models can be loaded.";
+            return CacheAndReturn(cacheKey, CreateDiscoveryResult(result, AiProviderDiscoveryStates.NeedsAdditionalConfiguration, message, message));
         }
 
         try
@@ -120,6 +102,10 @@ public sealed class AiProviderModelCatalogService : IAiProviderModelCatalogServi
             };
             result.DiscoveryState = AiProviderDiscoveryStates.LiveCatalog;
             result.DiscoveryStateMessage = $"Loaded the live {metadata.ProviderDisplayName} model catalog.";
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -157,6 +143,29 @@ public sealed class AiProviderModelCatalogService : IAiProviderModelCatalogServi
         };
 
         this.memoryCache.Set(cacheKey, result, cacheDuration);
+        return result;
+    }
+
+    private static AiProviderModelCatalogResult CreateResult(AiProviderMetadata metadata)
+    {
+        return new AiProviderModelCatalogResult
+        {
+            ProviderKey = metadata.ProviderKey,
+            ProviderDisplayName = metadata.ProviderDisplayName,
+            SupportsModelDiscovery = metadata.SupportsModelDiscovery,
+            SupportsUserModelSelection = metadata.SupportsUserModelSelection,
+            SupportsAutoMode = metadata.SupportsAutoMode,
+            DiscoveryState = metadata.DiscoveryState,
+            DiscoveryStateMessage = metadata.DiscoveryStateMessage,
+            DefaultModeDescription = metadata.DefaultModeDescription,
+        };
+    }
+
+    private static AiProviderModelCatalogResult CreateDiscoveryResult(AiProviderModelCatalogResult result, string discoveryState, string discoveryStateMessage, string discoveryError)
+    {
+        result.DiscoveryState = discoveryState;
+        result.DiscoveryStateMessage = discoveryStateMessage;
+        result.DiscoveryError = discoveryError;
         return result;
     }
 

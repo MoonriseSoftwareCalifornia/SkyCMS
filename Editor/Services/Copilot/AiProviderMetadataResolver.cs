@@ -8,6 +8,7 @@
 namespace Sky.Editor.Services.Copilot;
 
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 
 /// <summary>
@@ -20,6 +21,92 @@ public static class AiProviderMetadataResolver
     /// </summary>
     public const string DefaultAutoModel = "gpt-4o-mini";
 
+    private static readonly AiProviderMetadata GitHubModelsMetadata = new()
+    {
+        ProviderKey = "github-models",
+        ProviderDisplayName = "GitHub Models",
+        SupportsModelDiscovery = true,
+        SupportsUserModelSelection = true,
+        SupportsAutoMode = true,
+        DiscoveryState = AiProviderDiscoveryStates.LiveCatalog,
+        DiscoveryStateMessage = "SkyCMS can load the live GitHub Models catalog for this provider.",
+        DefaultModeDescription = $"SkyCMS auto resolves to {DefaultAutoModel}.",
+    };
+
+    private static readonly AiProviderMetadata OpenAiMetadata = new()
+    {
+        ProviderKey = "openai",
+        ProviderDisplayName = "OpenAI",
+        SupportsModelDiscovery = true,
+        SupportsUserModelSelection = true,
+        SupportsAutoMode = true,
+        DiscoveryState = AiProviderDiscoveryStates.LiveCatalog,
+        DiscoveryStateMessage = "SkyCMS can load the live OpenAI model catalog for this provider.",
+        DefaultModeDescription = $"SkyCMS auto resolves to {DefaultAutoModel}.",
+    };
+
+    private static readonly AiProviderMetadata AzureOpenAiMetadata = new()
+    {
+        ProviderKey = "azure-openai",
+        ProviderDisplayName = "Azure OpenAI",
+        SupportsModelDiscovery = true,
+        SupportsUserModelSelection = false,
+        SupportsAutoMode = false,
+        DiscoveryState = AiProviderDiscoveryStates.Inferred,
+        DiscoveryStateMessage = "SkyCMS can infer the active Azure OpenAI deployment from a deployment-scoped endpoint, but it cannot list deployments with the current configuration.",
+        DefaultModeDescription = "The deployment in the endpoint URL is the default model.",
+    };
+
+    private static readonly AiProviderMetadata AzureAiFoundryMetadata = new()
+    {
+        ProviderKey = "azure-ai-foundry",
+        ProviderDisplayName = "Azure AI Foundry",
+        SupportsModelDiscovery = false,
+        SupportsUserModelSelection = false,
+        SupportsAutoMode = false,
+        DiscoveryState = AiProviderDiscoveryStates.NeedsAdditionalConfiguration,
+        DiscoveryStateMessage = "Azure AI Foundry model discovery needs additional project or management metadata beyond the current endpoint and token.",
+        DefaultModeDescription = "The endpoint default model is used when no model is sent.",
+    };
+
+    private static readonly AiProviderMetadata LocalMetadata = new()
+    {
+        ProviderKey = "local",
+        ProviderDisplayName = "Local AI",
+        SupportsModelDiscovery = false,
+        SupportsUserModelSelection = false,
+        SupportsAutoMode = false,
+        DiscoveryState = AiProviderDiscoveryStates.Unsupported,
+        DiscoveryStateMessage = "SkyCMS cannot discover local model catalogs automatically for this provider.",
+        DefaultModeDescription = "Configure a local model explicitly if the provider requires one.",
+    };
+
+    private static readonly AiProviderMetadata AnthropicMetadata = new()
+    {
+        ProviderKey = "anthropic",
+        ProviderDisplayName = "Claude",
+        SupportsModelDiscovery = false,
+        SupportsUserModelSelection = false,
+        SupportsAutoMode = false,
+        DiscoveryState = AiProviderDiscoveryStates.Unsupported,
+        DiscoveryStateMessage = "SkyCMS cannot discover Claude models automatically from the current configuration.",
+        DefaultModeDescription = "Configure an explicit Claude model.",
+    };
+
+    private static readonly AiProviderMetadata UnknownMetadata = new()
+    {
+        ProviderKey = "unknown",
+        ProviderDisplayName = "AI",
+        SupportsModelDiscovery = false,
+        SupportsUserModelSelection = false,
+        SupportsAutoMode = false,
+        DiscoveryState = AiProviderDiscoveryStates.Unsupported,
+        DiscoveryStateMessage = "This provider does not expose a supported discovery flow in SkyCMS yet.",
+        DefaultModeDescription = "Use the configured model or provider default.",
+    };
+
+    private static readonly ConcurrentDictionary<string, AiProviderMetadata> UnknownProviderMetadataCache = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Creates provider metadata for the configured endpoint.
     /// </summary>
@@ -28,87 +115,35 @@ public static class AiProviderMetadataResolver
     /// <returns>Provider metadata.</returns>
     public static AiProviderMetadata Describe(string? endpoint, string? configuredModel)
     {
-        var providerKey = ResolveProviderKey(endpoint, configuredModel);
+        return ResolveProviderMetadata(ResolveProviderKey(endpoint, configuredModel));
+    }
 
+    private static AiProviderMetadata ResolveProviderMetadata(string providerKey)
+    {
         return providerKey switch
         {
-            "github-models" => new AiProviderMetadata
-            {
-                ProviderKey = providerKey,
-                ProviderDisplayName = "GitHub Models",
-                SupportsModelDiscovery = true,
-                SupportsUserModelSelection = true,
-                SupportsAutoMode = true,
-                DiscoveryState = AiProviderDiscoveryStates.LiveCatalog,
-                DiscoveryStateMessage = "SkyCMS can load the live GitHub Models catalog for this provider.",
-                DefaultModeDescription = $"SkyCMS auto resolves to {DefaultAutoModel}.",
-            },
-            "openai" => new AiProviderMetadata
-            {
-                ProviderKey = providerKey,
-                ProviderDisplayName = "OpenAI",
-                SupportsModelDiscovery = true,
-                SupportsUserModelSelection = true,
-                SupportsAutoMode = true,
-                DiscoveryState = AiProviderDiscoveryStates.LiveCatalog,
-                DiscoveryStateMessage = "SkyCMS can load the live OpenAI model catalog for this provider.",
-                DefaultModeDescription = $"SkyCMS auto resolves to {DefaultAutoModel}.",
-            },
-            "azure-openai" => new AiProviderMetadata
-            {
-                ProviderKey = providerKey,
-                ProviderDisplayName = "Azure OpenAI",
-                SupportsModelDiscovery = true,
-                SupportsUserModelSelection = false,
-                SupportsAutoMode = false,
-                DiscoveryState = AiProviderDiscoveryStates.Inferred,
-                DiscoveryStateMessage = "SkyCMS can infer the active Azure OpenAI deployment from a deployment-scoped endpoint, but it cannot list deployments with the current configuration.",
-                DefaultModeDescription = "The deployment in the endpoint URL is the default model.",
-            },
-            "azure-ai-foundry" => new AiProviderMetadata
-            {
-                ProviderKey = providerKey,
-                ProviderDisplayName = "Azure AI Foundry",
-                SupportsModelDiscovery = false,
-                SupportsUserModelSelection = false,
-                SupportsAutoMode = false,
-                DiscoveryState = AiProviderDiscoveryStates.NeedsAdditionalConfiguration,
-                DiscoveryStateMessage = "Azure AI Foundry model discovery needs additional project or management metadata beyond the current endpoint and token.",
-                DefaultModeDescription = "The endpoint default model is used when no model is sent.",
-            },
-            "local" => new AiProviderMetadata
-            {
-                ProviderKey = providerKey,
-                ProviderDisplayName = "Local AI",
-                SupportsModelDiscovery = false,
-                SupportsUserModelSelection = false,
-                SupportsAutoMode = false,
-                DiscoveryState = AiProviderDiscoveryStates.Unsupported,
-                DiscoveryStateMessage = "SkyCMS cannot discover local model catalogs automatically for this provider.",
-                DefaultModeDescription = "Configure a local model explicitly if the provider requires one.",
-            },
-            "anthropic" => new AiProviderMetadata
-            {
-                ProviderKey = providerKey,
-                ProviderDisplayName = "Claude",
-                SupportsModelDiscovery = false,
-                SupportsUserModelSelection = false,
-                SupportsAutoMode = false,
-                DiscoveryState = AiProviderDiscoveryStates.Unsupported,
-                DiscoveryStateMessage = "SkyCMS cannot discover Claude models automatically from the current configuration.",
-                DefaultModeDescription = "Configure an explicit Claude model.",
-            },
-            _ => new AiProviderMetadata
-            {
-                ProviderKey = providerKey,
-                ProviderDisplayName = "AI",
-                SupportsModelDiscovery = false,
-                SupportsUserModelSelection = false,
-                SupportsAutoMode = false,
-                DiscoveryState = AiProviderDiscoveryStates.Unsupported,
-                DiscoveryStateMessage = "This provider does not expose a supported discovery flow in SkyCMS yet.",
-                DefaultModeDescription = "Use the configured model or provider default.",
-            },
+            "github-models" => GitHubModelsMetadata,
+            "openai" => OpenAiMetadata,
+            "azure-openai" => AzureOpenAiMetadata,
+            "azure-ai-foundry" => AzureAiFoundryMetadata,
+            "local" => LocalMetadata,
+            "anthropic" => AnthropicMetadata,
+            _ => UnknownProviderMetadataCache.GetOrAdd(providerKey, CreateUnknownMetadata),
+        };
+    }
+
+    private static AiProviderMetadata CreateUnknownMetadata(string providerKey)
+    {
+        return new AiProviderMetadata
+        {
+            ProviderKey = providerKey,
+            ProviderDisplayName = UnknownMetadata.ProviderDisplayName,
+            SupportsModelDiscovery = UnknownMetadata.SupportsModelDiscovery,
+            SupportsUserModelSelection = UnknownMetadata.SupportsUserModelSelection,
+            SupportsAutoMode = UnknownMetadata.SupportsAutoMode,
+            DiscoveryState = UnknownMetadata.DiscoveryState,
+            DiscoveryStateMessage = UnknownMetadata.DiscoveryStateMessage,
+            DefaultModeDescription = UnknownMetadata.DefaultModeDescription,
         };
     }
 
@@ -300,40 +335,40 @@ public sealed class AiProviderMetadata
     /// <summary>
     /// Gets or sets the provider key.
     /// </summary>
-    public string ProviderKey { get; set; } = "unknown";
+    public string ProviderKey { get; init; } = "unknown";
 
     /// <summary>
     /// Gets or sets the display name.
     /// </summary>
-    public string ProviderDisplayName { get; set; } = "AI";
+    public string ProviderDisplayName { get; init; } = "AI";
 
     /// <summary>
     /// Gets or sets a value indicating whether model discovery is supported.
     /// </summary>
-    public bool SupportsModelDiscovery { get; set; }
+    public bool SupportsModelDiscovery { get; init; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the UI should offer user model selection.
     /// </summary>
-    public bool SupportsUserModelSelection { get; set; }
+    public bool SupportsUserModelSelection { get; init; }
 
     /// <summary>
     /// Gets or sets a value indicating whether SkyCMS auto mode is supported.
     /// </summary>
-    public bool SupportsAutoMode { get; set; }
+    public bool SupportsAutoMode { get; init; }
 
     /// <summary>
     /// Gets or sets the discovery state.
     /// </summary>
-    public string DiscoveryState { get; set; } = AiProviderDiscoveryStates.Unsupported;
+    public string DiscoveryState { get; init; } = AiProviderDiscoveryStates.Unsupported;
 
     /// <summary>
     /// Gets or sets a human-readable discovery state message.
     /// </summary>
-    public string DiscoveryStateMessage { get; set; } = string.Empty;
+    public string DiscoveryStateMessage { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the default mode description.
     /// </summary>
-    public string DefaultModeDescription { get; set; } = string.Empty;
+    public string DefaultModeDescription { get; init; } = string.Empty;
 }
