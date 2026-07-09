@@ -32,6 +32,7 @@ namespace Sky.Tests.DynamicConfig
         {
             _loggerMock = new Mock<ILogger<DomainMiddleware>>();
             _configProviderMock = new Mock<IDynamicConfigurationProvider>();
+            _configProviderMock.SetupGet(x => x.IsMultiTenantConfigured).Returns(true);
             _nextMock = new Mock<RequestDelegate>();
             _middleware = new DomainMiddleware(_nextMock.Object, _loggerMock.Object);
         }
@@ -137,6 +138,24 @@ namespace Sky.Tests.DynamicConfig
             // Should continue when no config provider is registered
             _nextMock.Verify(x => x(context), Times.Once);
             Assert.AreEqual("no-provider-domain.com", context.Items["Domain"]);
+        }
+
+        [TestMethod]
+        public async Task InvokeAsync_SingleTenantMode_SkipsDatabaseValidation()
+        {
+            // Arrange
+            var context = CreateHttpContext("single-tenant.com");
+            _configProviderMock.SetupGet(x => x.IsMultiTenantConfigured).Returns(false);
+
+            // Act
+            await _middleware.InvokeAsync(context);
+
+            // Assert
+            _nextMock.Verify(x => x(context), Times.Once);
+            _configProviderMock.Verify(
+                x => x.GetDatabaseConnectionStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+            Assert.AreEqual("single-tenant.com", context.Items["Domain"]);
         }
 
         [TestMethod]

@@ -827,22 +827,8 @@ if (allowSetup)
 }
 
 // Environment-specific middleware
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    // Handle unhandled exceptions (500, etc.)
-    app.UseExceptionHandler("/Error"); // Use your generic error page
-
-    // Handle status codes (404, 403, etc.) by redirecting to the same error page
-    app.UseStatusCodePages(context =>
-    {
-        context.HttpContext.Response.Redirect("/Error");
-        return Task.CompletedTask;
-    });
-
     app.UseHsts();
 }
 

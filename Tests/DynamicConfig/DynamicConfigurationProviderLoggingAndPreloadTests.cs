@@ -6,6 +6,7 @@
 using Cosmos.DynamicConfig;
 using Cosmos.DynamicConfig.Configurations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -165,6 +166,136 @@ namespace Sky.Tests.DynamicConfig
             }
         }
 
+        [TestMethod]
+        public async Task GetTenantConnectionAsync_MissingDomain_UsesNegativeCacheUntilExpiry()
+        {
+            var configDb = GetConfigFilePath();
+            var tenantDb = TempFilePath($"skycms-tenant-{Guid.NewGuid()}.db");
+
+            try
+            {
+                var dbOptions = AspNetCore.Identity.FlexDb.CosmosDbOptionsBuilder.GetDbOptions<DynamicConfigDbContext>(SqliteConnectionString(configDb));
+                await using (var context = new DynamicConfigDbContext(dbOptions))
+                {
+                    context.Database.EnsureDeleted();
+                    context.Database.EnsureCreated();
+                }
+
+                var inMemorySettings = new Dictionary<string, string>
+                {
+                    { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) },
+                    { "MultiTenant", "true" }
+                };
+
+                var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
+                var provider = new DynamicConfigurationProvider(
+                    configuration,
+                    CreateHttpContextAccessor("missing.tenant.test"),
+                    new MemoryCache(new MemoryCacheOptions()),
+                    new Mock<ILogger<DynamicConfigurationProvider>>().Object,
+                    Options.Create(new ProxySettings()));
+
+                var firstLookup = await provider.GetTenantConnectionAsync("missing.tenant.test");
+                Assert.IsNull(firstLookup);
+
+                await using (var context = new DynamicConfigDbContext(dbOptions))
+                {
+                    context.Connections.Add(new Connection
+                    {
+                        DomainNames = new[] { "missing.tenant.test" },
+                        DbConn = SqliteConnectionString(tenantDb),
+                        StorageConn = "storage-conn",
+                        WebsiteUrl = "https://missing.tenant.test",
+                        ResourceGroup = "rg"
+                    });
+                    await context.SaveChangesAsync();
+                }
+
+                var secondLookup = await provider.GetTenantConnectionAsync("missing.tenant.test");
+                Assert.IsNull(secondLookup, "Negative cache should prevent immediate DB re-query after a miss.");
+            }
+            finally
+            {
+                foreach (var file in new[] { configDb, tenantDb })
+                {
+                    try
+                    {
+                        if (File.Exists(file))
+                        {
+                            File.Delete(file);
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public async Task GetTenantConnectionAsync_ConcurrentSameDomain_DeduplicatesDatabaseFetch()
+        {
+            var configDb = GetConfigFilePath();
+            var tenantDb = TempFilePath($"skycms-tenant-{Guid.NewGuid()}.db");
+
+            try
+            {
+                var dbOptions = AspNetCore.Identity.FlexDb.CosmosDbOptionsBuilder.GetDbOptions<DynamicConfigDbContext>(SqliteConnectionString(configDb));
+                await using (var context = new DynamicConfigDbContext(dbOptions))
+                {
+                    context.Database.EnsureDeleted();
+                    context.Database.EnsureCreated();
+                    context.Connections.Add(new Connection
+                    {
+                        DomainNames = new[] { "singleflight.tenant.test" },
+                        DbConn = SqliteConnectionString(tenantDb),
+                        StorageConn = "storage-conn",
+                        WebsiteUrl = "https://singleflight.tenant.test",
+                        ResourceGroup = "rg"
+                    });
+                    await context.SaveChangesAsync();
+                }
+
+                var inMemorySettings = new Dictionary<string, string>
+                {
+                    { "ConnectionStrings:ConfigDbConnectionString", SqliteConnectionString(configDb) },
+                    { "MultiTenant", "true" }
+                };
+
+                var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
+                var provider = new CountingDbContextProvider(
+                    configuration,
+                    CreateHttpContextAccessor("singleflight.tenant.test"),
+                    new MemoryCache(new MemoryCacheOptions()),
+                    new Mock<ILogger<DynamicConfigurationProvider>>().Object,
+                    Options.Create(new ProxySettings()),
+                    dbOptions);
+
+                var lookups = Enumerable.Range(0, 8)
+                    .Select(_ => provider.GetTenantConnectionAsync("singleflight.tenant.test"));
+                var results = await Task.WhenAll(lookups);
+
+                Assert.IsTrue(results.All(r => r != null));
+                Assert.AreEqual(1, provider.GetDbContextCallCount, "Concurrent cache misses for same domain should use a single DB fetch.");
+            }
+            finally
+            {
+                foreach (var file in new[] { configDb, tenantDb })
+                {
+                    try
+                    {
+                        if (File.Exists(file))
+                        {
+                            File.Delete(file);
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+
         private sealed class TestPreloadProvider : DynamicConfigurationProvider
         {
             private readonly Func<System.Threading.CancellationToken, Task> _coreOverride;
@@ -178,6 +309,32 @@ namespace Sky.Tests.DynamicConfig
             protected override Task PreloadAllConnectionsCoreAsync(System.Threading.CancellationToken cancellationToken = default)
             {
                 return _coreOverride(cancellationToken);
+            }
+        }
+
+        private sealed class CountingDbContextProvider : DynamicConfigurationProvider
+        {
+            private readonly DbContextOptions<DynamicConfigDbContext> _dbOptions;
+            private int _getDbContextCallCount;
+
+            public CountingDbContextProvider(
+                IConfiguration configuration,
+                IHttpContextAccessor httpContextAccessor,
+                IMemoryCache memoryCache,
+                ILogger<DynamicConfigurationProvider> logger,
+                IOptions<ProxySettings> proxyOptions,
+                DbContextOptions<DynamicConfigDbContext> dbOptions)
+                : base(configuration, httpContextAccessor, memoryCache, logger, proxyOptions)
+            {
+                _dbOptions = dbOptions;
+            }
+
+            public int GetDbContextCallCount => _getDbContextCallCount;
+
+            protected override DynamicConfigDbContext GetDbContext()
+            {
+                Interlocked.Increment(ref _getDbContextCallCount);
+                return new DynamicConfigDbContext(_dbOptions);
             }
         }
     }

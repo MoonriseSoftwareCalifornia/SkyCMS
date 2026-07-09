@@ -12,6 +12,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text;
@@ -43,10 +44,24 @@ namespace Cosmos.DynamicConfig
 
 
         private const string CacheKeyPrefix = "tenant:connection:";
+        private const string MissingTenantCacheValue = "__missing__";
+        private const int PositiveCacheSlidingMinutes = 5;
+        private const int PositiveCacheAbsoluteMinutes = 20;
+        private const int NegativeCacheSlidingSeconds = 30;
+        private const int NegativeCacheAbsoluteMinutes = 2;
 
+        private const int CacheMetricsLogInterval = 250;
+
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _tenantLookupLocks = new(StringComparer.OrdinalIgnoreCase);
         private readonly SemaphoreSlim _preloadLock = new(1, 1);
         private DateTime _lastPreloadTime = DateTime.MinValue;
         private const int PreloadIntervalMinutes = 30;
+        private long _cachePositiveHitCount;
+        private long _cacheNegativeHitCount;
+        private long _cacheMissCount;
+        private long _singleFlightWaitCount;
+        private long _dbHitCount;
+        private long _dbMissCount;
 
         /// <summary>
         /// Gets a value indicating whether the connection is configured for multi-tenant.
@@ -439,40 +454,66 @@ namespace Cosmos.DynamicConfig
                 return null;
             }
 
-            // Normalize domain name
             domainName = NormalizeDomainName(domainName);
-
-            // Use namespaced cache key to prevent cache poisoning
             var cacheKey = GetCacheKey(domainName);
 
-            if (!memoryCache.TryGetValue<Connection>(cacheKey, out var connection))
+            if (TryReadConnectionFromCache(cacheKey, out var cachedConnection, out var isNegativeCacheHit))
             {
-                await using var dbContext = GetDbContext();
-                connection = await dbContext.Connections.AsNoTracking().FirstOrDefaultAsync(c =>
-                    c.DomainNames != null &&
-                    c.DomainNames.Contains(domainName));
-
-                if (connection == null)
+                if (isNegativeCacheHit)
                 {
-                    _logger?.LogDebug("Connection data not found in database for domain: {Domain}.", domainName);
+                    Interlocked.Increment(ref _cacheNegativeHitCount);
+                    LogCacheMetricsSnapshot();
                     return null;
                 }
 
-                // Cache with longer expiration since connection strings rarely change
-                // Use sliding expiration to keep frequently accessed tenants in cache
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(5))
-                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(20))
-                    .SetPriority(CacheItemPriority.High)
-                    .RegisterPostEvictionCallback((key, value, reason, state) =>
-                    {
-                        _logger?.LogDebug("Cache entry evicted: {Key}, Reason: {Reason}", key, reason);
-                    });
-
-                memoryCache.Set(cacheKey, connection, cacheOptions);
+                Interlocked.Increment(ref _cachePositiveHitCount);
+                LogCacheMetricsSnapshot();
+                return cachedConnection;
             }
 
-            return connection;
+            Interlocked.Increment(ref _cacheMissCount);
+            var tenantLock = _tenantLookupLocks.GetOrAdd(cacheKey, static _ => new SemaphoreSlim(1, 1));
+            Interlocked.Increment(ref _singleFlightWaitCount);
+            await tenantLock.WaitAsync(cancellationToken);
+            try
+            {
+                if (TryReadConnectionFromCache(cacheKey, out cachedConnection, out isNegativeCacheHit))
+                {
+                    if (isNegativeCacheHit)
+                    {
+                        Interlocked.Increment(ref _cacheNegativeHitCount);
+                        LogCacheMetricsSnapshot();
+                        return null;
+                    }
+
+                    Interlocked.Increment(ref _cachePositiveHitCount);
+                    LogCacheMetricsSnapshot();
+                    return cachedConnection;
+                }
+
+                await using var dbContext = GetDbContext();
+                var connection = await dbContext.Connections.AsNoTracking().FirstOrDefaultAsync(c =>
+                    c.DomainNames != null &&
+                    c.DomainNames.Contains(domainName), cancellationToken);
+
+                if (connection == null)
+                {
+                    Interlocked.Increment(ref _dbMissCount);
+                    _logger?.LogDebug("Connection data not found in database for domain: {Domain}.", domainName);
+                    SetNegativeCacheEntry(cacheKey);
+                    LogCacheMetricsSnapshot();
+                    return null;
+                }
+
+                Interlocked.Increment(ref _dbHitCount);
+                SetPositiveCacheEntry(cacheKey, connection);
+                LogCacheMetricsSnapshot();
+                return connection;
+            }
+            finally
+            {
+                tenantLock.Release();
+            }
         }
 
         /// <summary>
@@ -514,11 +555,6 @@ namespace Cosmos.DynamicConfig
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromMinutes(30))
-                .SetAbsoluteExpiration(TimeSpan.FromHours(1))
-                .SetPriority(CacheItemPriority.High);
-
             foreach (var connection in allConnections)
             {
                 if (connection.DomainNames != null)
@@ -527,7 +563,7 @@ namespace Cosmos.DynamicConfig
                     {
                         var normalizedDomain = NormalizeDomainName(domain);
                         var cacheKey = GetCacheKey(normalizedDomain);
-                        memoryCache.Set(cacheKey, connection, cacheOptions);
+                        SetPositiveCacheEntry(cacheKey, connection);
                     }
                 }
             }
@@ -569,6 +605,81 @@ namespace Cosmos.DynamicConfig
             return connection.Id;
         }
 
+        private bool TryReadConnectionFromCache(string cacheKey, out Connection? connection, out bool isNegativeCacheHit)
+        {
+            connection = null;
+            isNegativeCacheHit = false;
+            if (!memoryCache.TryGetValue<object>(cacheKey, out var cachedValue))
+            {
+                return false;
+            }
+
+            if (cachedValue is string marker && marker == MissingTenantCacheValue)
+            {
+                isNegativeCacheHit = true;
+                return true;
+            }
+
+            connection = cachedValue as Connection;
+            return true;
+        }
+
+        private void SetPositiveCacheEntry(string cacheKey, Connection connection)
+        {
+            memoryCache.Set(cacheKey, connection, BuildPositiveCacheEntryOptions());
+        }
+
+        private void SetNegativeCacheEntry(string cacheKey)
+        {
+            memoryCache.Set(cacheKey, MissingTenantCacheValue, BuildNegativeCacheEntryOptions());
+        }
+
+        private void LogCacheMetricsSnapshot()
+        {
+            var positiveHits = Interlocked.Read(ref _cachePositiveHitCount);
+            var negativeHits = Interlocked.Read(ref _cacheNegativeHitCount);
+            var misses = Interlocked.Read(ref _cacheMissCount);
+            var dbHits = Interlocked.Read(ref _dbHitCount);
+            var dbMisses = Interlocked.Read(ref _dbMissCount);
+            var totalLookups = positiveHits + negativeHits + misses;
+
+            if (totalLookups == 0 || totalLookups % CacheMetricsLogInterval != 0)
+            {
+                return;
+            }
+
+            var singleFlightWaits = Interlocked.Read(ref _singleFlightWaitCount);
+            _logger?.LogInformation(
+                "Tenant cache metrics snapshot: total={TotalLookups}, positiveHits={PositiveHits}, negativeHits={NegativeHits}, misses={Misses}, dbHits={DbHits}, dbMisses={DbMisses}, singleFlightWaits={SingleFlightWaits}",
+                totalLookups,
+                positiveHits,
+                negativeHits,
+                misses,
+                dbHits,
+                dbMisses,
+                singleFlightWaits);
+        }
+
+        private MemoryCacheEntryOptions BuildPositiveCacheEntryOptions()
+        {
+            return new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(PositiveCacheSlidingMinutes))
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(PositiveCacheAbsoluteMinutes))
+                .SetPriority(CacheItemPriority.High)
+                .RegisterPostEvictionCallback((key, value, reason, state) =>
+                {
+                    _logger?.LogDebug("Cache entry evicted: {Key}, Reason: {Reason}", key, reason);
+                });
+        }
+
+        private static MemoryCacheEntryOptions BuildNegativeCacheEntryOptions()
+        {
+            return new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromSeconds(NegativeCacheSlidingSeconds))
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(NegativeCacheAbsoluteMinutes))
+                .SetPriority(CacheItemPriority.Normal);
+        }
+
         /// <summary>
         /// Normalizes a domain name to lowercase for consistent comparison and caching.
         /// </summary>
@@ -593,5 +704,6 @@ namespace Cosmos.DynamicConfig
         {
             return $"{CacheKeyPrefix}{NormalizeDomainName(domainName)}";
         }
+
     }
 }
