@@ -27,6 +27,7 @@ class MonacoLoader {
         try {
             this.monaco = await this.loadPromise;
             this.loaded = true;
+            this.loading = false;
             window.monaco = this.monaco; // Backward compatibility
             return this.monaco;
         } catch (error) {
@@ -73,40 +74,15 @@ class MonacoLoader {
     }
 
     _requireEditor(basePath, resolve, reject) {
-        const originalDefineProperty = Object.defineProperty;
-        const safeDefineProperty = function (target, property, descriptor) {
-            if (descriptor === undefined || descriptor === null || typeof descriptor !== 'object') {
-                descriptor = {
-                    configurable: true,
-                    enumerable: true,
-                    writable: true,
-                    value: descriptor
-                };
-            }
-
-            return originalDefineProperty(target, property, descriptor);
-        };
-
-        const restoreDefineProperty = () => {
-            if (Object.defineProperty !== originalDefineProperty) {
-                Object.defineProperty = originalDefineProperty;
-            }
-        };
-
         try {
-            Object.defineProperty = safeDefineProperty;
-
             window.require.config({
                 paths: { vs: `${basePath}/vs` },
                 'vs/nls': { availableLanguages: { '*': '' } }
             });
 
             window.require(['vs/editor/editor.main'], (monacoModule) => {
-                restoreDefineProperty();
-
-                // Monaco AMD loader doesn't always pass monaco as parameter
-                // Access it from window object instead
-                const monaco = window.monaco;
+                // Monaco AMD loader doesn't always pass monaco as parameter.
+                const monaco = monacoModule || window.monaco;
 
                 if (monaco && monaco.editor) {
                     resolve(monaco);
@@ -114,11 +90,9 @@ class MonacoLoader {
                     reject(new Error('Monaco editor.main loaded but monaco.editor is undefined. Check if Monaco files are properly deployed.'));
                 }
             }, (error) => {
-                restoreDefineProperty();
                 reject(error);
             });
         } catch (error) {
-            restoreDefineProperty();
             reject(error);
         }
     }
