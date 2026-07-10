@@ -7,9 +7,9 @@
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
 		<UserSecretsId>c44b0fbc-a20c-4a15-8e5b-1a9eb09e6ac1</UserSecretsId>
-		<Version>12.4.0</Version>
-		<FileVersion>12.4.0</FileVersion>
-		<AssemblyVersion>12.4.0</AssemblyVersion>
+		<Version>12.5.0</Version>
+		<FileVersion>12.5.0</FileVersion>
+		<AssemblyVersion>12.5.0</AssemblyVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
