@@ -46,7 +46,7 @@ namespace Sky.Tests.Middleware
             var middleware = new DomainMiddleware(mockNext.Object, mockLogger.Object);
             var context = CreateHttpContext("validtenant.com");
 
-            var mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
+            var mockConfigProvider = CreateMultiTenantConfigProviderMock();
             mockConfigProvider
                 .Setup(x => x.GetDatabaseConnectionStringAsync("validtenant.com", It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Server=localhost;Database=TenantDb;");
@@ -76,7 +76,7 @@ namespace Sky.Tests.Middleware
             var middleware = new DomainMiddleware(mockNext.Object, mockLogger.Object);
             var context = CreateHttpContext(inputDomain);
 
-            var mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
+            var mockConfigProvider = CreateMultiTenantConfigProviderMock();
             mockConfigProvider
                 .Setup(x => x.GetDatabaseConnectionStringAsync(expectedDomain, It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Server=localhost;Database=TenantDb;");
@@ -109,7 +109,7 @@ namespace Sky.Tests.Middleware
             var middleware = new DomainMiddleware(mockNext.Object, mockLogger.Object);
             var context = CreateHttpContext("unauthorized.com");
 
-            var mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
+            var mockConfigProvider = CreateMultiTenantConfigProviderMock();
             mockConfigProvider
                 .Setup(x => x.GetDatabaseConnectionStringAsync("unauthorized.com", It.IsAny<CancellationToken>()))
                 .ReturnsAsync((string)null); // Simulate no connection string = invalid domain
@@ -134,7 +134,7 @@ namespace Sky.Tests.Middleware
             var middleware = new DomainMiddleware(mockNext.Object, mockLogger.Object);
             var context = CreateHttpContext("noconfiguration.com");
 
-            var mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
+            var mockConfigProvider = CreateMultiTenantConfigProviderMock();
             mockConfigProvider
                 .Setup(x => x.GetDatabaseConnectionStringAsync("noconfiguration.com", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(string.Empty); // Empty string = invalid
@@ -163,7 +163,7 @@ namespace Sky.Tests.Middleware
             var middleware = new DomainMiddleware(mockNext.Object, mockLogger.Object);
             var context = CreateHttpContext("error.com");
 
-            var mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
+            var mockConfigProvider = CreateMultiTenantConfigProviderMock();
             mockConfigProvider
                 .Setup(x => x.GetDatabaseConnectionStringAsync("error.com", It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Database connection failed"));
@@ -219,7 +219,7 @@ namespace Sky.Tests.Middleware
             try
             {
                 var context = CreateHttpContext(maliciousDomain);
-                var mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
+                var mockConfigProvider = CreateMultiTenantConfigProviderMock();
                 mockConfigProvider
                     .Setup(x => x.GetDatabaseConnectionStringAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((string)null);
@@ -251,6 +251,13 @@ namespace Sky.Tests.Middleware
             context.Response.Body = new MemoryStream();
             context.RequestServices = new ServiceCollection().BuildServiceProvider();
             return context;
+        }
+
+        private Mock<IDynamicConfigurationProvider> CreateMultiTenantConfigProviderMock()
+        {
+            var mockConfigProvider = new Mock<IDynamicConfigurationProvider>();
+            mockConfigProvider.SetupGet(x => x.IsMultiTenantConfigured).Returns(true);
+            return mockConfigProvider;
         }
 
         private void AddServiceToContext(HttpContext context, IDynamicConfigurationProvider configProvider)
