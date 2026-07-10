@@ -1,8 +1,4 @@
 import { Plugin as s, ButtonView as c, IconBrowseFiles as I, ImageInsertUI as h, IconImageUpload as m, MenuBarMenuListItemButtonView as f, IconImageUrl as p, IconImageAssetManager as k, createDropdown as x, IconLink as b, addToolbarToDropdown as C, IconCode as F } from "ckeditor5";
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 const T = [
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">',
   [
@@ -41,27 +37,15 @@ class L extends s {
     });
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class B extends s {
   init() {
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class D extends s {
   static get requires() {
     return [L, B];
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class y extends s {
   init() {
     const e = this.editor, t = e.t;
@@ -83,27 +67,15 @@ class y extends s {
     });
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class U extends s {
   init() {
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class z extends s {
   static get requires() {
     return [y, U];
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class E extends s {
   static get requires() {
     return [h];
@@ -224,35 +196,19 @@ class E extends s {
     n && n.trim().length > 0 && e.execute("insertImage", { source: n.trim() });
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class _ extends s {
   init() {
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class j extends s {
   static get requires() {
     return [E, _];
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class S extends s {
   init() {
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class v extends s {
   init() {
     const e = this.editor, t = e.t;
@@ -322,19 +278,11 @@ class v extends s {
     i && i.trim().length > 0 && this.editor.execute("link", i.trim());
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class N extends s {
   static get requires() {
     return [S, v];
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class V extends s {
   static get pluginName() {
     return "SignalR";
@@ -353,27 +301,15 @@ class V extends s {
     });
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class P extends s {
   init() {
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class Q extends s {
   static get requires() {
     return [V, P];
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class M extends s {
   init() {
     const e = this.editor, t = e.t;
@@ -388,27 +324,15 @@ class M extends s {
     });
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class K extends s {
   static get requires() {
     return [M];
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class A extends s {
   init() {
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class O extends s {
   static get pluginName() {
     return "VSCodeEditor";
@@ -433,19 +357,11 @@ class O extends s {
     });
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 class Y extends s {
   static get requires() {
     return [A, O];
   }
 }
-/**
- * @license Copyright (c) 2003-2026, CKSource Holding sp. z o.o. All rights reserved.
- * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
- */
 const u = {
   title: {
     toolbar: ["titleModeIndicator"],
