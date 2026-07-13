@@ -42,6 +42,10 @@
     <!-- Will be restored when Pomelo releases EF Core 10 support (expected Q1-Q2 2025) -->
     <!-- <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" /> -->
     <!-- Microting is a fast-update verion of Pomelo, might stay with this. -->
+    <PackageVersion Include="Microsoft.Graph" Version="6.2.0" />
+    <PackageVersion Include="Microsoft.Identity.Web" Version="4.13.0" />
+    <PackageVersion Include="Microsoft.Identity.Web.MicrosoftGraph" Version="4.13.0" />
+    <PackageVersion Include="Microsoft.Identity.Web.UI" Version="4.13.0" />
     <PackageVersion Include="Microting.EntityFrameworkCore.MySql" Version="10.0.9" />
     <!-- ASP.NET Core Identity packages -->
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.9" />
@@ -52,8 +56,8 @@
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Facebook" Version="10.0.5" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.5" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.9" />
     <!-- ASP.NET Core Common packages -->
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.9" />
@@ -68,7 +72,7 @@
     <PackageVersion Include="Azure.ResourceManager" Version="1.14.0" />
     <PackageVersion Include="Azure.ResourceManager.Cdn" Version="1.5.1" />
     <!-- AWS packages -->
-    <PackageVersion Include="AWSSDK.S3" Version="4.0.100.2" />
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.100.3" />
     <!-- Microsoft Graph -->
     <PackageVersion Include="Microsoft.Graph.Beta" Version="5.78.0-preview" />
     <PackageVersion Include="Microsoft.Kiota.Abstractions" Version="2.0.0" />
@@ -82,8 +86,8 @@
     <!-- Testing packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="[17.14.1,18.0)" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.57.0" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="4.2.3" />
-    <PackageVersion Include="MSTest.TestFramework" Version="4.2.3" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="4.3.0" />
+    <PackageVersion Include="MSTest.TestFramework" Version="4.3.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="Moq" Version="[4.20.72,5.0)" />
     <PackageVersion Include="RazorLight" Version="[2.3.1,3.0)" />

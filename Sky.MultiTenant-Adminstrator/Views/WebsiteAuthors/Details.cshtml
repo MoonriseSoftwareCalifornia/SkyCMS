@@ -1,0 +1,38 @@
+﻿@using Cosmos.MultiTenant.Administrator.Data
+@using Cosmos.MultiTenant.Administrator.Models
+@model WebsiteAuthor
+
+@{
+    ViewData["Title"] = "Details";
+    var connections = ViewData["Connections"] as List<ConnectionWebSiteViewModel>;
+    var connectionSelectList = connections?.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+    {
+        Value = c.ConnectionId.ToString(),
+        Text = c.WebsiteUrl
+    }).ToList();
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>StoryAuthorsAndWebsites</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.ConnectionId)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DropDownListFor(item => item.ConnectionId, connectionSelectList, "Select Connection", htmlAttributes: new { disabled = true })
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.EmailAddress)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.EmailAddress)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

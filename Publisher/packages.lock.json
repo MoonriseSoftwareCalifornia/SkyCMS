@@ -58,8 +58,8 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "4.0.100.2",
-        "contentHash": "1hz6lB2Meymkv9rdOy30p5pIbGpYLK0H4O8XUMGwEMmXUB4FJhyTNk69dLWIFdDUrY66h0NyKy9maHKXMRTwJA=="
+        "resolved": "4.0.100.3",
+        "contentHash": "KU+8IlwHqh68J82FXvsNgehAuG0Z++Ul62oD5sg5Iyj4RgSdUKer3nbLBJbW31DAM7mgEuckhsEcJW+2wYpSVA=="
       },
       "Azure.Core": {
         "type": "Transitive",
@@ -356,19 +356,19 @@
       "cosmos.blobservice": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.S3": "[4.0.100.2, )",
+          "AWSSDK.S3": "[4.0.100.3, )",
           "Azure.Extensions.AspNetCore.DataProtection.Blobs": "[1.5.3, )",
           "Azure.Storage.Files.Shares": "[12.27.1, )",
-          "Cosmos.DynamicConfig": "[12.4.0, )"
+          "Cosmos.DynamicConfig": "[12.5.0, )"
         }
       },
       "cosmos.common": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[12.4.0, )",
+          "AspNetCore.Identity.FlexDb": "[12.5.0, )",
           "Azure.Monitor.Query.Logs": "[1.0.0, )",
-          "Cosmos.BlobService": "[12.4.0, )",
-          "Cosmos.DynamicConfig": "[12.4.0, )",
+          "Cosmos.BlobService": "[12.5.0, )",
+          "Cosmos.DynamicConfig": "[12.5.0, )",
           "MailChimp.Net.V3": "[5.8.2, 6.0.0)",
           "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore": "[10.0.9, )",
           "Otp.NET": "[1.4.1, )",
@@ -378,7 +378,7 @@
       "cosmos.dynamicconfig": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[12.4.0, )",
+          "AspNetCore.Identity.FlexDb": "[12.5.0, )",
           "IPAddressRange": "[6.3.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.9, )",
           "Microsoft.EntityFrameworkCore.Cosmos": "[10.0.9, )"
@@ -387,10 +387,10 @@
       "cosmos.emailservices": {
         "type": "Project",
         "dependencies": {
-          "AspNetCore.Identity.FlexDb": "[12.4.0, )",
+          "AspNetCore.Identity.FlexDb": "[12.5.0, )",
           "Azure.Communication.Email": "[1.1.0, )",
           "Azure.Identity": "[1.21.0, )",
-          "Cosmos.Common": "[12.4.0, )",
+          "Cosmos.Common": "[12.5.0, )",
           "HtmlAgilityPack": "[1.12.4, )",
           "Microsoft.AspNetCore.Identity.UI": "[10.0.9, )",
           "Newtonsoft.Json": "[13.0.4, 14.0.0)",
@@ -416,7 +416,7 @@
       "sky.shared.razor": {
         "type": "Project",
         "dependencies": {
-          "Cosmos.Common": "[12.4.0, )"
+          "Cosmos.Common": "[12.5.0, )"
         }
       },
       "AspNetCore.Identity.CosmosDb": {
@@ -434,11 +434,11 @@
       },
       "AWSSDK.S3": {
         "type": "CentralTransitive",
-        "requested": "[4.0.100.2, )",
-        "resolved": "4.0.100.2",
-        "contentHash": "t7kVd4ckiEVE79yu4fnjt9X4Rq+M4Kxg0ghGogzP0rGzgtBQY3es9wD6vJXFjEvYy/b3ef31NbKqL7wvHTN5Pg==",
+        "requested": "[4.0.100.3, )",
+        "resolved": "4.0.100.3",
+        "contentHash": "bHe+BZRyC/TnyPw3/l6N96V/hqtBHyjtXINVrVxVl8LTYx2fxNI1HTwknm0jslSkOiOKeHRZ/oduxMcJXBbtsg==",
         "dependencies": {
-          "AWSSDK.Core": "[4.0.100.2, 5.0.0)"
+          "AWSSDK.Core": "[4.0.100.3, 5.0.0)"
         }
       },
       "Azure.Communication.Email": {

@@ -1,0 +1,110 @@
+﻿@using Cosmos.MultiTenant.Administrator.Data
+@using Cosmos.MultiTenant.Administrator.Models
+@model WebsiteAuthorsViewModel
+
+@{
+    ViewData["Title"] = "Edit";
+    var connections = ViewData["Connections"] as List<ConnectionWebSiteViewModel>;
+    var connectionSelectList = connections?.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+    {
+        Value = c.ConnectionId.ToString(),
+        Text = c.WebsiteUrl
+    }).ToList();
+}
+
+<h1>Edit</h1>
+
+<h4>Story Authors And Websites</h4>
+<hr />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="TemplateId" />
+            <input type="hidden" asp-for="TemplateName" />
+            <input type="hidden" asp-for="WebsiteUrl" />
+            <div class="form-group">
+                <label asp-for="WebsiteUrl" class="control-label"></label>
+                @Html.DropDownListFor(modelItem => modelItem.ConnectionId, connectionSelectList, "Select Website", htmlAttributes: new { @class = "form-control" })
+                <span asp-validation-for="ConnectionId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="EmailAddress" class="control-label"></label>
+                <input asp-for="EmailAddress" class="form-control" />
+                <span asp-validation-for="EmailAddress" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Path" class="control-label"></label>
+                <input asp-for="Path" class="form-control" />
+                <span asp-validation-for="Path" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TemplateId" class="control-label"></label>
+                <select id="templateDropDown" class="form-select">
+                    <option selected disabled>Loading...</option>
+                </select>
+
+                <span asp-validation-for="ConnectionId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('ConnectionId')
+            .addEventListener('change',
+                function () {
+                    document.getElementById('WebsiteUrl').value = this.options[this.selectedIndex].text;
+                    document.getElementById('TemplateName').value = "";
+                    document.getElementById('TemplateId').value = "";
+                    loadTemplates();
+                });
+
+        document.getElementById('templateDropDown')
+            .addEventListener('change',
+                function () {
+                    var selectedText = this.options[this.selectedIndex].text; // Gets the selected option's text
+                    document.getElementById('TemplateName').value = selectedText;
+                    document.getElementById('TemplateId').value = this.value;
+                });
+    });
+
+    function loadTemplates(templateId) {
+        const connectionId = document.getElementById('ConnectionId').value;
+
+        const dropdown = document.getElementById('templateDropDown');
+
+        fetch('/WebsiteAuthors/GetTemplates/' + connectionId)
+            .then(response => response.json())
+            .then(data => {
+                dropdown.innerHTML = '<option selected disabled>Select a template</option>';
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.title;
+                    if (item.id === templateId) {
+                        option.selected = true; // Select the template if it matches the provided templateId
+                    }
+                    dropdown.appendChild(option);
+                });
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log("DOM is fully loaded!");
+        loadTemplates('@Model.TemplateId');
+    });
+</script>

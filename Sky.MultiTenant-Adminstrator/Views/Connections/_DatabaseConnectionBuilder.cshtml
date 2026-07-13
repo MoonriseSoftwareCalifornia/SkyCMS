@@ -1,0 +1,123 @@
+@* Shared modal used by the Connections Create/Edit views.
+   The JavaScript widget in wwwroot/js/site.js depends on the ids and data-* attributes
+   in this partial, so rename them only if the script is updated at the same time. *@
+<div class="modal fade" id="dbConnectionBuilderModal" tabindex="-1" aria-labelledby="dbConnectionBuilderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dbConnectionBuilderModalLabel">Database Connection Builder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" data-db-builder-validation role="alert"></div>
+                <div class="alert alert-warning d-none" data-db-builder-unsupported role="alert">
+                    The existing connection string could not be matched to a supported provider form. Use Clear to remove it, or Cancel to leave it unchanged.
+                </div>
+
+                <div data-db-builder-provider-selection>
+                    <p class="mb-3">Choose the database provider for this connection string.</p>
+                    <div class="d-grid gap-2 d-md-block">
+                        <button type="button" class="btn btn-outline-primary mb-2 me-md-2" data-provider-option="cosmos">Azure Cosmos DB</button>
+                        <button type="button" class="btn btn-outline-primary mb-2 me-md-2" data-provider-option="sqlserver">SQL Server</button>
+                        <button type="button" class="btn btn-outline-primary mb-2 me-md-2" data-provider-option="mysql">MySQL</button>
+                        <button type="button" class="btn btn-outline-primary mb-2" data-provider-option="sqlite">SQLite</button>
+                    </div>
+                </div>
+
+                <div class="d-none" data-db-builder-provider-forms>
+                    <div class="mb-3">
+                        <span class="badge text-bg-secondary" data-db-builder-provider-label></span>
+                    </div>
+
+                    <div class="d-none" data-provider-form="cosmos">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label" for="dbBuilderCosmosAccountEndpoint">Account Endpoint</label>
+                                <input type="text" class="form-control" id="dbBuilderCosmosAccountEndpoint" data-field="accountEndpoint" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderCosmosDatabase">Database</label>
+                                <input type="text" class="form-control" id="dbBuilderCosmosDatabase" data-field="database" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderCosmosAccountKey">Account Key or AccessToken</label>
+                                <input type="text" class="form-control" id="dbBuilderCosmosAccountKey" data-field="accountKey" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-none" data-provider-form="sqlserver">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderSqlServerServer">Server</label>
+                                <input type="text" class="form-control" id="dbBuilderSqlServerServer" data-field="server" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderSqlServerDatabase">Database</label>
+                                <input type="text" class="form-control" id="dbBuilderSqlServerDatabase" data-field="database" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderSqlServerAuthentication">Authentication</label>
+                                <select class="form-select" id="dbBuilderSqlServerAuthentication" data-field="authentication">
+                                    <option value="Sql">SQL Server Authentication</option>
+                                    <option value="Integrated">Integrated Security</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" data-sql-auth-fields>
+                                <label class="form-label" for="dbBuilderSqlServerUserId">User ID</label>
+                                <input type="text" class="form-control" id="dbBuilderSqlServerUserId" data-field="userId" />
+                            </div>
+                            <div class="col-md-6" data-sql-auth-fields>
+                                <label class="form-label" for="dbBuilderSqlServerPassword">Password</label>
+                                <input type="text" class="form-control" id="dbBuilderSqlServerPassword" data-field="password" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-none" data-provider-form="mysql">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderMySqlServer">Server</label>
+                                <input type="text" class="form-control" id="dbBuilderMySqlServer" data-field="server" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderMySqlPort">Port</label>
+                                <input type="text" class="form-control" id="dbBuilderMySqlPort" data-field="port" value="3306" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderMySqlDatabase">Database</label>
+                                <input type="text" class="form-control" id="dbBuilderMySqlDatabase" data-field="database" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderMySqlUserId">User ID</label>
+                                <input type="text" class="form-control" id="dbBuilderMySqlUserId" data-field="userId" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="dbBuilderMySqlPassword">Password</label>
+                                <input type="text" class="form-control" id="dbBuilderMySqlPassword" data-field="password" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-none" data-provider-form="sqlite">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label" for="dbBuilderSqliteDataSource">Data Source</label>
+                                <input type="text" class="form-control" id="dbBuilderSqliteDataSource" data-field="dataSource" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="dbBuilderSqlitePassword">Password</label>
+                                <input type="text" class="form-control" id="dbBuilderSqlitePassword" data-field="password" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" data-db-builder-clear>Clear</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" data-db-builder-save>Save</button>
+            </div>
+        </div>
+    </div>
+</div>

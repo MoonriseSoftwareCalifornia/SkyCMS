@@ -45,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Drivers", "Drivers", "{7455
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyCMS.Drivers.ElFinder", "Drivers\SkyCMS.Drivers.ElFinder\SkyCMS.Drivers.ElFinder.csproj", "{47914A72-C2A1-4032-AFF3-C8A741016963}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sky.MultiTenant.Adminstrator", "Sky.MultiTenant-Adminstrator\Sky.MultiTenant.Adminstrator.csproj", "{5C2215F0-43C1-77FD-730A-745CADDEF27A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -235,6 +237,18 @@ Global
 		{47914A72-C2A1-4032-AFF3-C8A741016963}.Release|x64.Build.0 = Release|Any CPU
 		{47914A72-C2A1-4032-AFF3-C8A741016963}.Release|x86.ActiveCfg = Release|Any CPU
 		{47914A72-C2A1-4032-AFF3-C8A741016963}.Release|x86.Build.0 = Release|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Debug|x64.Build.0 = Debug|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Debug|x86.Build.0 = Debug|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Release|x64.ActiveCfg = Release|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Release|x64.Build.0 = Release|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Release|x86.ActiveCfg = Release|Any CPU
+		{5C2215F0-43C1-77FD-730A-745CADDEF27A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

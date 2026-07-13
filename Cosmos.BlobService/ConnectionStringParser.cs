@@ -51,6 +51,22 @@ namespace Cosmos.BlobService
         }
 
         /// <summary>
+        /// Gets the appropriate BlobServiceClient based on the provided connection string.
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <returns></returns>
+        public static string GetProviderName(CloudStorageProvider provider)
+        {
+            return provider switch
+            {
+                CloudStorageProvider.Azure => "Azure",
+                CloudStorageProvider.CloudflareR2 => "Cloudflare R2",
+                CloudStorageProvider.AmazonS3 => "Amazon S3",
+                _ => "Unknown"
+            };
+        }
+
+        /// <summary>
         /// Parses an Azure Blob Storage connection string into its components.
         /// </summary>
         /// <param name="connectionString">The Azure connection string.</param>
