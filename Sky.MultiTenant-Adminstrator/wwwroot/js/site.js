@@ -19,8 +19,24 @@
         sqlite: "SQLite"
     };
 
+    const storageProviderLabels = {
+        azure: "Azure Blob Storage",
+        s3: "Amazon S3",
+        r2: "Cloudflare R2"
+    };
+
     // State for the currently open modal session. This is reset whenever the modal closes.
     const state = {
+        activeInput: null,
+        provider: null,
+        extraSegments: [],
+        unsupported: false,
+        modal: null,
+        modalElement: null
+    };
+
+    // Separate state for storage connection builder interactions.
+    const storageState = {
         activeInput: null,
         provider: null,
         extraSegments: [],
@@ -550,13 +566,400 @@
         return segments.concat(extraSegments || []).join(";") + ";";
     }
 
+    function initializeStorageConnectionBuilder() {
+        const modalElement = document.getElementById("storageConnectionBuilderModal");
+        if (!modalElement || !window.bootstrap) {
+            return;
+        }
+
+        storageState.modalElement = modalElement;
+        storageState.modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+
+        document.querySelectorAll("[data-storage-connection-builder]").forEach((button) => {
+            button.addEventListener("click", onStorageBuilderOpen);
+        });
+
+        modalElement.querySelectorAll("[data-storage-provider-option]").forEach((button) => {
+            button.addEventListener("click", () => selectStorageProvider(button.getAttribute("data-storage-provider-option")));
+        });
+
+        modalElement.querySelector("[data-storage-builder-save]").addEventListener("click", onStorageSaveClick);
+        modalElement.querySelector("[data-storage-builder-clear]").addEventListener("click", onStorageClearClick);
+        modalElement.addEventListener("hidden.bs.modal", resetStorageBuilderState);
+    }
+
+    function onStorageBuilderOpen(event) {
+        const targetInputId = event.currentTarget.getAttribute("data-target-input");
+        const input = document.getElementById(targetInputId);
+        if (!input) {
+            return;
+        }
+
+        storageState.activeInput = input;
+        resetStorageBuilderUi();
+
+        const connectionString = (input.value || "").trim();
+        if (!connectionString) {
+            showStorageProviderSelection();
+            storageState.modal.show();
+            return;
+        }
+
+        const provider = detectStorageProvider(connectionString);
+        if (!provider) {
+            showUnsupportedStorageState();
+            storageState.modal.show();
+            return;
+        }
+
+        const parsed = parseStorageConnectionString(connectionString, provider);
+        if (!parsed) {
+            showUnsupportedStorageState();
+            storageState.modal.show();
+            return;
+        }
+
+        storageState.provider = provider;
+        storageState.extraSegments = parsed.extraSegments;
+        populateStorageProviderFields(provider, parsed.fields);
+        showStorageProviderForm(provider);
+        storageState.modal.show();
+    }
+
+    function resetStorageBuilderState() {
+        storageState.activeInput = null;
+        resetStorageBuilderUi();
+    }
+
+    function resetStorageBuilderUi() {
+        storageState.provider = null;
+        storageState.extraSegments = [];
+        storageState.unsupported = false;
+        clearStorageValidation();
+        clearAllStorageProviderFields();
+        document.querySelector("[data-storage-builder-provider-selection]").classList.remove("d-none");
+        document.querySelector("[data-storage-builder-provider-forms]").classList.add("d-none");
+        document.querySelector("[data-storage-builder-unsupported]").classList.add("d-none");
+        document.getElementById("storageConnectionBuilderModalLabel").textContent = "Storage Connection Builder";
+    }
+
+    function showStorageProviderSelection() {
+        clearStorageValidation();
+        storageState.provider = null;
+        storageState.extraSegments = [];
+        storageState.unsupported = false;
+        document.querySelector("[data-storage-builder-provider-selection]").classList.remove("d-none");
+        document.querySelector("[data-storage-builder-provider-forms]").classList.add("d-none");
+        document.querySelector("[data-storage-builder-unsupported]").classList.add("d-none");
+        document.getElementById("storageConnectionBuilderModalLabel").textContent = "Storage Connection Builder";
+    }
+
+    function showStorageProviderForm(provider) {
+        clearStorageValidation();
+        storageState.provider = provider;
+        storageState.unsupported = false;
+        document.querySelector("[data-storage-builder-provider-selection]").classList.add("d-none");
+        document.querySelector("[data-storage-builder-provider-forms]").classList.remove("d-none");
+        document.querySelector("[data-storage-builder-unsupported]").classList.add("d-none");
+
+        document.querySelectorAll("[data-storage-provider-form]").forEach((form) => {
+            form.classList.toggle("d-none", form.getAttribute("data-storage-provider-form") !== provider);
+        });
+
+        document.querySelector("[data-storage-builder-provider-label]").textContent = storageProviderLabels[provider];
+        document.getElementById("storageConnectionBuilderModalLabel").textContent = storageProviderLabels[provider] + " Connection";
+    }
+
+    function showUnsupportedStorageState() {
+        clearStorageValidation();
+        storageState.provider = null;
+        storageState.extraSegments = [];
+        storageState.unsupported = true;
+        clearAllStorageProviderFields();
+        document.querySelector("[data-storage-builder-provider-selection]").classList.add("d-none");
+        document.querySelector("[data-storage-builder-provider-forms]").classList.add("d-none");
+        document.querySelector("[data-storage-builder-unsupported]").classList.remove("d-none");
+        document.getElementById("storageConnectionBuilderModalLabel").textContent = "Unsupported Storage Connection String";
+    }
+
+    function onStorageClearClick() {
+        resetStorageBuilderUi();
+        showStorageProviderSelection();
+    }
+
+    function onStorageSaveClick() {
+        if (!storageState.activeInput) {
+            return;
+        }
+
+        if (storageState.unsupported) {
+            showStorageValidation("Use Clear to remove the existing storage connection string, or Cancel to keep it unchanged.");
+            return;
+        }
+
+        if (!storageState.provider) {
+            if (confirmEmptyStorageConnectionString()) {
+                setInputValue(storageState.activeInput, "");
+                storageState.modal.hide();
+            }
+
+            return;
+        }
+
+        const fields = collectStorageProviderFields(storageState.provider);
+        if (areAllStorageFieldsBlank(storageState.provider, fields)) {
+            if (confirmEmptyStorageConnectionString()) {
+                setInputValue(storageState.activeInput, "");
+                storageState.modal.hide();
+            }
+
+            return;
+        }
+
+        const validationErrors = validateStorageProviderFields(storageState.provider, fields);
+        if (validationErrors.length > 0) {
+            showStorageValidation(validationErrors.join(" "));
+            return;
+        }
+
+        const connectionString = buildStorageConnectionString(storageState.provider, fields, storageState.extraSegments);
+        setInputValue(storageState.activeInput, connectionString);
+        storageState.modal.hide();
+    }
+
+    function confirmEmptyStorageConnectionString() {
+        return window.confirm("No storage connection data was provided. Select OK to save an empty storage connection string and remove any existing value.");
+    }
+
+    function clearStorageValidation() {
+        const validationElement = document.querySelector("[data-storage-builder-validation]");
+        validationElement.textContent = "";
+        validationElement.classList.add("d-none");
+    }
+
+    function showStorageValidation(message) {
+        const validationElement = document.querySelector("[data-storage-builder-validation]");
+        validationElement.textContent = message;
+        validationElement.classList.remove("d-none");
+    }
+
+    function clearAllStorageProviderFields() {
+        document.getElementById("storageBuilderAzureProtocol").value = "https";
+        document.getElementById("storageBuilderAzureAccountName").value = "";
+        document.getElementById("storageBuilderAzureEndpointSuffix").value = "core.windows.net";
+        document.getElementById("storageBuilderAzureAccountKey").value = "";
+
+        document.getElementById("storageBuilderS3Bucket").value = "";
+        document.getElementById("storageBuilderS3Region").value = "";
+        document.getElementById("storageBuilderS3KeyId").value = "";
+        document.getElementById("storageBuilderS3Key").value = "";
+
+        document.getElementById("storageBuilderR2Bucket").value = "";
+        document.getElementById("storageBuilderR2AccountId").value = "";
+        document.getElementById("storageBuilderR2KeyId").value = "";
+        document.getElementById("storageBuilderR2Key").value = "";
+    }
+
+    function selectStorageProvider(provider) {
+        clearAllStorageProviderFields();
+        showStorageProviderForm(provider);
+    }
+
+    function detectStorageProvider(connectionString) {
+        const normalized = connectionString.toLowerCase();
+        if (normalized.startsWith("defaultendpointsprotocol=")) {
+            return "azure";
+        }
+
+        if (normalized.includes("accountid") && normalized.includes("bucket")) {
+            return "r2";
+        }
+
+        if (normalized.includes("bucket") && normalized.includes("region")) {
+            return "s3";
+        }
+
+        return null;
+    }
+
+    function parseStorageConnectionString(connectionString, provider) {
+        const parts = splitConnectionString(connectionString);
+        const normalizedParts = parts.map(createConnectionPart);
+
+        switch (provider) {
+            case "azure":
+                return {
+                    fields: {
+                        protocol: getValue(normalizedParts, ["defaultendpointsprotocol"]),
+                        accountName: getValue(normalizedParts, ["accountname"]),
+                        accountKey: getValue(normalizedParts, ["accountkey"]),
+                        endpointSuffix: getValue(normalizedParts, ["endpointsuffix"]) || "core.windows.net"
+                    },
+                    extraSegments: getExtraSegments(normalizedParts, ["defaultendpointsprotocol", "accountname", "accountkey", "endpointsuffix"])
+                };
+            case "s3":
+                return {
+                    fields: {
+                        bucket: getValue(normalizedParts, ["bucket"]),
+                        region: getValue(normalizedParts, ["region"]),
+                        keyId: getValue(normalizedParts, ["keyid"]),
+                        key: getValue(normalizedParts, ["key"])
+                    },
+                    extraSegments: getExtraSegments(normalizedParts, ["bucket", "region", "keyid", "key", "accountid"])
+                };
+            case "r2":
+                return {
+                    fields: {
+                        bucket: getValue(normalizedParts, ["bucket"]),
+                        accountId: getValue(normalizedParts, ["accountid"]),
+                        keyId: getValue(normalizedParts, ["keyid"]),
+                        key: getValue(normalizedParts, ["key"])
+                    },
+                    extraSegments: getExtraSegments(normalizedParts, ["bucket", "accountid", "keyid", "key", "region"])
+                };
+            default:
+                return null;
+        }
+    }
+
+    function populateStorageProviderFields(provider, fields) {
+        clearAllStorageProviderFields();
+
+        switch (provider) {
+            case "azure":
+                document.getElementById("storageBuilderAzureProtocol").value = fields.protocol || "https";
+                document.getElementById("storageBuilderAzureAccountName").value = fields.accountName || "";
+                document.getElementById("storageBuilderAzureAccountKey").value = fields.accountKey || "";
+                document.getElementById("storageBuilderAzureEndpointSuffix").value = fields.endpointSuffix || "core.windows.net";
+                break;
+            case "s3":
+                document.getElementById("storageBuilderS3Bucket").value = fields.bucket || "";
+                document.getElementById("storageBuilderS3Region").value = fields.region || "";
+                document.getElementById("storageBuilderS3KeyId").value = fields.keyId || "";
+                document.getElementById("storageBuilderS3Key").value = fields.key || "";
+                break;
+            case "r2":
+                document.getElementById("storageBuilderR2Bucket").value = fields.bucket || "";
+                document.getElementById("storageBuilderR2AccountId").value = fields.accountId || "";
+                document.getElementById("storageBuilderR2KeyId").value = fields.keyId || "";
+                document.getElementById("storageBuilderR2Key").value = fields.key || "";
+                break;
+            default:
+                break;
+        }
+    }
+
+    function collectStorageProviderFields(provider) {
+        switch (provider) {
+            case "azure":
+                return {
+                    protocol: document.getElementById("storageBuilderAzureProtocol").value.trim(),
+                    accountName: document.getElementById("storageBuilderAzureAccountName").value.trim(),
+                    accountKey: document.getElementById("storageBuilderAzureAccountKey").value.trim(),
+                    endpointSuffix: document.getElementById("storageBuilderAzureEndpointSuffix").value.trim()
+                };
+            case "s3":
+                return {
+                    bucket: document.getElementById("storageBuilderS3Bucket").value.trim(),
+                    region: document.getElementById("storageBuilderS3Region").value.trim(),
+                    keyId: document.getElementById("storageBuilderS3KeyId").value.trim(),
+                    key: document.getElementById("storageBuilderS3Key").value.trim()
+                };
+            case "r2":
+                return {
+                    bucket: document.getElementById("storageBuilderR2Bucket").value.trim(),
+                    accountId: document.getElementById("storageBuilderR2AccountId").value.trim(),
+                    keyId: document.getElementById("storageBuilderR2KeyId").value.trim(),
+                    key: document.getElementById("storageBuilderR2Key").value.trim()
+                };
+            default:
+                return {};
+        }
+    }
+
+    function areAllStorageFieldsBlank(provider, fields) {
+        switch (provider) {
+            case "azure":
+                return !fields.accountName && !fields.accountKey;
+            case "s3":
+                return !fields.bucket && !fields.region && !fields.keyId && !fields.key;
+            case "r2":
+                return !fields.bucket && !fields.accountId && !fields.keyId && !fields.key;
+            default:
+                return true;
+        }
+    }
+
+    function validateStorageProviderFields(provider, fields) {
+        const errors = [];
+
+        switch (provider) {
+            case "azure":
+                if (!fields.accountName || !fields.accountKey) {
+                    errors.push("Account Name and Account Key or AccessToken are required for Azure Blob Storage.");
+                }
+
+                break;
+            case "s3":
+                if (!fields.bucket || !fields.region || !fields.keyId || !fields.key) {
+                    errors.push("Bucket, Region, KeyId, and Key are required for Amazon S3.");
+                }
+
+                break;
+            case "r2":
+                if (!fields.bucket || !fields.accountId || !fields.keyId || !fields.key) {
+                    errors.push("Bucket, AccountId, KeyId, and Key are required for Cloudflare R2.");
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        return errors;
+    }
+
+    function buildStorageConnectionString(provider, fields, extraSegments) {
+        const segments = [];
+
+        switch (provider) {
+            case "azure":
+                segments.push("DefaultEndpointsProtocol=" + (fields.protocol || "https"));
+                segments.push("AccountName=" + fields.accountName);
+                segments.push("AccountKey=" + fields.accountKey);
+                segments.push("EndpointSuffix=" + (fields.endpointSuffix || "core.windows.net"));
+                break;
+            case "s3":
+                segments.push("Bucket=" + fields.bucket);
+                segments.push("Region=" + fields.region);
+                segments.push("KeyId=" + fields.keyId);
+                segments.push("Key=" + fields.key);
+                break;
+            case "r2":
+                segments.push("Bucket=" + fields.bucket);
+                segments.push("AccountId=" + fields.accountId);
+                segments.push("KeyId=" + fields.keyId);
+                segments.push("Key=" + fields.key);
+                break;
+            default:
+                break;
+        }
+
+        return segments.concat(extraSegments || []).join(";") + ";";
+    }
+
     // Export a small surface for developer diagnostics and Jest unit tests.
     const api = {
         initializeDatabaseConnectionBuilder,
         detectProvider,
         parseConnectionString,
         buildConnectionString,
-        validateProviderFields
+        validateProviderFields,
+        initializeStorageConnectionBuilder,
+        detectStorageProvider,
+        parseStorageConnectionString,
+        buildStorageConnectionString,
+        validateStorageProviderFields
     };
 
     if (typeof window !== "undefined") {
@@ -567,10 +970,15 @@
         module.exports = api;
     }
 
+    function initializeConnectionBuilders() {
+        initializeDatabaseConnectionBuilder();
+        initializeStorageConnectionBuilder();
+    }
+
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initializeDatabaseConnectionBuilder);
+        document.addEventListener("DOMContentLoaded", initializeConnectionBuilders);
     }
     else {
-        initializeDatabaseConnectionBuilder();
+        initializeConnectionBuilders();
     }
 }());

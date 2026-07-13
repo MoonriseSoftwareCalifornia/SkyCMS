@@ -121,3 +121,103 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="storageConnectionBuilderModal" tabindex="-1" aria-labelledby="storageConnectionBuilderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="storageConnectionBuilderModalLabel">Storage Connection Builder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger d-none" data-storage-builder-validation role="alert"></div>
+                <div class="alert alert-warning d-none" data-storage-builder-unsupported role="alert">
+                    The existing storage connection string could not be matched to a supported provider form. Use Clear to remove it, or Cancel to leave it unchanged.
+                </div>
+
+                <div data-storage-builder-provider-selection>
+                    <p class="mb-3">Choose the storage provider for this connection string.</p>
+                    <div class="d-grid gap-2 d-md-block">
+                        <button type="button" class="btn btn-outline-primary mb-2 me-md-2" data-storage-provider-option="azure">Azure Blob Storage</button>
+                        <button type="button" class="btn btn-outline-primary mb-2 me-md-2" data-storage-provider-option="s3">Amazon S3</button>
+                        <button type="button" class="btn btn-outline-primary mb-2" data-storage-provider-option="r2">Cloudflare R2</button>
+                    </div>
+                </div>
+
+                <div class="d-none" data-storage-builder-provider-forms>
+                    <div class="mb-3">
+                        <span class="badge text-bg-secondary" data-storage-builder-provider-label></span>
+                    </div>
+
+                    <div class="d-none" data-storage-provider-form="azure">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label" for="storageBuilderAzureProtocol">Default Endpoints Protocol</label>
+                                <input type="text" class="form-control" id="storageBuilderAzureProtocol" data-field="protocol" value="https" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="storageBuilderAzureAccountName">Account Name</label>
+                                <input type="text" class="form-control" id="storageBuilderAzureAccountName" data-field="accountName" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" for="storageBuilderAzureEndpointSuffix">Endpoint Suffix</label>
+                                <input type="text" class="form-control" id="storageBuilderAzureEndpointSuffix" data-field="endpointSuffix" value="core.windows.net" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="storageBuilderAzureAccountKey">Account Key or AccessToken</label>
+                                <input type="text" class="form-control" id="storageBuilderAzureAccountKey" data-field="accountKey" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-none" data-storage-provider-form="s3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="storageBuilderS3Bucket">Bucket</label>
+                                <input type="text" class="form-control" id="storageBuilderS3Bucket" data-field="bucket" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="storageBuilderS3Region">Region</label>
+                                <input type="text" class="form-control" id="storageBuilderS3Region" data-field="region" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="storageBuilderS3KeyId">KeyId</label>
+                                <input type="text" class="form-control" id="storageBuilderS3KeyId" data-field="keyId" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="storageBuilderS3Key">Key</label>
+                                <input type="text" class="form-control" id="storageBuilderS3Key" data-field="key" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-none" data-storage-provider-form="r2">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="storageBuilderR2Bucket">Bucket</label>
+                                <input type="text" class="form-control" id="storageBuilderR2Bucket" data-field="bucket" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="storageBuilderR2AccountId">AccountId</label>
+                                <input type="text" class="form-control" id="storageBuilderR2AccountId" data-field="accountId" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="storageBuilderR2KeyId">KeyId</label>
+                                <input type="text" class="form-control" id="storageBuilderR2KeyId" data-field="keyId" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="storageBuilderR2Key">Key</label>
+                                <input type="text" class="form-control" id="storageBuilderR2Key" data-field="key" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" data-storage-builder-clear>Clear</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" data-storage-builder-save>Save</button>
+            </div>
+        </div>
+    </div>
+</div>

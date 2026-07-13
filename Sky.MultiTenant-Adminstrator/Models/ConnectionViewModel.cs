@@ -85,7 +85,6 @@ namespace Cosmos.MultiTenant.Administrator.Models
         /// <summary>
         /// Gets or sets the storage connection string.
         /// </summary>
-        [Required(AllowEmptyStrings = false)]
         [Display(Name = "Storage Connection String")]
         public string StorageConn { get; set; } = null!;
 

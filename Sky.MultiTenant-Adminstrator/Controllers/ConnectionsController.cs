@@ -110,7 +110,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                     ModelState.AddModelError(string.Empty, "Database connection failed: " + result.ErrorMessage);
                     return View(model);
                 }
-                if (!result.IsStorageConnected)
+                if (!string.IsNullOrWhiteSpace(connection.StorageConn) && !result.IsStorageConnected)
                 {
                     ModelState.AddModelError(string.Empty, "Storage connection failed: " + result.ErrorMessage);
                     return View(model);
@@ -163,7 +163,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                         ModelState.AddModelError(string.Empty, "Database connection failed: " + result.ErrorMessage);
                         return View(model);
                     }
-                    if (!result.IsStorageConnected)
+                    if (!string.IsNullOrWhiteSpace(connection.StorageConn) && !result.IsStorageConnected)
                     {
                         ModelState.AddModelError(string.Empty, "Storage connection failed: " + result.ErrorMessage);
                         return View(model);
@@ -255,14 +255,17 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                     result.IsDatabaseConnected = testResult == DbStatus.ExistsWithUsers || testResult == DbStatus.ExistsWithNoUsers;
                 }
 
-                // Test the storage connection
-                var blobClient = new BlobServiceClient(connection.StorageConn);
-                var containerClient = blobClient.GetBlobContainerClient("$web");
-                var result1 = await containerClient.CreateIfNotExistsAsync();
+                if (!string.IsNullOrWhiteSpace(connection.StorageConn))
+                {
+                    // Test the storage connection
+                    var blobClient = new BlobServiceClient(connection.StorageConn);
+                    var containerClient = blobClient.GetBlobContainerClient("$web");
+                    var result1 = await containerClient.CreateIfNotExistsAsync();
 
-                var result2 = await blobClient.GetPropertiesAsync();
+                    var result2 = await blobClient.GetPropertiesAsync();
 
-                result.IsStorageConnected = true;
+                    result.IsStorageConnected = true;
+                }
             }
             catch (Exception ex)
             {
