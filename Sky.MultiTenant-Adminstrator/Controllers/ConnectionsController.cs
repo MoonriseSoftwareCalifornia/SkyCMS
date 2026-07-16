@@ -13,6 +13,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
     public class ConnectionsController : Controller
     {
         private readonly DynamicConfigDbContext _context;
+
         public ConnectionsController(DynamicConfigDbContext context)
         {
             _context = context;
@@ -22,7 +23,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
         [AuthorizeForScopes(ScopeKeySection = "MicrosoftGraph:Scopes")]
         public async Task<IActionResult> Index()
         {
-            await _context.Database.EnsureCreatedAsync();
+            // await _context.Database.EnsureCreatedAsync();
 
             try
             {
@@ -32,18 +33,17 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                     return RedirectToAction("Create");
                 }
 
-                var entities = await _context.Connections.ToListAsync();
-                var model = new List<ConnectionsIndexViewModel>();
+                var model = connections.Select(c => new ConnectionsIndexViewModel(c)).ToList();
 
-                foreach (var item in entities)
-                {
-                    var result = await this.TestConnections(item, false);
-                    model.Add(new ConnectionsIndexViewModel(item)
-                    {
-                        DatabaseStatus = result.IsDatabaseConnected,
-                        StorageStatus = result.IsStorageConnected
-                    });
-                }
+                //foreach (var item in entities)
+                //{
+                //    var result = await this.TestConnections(item, false);
+                //    model.Add(new ConnectionsIndexViewModel(item)
+                //    {
+                //        DatabaseStatus = result.IsDatabaseConnected,
+                //        StorageStatus = result.IsStorageConnected
+                //    });
+                //}
 
                 return View(model);
             }
@@ -77,7 +77,6 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
         }
 
         // GET: Connections/Create
-
         [AuthorizeForScopes(ScopeKeySection = "MicrosoftGraph:Scopes")]
         public IActionResult Create()
         {
@@ -104,7 +103,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
             {
                 model.Id = Guid.NewGuid();
                 var connection = model.ToConnection();
-                var result = await TestConnections(connection);
+                var result = await TestConnection(connection);
                 if (!string.IsNullOrWhiteSpace(connection.DbConn) && !result.IsDatabaseConnected)
                 {
                     ModelState.AddModelError(string.Empty, "Database connection failed: " + result.ErrorMessage);
@@ -157,7 +156,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                 try
                 {
                     var connection = model.ToConnection();
-                    var result = await TestConnections(connection);
+                    var result = await TestConnection(connection);
                     if (!string.IsNullOrWhiteSpace(connection.DbConn) && !result.IsDatabaseConnected)
                     {
                         ModelState.AddModelError(string.Empty, "Database connection failed: " + result.ErrorMessage);
@@ -241,7 +240,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
             return _context.Connections.Any(e => e.Id == id);
         }
 
-        private async Task<TestResult> TestConnections(Connection connection, bool setup = true)
+        private async Task<TestResult> TestConnection(Connection connection, bool setup = true)
         {
             var result = new TestResult();
             try
