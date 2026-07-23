@@ -7,10 +7,6 @@
 
 namespace Cosmos.Common.Data
 {
-    using System;
-    using System.Linq;
-    using System.Text.Json;
-    using System.Threading.Tasks;
     using AspNetCore.Identity.FlexDb;
     using Cosmos.Common.Data.SQlite;
     using Cosmos.DynamicConfig;
@@ -18,6 +14,11 @@ namespace Cosmos.Common.Data
     using Microsoft.Azure.Cosmos;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore.Diagnostics;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text.Json;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Database Context for Sky CMS.
@@ -232,17 +233,50 @@ namespace Cosmos.Common.Data
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     // Check required containers.
-                    var identityContainerResult = cosmosClient.GetContainer(databaseName, "Identity").ReadContainerAsync().Result;
-                    var articleContainerResult = cosmosClient.GetContainer(databaseName, "Articles").ReadContainerAsync().Result;
-
-                    if (identityContainerResult.StatusCode == System.Net.HttpStatusCode.OK &&
-                        articleContainerResult.StatusCode == System.Net.HttpStatusCode.OK)
+                    try
                     {
-                        var query = identityContainerResult.Container.GetItemLinqQueryable<IdentityUser>(allowSynchronousQueryExecution: true);
-                        var count = query.Count();
-                        dbStatus = count > 0 ? DbStatus.ExistsWithUsers : DbStatus.ExistsWithNoUsers;
+                        var containers = ListContainersAsync(cosmosClient, databaseName).Result;
+
+                        if (containers.Count > 0 &&
+                            containers.Contains("ArticleCatalog") &&
+                            containers.Contains("ArticleLocks") &&
+                            containers.Contains("ArticleLogs") &&
+                            containers.Contains("ArticleNumbers") &&
+                            containers.Contains("Articles") &&
+                            containers.Contains("AuthorInfos") &&
+                            containers.Contains("Contacts") &&
+                            containers.Contains("Layouts") &&
+                            containers.Contains("Metrics") &&
+                            containers.Contains("Pages") &&
+                            containers.Contains("PageDesignVersions") &&
+                            containers.Contains("Settings") &&
+                            containers.Contains("Templates") &&
+                            containers.Contains("__EFMigrationsHistory") &&
+                            containers.Contains("Identity"))
+                        {
+                            // See if any users exist by listing the contents of the Identity container.
+                            var iterator = cosmosClient.GetDatabase(databaseName)
+                                .GetContainer("Identity")
+                                .GetItemQueryIterator<int>("SELECT VALUE COUNT(1) FROM c");
+
+                            var data = iterator.ReadNextAsync().Result;
+                            int userCount = data.FirstOrDefault(); // Returns 0 if no users
+
+                            if (userCount == 0)
+                            {
+                                dbStatus = DbStatus.ExistsWithNoUsers;
+                            }
+                            else
+                            {
+                                dbStatus = DbStatus.ExistsWithUsers;
+                            }
+                        }
+                        else
+                        {
+                            dbStatus = DbStatus.ExistsWithMissingContainers;
+                        }
                     }
-                    else
+                    catch
                     {
                         dbStatus = DbStatus.ExistsWithMissingContainers;
                     }
@@ -521,5 +555,27 @@ namespace Cosmos.Common.Data
 
             return false;
         }
+
+        // Async version (recommended)
+        private static async Task<List<string>> ListContainersAsync(CosmosClient cosmosClient, string databaseName)
+        {
+            var database = cosmosClient.GetDatabase(databaseName);
+            var containers = new List<string>();
+
+            using (var iterator = database.GetContainerQueryIterator<ContainerProperties>())
+            {
+                while (iterator.HasMoreResults)
+                {
+                    var response = await iterator.ReadNextAsync();
+                    foreach (var container in response)
+                    {
+                        containers.Add(container.Id);
+                    }
+                }
+            }
+
+            return containers;
+        }
+
     }
 }

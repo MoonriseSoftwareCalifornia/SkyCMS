@@ -30,29 +30,29 @@ namespace Cosmos.DynamicConfig
         /// <summary>
         /// Gets or sets the database connection string.
         /// </summary>
-        [Required(AllowEmptyStrings = false)]
+        [Required(AllowEmptyStrings = true)]
         [Display(Name = "Database Connection String")]
-        public string DbConn { get; set; } = null!;
+        public string DbConn { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the storage connection string.
         /// </summary>
-        [Required(AllowEmptyStrings = false)]
+        [Required(AllowEmptyStrings = true)]
         [Display(Name = "Storage Connection String")]
-        public string StorageConn { get; set; } = null!;
+        public string StorageConn { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the customer name.
         /// </summary>
         [Display(Name = "Website Owner Name")]
-        public string? Customer { get; set; } = null;
+        public string? Customer { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the resrouce group where the customer's resources are kept.
         /// </summary>
-        [Required(AllowEmptyStrings = false)]
+        [Required(AllowEmptyStrings = true)]
         [Display(Name = "Customer Resource Group")]
-        public string? ResourceGroup { get; set; } = null;
+        public string? ResourceGroup { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the publisher mode.
@@ -79,12 +79,12 @@ namespace Cosmos.DynamicConfig
         /// Gets or sets the website URL.
         /// </summary>
         [HttpUrl]
-        [Required(AllowEmptyStrings = false)]
+        [Required(AllowEmptyStrings = true)]
         [Display(Name = "Website URL")]
-        public string WebsiteUrl { get; set; } = null!;
+        public string WebsiteUrl { get; set; } = string.Empty;
 
         [EmailAddress]
         [Display(Name = "Website Owner Email")]
-        public string? OwnerEmail { get; set; } = null;
+        public string? OwnerEmail { get; set; }
     }
 }

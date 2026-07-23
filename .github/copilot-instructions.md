@@ -35,6 +35,13 @@
 - Keep changes behavior-preserving and visibility-focused; do not mix unrelated refactors.
 - Validate with solution build and relevant tests before merge.
 
+## Website Copy/Migration Feature Design
+- For website copy/migration feature design in this repo:
+  - Use existing Connection.Id as website identifier.
+  - Migrate all ApplicationDbContext entities.
+  - Enforce strict destination-empty check (fail if any user data exists).
+  - Keep connection switch manual-only after validation.
+
 ---
 
 ## Purpose

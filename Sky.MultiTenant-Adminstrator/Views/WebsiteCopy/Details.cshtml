@@ -1,0 +1,89 @@
+@model Cosmos.MultiTenant.Administrator.Models.WebsiteCopyDetailsViewModel
+
+@{
+    ViewData["Title"] = "Website Copy Job";
+}
+
+<h1>Website Copy Job</h1>
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary">New Job</a>
+</div>
+
+<table class="table table-sm">
+    <tr><th>Job Id</th><td>@Model.Job.Id</td></tr>
+    <tr><th>Status</th><td id="jobStatus">@Model.Job.Status</td></tr>
+    <tr><th>Attempt</th><td id="jobAttempt">@Model.Job.AttemptCount / @Model.Job.MaxAttempts</td></tr>
+    <tr><th>Source</th><td>@(Model.SourceConnection?.WebsiteUrl ?? Model.Job.SourceConnectionId.ToString())</td></tr>
+    <tr><th>Destination</th><td>@(Model.DestinationConnection?.WebsiteUrl ?? "New connection")</td></tr>
+    <tr><th>Allow Destination Overwrite</th><td>@Model.Job.AllowDestinationOverwrite</td></tr>
+    <tr><th>Message</th><td id="jobMessage">@Model.Job.LastMessage</td></tr>
+    <tr><th>Error</th><td id="jobError" class="text-danger">@Model.Job.ErrorMessage</td></tr>
+</table>
+
+<div class="progress mb-3" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Model.Job.ProgressPercent">
+    <div id="jobProgressBar" class="progress-bar" style="width:@Model.Job.ProgressPercent%">@Model.Job.ProgressPercent%</div>
+</div>
+
+<div class="d-flex gap-2">
+    @if (Model.Job.Status.ToString() == "Failed")
+    {
+        <form asp-action="Retry" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Job.Id" />
+            <button type="submit" class="btn btn-warning">Retry / Resume</button>
+        </form>
+    }
+
+    @if (Model.Job.Status.ToString() == "Completed")
+    {
+        <form asp-action="ApplySwitch" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Job.Id" />
+            <button type="submit" class="btn btn-success">Apply Manual Connection Switch</button>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const jobId = '@Model.Job.Id';
+            const progressBar = document.getElementById('jobProgressBar');
+            const status = document.getElementById('jobStatus');
+            const message = document.getElementById('jobMessage');
+            const error = document.getElementById('jobError');
+            const attempt = document.getElementById('jobAttempt');
+
+            async function refresh() {
+                const response = await fetch('@Url.Action("Progress", "WebsiteCopy")?id=' + jobId, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const pct = data.progressPercent ?? 0;
+                progressBar.style.width = pct + '%';
+                progressBar.textContent = pct + '%';
+                status.textContent = data.status;
+                message.textContent = data.lastMessage ?? '';
+                error.textContent = data.errorMessage ?? '';
+                attempt.textContent = `${data.attemptCount} / ${data.maxAttempts}`;
+
+                if (data.status === 'Running' || data.status === 'Queued') {
+                    setTimeout(refresh, 1500);
+                }
+                else {
+                    location.reload();
+                }
+            }
+
+            if ('@Model.Job.Status' === 'Running' || '@Model.Job.Status' === 'Queued') {
+                setTimeout(refresh, 1500);
+            }
+        })();
+    </script>
+}

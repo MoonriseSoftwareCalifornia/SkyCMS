@@ -553,6 +553,7 @@ namespace Cosmos.DynamicConfig
             await using var dbContext = GetDbContext();
             var allConnections = await dbContext.Connections
                 .AsNoTracking()
+                .Where(w => w.WebsiteUrl != null && w.WebsiteUrl != string.Empty && w.DomainNames != null && w.DomainNames.Length > 0)
                 .ToListAsync(cancellationToken);
 
             foreach (var connection in allConnections)

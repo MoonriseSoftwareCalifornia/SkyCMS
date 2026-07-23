@@ -1,6 +1,7 @@
 using Cosmos.DynamicConfig;
 using Cosmos.MultiTenant.Administrator.Data;
 using Cosmos.MultiTenant.Administrator.Authentication;
+using Cosmos.MultiTenant.Administrator.Services;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -55,6 +56,8 @@ builder.Services.AddDbContext<DynamicConfigDbContext>(options =>
 builder.Services.AddDbContext<StoryDeskDbContext>(options =>
     options.UseCosmos(connectionString: connectionString, databaseName: "configs"));
 
+builder.Services.AddScoped<IWebsiteCopyOrchestrator, WebsiteCopyOrchestrator>();
+
 builder.Services.AddControllersWithViews(options =>
 {
     var policy = new AuthorizationPolicyBuilder()
@@ -83,7 +86,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     // Only loopback proxies are allowed by default.
     // Clear that restriction because forwarders are enabled by explicit
     // configuration.
-    options.KnownNetworks.Clear();
+    options.KnownNetworks.Clear(); // backward compatibility
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 

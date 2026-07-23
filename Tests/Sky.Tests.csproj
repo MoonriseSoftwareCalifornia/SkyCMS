@@ -59,6 +59,7 @@
 		<ProjectReference Include="..\Drivers\SkyCMS.Drivers.ElFinder\SkyCMS.Drivers.ElFinder.csproj" />
 		<ProjectReference Include="..\Editor\Sky.Editor.csproj" />
 		<ProjectReference Include="..\Publisher\Sky.Publisher.csproj" />
+		<ProjectReference Include="..\Sky.MultiTenant-Adminstrator\Sky.MultiTenant.Adminstrator.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

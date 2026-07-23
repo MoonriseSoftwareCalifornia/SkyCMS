@@ -37,6 +37,7 @@ namespace Sky.Tests.DynamicConfig
             // Arrange
             var connection = new Connection
             {
+                OwnerEmail = "foo1@acme.com",
                 DomainNames = new[] { "test.com" },
                 DbConn = "Server=test;",
                 StorageConn = "Storage=test;",

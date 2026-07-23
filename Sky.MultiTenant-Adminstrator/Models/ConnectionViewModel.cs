@@ -74,50 +74,49 @@ namespace Cosmos.MultiTenant.Administrator.Models
         /// Gets or sets the editor domain name of the connection.
         /// </summary>
         [Display(Name = "Editor Domain Names")]
-        public string DomainNames { get; set; } = null!;
+        public string? DomainNames { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the database connection string.
         /// </summary>
         [Display(Name = "Database Connection String")]
-        public string DbConn { get; set; } = null!;
+        public string? DbConn { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the storage connection string.
         /// </summary>
         [Display(Name = "Storage Connection String")]
-        public string StorageConn { get; set; } = null!;
+        public string? StorageConn { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the customer name.
         /// </summary>
-        [Display(Name = "Website Owner Name")]
-        public string? Customer { get; set; } = null;
+        [Display(Name = "Customer  or Connection Name")]
+        [Required(AllowEmptyStrings = false)]
+        public string? Customer { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the resrouce group where the customer's resources are kept.
         /// </summary>
-        [Required(AllowEmptyStrings = false)]
         [Display(Name = "Customer Resource Group")]
-        public string? ResourceGroup { get; set; } = null;
+        public string? ResourceGroup { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the publisher mode.
         /// </summary>
         [AllowedValues("Static", "Decoupled", "Headless", "Hybrid", "Static-dynamic", "")]
-        public string PublisherMode { get; set; } = string.Empty;
+        public string? PublisherMode { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the website URL.
         /// </summary>
         [Url]
-        [Required(AllowEmptyStrings = false)]
         [Display(Name = "Website URL")]
-        public string WebsiteUrl { get; set; } = null!;
+        public string? WebsiteUrl { get; set; } = string.Empty;
 
         [EmailAddress]
         [Display(Name = "Owner Email Address")]
-        public string? OwnerEmail { get; set; } = null;
+        public string? OwnerEmail { get; set; } = string.Empty;
 
         /// <summary>
         /// Converts the view model to a <see cref="Connection"/> object.
@@ -128,15 +127,20 @@ namespace Cosmos.MultiTenant.Administrator.Models
             return new Connection
             {
                 Id = Id,
-                DomainNames = DomainNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(d => d.Trim()).ToArray(),
-                DbConn = DbConn,
-                StorageConn = StorageConn,
-                Customer = Customer,
-                ResourceGroup = ResourceGroup,
-                PublisherMode = PublisherMode,
-                WebsiteUrl = WebsiteUrl,
-                OwnerEmail = OwnerEmail
+                DomainNames = GetDomainNames(DomainNames),
+                DbConn = DbConn ?? string.Empty,
+                StorageConn = StorageConn ?? string.Empty,
+                Customer = Customer ?? string.Empty,
+                ResourceGroup = ResourceGroup ?? string.Empty,
+                PublisherMode = PublisherMode ?? string.Empty,
+                WebsiteUrl = WebsiteUrl ?? string.Empty,
+                OwnerEmail = OwnerEmail  // Preserve null/empty instead of invalid default
             };
+        }
+
+        private static string[] GetDomainNames(string? domainNames)
+        {
+            return domainNames == null || domainNames == string.Empty ? new string[0] : domainNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(d => d.Trim()).ToArray();
         }
 
         //private static string GetDatabaseName(string connectionString)

@@ -1,0 +1,110 @@
+@model Cosmos.MultiTenant.Administrator.Models.WebsiteCopyStartViewModel
+
+@{
+    ViewData["Title"] = "Website Copy";
+}
+
+<h1>Website Copy</h1>
+<p class="text-muted">Create a copy job to move database and/or storage to a new destination.</p>
+
+<div class="row">
+    <div class="col-md-9">
+        <form asp-action="Start" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="SourceConnectionId" class="form-label"></label>
+                <select asp-for="SourceConnectionId" asp-items="Model.SourceConnections" class="form-select"></select>
+                <span asp-validation-for="SourceConnectionId" class="text-danger"></span>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="MoveDatabase" class="form-check-input" />
+                <label asp-for="MoveDatabase" class="form-check-label"></label>
+            </div>
+            <div class="form-check mb-3">
+                <input asp-for="MoveStorage" class="form-check-input" />
+                <label asp-for="MoveStorage" class="form-check-label"></label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="UseExistingDestination" class="form-check-input" id="useExistingDestinationToggle" />
+                <label asp-for="UseExistingDestination" class="form-check-label"></label>
+            </div>
+
+            <div id="existingDestinationSection" class="mb-3">
+                <label asp-for="DestinationConnectionId" class="form-label"></label>
+                <select asp-for="DestinationConnectionId" asp-items="Model.DestinationConnections" class="form-select">
+                    <option value="">-- select --</option>
+                </select>
+                <span asp-validation-for="DestinationConnectionId" class="text-danger"></span>
+            </div>
+
+            <div id="newDestinationSection" class="border rounded p-3 mb-3 d-none">
+                <h5>New Destination Connection</h5>
+                <div class="mb-3">
+                    <label asp-for="DestinationDbConn" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="DestinationDbConn" class="form-control" />
+                        <button type="button" class="btn btn-outline-secondary" data-db-connection-builder data-target-input="DestinationDbConn">Build Connection String</button>
+                    </div>
+                    <span asp-validation-for="DestinationDbConn" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="DestinationStorageConn" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="DestinationStorageConn" class="form-control" />
+                        <button type="button" class="btn btn-outline-secondary" data-storage-connection-builder data-target-input="DestinationStorageConn">Build Storage Connection</button>
+                    </div>
+                    <span asp-validation-for="DestinationStorageConn" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="DryRun" class="form-check-input" />
+                <label asp-for="DryRun" class="form-check-label"></label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="AllowDestinationOverwrite" class="form-check-input" />
+                <label asp-for="AllowDestinationOverwrite" class="form-check-label"></label>
+                <div class="form-text text-danger">
+                    When enabled (non-dry-run), destination storage files will be deleted and destination database schema data will be removed before copy.
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Start Copy Job</button>
+        </form>
+    </div>
+</div>
+
+@if (Model.LastJob != null)
+{
+    <hr />
+    <p>
+        Last job: <a asp-action="Details" asp-route-id="@Model.LastJob.Id">@Model.LastJob.Id</a>
+        (@Model.LastJob.Status)
+    </p>
+}
+
+@await Html.PartialAsync("~/Views/Connections/_DatabaseConnectionBuilder.cshtml")
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script>
+        (function () {
+            const toggle = document.getElementById('useExistingDestinationToggle');
+            const existing = document.getElementById('existingDestinationSection');
+            const custom = document.getElementById('newDestinationSection');
+
+            function syncSections() {
+                const useExisting = toggle.checked;
+                existing.classList.toggle('d-none', !useExisting);
+                custom.classList.toggle('d-none', useExisting);
+            }
+
+            toggle.addEventListener('change', syncSections);
+            syncSections();
+        })();
+    </script>
+}

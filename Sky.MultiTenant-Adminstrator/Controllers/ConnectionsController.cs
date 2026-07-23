@@ -1,10 +1,12 @@
 ﻿using Azure.Storage.Blobs;
+using Cosmos.BlobService;
 using Cosmos.Common.Data;
 using Cosmos.DynamicConfig;
 using Cosmos.MultiTenant.Administrator.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Identity.Web;
 
 namespace Cosmos.MultiTenant.Administrator.Controllers
@@ -13,10 +15,12 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
     public class ConnectionsController : Controller
     {
         private readonly DynamicConfigDbContext _context;
+        private readonly IMemoryCache memoryCache;
 
-        public ConnectionsController(DynamicConfigDbContext context)
+        public ConnectionsController(DynamicConfigDbContext context, IMemoryCache memoryCache)
         {
             _context = context;
+            this.memoryCache = memoryCache;
         }
 
         // GET: Connections
@@ -53,7 +57,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                 ModelState.AddModelError(string.Empty, "An error occurred while retrieving connections: " + ex.Message);
             }
 
-            return View(new List<Connection>());
+            return View(new List<ConnectionsIndexViewModel>());
         }
 
         // GET: Connections/Details/5
@@ -257,11 +261,8 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                 if (!string.IsNullOrWhiteSpace(connection.StorageConn))
                 {
                     // Test the storage connection
-                    var blobClient = new BlobServiceClient(connection.StorageConn);
-                    var containerClient = blobClient.GetBlobContainerClient("$web");
-                    var result1 = await containerClient.CreateIfNotExistsAsync();
-
-                    var result2 = await blobClient.GetPropertiesAsync();
+                    var storageContext = new StorageContext(connection.StorageConn, memoryCache);
+                    var result2 = storageContext.GetFilesAndDirectories("/"); // This will throw an exception if the connection is invalid
 
                     result.IsStorageConnected = true;
                 }
