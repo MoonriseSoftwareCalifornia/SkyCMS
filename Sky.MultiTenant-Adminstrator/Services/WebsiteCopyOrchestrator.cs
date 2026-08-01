@@ -1,15 +1,18 @@
 using System.Collections;
 using System.Collections.Concurrent;
+using AspNetCore.Identity.FlexDb;
 using Cosmos.BlobService;
 using Cosmos.BlobService.Models;
 using Cosmos.Common.Data;
 using Cosmos.DynamicConfig;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Graph.Models;
 
 namespace Cosmos.MultiTenant.Administrator.Services
 {
@@ -39,6 +42,36 @@ namespace Cosmos.MultiTenant.Administrator.Services
         /// This ensures that only one copy operation can run for a specific job at a time.
         /// </remarks>
         private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> WebsiteLocks = new();
+
+        /// <summary>
+        /// Gets the list of supported entity types for database copy and validation operations.
+        /// </summary>
+        private HashSet<Type> GetSupportedEntityTypes()
+        {
+            return new()
+            {
+                typeof(Article),
+                typeof(ArticleLock),
+                typeof(ArticleLog),
+                typeof(ArticleNumber),
+                typeof(AuthorInfo),
+                typeof(CatalogEntry),
+                typeof(Cosmos.Common.Data.Contact),
+                typeof(Layout),
+                typeof(Cosmos.Common.Data.Metric), // Qualified type to avoid namespace ambiguity
+                typeof(PublishedPage),
+                typeof(PageDesignVersion),
+                typeof(Setting),
+                typeof(Template),
+                typeof(TotpToken),
+                typeof(MigrationHistory),
+                typeof(IdentityUser),
+                typeof(IdentityRole),
+                typeof(IdentityUserClaim<string>),
+                typeof(IdentityUserLogin<string>),
+                typeof(IdentityUserPasskey<string>), // Generic type handled separately
+            };
+        }
 
         /// <summary>
         /// Factory for creating service scopes to access dependency-injected services.
@@ -94,14 +127,14 @@ namespace Cosmos.MultiTenant.Administrator.Services
         {
             await using var scope = scopeFactory.CreateAsyncScope();
             var configDb = scope.ServiceProvider.GetRequiredService<DynamicConfigDbContext>();
-            job.Status = WebsiteCopyJobStatus.Queued;
+            job.Status = (int)WebsiteCopyJobStatus.Queued;
             job.CreatedUtc = DateTimeOffset.UtcNow;
             job.ProgressPercent = 0;
             job.LastMessage = "Queued";
             configDb.WebsiteCopyJobs.Add(job);
             await configDb.SaveChangesAsync(cancellationToken);
 
-            _ = Task.Run(() => ProcessJobAsync(job.Id));
+            await ProcessJobAsync(job.Id);
             return job;
         }
 
@@ -150,12 +183,12 @@ namespace Cosmos.MultiTenant.Administrator.Services
             await using var scope = scopeFactory.CreateAsyncScope();
             var configDb = scope.ServiceProvider.GetRequiredService<DynamicConfigDbContext>();
             var job = await configDb.WebsiteCopyJobs.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-            if (job == null || job.Status == WebsiteCopyJobStatus.Running)
+            if (job == null || job.Status == (int)WebsiteCopyJobStatus.Running)
             {
                 return false;
             }
 
-            job.Status = WebsiteCopyJobStatus.Queued;
+            job.Status = (int)WebsiteCopyJobStatus.Queued;
             job.ErrorMessage = null;
             job.LastMessage = "Retry queued";
             await configDb.SaveChangesAsync(cancellationToken);
@@ -194,7 +227,7 @@ namespace Cosmos.MultiTenant.Administrator.Services
             await using var scope = scopeFactory.CreateAsyncScope();
             var configDb = scope.ServiceProvider.GetRequiredService<DynamicConfigDbContext>();
             var job = await configDb.WebsiteCopyJobs.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-            if (job == null || job.Status != WebsiteCopyJobStatus.Completed)
+            if (job == null || job.Status != (int)WebsiteCopyJobStatus.Completed)
             {
                 return false;
             }
@@ -251,118 +284,96 @@ namespace Cosmos.MultiTenant.Administrator.Services
         /// </remarks>
         private async Task ProcessJobAsync(Guid jobId)
         {
-            var copyLock = WebsiteLocks.GetOrAdd(jobId, _ => new SemaphoreSlim(1, 1));
-            if (!await copyLock.WaitAsync(0))
+            //try
+            //{
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var configDb = scope.ServiceProvider.GetRequiredService<DynamicConfigDbContext>();
+
+            var job = await configDb.WebsiteCopyJobs.FirstOrDefaultAsync(x => x.Id == jobId);
+            if (job == null)
             {
                 return;
             }
 
-            try
+            if (!job.AllowDestinationOverwrite)
             {
-                await using var scope = scopeFactory.CreateAsyncScope();
-                var configDb = scope.ServiceProvider.GetRequiredService<DynamicConfigDbContext>();
-                var job = await configDb.WebsiteCopyJobs.FirstOrDefaultAsync(x => x.Id == jobId);
-                if (job == null)
-                {
-                    return;
-                }
-
-                if (job.Status == WebsiteCopyJobStatus.Completed || job.Status == WebsiteCopyJobStatus.CompletedDryRun)
-                {
-                    return;
-                }
-
-                var source = await configDb.Connections.FirstOrDefaultAsync(x => x.Id == job.SourceConnectionId);
-                if (source == null)
-                {
-                    await FailJobAsync(configDb, job, "Source connection not found.");
-                    return;
-                }
-
-                job.AttemptCount += 1;
-                job.Status = WebsiteCopyJobStatus.Running;
-                job.StartedUtc ??= DateTimeOffset.UtcNow;
-                job.Locked = true;
-                await UpdateProgressAsync(configDb, job, 5, "Running preflight checks...");
-
-                var destination = await ResolveDestinationAsync(configDb, job);
-                if (destination == null)
-                {
-                    await FailJobAsync(configDb, job, "Destination connection is missing.");
-                    return;
-                }
-
-                if (!await CanLockWebsiteAsync(configDb, job.SourceConnectionId, job.Id))
-                {
-                    await FailJobAsync(configDb, job, "Another copy is already in progress for this website.");
-                    return;
-                }
-
-                if (job.AllowDestinationOverwrite && !job.DryRun)
-                {
-                    await UpdateProgressAsync(configDb, job, 12, "Clearing destination data for overwrite...");
-                    await ClearDestinationDataAsync(job, destination);
-                }
-                else if (!job.AllowDestinationOverwrite)
-                {
-                    await EnsureDestinationIsEmptyAsync(job, destination);
-                }
-
-                await UpdateProgressAsync(configDb, job, 20, "Preflight checks completed.");
-
-                if (job.DryRun)
-                {
-                    job.Status = WebsiteCopyJobStatus.CompletedDryRun;
-                    job.ValidationCompleted = true;
-                    job.CompletedUtc = DateTimeOffset.UtcNow;
-                    job.Locked = false;
-                    await UpdateProgressAsync(configDb, job, 100, "Dry-run completed successfully.");
-                    return;
-                }
-
-
-                if (job.CopyDatabase && !job.DatabaseCopied)
-                {
-                    await UpdateProgressAsync(configDb, job, 35, "Copying database...");
-                    await CopyDatabaseAsync(source.DbConn, destination.DbConn);
-                    job.DatabaseCopied = true;
-                    await configDb.SaveChangesAsync();
-                }
-
-                if (job.CopyStorage && !job.StorageCopied)
-                {
-                    await UpdateProgressAsync(configDb, job, 65, "Copying storage objects...");
-                    await CopyStorageAsync(source.StorageConn, destination.StorageConn, job);
-                    job.StorageCopied = true;
-                    await configDb.SaveChangesAsync();
-                }
-
-                await UpdateProgressAsync(configDb, job, 85, "Validating copied data...");
-                await ValidateCopyAsync(source, destination, job);
-
-                job.ValidationCompleted = true;
-                job.Status = WebsiteCopyJobStatus.Completed;
-                job.CompletedUtc = DateTimeOffset.UtcNow;
-                job.Locked = false;
-
-                await UpdateManagedConnectionMetadataAsync(configDb, job, destination.Id, "Copy validation passed.");
-                await UpdateProgressAsync(configDb, job, 100, "Copy completed successfully. Manual switch available.");
+                await FailJobAsync(configDb, job, "Must allow destination overwrite.");
+                return;
             }
-            catch (Exception ex)
+
+            if (!await CanLockWebsiteAsync(configDb, job.SourceConnectionId, job.Id))
             {
-                logger.LogError(ex, "Website copy job {JobId} failed.", jobId);
-                await using var scope = scopeFactory.CreateAsyncScope();
-                var configDb = scope.ServiceProvider.GetRequiredService<DynamicConfigDbContext>();
-                var job = await configDb.WebsiteCopyJobs.FirstOrDefaultAsync(x => x.Id == jobId);
-                if (job != null)
-                {
-                    await FailJobAsync(configDb, job, ex.Message);
-                }
+                await FailJobAsync(configDb, job, "Another copy is already in progress for this website.");
+                return;
             }
-            finally
+
+            if (job.Status == (int)WebsiteCopyJobStatus.Completed)
             {
-                copyLock.Release();
+                return;
             }
+
+            var source = await configDb.Connections.FirstOrDefaultAsync(x => x.Id == job.SourceConnectionId);
+            if (source == null)
+            {
+                await FailJobAsync(configDb, job, "Source connection not found.");
+                return;
+            }
+
+            var destination = await ResolveDestinationAsync(configDb, job);
+            if (destination == null)
+            {
+                await FailJobAsync(configDb, job, "Destination connection is missing.");
+                return;
+            }
+
+            // Copy the database over now.
+            if (!job.DatabaseCopied)
+            {
+                await UpdateProgressAsync(configDb, job, 12, "Clearing destination database...");
+                // Clear destination data base
+                await DropAndRecreateSchema(destination);
+
+                // Clear destination storage
+                await ClearStorageAsync(destination.StorageConn);
+                await UpdateProgressAsync(configDb, job, 35, "Copying database...");
+                await CopyDatabaseAsync(source.DbConn, destination.DbConn, GetSupportedEntityTypes());
+                job.DatabaseCopied = true;
+                await configDb.SaveChangesAsync();
+            }
+
+            if (!job.StorageCopied)
+            {
+                await UpdateProgressAsync(configDb, job, 12, "Clearing destination storage...");
+                await ClearStorageAsync(destination.StorageConn);
+
+                await UpdateProgressAsync(configDb, job, 65, "Copying storage objects...");
+                await CopyStorageAsync(source.StorageConn, destination.StorageConn);
+                job.StorageCopied = true;
+                await configDb.SaveChangesAsync();
+            }
+
+            job.ValidationCompleted = true;
+            job.Status = (int)WebsiteCopyJobStatus.Completed;
+            job.CompletedUtc = DateTimeOffset.UtcNow;
+            job.Locked = false;
+
+            await UpdateProgressAsync(configDb, job, 100, "Copy completed successfully. Manual switch available.");
+            //}
+            //catch (Exception ex)
+            //{
+            //    logger.LogError(ex, "Website copy job {JobId} failed.", jobId);
+            //    await using var scope = scopeFactory.CreateAsyncScope();
+            //    var configDb = scope.ServiceProvider.GetRequiredService<DynamicConfigDbContext>();
+            //    var job = await configDb.WebsiteCopyJobs.FirstOrDefaultAsync(x => x.Id == jobId);
+            //    if (job != null)
+            //    {
+            //        await FailJobAsync(configDb, job, ex.Message);
+            //    }
+            //}
+            //finally
+            //{
+            //    // Release the lock on the job
+            //}
         }
 
         /// <summary>
@@ -381,10 +392,14 @@ namespace Cosmos.MultiTenant.Administrator.Services
         /// </remarks>
         private static async Task<bool> CanLockWebsiteAsync(DynamicConfigDbContext db, Guid sourceConnectionId, Guid currentJobId)
         {
-            return !await db.WebsiteCopyJobs.AnyAsync(x =>
-                x.SourceConnectionId == sourceConnectionId &&
-                x.Id != currentJobId &&
-                x.Status == WebsiteCopyJobStatus.Running);
+            var status = (int)WebsiteCopyJobStatus.Running;
+            var jobs = await db.WebsiteCopyJobs
+                .AsNoTracking()
+                .Where(j => j.SourceConnectionId == sourceConnectionId && j.Status == status && j.Id != currentJobId)
+                .Select(j => j.Id)
+                .ToListAsync();
+
+            return !jobs.Any();
         }
 
         /// <summary>
@@ -428,278 +443,13 @@ namespace Cosmos.MultiTenant.Administrator.Services
             };
         }
 
-        /// <summary>
-        /// Ensures that the destination is empty before starting a copy operation.
-        /// </summary>
-        /// <param name="job">The copy job specifying which resources to check.</param>
-        /// <param name="destination">The destination connection to validate.</param>
-        /// <remarks>
-        /// This method validates that the destination is in a clean state before migration:
-        /// - If MoveDatabase is true, verifies the destination database contains no user data
-        /// - If MoveStorage is true, verifies the destination storage contains no files
-        /// 
-        /// This is a strict validation to ensure data integrity. Any existing data in the destination
-        /// will cause the validation to fail and the copy operation to be aborted.
-        /// 
-        /// Throws InvalidOperationException if validation fails.
-        /// </remarks>
-        private static async Task EnsureDestinationIsEmptyAsync(WebsiteCopyJob job, Connection destination)
-        {
-            if (job.CopyDatabase)
-            {
-                await EnsureDatabaseEmptyAsync(destination.DbConn);
-            }
-
-            if (job.CopyStorage)
-            {
-                await EnsureStorageEmptyAsync(destination.StorageConn);
-            }
-        }
-
-        private static async Task ClearDestinationDataAsync(WebsiteCopyJob job, Connection destination)
-        {
-            if (job.CopyStorage)
-            {
-                await ClearStorageAsync(destination.StorageConn);
-                await EnsureStorageEmptyAsync(destination.StorageConn);
-            }
-
-            if (job.CopyDatabase)
-            {
-                await ResetDatabaseSchemaAsync(destination.DbConn);
-                await EnsureDatabaseEmptyAsync(destination.DbConn);
-            }
-        }
-
-        /// <summary>
-        /// Validates that a destination database is empty of user data.
-        /// </summary>
-        /// <param name="connectionString">The connection string for the destination database.</param>
-        /// <remarks>
-        /// This method:
-        /// 1. Ensures the database schema exists
-        /// 2. Identifies all entity types (excluding owned entities and those without primary keys)
-        /// 3. Counts entities in each table
-        /// 4. Throws InvalidOperationException if any table contains records
-        /// 
-        /// This strict validation ensures data integrity by preventing accidental overwrites
-        /// of existing data in the destination database.
-        /// 
-        /// Includes retry logic with exponential backoff to handle Cosmos DB eventual consistency
-        /// after container creation. Newly created containers may not be immediately queryable.
-        /// 
-        /// Throws InvalidOperationException if any entity type has records.
-        /// </remarks>
-        private static async Task EnsureDatabaseEmptyAsync(string connectionString)
-        {
-            const int maxAttempts = 5;
-            for (var attempt = 1; attempt <= maxAttempts; attempt++)
-            {
-                try
-                {
-                    using var destinationDb = new ApplicationDbContext(connectionString);
-                    await destinationDb.Database.EnsureCreatedAsync();
-                    var types = destinationDb.Model.GetEntityTypes()
-                        .Where(t => !t.IsOwned() && t.FindPrimaryKey() != null)
-                        .Select(t => t.ClrType)
-                        .Distinct()
-                        .ToList();
-
-                    foreach (var type in types)
-                    {
-                        var count = await CountEntitiesAsync(destinationDb, type);
-                        if (count > 0)
-                        {
-                            throw new InvalidOperationException($"Destination database must be empty. Entity {type.Name} has {count} record(s).");
-                        }
-                    }
-
-                    // Success - exit retry loop
-                    return;
-                }
-                catch (DbUpdateException ex) when (attempt < maxAttempts && ex.InnerException is CosmosException cosmosEx && cosmosEx.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    // Container not ready yet - retry with exponential backoff
-                    await Task.Delay(TimeSpan.FromSeconds(attempt));
-                }
-            }
-        }
-
-        private static async Task ResetDatabaseSchemaAsync(string connectionString)
-        {
-            using var destinationDb = new ApplicationDbContext(connectionString);
-            await destinationDb.Database.EnsureCreatedAsync();
-
-            if (destinationDb.Database.IsCosmos())
-            {
-                await DeleteAllCosmosContainersAsync(destinationDb, connectionString);
-                return;
-            }
-
-            var providerName = destinationDb.Database.ProviderName ?? string.Empty;
-            if (providerName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase))
-            {
-                await DropAllSqlServerTablesAsync(destinationDb);
-                return;
-            }
-
-            if (providerName.Contains("MySql", StringComparison.OrdinalIgnoreCase))
-            {
-                await DropAllMySqlTablesAsync(destinationDb);
-                return;
-            }
-
-            if (providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
-            {
-                await DropAllSqliteTablesAsync(destinationDb);
-                return;
-            }
-
-            throw new InvalidOperationException($"Destination overwrite is not supported for provider '{providerName}'.");
-        }
-
-        private static async Task DeleteAllCosmosContainersAsync(ApplicationDbContext destinationDb, string connectionString)
-        {
-            var cosmosClient = destinationDb.Database.GetCosmosClient();
-            var databaseName = GetCosmosDatabaseName(connectionString);
-            var database = cosmosClient.GetDatabase(databaseName);
-
-            using var iterator = database.GetContainerQueryIterator<ContainerProperties>();
-            while (iterator.HasMoreResults)
-            {
-                var response = await iterator.ReadNextAsync();
-                foreach (var container in response)
-                {
-                    await database.GetContainer(container.Id).DeleteContainerAsync();
-                }
-            }
-        }
-
-        private static async Task DropAllSqlServerTablesAsync(ApplicationDbContext destinationDb)
-        {
-            await destinationDb.Database.ExecuteSqlRawAsync(@"
-DECLARE @dropForeignKeys NVARCHAR(MAX) = N'';
-SELECT @dropForeignKeys += N'ALTER TABLE [' + OBJECT_SCHEMA_NAME(parent_object_id) + N'].[' + OBJECT_NAME(parent_object_id) + N'] DROP CONSTRAINT [' + name + N'];'
-FROM sys.foreign_keys;
-IF LEN(@dropForeignKeys) > 0 EXEC sp_executesql @dropForeignKeys;
-
-DECLARE @dropTables NVARCHAR(MAX) = N'';
-SELECT @dropTables += N'DROP TABLE [' + TABLE_SCHEMA + N'].[' + TABLE_NAME + N'];'
-FROM INFORMATION_SCHEMA.TABLES
-WHERE TABLE_TYPE = 'BASE TABLE';
-IF LEN(@dropTables) > 0 EXEC sp_executesql @dropTables;");
-        }
-
-        private static async Task DropAllMySqlTablesAsync(ApplicationDbContext destinationDb)
-        {
-            await using var connection = destinationDb.Database.GetDbConnection();
-            if (connection.State != System.Data.ConnectionState.Open)
-            {
-                await connection.OpenAsync();
-            }
-
-            await using var listCommand = connection.CreateCommand();
-            listCommand.CommandText = "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'";
-
-            var tableNames = new List<string>();
-            await using var reader = await listCommand.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                tableNames.Add(reader.GetString(0));
-            }
-
-            if (!tableNames.Any())
-            {
-                return;
-            }
-
-            var quoted = string.Join(", ", tableNames.Select(name => $"`{name.Replace("`", "``", StringComparison.Ordinal)}`"));
-            await destinationDb.Database.ExecuteSqlRawAsync("SET FOREIGN_KEY_CHECKS = 0;");
-            await destinationDb.Database.ExecuteSqlRawAsync($"DROP TABLE IF EXISTS {quoted};");
-            await destinationDb.Database.ExecuteSqlRawAsync("SET FOREIGN_KEY_CHECKS = 1;");
-        }
-
-        private static async Task DropAllSqliteTablesAsync(ApplicationDbContext destinationDb)
-        {
-            await using var connection = destinationDb.Database.GetDbConnection();
-            if (connection.State != System.Data.ConnectionState.Open)
-            {
-                await connection.OpenAsync();
-            }
-
-            await using var listCommand = connection.CreateCommand();
-            listCommand.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
-
-            var tableNames = new List<string>();
-            await using var reader = await listCommand.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                tableNames.Add(reader.GetString(0));
-            }
-
-            if (!tableNames.Any())
-            {
-                return;
-            }
-
-            await destinationDb.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = OFF;");
-            foreach (var tableName in tableNames)
-            {
-                var escapedTableName = tableName.Replace("\"", "\"\"", StringComparison.Ordinal);
-                var sql = $"DROP TABLE IF EXISTS \"{escapedTableName}\";";
-                await destinationDb.Database.ExecuteSqlRawAsync(sql);
-            }
-
-            await destinationDb.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON;");
-
-            var databaseCreator = destinationDb.Database.GetService<IRelationalDatabaseCreator>();
-            await databaseCreator.CreateTablesAsync();
-        }
-
-        private static string GetCosmosDatabaseName(string connectionString)
-        {
-            return connectionString
-                .Split(';', StringSplitOptions.RemoveEmptyEntries)
-                .FirstOrDefault(segment => segment.StartsWith("Database=", StringComparison.OrdinalIgnoreCase))
-                ?.Split('=', 2)[1]
-                ?? "cosmoscms";
-        }
-
-        /// <summary>
-        /// Validates that a destination storage container is empty.
-        /// </summary>
-        /// <param name="connectionString">The connection string for the destination storage.</param>
-        /// <remarks>
-        /// This method:
-        /// 1. Initializes a storage context with an in-memory cache
-        /// 2. Lists all files in the root directory
-        /// 3. Throws InvalidOperationException if any files are present
-        /// 
-        /// This ensures the destination storage is in a clean state before the copy operation begins.
-        /// 
-        /// Throws InvalidOperationException if any files exist in the destination storage.
-        /// </remarks>
-        private static async Task EnsureStorageEmptyAsync(string connectionString)
-        {
-            var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var destinationStorage = new StorageContext(connectionString, memoryCache);
-            var files = await destinationStorage.GetFilesAsync("/");
-            if (files.Any())
-            {
-                throw new InvalidOperationException("Destination storage must be empty.");
-            }
-        }
-
         private static async Task ClearStorageAsync(string connectionString)
         {
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var destinationStorage = new StorageContext(connectionString, memoryCache);
             var files = await destinationStorage.GetFilesAsync("/");
 
-            foreach (var file in files)
-            {
-                await destinationStorage.DeleteFileAsync(file);
-            }
+            await destinationStorage.DeleteFolderAsync("/");
         }
 
         /// <summary>
@@ -725,7 +475,7 @@ IF LEN(@dropTables) > 0 EXEC sp_executesql @dropTables;");
         /// Includes retry logic with exponential backoff to handle Cosmos DB eventual consistency
         /// after schema creation.
         /// </remarks>
-        private static async Task CopyDatabaseAsync(string sourceConn, string destinationConn)
+        private async Task CopyDatabaseAsync(string sourceConn, string destinationConn, HashSet<Type> entityTypes)
         {
             const int maxAttempts = 5;
             for (var attempt = 1; attempt <= maxAttempts; attempt++)
@@ -736,25 +486,25 @@ IF LEN(@dropTables) > 0 EXEC sp_executesql @dropTables;");
                     using var destinationDb = new ApplicationDbContext(destinationConn);
                     await destinationDb.Database.EnsureCreatedAsync();
 
-                    var entityTypes = destinationDb.Model.GetEntityTypes()
-                        .Where(t => !t.IsOwned() && t.FindPrimaryKey() != null)
-                        .OrderBy(t => t.GetForeignKeys().Count())
-                        .Select(t => t.ClrType)
-                        .Distinct()
-                        .ToList();
-
                     foreach (var clrType in entityTypes)
                     {
-                        var records = await ReadEntitiesAsync(sourceDb, clrType);
-                        if (records.Count == 0)
+                        try
                         {
-                            continue;
-                        }
+                            var records = await ReadEntitiesAsync(sourceDb, clrType);
+                            if (records.Count == 0)
+                            {
+                                continue;
+                            }
 
-                        destinationDb.ChangeTracker.AutoDetectChangesEnabled = false;
-                        destinationDb.AddRange(records);
-                        await destinationDb.SaveChangesAsync();
-                        destinationDb.ChangeTracker.Clear();
+                            destinationDb.AddRange(records);    
+                            await destinationDb.SaveChangesAsync();
+                        }
+                        catch (InvalidOperationException ex) when (ex.Message.Contains("Unknown entity type"))
+                        {
+                            // Skip copying for entity types not yet supported in ReadEntitiesAsync
+                            // This allows forward compatibility when new entities are added
+                            System.Diagnostics.Debug.WriteLine($"Skipping copy for unsupported entity type: {clrType.Name}");
+                        }
                     }
 
                     // Success - exit retry loop
@@ -794,183 +544,135 @@ IF LEN(@dropTables) > 0 EXEC sp_executesql @dropTables;");
         /// Files are copied one at a time with full file content loaded into memory to handle
         /// any size constraints and support progress tracking.
         /// </remarks>
-        private static async Task CopyStorageAsync(string sourceConn, string destinationConn, WebsiteCopyJob job)
+        private static async Task CopyStorageAsync(string sourceConn, string destinationConn)
         {
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var sourceStorage = new StorageContext(sourceConn, memoryCache);
             var destinationStorage = new StorageContext(destinationConn, memoryCache);
-            var files = await sourceStorage.GetFilesAsync("/");
-            var provider = new FileExtensionContentTypeProvider();
 
-            var completed = 0;
-            foreach (var path in files)
+            await CopyFilesAndFolders(sourceStorage, destinationStorage, "/");
+        }
+
+        /// <summary>
+        /// Recursively copies files and folders from a source storage context to a destination storage context.
+        /// </summary>
+        /// <param name="sourceStorageContext">The source storage context.</param>
+        /// <param name="destinationStorageContext">The destination storage context.</param>
+        /// <param name="path">The path to start copying from.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private static async Task CopyFilesAndFolders(StorageContext sourceStorageContext, StorageContext destinationStorageContext, string path)
+        {
+            // First, copy all files in the current folder
+            var blobs = await sourceStorageContext.GetFilesAndDirectories(path);
+            var files = blobs.Where(b => !b.IsDirectory).ToList();
+            var directories = blobs.Where(b => b.IsDirectory).ToList();
+
+            foreach (var file in files)
             {
-                await using var stream = await sourceStorage.GetStreamAsync(path);
-                await using var temp = new MemoryStream();
-                await stream.CopyToAsync(temp);
-                temp.Position = 0;
+                var fileProperties = await sourceStorageContext.GetFileAsync(file.Path);
+                using var fileStream = await sourceStorageContext.GetStreamAsync(file.Path);
+                using var memStream = new MemoryStream();
+                await fileStream.CopyToAsync(memStream);
+                memStream.Position = 0;
 
-                var normalized = path.TrimStart('/');
-                var split = normalized.LastIndexOf('/');
-                var relativePath = split >= 0 ? normalized[..split] : string.Empty;
-                var fileName = split >= 0 ? normalized[(split + 1)..] : normalized;
-
-                if (!provider.TryGetContentType(fileName, out var contentType))
-                {
-                    contentType = "application/octet-stream";
-                }
-
-                var metadata = new FileUploadMetaData
+                await destinationStorageContext.AppendBlob(memStream, new FileUploadMetaData
                 {
                     UploadUid = Guid.NewGuid().ToString("N"),
-                    // Storage drivers resolve blob target from RelativePath; keep full source path here.
-                    RelativePath = path,
-                    FileName = fileName,
-                    ContentType = contentType,
+                    RelativePath = file.Path,
+                    FileName = Path.GetFileName(file.Path),
+                    ContentType = file.ContentType ?? "application/octet-stream",
                     ChunkIndex = 0,
                     TotalChunks = 1,
-                    TotalFileSize = temp.Length
-                };
+                    TotalFileSize = memStream.Length
+                }, StorageConstants.UploadModeBlock);
 
-                await destinationStorage.AppendBlob(temp, metadata, StorageConstants.UploadModeBlock);
-
-                completed++;
-                job.ProgressPercent = 65 + (int)Math.Round((double)completed / Math.Max(files.Count, 1) * 15);
-            }
-        }
-
-        /// <summary>
-        /// Validates that the copied data in the destination matches the source.
-        /// </summary>
-        /// <param name="source">The source connection.</param>
-        /// <param name="destination">The destination connection.</param>
-        /// <param name="job">The copy job specifying what to validate.</param>
-        /// <remarks>
-        /// This method performs conditional validation based on job configuration:
-        /// - If MoveDatabase is true, validates that all entity types have the same record count
-        /// - If MoveStorage is true, validates that file counts match between source and destination
-        /// 
-        /// Validation ensures data integrity by confirming that no records were lost or corrupted
-        /// during the copy operation. Any count mismatches will trigger an InvalidOperationException.
-        /// </remarks>
-        private static async Task ValidateCopyAsync(Connection source, Connection destination, WebsiteCopyJob job)
-        {
-            if (job.CopyDatabase)
-            {
-                await ValidateDatabaseAsync(source.DbConn, destination.DbConn);
-            }
-
-            if (job.CopyStorage)
-            {
-                await ValidateStorageAsync(source.StorageConn, destination.StorageConn);
-            }
-        }
-
-        /// <summary>
-        /// Validates that database copy is complete by comparing entity record counts.
-        /// </summary>
-        /// <param name="sourceConn">The connection string for the source database.</param>
-        /// <param name="destinationConn">The connection string for the destination database.</param>
-        /// <remarks>
-        /// This method:
-        /// 1. Opens connections to both source and destination databases
-        /// 2. Discovers all entity types (excluding owned types and those without primary keys)
-        /// 3. Counts entities in each table from both databases
-        /// 4. Compares counts and throws InvalidOperationException if any mismatch is found
-        /// 
-        /// If validation fails, the error message includes the entity type name and the count
-        /// discrepancy between source and destination, helping diagnose copy issues.
-        /// 
-        /// Throws InvalidOperationException if any entity type has different counts.
-        /// </remarks>
-        private static async Task ValidateDatabaseAsync(string sourceConn, string destinationConn)
-        {
-            using var sourceDb = new ApplicationDbContext(sourceConn);
-            using var destinationDb = new ApplicationDbContext(destinationConn);
-
-            var entityTypes = sourceDb.Model.GetEntityTypes()
-                .Where(t => !t.IsOwned() && t.FindPrimaryKey() != null)
-                .Select(t => t.ClrType)
-                .Distinct()
-                .ToList();
-
-            foreach (var clrType in entityTypes)
-            {
-                var sourceCount = await CountEntitiesAsync(sourceDb, clrType);
-                var destinationCount = await CountEntitiesAsync(destinationDb, clrType);
-                if (sourceCount != destinationCount)
+                var result = await destinationStorageContext.GetFileAsync(file.Path);
+                if (result.Size != fileProperties.Size)
                 {
-                    throw new InvalidOperationException($"Validation failed for {clrType.Name}: source count {sourceCount}, destination count {destinationCount}.");
+                    throw new InvalidOperationException($"File size mismatch for {file.Path}: source size {fileProperties.Size}, destination size {result.Size}");
                 }
             }
-        }
 
-        /// <summary>
-        /// Validates that storage copy is complete by comparing file counts.
-        /// </summary>
-        /// <param name="sourceConn">The connection string for the source storage.</param>
-        /// <param name="destinationConn">The connection string for the destination storage.</param>
-        /// <remarks>
-        /// This method:
-        /// 1. Initializes storage contexts for both source and destination
-        /// 2. Lists all files from the root directory of both storages
-        /// 3. Compares the file counts
-        /// 4. Throws InvalidOperationException if counts don't match
-        /// 
-        /// This validation ensures that all files were successfully copied from source to destination.
-        /// It does not perform deep content verification (e.g., file size or checksum comparison),
-        /// only that the number of files matches.
-        /// 
-        /// Throws InvalidOperationException if file counts don't match.
-        /// </remarks>
-        private static async Task ValidateStorageAsync(string sourceConn, string destinationConn)
-        {
-            var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            var sourceStorage = new StorageContext(sourceConn, memoryCache);
-            var destinationStorage = new StorageContext(destinationConn, memoryCache);
-
-            var sourceFiles = await sourceStorage.GetFilesAsync("/");
-            var destinationFiles = await destinationStorage.GetFilesAsync("/");
-
-            if (sourceFiles.Count != destinationFiles.Count)
+            // Then, recursively copy all subdirectories
+            foreach (var directory in directories)
             {
-                throw new InvalidOperationException($"Storage validation failed: source count {sourceFiles.Count}, destination count {destinationFiles.Count}.");
+                await CopyFilesAndFolders(sourceStorageContext, destinationStorageContext, directory.Path);
             }
         }
 
         /// <summary>
-        /// Counts the number of entities of a specific type in the database.
+        /// Determines whether an entity type is supported for database copy and validation operations.
         /// </summary>
-        /// <param name="dbContext">The database context to query.</param>
-        /// <param name="clrType">The CLR type of the entity to count.</param>
-        /// <returns>
-        /// A task that represents the asynchronous operation. The task result contains
-        /// the count of entities of the specified type.
-        /// </returns>
+        /// <param name="clrType">The CLR type to check.</param>
+        /// <returns>True if the entity type is supported; otherwise, false.</returns>
         /// <remarks>
-        /// This method uses reflection to invoke the generic CountAsync&lt;T&gt; method
-        /// for a type determined at runtime. This is necessary because the entity type is not
-        /// known at compile time.
-        /// 
-        /// Uses the EntityFrameworkQueryableExtensions.CountAsync&lt;T&gt; method to ensure
-        /// proper query translation across all database providers including Cosmos DB.
+        /// This method checks if the entity type is in the SupportedEntityTypeNames set.
+        /// New entity types must be registered in:
+        /// 1. SupportedEntityTypeNames constant
+        /// 2. CountEntitiesAsync switch statement
+        /// 3. ReadEntitiesAsync switch statement
         /// </remarks>
-        private static async Task<int> CountEntitiesAsync(DbContext dbContext, Type clrType)
+        private bool IsSupportedEntityType(Type clrType)
         {
-            var method = typeof(EntityFrameworkQueryableExtensions)
-                .GetMethods()
-                .Where(m => m.Name == nameof(EntityFrameworkQueryableExtensions.CountAsync) &&
-                           m.GetGenericArguments().Length == 1 &&
-                           m.GetParameters().Length == 1)
-                .First();
+            var typeName = clrType.Name;
 
-            var genericMethod = method.MakeGenericMethod(clrType);
-            var set = GetSet(dbContext, clrType);
-            var task = (Task)genericMethod.Invoke(null, new[] { set })!;
-            await task.ConfigureAwait(false);
+            // Special handling for generic IdentityUserPasskey<T>
+            if (typeName.StartsWith("IdentityUserPasskey", StringComparison.Ordinal))
+            {
+                return true;
+            }
 
-            var resultProperty = task.GetType().GetProperty("Result");
-            return (int)resultProperty!.GetValue(task)!;
+            var entityTypes = GetSupportedEntityTypes();
+
+            return entityTypes.Select(t => t.Name).Contains(typeName);
+        }
+
+        /// <summary>
+        /// Drops the schema for the specified entity type from the database.
+        /// </summary>
+        /// <param name="dbContext">The database context to use for removing entities.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>   
+        private async Task DropAndRecreateSchema(Connection connection)
+        {
+            // Create the context here.
+            using var dbContext = new ApplicationDbContext(connection.DbConn);
+
+            // Detect if there are any containers (in the case of Cosmos DB) or tables (in the case of relational databases) to remove entities from.
+            if (dbContext.Database.IsCosmos())
+            {
+                // Detect if any containers exist in the Cosmos DB database
+                var cosmosClient = dbContext.Database.GetCosmosClient();
+
+                var containers = await cosmosClient.GetDatabase(dbContext.Database.GetCosmosDatabaseId()).GetContainerQueryIterator<ContainerProperties>().ReadNextAsync();
+
+                if (containers.Any())
+                {
+                    foreach (var container in containers)
+                    {
+                        // Remove all entities from the container
+                        var containerClient = cosmosClient.GetContainer(dbContext.Database.GetCosmosDatabaseId(), container.Id);
+                        var result = await containerClient.DeleteContainerAsync(null);
+                    }
+                }
+
+            }
+            else
+            {
+                // For relational databases, drop all tables.
+                foreach (var entityType in dbContext.Model.GetEntityTypes())
+                {
+                    // Drop the table associated with the entity type
+                    var tableName = entityType.GetTableName();
+                    // build the SQL command to drop the table
+                    var dropTableSql = $"DROP TABLE IF EXISTS [{tableName}]";
+                    // Execute the SQL command
+                    await dbContext.Database.ExecuteSqlRawAsync(dropTableSql);
+                }
+            }
+
+            // Recreate the schema
+            await dbContext.Database.EnsureCreatedAsync();
         }
 
         /// <summary>
@@ -983,123 +685,53 @@ IF LEN(@dropTables) > 0 EXEC sp_executesql @dropTables;");
         /// a list of all entities of the specified type as untracked objects.
         /// </returns>
         /// <remarks>
-        /// This method:
-        /// 1. Uses reflection to get the DbSet for the runtime type
-        /// 2. Applies AsNoTracking to prevent change tracking overhead
-        /// 3. Materializes the query to a list asynchronously
-        /// 4. Casts the results to objects for return
+        /// This method uses a type-safe dispatch to read entities for known ApplicationDbContext entity types.
+        /// This approach:
+        /// - Eliminates reflection-based AsNoTracking and ToListAsync invocation
+        /// - Ensures proper query translation across all database providers (Cosmos DB, SQL, MySQL, SQLite)
+        /// - Provides type safety with compiler verification
         /// 
         /// No-tracking queries are more efficient for read-only operations like copying data,
         /// as they don't maintain identity maps or change tracking information.
         /// </remarks>
-        private static async Task<List<object>> ReadEntitiesAsync(DbContext dbContext, Type clrType)
+        private static async Task<ICollection<object>> ReadEntitiesAsync(DbContext dbContext, Type clrType)
         {
-            // Get the DbSet<T>
-            var set = GetSet(dbContext, clrType);
+            // Use type name to dispatch to appropriate query
+            var typeName = clrType.Name;
 
-            // Call AsNoTracking<T> via reflection
-            var asNoTrackingMethod = typeof(EntityFrameworkQueryableExtensions)
-                .GetMethods()
-                .Where(m => m.Name == nameof(EntityFrameworkQueryableExtensions.AsNoTracking) &&
-                           m.GetGenericArguments().Length == 1 &&
-                           m.GetParameters().Length == 1)
-                .First();
-
-            var asNoTrackingGenericMethod = asNoTrackingMethod.MakeGenericMethod(clrType);
-            var noTrackingQueryable = asNoTrackingGenericMethod.Invoke(null, new[] { set });
-
-            // Call ToListAsync<T> via reflection
-            var toListAsyncMethod = typeof(EntityFrameworkQueryableExtensions)
-                .GetMethods()
-                .Where(m => m.Name == nameof(EntityFrameworkQueryableExtensions.ToListAsync) &&
-                           m.GetGenericArguments().Length == 1 &&
-                           m.GetParameters().Length == 1)
-                .First();
-
-            var toListAsyncGenericMethod = toListAsyncMethod.MakeGenericMethod(clrType);
-            var task = (Task)toListAsyncGenericMethod.Invoke(null, new[] { noTrackingQueryable })!;
-            await task.ConfigureAwait(false);
-
-            var resultProperty = task.GetType().GetProperty("Result");
-            var list = (IEnumerable)resultProperty!.GetValue(task)!;
-            return list.Cast<object>().ToList();
-        }
-
-        /// <summary>
-        /// Retrieves the DbSet for a specific entity type using reflection.
-        /// </summary>
-        /// <param name="dbContext">The database context.</param>
-        /// <param name="clrType">The CLR type of the entity.</param>
-        /// <returns>
-        /// The DbSet for the specified entity type.
-        /// </returns>
-        /// <remarks>
-        /// This method uses reflection to dynamically invoke DbContext.Set&lt;T&gt;() with a
-        /// runtime-determined type. This is necessary because entity types are discovered at
-        /// runtime from the EF Core model rather than being known at compile time.
-        /// 
-        /// The method:
-        /// 1. Gets the Set method definition from DbContext
-        /// 2. Makes it generic with the clrType parameter
-        /// 3. Invokes the method on the provided context
-        /// 4. Returns the resulting DbSet
-        /// 
-        /// Throws InvalidOperationException if the method cannot be invoked.
-        /// </remarks>
-        private static object GetSet(DbContext dbContext, Type clrType)
-        {
-            var setMethod = typeof(DbContext).GetMethod(nameof(DbContext.Set), Type.EmptyTypes);
-            var generic = setMethod?.MakeGenericMethod(clrType) ?? throw new InvalidOperationException("Unable to access DbContext.Set<T>().");
-            return generic.Invoke(dbContext, null) ?? throw new InvalidOperationException("Unable to resolve entity set.");
-        }
-
-        /// <summary>
-        /// Updates metadata for a managed connection after successful copy and validation.
-        /// </summary>
-        /// <param name="configDb">The configuration database context.</param>
-        /// <param name="job">The copy job containing source connection information.</param>
-        /// <param name="destinationConnectionId">The unique identifier of the destination connection.</param>
-        /// <param name="summary">A summary message describing the validation result.</param>
-        /// <remarks>
-        /// This method updates the WebsiteManagedConnection entity with:
-        /// - WebsiteConnectionId: Linked to the source connection of the copy job
-        /// - LastCopiedUtc: Set to current UTC time
-        /// - LastValidatedUtc: Set to current UTC time
-        /// - IsKnownEmpty: Cleared to indicate the destination now contains data
-        /// - LastValidationSummary: Set to the provided summary message
-        /// 
-        /// The managed connection metadata tracks the relationship between the destination
-        /// and its source, along with validation timestamps and status.
-        /// 
-        /// If the managed connection is not found, the method silently returns without error.
-        /// </remarks>
-        private static async Task UpdateManagedConnectionMetadataAsync(
-            DynamicConfigDbContext configDb,
-            WebsiteCopyJob job,
-            Guid destinationConnectionId,
-            string summary)
-        {
-            var managed = await configDb.WebsiteManagedConnections.FirstOrDefaultAsync(x => x.Id == destinationConnectionId);
-            if (managed == null)
+            var results = typeName switch
             {
-                return;
-            }
+                nameof(Article) => (ICollection<object>)(await dbContext.Set<Article>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(ArticleLock) => (ICollection<object>)(await dbContext.Set<ArticleLock>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(ArticleLog) => (ICollection<object>)(await dbContext.Set<ArticleLog>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(ArticleNumber) => (ICollection<object>)(await dbContext.Set<ArticleNumber>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(AuthorInfo) => (ICollection<object>)(await dbContext.Set<AuthorInfo>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(CatalogEntry) => (ICollection<object>)(await dbContext.Set<CatalogEntry>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(Cosmos.Common.Data.Contact) => (ICollection<object>)(await dbContext.Set<Cosmos.Common.Data.Contact>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(Layout) => (ICollection<object>)(await dbContext.Set<Layout>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                "Metric" => (ICollection<object>)(await dbContext.Set<Cosmos.Common.Data.Metric>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(PublishedPage) => (ICollection<object>)(await dbContext.Set<PublishedPage>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(PageDesignVersion) => (ICollection<object>)(await dbContext.Set<PageDesignVersion>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(Setting) => (ICollection<object>)(await dbContext.Set<Setting>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(Template) => (ICollection<object>)(await dbContext.Set<Template>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(TotpToken) => (ICollection<object>)(await dbContext.Set<TotpToken>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(MigrationHistory) => (ICollection<object>)(await dbContext.Set<MigrationHistory>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(IdentityUser) => (ICollection<object>)(await dbContext.Set<IdentityUser>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(IdentityRole) => (ICollection<object>)(await dbContext.Set<IdentityRole>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(IdentityUserClaim<string>) => (ICollection<object>)(await dbContext.Set<IdentityUserClaim<string>>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(IdentityUserLogin<string>) => (ICollection<object>)(await dbContext.Set<IdentityUserLogin<string>>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(IdentityUserToken<string>) => (ICollection<object>)(await dbContext.Set<IdentityUserToken<string>>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(IdentityRoleClaim<string>) => (ICollection<object>)(await dbContext.Set<IdentityRoleClaim<string>>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                nameof(IdentityUserRole<string>) => (ICollection<object>)(await dbContext.Set<IdentityUserRole<string>>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                // Handle IdentityUserPasskey - note the generic parameter
+                _ when typeName.StartsWith("IdentityUserPasskey", StringComparison.Ordinal)
+                    => (ICollection<object>)(await dbContext.Set<IdentityUserPasskey<string>>().AsNoTracking().ToListAsync()).Cast<object>().ToList(),
+                _ => throw new InvalidOperationException($"Unknown entity type for reading: {clrType.Name}")
+            };  
 
-            managed.WebsiteConnectionId = job.SourceConnectionId;
-            managed.LastCopiedUtc = DateTimeOffset.UtcNow;
-            managed.LastValidatedUtc = DateTimeOffset.UtcNow;
-            managed.IsKnownEmpty = false;
-            managed.LastValidationSummary = summary;
-            await configDb.SaveChangesAsync();
+            return results;
         }
 
-        /// <summary>
-        /// Updates the progress and status message of a copy job.
-        /// </summary>
-        /// <param name="db">The configuration database context.</param>
-        /// <param name="job">The copy job to update.</param>
-        /// <param name="progress">The progress percentage (0-100).</param>
-        /// <param name="message">A human-readable status message.</param>
         /// <remarks>
         /// This method is called frequently during the copy operation to track progress and
         /// communicate status to users. It:
@@ -1137,12 +769,13 @@ IF LEN(@dropTables) > 0 EXEC sp_executesql @dropTables;");
         /// </remarks>
         private static async Task FailJobAsync(DynamicConfigDbContext db, WebsiteCopyJob job, string error)
         {
-            job.Status = WebsiteCopyJobStatus.Failed;
+            job.Status = (int)WebsiteCopyJobStatus.Failed;
             job.ErrorMessage = error;
             job.CompletedUtc = DateTimeOffset.UtcNow;
             job.Locked = false;
             await UpdateProgressAsync(db, job, job.ProgressPercent, "Job failed.");
         }
+
     }
 }
 

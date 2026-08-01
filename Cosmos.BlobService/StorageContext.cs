@@ -129,7 +129,7 @@ namespace Cosmos.BlobService
         }
 
         /// <summary>
-        ///     Delete a folder.
+        ///     Delete all files and folders at a given path.
         /// </summary>
         /// <param name="path">Path to folder.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>

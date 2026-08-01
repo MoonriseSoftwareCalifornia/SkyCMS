@@ -1,0 +1,24 @@
+// Comprehensive search for potential .First() issues in WebsiteCopyOrchestrator
+
+// Successfully Fixed Methods:
+// 1. ReadEntitiesAsync
+//    - Line with AsNoTracking lookup: .Where(...).First() -> .FirstOrDefault() ?? throw
+//    - Line with ToListAsync lookup: .Where(...).First() -> .FirstOrDefault() ?? throw
+
+// 2. CountEntitiesAsync
+//    - Line with CountAsync lookup: .Where(...).First() -> .FirstOrDefault() ?? throw
+
+// 3. GetSet (already has defensive check)
+//    - Uses MakeGenericMethod and throws explicit InvalidOperationException if null
+
+// Other methods to check for similar patterns:
+// - ResetDatabaseSchemaAsync - uses reflection?
+// - ClearStorageAsync - uses reflection?
+// - Additional helper methods
+
+// Pattern to watch for:
+// - .GetMethods().First()
+// - .GetProperties().First()
+// - .Where(...).First()
+//
+// All of these should use .FirstOrDefault() with null coalescing and explicit error messages

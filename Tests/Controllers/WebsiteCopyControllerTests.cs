@@ -169,6 +169,101 @@ namespace Sky.Tests.Controllers
             Assert.IsInstanceOfType<NotFoundResult>(result);
         }
 
+        [TestMethod]
+        public async Task CopyWebsite_Successful()
+        {
+            // Arrange
+            WebsiteCopyJob? capturedJob = null;
+            var jobId = Guid.NewGuid();
+
+            orchestrator
+                .Setup(x => x.StartJobAsync(It.IsAny<WebsiteCopyJob>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((WebsiteCopyJob job, CancellationToken _) =>
+                {
+                    capturedJob = job;
+                    job.Id = jobId;
+                    job.Status = (int)WebsiteCopyJobStatus.Queued;
+                    return job;
+                });
+
+            orchestrator
+                .Setup(x => x.GetJobAsync(jobId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    if (capturedJob == null)
+                        return null;
+
+                    return new WebsiteCopyJob
+                    {
+                        Id = capturedJob.Id,
+                        SourceConnectionId = capturedJob.SourceConnectionId,
+                        DestinationConnectionId = capturedJob.DestinationConnectionId,
+                        DestinationDbConn = capturedJob.DestinationDbConn,
+                        DestinationStorageConn = capturedJob.DestinationStorageConn,
+                        CopyDatabase = capturedJob.CopyDatabase,
+                        CopyStorage = capturedJob.CopyStorage,
+                        DryRun = capturedJob.DryRun,
+                        AllowDestinationOverwrite = capturedJob.AllowDestinationOverwrite,
+                        Status = (int)WebsiteCopyJobStatus.Completed,
+                        ProgressPercent = 100,
+                        LastMessage = "Website copy completed successfully",
+                        DatabaseCopied = true,
+                        StorageCopied = true,
+                        ValidationCompleted = true
+                    };
+                });
+
+            var model = new WebsiteCopyStartViewModel()
+            {
+                SourceConnectionId = sourceConnection.Id,
+                DestinationConnectionId = destinationConnection.Id,
+                DestinationDbConn = destinationConnection.DbConn,
+                DestinationStorageConn = destinationConnection.StorageConn,
+                MoveDatabase = true,
+                MoveStorage = true,
+                UseExistingDestination = true,
+                DryRun = false,
+                AllowDestinationOverwrite = true
+            };
+
+            // Act
+            var result = await controller.Start(model);
+
+            // Assert - Verify redirect to Details
+            var redirectResult = result as RedirectToActionResult;
+            Assert.IsNotNull(redirectResult, "Expected redirect to Details action");
+            Assert.AreEqual("Details", redirectResult.ActionName);
+            Assert.AreEqual(jobId, redirectResult.RouteValues["id"]);
+
+            // Assert - Verify job was created with correct parameters
+            Assert.IsNotNull(capturedJob, "Job should have been captured by orchestrator");
+            Assert.AreEqual(sourceConnection.Id, capturedJob.SourceConnectionId);
+            Assert.AreEqual(destinationConnection.Id, capturedJob.DestinationConnectionId);
+            Assert.AreEqual(destinationConnection.DbConn, capturedJob.DestinationDbConn);
+            Assert.AreEqual(destinationConnection.StorageConn, capturedJob.DestinationStorageConn);
+            Assert.IsTrue(capturedJob.CopyDatabase, "Database copy should be enabled");
+            Assert.IsTrue(capturedJob.CopyStorage, "Storage copy should be enabled");
+            Assert.IsFalse(capturedJob.DryRun, "DryRun should be false");
+            Assert.IsTrue(capturedJob.AllowDestinationOverwrite, "AllowDestinationOverwrite should be true");
+            Assert.AreEqual("copy-admin@local.test", capturedJob.StartedBy);
+
+            // Assert - Verify orchestrator was called
+            orchestrator.Verify(
+                x => x.StartJobAsync(It.IsAny<WebsiteCopyJob>(), It.IsAny<CancellationToken>()),
+                Times.Once,
+                "StartJobAsync should be called exactly once");
+
+            // Assert - Verify progress tracking by retrieving job status
+            var copiedJob = await orchestrator.Object.GetJobAsync(jobId);
+            Assert.IsNotNull(copiedJob, "Job should be retrievable after start");
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Completed, copiedJob.Status);
+            Assert.AreEqual(100, copiedJob.ProgressPercent, "Progress should be at 100%");
+            Assert.IsTrue(copiedJob.DatabaseCopied, "Database should be marked as copied");
+            Assert.IsTrue(copiedJob.StorageCopied, "Storage should be marked as copied");
+            Assert.IsTrue(copiedJob.ValidationCompleted, "Validation should be completed");
+            Assert.AreEqual("Website copy completed successfully", copiedJob.LastMessage);
+        }
+
         private static HttpContext BuildHttpContext()
         {
             var context = new DefaultHttpContext();

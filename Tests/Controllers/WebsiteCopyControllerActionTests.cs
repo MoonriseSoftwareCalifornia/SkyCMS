@@ -165,7 +165,7 @@ namespace Sky.Tests.Controllers
             {
                 Id = jobId,
                 SourceConnectionId = sourceConnection.Id,
-                Status = WebsiteCopyJobStatus.Running,
+                Status = (int)WebsiteCopyJobStatus.Running,
                 ProgressPercent = 42,
                 LastMessage = "Copy in progress",
                 ErrorMessage = null,

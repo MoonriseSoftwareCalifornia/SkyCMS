@@ -160,7 +160,7 @@ namespace Sky.Tests.Services.WebsiteCopy
                 Id = Guid.NewGuid(),
                 SourceConnectionId = sourceId ?? sourceConnectionId,
                 DestinationDbConn = "fake-dest",
-                Status = status,
+                Status = (int)status,
                 ErrorMessage = errorMessage,
                 CopyDatabase = false,
                 CopyStorage = false
@@ -181,10 +181,10 @@ namespace Sky.Tests.Services.WebsiteCopy
             while (DateTimeOffset.UtcNow < deadline)
             {
                 var job = await orchestrator.GetJobAsync(jobId);
-                if (job?.Status is WebsiteCopyJobStatus.Completed
-                    or WebsiteCopyJobStatus.CompletedDryRun
-                    or WebsiteCopyJobStatus.Failed
-                    or WebsiteCopyJobStatus.Cancelled)
+                if (job?.Status is (int)WebsiteCopyJobStatus.Completed
+                    or (int)WebsiteCopyJobStatus.CompletedDryRun
+                    or (int)WebsiteCopyJobStatus.Failed
+                    or (int)WebsiteCopyJobStatus.Cancelled)
                 {
                     return job;
                 }
@@ -202,7 +202,7 @@ namespace Sky.Tests.Services.WebsiteCopy
         {
             var job = await orchestrator.StartJobAsync(BuildDryRunJob());
 
-            Assert.AreEqual(WebsiteCopyJobStatus.Queued, job.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Queued, job.Status);
         }
 
         [TestMethod]
@@ -314,7 +314,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var updated = await orchestrator.GetJobAsync(seeded.Id);
 
             Assert.IsNotNull(updated);
-            Assert.AreEqual(WebsiteCopyJobStatus.Queued, updated.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Queued, updated.Status);
         }
 
         [TestMethod]
@@ -382,7 +382,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             {
                 Id = Guid.NewGuid(),
                 SourceConnectionId = Guid.NewGuid(),
-                Status = WebsiteCopyJobStatus.Completed,
+                Status = (int)WebsiteCopyJobStatus.Completed,
                 CopyDatabase = true,
                 DestinationDbConn = "new-db"
             };
@@ -406,7 +406,7 @@ namespace Sky.Tests.Services.WebsiteCopy
                 {
                     Id = Guid.NewGuid(),
                     SourceConnectionId = sourceConnectionId,
-                    Status = WebsiteCopyJobStatus.Completed,
+                    Status = (int)WebsiteCopyJobStatus.Completed,
                     CopyDatabase = true,
                     CopyStorage = false,
                     DestinationDbConn = newDbConn
@@ -441,7 +441,7 @@ namespace Sky.Tests.Services.WebsiteCopy
                 {
                     Id = Guid.NewGuid(),
                     SourceConnectionId = sourceConnectionId,
-                    Status = WebsiteCopyJobStatus.Completed,
+                    Status = (int)WebsiteCopyJobStatus.Completed,
                     CopyDatabase = false,
                     CopyStorage = true,
                     DestinationStorageConn = newStorageConn
@@ -476,7 +476,7 @@ namespace Sky.Tests.Services.WebsiteCopy
                 {
                     Id = Guid.NewGuid(),
                     SourceConnectionId = sourceConnectionId,
-                    Status = WebsiteCopyJobStatus.Completed,
+                    Status = (int)WebsiteCopyJobStatus.Completed,
                     CopyDatabase = true,
                     CopyStorage = true,
                     DestinationDbConn = newDbConn,
@@ -512,7 +512,7 @@ namespace Sky.Tests.Services.WebsiteCopy
                 {
                     Id = Guid.NewGuid(),
                     SourceConnectionId = sourceConnectionId,
-                    Status = WebsiteCopyJobStatus.Completed,
+                    Status = (int)WebsiteCopyJobStatus.Completed,
                     CopyDatabase = false,
                     CopyStorage = false,
                     DestinationDbConn = "should-not-be-applied"
@@ -550,7 +550,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id);
 
             Assert.IsNotNull(completed);
-            Assert.AreEqual(WebsiteCopyJobStatus.Failed, completed.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Failed, completed.Status);
             Assert.IsTrue(
                 completed.ErrorMessage?.Contains("Source connection not found", StringComparison.OrdinalIgnoreCase) == true,
                 $"Expected 'Source connection not found' in error message but got: {completed.ErrorMessage}");
@@ -572,7 +572,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id);
 
             Assert.IsNotNull(completed);
-            Assert.AreEqual(WebsiteCopyJobStatus.Failed, completed.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Failed, completed.Status);
             Assert.IsTrue(
                 completed.ErrorMessage?.Contains("Destination connection is missing", StringComparison.OrdinalIgnoreCase) == true,
                 $"Expected 'Destination connection is missing' in error message but got: {completed.ErrorMessage}");
@@ -589,7 +589,7 @@ namespace Sky.Tests.Services.WebsiteCopy
                 {
                     Id = Guid.NewGuid(),
                     SourceConnectionId = sourceConnectionId,
-                    Status = WebsiteCopyJobStatus.Running,
+                    Status = (int)WebsiteCopyJobStatus.Running,
                     DestinationDbConn = "existing-dest",
                     Locked = true
                 });
@@ -608,7 +608,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id);
 
             Assert.IsNotNull(completed);
-            Assert.AreEqual(WebsiteCopyJobStatus.Failed, completed.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Failed, completed.Status);
             Assert.IsTrue(
                 completed.ErrorMessage?.Contains("Another copy is already in progress", StringComparison.OrdinalIgnoreCase) == true,
                 $"Expected 'Another copy is already in progress' in error message but got: {completed.ErrorMessage}");
@@ -644,7 +644,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id);
 
             Assert.IsNotNull(completed);
-            Assert.AreEqual(WebsiteCopyJobStatus.Failed, completed.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Failed, completed.Status);
             Assert.IsTrue(
                 completed.ErrorMessage?.Contains("Destination database must be empty", StringComparison.OrdinalIgnoreCase) == true,
                 $"Expected destination-not-empty failure but got: {completed.ErrorMessage}");
@@ -684,7 +684,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id, timeoutSeconds: 10);
 
             Assert.IsNotNull(completed);
-            Assert.AreEqual(WebsiteCopyJobStatus.Completed, completed.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Completed, completed.Status);
             Assert.IsTrue(completed.DatabaseCopied, "DatabaseCopied should be true when overwrite path succeeds.");
             Assert.IsTrue(completed.ValidationCompleted, "ValidationCompleted should be true when overwrite path succeeds.");
 
@@ -700,7 +700,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id);
 
             Assert.IsNotNull(completed);
-            Assert.AreEqual(WebsiteCopyJobStatus.CompletedDryRun, completed.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.CompletedDryRun, completed.Status);
             Assert.IsTrue(completed.ValidationCompleted, "ValidationCompleted should be true after dry run.");
             Assert.IsFalse(completed.Locked, "Locked flag should be cleared after completion.");
             Assert.IsNotNull(completed.CompletedUtc, "CompletedUtc should be set after dry run.");

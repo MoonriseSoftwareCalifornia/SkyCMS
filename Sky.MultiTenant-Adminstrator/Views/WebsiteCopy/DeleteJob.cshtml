@@ -1,0 +1,92 @@
+@model Cosmos.DynamicConfig.WebsiteCopyJob
+
+@{
+    ViewData["Title"] = "Delete Website Copy Job";
+}
+
+<h1>Delete Website Copy Job</h1>
+
+<div class="alert alert-warning" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    <strong>Caution:</strong> This action will permanently delete the job record. This cannot be undone.
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <table class="table table-sm">
+            <tr>
+                <th width="30%">Job ID</th>
+                <td><code>@Model.Id</code></td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>
+                    @{
+                        var badgeClass = Model.Status switch
+                        {
+                            (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Queued => "bg-secondary",
+                            (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Running => "bg-info",
+                            (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Completed => "bg-success",
+                            (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.CompletedDryRun => "bg-success",
+                            (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Failed => "bg-danger",
+                            (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Cancelled => "bg-warning",
+                            _ => "bg-secondary"
+                        };
+                    }
+                    <span class="badge @badgeClass">@Model.Status</span>
+                </td>
+            </tr>
+            <tr>
+                <th>Progress</th>
+                <td>@Model.ProgressPercent%</td>
+            </tr>
+            <tr>
+                <th>Started By</th>
+                <td>@(Model.StartedBy ?? "Unknown")</td>
+            </tr>
+            <tr>
+                <th>Created</th>
+                <td>@Model.CreatedUtc.ToString("g")</td>
+            </tr>
+            <tr>
+                <th>Message</th>
+                <td>@Model.LastMessage</td>
+            </tr>
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <tr>
+                    <th>Error</th>
+                    <td class="text-danger"><small>@Model.ErrorMessage</small></td>
+                </tr>
+            }
+            <tr>
+                <th>Copy Options</th>
+                <td>
+                    @if (Model.CopyDatabase && Model.CopyStorage)
+                    {
+                        <span>Database and Storage</span>
+                    }
+                    else if (Model.CopyDatabase)
+                    {
+                        <span>Database Only</span>
+                    }
+                    else if (Model.CopyStorage)
+                    {
+                        <span>Storage Only</span>
+                    }
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="d-flex gap-2">
+    <form asp-action="ConfirmDeleteJob" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Delete Permanently
+        </button>
+    </form>
+    <a asp-action="Jobs" class="btn btn-outline-secondary">Cancel</a>
+</div>

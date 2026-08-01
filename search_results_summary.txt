@@ -1,0 +1,16 @@
+// Search for .First() in WebsiteCopyOrchestrator.cs
+// The file has 1156 lines total
+
+// Known .First() locations:
+// 1. ReadEntitiesAsync - line with AsNoTracking method lookup - SHOULD BE FIXED
+// 2. ReadEntitiesAsync - line with ToListAsync method lookup - SHOULD BE FIXED  
+// 3. CountEntitiesAsync - line with CountAsync method lookup - SHOULD BE FIXED
+
+// Need to verify if there are other .First() calls in:
+// - CopyStorageAsync
+// - CopyDatabaseAsync
+// - ResetDatabaseSchemaAsync
+// - ClearStorageAsync
+// - Other helper methods
+
+// Pattern to look for: .Where(...).First() or .GetMethods().First()

@@ -1,0 +1,97 @@
+@model IEnumerable<Cosmos.DynamicConfig.WebsiteCopyJob>
+
+@{
+    ViewData["Title"] = "Website Copy Jobs";
+}
+
+<h1>Website Copy Jobs</h1>
+<p class="text-muted">Manage and monitor all website copy operations.</p>
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-primary">New Job</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No copy jobs found. <a asp-action="Index">Create a new job</a> to get started.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Job ID</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Started By</th>
+                    <th>Created</th>
+                    <th>Message</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var job in Model)
+                {
+                    <tr>
+                        <td>
+                            <code class="text-break">@job.Id.ToString().Substring(0, 8)</code>
+                        </td>
+                        <td>
+                            @{
+                                var badgeClass = job.Status switch
+                                {
+                                    (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Queued => "bg-secondary",
+                                    (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Running => "bg-info",
+                                    (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Completed => "bg-success",
+                                    (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.CompletedDryRun => "bg-success",
+                                    (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Failed => "bg-danger",
+                                    (int)Cosmos.DynamicConfig.WebsiteCopyJobStatus.Cancelled => "bg-warning",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @badgeClass">@job.Status</span>
+                        </td>
+                        <td>
+                            <div class="progress" style="min-width: 100px;">
+                                <div class="progress-bar" role="progressbar" style="width: @job.ProgressPercent%" aria-valuenow="@job.ProgressPercent" aria-valuemin="0" aria-valuemax="100">
+                                    @job.ProgressPercent%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <small>@(job.StartedBy ?? "Unknown")</small>
+                        </td>
+                        <td>
+                            <small>@job.CreatedUtc.ToString("g")</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                @if (!string.IsNullOrWhiteSpace(job.ErrorMessage))
+                                {
+                                    <span class="text-danger">@job.ErrorMessage.Substring(0, Math.Min(50, job.ErrorMessage.Length))...</span>
+                                }
+                                else
+                                {
+                                    <span>@job.LastMessage</span>
+                                }
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a asp-action="Details" asp-route-id="@job.Id" class="btn btn-outline-primary" title="View Details">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                                <a asp-action="DeleteJob" asp-route-id="@job.Id" class="btn btn-outline-danger" title="Delete Job">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

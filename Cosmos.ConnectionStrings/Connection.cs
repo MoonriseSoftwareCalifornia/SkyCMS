@@ -78,12 +78,13 @@ namespace Cosmos.DynamicConfig
         /// <summary>
         /// Gets or sets the website URL.
         /// </summary>
-        [HttpUrl]
         [Required(AllowEmptyStrings = true)]
         [Display(Name = "Website URL")]
         public string WebsiteUrl { get; set; } = string.Empty;
 
-        [EmailAddress]
+        /// <summary>
+        /// Gets or sets the Email address of the website owner.
+        /// </summary>
         [Display(Name = "Website Owner Email")]
         public string? OwnerEmail { get; set; }
     }

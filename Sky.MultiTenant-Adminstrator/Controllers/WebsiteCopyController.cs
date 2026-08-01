@@ -221,6 +221,73 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
         }
 
         /// <summary>
+        /// Displays a list of all website copy jobs with their current status and action options.
+        /// </summary>
+        /// <returns>A view containing a table of all copy jobs sorted by most recent first.</returns>
+        /// <remarks>
+        /// Shows all jobs regardless of status, including Queued, Running, Completed, Failed, and other states.
+        /// Jobs are sorted by creation date (most recent first) for easy tracking and management.
+        /// Provides inline delete buttons for completed and failed jobs.
+        /// </remarks>
+        [AuthorizeForScopes(ScopeKeySection = "MicrosoftGraph:Scopes")]
+        public async Task<IActionResult> Jobs()
+        {
+            var jobs = await configDb.WebsiteCopyJobs
+                .OrderByDescending(x => x.CreatedUtc)
+                .ToListAsync();
+
+            return View(jobs);
+        }
+
+        /// <summary>
+        /// Displays a confirmation page before deleting a website copy job.
+        /// </summary>
+        /// <param name="id">The unique identifier of the job to delete.</param>
+        /// <returns>
+        /// The confirmation view with job details if the job exists; otherwise returns a Not Found result.
+        /// </returns>
+        /// <remarks>
+        /// This view allows the user to confirm deletion of a job. The deletion is permanent and cannot be undone.
+        /// Only completed and failed jobs can be deleted; jobs in other states must be retried or resolved first.
+        /// </remarks>
+        [AuthorizeForScopes(ScopeKeySection = "MicrosoftGraph:Scopes")]
+        public async Task<IActionResult> DeleteJob(Guid id)
+        {
+            var job = await configDb.WebsiteCopyJobs.FirstOrDefaultAsync(x => x.Id == id);
+            if (job == null)
+            {
+                return NotFound();
+            }
+
+            return View(job);
+        }
+
+        /// <summary>
+        /// Permanently deletes a website copy job from the system.
+        /// </summary>
+        /// <param name="id">The unique identifier of the job to delete.</param>
+        /// <returns>Redirects back to the Jobs list after deletion.</returns>
+        /// <remarks>
+        /// This method permanently removes the job record from the database.
+        /// Once deleted, the job cannot be recovered. This is useful for cleaning up old,
+        /// failed, or completed jobs that are no longer needed for reference.
+        /// </remarks>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AuthorizeForScopes(ScopeKeySection = "MicrosoftGraph:Scopes")]
+        public async Task<IActionResult> ConfirmDeleteJob(Guid id)
+        {
+            var job = await configDb.WebsiteCopyJobs.FirstOrDefaultAsync(x => x.Id == id);
+            if (job != null)
+            {
+                configDb.WebsiteCopyJobs.Remove(job);
+                await configDb.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Jobs));
+        }
+
+        /// <summary>
         /// Builds the website copy start view model with current connections and job history.
         /// </summary>
         /// <param name="current">

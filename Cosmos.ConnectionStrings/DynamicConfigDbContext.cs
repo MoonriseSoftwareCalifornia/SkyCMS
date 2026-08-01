@@ -27,12 +27,7 @@ namespace Cosmos.DynamicConfig
         public DbSet<Metric> Metrics { get; set; } = null!;
 
         /// <summary>
-        /// Gets or sets managed destination connections used by website copy operations.
-        /// </summary>
-        public DbSet<WebsiteManagedConnection> WebsiteManagedConnections { get; set; } = null!;
-
-        /// <summary>
-        /// Gets or sets website copy jobs.
+        /// Gets or sets the website copy jobs entities collection.
         /// </summary>
         public DbSet<WebsiteCopyJob> WebsiteCopyJobs { get; set; } = null!;
 
@@ -45,14 +40,13 @@ namespace Cosmos.DynamicConfig
             var provider = Database.ProviderName;
             if (provider != null && provider.Contains("Cosmos", StringComparison.OrdinalIgnoreCase))
             {
-                modelBuilder.Entity<Connection>().ToContainer("config");
                 modelBuilder.Entity<Metric>().ToContainer("Metrics");
                 modelBuilder.Entity<WebsiteCopyJob>().ToContainer("WebsiteCopyJobs");
+                modelBuilder.Entity<Connection>().ToContainer("config");
             }
             else
             {
                 modelBuilder.Entity<Connection>();
-                modelBuilder.Entity<WebsiteManagedConnection>();
                 modelBuilder.Entity<Metric>();
                 modelBuilder.Entity<WebsiteCopyJob>();
             }

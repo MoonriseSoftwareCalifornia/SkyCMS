@@ -312,9 +312,9 @@ namespace Sky.Tests.Services.WebsiteCopy
             while (DateTimeOffset.UtcNow < deadline)
             {
                 var job = await orchestrator.GetJobAsync(jobId);
-                if (job?.Status is WebsiteCopyJobStatus.Completed
-                    or WebsiteCopyJobStatus.CompletedDryRun
-                    or WebsiteCopyJobStatus.Failed)
+                if (job?.Status is (int)WebsiteCopyJobStatus.Completed
+                    or (int)WebsiteCopyJobStatus.CompletedDryRun
+                    or (int)WebsiteCopyJobStatus.Failed)
                 {
                     return job;
                 }
@@ -346,7 +346,7 @@ namespace Sky.Tests.Services.WebsiteCopy
 
             Assert.IsNotNull(completed);
             Assert.AreEqual(
-                WebsiteCopyJobStatus.Completed,
+                (int)WebsiteCopyJobStatus.Completed,
                 completed.Status,
                 $"Expected Completed but got {completed.Status}. ErrorMessage: {completed.ErrorMessage}");
             Assert.IsTrue(completed.DatabaseCopied, "DatabaseCopied should be true after a full copy.");
@@ -376,7 +376,7 @@ namespace Sky.Tests.Services.WebsiteCopy
 
             Assert.IsNotNull(completed);
             Assert.AreEqual(
-                WebsiteCopyJobStatus.Completed,
+                (int)WebsiteCopyJobStatus.Completed,
                 completed.Status,
                 $"Expected Completed but got {completed.Status}. ErrorMessage: {completed.ErrorMessage}");
             Assert.IsTrue(completed.DatabaseCopied);
@@ -408,7 +408,7 @@ namespace Sky.Tests.Services.WebsiteCopy
 
             Assert.IsNotNull(completed);
             Assert.AreEqual(
-                WebsiteCopyJobStatus.Completed,
+                (int)WebsiteCopyJobStatus.Completed,
                 completed.Status,
                 $"Expected Completed but got {completed.Status}. ErrorMessage: {completed.ErrorMessage}");
             Assert.IsTrue(completed.StorageCopied, "StorageCopied should be true.");
@@ -445,7 +445,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id);
 
             Assert.IsNotNull(completed);
-            Assert.AreEqual(WebsiteCopyJobStatus.Failed, completed.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Failed, completed.Status);
             Assert.IsTrue(
                 completed.ErrorMessage?.Contains("must be empty", StringComparison.OrdinalIgnoreCase) == true
                 || completed.ErrorMessage?.Contains("record(s)", StringComparison.OrdinalIgnoreCase) == true,
@@ -489,7 +489,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id);
 
             Assert.IsNotNull(completed);
-            Assert.AreEqual(WebsiteCopyJobStatus.Failed, completed.Status);
+            Assert.AreEqual((int)WebsiteCopyJobStatus.Failed, completed.Status);
             Assert.IsTrue(
                 completed.ErrorMessage?.Contains("empty", StringComparison.OrdinalIgnoreCase) == true,
                 $"Expected 'empty' in error message but got: {completed.ErrorMessage}");
@@ -514,7 +514,7 @@ namespace Sky.Tests.Services.WebsiteCopy
             var completed = await WaitForTerminalStatusAsync(job.Id);
             Assert.IsNotNull(completed);
             Assert.AreEqual(
-                WebsiteCopyJobStatus.Completed,
+                (int)WebsiteCopyJobStatus.Completed,
                 completed.Status,
                 $"Copy must succeed before testing the switch. ErrorMessage: {completed.ErrorMessage}");
 

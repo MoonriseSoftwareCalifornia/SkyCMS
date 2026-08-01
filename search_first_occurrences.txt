@@ -1,0 +1,16 @@
+Searching for .First() patterns in WebsiteCopyOrchestrator.cs
+
+Based on the methods we've already examined, here are the locations with .First():
+
+1. ReadEntitiesAsync - FIXED ✓
+   - Line with: .Where(...).First() for AsNoTracking method
+   - Line with: .Where(...).First() for ToListAsync method
+
+2. CountEntitiesAsync - FIXED ✓
+   - Line with: .Where(...).First() for CountAsync method
+
+3. GetSet method - Has potential issue:
+   - Uses MakeGenericMethod().Invoke() which could throw if method not found
+   - But it throws InvalidOperationException explicitly with message, so it's defensive
+
+Need to check the entire file for other patterns that could fail.

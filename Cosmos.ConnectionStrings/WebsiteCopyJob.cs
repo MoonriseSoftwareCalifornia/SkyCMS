@@ -344,7 +344,7 @@ namespace Cosmos.DynamicConfig
         /// 
         /// Use GetJobAsync to poll the current status.
         /// </remarks>
-        public WebsiteCopyJobStatus Status { get; set; } = WebsiteCopyJobStatus.Queued;
+        public int Status { get; set; } = (int)WebsiteCopyJobStatus.Queued;
 
         /// <summary>
         /// Error message if the job failed, describing why the operation could not complete.
