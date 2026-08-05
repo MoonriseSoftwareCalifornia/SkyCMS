@@ -31,6 +31,7 @@ namespace Cosmos.MultiTenant.Administrator.Models
             PublisherMode = connection.PublisherMode;
             WebsiteUrl = connection.WebsiteUrl;
             OwnerEmail = connection.OwnerEmail;
+            AllowSetup = connection.AllowSetup;
         }
 
         /// <summary>
@@ -39,6 +40,12 @@ namespace Cosmos.MultiTenant.Administrator.Models
         [Key]
         [Display(Name = "ID")]
         public Guid Id { get; set; } = Guid.NewGuid();
+
+        /// <summary>
+        /// Gets or sets a value indicating whether setup, deletion or overwrite is allowed for the connection.
+        /// </summary>
+        [Display(Name = "Allow Setup, deletion or overwrite")]
+        public bool? AllowSetup { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the database provider name.
@@ -127,6 +134,7 @@ namespace Cosmos.MultiTenant.Administrator.Models
             return new Connection
             {
                 Id = Id,
+                AllowSetup = AllowSetup ?? false,
                 DomainNames = GetDomainNames(DomainNames),
                 DbConn = DbConn ?? string.Empty,
                 StorageConn = StorageConn ?? string.Empty,

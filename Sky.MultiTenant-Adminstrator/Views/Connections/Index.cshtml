@@ -17,6 +17,9 @@
                 @Html.DisplayNameFor(model => model.Customer)
             </th>
             <th>
+                @Html.DisplayNameFor(model => model.AllowSetup)
+            </th>
+            <th>
                 @Html.DisplayNameFor(model => model.WebsiteUrl)
             </th>
             <th>
@@ -34,6 +37,9 @@
             <tr>
                 <td>
                     <a href="mailto:@item.OwnerEmail">@Html.DisplayFor(modelItem => item.Customer)</a>
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.AllowSetup)
                 </td>
                 <td>
                     <a href="@item.WebsiteUrl" target="_blank">@Html.DisplayFor(modelItem => item.WebsiteUrl)</a>
@@ -56,8 +62,11 @@
                 </td>
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a>
+                    @if(item.AllowSetup)
+                    {
+                        <span> | <a asp-action="Delete" asp-route-id="@item.Id">Delete</a></span>
+                    }
                 </td>
             </tr>
         }

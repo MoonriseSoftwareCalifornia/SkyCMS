@@ -98,6 +98,13 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                 ? await configDb.Connections.FirstOrDefaultAsync(x => x.Id == model.DestinationConnectionId)
                 : null;
 
+            if (!destination.AllowSetup)
+            {
+                ModelState.AddModelError(string.Empty, "Destination connection is not allowed for overwrite.");
+                var rebuilt = await BuildStartViewModelAsync(model);
+                return View("Index", rebuilt);
+            }
+
             var job = new WebsiteCopyJob
             {
                 SourceConnectionId = model.SourceConnectionId,

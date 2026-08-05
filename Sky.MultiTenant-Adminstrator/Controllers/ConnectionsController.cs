@@ -87,6 +87,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
             return View(new ConnectionViewModel
             {
                 Id = Guid.NewGuid(),
+                AllowSetup = true,
                 DomainNames = string.Empty,
                 DbConn = string.Empty,
                 StorageConn = string.Empty,
@@ -101,7 +102,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
         [HttpPost]
         [AuthorizeForScopes(ScopeKeySection = "MicrosoftGraph:Scopes")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,DomainNames,DbConn,DbName,StorageConn,Customer,WebsiteUrl,ResourceGroup,PublisherMode,OwnerEmail")] ConnectionViewModel model)
+        public async Task<IActionResult> Create([Bind("Id,AllowSetup,DomainNames,DbConn,DbName,StorageConn,Customer,WebsiteUrl,ResourceGroup,PublisherMode,OwnerEmail")] ConnectionViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -177,6 +178,7 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                         return NotFound();
                     }
 
+                    entity.AllowSetup = model.AllowSetup ?? false;
                     entity.PublisherMode = model.PublisherMode;
                     entity.Customer = model.Customer;
                     entity.DomainNames = model.DomainNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(d => d.Trim()).ToArray();
@@ -220,7 +222,14 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
                 return NotFound();
             }
 
-            return View(new ConnectionViewModel(connection));
+            if (connection.AllowSetup )
+            {
+                return View(new ConnectionViewModel(connection));
+            }
+            else
+            {
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         // POST: Connections/Delete/5
@@ -230,10 +239,19 @@ namespace Cosmos.MultiTenant.Administrator.Controllers
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
             var connection = await _context.Connections.FindAsync(id);
-            if (connection != null)
+
+            if (connection == null)
             {
-                _context.Connections.Remove(connection);
+                return RedirectToAction(nameof(Index));
             }
+
+            if (connection.AllowSetup == false)
+            {
+                ModelState.AddModelError(string.Empty, "This connection cannot be deleted because it is not allowed to be deleted.");
+                return View(new ConnectionViewModel(connection));
+            }
+
+            _context.Connections.Remove(connection);
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
