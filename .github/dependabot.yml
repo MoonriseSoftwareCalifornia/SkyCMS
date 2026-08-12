@@ -12,25 +12,18 @@ updates:
     schedule:
       interval: "weekly"
 
-  # CloudFrontTestSetup npm packages - brace-expansion is bundled inside
-  # aws-cdk-lib and cannot be updated independently; ignore it to prevent
-  # Dependabot from crashing on the bundled (no 'resolved' URL) entry.
+  # CloudFrontTestSetup npm packages
   - package-ecosystem: "npm"
     directory: "/CloudFrontTestSetup"
     schedule:
       interval: "weekly"
-    ignore:
-      - dependency-name: "brace-expansion"
 
-  # AWS CDK install scripts npm packages - brace-expansion is bundled inside
-  # aws-cdk-lib and cannot be updated independently; ignore it to prevent
-  # Dependabot from crashing on the bundled (no 'resolved' URL) entry.
+  # AWS CDK install scripts npm packages
   - package-ecosystem: "npm"
     directory: "/InstallScripts/AWS/cdk"
     schedule:
       interval: "weekly"
     ignore:
-      - dependency-name: "brace-expansion"
       # Temporary: fast-uri is bundled transitively via aws-cdk-lib and
       # currently not patchable by Dependabot in this directory.
       - dependency-name: "fast-uri"
